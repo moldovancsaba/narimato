@@ -13,7 +13,6 @@ body {
     display: flex;
     justify-content: center; /* Horizontally center the content */
     align-items: center; /* Vertically center the content */
-    flex-direction: column; /* Stack elements vertically by default */
 }
 
 /* 2. Style for the Polaroid Frame */
@@ -84,9 +83,6 @@ button:hover {
 
 /* 4.2. Style adjustments for portrait orientation */
 @media screen and (orientation: portrait) {
-    body {
-        flex-direction: column; /* Align items in a column for portrait mode */
-    }
 
     #numberContainer {
         order: 1; /* Place number container first */
@@ -98,7 +94,6 @@ button:hover {
     #dislikeButton, #likeButton {
         flex-direction: row; /* Align items in a column for portrait mode */
         order: 2; /* Place buttons after the number container */
-        flex: 1; /* Equal flex for equal width */
     }
 }
 
