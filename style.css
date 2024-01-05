@@ -8,15 +8,34 @@ body {
     margin-bottom: 20px;
     font-size: 48px;
     font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
 }
 
+/* A button konténereket állítja be */
 button {
     margin: 5px;
     padding: 10px 20px;
     font-size: 16px;
     cursor: pointer;
+    flex: 1; /* Biztosítja, hogy a gombok egyforma méretűek legyenek */
 }
 
 button:hover {
     opacity: 0.8;
+}
+
+/* A képernyő orientációjától függő stílusok */
+@media screen and (orientation: landscape) {
+    #numberContainer {
+        flex-direction: row;
+    }
+}
+
+@media screen and (orientation: portrait) {
+    #numberContainer {
+        flex-direction: column;
+    }
 }
