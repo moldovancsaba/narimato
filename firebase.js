@@ -16,8 +16,8 @@ const firebaseConfig = {
   authDomain: "play-narimato.firebaseapp.com",
   projectId: "play-narimato",
   storageBucket: "play-narimato.appspot.com",
-  messagingSenderId: "114791157291",
-  appId: "1:114791157291:web:98c7715b15784f00a8e46e",
+  messagingSenderId: "114891157291",
+  appId: "1:114891157291:web:98c7715b15784f00a8e46e",
   measurementId: "G-L970ZBSM2J"
 };
 
