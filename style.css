@@ -81,8 +81,8 @@ button:hover {
 
     #numberContainer {
         order: 2; /* Place number container in the middle */
-        width: 30vh;
-        height: 50vh; /* Fixed height */
+        width: 50vh;
+        height: 70vh; /* Fixed height */
     
     }
 
