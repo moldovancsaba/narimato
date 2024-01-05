@@ -28,44 +28,44 @@ body {
 #numberContainer {
     font-size: 5vh;
     font-weight: bold;
-    background-color: white; /* Polaroid background */
+    background-color: rgb(189, 183, 183); /* Polaroid background */
     border: 1px solid #ccc; /* Border for the Polaroid effect */
-    padding: 20px;
-    padding-bottom: 60px; /* Larger bottom padding for the comment area */
-    margin-bottom: 20px;
-    box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2); /* Shadow for depth effect */
+    padding: 2vh;
+    padding-bottom: 5vh; /* Larger bottom padding for the comment area */
+    margin-bottom: 4vh;
+    box-shadow: 1vh 1vh 2vh rgba(0, 0, 0, 0.2); /* Shadow for depth effect */
     position: relative; /* Needed for positioning the comment */
     display: flex;
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    width: 20vw; /* Fixed width */
-    height: 20vh; /* Fixed height */
+    width: 30vw; /* Fixed width */
+    height: 40vh; /* Fixed height */
 }
 
 /* 2.2. Style for the comment area */
 .comment {
     position: absolute;
-    bottom: 10px;
+    bottom: 1vh;
     width: 90%; /* Relative to the parent container */
     text-align: center;
     font-style: italic;
     font-size: 2vh;
     font-weight: bold;
-    margin-bottom: 3vh;
+    margin-bottom: 2vh;
 }
 
 /* 3. Style for the Buttons */
 /* 3.1. Style for individual buttons */
 button {
-    margin: 5px;
-    padding: 10px 20px;
+    margin: 1vh;
+    padding: 2vh 2vh;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 3vh;
 }
 
 button:hover {
-    opacity: 0.8;
+    opacity: 0.5;
 }
 
 /* 4. Responsive Design Adjustments */
