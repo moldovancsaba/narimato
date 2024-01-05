@@ -29,11 +29,11 @@ body {
     font-size: 5vh;
     font-weight: bold;
     background-color: rgb(189, 183, 183); /* Polaroid background */
-    border: 1px solid #ccc; /* Border for the Polaroid effect */
+    border: 1px solid #fff; /* Border for the Polaroid effect */
     padding: 2vh;
     padding-bottom: 5vh; /* Larger bottom padding for the comment area */
     margin-bottom: 4vh;
-    box-shadow: 1vh 1vh 2vh rgba(0, 0, 0, 0.2); /* Shadow for depth effect */
+    box-shadow: 1vh 1vh 2vh rgba(0, 0, 0, 0.4); /* Shadow for depth effect */
     position: relative; /* Needed for positioning the comment */
     display: flex;
     justify-content: center;
@@ -81,8 +81,8 @@ button:hover {
 
     #numberContainer {
         order: 2; /* Place number container in the middle */
-        width: 50vh;
-        height: 70vh; /* Fixed height */
+        width: 40vh;
+        height: 60vh; /* Fixed height */
     
     }
 
@@ -100,8 +100,8 @@ button:hover {
     /* Position the buttons on either side of the number container */
     #numberContainer {
     order: 1; /* Place number container in the middle */
-    width: 50vw; /* Fixed width */
-    height: 70vw; /* Fixed height */
+    width: 40vw; /* Fixed width */
+    height: 60vw; /* Fixed height */
     }
     
     #dislikeButton {
