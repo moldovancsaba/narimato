@@ -28,7 +28,7 @@ body {
     margin-bottom: 4vh;
     box-shadow: 1vh 1vh 2vh rgba(0, 0, 0, 0.4); /* Shadow for depth effect */
     position: relative; /* Needed for positioning the comment */
-    display: flex;
+    /* display: flex; */ 
     justify-content: center;
     align-items: center;
     flex-direction: column;
@@ -85,7 +85,7 @@ button:hover {
 /* 4.2. Style adjustments for portrait orientation */
 @media screen and (orientation: portrait) {
     body {
-        flex-direction: column; /* Align items in a column for portrait mode */
+        flex-direction: row; /* Align items in a column for portrait mode */
     }
 
     #numberContainer {
