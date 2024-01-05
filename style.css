@@ -39,7 +39,8 @@ body {
     justify-content: center;
     align-items: center;
     flex-direction: column;
-
+    width: 20vw; /* Fixed width */
+    height: 20vh; /* Fixed height */
 }
 
 /* 2.2. Style for the comment area */
@@ -60,6 +61,7 @@ button {
     margin: 5px;
     padding: 10px 20px;
     cursor: pointer;
+    font-size: 16px;
 }
 
 button:hover {
@@ -74,13 +76,17 @@ button:hover {
         justify-content: space-around; /* Distribute space around items */
     }
 
-    #numberContainer {
-        width: 20vw; /* Fixed width */
-        height: 20vh; /* Fixed height */
+    /* Position the buttons on either side of the number container */
+    #dislikeButton {
+        order: 1; /* Place dislike button to the left */
     }
 
-    button {
-        font-size: 16px;
+    #numberContainer {
+        order: 2; /* Place number container in the middle */
+    }
+
+    #likeButton {
+        order: 3; /* Place like button to the right */
     }
 }
 
@@ -90,13 +96,9 @@ button:hover {
         flex-direction: column; /* Align items in a column for portrait mode */
     }
 
-    #numberContainer {
-        width: 20vw; /* Fixed width */
-        height: 20vh; /* Fixed height */
-    }
-
-    button {
-        font-size: 16px;
+    /* Keep the original order in portrait mode */
+    #dislikeButton, #numberContainer, #likeButton {
+        order: 0;
     }
 }
 
