@@ -31,6 +31,8 @@ body {
     justify-content: center;
     align-items: center;
     flex-direction: column;
+    width: 40vw; /* Adjusted width */
+    height: 60vw; /* Adjusted height */
 }
 
 /* 2.2. Style for the comment area */
@@ -72,8 +74,6 @@ button:hover {
 
     #numberContainer {
         order: 2; /* Place number container in the middle */
-        width: 40vh; /* Adjusted width for landscape */
-        height: 60vh; /* Adjusted height for landscape */
     }
 
     #likeButton {
@@ -84,16 +84,14 @@ button:hover {
 /* 4.2. Style adjustments for portrait orientation */
 @media screen and (orientation: portrait) {
     body {
-        flex-direction: column;
-        justify-content: space-around; /* Distribute space around items */
+        flex-direction: column; /* Align items in a column for portrait mode */
     }
 
-    #numberContainer {
-        width: 40vw; /* Adjusted width for portrait */
-        height: 60vw; /* Adjusted height for portrait */
+    #dislikeButton, #likeButton {
+        order: 3; /* Place buttons after the number container */
+        margin: 0 auto; /* Center the buttons */
     }
 }
-
 
 /*-----------------------------*/
 /* END OF CSS -----------------*/
