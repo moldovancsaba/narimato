@@ -84,9 +84,6 @@ button:hover {
 }
 
 
-
-}
-
 /* 2.2. Responsive design for portrait orientation */
 @media screen and (orientation: portrait) {
     body {
