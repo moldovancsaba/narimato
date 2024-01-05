@@ -1,5 +1,5 @@
 <!------------------------->
-<!-- index.html ----------->
+<!-- result.html --------->
 <!------------------------->
 <!-- HTML STARTS HERE ----->
 <!------------------------->
@@ -15,24 +15,27 @@
         gtag('js', new Date());
         gtag('config', 'G-8RCT54Y6E7');
     </script>
-    <title>Numbers 138</title>
+    <title>Results</title>
     <link rel="stylesheet" type="text/css" href="style.css?v=138">
     <link rel="stylesheet" type="text/css" href="environment.css?v=138">
 </head>
 <body>
-    <!-- Polaroid -->
-    <div id="numberContainer">
-        <div class="comment">Your comment here</div>
+    <div class="content">
+        <div class="column">
+            <h2 style="color: red;">Top 10 Disliked Numbers</h2>
+            <!-- Top 10 Disliked Numbers will be listed here -->
+        </div>
+        <div class="column">
+            <h2 style="color: green;">Top 10 Liked Numbers</h2>
+            <!-- Top 10 Liked Numbers will be listed here -->
+        </div>
     </div>
-    <button id="dislikeButton">👎</button> <!-- Dislike button -->
-    <button id="likeButton">👍</button> <!-- Like button -->
+    <button onclick="window.location.href='index.html'">Back to Main</button>
 
     <!-- Firebase Script -->
     <script src="firebase.js?v=138"></script>
-    <!-- Firebase Logic Script -->
-    <script src="firebase-logic.js?v=138"></script>
-    <!-- Application Script -->
-    <script src="script.js?v=138"></script>
+    <!-- Firebase Logic Script for Results Page -->
+    <script src="firebase-logic-results.js?v=138"></script>
 </body>
 </html>
 
