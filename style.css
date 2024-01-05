@@ -39,8 +39,7 @@ body {
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    width: 20vw; /* Fixed width */
-    height: 20vh; /* Fixed height */
+
 }
 
 /* 2.2. Style for the comment area */
@@ -60,7 +59,6 @@ body {
 button {
     margin: 5px;
     padding: 10px 20px;
-    font-size: 16px;
     cursor: pointer;
 }
 
@@ -77,11 +75,12 @@ button:hover {
     }
 
     #numberContainer {
-        /* Adjust size if necessary for landscape orientation */
+        width: 20vw; /* Fixed width */
+        height: 20vh; /* Fixed height */
     }
 
     button {
-        /* Adjust button styles if necessary for landscape orientation */
+        font-size: 16px;
     }
 }
 
@@ -92,11 +91,12 @@ button:hover {
     }
 
     #numberContainer {
-        /* Adjust size if necessary for portrait orientation */
+        width: 20vw; /* Fixed width */
+        height: 20vh; /* Fixed height */
     }
 
     button {
-        /* Adjust button styles if necessary for portrait orientation */
+        font-size: 16px;
     }
 }
 
