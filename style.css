@@ -96,8 +96,7 @@ button:hover {
         flex-direction: column; /* Align items in a column for portrait mode */
     }
 
-    /* Keep the original order in portrait mode */
-    #dislikeButton, #numberContainer, #likeButton {
+    #numberContainer, #dislikeButton, #likeButton {
         order: 0;
     }
 }
