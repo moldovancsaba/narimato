@@ -6,7 +6,9 @@
 
 
 /* 1. Style adjustments based on screen orientation */
+/* 1.1. Style for the body */
 body {
+    
     font-family: Arial, sans-serif;
     margin: 0;
     height: 100vh; /* Set body height to fill the viewport */
@@ -16,12 +18,39 @@ body {
     flex-direction: column; /* Stack elements vertically by default */
 }
 
+/* 1.2. Style for the polaroid frame */
 #numberContainer {
-    font-size: 48px;
+    font-size: 5vh;
     font-weight: bold;
+    background-color: white; /* Polaroid background */
+    border: 1px solid #ccc; /* Border for the Polaroid effect */
+    padding: 20px;
+    padding-bottom: 60px; /* Larger bottom padding for the comment area */
     margin-bottom: 20px;
+    box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2); /* Shadow for depth effect */
+    position: relative; /* Needed for positioning the comment */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    width: 20vw; /* Fixed width */
+    height: 20vh; /* Fixed height */
 }
+    
+/* 1.3. Style for the comment area */
+    .comment {
+        position: absolute;
+        bottom: 10px;
+        width: 90%; /* Relative to the parent container */
+        text-align: center;
+        font-style: italic;
+        font-size: 2vh;
+        font-weight: bold;
+        margin-bottom: 3vh;
 
+    }
+
+/* 1.4. Style for the buttons */
 button {
     margin: 5px;
     padding: 10px 20px;
@@ -34,13 +63,17 @@ button:hover {
     opacity: 0.8;
 }
 
+
+
 /* 2. Style adjustments based on screen orientation */
+/* 2.1. Responsive design for landscape orientation */
 @media screen and (orientation: landscape) {
     body {
         flex-direction: row; /* Align items in a row for landscape mode */
     }
 }
 
+/* 2.2. Responsive design for portrait orientation */
 @media screen and (orientation: portrait) {
     body {
         flex-direction: column; /* Align items in a column for portrait mode */
