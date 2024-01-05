@@ -1,41 +1,56 @@
+//------------------------------
+// style.js -------------------
+//------------------------------
+// JAVASCRIPT STARTS HERE ------
+//------------------------------
+
+/* 1. Style adjustments based on screen orientation */
 body {
     font-family: Arial, sans-serif;
-    text-align: center;
-    margin-top: 100px;
+    margin: 0;
+    height: 100vh; /* Set body height to fill the viewport */
+    display: flex;
+    justify-content: center; /* Horizontally center the content */
+    align-items: center; /* Vertically center the content */
+    flex-direction: column; /* Stack elements vertically by default */
 }
 
 #numberContainer {
-    margin-bottom: 20px;
     font-size: 48px;
     font-weight: bold;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
+    margin-bottom: 20px;
 }
 
-/* A button konténereket állítja be */
 button {
     margin: 5px;
     padding: 10px 20px;
     font-size: 16px;
     cursor: pointer;
-    flex: 1; /* Biztosítja, hogy a gombok egyforma méretűek legyenek */
+    flex: 1; /* Ensure buttons have equal width */
 }
 
 button:hover {
     opacity: 0.8;
 }
 
-/* A képernyő orientációjától függő stílusok */
+/* 2. Style adjustments based on screen orientation */
 @media screen and (orientation: landscape) {
-    #numberContainer {
-        flex-direction: row;
+    body {
+        flex-direction: row; /* Align items in a row for landscape mode */
     }
 }
 
 @media screen and (orientation: portrait) {
-    #numberContainer {
-        flex-direction: column;
+    body {
+        flex-direction: column; /* Align items in a column for portrait mode */
     }
 }
+
+
+//------------------------------
+// END OF CODE -----------------
+//------------------------------
+// CREATED BY MOLDOVAN ---------
+//------------------------------
+// STYLE BY GPT -----------
+//------------------------------
