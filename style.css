@@ -83,9 +83,12 @@ button:hover {
 
 /* 4.2. Style adjustments for portrait orientation */
 @media screen and (orientation: portrait) {
+    body {
+        flex-direction: column;
+        justify-content: space-around; /* Distribute space around items */
+    }
 
     #numberContainer {
-        order: 1; /* Place number container first */
         width: 40vw; /* Adjusted width for portrait */
         height: 60vw; /* Adjusted height for portrait */
     }
