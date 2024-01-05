@@ -91,9 +91,15 @@ button:hover {
     }
 
     /* Aligning buttons side by side below the number container */
-    #dislikeButton, #likeButton {
+    #dislikeButton, {
         flex-direction: row; /* Align items in a column for portrait mode */
         order: 2; /* Place buttons after the number container */
+    }
+
+    /* Aligning buttons side by side below the number container */
+    #likeButton {
+        flex-direction: row; /* Align items in a column for portrait mode */
+        order: 3; /* Place buttons after the number container */
     }
 }
 
