@@ -50,13 +50,20 @@ body {
 
     }
 
-/* 1.4. Style for the buttons */
+
+/* 1.4. Style for the button container */
+#buttonContainer {
+    display: flex;
+    justify-content: center;
+}
+
+/* 1.5. Style for the buttons */
 button {
     margin: 5px;
     padding: 10px 20px;
     font-size: 16px;
     cursor: pointer;
-    flex: 1; /* Ensure buttons have equal width */
+    /* Remove the flex: 1; to allow buttons to size based on content */
 }
 
 button:hover {
@@ -71,6 +78,13 @@ button:hover {
     body {
         flex-direction: row; /* Align items in a row for landscape mode */
     }
+    #buttonContainer {
+        flex-direction: column; /* Stack buttons vertically in landscape mode */
+    }
+}
+
+
+
 }
 
 /* 2.2. Responsive design for portrait orientation */
@@ -78,6 +92,11 @@ button:hover {
     body {
         flex-direction: column; /* Align items in a column for portrait mode */
     }
+
+    #buttonContainer {
+        flex-direction: row; /* Place buttons side by side in portrait mode */
+    }
+
 }
 
 
