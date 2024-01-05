@@ -94,19 +94,10 @@ button:hover {
         height: 60vw; /* Adjusted height for portrait */
     }
 
-    #dislikeButton, #likeButton {
-        order: 2; /* Place buttons after the number container */
-    }
-
     /* Aligning buttons side by side below the number container */
     #dislikeButton, #likeButton {
+        order: 2; /* Place buttons after the number container */
         flex: 1; /* Equal flex for equal width */
-    }
-
-    .buttonContainer {
-        display: flex; /* Display buttons in a flex row */
-        width: 100%; /* Full width to contain both buttons */
-        justify-content: center; /* Center the buttons */
     }
 }
 
