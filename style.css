@@ -86,7 +86,7 @@ button:hover {
     }
 
     #likeButton {
-        order: 3; /* Place like button to the right */
+        order: 2; /* Place like button to the right */
     }
 }
 
