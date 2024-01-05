@@ -67,18 +67,20 @@ button:hover {
         justify-content: space-around; /* Distribute space around items */
     }
 
+    /* Position the buttons on either side of the number container */
     #dislikeButton {
         order: 1; /* Place dislike button to the left */
     }
 
     #numberContainer {
         order: 2; /* Place number container in the middle */
-        width: 40vh; /* Adjusted width for landscape */
-        height: 60vh; /* Adjusted height for landscape */
+        width: 40vh;
+        height: 60vh; /* Fixed height */
+    
     }
 
     #likeButton {
-        order: 3; /* Place like button to the right */
+        order: 2; /* Place like button to the right */
     }
 }
 
@@ -88,27 +90,22 @@ button:hover {
         flex-direction: column; /* Align items in a column for portrait mode */
     }
 
+    /* Position the buttons on either side of the number container */
     #numberContainer {
-        order: 1; /* Place number container first */
-        width: 40vw; /* Adjusted width for portrait */
-        height: 60vw; /* Adjusted height for portrait */
+    order: 1; /* Place number container in the middle */
+    width: 40vw; /* Fixed width */
+    height: 60vw; /* Fixed height */
+    }
+    
+    #dislikeButton {
+    order: 2; /* Place dislike button to the left */
     }
 
-    #dislikeButton, #likeButton {
-        order: 2; /* Place buttons after the number container */
+    #likeButton {
+    order: 3; /* Place like button to the right */
+    }
     }
 
-    /* Aligning buttons side by side below the number container */
-    #dislikeButton, #likeButton {
-        flex: 1; /* Equal flex for equal width */
-    }
-
-    .buttonContainer {
-        display: flex; /* Display buttons in a flex row */
-        width: 100%; /* Full width to contain both buttons */
-        justify-content: center; /* Center the buttons */
-    }
-}
 
 /*-----------------------------*/
 /* END OF CSS -----------------*/
