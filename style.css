@@ -96,10 +96,19 @@ button:hover {
         flex-direction: column; /* Align items in a column for portrait mode */
     }
 
-    #numberContainer, #dislikeButton, #likeButton {
-        order: 0;
+    /* Position the buttons on either side of the number container */
+    #numberContainer {
+    order: 1; /* Place number container in the middle */
     }
-}
+    
+    #dislikeButton {
+    order: 2; /* Place dislike button to the left */
+    }
+
+    #likeButton {
+    order: 3; /* Place like button to the right */
+    }
+    }
 
 
 /*-----------------------------*/
