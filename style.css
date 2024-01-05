@@ -39,8 +39,6 @@ body {
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    width: 30vw; /* Fixed width */
-    height: 40vh; /* Fixed height */
 }
 
 /* 2.2. Style for the comment area */
@@ -83,6 +81,9 @@ button:hover {
 
     #numberContainer {
         order: 2; /* Place number container in the middle */
+        width: 30vh;
+        height: 50vh; /* Fixed height */
+    
     }
 
     #likeButton {
@@ -99,6 +100,8 @@ button:hover {
     /* Position the buttons on either side of the number container */
     #numberContainer {
     order: 1; /* Place number container in the middle */
+    width: 50vw; /* Fixed width */
+    height: 70vw; /* Fixed height */
     }
     
     #dislikeButton {
