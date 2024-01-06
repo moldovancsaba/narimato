@@ -1,5 +1,5 @@
 //------------------------------
-// script.js 155 ---------------
+// script.js 156 ---------------
 //------------------------------
 // JAVASCRIPT STARTS HERE ------
 //------------------------------
@@ -16,6 +16,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     displayNumber();
+
+    const likeButton = document.getElementById('likeButton');
+    const dislikeButton = document.getElementById('dislikeButton');
+
+    if (likeButton) {
+        likeButton.addEventListener('click', () => {
+            displayNumber();
+        });
+    }
+
+    if (dislikeButton) {
+        dislikeButton.addEventListener('click', () => {
+            displayNumber();
+        });
+    }
 });
 
 //------------------------------
