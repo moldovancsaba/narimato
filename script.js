@@ -17,17 +17,22 @@ document.addEventListener('DOMContentLoaded', () => {
         numberContainer.textContent = generateRandomNumber();
     }
 
+    displayNumber();
+});
+
     // Check if like and dislike buttons exist
     const likeButton = document.getElementById('likeButton');
     const dislikeButton = document.getElementById('dislikeButton');
 
-    if (likeButton && dislikeButton) {
+    if (likeButton) {
         likeButton.addEventListener('click', () => {
             const number = numberContainer.textContent;
             handleLike(number);
             displayNumber();
         });
+    }
 
+    if (dislikeButton) {
         dislikeButton.addEventListener('click', () => {
             const number = numberContainer.textContent;
             handleDislike(number);
@@ -48,8 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    displayNumber();
-});
 
 //------------------------------
 // END OF CODE -----------------
