@@ -1,8 +1,10 @@
 //------------------------------
-// script.js 157 ---------------
+// script.js -------------------
 //------------------------------
 // JAVASCRIPT STARTS HERE ------
 //------------------------------
+
+import { handleLike, handleDislike } from './firebase-logic.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const numberContainer = document.getElementById('numberContainer');
@@ -24,12 +26,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (likeButton) {
         likeButton.addEventListener('click', () => {
+            const number = numberDisplay.textContent;
+            handleLike(number); // Update like count in the database
             displayNumber();
         });
     }
 
     if (dislikeButton) {
         dislikeButton.addEventListener('click', () => {
+            const number = numberDisplay.textContent;
+            handleDislike(number); // Update dislike count in the database
             displayNumber();
         });
     }
