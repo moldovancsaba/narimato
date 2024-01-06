@@ -1,10 +1,8 @@
 //------------------------------
-// script.js -------------------
+// script.js 154 ---------------
 //------------------------------
 // JAVASCRIPT STARTS HERE ------
 //------------------------------
-
-import { handleLike, handleDislike } from './firebase-logic.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const numberContainer = document.getElementById('numberContainer');
@@ -18,35 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     displayNumber();
-
-    const likeButton = document.getElementById('likeButton');
-    const dislikeButton = document.getElementById('dislikeButton');
-
-    if (likeButton && dislikeButton) {
-        likeButton.addEventListener('click', () => {
-            const number = numberContainer.textContent;
-            handleLike(number);
-            displayNumber();
-        });
-
-        dislikeButton.addEventListener('click', () => {
-            const number = numberContainer.textContent;
-            handleDislike(number);
-            displayNumber();
-        });
-
-        document.addEventListener('keydown', (event) => {
-            if (event.code === 'ArrowRight') {
-                const number = numberContainer.textContent;
-                handleLike(number);
-                displayNumber();
-            } else if (event.code === 'ArrowLeft') {
-                const number = numberContainer.textContent;
-                handleDislike(number);
-                displayNumber();
-            }
-        });
-    }
 });
 
 //------------------------------
