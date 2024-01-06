@@ -25,17 +25,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const dislikeButton = document.getElementById('dislikeButton');
 
     if (likeButton) {
-        likeButton.addEventListener('click', () => {
+        likeButton.addEventListener('click', async () => {
             const number = numberDisplay.textContent;
-            handleLike(number);
+            await handleLike(number);
             displayNumber();
         });
     }
 
     if (dislikeButton) {
-        dislikeButton.addEventListener('click', () => {
+        dislikeButton.addEventListener('click', async () => {
             const number = numberDisplay.textContent;
-            handleDislike(number);
+            await handleDislike(number);
             displayNumber();
         });
     }
@@ -44,4 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
 //------------------------------
 // END OF CODE -----------------
 //------------------------------
-// CREATED BY MOL⬤
+// CREATED BY MOLDOVAN ---------
+//------------------------------
+// JAVASCRIPT BY GPT -----------
+//------------------------------
