@@ -19,38 +19,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     displayNumber();
 
-    // Check if like and dislike buttons exist
     const likeButton = document.getElementById('likeButton');
     const dislikeButton = document.getElementById('dislikeButton');
 
-    if (likeButton) {
+    if (likeButton && dislikeButton) {
         likeButton.addEventListener('click', () => {
             const number = numberContainer.textContent;
             handleLike(number);
             displayNumber();
         });
-    }
 
-    if (dislikeButton) {
         dislikeButton.addEventListener('click', () => {
             const number = numberContainer.textContent;
             handleDislike(number);
             displayNumber();
         });
-    }
 
-    // Keyboard event listener
-    document.addEventListener('keydown', (event) => {
-        if (event.code === 'ArrowRight' && likeButton) {
-            const number = numberContainer.textContent;
-            handleLike(number);
-            displayNumber();
-        } else if (event.code === 'ArrowLeft' && dislikeButton) {
-            const number = numberContainer.textContent;
-            handleDislike(number);
-            displayNumber();
-        }
-    });
+        document.addEventListener('keydown', (event) => {
+            if (event.code === 'ArrowRight') {
+                const number = numberContainer.textContent;
+                handleLike(number);
+                displayNumber();
+            } else if (event.code === 'ArrowLeft') {
+                const number = numberContainer.textContent;
+                handleDislike(number);
+                displayNumber();
+            }
+        });
+    }
 });
 
 //------------------------------
