@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>All Data 164</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 2vh;
+        }
+    </style>
+</head>
+<body>
+    <h1>All Data in Database</h1>
+    <div id="data-list"></div>
+
+    <script>
+        fetch('/alldata')
+            .then(response => response.json())
+            .then(data => {
+                const dataList = document.getElementById('data-list');
+                dataList.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            })
+            .catch(error => console.error('Error:', error));
+    </script>
+</body>
+</html>
