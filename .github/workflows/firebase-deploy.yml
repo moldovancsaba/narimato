@@ -13,6 +13,6 @@ jobs:
     - uses: FirebaseExtended/action-hosting-deploy@v0
       with:
         repoToken: "${{ secrets.GITHUB_TOKEN }}"
-        firebaseServiceAccount: "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}"
+        firebaseServiceAccount: "${{ secrets.FIREBASE_PRIVATE_KEY }}"
         channelId: live  # or any other channel you want to deploy to
-        projectId: your-firebase-project-id
+        projectId: play-narimato
