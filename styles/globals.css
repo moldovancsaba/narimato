@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global dark mode styles */
+@media (prefers-color-scheme: dark) {
+  body {
+    @apply bg-gray-900 text-white;
+  }
+}
+
+/* Card base styles */
+@layer components {
+  .card {
+    @apply relative bg-white dark:bg-gray-800 rounded-lg overflow-hidden;
+  }
+
+  .card-image {
+    @apply relative overflow-hidden;
+  }
+
+  .card-meta {
+    @apply p-4 bg-white dark:bg-gray-800;
+  }
+}
+
+/* Loading animation */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
