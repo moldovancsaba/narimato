@@ -13,7 +13,9 @@ if (!cached) {
   cached = global.mongoose = { conn: null, promise: null };
 }
 
-const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/narimato';
+import { env } from '@/env.mjs';
+
+const MONGODB_URI = env.MONGODB_URI;
 
 if (!MONGODB_URI) {
   throw new Error('Please define the MONGODB_URI environment variable');
