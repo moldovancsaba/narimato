@@ -90,7 +90,8 @@ export default function CardForm({ onSubmit }: CardFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto p-6">
+    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
+      <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white text-center">Create New Card</h2>
       <FormControl fullWidth>
         <InputLabel id="type-label">Type</InputLabel>
         <Select
