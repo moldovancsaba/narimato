@@ -1,37 +1,39 @@
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
-/** Available aspect ratios for cards */
-export type AspectRatio = '1:1' | '4:3' | '16:9' | '21:9';
+/**
+ * Card Component - The foundational display unit of the Narimato system.
+ * 
+ * This component strictly follows the Card Rules from narimato.md:
+ * - It is the smallest unit, used consistently across all modules
+ * - Contains no internal styling logic - all styling is controlled by the container
+ * - Adapts content based on type (image or text) while maintaining consistent structure
+ * - Uses global CSS only (no component-specific styles)
+ */
 
-/** Card variant styles */
-export type CardVariant = 'default' | 'outline' | 'shadow' | 'elevated';
-
-/** Card size options */
-export type CardSize = 'sm' | 'md' | 'lg' | 'xl';
-
+/** Props interface for the Card component */
 interface CardProps {
-  /** Type of card content - 'image' or 'text' */
+  /** Type of card - either 'image' (uses original aspect ratio) or 'text' (fixed 3:4) */
   type: 'image' | 'text';
-  /** Main content - URL for image type, text content for text type */
+  /** Content - URL for image type, text content for text type */
   content: string;
   /** Optional title for the card */
   title?: string;
   /** Optional description text */
   description?: string;
-  /** Optional CSS classes to apply to the card container */
+  /** Container-provided CSS classes - all styling must come from container */
   className?: string;
-  /** Aspect ratio for the card (defaults to '4:3') */
-  aspectRatio?: AspectRatio;
-  /** Card visual variant (defaults to 'default') */
-  variant?: CardVariant;
-  /** Card size preset (defaults to 'md') */
-  size?: CardSize;
-  /** Translation key for text content */
+  /** Unique slug for direct card access */
+  slug: string;
+  /** Array of hashtags for filtering */
+  hashtags: string[];
+  /** Translation key for text content internationalization */
   translationKey?: string;
-  /** Array of hashtags associated with the card */
-  hashtags?: string[];
-  /** Optional image alt text (if not provided, falls back to title) */
+  /** Creation timestamp */
+  createdAt: Date;
+  /** Last update timestamp */
+  updatedAt: Date;
+  /** Optional image alt text for accessibility */
   imageAlt?: string;
 }
 
@@ -39,71 +41,47 @@ interface CardProps {
  * Card component that adapts its rendering based on content type.
  * Supports both image and text content with dark mode compatibility.
  */
-/** Get aspect ratio dimensions */
-const getAspectRatioDimensions = (ratio: AspectRatio): { width: number; height: number } => {
-  switch (ratio) {
-    case '1:1': return { width: 400, height: 400 };
-    case '16:9': return { width: 400, height: 225 };
-    case '21:9': return { width: 400, height: 171 };
-    default: return { width: 400, height: 300 }; // 4:3
-  }
-};
-
-/** Get variant styles */
-const getVariantStyles = (variant: CardVariant): string => {
-  switch (variant) {
-    case 'outline': return 'border border-gray-200 dark:border-gray-700';
-    case 'shadow': return 'shadow-md hover:shadow-lg transition-shadow';
-    case 'elevated': return 'shadow-lg hover:shadow-xl transition-shadow bg-white dark:bg-gray-800';
-    default: return 'bg-white dark:bg-gray-800';
-  }
-};
-
-/** Get size styles */
-const getSizeStyles = (size: CardSize): string => {
-  switch (size) {
-    case 'sm': return 'p-2 text-sm';
-    case 'lg': return 'p-6 text-lg';
-    case 'xl': return 'p-8 text-xl';
-    default: return 'p-4 text-base'; // md
-  }
-};
-
+/**
+ * The Card component's render function.
+ * Follows strict rules from narimato.md:
+ * - No internal styling decisions
+ * - Adapts content based on type while maintaining consistent structure
+ * - Uses container-based styling system
+ * - Supports text internationalization
+ */
 export function Card({
   type,
   content,
   title,
   description,
   className,
-  aspectRatio = '4:3',
-  variant = 'default',
-  size = 'md',
+  slug,
+  hashtags,
   translationKey,
-  hashtags = [],
+  createdAt,
+  updatedAt,
   imageAlt,
 }: CardProps) {
-const dimensions = getAspectRatioDimensions(aspectRatio);
-  const variantStyles = getVariantStyles(variant);
-  const sizeStyles = getSizeStyles(size);
-
   return (
     <div 
       className={cn(
-        'card rounded-lg overflow-hidden',
-        variantStyles,
-        sizeStyles,
+        'card',
+        // Container must provide all styling
         className
-      )}>
+      )}
+      data-card-slug={slug}
+      data-card-type={type}
+      data-created-at={createdAt.toISOString()}
+      data-updated-at={updatedAt.toISOString()}>
       {type === 'image' ? (
         <>
-          <div className="card-image">
+          <div className="card-image w-[min(100vw,500px)]">
             <Image
               src={content}
               alt={imageAlt || title || 'Card image'}
-              width={dimensions.width}
-              height={dimensions.height}
-              className="w-full h-auto object-cover"
-            />
+              fill
+              className="object-contain w-full h-full"
+              sizes="(max-width: 500px) 100vw, 500px"
           </div>
           {(title || description) && (
             <div className="card-content">
@@ -124,7 +102,15 @@ const dimensions = getAspectRatioDimensions(aspectRatio);
       ) : (
         <div className="card-content">
           {title && <h3 className="text-lg font-semibold">{title}</h3>}
-          <p className="text-sm opacity-90" data-translation-key={translationKey}>{content}</p>
+          <div className="aspect-[3/4] flex items-center justify-center p-4">
+            <p 
+              className="text-balance text-center" 
+              style={{ fontSize: 'min(5vw, 24px)' }}
+              data-translation-key={translationKey}
+            >
+              {content}
+            </p>
+          </div>
           {description && (
             <p className="text-sm opacity-70 mt-2">{description}</p>
           )}
