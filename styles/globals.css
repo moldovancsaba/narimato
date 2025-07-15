@@ -1,0 +1,49 @@
+:root {
+  /* Light theme variables */
+  --background-light: #ffffff;
+  --card-background-light: #f8f9fa;
+  --foreground-light: #1a1a1a;
+  --card-foreground-light: #2a2a2a;
+  --card-border-light: #e5e7eb;
+  
+  /* Dark theme variables */
+  --background-dark: #1a1a1a;
+  --card-background-dark: #2a2a2a;
+  --foreground-dark: #ffffff;
+  --card-foreground-dark: #f8f9fa;
+  --card-border-dark: #404040;
+
+  /* Accessible text color variables - dynamically set by JavaScript */
+  --accessible-text: var(--foreground-light);
+  --background-color: var(--background-light);
+}
+
+/* Dark mode overrides */
+[data-theme="dark"] {
+  --accessible-text: var(--foreground-dark);
+  --background-color: var(--background-dark);
+}
+
+/* Contrast protection utility classes */
+.text-contrast-protected {
+  color: var(--accessible-text);
+  position: relative;
+}
+
+/* High contrast overrides for interactive elements */
+a:hover, button:hover {
+  --text-contrast-ratio: calc((var(--luminance-text) + 0.05) / (var(--luminance-bg) + 0.05));
+  color: var(--accessible-text);
+}
+
+/* Contrast protection for focus states */
+:focus {
+  outline: 3px solid var(--accessible-text);
+  outline-offset: 2px;
+}
+
+/* Ensure minimum contrast for disabled states */
+:disabled {
+  opacity: 0.7;
+  color: var(--accessible-text);
+}
