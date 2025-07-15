@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card as CardType } from '@/models/Card';
+import { ICard } from '@/models/Card';
 import Image from 'next/image';
 import { Chip, Box, Typography, Paper } from '@mui/material';
 
 export default function CardPage({ params }: { params: { slug: string } }) {
-  const [card, setCard] = useState<CardType | null>(null);
+  const [card, setCard] = useState<ICard | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
