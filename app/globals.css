@@ -5,6 +5,7 @@
 :root {
   --mui-background: #ffffff;
   --mui-text: #171717;
+  --adaptive-text: #171717; /* Default dark text for light backgrounds */
   --background: #ffffff;
   --foreground: #171717;
   --card-background: #f5f5f5;
@@ -16,24 +17,65 @@
   --success: #10b981;
   --error: #ef4444;
   --border-radius: 0.5rem;
+  /* Primary Background Gradient */
+  --bg-gradient-from: #020024;
+  --bg-gradient-middle: rgba(9, 9, 121, 1);
+  --bg-gradient-to: rgba(0, 212, 255, 1);
+  /* Alternative Gradients */
+  --gradient-primary-from: #e0f2fe;
+  --gradient-primary-to: #bae6fd;
+  --gradient-secondary-from: #f3f4f6;
+  --gradient-secondary-to: #e5e7eb;
+  --gradient-accent-from: #dbeafe;
+  --gradient-accent-to: #bfdbfe;
+  --gradient-success-from: #dcfce7;
+  --gradient-success-to: #bbf7d0;
+  --gradient-warning-from: #fef9c3;
+  --gradient-warning-to: #fde047;
+  --gradient-error-from: #fee2e2;
+  --gradient-error-to: #fecaca;
+  /* Subtle Gradients */
+  --gradient-subtle-from: rgba(255, 255, 255, 0.1);
+  --gradient-subtle-to: rgba(255, 255, 255, 0.05);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
+    --adaptive-text: #ffffff; /* Light text for dark backgrounds */
     --mui-background: #1a1a1a;
     --mui-text: #ffffff;
   }
   :root {
     --background: #0a0a0a;
-    --foreground: #ededed;
+    --foreground: #ffffff;
     --card-background: #171717;
-    --card-foreground: #ededed;
+    --card-foreground: #ffffff;
     --card-border: #262626;
     --primary: #3b82f6;
     --secondary: #9ca3af;
     --accent: #60a5fa;
     --success: #34d399;
     --error: #f87171;
+    /* Primary Background Gradient */
+    --bg-gradient-from: #020024;
+    --bg-gradient-middle: rgba(9, 9, 121, 1);
+    --bg-gradient-to: rgba(0, 212, 255, 1);
+    /* Alternative Gradients */
+    --gradient-primary-from: #0c4a6e;
+    --gradient-primary-to: #075985;
+    --gradient-secondary-from: #1f2937;
+    --gradient-secondary-to: #111827;
+    --gradient-accent-from: #1e3a8a;
+    --gradient-accent-to: #1e40af;
+    --gradient-success-from: #065f46;
+    --gradient-success-to: #047857;
+    --gradient-warning-from: #854d0e;
+    --gradient-warning-to: #a16207;
+    --gradient-error-from: #991b1b;
+    --gradient-error-to: #b91c1c;
+    /* Subtle Gradients */
+    --gradient-subtle-from: rgba(0, 0, 0, 0.1);
+    --gradient-subtle-to: rgba(0, 0, 0, 0.05);
   }
 }
 
@@ -46,8 +88,8 @@
   body {
     @apply text-foreground min-h-screen antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
-    background: #020024;
-    background: linear-gradient(45deg, rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 212, 255, 1) 100%);
+    background: var(--bg-gradient-from);
+    background: linear-gradient(45deg, var(--bg-gradient-from) 0%, var(--bg-gradient-middle) 35%, var(--bg-gradient-to) 100%);
   }
 }
 

@@ -1,5 +1,10 @@
 # Release Notes
 
+## [v2.1.1] — 2025-07-15T17:22:05.000Z
+
+### Fixed
+- Adjusted text opacity and color settings to ensure proper contrast in dark mode for the homepage content.
+
 ## [v2.1.0] — 2025-07-15T18:00:00.000Z
 
 ### Added
