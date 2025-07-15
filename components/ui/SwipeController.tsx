@@ -3,13 +3,21 @@
 import { useState, useEffect } from 'react';
 import { motion, useAnimation, PanInfo } from 'framer-motion';
 import { ICard } from '@/models/Card';
+import { CardContainer } from './CardContainer';
 
 interface SwipeControllerProps {
   card: ICard;
   onSwipe: (direction: 'left' | 'right') => void;
+  likeCount: number;
+  totalLikesNeeded?: number;
 }
 
-export default function SwipeController({ card, onSwipe }: SwipeControllerProps) {
+export default function SwipeController({
+  card,
+  onSwipe,
+  likeCount,
+  totalLikesNeeded = 1,
+}: SwipeControllerProps) {
   const [isDragging, setIsDragging] = useState(false);
   const controls = useAnimation();
 
@@ -59,7 +67,7 @@ export default function SwipeController({ card, onSwipe }: SwipeControllerProps)
       className={`card-container ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
       role="button"
       tabIndex={0}
-      aria-label={`Card: ${card.title}. Use arrow keys to vote.`}
+      aria-label={`Card: ${card.title}. Use arrow keys to vote. ${likeCount} out of ${totalLikesNeeded} likes needed.`}
       onKeyDown={(e) => {
         if (e.key === 'ArrowLeft') {
           handleSwipe('left');
@@ -68,20 +76,21 @@ export default function SwipeController({ card, onSwipe }: SwipeControllerProps)
         }
       }}
     >
-      {card.type === 'image' ? (
-        <div className="relative aspect-[3/4] overflow-hidden rounded-lg">
-          <img
-            src={card.content}
-            alt={card.imageAlt || card.title}
-            className="absolute inset-0 w-full h-full object-contain"
-          />
-        </div>
-      ) : (
-        <div className="text-card">
-          <h3 className="text-xl font-semibold mb-2">{card.title}</h3>
-          <p className="text-foreground/80">{card.content}</p>
-        </div>
-      )}
+      <CardContainer
+        type={card.type}
+        content={card.content}
+        title={card.title}
+        description={card.description}
+        imageAlt={card.imageAlt}
+        hashtags={card.hashtags}
+        createdAt={typeof card.createdAt === 'string' ? card.createdAt : card.createdAt.toISOString()}
+        updatedAt={typeof card.updatedAt === 'string' ? card.updatedAt : card.updatedAt.toISOString()}
+        extraContent={
+          <div className="absolute top-2 right-2 bg-primary/90 text-white px-3 py-1 rounded-full text-sm">
+            {likeCount}/{totalLikesNeeded} Likes
+          </div>
+        }
+      />
     </motion.div>
   );
 }

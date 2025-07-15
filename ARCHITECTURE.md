@@ -10,13 +10,26 @@ NARIMATO is a Next.js application with TypeScript and Tailwind CSS, using MongoD
 ```
 /components
 ├── UI/                   # UI primitives
-├── Card/                 # Card components
-│   ├── Card.tsx         # Base card component with aspect ratio handling
-│   ├── Container.tsx    # Responsive container with styling system
-│   ├── ImageCard.tsx    # Image-specific card implementation
-│   ├── TextCard.tsx     # Text card with translation support
-│   └── Controller.tsx   # Touch & keyboard interaction handling
-└── Common/              # Shared components
+│   ├── Typography.tsx    # Centralized text styling
+│   ├── Card.tsx         # Base card component
+│   ├── CardContainer.tsx # Card layout management
+│   ├── CardFilters.tsx  # Filtering interface
+│   ├── CardForm.tsx     # Card creation/editing
+│   ├── CardList.tsx     # Card listing component
+│   ├── Navigation.tsx   # App navigation
+│   ├── SwipeController.tsx # Swipe interactions
+│   ├── VoteSystem.tsx   # Voting interface
+│   └── LeaderboardCard.tsx # Ranking display
+├── Project/             # Project management
+│   ├── CardManager.tsx  # Project card organization
+│   ├── DeleteProjectModal.tsx # Project deletion confirmation
+│   ├── ProjectForm.tsx  # Project creation/editing
+│   ├── ProjectSettings.tsx # Project configuration
+│   ├── ProjectWithRealtime.tsx # Real-time project updates
+│   └── ProjectsMenu.tsx # Project navigation
+├── Layout/              # Layout components
+│   ├── Container.tsx    # Responsive container
+│   └── Grid.tsx        # Grid system
 ```
 
 ### 2. Page Structure
@@ -94,7 +107,7 @@ graph TD
   - Text Cards: Fixed 3:4 ratio with dynamic resizing
   - Container-based styling system
   - Hashtag support and filtering
-  - Translation support for text cards
+  - Optional translation support for all card types
 
 ### Image Processing
 - ImgBB Integration:

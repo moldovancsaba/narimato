@@ -2,7 +2,7 @@
 
 ## ✅ Project Overview
 
-**NARIMATO** is a real-time, card-based web application built with Next.js, MongoDB, and Vercel, designed to support dynamic image/text-based card management, user voting, ranking, and leaderboard functionality across global and project-based contexts. The system is designed to be fully responsive, production-grade, and future-proof. It strictly adheres to the AI Developer Rules and enforces clean, reliable, and traceable development.
+**NARIMATO** is a real-time, card-based web application built with **Next.js App Router**, MongoDB, and Vercel. The system supports dynamic image/text-based card management, user interactions through swiping and voting, intelligent ranking, and leaderboards at both personal and global levels. All development must strictly follow AI Developer Rules: clean, error-free, no hardcoded content, maintainable and traceable logic, fully commented code.
 
 ---
 
@@ -10,18 +10,17 @@
 
 ### Hosting & Code
 
-- **Frontend/Backend**: Next.js + React.js
-- **Deployment**: Vercel (Production after every feature delivery)
-- **Database**: MongoDB Atlas (via mongoose)
-- **Codebase**: GitHub
-- **Version Control Branches**: `DEV`, `STAGING`, `MAIN`
+- **Framework**: Next.js (**App Router only**)
+- **Deployment**: Vercel (Production pushed after each feature completion)
+- **Database**: MongoDB Atlas via mongoose
+- **Code Repository**: GitHub
+- **Branches**: `DEV`, `STAGING`, `MAIN`
 
 ### External Services
 
 - **Image Hosting**: [ImgBB](https://api.imgbb.com/1/upload)
   - API Key: `9285b95f2c425d764a48cf047e772c1f`
-  - File types: JPG, PNG, GIF, TIF, WEBP, HEIC, AVIF, PDF
-  - Max size: 32MB
+  - Max 32MB, supports JPG, PNG, GIF, TIF, WEBP, HEIC, AVIF, PDF
 
 ---
 
@@ -39,193 +38,200 @@ VERCEL_ENV=production
 
 ### CARD TYPES
 
-- **Image Cards**: must use aspect ratio of original image (NO crop, NO overflow, just FIT)
-- **Text Cards**: fixed 3:4 aspect ratio; auto-resize text to fill space
-- **Common**:
-  - Every card is a container
-  - Used consistently across all modules (Swipe, Vote, Rank, List, Dashboard, Card Page)
-  - Each card has: `slug`, `type`, `hashtags`, `createdAt`, `updatedAt`, and optional `translations` if Text type
+- **Image Card**:
 
-### CARD RULES
+  - Uses the image’s native aspect ratio.
+  - Absolutely no crop, overflow, or distortion — use `object-contain`.
 
-- CARD is the smallest unit. Every view uses the same base component styled via the outer container.
-- Container adjusts size, card adapts content inside based on its type.
-- Never place styling logic inside the card – always externally controlled by the container.
-- Avoid fixed width/height on cards.
+- **Text Card**:
 
-### CARD UI RULES
+  - Fixed **3:4** aspect ratio.
+  - Text resizes automatically to **fit the entire card**.
+  - No crop or overflow allowed.
 
-- Global CSS only (no per-component styles)
-- Mobile-first, responsive design
-- Layout via Tailwind + MUI if needed
-- Containers should use:
-  ```css
-  w-[min(100vw,500px)] // Adaptive width
-  aspect-[3/4] or use object-contain for image
+### Shared Card Behavior
+
+- **CARD is a container.**
+- The same card component is used in **SWIPE / VOTE / RANKING / LISTING / DASHBOARD / CARD PAGE**.
+- The **container** defines the size and layout — **not** the card.
+- **No overlapping cards** on any screen.
+- If multiple cards are shown (e.g. vote), each must **fit the available space** within its container.
+
+### UI/Styling Rules
+
+- **Mobile-first**
+- Responsive layout via Tailwind
+- No per-component CSS – all styling must be global or via tailwind utility classes
+- Example container config:
+  ```ts
+  className="w-[min(100vw,500px)] aspect-[3/4]"
   ```
 
 ---
 
 ## ✅ USER SYSTEM
 
-- Anonymous access by default
-- Logged-in users get UUID session-based identity
-- Users can create/edit Cards, Projects
-- User roles: `admin`, `user`, `guest`
-- Session ID assigned per session
-- Admins can see Dashboard and restore soft-deleted records
+- Anonymous users allowed
+- Session ID assigned on entry
+- Logged-in users identified with UUID
+- User roles: `guest`, `user`, `admin`
+- Admin access unlocks `/dashboard` and elevated permissions
 
 ---
 
 ## ✅ CARD MANAGEMENT
 
-- Create/Edit/Delete Cards
-- Only images via URL (to ensure comparison & deduplication)
-- Text Cards: support i18n (translations stored in DB)
-- All Cards:
-  - Have unique slug for direct access (`/card/[slug]`)
-  - Filterable via `#hashtags`
-  - Searchable (Text content only)
-  - Can be included in Projects
+- Cards created via URL or multiline import
+- Image Cards via Imgbb
+- Text Cards support i18n (`translations` array in DB)
+- Cards are searchable, hashtag-filterable, and slug-addressable
+- URLs: `/card/[slug]`
 
 ---
 
 ## ✅ PROJECT SYSTEM
 
 - Projects contain Cards
-- Each has a slug URL: `/project/[slug]`
-- Cards can be reordered by the creator
-- Deleting a Card removes it from projects and rankings
+- Slug-based routing: `/project/[slug]`
+- User can reorder cards in a project
+- Project leaderboard based on session-level ranking
+- Projects public by default
 
 ---
 
-## ✅ BUSINESS LOGIC
+## ✅ INTERACTION LOGIC
 
 ### 1. SWIPE
 
-- Users see one Card at a time
-- Swipe Right → Like
-- Swipe Left → Dislike
-- Cards are shown until 2 Likes
-- Keyboard Support:
-  - Left Arrow → Swipe Left
-  - Right Arrow → Swipe Right
+- Shows one card at a time
+- User can swipe:
+  - ← Left Arrow → Dislike
+  - → Right Arrow → Like
+- Two Likes required to unlock VOTE
+- Mobile touch or desktop keyboard supported
 
 ### 2. VOTE
 
-- When 2+ Liked Cards exist, show pair of Cards
-- User picks one
-- Keyboard:
-  - Left Arrow → Left Card Wins
-  - Right Arrow → Right Card Wins
-- Each vote updates local ranking for the Project
+- Two cards shown:
+  - Horizontal (landscape)
+  - Vertical stacked (portrait)
+- **No overlap allowed** — container must auto-resize cards
+- User selects preferred card:
+  - ← Left Arrow → select left card
+  - → Right Arrow → select right card
+- Vote result updates **project session-level ranking**
 
 ### 3. RANK
 
-- Cards ranked within Project context
-- User has personal ranking list
-- System uses pairwise comparison sorting logic (e.g. MergeSort or QuickSort variant)
+- Local preference ranking per user (project-based)
+- Pairwise sorting logic (e.g. MergeSort optimized)
+- No need for all votes — partial orders are valid
 
 ### 4. GLOBAL LEADERBOARD
 
-- Uses ELO rating (adjusted dynamically via activity)
-- Calculated across all Projects and user interactions
-- Cards have globalScore
+- Uses **ELO rating system**
+- Global rank affected by user votes across projects
+- Rank updated automatically on relevant activity
 
 ### 5. PROJECT LEADERBOARD
 
-- Local ranking within Project
-- Preference order per user aggregated into weighted scores
+- Aggregates user rankings into weighted score
+- Sessions are tracked anonymously unless logged in
 
 ---
 
 ## ✅ SECURITY
 
-- Zod for schema validation
-- Input sanitation
+- Input Validation: Zod
 - Rate Limiting:
   - Anonymous: 50 req / 10min
   - Authenticated: 100 req / 10min
-  - IP bans for abuse (env-configurable)
-- Admin API endpoints protected
+- Admin routes require login
+- All user input is sanitized and escaped
 
 ---
 
 ## ✅ REAL-TIME FEATURES
 
-- Socket.io
-  - Card creation/deletion/edit sync
-  - Real-time activity broadcast
-  - Dashboard indicators: active users, socket status
+- **Socket.io** implementation
+- Real-time sync for:
+  - New card creation
+  - Voting events
+  - Swipe updates
+- Realtime data feeds `/dashboard` and `/leaderboard`
 
 ---
 
 ## ✅ DASHBOARD
 
-- /dashboard URL (Admin only)
-- Status Indicators:
-  - MongoDB: Connected / Not Connected
-  - Sockets: Active / Disconnected
-  - Users Online
-  - API Health (response latency)
+- Path: `/dashboard` (admin only)
+- Indicators:
+  - MongoDB Connection
+  - Active User Sessions
+  - Realtime socket status
+  - Latency on main API routes
 
 ---
 
-## ✅ DARK MODE & UI
+## ✅ DARK MODE
 
-- Detect system preferences
-- Toggle manually → stored in MongoDB
-- Applied globally (not just via localStorage)
-
----
-
-## ✅ DEVELOPMENT & VERSIONING
-
-- GitHub flow: every change must be versioned
-- CI/CD: deploy on Vercel after push to `main`
-- Strict Definition of Done:
-  - ✅ Error-free
-  - ✅ Verified by User
-  - ✅ Versioned & Tagged
-  - ✅ Documented (README, RELEASE\_NOTES)
-  - ✅ Deployed
+- System preference by default
+- Manual toggle persists in MongoDB
+- Tailwind dark mode enabled globally
 
 ---
 
-## ✅ PROHIBITED PRACTICES
-
-- ❌ No test automation in MVP
-- ❌ No hardcoded content
-- ❌ No placeholder UI
-- ❌ No inline or per-component CSS
-- ❌ No duplicate cards/images (validate on submit)
-
----
-
-## ✅ FILE STRUCTURE SNAPSHOT
+## ✅ FILE STRUCTURE (App Router)
 
 ```
-/pages
-  /card/[slug].js       → View/edit single Card
-  /project/[slug].js    → Project voting and ranking
-  /swipe.js             → Initial Swipe view
-  /vote.js              → Head-to-head voting view
-  /leaderboard.js       → Global Leaderboard
-  /dashboard.js         → Admin system monitor
+/app
+  /card/[slug]/page.tsx         → View/edit single Card
+  /project/[slug]/page.tsx      → Voting & ranking in a project
+  /swipe/page.tsx               → SWIPE interface
+  /vote/page.tsx                → VOTE interface
+  /leaderboard/page.tsx         → GLOBAL leaderboard
+  /dashboard/page.tsx           → Admin tools
 
 /components
-  Card.js               → Single card display
-  CardContainer.js      → Responsive wrapper
-  SwipeController.js    → Touch & keyboard logic
+  Card.tsx                      → Shared Card Component
+  CardContainer.tsx             → Layout manager
+  SwipeController.tsx           → Keyboard & gesture handling
 
-/utils
-  db.js                 → MongoDB connection handler
-  elo.js                → ELO rating logic
-  ranking.js            → Local ranking engine
-  validateCard.js       → Input validation rules
+/lib
+  mongodb.ts                    → DB connector
+  elo.ts                        → ELO logic
+  rank.ts                       → Sorting-based ranking
+  validate.ts                   → All validation rules
 ```
 
 ---
 
-**✅ Status: This document replaces all prior plans. Any missing feature must be added explicitly.**
+## ✅ DEVELOPER RULES
+
+- Strict Definition of Done:
+
+  - ✅ Works in Vercel PROD
+  - ✅ Fully Documented
+  - ✅ Commented Code (Plain English)
+  - ✅ No test failures
+  - ✅ No placeholder code
+  - ✅ Fully responsive
+
+- ❌ No shortcut coding
+
+- ❌ No hardcoded values
+
+- ❌ Cards must not overlap on screen
+
+- ❌ All multi-card views must auto-resize containers properly
+
+- ❌ Every component must be reusable
+
+- ❌ Every action must be traceable
+
+---
+
+✅ This document **supersedes all earlier specifications**.\
+✅ All previous agreements are consolidated here.\
+❗ Any missing feature must be requested explicitly.
 

@@ -1,7 +1,7 @@
 'use client';
 
-import { Card } from '@/components/ui/Card';
-import { CardContainer } from '@/components/ui/CardContainer';
+import { Card } from './Card';
+import { CardContainer } from './CardContainer';
 import { useRouter } from 'next/navigation';
 
 interface CardListProps {
@@ -50,30 +50,17 @@ export function CardList({
         {cards.map((card) => (
           <CardContainer
             key={card.slug}
-            cardType={card.type}
-            isList
-          >
-            <div
-              className="cursor-pointer"
-              role="button"
-              tabIndex={0}
-              aria-label={`View ${card.title} card`}
-            >
-              <Card
-                type={card.type}
-                content={card.content}
-                title={card.title}
-                description={card.description}
-                slug={card.slug}
-                hashtags={card.hashtags}
-                translationKey={card.translationKey}
-                createdAt={card.createdAt}
-                updatedAt={card.updatedAt}
-                imageAlt={card.imageAlt}
-                onClick={() => router.push(`/cards/${card.slug}`)}
-              />
-            </div>
-          </CardContainer>
+            type={card.type}
+            content={card.content}
+            title={card.title}
+            description={card.description}
+            imageAlt={card.imageAlt}
+            hashtags={card.hashtags}
+            createdAt={card.createdAt}
+            updatedAt={card.updatedAt}
+            onClick={() => router.push(`/cards/${card.slug}`)}
+            isInteractive
+          />
         ))}
       </div>
 

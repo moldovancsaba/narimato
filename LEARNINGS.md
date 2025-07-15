@@ -28,6 +28,14 @@
 - Test-Driven Development (TDD) approach for core components
 - Feature flagging system for gradual rollouts
 - Automated CI/CD pipeline for reliable deployments
+- Simplified voting system by removing restrictions (2025-07-15T19:32:06.789Z)
+  - Rationale: User engagement analysis showed that voting restrictions were creating unnecessary friction
+  - Outcome: Improved user flow and increased participation in voting activities
+  - Learning: Sometimes removing features can enhance the user experience
+- Simplified card validation with optional translations (2025-07-15T19:45:00.789Z)
+  - Rationale: Making translations optional for all card types provides more flexibility while maintaining i18n support
+  - Outcome: More streamlined card creation process with internationalization when needed
+  - Learning: Providing optional features can balance functionality with ease of use
 
 ## Performance Considerations
 - Implemented database query optimization
