@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react';
 import SwipeController from '@/components/ui/SwipeController';
 import { ICard } from '@/models/Card';
-import { Paper, Typography, Button } from '@mui/material';
+import { Paper, Typography, Button, Stack } from '@mui/material';
+import { useRouter } from 'next/navigation';
 
 export default function SwipePage() {
+  const router = useRouter();
   const [currentCard, setCurrentCard] = useState<ICard | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -18,11 +20,15 @@ export default function SwipePage() {
     try {
       setLoading(true);
       const response = await fetch('/api/cards/random');
-      if (!response.ok) {
-        throw new Error('Failed to fetch next card');
-      }
       const data = await response.json();
-      setCurrentCard(data);
+      
+      if (response.status === 404) {
+        setCurrentCard(null);
+      } else if (!response.ok) {
+        throw new Error('Failed to fetch next card');
+      } else {
+        setCurrentCard(data);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -85,14 +91,19 @@ export default function SwipePage() {
       <div className="min-h-screen flex items-center justify-center p-4">
         <Paper className="p-6 max-w-md text-center">
           <Typography variant="h6" gutterBottom>
-            No More Cards
+            No More Cards to Swipe!
           </Typography>
           <Typography paragraph>
-            You've gone through all available cards for now.
+            You've rated all available cards. Time to vote on the best ones!
           </Typography>
-          <Button variant="contained" onClick={() => window.location.reload()}>
-            Start Over
-          </Button>
+          <Stack direction="column" spacing={2} sx={{ mt: 2 }}>
+            <Button variant="contained" onClick={() => router.push('/vote')}>
+              Go to Voting
+            </Button>
+            <Button variant="outlined" onClick={() => router.refresh()}>
+              Check Again
+            </Button>
+          </Stack>
         </Paper>
       </div>
     );
