@@ -2,6 +2,7 @@
 
 import { Card } from '@/components/ui/Card';
 import { CardContainer } from '@/components/ui/CardContainer';
+import { useRouter } from 'next/navigation';
 
 interface CardListProps {
   cards: {
@@ -33,6 +34,7 @@ export function CardList({
   typeFilter,
   hashtagFilter,
 }: CardListProps) {
+  const router = useRouter();
   return (
     <>
       {/* Results Count */}
@@ -41,14 +43,22 @@ export function CardList({
       </p>
 
       {/* Card Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div
+        role="grid"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+      >
         {cards.map((card) => (
           <CardContainer
             key={card.slug}
             cardType={card.type}
             isList
           >
-            <a href={`/card/${card.slug}`}>
+            <div
+              className="cursor-pointer"
+              role="button"
+              tabIndex={0}
+              aria-label={`View ${card.title} card`}
+            >
               <Card
                 type={card.type}
                 content={card.content}
@@ -60,17 +70,25 @@ export function CardList({
                 createdAt={card.createdAt}
                 updatedAt={card.updatedAt}
                 imageAlt={card.imageAlt}
+                onClick={() => router.push(`/cards/${card.slug}`)}
               />
-            </a>
+            </div>
           </CardContainer>
         ))}
       </div>
 
       {/* Pagination */}
       {pages > 1 && (
-        <div className="mt-8 flex justify-center gap-2">
+        <nav 
+          role="navigation" 
+          aria-label="Pagination"
+          className="mt-8 flex justify-center gap-2"
+        >
           {Array.from({ length: pages }, (_, i) => i + 1).map((page) => (
             <a
+              role="button"
+              aria-label={`Go to page ${page}`}
+              aria-current={currentPage === page ? 'page' : undefined}
               key={page}
               href={`/cards?page=${page}${searchQuery ? `&q=${searchQuery}` : ''}${
                 typeFilter ? `&type=${typeFilter}` : ''
@@ -84,7 +102,7 @@ export function CardList({
               {page}
             </a>
           ))}
-        </div>
+        </nav>
       )}
     </>
   );

@@ -57,6 +57,16 @@ export default function SwipeController({ card, onSwipe }: SwipeControllerProps)
       onDragStart={() => setIsDragging(true)}
       onDragEnd={handleDragEnd}
       className={`card-container ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+      role="button"
+      tabIndex={0}
+      aria-label={`Card: ${card.title}. Use arrow keys to vote.`}
+      onKeyDown={(e) => {
+        if (e.key === 'ArrowLeft') {
+          handleSwipe('left');
+        } else if (e.key === 'ArrowRight') {
+          handleSwipe('right');
+        }
+      }}
     >
       {card.type === 'image' ? (
         <div className="relative aspect-[3/4] overflow-hidden rounded-lg">

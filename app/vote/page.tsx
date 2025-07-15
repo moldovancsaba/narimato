@@ -48,7 +48,7 @@ export default async function VotePage() {
         ) : (
           <>
             <p className="text-gray-600 dark:text-gray-400 mb-8">
-              Choose your favorite between each pair of cards. You can use keyboard arrows or swipe gestures to vote.
+              Choose your favorite between each pair of cards. Click the buttons below or use keyboard arrows to vote.
             </p>
 
             <VoteSystem cards={cards} />

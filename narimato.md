@@ -105,7 +105,7 @@ VERCEL_ENV=production
 
 - Users see one Card at a time
 - Swipe Right → Like
-- Swipe Left → Skip
+- Swipe Left → Dislike
 - Cards are shown until 2 Likes
 - Keyboard Support:
   - Left Arrow → Swipe Left
