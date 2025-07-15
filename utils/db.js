@@ -1,7 +1,16 @@
 import mongoose from 'mongoose';
 
+<<<<<<< HEAD
 // MongoDB connection configuration
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/narimato';
+=======
+// MongoDB Atlas connection configuration
+if (!process.env.MONGODB_URI) {
+  throw new Error('Please define the MONGODB_URI environment variable');
+}
+
+const MONGODB_URI = process.env.MONGODB_URI;
+>>>>>>> dev
 const MAX_RETRIES = 5;
 const RETRY_INTERVAL = 5000; // 5 seconds
 
@@ -36,11 +45,27 @@ const ProjectSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+<<<<<<< HEAD
+=======
+  slug: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true
+  },
+>>>>>>> dev
   description: String,
   cards: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Card'
   }],
+<<<<<<< HEAD
+=======
+  cardOrder: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Card'
+  }],
+>>>>>>> dev
   createdAt: {
     type: Date,
     default: Date.now
