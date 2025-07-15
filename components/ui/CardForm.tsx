@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { TextField, Button, Select, MenuItem, FormControl, InputLabel, Chip, Box } from '@mui/material';
+import { TextField, Button, Select, MenuItem, FormControl, InputLabel, Chip, Box, SelectChangeEvent } from '@mui/material';
 import { useRouter } from 'next/navigation';
 
 interface CardFormProps {
@@ -21,11 +21,21 @@ export default function CardForm({ onSubmit }: CardFormProps) {
   const [currentHashtag, setCurrentHashtag] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name as string]: value,
+      [name]: value,
+    }));
+  };
+
+  const handleSelectChange = (e: SelectChangeEvent) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
     }));
   };
 
@@ -88,7 +98,7 @@ export default function CardForm({ onSubmit }: CardFormProps) {
           name="type"
           value={formData.type}
           label="Type"
-          onChange={handleInputChange}
+          onChange={handleSelectChange}
         >
           <MenuItem value="text">Text</MenuItem>
           <MenuItem value="image">Image</MenuItem>
