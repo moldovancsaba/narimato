@@ -1,7 +1,11 @@
 import mongoose from 'mongoose';
 
 // MongoDB Atlas connection configuration
-const MONGODB_URI = process.env.MONGO_URI;
+if (!process.env.MONGODB_URI) {
+  throw new Error('Please define the MONGODB_URI environment variable');
+}
+
+const MONGODB_URI = process.env.MONGODB_URI;
 const MAX_RETRIES = 5;
 const RETRY_INTERVAL = 5000; // 5 seconds
 
@@ -36,8 +40,18 @@ const ProjectSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  slug: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true
+  },
   description: String,
   cards: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Card'
+  }],
+  cardOrder: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Card'
   }],
