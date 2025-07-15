@@ -1,4 +1,4 @@
-# NARIMATO 🎴 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+# NARIMATO 🎴 ![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)
 
 NARIMATO is a real-time, card-based web application built with Next.js, MongoDB Atlas, and Vercel. It enables dynamic image/text-based card management with features like user voting, ranking, and comprehensive leaderboard functionality. Built for seamless deployment on Vercel, it provides an enterprise-grade platform for HR management and frame-based content organization.
 
