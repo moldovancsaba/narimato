@@ -1,10 +1,38 @@
 # Release Notes
 
+## [v2.4.0] — 2025-07-16T15:45:00.000Z
+
+### Added
+- New DeleteProjectModal component for safe project deletion
+- Project real-time updates with ProjectWithRealtime component
+- Enhanced leaderboard API with trending card support
+- Comprehensive acceptance criteria in task management
+- Extended roadmap with detailed future features
+
+### Changed
+- Fixed type definitions in Project model
+- Enhanced task dependency tracking
+- Improved API documentation with response type details
+- Updated component hierarchy in architecture docs
+
+## [v2.3.0] — 2025-07-16T14:30:00.789Z
+
+### Added
+- New API documentation with complete endpoint descriptions
+- Comprehensive project management workflows in README.md
+- Enhanced architectural documentation for all components
+
+### Changed
+- Updated component hierarchy in ARCHITECTURE.md
+- Improved documentation structure and organization
+- Enhanced version control and deployment documentation
+
 ## [v2.2.0] — 2025-07-15T19:45:00.789Z
 
 ### Changed
 - Version increment for production deployment
 - Documentation updates
+- Made translations optional for all card types to provide more flexibility while maintaining internationalization support
 
 ## [v2.1.4] — 2025-07-15T19:32:06.789Z
 

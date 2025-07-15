@@ -11,6 +11,8 @@ export default function SwipePage() {
   const [currentCard, setCurrentCard] = useState<ICard | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [likeCount, setLikeCount] = useState(0);
+  const TOTAL_LIKES_NEEDED = 1;
 
   useEffect(() => {
     fetchNextCard();
@@ -40,6 +42,17 @@ export default function SwipePage() {
     if (!currentCard) return;
 
     try {
+      // Update like count if swiped right
+      if (direction === 'right') {
+        const newLikeCount = likeCount + 1;
+        setLikeCount(newLikeCount);
+        
+        // If we've reached the required likes, redirect to voting page
+        if (newLikeCount >= TOTAL_LIKES_NEEDED) {
+          router.push('/vote');
+          return;
+        }
+      }
       const response = await fetch('/api/swipe', {
         method: 'POST',
         headers: {
@@ -117,9 +130,18 @@ export default function SwipePage() {
         <span className="text-sm text-gray-500">
           (or use arrow keys ← →)
         </span>
+        <br />
+        <span className="text-sm text-primary">
+          {TOTAL_LIKES_NEEDED - likeCount} more {TOTAL_LIKES_NEEDED - likeCount === 1 ? 'like' : 'likes'} needed
+        </span>
       </Typography>
 
-      <SwipeController card={currentCard} onSwipe={handleSwipe} />
+      <SwipeController 
+        card={currentCard} 
+        onSwipe={handleSwipe} 
+        likeCount={likeCount} 
+        totalLikesNeeded={TOTAL_LIKES_NEEDED}
+      />
 
       <div className="mt-8 flex gap-4">
         <Button

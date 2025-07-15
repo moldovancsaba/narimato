@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Card } from '@/components/ui/Card';
+import React, { useState } from 'react';
+import { CardContainer } from './CardContainer';
 import { useRouter } from 'next/navigation';
 import { safeDate } from '@/utils/date';
 
@@ -23,43 +23,47 @@ interface VoteSystemProps {
 export function VoteSystem({ cards }: VoteSystemProps) {
   const [currentPair, setCurrentPair] = useState([0, 1]);
   const [isVoting, setIsVoting] = useState(false);
+  const [error, setError] = useState('');
   const router = useRouter();
+
+  React.useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (isVoting) return;
+      if (e.key === 'ArrowLeft') handleVote(0);
+      if (e.key === 'ArrowRight') handleVote(1);
+    };
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [isVoting]);
 
   const handleVote = async (winnerIndex: number) => {
     if (isVoting) return;
     setIsVoting(true);
-    const winnerId = cards[currentPair[winnerIndex]].id;
-    const loserId = cards[currentPair[1 - winnerIndex]].id;
-
+    const winner = cards[currentPair[winnerIndex]];
+    const loser = cards[currentPair[1 - winnerIndex]];
+    if (!winner || !loser) {
+      console.error('Invalid card pair for voting');
+      setIsVoting(false);
+      return;
+    }
     try {
       const response = await fetch('/api/vote', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          winnerId: winnerId,
-          loserId: loserId,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ winnerId: winner.id, loserId: loser.id }),
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to record vote');
-      }
-
-      // Move to next pair
+      if (!response.ok) throw new Error('Failed to record vote');
       setCurrentPair(([first, second]) => [second, (second + 1) % cards.length]);
-      
-      // Refresh the page data
       router.refresh();
     } catch (error) {
       console.error('Error recording vote:', error);
+      setError('Failed to record vote. Please try again.');
+      setTimeout(() => setError(''), 3000);
     } finally {
       setIsVoting(false);
     }
   };
 
-  // Safely get the cards for the current pair
   const getCard = (index: number) => {
     if (!cards || !cards[index]) {
       return {
@@ -82,48 +86,39 @@ export function VoteSystem({ cards }: VoteSystemProps) {
   const secondCard = getCard(currentPair[1]);
 
   return (
-    <div 
-      className="flex flex-col items-center w-full"
-      role="region"
-      aria-label="Card voting system"
-    >
-      <div 
-        className="flex flex-col lg:flex-row w-full justify-center items-center gap-6 lg:gap-12"
-        role="group"
-        aria-label="Cards to compare"
-      >
-        <Card
-          {...firstCard}
+    <div className="flex flex-col items-center w-full space-y-4" role="region" aria-label="Card voting system">
+      {error && (
+        <div className="text-red-500 dark:text-red-400 text-center p-2 rounded bg-red-50 dark:bg-red-900/20">
+          {error}
+        </div>
+      )}
+      <div className="flex flex-col lg:flex-row w-full justify-center items-center gap-6 lg:gap-12" role="group" aria-label="Cards to compare">
+        <CardContainer
+          type={firstCard.type}
+          content={firstCard.content}
+          title={firstCard.title}
+          description={firstCard.description}
+          imageAlt={firstCard.imageAlt}
+          hashtags={firstCard.hashtags}
           createdAt={safeDate(firstCard.createdAt)}
           updatedAt={safeDate(firstCard.updatedAt)}
           onClick={() => handleVote(0)}
+          containerClassName="cursor-pointer"
+          isInteractive
         />
-        <Card
-          {...secondCard}
+        <CardContainer
+          type={secondCard.type}
+          content={secondCard.content}
+          title={secondCard.title}
+          description={secondCard.description}
+          imageAlt={secondCard.imageAlt}
+          hashtags={secondCard.hashtags}
           createdAt={safeDate(secondCard.createdAt)}
           updatedAt={safeDate(secondCard.updatedAt)}
           onClick={() => handleVote(1)}
+          containerClassName="cursor-pointer"
+          isInteractive
         />
-      </div>
-      <div className="mt-6">
-        <button
-          onClick={() => handleVote(0)}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition mr-4"
-          disabled={isVoting}
-          aria-label={`Vote for ${firstCard.title}`}
-          aria-disabled={isVoting}
-        >
-          Vote Left
-        </button>
-        <button
-          onClick={() => handleVote(1)}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
-          disabled={isVoting}
-          aria-label={`Vote for ${secondCard.title}`}
-          aria-disabled={isVoting}
-        >
-          Vote Right
-        </button>
       </div>
     </div>
   );

@@ -4,21 +4,19 @@ import { NextResponse } from 'next/server';
 const K_FACTOR = 32; // ELO rating constant
 
 function calculateNewRatings(winnerRating: number, loserRating: number) {
-  const expectedWinnerScore = 1 / (1 + Math.pow(10, (loserRating - winnerRating) / 400));
-  const expectedLoserScore = 1 - expectedWinnerScore;
-
-  const newWinnerRating = winnerRating + K_FACTOR * (1 - expectedWinnerScore);
-  const newLoserRating = loserRating + K_FACTOR * (0 - expectedLoserScore);
+  const K_FACTOR = 32;
+  const expectedWinner = 1 / (1 + Math.pow(10, (loserRating - winnerRating) / 400));
+  const expectedLoser = 1 - expectedWinner;
 
   return {
-    winner: Math.round(newWinnerRating),
-    loser: Math.round(newLoserRating),
+    winner: Math.round(winnerRating + K_FACTOR * (1 - expectedWinner)),
+    loser: Math.round(loserRating + K_FACTOR * (0 - expectedLoser))
   };
 }
 
 export async function POST(request: Request) {
   try {
-    const { winnerId, loserId } = await request.json();
+    const { winnerId, loserId, projectId } = await request.json();
 
     if (!winnerId || !loserId) {
       return NextResponse.json(
@@ -41,19 +39,27 @@ export async function POST(request: Request) {
     }
 
     // Calculate new ratings
-    const newRatings = calculateNewRatings(winner.rank, loser.rank);
+    const newRatings = calculateNewRatings(winner.globalScore, loser.globalScore);
 
     // Update cards with new ratings and increment like/dislike counts
+    // Using save() to ensure middlewares run
+    winner.globalScore = newRatings.winner;
+    winner.likes += 1;
+    loser.globalScore = newRatings.loser;
+    loser.dislikes += 1;
+    
     await Promise.all([
-      Card.findByIdAndUpdate(winnerId, {
-        $set: { rank: newRatings.winner },
-        $inc: { likes: 1 },
-      }),
-      Card.findByIdAndUpdate(loserId, {
-        $set: { rank: newRatings.loser },
-        $inc: { dislikes: 1 },
-      }),
+      winner.save(),
+      loser.save()
     ]);
+
+    // If projectId is provided, update project-specific rankings
+    if (projectId) {
+      await Promise.all([
+        winner.updateProjectRanking(projectId, loser.projectRankings[0]?.rank || 1500, true),
+        loser.updateProjectRanking(projectId, winner.projectRankings[0]?.rank || 1500, false)
+      ]);
+    }
 
     return NextResponse.json({
       message: 'Vote recorded successfully',
