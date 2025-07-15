@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { motion, useAnimation, PanInfo } from 'framer-motion';
+import { motion } from 'framer-motion';
 import Image from 'next/image';
 
 interface CardProps {
@@ -15,8 +14,6 @@ interface CardProps {
   imageAlt?: string;
   createdAt: string;
   updatedAt: string;
-  onSwipe?: (direction: 'left' | 'right') => void;
-  isSwipeable?: boolean;
 }
 
 export function Card({
@@ -28,76 +25,21 @@ export function Card({
   imageAlt,
   createdAt,
   updatedAt,
-  onSwipe,
-  isSwipeable = false,
   onClick,
 }: CardProps & { onClick?: (e: React.MouseEvent) => void }) {
-  const controls = useAnimation();
-  const [isDragging, setIsDragging] = useState(false);
-
-  const handleSwipe = useCallback(
-    async (direction: 'left' | 'right') => {
-      if (!isSwipeable || !onSwipe) return;
-
-      const xOffset = direction === 'left' ? -200 : 200;
-      await controls.start({
-        x: xOffset,
-        opacity: 0,
-        transition: { duration: 0.3 },
-      });
-      onSwipe(direction);
-      await controls.start({ x: 0, opacity: 1 });
-    },
-    [isSwipeable, onSwipe, controls]
-  );
-
-  useEffect(() => {
-    if (!isSwipeable) return;
-
-    const handleKeyPress = (e: KeyboardEvent) => {
-      switch (e.key) {
-        case 'ArrowLeft':
-          handleSwipe('left');
-          break;
-        case 'ArrowRight':
-          handleSwipe('right');
-          break;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [isSwipeable, handleSwipe]);
-
-  const handleDragEnd = (_: any, { offset: { x }, velocity: { x: vx } }: PanInfo) => {
-    setIsDragging(false);
-    const direction = x + vx * 100 > 0 ? 'right' : 'left';
-    handleSwipe(direction);
-  };
 
   return (
     <div
-onClick={(e) => {
-        if (!isDragging && onClick) {
-          onClick(e);
-        }
-      }}
+onClick={onClick}
     >
       <motion.div
-        animate={controls}
-        drag={isSwipeable ? 'x' : false}
-        dragConstraints={{ left: 0, right: 0 }}
-        onDragStart={() => setIsDragging(true)}
-        onDragEnd={handleDragEnd}
-        whileHover={isSwipeable ? undefined : {
+        whileHover={{
           scale: 1.02,
           boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
           transition: { type: 'tween', duration: 0.2 },
         }}
-        whileTap={isSwipeable ? undefined : { scale: 0.98 }}
-        className={`relative rounded-lg overflow-hidden shadow-lg bg-white dark:bg-gray-800 transition-shadow hover:cursor-pointer ${
-          isDragging ? 'cursor-grabbing' : 'cursor-grab'
-        }`}
+        whileTap={{ scale: 0.98 }}
+        className="relative rounded-lg overflow-hidden shadow-lg bg-white dark:bg-gray-800 transition-shadow hover:cursor-pointer"
       >
         {type === 'image' && (
           <div className="relative h-48 md:h-64">
@@ -138,12 +80,6 @@ onClick={(e) => {
             )}
           </div>
         </div>
-
-        {isSwipeable && (
-          <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/50 to-transparent text-white text-center">
-            <p>← Swipe left to skip | Swipe right to like →</p>
-          </div>
-        )}
       </motion.div>
     </div>
   );

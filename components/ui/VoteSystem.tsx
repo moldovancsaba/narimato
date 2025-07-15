@@ -96,16 +96,12 @@ export function VoteSystem({ cards }: VoteSystemProps) {
           {...firstCard}
           createdAt={safeDate(firstCard.createdAt)}
           updatedAt={safeDate(firstCard.updatedAt)}
-          onSwipe={() => handleVote(0)}
-          isSwipeable={true}
           onClick={() => handleVote(0)}
         />
         <Card
           {...secondCard}
           createdAt={safeDate(secondCard.createdAt)}
           updatedAt={safeDate(secondCard.updatedAt)}
-          onSwipe={() => handleVote(1)}
-          isSwipeable={true}
           onClick={() => handleVote(1)}
         />
       </div>

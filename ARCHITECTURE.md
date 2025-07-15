@@ -29,7 +29,7 @@ NARIMATO is a Next.js application with TypeScript and Tailwind CSS, using MongoD
 │   ├── create.tsx       # Card creation interface
 │   └── list.tsx         # Card listing with filters
 ├── project/[slug].tsx   # Project management
-├── swipe.tsx            # Card swiping interface
+├── vote.tsx             # Card voting interface
 ├── vote.tsx             # Head-to-head voting
 ├── leaderboard.tsx      # Global rankings
 └── dashboard.tsx        # Admin interface
@@ -66,6 +66,27 @@ graph TD
 ```
 
 ### Key Features
+
+### Typography System v1.0.0
+- Centralized Typography Configuration:
+  - Consistent font scales from xs (12px) to 6xl (60px)
+  - Responsive text behavior with mobile-first design
+  - System fonts with fallbacks for optimal performance
+  - Unified line height and letter spacing scales
+
+- Text Components:
+  - H1: Large headlines (4xl-6xl) with tight tracking
+  - H2: Section headers (3xl-4xl) with medium weight
+  - H3: Subsection headers (2xl-3xl) with balanced spacing
+  - Body: Main content text with relaxed line height
+  - SmallText: Secondary content with normal spacing
+  - Caption: Small, muted text for supplementary info
+
+- Design Principles:
+  - Mobile-first responsive typography
+  - Consistent vertical rhythm
+  - Accessible font sizes and contrast
+  - Maintainable type scale system
 
 ### Card System v1.0.0
 - Enhanced Card Components:

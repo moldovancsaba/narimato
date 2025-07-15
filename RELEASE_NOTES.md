@@ -1,5 +1,32 @@
 # Release Notes
 
+## [v2.1.0] — 2025-07-15T18:00:00.000Z
+
+### Added
+- Implemented new text styling system:
+  - Centralized typography configuration
+  - Consistent font scales (xs to 6xl)
+  - Responsive text behavior with mobile-first design
+  - System fonts with fallbacks
+  - Unified line height and letter spacing scales
+- Added new text components:
+  - H1-H3 headers with specific styling
+  - Body text with relaxed line height
+  - SmallText and Caption components
+
+### Changed
+- Updated typography system documentation
+- Enhanced text styling implementation across components
+- Improved overall text consistency and readability
+
+## [v2.0.1] — 2025-07-15T17:00:00.000Z
+
+### Changed
+- Updated terminology throughout the application:
+  - Changed "swipe" references to "vote" for consistency
+  - Updated UI/UX documentation to reflect new terminology
+  - Standardized action naming across components and interfaces
+
 ## [v2.0.0] — 2025-07-15T16:41:57Z
 
 ### Added

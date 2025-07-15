@@ -12,7 +12,7 @@
 - [x] Create initial documentation
 
 ### Core UI Development
-- [ ] Global CSS configuration
+- [x] Global CSS configuration
 - [ ] Dark mode implementation
 - [ ] Base layout components
 - [ ] Responsive design utilities
@@ -34,6 +34,7 @@
 - [ ] Card type definitions
 
 ### Card Features
+- [x] Update interface terminology (swipe to vote)
 - [ ] Image card handling
 - [ ] Text card implementation
 - [ ] Hashtag system

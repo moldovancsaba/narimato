@@ -1,4 +1,6 @@
 /** @type {import('tailwindcss').Config} */
+const { typography } = require('./app/styles/typography')
+
 module.exports = {
   content: [
     './pages/**/*.{js,ts,jsx,tsx,mdx}',
@@ -12,10 +14,11 @@ module.exports = {
         background: 'var(--background)',
         foreground: 'var(--foreground)',
       },
-      fontFamily: {
-        sans: ['var(--font-sans)'],
-        mono: ['var(--font-mono)'],
-      },
+      fontFamily: typography.fontFamily,
+      fontSize: typography.fontSize,
+      lineHeight: typography.lineHeight,
+      fontWeight: typography.fontWeight,
+      letterSpacing: typography.letterSpacing,
       container: {
         center: true,
         padding: '1rem',
