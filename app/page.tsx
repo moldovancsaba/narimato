@@ -26,9 +26,9 @@ export default function Home() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button className="btn btn-primary">
+          <a href="/cards/create" className="btn btn-primary">
             Start Creating
-          </button>
+          </a>
           <button className="btn btn-secondary">
             Learn More
           </button>
