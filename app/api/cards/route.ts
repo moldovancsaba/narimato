@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { Card } from '@/models/Card';
 import mongoose from 'mongoose';
-import { connectToDatabase } from '@/lib/mongodb';
+import dbConnect from '@/lib/mongodb';
 import { z } from 'zod';
 
 // Schema validation for card creation
@@ -16,7 +16,7 @@ const CardSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    await connectToDatabase();
+    await dbConnect();
 
     const body = await request.json();
     
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
 
 export async function GET() {
   try {
-    await connectToDatabase();
+    await dbConnect();
     
     const cards = await Card.find({ isDeleted: false })
       .sort({ createdAt: -1 })
