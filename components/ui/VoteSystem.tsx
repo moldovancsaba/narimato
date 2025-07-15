@@ -82,14 +82,23 @@ export function VoteSystem({ cards }: VoteSystemProps) {
   const secondCard = getCard(currentPair[1]);
 
   return (
-    <div className="flex flex-col items-center">
-      <div className="flex space-x-6">
+    <div 
+      className="flex flex-col items-center w-full"
+      role="region"
+      aria-label="Card voting system"
+    >
+      <div 
+        className="flex flex-col lg:flex-row w-full justify-center items-center gap-6 lg:gap-12"
+        role="group"
+        aria-label="Cards to compare"
+      >
         <Card
           {...firstCard}
           createdAt={safeDate(firstCard.createdAt)}
           updatedAt={safeDate(firstCard.updatedAt)}
           onSwipe={() => handleVote(0)}
           isSwipeable={true}
+          onClick={() => handleVote(0)}
         />
         <Card
           {...secondCard}
@@ -97,6 +106,7 @@ export function VoteSystem({ cards }: VoteSystemProps) {
           updatedAt={safeDate(secondCard.updatedAt)}
           onSwipe={() => handleVote(1)}
           isSwipeable={true}
+          onClick={() => handleVote(1)}
         />
       </div>
       <div className="mt-6">
@@ -104,6 +114,8 @@ export function VoteSystem({ cards }: VoteSystemProps) {
           onClick={() => handleVote(0)}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition mr-4"
           disabled={isVoting}
+          aria-label={`Vote for ${firstCard.title}`}
+          aria-disabled={isVoting}
         >
           Vote Left
         </button>
@@ -111,6 +123,8 @@ export function VoteSystem({ cards }: VoteSystemProps) {
           onClick={() => handleVote(1)}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
           disabled={isVoting}
+          aria-label={`Vote for ${secondCard.title}`}
+          aria-disabled={isVoting}
         >
           Vote Right
         </button>

@@ -112,7 +112,7 @@ export default function SwipePage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
       <Typography variant="h6" className="mb-8 text-center">
-        Swipe right to like, left to skip
+        Swipe right to like, left to dislike
         <br />
         <span className="text-sm text-gray-500">
           (or use arrow keys ← →)
@@ -127,7 +127,7 @@ export default function SwipePage() {
           onClick={() => handleSwipe('left')}
           className="w-24"
         >
-          Skip
+          Dislike
         </Button>
         <Button
           variant="contained"

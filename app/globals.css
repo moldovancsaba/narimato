@@ -44,8 +44,10 @@
   }
 
   body {
-    @apply bg-background text-foreground min-h-screen antialiased;
+    @apply text-foreground min-h-screen antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
+    background: #020024;
+    background: linear-gradient(45deg, rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 212, 255, 1) 100%);
   }
 }
 

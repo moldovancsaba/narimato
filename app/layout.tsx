@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import ThemeRegistry from './ThemeRegistry';
+import { Navigation } from '@/components/ui/Navigation';
 import "./globals.css";
 
 const inter = Inter({
@@ -33,7 +34,10 @@ export default function RootLayout({
         className={`${inter.variable} ${jetbrainsMono.variable} antialiased font-sans`}
       >
         <ThemeRegistry>
-          {children}
+          <Navigation />
+          <main className="min-h-screen">
+            {children}
+          </main>
         </ThemeRegistry>
       </body>
     </html>

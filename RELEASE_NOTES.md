@@ -1,5 +1,36 @@
 # Release Notes
 
+## [v2.0.0] — 2025-07-15T16:41:57Z
+
+### Added
+- Global navigation system implemented across all pages
+- New Navigation component with:
+  - Responsive design for all screen sizes
+  - Active state indicators
+  - Dark mode support
+  - Consistent styling with the application theme
+- Unified navigation structure for improved user experience
+- Easy access to all major application features:
+  - Home
+  - Cards (listing and creation)
+  - Dashboard
+  - Leaderboard
+  - Swipe
+  - Vote
+
+### Changed
+- Application layout structure to accommodate global navigation
+- Root layout enhanced with proper navigation integration
+- Improved overall application navigation flow
+
+## [v1.1.1] — 2025-07-15T15:50:42.000Z
+
+### Fixed
+- Fixed build errors in Card.tsx and CardList.tsx components
+- Fixed React hook dependency arrays in Card component
+- Improved JSX structure and syntax
+- Removed invalid role prop from CardContainer usage
+
 ## [v1.1.0] — 2025-07-15T14:30:43.000Z
 
 ### Added

@@ -9,11 +9,13 @@
 - Implemented modular architecture with clear separation of concerns
 - Adopted state management pattern with centralized store
 - Introduced caching layer for frequently accessed data
+- Designed and integrated a global navigation system for improved user experience
 
 ## Best Practices Established
 - Strict typing enforcement across all modules
 - Comprehensive error handling and logging strategy
 - Code review guidelines focusing on performance and maintainability
+- Consistent UX patterns across layout, implementing active indicators and responsive design
 
 # Technical Decisions 🎯
 
