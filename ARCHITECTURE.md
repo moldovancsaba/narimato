@@ -2,51 +2,90 @@
 
 ## System Overview
 
-NARIMATO is a Next.js application with MongoDB Atlas as its database, designed for high performance and scalability. The architecture follows a modular approach with clear separation of concerns.
+NARIMATO is a Next.js application with TypeScript and Tailwind CSS, using MongoDB Atlas as its database. The architecture follows a modular approach with clear separation of concerns, emphasizing type safety, responsive design, and scalability.
 
-## Core Components
+## Component Hierarchy
 
 ### 1. Frontend Layer
 ```
 /components
-├── Card.js                 # Base card component
-├── CardContainer.js        # Responsive wrapper
-└── SwipeController.js      # Touch & keyboard handling
+├── UI/                   # UI primitives
+├── Card/                 # Card components
+│   ├── Card.tsx         # Base card component with aspect ratio handling
+│   ├── Container.tsx    # Responsive container with styling system
+│   ├── ImageCard.tsx    # Image-specific card implementation
+│   ├── TextCard.tsx     # Text card with translation support
+│   └── Controller.tsx   # Touch & keyboard interaction handling
+└── Common/              # Shared components
 ```
 
 ### 2. Page Structure
 ```
 /pages
-├── card/[slug].js         # Single card view/edit
-├── project/[slug].js      # Project management
-├── swipe.js              # Card swiping interface
-├── vote.js               # Head-to-head voting
-├── leaderboard.js        # Global rankings
-└── dashboard.js          # Admin interface
+├── index.tsx            # Enhanced homepage design
+├── _app.tsx             # Application wrapper with providers
+├── card/
+│   ├── [slug].tsx       # Individual card view/edit
+│   ├── create.tsx       # Card creation interface
+│   └── list.tsx         # Card listing with filters
+├── project/[slug].tsx   # Project management
+├── swipe.tsx            # Card swiping interface
+├── vote.tsx             # Head-to-head voting
+├── leaderboard.tsx      # Global rankings
+└── dashboard.tsx        # Admin interface
 ```
 
-### 3. Data Layer
+### 3. Data & Utils Layer
 ```
 /utils
-├── db.js                 # MongoDB connection
-├── elo.js                # Rating calculations
-├── ranking.js            # Sorting algorithms
-└── validateCard.js       # Input validation
+├── db/
+│   ├── connect.ts       # MongoDB connection handler
+│   └── models/          # Mongoose models & schemas
+├── validation/
+│   ├── card.ts          # Zod schemas for card data
+│   └── project.ts       # Project validation schemas
+├── services/
+│   ├── imgbb.ts         # Image upload service
+│   ├── elo.ts           # Rating calculations
+│   └── ranking.ts       # Sorting algorithms
+└── helpers/            # Utility functions
 ```
 
-## Key Features
+## Data Flow & Integration
 
-### Card System
-- Image Cards: Maintains original aspect ratio
-- Text Cards: Fixed 3:4 ratio with auto-resizing
-- Common attributes: slug, type, hashtags, timestamps
-- Optional translations for Text cards
+### Card Processing Flow
+```mermaid
+graph TD
+    A[User Input] --> B{Card Type}
+    B -->|Image| C[ImgBB Upload]
+    B -->|Text| D[Translation Check]
+    C --> E[Validation]
+    D --> E
+    E --> F[MongoDB Storage]
+    F --> G[UI Update]
+```
+
+### Key Features
+
+### Card System v1.0.0
+- Enhanced Card Components:
+  - Image Cards: Original aspect ratio preservation
+  - Text Cards: Fixed 3:4 ratio with dynamic resizing
+  - Container-based styling system
+  - Hashtag support and filtering
+  - Translation support for text cards
+
+### Image Processing
+- ImgBB Integration:
+  - Secure upload handling
+  - File validation (32MB limit)
+  - Supported formats: JPG, PNG, GIF, TIF, WEBP, HEIC, AVIF, PDF
 
 ### User System
-- Anonymous access by default
-- UUID session-based identity
-- Role-based access control
-- Admin dashboard access
+- TypeScript-based session management
+- UUID-based identity system
+- Role-based access control (RBAC)
+- Enhanced admin dashboard
 
 ### Real-time Features
 - Socket.io integration
@@ -54,67 +93,106 @@ NARIMATO is a Next.js application with MongoDB Atlas as its database, designed f
 - Real-time leaderboard updates
 - Activity broadcasting
 
-## Security Architecture
+## Technical Specifications
 
-### Authentication
-- Session-based authentication
-- Role-based access control
-- Protected admin endpoints
-
-### Data Validation
-- Zod schema validation
-- Input sanitation
+### Security Architecture
+- Session-based authentication with TypeScript types
+- Role-based access control (RBAC)
+- Protected admin endpoints and API routes
 - Rate limiting per IP/user
 
-## Database Schema
+### Data Validation & Safety
+- Comprehensive Zod schema validation
+- Type-safe input handling
+- Strict input sanitation
+- File type verification
+
+## Database Architecture
 
 ### Card Collection
 ```typescript
-{
-  type: "image" | "text",
-  content: string,
-  hashtags: string[],
+interface Card {
+  type: 'image' | 'text';
+  content: string;          // URL for images, text content for text cards
+  hashtags: string[];       // Indexed for efficient filtering
   translations?: {
-    [locale: string]: string
-  },
-  slug: string,
-  createdAt: Date,
-  updatedAt: Date
+    [locale: string]: {
+      content: string;
+      lastUpdated: Date;
+    }
+  };
+  metadata: {
+    dimensions?: {
+      width: number;
+      height: number;
+    };
+    fileSize?: number;      // For images only
+    format?: string;        // File format for images
+  };
+  slug: string;             // URL-friendly unique identifier
+  status: 'active' | 'archived' | 'deleted';
+  createdAt: Date;
+  updatedAt: Date;
 }
 ```
 
 ### Project Collection
 ```typescript
-{
-  name: string,
-  description: string,
-  cards: ObjectId[],
-  createdAt: Date,
-  updatedAt: Date
+interface Project {
+  name: string;
+  description: string;
+  cards: ObjectId[];        // References to Card collection
+  settings: {
+    visibility: 'public' | 'private';
+    allowComments: boolean;
+    cardOrder: 'manual' | 'date' | 'popularity';
+  };
+  createdAt: Date;
+  updatedAt: Date;
 }
 ```
 
 ### User Collection
 ```typescript
-{
-  uuid: string,
-  role: "admin" | "user" | "guest",
+interface User {
+  uuid: string;              // Unique identifier
+  role: 'admin' | 'user' | 'guest';
   preferences: {
-    darkMode: boolean
-  },
-  createdAt: Date,
-  updatedAt: Date
+    darkMode: boolean;
+    language: string;
+    notifications: {
+      email: boolean;
+      push: boolean;
+    };
+  };
+  lastActive: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 ```
 
-## Deployment Architecture
+## Deployment & DevOps
 
-### Environments
-1. Development (dev branch)
-2. Staging (staging branch)
-3. Production (main branch)
+### Environment Structure
+```mermaid
+graph LR
+    A[Development] -->|Automated Tests| B[Staging]
+    B -->|Manual Approval| C[Production]
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style B fill:#bbf,stroke:#333,stroke-width:2px
+    style C fill:#bfb,stroke:#333,stroke-width:2px
+```
 
-### CI/CD Pipeline
-- Automated deployments via Vercel
+### CI/CD Pipeline v1.0.0
+- Vercel-based deployment automation
 - Environment-specific configurations
-- Automatic database migrations
+- TypeScript type checking
+- Automated testing pipeline
+- Database migration management
+- Performance monitoring
+
+### Performance Optimization
+- Static page generation where possible
+- Image optimization pipeline
+- MongoDB query optimization
+- Client-side caching strategy

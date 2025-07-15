@@ -1,6 +1,7 @@
+import dbConnect from '@/lib/mongodb';
 import { Card as CardModel } from '@/models/Card';
-import { CardContainer } from '@/components/ui/CardContainer';
-import { Card } from '@/components/ui/Card';
+import { CardList } from '@/components/ui/CardList';
+import { CardFilters } from '@/components/ui/CardFilters';
 
 /**
  * Card List Page Component
@@ -65,11 +66,18 @@ async function getCards({
     const total = await CardModel.countDocuments(query);
 
     return {
-      cards: cards.map(card => ({
-        ...card,
-        createdAt: card.createdAt.toISOString(),
-        updatedAt: card.updatedAt.toISOString(),
-      })),
+cards: cards.map(card => ({
+  type: card.type,
+  content: card.content,
+  title: card.title,
+  description: card.description,
+  slug: card.slug,
+  hashtags: card.hashtags,
+  translationKey: card.translationKey,
+  imageAlt: card.imageAlt,
+  createdAt: card.createdAt.toISOString(),
+  updatedAt: card.updatedAt.toISOString(),
+})),
       total,
       pages: Math.ceil(total / CARDS_PER_PAGE),
     };
@@ -83,12 +91,19 @@ async function getCards({
   }
 }
 
-export default async function CardListPage({ searchParams }: CardListPageProps) {
+import { GetServerSideProps } from 'next';
+
+export default async function CardListPage(props: any) {
   // Parse search parameters
-  const currentPage = Number(searchParams.page) || 1;
-  const searchQuery = searchParams.q;
-  const typeFilter = searchParams.type as 'image' | 'text' | undefined;
-  const hashtagFilter = searchParams.hashtags?.split(',').filter(Boolean);
+  const searchParams = props.searchParams || {};
+
+  const currentPage = Number(Array.isArray(searchParams.page) ? searchParams.page[0] : searchParams.page) || 1;
+  const searchQuery = Array.isArray(searchParams.q) ? searchParams.q[0] : searchParams.q;
+  const typeFilter = (Array.isArray(searchParams.type) ? searchParams.type[0] : searchParams.type) as 'image' | 'text' | undefined;
+  const hashtagFilter = typeof searchParams.hashtags === 'string' ? searchParams.hashtags.split(',').filter(Boolean) : [];
+
+  // Ensure the database is connected
+  await dbConnect();
 
   // Fetch cards with filters
   const { cards, total, pages } = await getCards({
@@ -111,96 +126,21 @@ export default async function CardListPage({ searchParams }: CardListPageProps) 
           </a>
         </div>
 
-        {/* Filters */}
-        <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Filters</h2>
-          <form className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block font-medium mb-1">Search</label>
-              <input
-                type="text"
-                name="q"
-                defaultValue={searchQuery}
-                className="w-full px-3 py-2 border rounded"
-                placeholder="Search cards..."
-              />
-            </div>
-            <div>
-              <label className="block font-medium mb-1">Type</label>
-              <select
-                name="type"
-                defaultValue={typeFilter}
-                className="w-full px-3 py-2 border rounded"
-              >
-                <option value="">All Types</option>
-                <option value="image">Image Cards</option>
-                <option value="text">Text Cards</option>
-              </select>
-            </div>
-            <div>
-              <label className="block font-medium mb-1">Hashtags</label>
-              <input
-                type="text"
-                name="hashtags"
-                defaultValue={hashtagFilter?.join(',')}
-                className="w-full px-3 py-2 border rounded"
-                placeholder="nature,art,photography"
-              />
-            </div>
-          </form>
-        </section>
+        <CardFilters
+          searchQuery={searchQuery}
+          typeFilter={typeFilter}
+          hashtagFilter={hashtagFilter}
+        />
 
-        {/* Results Count */}
-        <p className="text-gray-600 dark:text-gray-400 mb-4">
-          Showing {cards.length} of {total} cards
-        </p>
-
-        {/* Card Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {cards.map((card) => (
-            <CardContainer
-              key={card.slug}
-              cardType={card.type}
-              isList
-            >
-              <a href={`/card/${card.slug}`}>
-                <Card
-                  type={card.type}
-                  content={card.content}
-                  title={card.title}
-                  description={card.description}
-                  slug={card.slug}
-                  hashtags={card.hashtags}
-                  translationKey={card.translationKey}
-                  createdAt={new Date(card.createdAt)}
-                  updatedAt={new Date(card.updatedAt)}
-                  imageAlt={card.imageAlt}
-                />
-              </a>
-            </CardContainer>
-          ))}
-        </div>
-
-        {/* Pagination */}
-        {pages > 1 && (
-          <div className="mt-8 flex justify-center gap-2">
-            {Array.from({ length: pages }, (_, i) => i + 1).map((page) => (
-              <a
-                key={page}
-                href={`/cards?page=${page}${searchQuery ? `&q=${searchQuery}` : ''}${
-                  typeFilter ? `&type=${typeFilter}` : ''
-                }${hashtagFilter?.length ? `&hashtags=${hashtagFilter.join(',')}` : ''}`}
-                className={`px-4 py-2 rounded ${
-                  currentPage === page
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 dark:bg-gray-800'
-                }`}
-              >
-                {page}
-              </a>
-            ))}
-          </div>
-        )}
+        <CardList
+          cards={cards}
+          total={total}
+          pages={pages}
+          currentPage={currentPage}
+          searchQuery={searchQuery}
+          typeFilter={typeFilter}
+          hashtagFilter={hashtagFilter}
+        />
       </div>
     </main>
   );

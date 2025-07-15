@@ -1,5 +1,17 @@
 # Release Notes
 
+## [v1.1.0] — 2025-07-15T14:30:43.000Z
+
+### Added
+- Enhanced voting system with real-time updates
+- User authentication improvements
+- Project creation and editing interface
+- Performance optimizations
+
+### Fixed
+- Dependency conflicts resolution (React version compatibility)
+- Package-lock.json regeneration for build stability
+
 ## [v1.0.0] — 2024-01-08T00:00:00.000Z
 
 ### Added
