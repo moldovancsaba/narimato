@@ -1,5 +1,14 @@
 # Release Notes
 
+## [v2.1.2] — 2025-07-15T17:34:00.000Z
+
+### Fixed
+- Fixed dark mode implementation to ensure proper text visibility:
+  - Added dark class to HTML element
+  - Updated dark mode CSS variable application
+  - Forced dark theme in ThemeRegistry
+  - Fixed nested :root selectors in dark mode styles
+
 ## [v2.1.1] — 2025-07-15T17:22:05.000Z
 
 ### Fixed
