@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function Home() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center">
@@ -26,9 +28,9 @@ export default function Home() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <a href="/cards/create" className="btn btn-primary">
+          <Link href="/cards/create" className="btn btn-primary">
             Start Creating
-          </a>
+          </Link>
           <button className="btn btn-secondary">
             Learn More
           </button>
