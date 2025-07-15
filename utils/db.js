@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
-// MongoDB connection configuration
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/narimato';
+// MongoDB Atlas connection configuration
+const MONGODB_URI = process.env.MONGO_URI;
 const MAX_RETRIES = 5;
 const RETRY_INTERVAL = 5000; // 5 seconds
 
