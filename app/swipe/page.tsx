@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import SwipeController from '@/components/ui/SwipeController';
-import { Card as CardType } from '@/models/Card';
+import { ICard } from '@/models/Card';
 import { Paper, Typography, Button } from '@mui/material';
 
 export default function SwipePage() {
-  const [currentCard, setCurrentCard] = useState<CardType | null>(null);
+  const [currentCard, setCurrentCard] = useState<ICard | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 

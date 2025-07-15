@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { motion, useAnimation, PanInfo } from 'framer-motion';
-import { Card as CardType } from '@/models/Card';
+import { ICard } from '@/models/Card';
 
 interface SwipeControllerProps {
-  card: CardType;
+  card: ICard;
   onSwipe: (direction: 'left' | 'right') => void;
 }
 
