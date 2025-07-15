@@ -77,8 +77,8 @@ export default function ThemeRegistry({ children }: { children: React.ReactNode 
     );
   });
 
-  const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
-  const theme = prefersDarkMode ? darkTheme : lightTheme;
+  // Force dark theme
+  const theme = darkTheme;
 
   return (
     <CacheProvider value={cache}>
