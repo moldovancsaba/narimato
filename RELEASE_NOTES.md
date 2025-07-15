@@ -1,5 +1,22 @@
 # Release Notes
 
+## [v2.2.0] — 2025-07-15T19:45:00.789Z
+
+### Changed
+- Version increment for production deployment
+- Documentation updates
+
+## [v2.1.4] — 2025-07-15T19:32:06.789Z
+
+### Changed
+- Removed voting restrictions on cards to simplify user experience and increase engagement
+- All cards are now immediately available for voting upon creation
+
+## [v2.1.3] — 2025-07-15T19:15:55Z
+
+### Changed
+- Development cycle version increment
+
 ## [v2.1.2] — 2025-07-15T17:34:00.000Z
 
 ### Fixed
