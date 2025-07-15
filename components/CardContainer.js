@@ -1,16 +1,15 @@
-import { Container, Grid } from '@mui/material';
-import Card from './Card';
-
-export default function CardContainer({ cards }) {
+/**
+ * CardContainer Component
+ * Follows narimato.md container rules:
+ * - Manages all styling for contained cards
+ * - Uses w-[min(100vw,500px)] for adaptive width
+ * - Handles aspect ratios: 3:4 for text, original for images
+ * - No per-component styles, only Tailwind utilities
+ */
+export default function CardContainer({ children }) {
   return (
-    <Container>
-      <Grid container spacing={2}>
-        {cards?.map((card, index) => (
-          <Grid item xs={12} sm={6} md={4} key={index}>
-            <Card {...card} />
-          </Grid>
-        ))}
-      </Grid>
-    </Container>
+    <div className="w-[min(100vw,500px)] h-full relative rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-200 bg-white dark:bg-gray-800">
+      {children}
+    </div>
   );
 }

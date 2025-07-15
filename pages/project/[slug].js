@@ -1,21 +1,20 @@
 import { useRouter } from 'next/router';
-<<<<<<< HEAD
-=======
 import { useEffect, useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { useSession } from 'next-auth/react';
->>>>>>> dev
+import Card from '../../components/Card';
+import CardContainer from '../../components/CardContainer';
 
+/**
+ * Project Page Component
+ * Implements project view and card management following narimato.md specs:
+ * - Uses slug-based URL routing (/project/[slug])
+ * - Supports card reordering by project creator
+ * - Integrates with the global card system
+ * - Uses container-based styling approach
+ */
 export default function ProjectPage() {
   const router = useRouter();
   const { slug } = router.query;
-<<<<<<< HEAD
-
-  return (
-    <div>
-      <h1>Project: {slug}</h1>
-=======
-  const { data: session } = useSession();
   const [project, setProject] = useState(null);
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -73,68 +72,88 @@ export default function ProjectPage() {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
-  if (!project) return <div>Project not found</div>;
+  // Loading states with consistent styling
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse text-2xl">Loading...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-red-500 text-xl">{error}</div>
+      </div>
+    );
+  }
+
+  if (!project) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-gray-500 text-xl">Project not found</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">{project.name}</h1>
-        {session && (
-          <button
-            onClick={() => router.push(`/project/${slug}/edit`)}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            Edit Project
-          </button>
-        )}
-      </div>
-
-      {project.description && (
-        <p className="text-gray-600 mb-8">{project.description}</p>
-      )}
-
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId="cards">
-          {(provided) => (
-            <div
-              {...provided.droppableProps}
-              ref={provided.innerRef}
-              className="space-y-4"
-            >
-              {cards.map((card, index) => (
-                <Draggable
-                  key={card._id}
-                  draggableId={card._id}
-                  index={index}
-                >
-                  {(provided) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      {...provided.dragHandleProps}
-                      className="bg-white p-4 rounded-lg shadow"
-                    >
-                      {card.type === 'image' ? (
-                        <img
-                          src={card.imageUrl}
-                          alt={card.content}
-                          className="w-full h-48 object-cover rounded"
-                        />
-                      ) : (
-                        <p>{card.content}</p>
-                      )}
-                    </div>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-            </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="container mx-auto px-4 py-8">
+        <header className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
+            {project.name}
+          </h1>
+          {project.description && (
+            <p className="mt-2 text-gray-600 dark:text-gray-300">
+              {project.description}
+            </p>
           )}
-        </Droppable>
-      </DragDropContext>
->>>>>>> dev
+        </header>
+
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <Droppable droppableId="cards">
+            {(provided) => (
+              <div
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+              >
+                {cards.map((card, index) => (
+                  <Draggable
+                    key={card._id}
+                    draggableId={card._id}
+                    index={index}
+                  >
+                    {(provided) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                      >
+                        <CardContainer>
+                          <Card
+                            type={card.type}
+                            content={card.content}
+                            title={card.title}
+                            slug={card.slug}
+                            hashtags={card.hashtags}
+                            createdAt={new Date(card.createdAt)}
+                            updatedAt={new Date(card.updatedAt)}
+                            imageAlt={card.imageAlt}
+                            translationKey={card.translationKey}
+                          />
+                        </CardContainer>
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
+      </div>
     </div>
   );
 }
