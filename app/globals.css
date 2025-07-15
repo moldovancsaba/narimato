@@ -2,6 +2,91 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Global CSS Variables */
+:root {
+  --background: #ffffff;
+  --foreground: #000000;
+  --card-background: #f5f5f5;
+  --primary: #0070f3;
+  --secondary: #6b7280;
+  --accent: #3b82f6;
+  --success: #10b981;
+  --error: #ef4444;
+  --border-radius: 0.5rem;
+}
+
+/* Dark Mode Variables */
+[data-theme='dark'] {
+  --background: #1a1a1a;
+  --foreground: #ffffff;
+  --card-background: #2a2a2a;
+  --primary: #3b82f6;
+  --secondary: #9ca3af;
+  --accent: #60a5fa;
+  --success: #34d399;
+  --error: #f87171;
+}
+
+/* Base Styles */
+html {
+  @apply antialiased;
+}
+
+body {
+  @apply bg-[var(--background)] text-[var(--foreground)];
+  @apply min-h-screen;
+}
+
+/* Card Container Styles */
+.card-container {
+  @apply w-[min(100vw,500px)];
+  @apply bg-[var(--card-background)];
+  @apply rounded-[var(--border-radius)];
+  @apply shadow-lg;
+  @apply transition-all duration-300;
+}
+
+/* Text Card Style */
+.text-card {
+  @apply aspect-[3/4];
+  @apply flex items-center justify-center;
+  @apply p-6;
+  @apply text-center;
+}
+
+/* Image Card Style */
+.image-card img {
+  @apply w-full h-full;
+  @apply object-contain;
+}
+
+/* Interactive Elements */
+.btn {
+  @apply px-4 py-2;
+  @apply rounded-[var(--border-radius)];
+  @apply transition-colors duration-200;
+  @apply focus:outline-none focus:ring-2;
+}
+
+.btn-primary {
+  @apply bg-[var(--primary)];
+  @apply text-white;
+  @apply hover:bg-opacity-90;
+}
+
+.btn-secondary {
+  @apply bg-[var(--secondary)];
+  @apply text-white;
+  @apply hover:bg-opacity-90;
+}
+
+/* Responsive Text */
+@responsive {
+  .text-fluid {
+    @apply text-base md:text-lg lg:text-xl;
+  }
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
