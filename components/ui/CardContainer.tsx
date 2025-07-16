@@ -39,10 +39,11 @@ export function CardContainer({
 
   return (
     <div 
-      className={`w-[min(100vw,500px)] ${containerClassName}`}
+      className={`w-[min(100vw,500px)] ${containerClassName} ${onClick ? 'hover:cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-xl hover:ring-2 hover:ring-blue-500/50 active:scale-95' : ''}`}
       onClick={onClick}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
+      onKeyPress={(e) => e.key === 'Enter' && onClick?.()}
     >
       <Container
         className={`relative overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-lg ${className}`}

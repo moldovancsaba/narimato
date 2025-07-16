@@ -152,9 +152,11 @@ All API endpoints follow a consistent error response format:
 
 ## Authentication
 
-Currently, the API uses a session-based system with the following headers:
-- `session-id`: Used for identifying users and tracking preferences
-- `Authorization`: Reserved for future implementation of token-based auth
+The API currently employs a session-based system with the following headers:
+- `session-id`: Utilized for user identification and preference tracking.
+- `Authorization`: Reserved for the integration of a future token-based authentication system.
+
+This setup allows for secured API interactions, aligning with future-proofing strategies.
 
 ## Rate Limiting
 

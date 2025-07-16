@@ -1,5 +1,10 @@
 # Release Notes
 
+## [v3.0.0] — 2024-01-16T15:30:00.000Z
+
+### Changed
+- Major version upgrade from 2.4.0 to 3.0.0
+- Updated all version references for consistency
 ## [v2.4.0] — 2025-07-16T15:45:00.000Z
 
 ### Added

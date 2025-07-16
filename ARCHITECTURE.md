@@ -1,5 +1,7 @@
 # System Architecture
 
+Last Updated: 2024-01-09T14:30:00.000Z
+
 ## System Overview
 
 NARIMATO is a Next.js application with TypeScript and Tailwind CSS, using MongoDB Atlas as its database. The architecture follows a modular approach with clear separation of concerns, emphasizing type safety, responsive design, and scalability.
@@ -129,11 +131,155 @@ graph TD
 
 ## Technical Specifications
 
+### Recent Technical Improvements v1.1.0
+
+#### 1. TypeScript Improvements
+```typescript
+// SwipeStore Type Corrections
+interface SwipeState {
+  direction: 'left' | 'right' | null;
+  offset: number;
+  isDragging: boolean;
+  currentCard: string | null;
+}
+
+// Zustand Persist Middleware Type Declaration
+interface PersistOptions<T> {
+  name: string;
+  storage?: StorageValue<T>;
+  partialize?: (state: T) => Partial<T>;
+  version?: number;
+  migrate?: (state: T, version: number) => T;
+}
+
+type StorageValue<T> = {
+  getItem: (name: string) => T | null | Promise<T | null>;
+  setItem: (name: string, value: T) => void | Promise<void>;
+  removeItem: (name: string) => void | Promise<void>;
+};
+```
+
+#### 2. Backend Stability
+```typescript
+// Mongoose Model Registration System
+class ModelRegistry {
+  private static models = new Map<string, mongoose.Model<any>>();
+
+  static register<T>(name: string, schema: mongoose.Schema<T>): mongoose.Model<T> {
+    if (!this.models.has(name)) {
+      const model = mongoose.model<T>(name, schema);
+      this.models.set(name, model);
+      return model;
+    }
+    return this.models.get(name) as mongoose.Model<T>;
+  }
+
+  static getModel<T>(name: string): mongoose.Model<T> | undefined {
+    return this.models.get(name) as mongoose.Model<T>;
+  }
+}
+
+// Database Interaction Layer
+interface DatabaseOperation<T> {
+  execute(): Promise<T>;
+  rollback(): Promise<void>;
+  validate(): Promise<boolean>;
+}
+
+class DatabaseTransaction {
+  private operations: DatabaseOperation<any>[] = [];
+
+  async execute<T>(operation: DatabaseOperation<T>): Promise<T> {
+    try {
+      if (await operation.validate()) {
+        const result = await operation.execute();
+        this.operations.push(operation);
+        return result;
+      }
+      throw new Error('Validation failed');
+    } catch (error) {
+      await this.rollback();
+      throw error;
+    }
+  }
+
+  private async rollback(): Promise<void> {
+    for (const op of this.operations.reverse()) {
+      await op.rollback();
+    }
+  }
+}
+```
+
+#### 3. Component Architecture
+```typescript
+// ProjectForm Component Structure
+interface ProjectFormProps {
+  initialData?: Partial<Project>;
+  onSubmit: (data: Project) => Promise<void>;
+  onCancel: () => void;
+}
+
+// Form State Management
+interface FormState<T> {
+  data: T;
+  errors: Record<keyof T, string[]>;
+  touched: Set<keyof T>;
+  isSubmitting: boolean;
+  isDirty: boolean;
+}
+
+type FormAction<T> =
+  | { type: 'SET_FIELD'; field: keyof T; value: any }
+  | { type: 'SET_ERRORS'; errors: Record<keyof T, string[]> }
+  | { type: 'TOUCH_FIELD'; field: keyof T }
+  | { type: 'SUBMIT_START' | 'SUBMIT_END' | 'RESET' };
+```
+
 ### Security Architecture
-- Session-based authentication with TypeScript types
-- Role-based access control (RBAC)
-- Protected admin endpoints and API routes
-- Rate limiting per IP/user
+
+### Authentication Flow
+```mermaid
+graph TD
+    A[User Access] --> B{Has Session?}
+    B -->|No| C[Create Anonymous Session]
+    B -->|Yes| D{Session Type?}
+    C --> E[Generate UUID]
+    E --> F[Create Session Record]
+    F --> G[Set Session Cookie]
+    D -->|Anonymous| H[Limited Access]
+    D -->|Authenticated| I[Full Access]
+    H --> J[Read-Only Features]
+    H --> L[Voting with Rate Limits]
+    I --> K[All Features]
+    J --> M[Upgrade Prompt]
+    L --> M
+```
+
+- **Session Management**:
+  - UUID-based session identification with `session-id`
+  - Anonymous sessions automatically created for new visitors
+  - Enhanced session persistence with secure cookie handling
+  - Seamless upgrade path from anonymous to authenticated
+  - Multi-level rate limiting (IP + session-based)
+  - Session data cleanup with configurable expiration
+
+- **Access Levels**:
+  - Anonymous:
+    - Read-only access to public content
+    - Basic voting capabilities with rate limits
+    - Temporary data storage
+    - No content creation/editing
+  - Authenticated:
+    - Full platform access
+    - Project creation and management
+    - Unrestricted voting
+    - Persistent data storage
+  - Admin:
+    - System configuration
+    - User management
+    - Analytics access
+    - Rate limit overrides
 
 ### Data Validation & Safety
 - Comprehensive Zod schema validation
@@ -190,7 +336,8 @@ interface Project {
 ```typescript
 interface User {
   uuid: string;              // Unique identifier
-  role: 'admin' | 'user' | 'guest';
+  role: 'admin' | 'user' | 'guest' | 'anonymous';
+  sessionType: 'anonymous' | 'authenticated';
   preferences: {
     darkMode: boolean;
     language: string;
@@ -202,6 +349,30 @@ interface User {
   lastActive: Date;
   createdAt: Date;
   updatedAt: Date;
+  anonymousData?: {
+    sessionId: string;
+    createdAt: Date;
+    lastActive: Date;
+    votingHistory: string[];  // Array of card IDs voted on
+  };
+}
+```
+
+### Session Collection
+```typescript
+interface Session {
+  sessionId: string;         // Unique session identifier
+  userId: string;            // Reference to User collection
+  type: 'anonymous' | 'authenticated';
+  status: 'active' | 'expired' | 'upgraded';
+  deviceInfo: {
+    userAgent: string;
+    ip: string;
+    lastKnownLocation?: string;
+  };
+  createdAt: Date;
+  expiresAt: Date;
+  lastActive: Date;
 }
 ```
 

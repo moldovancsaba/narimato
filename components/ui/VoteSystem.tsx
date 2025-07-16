@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { CardContainer } from './CardContainer';
 import { useRouter } from 'next/navigation';
 import { safeDate } from '@/utils/date';
+import { LoadingSpinner } from './LoadingSpinner';
 
 interface VoteSystemProps {
   cards: {
@@ -37,21 +38,37 @@ export function VoteSystem({ cards }: VoteSystemProps) {
   }, [isVoting]);
 
   const handleVote = async (winnerIndex: number) => {
-    if (isVoting) return;
-    setIsVoting(true);
+    if (isVoting) {
+      console.log('Vote already in progress, ignoring click');
+      return;
+    }
+    
     const winner = cards[currentPair[winnerIndex]];
     const loser = cards[currentPair[1 - winnerIndex]];
+    
+    if (!winner?.id || !loser?.id) {
+      console.error('Invalid card data:', { winner, loser });
+      setError('Invalid card data. Please try refreshing the page.');
+      setTimeout(() => setError(''), 3000);
+      return;
+    }
+    
+    setIsVoting(true);
+    console.log('Starting vote process...');
+    console.log('Selected cards:', { winner: winner.id, loser: loser.id });
     if (!winner || !loser) {
       console.error('Invalid card pair for voting');
       setIsVoting(false);
       return;
     }
     try {
+      console.log('Sending vote request...');
       const response = await fetch('/api/vote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ winnerId: winner.id, loserId: loser.id }),
       });
+      console.log('Vote response:', await response.clone().json());
       if (!response.ok) throw new Error('Failed to record vote');
       setCurrentPair(([first, second]) => [second, (second + 1) % cards.length]);
       router.refresh();
@@ -92,6 +109,11 @@ export function VoteSystem({ cards }: VoteSystemProps) {
           {error}
         </div>
       )}
+      {isVoting && (
+        <div className="fixed inset-0 bg-black/20 dark:bg-black/40 flex items-center justify-center z-50">
+          <LoadingSpinner size="lg" className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg" />
+        </div>
+      )}
       <div className="flex flex-col lg:flex-row w-full justify-center items-center gap-6 lg:gap-12" role="group" aria-label="Cards to compare">
         <CardContainer
           type={firstCard.type}
@@ -103,7 +125,7 @@ export function VoteSystem({ cards }: VoteSystemProps) {
           createdAt={safeDate(firstCard.createdAt)}
           updatedAt={safeDate(firstCard.updatedAt)}
           onClick={() => handleVote(0)}
-          containerClassName="cursor-pointer"
+          containerClassName="cursor-pointer hover:scale-105 transform transition-transform duration-200 ease-in-out"
           isInteractive
         />
         <CardContainer

@@ -1,5 +1,7 @@
 import { Card } from '@/models/Card';
 import { NextResponse } from 'next/server';
+import mongoose from 'mongoose';
+import dbConnect from '@/lib/mongodb';
 
 const K_FACTOR = 32; // ELO rating constant
 
@@ -16,6 +18,9 @@ function calculateNewRatings(winnerRating: number, loserRating: number) {
 
 export async function POST(request: Request) {
   try {
+    await dbConnect();
+    
+    // Card model is already initialized via import
     const { winnerId, loserId, projectId } = await request.json();
 
     if (!winnerId || !loserId) {

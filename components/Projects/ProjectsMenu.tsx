@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 interface Project {
   id: string;
-  title: string;
+  title: string; // maps to name in the database
   description?: string;
   slug: string;
   tags: Array<{ name: string; color: string }>;

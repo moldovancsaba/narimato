@@ -41,7 +41,7 @@ async function getProjects() {
   return {
     projects: projects.map(project => ({
       id: project._id?.toString() || '',
-      title: project.title,
+      title: project.name,
       description: project.description,
       slug: project.slug,
       tags: project.tags || [],
