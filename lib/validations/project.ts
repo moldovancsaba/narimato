@@ -1,9 +1,18 @@
 import { z } from 'zod';
 import { CardSchema } from './card';
 
+// User identifier types
+const UserIdentifierSchema = z.string();
+
+// Helper to validate UUID format
+function isUUID(str: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+}
+
 // Project settings schema
 const ProjectSettingsSchema = z.object({
-  visibility: z.enum(['public', 'private']).default('private'),
+  visibility: z.enum(['public', 'private']).default('public'),
   allowComments: z.boolean().default(true),
   cardOrder: z.enum(['manual', 'date', 'popularity']).default('manual'),
   isFeatured: z.boolean().default(false), // For featuring projects
@@ -49,7 +58,7 @@ export const ProjectSchema = z.object({
   updatedAt: z.date().optional(),
   lastViewedAt: z.date().optional(), // For recently viewed tracking
   viewCount: z.number().int().min(0).default(0), // For popularity tracking
-  createdBy: z.string(), // User ID
+  createdBy: UserIdentifierSchema,
   collaborators: z.array(z.string()).default([]), // Array of user IDs
   activity: z.array(ProjectActivitySchema).default([]), // Project activity feed
 });
@@ -59,14 +68,64 @@ export type ProjectInput = z.input<typeof ProjectSchema>;
 // Type for validated project data
 export type ProjectOutput = z.output<typeof ProjectSchema>;
 
+// Context for project validation
+type ValidationContext = {
+  userId?: string; // Authenticated user ID
+  sessionId?: string; // Anonymous session ID
+};
+
 // Validation function for project creation
-export const validateProject = (data: unknown): ProjectOutput => {
-  return ProjectSchema.parse(data);
+export const validateProject = (data: unknown, context: ValidationContext): ProjectOutput => {
+  const result = ProjectSchema.parse(data);
+  
+  // Validate and ensure createdBy matches the context
+  if (context.userId) {
+    if (result.createdBy !== context.userId) {
+      throw new Error('Project createdBy field must match the authenticated user ID');
+    }
+    // Google IDs and other OAuth providers may have different formats
+    // We just ensure it's a non-empty string
+    if (typeof context.userId !== 'string' || !context.userId) {
+      throw new Error('Invalid user ID format');
+    }
+  } else if (context.sessionId) {
+    if (result.createdBy !== context.sessionId) {
+      throw new Error('Project createdBy field must match the current session ID for anonymous users');
+    }
+    if (!result.createdBy.startsWith('session_')) {
+      throw new Error('Anonymous users must use a session ID');
+    }
+  } else {
+    throw new Error('Either a user ID or session ID is required to create a project');
+  }
+  
+  return result;
 };
 
 // Validation function for project updates (partial data)
-export const validateProjectUpdate = (data: unknown): Partial<ProjectOutput> => {
-  return ProjectSchema.partial().parse(data);
+export const validateProjectUpdate = (
+  data: unknown,
+  context: ValidationContext,
+  existingProject?: ProjectOutput
+): Partial<ProjectOutput> => {
+  const updates = ProjectSchema.partial().parse(data);
+  
+  // If createdBy is being updated, ensure it matches the context
+  if (updates.createdBy !== undefined) {
+    if (context.userId && updates.createdBy !== context.userId) {
+      throw new Error('Cannot update project createdBy field to a different user ID');
+    }
+    if (!context.userId && context.sessionId && updates.createdBy !== context.sessionId) {
+      throw new Error('Cannot update project createdBy field to a different session ID');
+    }
+  }
+  
+  // Prevent changes if user doesn't match the original creator
+  if (existingProject && existingProject.createdBy !== (context.userId || context.sessionId)) {
+    throw new Error('Only the project creator can update the project');
+  }
+  
+  return updates;
 };
 
 // Helper function to generate a URL-friendly slug

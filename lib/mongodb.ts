@@ -15,7 +15,7 @@ if (!cached) {
 
 import { env } from '@/env.mjs';
 
-const MONGODB_URI = env.MONGODB_URI;
+const MONGODB_URI = env.MONGO_URI;
 
 if (!MONGODB_URI) {
   throw new Error('Please define the MONGODB_URI environment variable');
@@ -28,7 +28,8 @@ async function dbConnect() {
   }
 
   // If a connection is being established, wait for it
-  if (!cached.promise) {
+if (!cached.promise) {
+    console.log('Establishing new MongoDB connection...');
     const opts = {
       bufferCommands: true,
       serverSelectionTimeoutMS: 5000,

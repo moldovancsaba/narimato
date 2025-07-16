@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { LeaderboardService } from '@/lib/services/leaderboardService';
 import { z } from 'zod';
 
-// Query parameters schema
+/**
+ * Validation schema for leaderboard query parameters
+ * Enforces type safety and provides default values for pagination
+ *
+ * @schema QuerySchema
+ */
 const QuerySchema = z.object({
   type: z.enum(['global', 'project', 'personal']).default('global'),
   projectId: z.string().optional(),
@@ -10,11 +15,33 @@ const QuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(50).default(10),
 });
 
+/**
+ * GET /api/leaderboard
+ * Retrieves leaderboard data based on the specified type and filters.
+ *
+ * @endpoint
+ * @method GET
+ * @param {NextRequest} request - The incoming HTTP request
+ *
+ * Query Parameters:
+ * - type: 'global' | 'project' | 'personal' (default: 'global')
+ * - projectId?: string (required for project type)
+ * - page?: number (default: 1)
+ * - limit?: number (default: 10, max: 50)
+ *
+ * Headers:
+ * - session-id: Required for personal leaderboard
+ *
+ * @returns {Promise<NextResponse>} JSON response containing leaderboard data
+ */
 export async function GET(request: NextRequest) {
-  try {
+try {
+    // Validate and coerce query parameters using Zod schema
     const validatedParams = QuerySchema.parse(Object.fromEntries(request.nextUrl.searchParams.entries()));
 
+    // Handle different leaderboard types with appropriate data fetching
     switch (validatedParams.type) {
+      // Global leaderboard - all cards ranked by score
       case 'global':
         const globalData = await LeaderboardService.getGlobalLeaderboard(
           validatedParams.limit,
@@ -22,6 +49,7 @@ export async function GET(request: NextRequest) {
         );
         return NextResponse.json(globalData);
 
+      // Project-specific leaderboard - cards ranked within a project
       case 'project':
         if (!validatedParams.projectId) {
           return NextResponse.json(
@@ -36,6 +64,7 @@ export async function GET(request: NextRequest) {
         );
         return NextResponse.json(projectData);
 
+      // Personal leaderboard - user-specific rankings
       case 'personal':
         const sessionId = request.headers.get('session-id');
         if (!sessionId) {
@@ -61,6 +90,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching leaderboard:', error);
     
+    // Handle validation errors separately from other errors
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { message: 'Invalid request parameters', errors: error.errors },
