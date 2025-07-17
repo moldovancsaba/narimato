@@ -1,6 +1,6 @@
 'use client';
 
-import { Card } from './Card';
+import { Card } from './card';
 import { CardContainer } from './CardContainer';
 import { useRouter } from 'next/navigation';
 
@@ -43,10 +43,7 @@ export function CardList({
       </p>
 
       {/* Card Grid */}
-      <div
-        role="grid"
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-      >
+      <div role="grid" className="card-grid container mx-auto">
         {cards.map((card) => (
           <CardContainer
             key={card.slug}

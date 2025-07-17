@@ -38,15 +38,17 @@ export function CardContainer({
   const Container = isInteractive ? motion.div : 'div';
 
   return (
-    <div 
-      className={`w-[min(100vw,500px)] ${containerClassName} ${onClick ? 'hover:cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-xl hover:ring-2 hover:ring-blue-500/50 active:scale-95' : ''}`}
+    <div
+      className={`card-grid-item ${containerClassName}`}
+      data-type={type}
       onClick={onClick}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
       onKeyPress={(e) => e.key === 'Enter' && onClick?.()}
     >
       <Container
-        className={`relative overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-lg ${className}`}
+        className={`card ${className}`}
+        data-variant={isInteractive ? 'interactive' : 'default'}
         {...(isInteractive && {
           whileHover: { scale: 1.02 },
           whileTap: { scale: 0.98 },
@@ -54,33 +56,29 @@ export function CardContainer({
         })}
       >
         {/* Card Content */}
-        <div className={`${type === 'text' ? 'aspect-[3/4]' : ''} relative`}
-        >
+        <div className="card-content" data-type={type}>
           {type === 'image' ? (
-            <div className="relative aspect-auto">
-              <Image
-                src={content}
-                alt={imageAlt || title}
-                width={500}
-                height={375}
-                className="w-full h-auto object-contain"
-                priority
-              />
-            </div>
+            <Image
+              src={content}
+              alt={imageAlt || title}
+              width={500}
+              height={375}
+              priority
+            />
           ) : (
-            <div className="p-6 flex flex-col h-full">
-              <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
+            <>
+              <h3 className="text-[var(--text-xl)] font-semibold text-[var(--card-foreground)]">
                 {title}
               </h3>
               {description && (
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                <p className="text-[var(--text-base)] text-[var(--card-foreground)]/70">
                   {description}
                 </p>
               )}
-              <p className="text-gray-800 dark:text-gray-200 flex-grow">
+              <p className="text-[var(--text-base)] text-[var(--card-foreground)] flex-grow">
                 {content}
               </p>
-            </div>
+            </>
           )}
 
           {/* Extra content (like voting buttons, stats, etc.) */}
