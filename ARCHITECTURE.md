@@ -1,10 +1,22 @@
 # System Architecture
 
-Last Updated: 2024-01-09T14:30:00.000Z
+Last Updated: 2024-01-16T16:30:00.000Z
+
+## Version Status
+
+Current Version: v5.0.0
+Status: Active Development
 
 ## System Overview
 
-NARIMATO is a Next.js application with TypeScript and Tailwind CSS, using MongoDB Atlas as its database. The architecture follows a modular approach with clear separation of concerns, emphasizing type safety, responsive design, and scalability.
+NARIMATO is a Next.js application with TypeScript and Tailwind CSS, using MongoDB Atlas as its database and Redis for caching. The architecture follows a modular approach with clear separation of concerns, emphasizing performance, scalability, and security.
+
+Key Infrastructure Components:
+- Next.js + React.js: Frontend and API routes
+- MongoDB Atlas: Primary database
+- Redis: Caching and rate limiting
+- Socket.io: Real-time updates
+- Vercel: Deployment and hosting
 
 ## Component Hierarchy
 
@@ -66,14 +78,86 @@ NARIMATO is a Next.js application with TypeScript and Tailwind CSS, using MongoD
 └── helpers/            # Utility functions
 ```
 
-## Data Flow & Integration
+### Data Flow & Integration
+
+### Project Ranking System
+The project ranking system uses a modified ELO rating algorithm adapted for project-specific contexts:
+
+```typescript
+interface RankingCalculation {
+  baseK: number;           // Base K-factor (typically 32)
+  projectFactor: number;   // Project-specific multiplier (0.5-2.0)
+  voteDelta: number;       // Vote strength (1-10)
+  timeDecay: number;       // Time-based decay factor (0.95-1.0)
+}
+
+// Ranking Formula:
+function calculateNewRating(current: number, expected: number, actual: number, config: RankingCalculation): number {
+  const adjustedK = config.baseK * config.projectFactor * config.timeDecay;
+  return current + adjustedK * (actual - expected);
+}
+
+// Expected Score Calculation:
+function calculateExpectedScore(ratingA: number, ratingB: number): number {
+  return 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
+}
+```
+
+### Vote System Flow
+```mermaid
+graph TD
+    A[User Vote] --> B{Vote Type}
+    B -->|Project-Specific| C[Project Context]
+    B -->|Global| D[Global Context]
+    C --> E[Validate Project Access]
+    D --> F[Check Rate Limits]
+    E --> G[Apply Project Rules]
+    F --> H[Process Vote]
+    G --> H
+    H --> I[Update Rankings]
+    I --> J[Calculate New Scores]
+    J --> K[Update Leaderboard]
+    K --> L[Trigger Real-time Updates]
+    
+    subgraph "Ranking Process"
+    J --> M[Apply Time Decay]
+    J --> N[Consider Project Factor]
+    J --> O[Calculate Final Score]
+    end
+    
+    subgraph "Rate Limiting"
+    F --> P[Check IP Limits]
+    F --> Q[Check Session Limits]
+    F --> R[Check Project Limits]
+    end
+```
+
+### Card Management Flow
+```mermaid
+graph TD
+    A[User Action] --> B{Action Type}
+    B --> |Create| C[Card Creation]
+    B --> |Edit| D[Card Update]
+    B --> |Delete| E[Card Deletion]
+    B --> |Vote| F[Vote Processing]
+    C --> G[Validation]
+    D --> G
+    E --> H[Soft Delete]
+    F --> I[Rate Limiting]
+    G --> J[MongoDB Update]
+    H --> J
+    I --> K[Update Rankings]
+    J --> L[Real-time Update]
+    K --> L
+    L --> M[UI Refresh]
+```
 
 ### Card Processing Flow
 ```mermaid
 graph TD
     A[User Input] --> B{Card Type}
-    B -->|Image| C[ImgBB Upload]
-    B -->|Text| D[Translation Check]
+    B --> |Image| C[ImgBB Upload]
+    B --> |Text| D[Translation Check]
     C --> E[Validation]
     D --> E
     E --> F[MongoDB Storage]
