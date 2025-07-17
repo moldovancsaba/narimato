@@ -68,11 +68,20 @@ export type CardOutput = z.output<typeof CardSchema>;
 
 // Validation function for card creation
 export const validateCard = (data: unknown): CardOutput => {
-  return CardSchema.parse(data);
+  console.log('[Card Validation] Validating new card data');
+  try {
+    const validatedData = CardSchema.parse(data);
+    console.log('[Card Validation] Card data validation successful');
+    return validatedData;
+  } catch (error) {
+    console.error('[Card Validation] Card validation failed:', error);
+    throw error;
+  }
 };
 
 // Validation function for card updates (partial data)
 export const validateCardUpdate = (data: unknown): Partial<CardOutput> => {
+  console.log('[Card Validation] Validating card update data');
   const mergedSchema = z.object({
     type: z.string(),
     globalScore: z.number().int().default(1500),
@@ -104,13 +113,17 @@ export const validateCardUpdate = (data: unknown): Partial<CardOutput> => {
     }
   }
 
+  console.error('[Card Validation] Invalid card type:', data);
   throw new Error('Invalid card type');
 };
 
 // Helper function to generate a URL-friendly slug
 export const generateSlug = (title: string): string => {
-  return title
+  console.log('[Slug Generator] Generating slug from title:', title);
+  const slug = title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
+  console.log('[Slug Generator] Generated slug:', slug);
+  return slug;
 };

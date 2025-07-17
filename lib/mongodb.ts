@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import '@/models';  // Import all models to ensure proper registration
 
 declare global {
   var mongoose: {

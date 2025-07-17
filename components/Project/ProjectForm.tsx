@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ProjectSchema, type ProjectInput, generateProjectSlug } from '@/lib/validations/project';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { CardSelector } from './CardSelector';
 
 /**
  * Props for the ProjectForm component
@@ -32,9 +33,13 @@ interface ProjectFormProps {
  * - Dark mode support
  */
 export const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProps) => {
-  // Track form submission state and errors
+  // Track component states
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [isAddingCard, setIsAddingCard] = useState(false);
+  const [cardActionInProgress, setCardActionInProgress] = useState<number | null>(null);
+
   // Initialize form with react-hook-form and zod validation
   const {
     register,
@@ -64,7 +69,6 @@ export const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProp
   });
 
   // Auto-generate URL-friendly slug whenever the project name changes
-  // This ensures the project has a valid URL path that matches its name
   const name = watch('name');
 
   // Update slug only when name changes
@@ -79,12 +83,40 @@ export const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProp
    * Handles form submission with proper error handling and loading states.
    * Prevents multiple submissions and provides error feedback to the user.
    */
+  const handleCardAction = async (action: 'add' | 'remove', index?: number) => {
+    if (action === 'add') {
+      setIsAddingCard(true);
+    } else if (index !== undefined) {
+      setCardActionInProgress(index);
+    }
+
+    try {
+      // Ensure cards is always an array, even if undefined
+      const cards = watch('cards') || [];
+      if (action === 'add') {
+        // Generate a temporary card ID - in a real app, this would be handled by the backend
+        const newCardId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        setValue('cards', [...cards, newCardId]);
+      } else if (index !== undefined) {
+        setValue('cards', cards.filter((_, i) => i !== index));
+      }
+      // Simulate a delay to show loading state
+      await new Promise(resolve => setTimeout(resolve, 500));
+    } finally {
+      setIsAddingCard(false);
+      setCardActionInProgress(null);
+    }
+  };
+
   const handleFormSubmit = async (data: ProjectInput) => {
     console.log('Form submitted with data:', data);
     setIsSubmitting(true);
     setSubmitError('');
     try {
       await onSubmit(data);
+      setSubmitSuccess(true);
+      // Hide success message after 3 seconds
+      setTimeout(() => setSubmitSuccess(false), 3000);
     } catch (error) {
       console.error('Error submitting project:', error);
       setSubmitError(
@@ -99,6 +131,16 @@ export const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProp
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+      {submitSuccess && !submitError && !isSubmitting && (
+        <div className="p-4 rounded-md bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 flex items-center justify-between">
+          <div className="flex items-center">
+            <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            Project saved successfully!
+          </div>
+        </div>
+      )}
       {submitError && (
         <div className="p-4 rounded-md bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300">
           {submitError}
@@ -122,7 +164,7 @@ export const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProp
           {...register('name')}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
         />
-      {errors.name && (
+        {errors.name && (
           <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
         )}
       </div>
@@ -183,7 +225,82 @@ export const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProp
         </select>
       </div>
 
-      <div className="flex justify-end space-x-3">
+      {/* Card Management Section */}
+      <div className="mt-6 space-y-4">
+        <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100">
+          Cards
+        </h3>
+        <CardSelector
+          projectSlug={watch('slug')}
+          onCardAdded={() => {
+            // The project data will be updated through the onSubmit callback
+            setSubmitSuccess(true);
+            setTimeout(() => setSubmitSuccess(false), 3000);
+          }}
+          onError={(error) => {
+            setSubmitError(error.message);
+            setTimeout(() => setSubmitError(''), 3000);
+          }}
+        />
+
+        <div className="mt-4 bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+          <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+            {(watch('cards') || []).map((card, index) => (
+              <li 
+                key={index} 
+                className="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Card ID: {card}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleCardAction('remove', index)}
+                  disabled={cardActionInProgress === index}
+                  className="ml-4 flex-shrink-0 p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 relative"
+                >
+                  {cardActionInProgress === index ? (
+                    <LoadingSpinner size="sm" className="absolute inset-0 m-auto" />
+                  ) : (
+                    <>
+                      <span className="sr-only">Remove card</span>
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </>
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+          {(watch('cards') || []).length === 0 && (
+            <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+              No cards added yet
+            </div>
+          )}
+        </div>
+        <button 
+          type="button" 
+          onClick={() => handleCardAction('add')}
+          disabled={isAddingCard}
+          className="w-full flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed relative"
+        >
+          {isAddingCard ? (
+            <LoadingSpinner size="sm" className="absolute inset-0 m-auto" />
+          ) : (
+            <>
+              <svg className="-ml-1 mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add New Card
+            </>
+          )}
+        </button>
+      </div>
+
+      <div className="flex justify-end space-x-3 mt-6">
         {onCancel && (
           <button
             type="button"

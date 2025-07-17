@@ -5,8 +5,10 @@ import { useWebSocket } from '@/hooks/useWebSocket';
 import ProjectHeader from './ProjectHeader';
 import ProjectMetadata from './ProjectMetadata';
 import CardList from './CardList';
+import CardManager from './CardManager';
 import ErrorState from './ErrorState';
 import { ErrorBoundary } from 'react-error-boundary';
+import { useRouter } from 'next/navigation';
 
 interface Project {
   id: string;
@@ -38,6 +40,12 @@ export default function ProjectWithRealtime({
 }: ProjectWithRealtimeProps) {
   const [project, setProject] = useState(initialProject);
   const { socket, connectionState, activeUsers } = useWebSocket();
+  const router = useRouter();
+
+  const handleProjectUpdate = () => {
+    // Refresh the page data
+    router.refresh();
+  };
 
   useEffect(() => {
     if (!socket) return;
@@ -89,8 +97,12 @@ export default function ProjectWithRealtime({
             <span className="font-medium">{activeUsers}</span>
           </div>
         </div>
-        <ProjectHeader project={project} />
+        <ProjectHeader project={project} onUpdate={handleProjectUpdate} />
         <ProjectMetadata project={project} />
+        <CardManager 
+          projectSlug={slug}
+          onCardAdded={handleProjectUpdate}
+        />
         <CardList 
           project={project} 
           reorderCards={reorderCards}

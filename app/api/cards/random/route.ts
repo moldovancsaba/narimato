@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
 import { CardService } from '@/lib/services/cardService';
+import { headers } from 'next/headers';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const cards = await CardService.getRandomCards(1);
+    const headersList = headers();
+    const sessionId = headersList.get('session-id') ?? undefined;
+    const cards = await CardService.getRandomCards(1, sessionId);
 
     if (!cards || cards.length === 0) {
       return NextResponse.json(

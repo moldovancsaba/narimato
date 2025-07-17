@@ -1,6 +1,13 @@
 # Release Notes
 
+## [v4.0.1] — 2025-07-17T00:50:48.000Z
+
+### Deployment
+- Successfully deployed to production environment
+- Verified application health and accessibility
+- Production URL: https://narimato-4eqm05y6k-narimato.vercel.app
 ## [v5.0.0] — 2024-01-16T16:30:00.000Z
+Completed: 2025-07-17T01:00:00.000Z
 
 ### Major Changes
 - Implemented comprehensive performance optimization system

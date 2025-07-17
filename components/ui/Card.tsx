@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { cn, cssVar, getComponentTheme } from '@/lib/theme/utils';
 
 interface CardProps {
   type: 'image' | 'text';
@@ -14,6 +15,8 @@ interface CardProps {
   createdAt: string;
   updatedAt: string;
   onClick?: () => void;
+  variant?: 'default' | 'interactive' | 'elevated';
+  className?: string;
 }
 
 export function Card({
@@ -23,42 +26,78 @@ export function Card({
   description,
   hashtags,
   imageAlt,
-  onClick
+  onClick,
+  variant = 'default',
+  className
 }: CardProps) {
-  return (
+  // Get theme configuration for card component
+  const cardTheme = getComponentTheme('card');
+  const typography = getComponentTheme('typography');
+return (
     <div 
       onClick={onClick}
-      className="w-full h-full rounded-lg shadow-md overflow-hidden bg-white dark:bg-gray-800"
+      className={cn(
+        // Base styles
+        'w-full h-full overflow-hidden',
+        cardTheme.base.background,
+        cardTheme.base.borderRadius,
+        cardTheme.base.transition,
+        // Variant styles
+        variant === 'interactive' && 'cursor-pointer hover:shadow-md hover:border-primary',
+        // Custom classes
+        className
+      )}
     >
-      {type === 'image' && (
-        <div className="w-full aspect-square relative">
+{type === 'image' && (
+        <div className="relative aspect-square w-full">
           <img
             src={content}
             alt={imageAlt || title}
-            className="w-full h-full object-cover"
+            className="h-full w-full object-cover"
           />
         </div>
       )}
-      <div className="p-4">
-        <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">
+<div className={cardTheme.base.padding}>
+<h3 className={cn(
+          typography.h4,
+          `mb-${cssVar('space-2')}`,
+          `text-${cssVar('card-foreground')}`
+        )}>
           {title}
         </h3>
         {description && (
-          <p className="text-gray-600 dark:text-gray-300 mb-4">
+<p className={cn(
+            typography.p,
+            `text-${cssVar('card-foreground')}/70`,
+            `mb-${cssVar('space-4')}`
+          )}>
             {description}
           </p>
         )}
         {type === 'text' && (
-          <p className="text-gray-800 dark:text-gray-200 mb-4">
+<p className={cn(
+            typography.p,
+            `text-${cssVar('card-foreground')}`,
+            `mb-${cssVar('space-4')}`
+          )}>
             {content}
           </p>
         )}
         {hashtags.length > 0 && (
-          <div className="flex flex-wrap gap-2">
+<div className={cn(
+            'flex flex-wrap',
+            `gap-${cssVar('space-2')}`
+          )}>
             {hashtags.map(tag => (
-              <span
+<span
                 key={tag}
-                className="px-2 py-1 text-sm rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                className={cn(
+                  `px-${cssVar('space-2')} py-${cssVar('space-1')}`,
+                  typography.small,
+                  `rounded-${cssVar('radius-full')}`,
+                  `bg-${cssVar('card-background')}/10`,
+                  `text-${cssVar('card-foreground')}/70`
+                )}
               >
                 #{tag}
               </span>

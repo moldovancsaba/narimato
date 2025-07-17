@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react';
 import { CardContainer } from './CardContainer';
+import { cn, cssVar } from '@/lib/theme/utils';
 import { useRouter } from 'next/navigation';
 import { safeDate } from '@/utils/date';
-import { LoadingSpinner } from './LoadingSpinner';
+import { LoadingSpinner } from './loading-spinner';
 
 interface VoteSystemProps {
   cards: {
@@ -19,9 +20,10 @@ interface VoteSystemProps {
     createdAt: string;
     updatedAt: string;
   }[];
+  projectId?: string;
 }
 
-export function VoteSystem({ cards }: VoteSystemProps) {
+export function VoteSystem({ cards, projectId }: VoteSystemProps) {
   const [currentPair, setCurrentPair] = useState([0, 1]);
   const [isVoting, setIsVoting] = useState(false);
   const [error, setError] = useState('');
@@ -66,7 +68,11 @@ export function VoteSystem({ cards }: VoteSystemProps) {
       const response = await fetch('/api/vote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ winnerId: winner.id, loserId: loser.id }),
+        body: JSON.stringify({
+          winnerId: winner.id,
+          loserId: loser.id,
+          projectId
+        }),
       });
       console.log('Vote response:', await response.clone().json());
       if (!response.ok) throw new Error('Failed to record vote');
@@ -74,7 +80,12 @@ export function VoteSystem({ cards }: VoteSystemProps) {
       router.refresh();
     } catch (error) {
       console.error('Error recording vote:', error);
-      setError('Failed to record vote. Please try again.');
+      const errorMessage = error instanceof Error && error.message === 'Failed to record vote'
+        ? 'Failed to record vote. Please try again.'
+        : projectId
+          ? `Failed to record project vote for ${projectId}. Please try again.`
+          : 'Failed to record vote. Please try again.';
+      setError(errorMessage);
       setTimeout(() => setError(''), 3000);
     } finally {
       setIsVoting(false);
@@ -102,19 +113,58 @@ export function VoteSystem({ cards }: VoteSystemProps) {
   const firstCard = getCard(currentPair[0]);
   const secondCard = getCard(currentPair[1]);
 
-  return (
-    <div className="flex flex-col items-center w-full space-y-4" role="region" aria-label="Card voting system">
+return (
+    <div 
+      className={cn(
+        'flex flex-col items-center w-full',
+        `space-y-[${cssVar('space-4')}]`
+      )}
+      role="region"
+      aria-label="Card voting system"
+    >
       {error && (
-        <div className="text-red-500 dark:text-red-400 text-center p-2 rounded bg-red-50 dark:bg-red-900/20">
+<div
+          className={cn(
+            `text-[${cssVar('error')}]`,
+            'text-center',
+            `p-[${cssVar('space-2')}]`,
+            `rounded-[${cssVar('radius-md')}]`,
+            `bg-[${cssVar('error-light')}]/10`
+          )}
+        >
           {error}
         </div>
       )}
-      {isVoting && (
-        <div className="fixed inset-0 bg-black/20 dark:bg-black/40 flex items-center justify-center z-50">
-          <LoadingSpinner size="lg" className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg" />
-        </div>
+{isVoting && (
+<div
+    className={cn(
+      'fixed inset-0',
+      `bg-[${cssVar('foreground')}]/20`,
+      'flex items-center justify-center',
+      `z-[${cssVar('z-modal')}]`
+    )}
+  >
+<div
+      className={cn(
+        `bg-[${cssVar('background')}]`,
+        `p-[${cssVar('space-6')}]`,
+        `rounded-[${cssVar('radius-lg')}]`,
+        `shadow-[${cssVar('shadow-lg')}]`
       )}
-      <div className="flex flex-col lg:flex-row w-full justify-center items-center gap-6 lg:gap-12" role="group" aria-label="Cards to compare">
+    >
+      <LoadingSpinner size="lg" />
+    </div>
+  </div>
+)}
+<div
+        className={cn(
+          'flex flex-col lg:flex-row w-full',
+          'justify-center items-center',
+          `gap-[${cssVar('space-6')}] lg:gap-[${cssVar('space-12')}]`
+        )}
+        role="group"
+        aria-label="Cards to compare"
+      >
         <CardContainer
           type={firstCard.type}
           content={firstCard.content}
@@ -125,7 +175,12 @@ export function VoteSystem({ cards }: VoteSystemProps) {
           createdAt={safeDate(firstCard.createdAt)}
           updatedAt={safeDate(firstCard.updatedAt)}
           onClick={() => handleVote(0)}
-          containerClassName="cursor-pointer hover:scale-105 transform transition-transform duration-200 ease-in-out"
+containerClassName={cn(
+            'cursor-pointer',
+            'transform transition-transform',
+            `duration-[${cssVar('duration-normal')}]`,
+            'hover:scale-105'
+          )}
           isInteractive
         />
         <CardContainer
@@ -138,7 +193,12 @@ export function VoteSystem({ cards }: VoteSystemProps) {
           createdAt={safeDate(secondCard.createdAt)}
           updatedAt={safeDate(secondCard.updatedAt)}
           onClick={() => handleVote(1)}
-          containerClassName="cursor-pointer"
+containerClassName={cn(
+            'cursor-pointer',
+            'transform transition-transform',
+            `duration-[${cssVar('duration-normal')}]`,
+            'hover:scale-105'
+          )}
           isInteractive
         />
       </div>

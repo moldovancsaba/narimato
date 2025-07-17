@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Card, ICard } from '@/models/Card';
 import { PersonalRanking, IPersonalRanking } from '@/models/PersonalRanking';
 import dbConnect from '@/lib/mongodb';
@@ -88,7 +89,7 @@ export class LeaderboardService {
    * @param page Page number (1-based)
    * @returns Array of leaderboard entries specific to the project
    */
-  static async getProjectLeaderboard(
+static async getProjectLeaderboard(
     projectId: string,
     limit: number = 10,
     page: number = 1
@@ -96,62 +97,137 @@ export class LeaderboardService {
     entries: LeaderboardEntry[];
     total: number;
     pages: number;
+    projectMetrics?: {
+      totalVotes: number;
+      averageRank: number;
+      lastUpdated?: Date;
+      topPerformers: number; // Number of cards in top 20% globally
+    };
   }> {
     await dbConnect();
+
+    // Validate projectId format (assuming MongoDB ObjectId)
+    if (!mongoose.Types.ObjectId.isValid(projectId)) {
+      throw new Error('Invalid project ID format');
+    }
+
+    // Validate pagination parameters
+    if (page < 1 || limit < 1) {
+      throw new Error('Invalid pagination parameters. Page and limit must be positive numbers.');
+    }
 
     // Find cards that have rankings for this project
     const query = {
       isDeleted: false,
       'projectRankings.projectId': projectId,
-      // readyForVoting check removed - all cards are available for voting
     };
 
     const total = await Card.countDocuments(query);
+
+    // Handle case where no rankings exist
+    if (total === 0) {
+      return {
+        entries: [],
+        total: 0,
+        pages: 0,
+        projectMetrics: {
+          totalVotes: 0,
+          averageRank: 0,
+          topPerformers: 0
+        }
+      };
+    }
+
     const pages = Math.ceil(total / limit);
 
+    // Validate page number against total pages
+    if (page > pages) {
+      throw new Error(`Page ${page} exceeds available pages (${pages})`);
+    }
+
+    // Aggregate pipeline for cards with project rankings
     const cards = await Card.aggregate([
-      // readyForVoting check removed - all cards are available for voting
-      { $match: { isDeleted: false, 'projectRankings.projectId': projectId } },
+      { $match: { isDeleted: false } },
       { $unwind: '$projectRankings' },
       { $match: { 'projectRankings.projectId': projectId } },
-      { $sort: { 'projectRankings.rank': -1, 'projectRankings.votes': -1 } },
+      {
+        $sort: {
+          'projectRankings.rank': -1,
+          'projectRankings.votes': -1,
+          createdAt: -1 // Tiebreaker for consistent ordering
+        }
+      },
       { $skip: (page - 1) * limit },
       { $limit: limit },
-      { $addFields: { rank: { $add: [{ $multiply: [{ $subtract: [page, 1] }, limit] }, { $add: ['$projectRankings.rank', 1] }] } } }
+      {
+        $addFields: {
+          rank: { $add: [{ $multiply: [{ $subtract: [page, 1] }, limit] }, { $add: ['$index', 1] }] },
+          projectVotes: '$projectRankings.votes',
+          projectRank: '$projectRankings.rank',
+          lastVotedAt: '$projectRankings.lastVotedAt'
+        }
+      }
+    ]);
+
+    // Calculate project-wide metrics
+    const metrics = await Card.aggregate([
+      { $match: { isDeleted: false } },
+      { $unwind: '$projectRankings' },
+      { $match: { 'projectRankings.projectId': projectId } },
+      {
+        $group: {
+          _id: null,
+          totalVotes: { $sum: '$projectRankings.votes' },
+          averageRank: { $avg: '$projectRankings.rank' },
+          lastUpdated: { $max: '$projectRankings.lastVotedAt' },
+          topPerformers: {
+            $sum: {
+              $cond: [
+                { $gt: ['$globalScore', 1800] }, // Top 20% threshold (assuming 1500 starting ELO)
+                1,
+                0
+              ]
+            }
+          }
+        }
+      }
     ]);
 
     // Transform to leaderboard entries with project-specific ranking
-    const entries: LeaderboardEntry[] = cards.map((card, index) => {
-      const projectRanking = card.projectRankings.find(
-        (pr: { projectId: string }) => pr.projectId === projectId
-      );
+    const entries: LeaderboardEntry[] = cards.map((card, index) => ({
+      title: card.title,
+      content: card.content,
+      type: card.type,
+      imageAlt: card.imageAlt,
+      description: card.description,
+      slug: card.slug,
+      hashtags: card.hashtags,
+      likes: card.likes,
+      dislikes: card.dislikes,
+      globalScore: card.globalScore,
+      translations: card.translations,
+      projectRankings: card.projectRankings,
+      isDeleted: card.isDeleted,
+      createdAt: card.createdAt,
+      updatedAt: card.updatedAt,
+      rank: (page - 1) * limit + index + 1,
+      totalVotes: card.projectVotes || 0,
+      projectRank: card.projectRank || 0,
+      lastVotedAt: card.lastVotedAt
+    }));
 
-      return {
-        title: card.title,
-        content: card.content,
-        type: card.type,
-        imageAlt: card.imageAlt,
-        description: card.description,
-        slug: card.slug,
-        hashtags: card.hashtags,
-        likes: card.likes,
-        dislikes: card.dislikes,
-        globalScore: card.globalScore,
-        translations: card.translations,
-        projectRankings: card.projectRankings,
-        isDeleted: card.isDeleted,
-        createdAt: card.createdAt,
-        updatedAt: card.updatedAt,
-        rank: (page - 1) * limit + index + 1,
-        totalVotes: projectRanking?.votes || 0,
-        projectRank: projectRanking?.rank || 0
-      };
-    });
+    const [projectMetrics] = metrics;
 
     return {
       entries,
       total,
       pages,
+      projectMetrics: projectMetrics ? {
+        totalVotes: projectMetrics.totalVotes,
+        averageRank: Math.round(projectMetrics.averageRank),
+        lastUpdated: projectMetrics.lastUpdated,
+        topPerformers: projectMetrics.topPerformers
+      } : undefined
     };
   }
 

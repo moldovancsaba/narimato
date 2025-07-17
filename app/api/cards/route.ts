@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import { Card } from '@/models/Card';
+import { NextResponse, NextRequest } from 'next/server';
+import { Card } from '@/models';
 import mongoose from 'mongoose';
 import dbConnect from '@/lib/mongodb';
 import { z } from 'zod';
@@ -14,57 +14,35 @@ const CardSchema = z.object({
   imageAlt: z.string().optional(),
 });
 
-export async function POST(request: Request) {
+export async function GET(request: NextRequest) {
   try {
+    const searchTerm = request.nextUrl.searchParams.get('search');
     await dbConnect();
 
-    const body = await request.json();
-    
-    // Validate the request body
-    const validatedData = CardSchema.parse(body);
+    // If there's a search term, search for matching cards
+    if (searchTerm) {
+      const cards = await Card.find({
+        isDeleted: false,
+        $or: [
+          { title: { $regex: searchTerm, $options: 'i' } },
+          { content: { $regex: searchTerm, $options: 'i' } },
+        ]
+      })
+      .select('_id title type content')
+      .limit(10)
+      .lean();
 
-    // Generate a slug from the title
-    const slug = validatedData.title
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/[\s_-]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-
-    // Check if slug already exists
-    const existingCard = await Card.findOne({ slug });
-    if (existingCard) {
-      return NextResponse.json(
-        { message: 'A card with this title already exists' },
-        { status: 409 }
-      );
+      return NextResponse.json(cards);
     }
 
-    // Create the card
-    const card = new Card({
-      ...validatedData,
-      slug,
-    });
-
-    await card.save();
-
-    return NextResponse.json(card, { status: 201 });
+    // If no search term, return all cards
+    const cards = await Card.find({ isDeleted: false })
+      .sort({ createdAt: -1 })
+      .limit(100);
+      
+    return NextResponse.json(cards);
   } catch (error) {
-    console.error('Error creating card:', error);
-    
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { message: 'Validation error', errors: error.errors },
-        { status: 400 }
-      );
-    }
-
-    if (error instanceof mongoose.Error) {
-      return NextResponse.json(
-        { message: 'Database error' },
-        { status: 500 }
-      );
-    }
-
+    console.error('Error fetching cards:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }
@@ -72,7 +50,7 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+export async function POST(request: NextRequest) {
   try {
     await dbConnect();
     

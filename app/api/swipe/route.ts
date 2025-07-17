@@ -25,16 +25,27 @@ export async function POST(request: Request) {
       );
     }
 
-    // Update like/dislike count based on swipe direction
+    // Get session ID from headers
+    const sessionId = request.headers.get('session-id');
+
+    // Update like/dislike count and session based on swipe direction
     if (direction === 'right') {
       card.likes = (card.likes || 0) + 1;
+      
+      // Add to liked cards in the session
+      if (sessionId) {
+        await UserSession.findOneAndUpdate(
+          { sessionId },
+          { $addToSet: { likedCards: cardId } },
+          { upsert: true, new: true }
+        );
+      }
     } else {
       card.dislikes = (card.dislikes || 0) + 1;
 
       // Add to disliked cards in the session
-      const sessionId = request.headers.get('session-id');
       if (sessionId) {
-        const session = await UserSession.findOneAndUpdate(
+        await UserSession.findOneAndUpdate(
           { sessionId },
           { $addToSet: { dislikedCards: cardId } },
           { upsert: true, new: true }

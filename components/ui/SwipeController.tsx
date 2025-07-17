@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion, useAnimation, PanInfo } from 'framer-motion';
+import { useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { cn, getComponentTheme, cssVar } from '@/lib/theme/utils';
+import useInteractionAnimations from '@/hooks/useInteractionAnimations';
 import { ICard } from '@/models/Card';
 import { CardContainer } from './CardContainer';
 
@@ -10,6 +12,7 @@ interface SwipeControllerProps {
   onSwipe: (direction: 'left' | 'right') => void;
   likeCount: number;
   totalLikesNeeded?: number;
+  className?: string;
 }
 
 export default function SwipeController({
@@ -17,64 +20,54 @@ export default function SwipeController({
   onSwipe,
   likeCount,
   totalLikesNeeded = 1,
+  className,
 }: SwipeControllerProps) {
-  const [isDragging, setIsDragging] = useState(false);
-  const controls = useAnimation();
+  // Get theme configuration
+  const cardTheme = getComponentTheme('card');
+  const badgeTheme = getComponentTheme('badge');
+  const {
+    isDragging,
+    swipeConfig,
+    handleKeyDown,
+  } = useInteractionAnimations({
+    onSwipe,
+  });
 
+  // Add keyboard event listener
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft') {
-        handleSwipe('left');
+        onSwipe('left');
       } else if (e.key === 'ArrowRight') {
-        handleSwipe('right');
+        onSwipe('right');
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [onSwipe]);
 
-  const handleSwipe = async (direction: 'left' | 'right') => {
-    const distance = direction === 'left' ? -200 : 200;
-    await controls.start({
-      x: distance,
-      opacity: 0,
-      transition: { duration: 0.5 },
-    });
-    onSwipe(direction);
-  };
-
-  const handleDragEnd = async (event: any, info: PanInfo) => {
-    const threshold = 100;
-    const direction = info.offset.x > threshold ? 'right' : info.offset.x < -threshold ? 'left' : null;
-
-    if (direction) {
-      await handleSwipe(direction);
-    } else {
-      controls.start({ x: 0, opacity: 1 });
-    }
-    setIsDragging(false);
-  };
-
-  return (
+return (
     <motion.div
       drag="x"
       dragConstraints={{ left: 0, right: 0 }}
       dragElastic={1}
-      animate={controls}
-      onDragStart={() => setIsDragging(true)}
-      onDragEnd={handleDragEnd}
-      className={`card-container ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+      className={cn(
+        // Base styles
+        'w-[min(100vw,500px)]',
+        cardTheme.base.background,
+        cardTheme.base.borderRadius,
+        cardTheme.base.transition,
+        // Interactive states
+        isDragging ? 'cursor-grabbing' : 'cursor-grab',
+        // Card shadow
+        `shadow-[${cssVar('shadow-md')}]`,
+        // Custom classes
+        className
+      )}
       role="button"
       tabIndex={0}
       aria-label={`Card: ${card.title}. Use arrow keys to vote. ${likeCount} out of ${totalLikesNeeded} likes needed.`}
-      onKeyDown={(e) => {
-        if (e.key === 'ArrowLeft') {
-          handleSwipe('left');
-        } else if (e.key === 'ArrowRight') {
-          handleSwipe('right');
-        }
-      }}
     >
       <CardContainer
         type={card.type}
@@ -86,7 +79,17 @@ export default function SwipeController({
         createdAt={typeof card.createdAt === 'string' ? card.createdAt : card.createdAt.toISOString()}
         updatedAt={typeof card.updatedAt === 'string' ? card.updatedAt : card.updatedAt.toISOString()}
         extraContent={
-          <div className="absolute top-2 right-2 bg-primary/90 text-white px-3 py-1 rounded-full text-sm">
+<div className={cn(
+            // Positioning
+            'absolute',
+            `top-[${cssVar('space-2')}]`,
+            `right-[${cssVar('space-2')}]`,
+            // Badge styles
+            badgeTheme.base,
+            badgeTheme.variants.primary,
+            // Additional styling
+            `text-[${cssVar('text-sm')}]`
+          )}>
             {likeCount}/{totalLikesNeeded} Likes
           </div>
         }

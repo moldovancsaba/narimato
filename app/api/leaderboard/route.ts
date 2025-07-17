@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { LeaderboardService } from '@/lib/services/leaderboardService';
+import { headers } from 'next/headers';
 import { z } from 'zod';
+
+export const dynamic = 'force-dynamic';
 
 /**
  * Validation schema for leaderboard query parameters
@@ -37,7 +40,8 @@ const QuerySchema = z.object({
 export async function GET(request: NextRequest) {
 try {
     // Validate and coerce query parameters using Zod schema
-    const validatedParams = QuerySchema.parse(Object.fromEntries(request.nextUrl.searchParams.entries()));
+    const url = new URL(request.url);
+    const validatedParams = QuerySchema.parse(Object.fromEntries(url.searchParams.entries()));
 
     // Handle different leaderboard types with appropriate data fetching
     switch (validatedParams.type) {
@@ -66,7 +70,8 @@ try {
 
       // Personal leaderboard - user-specific rankings
       case 'personal':
-        const sessionId = request.headers.get('session-id');
+        const headersList = headers();
+        const sessionId = headersList.get('session-id');
         if (!sessionId) {
           return NextResponse.json(
             { message: 'Session ID is required for personal leaderboard' },

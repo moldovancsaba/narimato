@@ -3,6 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IUserSession extends Document {
   sessionId: string;
   dislikedCards: string[]; // Array of card IDs
+  likedCards: string[]; // Array of liked card IDs
   createdAt: Date;
   updatedAt: Date;
 }
@@ -15,6 +16,10 @@ const UserSessionSchema = new Schema<IUserSession>(
       unique: true,
     },
     dislikedCards: [{
+      type: String,
+      ref: 'Card',
+    }],
+    likedCards: [{
       type: String,
       ref: 'Card',
     }],

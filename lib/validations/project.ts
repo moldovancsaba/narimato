@@ -135,3 +135,18 @@ export const generateProjectSlug = (name: string): string => {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
 };
+
+/**
+ * Schema for validating card addition to a project
+ * - projectId: Required string identifier for the project
+ * - cardId: Required string identifier for the card
+ * - position: Optional number for card ordering within project
+ */
+export const AddCardSchema = z.object({
+  projectId: z.string().min(1, { message: 'Project ID is required' }),
+  cardId: z.string().min(1, { message: 'Card ID is required' }),
+  position: z.number().optional()
+});
+
+// Type inference for the schema
+export type AddCardInput = z.infer<typeof AddCardSchema>;

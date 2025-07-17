@@ -9,10 +9,12 @@ import ProjectWithRealtime from './components/ProjectWithRealtime';
 
 interface MongoDoc {
   _id: { toString(): string };
-  title: string;
+  name: string;
   description?: string;
   slug: string;
-  isPublic: boolean;
+  settings: {
+    visibility: 'public' | 'private';
+  };
   createdAt: Date;
   updatedAt: Date;
   cards: Array<{
@@ -39,10 +41,10 @@ async function getProject(slug: string) {
 
     return {
       id: project._id.toString(),
-      title: project.title,
+      title: project.name, // Map from name to title
       description: project.description,
       slug: project.slug,
-      isPublic: project.isPublic,
+      isPublic: project.settings.visibility === 'public',
       createdAt: project.createdAt.toISOString(),
       updatedAt: project.updatedAt.toISOString(),
       cards: project.cards.map((card) => ({

@@ -1,7 +1,9 @@
-import { useState } from 'react';
+'use client';
+
+import React from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
-import { CardSchema, type CardInput } from '@/lib/validations/card';
+import { type CardInput } from '@/lib/validations/card';
 
 /**
  * Props for the CardManager component
