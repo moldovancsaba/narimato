@@ -1,6 +1,6 @@
 {
   "name": "narimato",
-  "version": "7.0.0",
+  "version": "7.3.2",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -9,12 +9,15 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@auth/core": "^0.40.0",
     "@headlessui/react": "1.7.17",
     "@heroicons/react": "2.2.0",
     "@hookform/resolvers": "3.3.1",
     "@radix-ui/react-dialog": "^1.1.14",
+    "@react-oauth/google": "^0.12.2",
     "@t3-oss/env-nextjs": "0.7.1",
     "@types/dotenv": "^6.1.1",
+    "@types/google-one-tap": "^1.2.6",
     "@types/lodash": "^4.17.20",
     "@types/pino": "^7.0.4",
     "clsx": "2.0.0",

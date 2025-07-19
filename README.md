@@ -1,4 +1,4 @@
-![Version](https://img.shields.io/badge/version-6.1.0-blue.svg)
+![Version](https://img.shields.io/badge/version-7.3.0-blue.svg)
 
 NARIMATO is a real-time, card-based web application built with Next.js, MongoDB Atlas, and Vercel. It enables dynamic image/text-based card management with features like user voting, ranking, and comprehensive leaderboard functionality. Built for seamless deployment on Vercel, it provides an enterprise-grade platform for HR management and frame-based content organization.
 
@@ -65,32 +65,76 @@ For detailed technical information and implementation details, refer to the [Arc
    - Get code review approval
    - Merge to appropriate branch based on environment
 
-### Navigation Examples
+### Navigation System
 
-NARIMATO uses a dual URL structure for maximum usability and stability:
+NARIMATO implements a sophisticated navigation system that balances user experience, SEO optimization, and security:
 
-#### Public URLs (User-Facing)
+#### 1. Public URLs (User-Facing)
 ```
-# View a card
+# View card content
 /cards/my-awesome-project-card
 
-# Browse a project
+# Browse project
 /projects/hr-management-2025
 
 # View user profile
 /users/john-smith
 ```
 
-#### Management URLs (Administrative)
+#### 2. Management URLs (Administrative)
 ```
-# Edit a card
+# Card management
 /cards/5d41402abc4b2a76b9719d911017c592/edit
 
-# Manage project settings
+# Project configuration
 /projects/8d777f385d3dfec8815d20f7496026dc/edit
 
-# Update user settings
+# User settings
 /users/7d793037a0760186574b0282f2f435e7/settings
+```
+
+#### Navigation Configuration
+
+1. Route Protection:
+```typescript
+// Protected route configuration in next.config.js
+module.exports = {
+  async redirects() {
+    return [
+      {
+        source: '/cards/:hash/edit',
+        has: [{ type: 'header', key: 'authorization', missing: true }],
+        permanent: false,
+        destination: '/auth/login'
+      },
+      // Add similar rules for other protected routes
+    ]
+  }
+}
+```
+
+2. Access Control:
+```typescript
+// Access level configuration in middleware.ts
+export function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl
+  const isProtectedRoute = pathname.includes('/edit') || 
+                          pathname.includes('/settings')
+  
+  if (isProtectedRoute && !isAuthenticated(req)) {
+    return NextResponse.redirect(new URL('/auth/login', req.url))
+  }
+  return NextResponse.next()
+}
+```
+
+3. Rate Limiting:
+```typescript
+// Rate limit configuration
+const limiter = new RateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+})
 ```
 
 ### Example Usage
@@ -150,14 +194,14 @@ These steps illustrate how users can actively participate and manage content wit
 ## 🚀 Quick Start
 
 1. Clone the repository
-2. Install dependencies: `yarn install`
+2. Install dependencies: `npm install`
 3. Set up environment variables:
    ```env
    MONGO_URI=your_mongodb_atlas_uri
    IMGBB_API_KEY=your_imgbb_api_key
    VERCEL_ENV=development
    ```
-4. Run development server: `yarn dev`
+4. Run development server: `npm run dev`
 5. Visit http://localhost:3000
 
 ## 🛠 Tech Stack

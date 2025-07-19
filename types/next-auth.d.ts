@@ -1,17 +1,13 @@
-// Custom session type definition
+import { DefaultSession } from 'next-auth';
+
 export interface User {
   id: string;
-  name?: string | null;
-  email?: string | null;
-  image?: string | null;
+  email: string;
   role: string;
 }
 
-export interface Session {
-  user: User | null;
-}
-
-export interface JWT {
-  sub?: string;
-  user?: User;
+declare module 'next-auth' {
+  interface Session {
+    user: User & DefaultSession['user'];
+  }
 }

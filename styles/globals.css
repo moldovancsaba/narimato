@@ -44,6 +44,49 @@ a:hover, button:hover {
 
 /* Ensure minimum contrast for disabled states */
 :disabled {
-  opacity: 0.7;
+    opacity: 0.7;
   color: var(--accessible-text);
+}
+
+/* Utility Classes for Global Design System */
+
+/* Typography */
+.text-primary {
+  color: var(--foreground-light);
+}
+.text-secondary {
+  color: var(--foreground-dark);
+}
+
+/* Backgrounds */
+.bg-primary {
+  background-color: var(--background-light);
+}
+.bg-secondary {
+  background-color: var(--background-dark);
+}
+
+/* Card Styles */
+.card {
+  background-color: var(--card-background-light);
+  color: var(--card-foreground-light);
+  border: 1px solid var(--card-border-light);
+  border-radius: var(--borderRadius-md);
+  padding: var(--spacing-4);
+}
+
+/* Button Styles */
+.btn {
+  font-size: var(--typography-sizes-base);
+  padding: var(--spacing-2) var(--spacing-4);
+  border-radius: var(--borderRadius-md);
+  transition: background-color var(--transitions-duration-normal) var(--transitions-timing-ease);
+}
+.btn-primary {
+  background-color: var(--colors-primary-500);
+  color: var(--colors-secondary-100);
+}
+.btn-primary:hover {
+  background-color: var(--colors-primary-600);
+}
 }

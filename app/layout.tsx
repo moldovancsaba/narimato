@@ -1,16 +1,20 @@
-import { Providers } from './providers'
-import './globals.css'
+import { Providers } from './providers';
+import { MainNav } from './components/navigation/MainNav';
+import './globals.css';
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en">
       <body>
-        <Providers>{children}</Providers>
+        <Providers>
+          <MainNav />
+          <main>{children}</main>
+        </Providers>
       </body>
     </html>
-  )
+  );
 }

@@ -1,10 +1,10 @@
 # System Architecture
 
-Last Updated: 2025-07-18T14:00:00Z
+Last Updated: 2025-07-19T19:15:00.000Z
 
 ## Version Status
 
-Current Version: v7.0.0
+Current Version: v7.2.0
 Status: Active Development
 
 ## System Overview
@@ -46,25 +46,75 @@ Key Infrastructure Components:
 │   └── Grid.tsx        # Grid system
 ```
 
-### 2. URL Structure & Page Organization
+### 2. Navigation System & URL Structure
 
-NARIMATO follows a dual URL structure pattern for maximum usability and stability:
+NARIMATO utilizes a sophisticated navigation system with a dual URL structure pattern for maximum usability, stability, and SEO optimization:
 
-#### User-Facing URLs (Slug-based)
-Designed for readability and SEO:
+#### Component Structure
+```typescript
+// Core Navigation Components
+interface NavigationSystem {
+  PublicRoutes: {
+    cards: string[];      // Slug-based public card routes
+    projects: string[];   // Project visibility routes
+    users: string[];      // Public profile routes
+  };
+  ManagementRoutes: {
+    cards: string[];      // MD5-based card management
+    projects: string[];   // Project administration
+    users: string[];      // User settings & preferences
+  };
+  middleware: {
+    auth: RouteHandler;   // Authentication checks
+    access: RouteHandler; // Access control
+    redirect: RouteHandler; // Smart redirection
+  };
+}
+```
+
+#### URL Structure
+
+1. Public URLs (Slug-based)
+Optimized for readability and SEO:
 ```
 /cards/my-cool-card          # Public card view
 /projects/awesome-project    # Public project view
 /users/john-doe             # Public user profile
 ```
 
-#### Management URLs (MD5-based)
+2. Management URLs (MD5-based)
 Designed for stability and unique identification:
 ```
 /cards/5d41402abc4b2a76b9719d911017c592/edit      # Card management
 /projects/8d777f385d3dfec8815d20f7496026dc/edit   # Project management
 /users/7d793037a0760186574b0282f2f435e7/settings  # User settings
 ```
+
+#### Navigation Handlers
+
+1. Route Protection
+```typescript
+const protectedRoutes = {
+  cards: ['/edit', '/delete', '/settings'],
+  projects: ['/edit', '/manage', '/configure'],
+  users: ['/settings', '/preferences', '/security']
+};
+```
+
+2. Access Control Logic
+```typescript
+const accessControl = {
+  public: ['view', 'browse', 'search'],
+  authenticated: ['create', 'edit', 'delete'],
+  admin: ['manage', 'configure', 'moderate']
+};
+```
+
+3. Special Route Handling
+- Dynamic route resolution for slugs vs. MD5 hashes
+- Automatic redirection for moved/renamed resources
+- Rate limiting for sensitive operations
+- Cache-control headers for public routes
 
 ### 3. Page Structure
 ```
@@ -590,6 +640,31 @@ interface Session {
 ```
 
 ## Deployment & DevOps
+
+### Package Management
+
+- **Required Package Manager**: npm
+  - Version: Latest stable release
+  - Usage: All dependency management and script execution
+  - Required Files:
+    - package.json: Project configuration and scripts
+    - package-lock.json: Deterministic dependency tree
+
+### Node.js Requirements
+- Node.js: Latest LTS version
+- npm: Included with Node.js installation
+
+### Development Scripts
+```json
+{
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  }
+}
+```
 
 ### Environment Structure
 ```mermaid

@@ -1,36 +1,15 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 
 interface SwipeState {
-  hasSwipedRight: boolean;
-  isVotingUnlocked: boolean;
-  addRightSwipe: () => void;
-  resetSwipes: () => void;
+  currentIndex: number;
+  swipeLeft: () => void;
+  swipeRight: () => void;
+  reset: () => void;
 }
 
-export const useSwipeStore = create(
-  persist<SwipeState>(
-    (set) => ({
-      hasSwipedRight: false,
-      isVotingUnlocked: false,
-      addRightSwipe: () =>
-        set((state) => {
-          // Only allow one right swipe
-          if (state.hasSwipedRight) return state;
-          
-          return {
-            hasSwipedRight: true,
-            isVotingUnlocked: true,
-          };
-        }),
-      resetSwipes: () =>
-        set({
-          hasSwipedRight: false,
-          isVotingUnlocked: false,
-        }),
-    }),
-    {
-      name: 'swipe-storage',
-    }
-  )
-);
+export const useSwipeStore = create<SwipeState>((set) => ({
+  currentIndex: 0,
+  swipeLeft: () => set((state) => ({ currentIndex: state.currentIndex + 1 })),
+  swipeRight: () => set((state) => ({ currentIndex: state.currentIndex + 1 })),
+  reset: () => set({ currentIndex: 0 }),
+}));
