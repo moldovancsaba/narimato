@@ -50,3 +50,4 @@ narimato.md
 .env.local
 .env.*.local
 *.DS_Store
+.env.local
