@@ -60,3 +60,12 @@ if (!cached.promise) {
 }
 
 export default dbConnect;
+
+export const serializeDocument = <T>(doc: T): T => {
+  return JSON.parse(JSON.stringify(doc));
+};
+
+export async function getMongoDb() {
+  await dbConnect();
+  return mongoose.connection.db;
+}

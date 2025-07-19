@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { cn, getComponentTheme, cssVar } from '@/lib/theme/utils';
 import useInteractionAnimations from '@/hooks/useInteractionAnimations';
@@ -8,92 +8,98 @@ import { ICard } from '@/models/Card';
 import { CardContainer } from './CardContainer';
 
 interface SwipeControllerProps {
-  card: ICard;
-  onSwipe: (direction: 'left' | 'right') => void;
-  likeCount: number;
-  totalLikesNeeded?: number;
+  cards: Array<{
+    id: string;
+    title: string;
+    content: string;
+    type: 'text' | 'image';
+    order: number;
+  }>;
+  onSwipe: (cardId: string, direction: 'left' | 'right') => void;
+  projectSlug: string;
   className?: string;
 }
 
-export default function SwipeController({
-  card,
+export function SwipeController({
+  cards,
   onSwipe,
-  likeCount,
-  totalLikesNeeded = 1,
+  projectSlug,
   className,
 }: SwipeControllerProps) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const currentCard = cards[currentIndex];
   // Get theme configuration
   const cardTheme = getComponentTheme('card');
   const badgeTheme = getComponentTheme('badge');
-  const {
-    isDragging,
-    swipeConfig,
-    handleKeyDown,
-  } = useInteractionAnimations({
-    onSwipe,
-  });
+const handleSwipe = (direction: 'left' | 'right') => {
+    if (!currentCard) return;
+    
+    onSwipe(currentCard.id, direction);
+    if (currentIndex < cards.length - 1) {
+      setCurrentIndex(prev => prev + 1);
+    }
+  };
 
   // Add keyboard event listener
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (!currentCard) return;
+      
       if (e.key === 'ArrowLeft') {
-        onSwipe('left');
+        onSwipe(currentCard.id, 'left');
+        if (currentIndex < cards.length - 1) {
+          setCurrentIndex(prev => prev + 1);
+        }
       } else if (e.key === 'ArrowRight') {
-        onSwipe('right');
+        onSwipe(currentCard.id, 'right');
+        if (currentIndex < cards.length - 1) {
+          setCurrentIndex(prev => prev + 1);
+        }
       }
     };
 
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [onSwipe]);
+  }, [currentCard, currentIndex, cards.length, onSwipe]);
 
-return (
-    <motion.div
-      drag="x"
-      dragConstraints={{ left: 0, right: 0 }}
-      dragElastic={1}
-      className={cn(
-        // Base styles
-        'w-[min(100vw,500px)]',
-        cardTheme.base.background,
-        cardTheme.base.borderRadius,
-        cardTheme.base.transition,
-        // Interactive states
-        isDragging ? 'cursor-grabbing' : 'cursor-grab',
-        // Card shadow
-        `shadow-[${cssVar('shadow-md')}]`,
-        // Custom classes
-        className
-      )}
-      role="button"
-      tabIndex={0}
-      aria-label={`Card: ${card.title}. Use arrow keys to vote. ${likeCount} out of ${totalLikesNeeded} likes needed.`}
-    >
-      <CardContainer
-        type={card.type}
-        content={card.content}
-        title={card.title}
-        description={card.description}
-        imageAlt={card.imageAlt}
-        hashtags={card.hashtags}
-        createdAt={typeof card.createdAt === 'string' ? card.createdAt : card.createdAt.toISOString()}
-        updatedAt={typeof card.updatedAt === 'string' ? card.updatedAt : card.updatedAt.toISOString()}
-        extraContent={
-<div className={cn(
-            // Positioning
-            'absolute',
-            `top-[${cssVar('space-2')}]`,
-            `right-[${cssVar('space-2')}]`,
-            // Badge styles
-            badgeTheme.base,
-            badgeTheme.variants.primary,
-            // Additional styling
-            `text-[${cssVar('text-sm')}]`
-          )}>
-            {likeCount}/{totalLikesNeeded} Likes
-          </div>
-        }
-      />
-    </motion.div>
+if (!currentCard) {
+    return (
+      <div className="flex items-center justify-center min-h-[500px]">
+        <p className="text-lg text-gray-500 dark:text-gray-400">
+          No more cards to show
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center">
+      <div className="relative w-[min(100vw,500px)] bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <h2 className="text-xl font-bold mb-4">{currentCard.title}</h2>
+        {currentCard.type === 'image' ? (
+          <img
+            src={currentCard.content}
+            alt={currentCard.title}
+            className="w-full h-auto object-contain rounded"
+          />
+        ) : (
+          <p className="text-gray-600 dark:text-gray-300">{currentCard.content}</p>
+        )}
+      </div>
+      <div className="mt-4 space-x-2">
+        <button
+          onClick={() => handleSwipe('left')}
+          className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-colors"
+        >
+          Reject
+        </button>
+        <button
+          onClick={() => handleSwipe('right')}
+          className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-full shadow-lg transition-colors"
+        >
+          Accept
+        </button>
+      </div>
+    </div>
   );
 }

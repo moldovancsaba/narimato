@@ -1,3 +1,53 @@
+# Narimato API Documentation
+
+## Card Management
+
+### POST /api/cards/search
+Search and filter cards based on query parameters.
+
+**Request Body:**
+```json
+{
+  "query": "string",      // Optional: Search query for title, description, or hashtags
+  "filters": {
+    "type": "image" | "text",  // Optional: Filter by card type
+    "hashtags": ["string"],    // Optional: Filter by specific hashtags
+    "minScore": number,        // Optional: Minimum global score
+    "dateRange": {             // Optional: Filter by creation date
+      "start": "ISO8601",
+      "end": "ISO8601"
+    }
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "cards": [{
+    "_id": "string",
+    "title": "string",
+    "description": "string",
+    "type": "image" | "text",
+    "hashtags": ["string"],
+    "globalScore": number,
+    "createdAt": "ISO8601"
+  }],
+  "total": number,
+  "timestamp": "ISO8601"
+}
+```
+
+**Error Response:**
+```json
+{
+  "success": false,
+  "error": "string",
+  "timestamp": "ISO8601"
+}
+```
+
 # API Documentation
 
 ## Base URL
@@ -12,8 +62,24 @@
 #### GET `/api/cards`
 Retrieves a list of all active cards.
 
+**Query Parameters**
+- `page`: number (default: 1) - Page number for pagination
+- `limit`: number (default: 20, max: 100) - Items per page
+- `sort`: string (optional) - Sort order ('latest', 'popular', 'trending')
+- `filter`: string (optional) - Filter by type ('image', 'text')
+
 **Response**
-- `200 OK`: Returns an array of card objects
+- `200 OK`: Returns paginated array of card objects
+  ```typescript
+  {
+    items: Card[];
+    total: number;
+    page: number;
+    limit: number;
+    hasMore: boolean;
+  }
+  ```
+- `400 Bad Request`: If query parameters are invalid
 - `500 Internal Server Error`: If there's a server error
 
 #### POST `/api/cards`
@@ -32,27 +98,79 @@ Creates a new card.
 ```
 
 **Response**
-- `201 Created`: Returns the created card object
+- `201 Created`: Returns the created card object with URLs
+  ```typescript
+  {
+    ...cardData,
+    urls: {
+      view: string;      // Public URL (/cards/slug)
+      edit: string;      // Management URL (/cards/hash/edit)
+      api: string;       // API endpoint URL
+    }
+  }
+  ```
 - `400 Bad Request`: If validation fails
 - `409 Conflict`: If a card with the same title exists
 - `500 Internal Server Error`: If there's a server error
 
-#### GET `/api/cards/[slug]`
-Retrieves a specific card by its slug.
+#### GET `/api/cards/[identifier]`
+Retrieves a specific card by its slug (public) or MD5 hash (management).
 
 **Parameters**
-- `slug`: URL-friendly identifier for the card
+- `identifier`: Either:
+  - Slug: URL-friendly identifier for public access
+  - MD5 hash: For management access
 
 **Response**
-- `200 OK`: Returns the card object
+- `200 OK`: Returns the card object with appropriate URLs
+  ```typescript
+  {
+    ...cardData,
+    urls: {
+      view: string;      // Public URL
+      edit?: string;     // Management URL (if authorized)
+      api: string;       // API endpoint URL
+    }
+  }
+  ```
 - `404 Not Found`: If the card doesn't exist
+- `403 Forbidden`: If trying to access management URL without authorization
+- `500 Internal Server Error`: If there's a server error
+
+#### PUT `/api/cards/[hash]/edit`
+Updates a card using its MD5 hash identifier.
+
+**Parameters**
+- `hash`: MD5 hash identifier for the card
+
+**Request Body**
+```typescript
+{
+  title?: string;          // Optional updates
+  description?: string;
+  content?: string;
+  hashtags?: string[];
+  imageAlt?: string;
+  status?: 'active' | 'archived' | 'deleted';
+}
+```
+
+**Response**
+- `200 OK`: Returns updated card object with URLs
+- `400 Bad Request`: If validation fails
+- `403 Forbidden`: If not authorized
+- `404 Not Found`: If card doesn't exist
 - `500 Internal Server Error`: If there's a server error
 
 #### GET `/api/cards/random`
 Retrieves a random card.
 
+**Query Parameters**
+- `type`: string (optional) - Filter by card type
+- `project`: string (optional) - Filter by project ID
+
 **Response**
-- `200 OK`: Returns a random card object
+- `200 OK`: Returns a random card object with URLs
 - `404 Not Found`: If no cards are available
 - `500 Internal Server Error`: If there's a server error
 

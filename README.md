@@ -1,4 +1,4 @@
-![Version](https://img.shields.io/badge/version-5.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-6.1.0-blue.svg)
 
 NARIMATO is a real-time, card-based web application built with Next.js, MongoDB Atlas, and Vercel. It enables dynamic image/text-based card management with features like user voting, ranking, and comprehensive leaderboard functionality. Built for seamless deployment on Vercel, it provides an enterprise-grade platform for HR management and frame-based content organization.
 
@@ -10,43 +10,35 @@ NARIMATO is a real-time, card-based web application built with Next.js, MongoDB 
 - [Task List](./TASKLIST.md) - Current development progress
 - [Release Notes](./RELEASE_NOTES.md) - Version history and changes
 
-## 🕵️ Anonymous User Documentation
+## 🔓 Public Access Documentation
 
-NARIMATO provides a sophisticated anonymous user system that enables immediate platform engagement without registration barriers. This feature is designed to enhance accessibility while maintaining security and performance.
+NARIMATO provides public access to content with built-in rate limiting and security measures. This approach ensures open accessibility while maintaining system integrity.
 
 ### Key Features
 
 - **Instant Access**:
-  - Automatic session creation for new visitors
-  - UUID-based identification system
-  - 30-day session persistence
-  - Secure cookie-based session management
+  - No registration required
+  - Immediate platform access
+  - All content publicly viewable
 
 - **Available Features**:
-  - Browse all public projects and cards
+  - Browse all projects and cards
   - View project details and card content
   - Participate in card voting (rate-limited)
   - Access basic platform features
 
-- **Security & Privacy**:
-  - Rate limiting: 50 votes/hour per session
+- **Security & Rate Limiting**:
+  - 50 votes/hour limit
   - IP-based abuse prevention
-  - Minimal data collection
-  - No personally identifiable information stored
-  - Automatic session cleanup
-
-- **Upgrade Path**:
-  - Strategic upgrade prompts
-  - One-click account creation
-  - Activity preservation during upgrade
-  - Seamless transition to full features
+  - Automated threat detection
+  - System integrity protection
 
 ### Limitations
 
 - No content creation capabilities
 - No project management features
 - Rate-limited voting system
-- Public content access only
+- Read-only access
 
 For detailed technical information and implementation details, refer to the [Architecture Documentation](./ARCHITECTURE.md).
 
@@ -73,18 +65,51 @@ For detailed technical information and implementation details, refer to the [Arc
    - Get code review approval
    - Merge to appropriate branch based on environment
 
+### Navigation Examples
+
+NARIMATO uses a dual URL structure for maximum usability and stability:
+
+#### Public URLs (User-Facing)
+```
+# View a card
+/cards/my-awesome-project-card
+
+# Browse a project
+/projects/hr-management-2025
+
+# View user profile
+/users/john-smith
+```
+
+#### Management URLs (Administrative)
+```
+# Edit a card
+/cards/5d41402abc4b2a76b9719d911017c592/edit
+
+# Manage project settings
+/projects/8d777f385d3dfec8815d20f7496026dc/edit
+
+# Update user settings
+/users/7d793037a0760186574b0282f2f435e7/settings
+```
+
 ### Example Usage
 
-Here's a quick example of how to use the NARIMATO platform to create and manage a card:
+Here's a quick example of how to use the NARIMATO platform:
 
-1. **Create a New Card**:
-   - Navigate to the card creation interface.
-   - Fill in the necessary details: type, content, hashtags, and optional image.
-2. **Interact with Cards**:
-   - Use the swipe or vote system to engage with cards.
-   - Check real-time updates in the leaderboard for card rankings.
-3. **Manage Projects**:
-   - Organize cards within projects and manage settings like visibility and order.
+1. **Create and Manage Content**:
+   - Create a new card at `/cards/create`
+   - View your card at `/cards/your-card-title`
+   - Edit it at `/cards/[MD5_HASH]/edit`
+
+2. **Project Management**:
+   - Create a project at `/projects/create`
+   - View it at `/projects/your-project-name`
+   - Manage settings at `/projects/[MD5_HASH]/edit`
+
+3. **User Features**:
+   - Access your profile at `/users/your-name`
+   - Manage settings at `/users/[MD5_HASH]/settings`
 
 These steps illustrate how users can actively participate and manage content within the NARIMATO ecosystem. For more details, check the section for each specific feature.
 

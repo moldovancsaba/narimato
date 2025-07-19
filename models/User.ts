@@ -8,6 +8,7 @@ export interface IUser extends Document {
   role: 'user' | 'admin';
   createdAt: Date;
   updatedAt: Date;
+  lastLogin?: Date;
 }
 
 const UserSchema = new Schema<IUser>(
@@ -28,7 +29,17 @@ const UserSchema = new Schema<IUser>(
     },
     image: {
       type: String,
-      trim: true
+      trim: true,
+      validate: {
+        validator: function(v: string) {
+          return !v || /^https?:\/\/.+/.test(v);
+        },
+        message: 'Image URL must be a valid HTTP/HTTPS URL'
+      }
+    },
+    lastLogin: {
+      type: Date,
+      default: null
     },
     emailVerified: Date,
     role: {
@@ -46,6 +57,22 @@ const UserSchema = new Schema<IUser>(
 // Create indexes for improved query performance
 UserSchema.index({ email: 1 }, { unique: true });
 UserSchema.index({ role: 1 });
+UserSchema.index({ createdAt: -1 }); // For recent user queries
+UserSchema.index({ lastLogin: -1 }); // For active user queries
+
+// Add middleware to update lastLogin
+UserSchema.pre('save', function(next) {
+  if (this.isModified('emailVerified') && this.emailVerified) {
+    this.lastLogin = new Date();
+  }
+  next();
+});
+
+// Add instance method to update lastLogin
+UserSchema.methods.updateLastLogin = async function() {
+  this.lastLogin = new Date();
+  return this.save();
+};
 
 export const User = mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
 

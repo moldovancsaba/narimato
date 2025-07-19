@@ -39,18 +39,23 @@ async function getProjects() {
     .lean();
 
   return {
-    projects: projects.map(project => ({
-      id: project._id?.toString() || '',
-      title: project.name,
-      description: project.description,
-      slug: project.slug,
-      tags: project.tags || [],
-      isPublic: project.isPublic,
-      isFeatured: project.settings?.isFeatured || false,
+projects: projects.map(project => ({
+          _id: project._id?.toString() || '',
+          id: project._id?.toString() || '',
+          title: project.name,
+          description: project.description,
+          slug: project.slug,
+          tags: project.tags || [],
+          isPublic: project.isPublic,
+          isFeatured: project.settings?.isFeatured || false,
       viewCount: project.viewCount || 0,
       lastViewedAt: project.lastViewedAt?.toISOString(),
       createdAt: project.createdAt.toISOString(),
       updatedAt: project.updatedAt.toISOString(),
+      settings: project.settings,
+      cards: project.cards,
+      createdBy: project.createdBy,
+      collaborators: project.collaborators,
     })),
     activities: activities.map(activity => ({
       type: activity.type,

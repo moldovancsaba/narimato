@@ -49,6 +49,9 @@ export const ProjectSchema = z.object({
   description: z.string()
     .max(500, 'Description must be 500 characters or less')
     .optional(),
+  identifierMD5: z.string().regex(/^[a-f0-9]{32}$/i, 'Invalid MD5 format'),
+  isAnonymous: z.boolean().default(false),
+  anonymousId: z.string().optional(),
   slug: z.string()
     .regex(/^[a-z0-9-]+$/, 'Slug must contain only lowercase letters, numbers, and hyphens'),
   cards: z.array(z.string()).default([]), // Array of card IDs
@@ -68,63 +71,18 @@ export type ProjectInput = z.input<typeof ProjectSchema>;
 // Type for validated project data
 export type ProjectOutput = z.output<typeof ProjectSchema>;
 
-// Context for project validation
-type ValidationContext = {
-  userId?: string; // Authenticated user ID
-  sessionId?: string; // Anonymous session ID
-};
-
 // Validation function for project creation
-export const validateProject = (data: unknown, context: ValidationContext): ProjectOutput => {
+export const validateProject = (data: unknown): ProjectOutput => {
   const result = ProjectSchema.parse(data);
-  
-  // Validate and ensure createdBy matches the context
-  if (context.userId) {
-    if (result.createdBy !== context.userId) {
-      throw new Error('Project createdBy field must match the authenticated user ID');
-    }
-    // Google IDs and other OAuth providers may have different formats
-    // We just ensure it's a non-empty string
-    if (typeof context.userId !== 'string' || !context.userId) {
-      throw new Error('Invalid user ID format');
-    }
-  } else if (context.sessionId) {
-    if (result.createdBy !== context.sessionId) {
-      throw new Error('Project createdBy field must match the current session ID for anonymous users');
-    }
-    if (!result.createdBy.startsWith('session_')) {
-      throw new Error('Anonymous users must use a session ID');
-    }
-  } else {
-    throw new Error('Either a user ID or session ID is required to create a project');
-  }
-  
   return result;
 };
 
 // Validation function for project updates (partial data)
 export const validateProjectUpdate = (
   data: unknown,
-  context: ValidationContext,
   existingProject?: ProjectOutput
 ): Partial<ProjectOutput> => {
   const updates = ProjectSchema.partial().parse(data);
-  
-  // If createdBy is being updated, ensure it matches the context
-  if (updates.createdBy !== undefined) {
-    if (context.userId && updates.createdBy !== context.userId) {
-      throw new Error('Cannot update project createdBy field to a different user ID');
-    }
-    if (!context.userId && context.sessionId && updates.createdBy !== context.sessionId) {
-      throw new Error('Cannot update project createdBy field to a different session ID');
-    }
-  }
-  
-  // Prevent changes if user doesn't match the original creator
-  if (existingProject && existingProject.createdBy !== (context.userId || context.sessionId)) {
-    throw new Error('Only the project creator can update the project');
-  }
-  
   return updates;
 };
 

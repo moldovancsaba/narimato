@@ -44,3 +44,8 @@ next-env.d.ts
 narimato.md
 >>>>>>> dev
 narimato.md
+
+# Environment variables
+.env
+.env.local
+.env.*.local

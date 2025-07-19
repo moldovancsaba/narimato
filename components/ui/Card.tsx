@@ -15,7 +15,8 @@ interface CardProps {
   createdAt: string;
   updatedAt: string;
   onClick?: () => void;
-  variant?: 'default' | 'interactive' | 'elevated';
+isInteractive?: boolean;
+  variant?: 'default' | 'elevated';
   className?: string;
 }
 
@@ -27,13 +28,15 @@ export function Card({
   hashtags,
   imageAlt,
   onClick,
+isInteractive,
   variant = 'default',
   className
 }: CardProps) {
   // Get theme configuration for card component
   const cardTheme = getComponentTheme('card');
   const typography = getComponentTheme('typography');
-return (
+
+  return (
     <div 
       onClick={onClick}
       className={cn(
@@ -43,12 +46,12 @@ return (
         cardTheme.base.borderRadius,
         cardTheme.base.transition,
         // Variant styles
-        variant === 'interactive' && 'cursor-pointer hover:shadow-md hover:border-primary',
+        isInteractive && 'cursor-pointer hover:shadow-md hover:border-primary',
         // Custom classes
         className
       )}
     >
-{type === 'image' && (
+      {type === 'image' && (
         <div className="relative aspect-square w-full">
           <img
             src={content}
@@ -57,8 +60,8 @@ return (
           />
         </div>
       )}
-<div className={cardTheme.base.padding}>
-<h3 className={cn(
+      <div className={cardTheme.base.padding}>
+        <h3 className={cn(
           typography.h4,
           `mb-${cssVar('space-2')}`,
           `text-${cssVar('card-foreground')}`
@@ -66,7 +69,7 @@ return (
           {title}
         </h3>
         {description && (
-<p className={cn(
+          <p className={cn(
             typography.p,
             `text-${cssVar('card-foreground')}/70`,
             `mb-${cssVar('space-4')}`
@@ -75,7 +78,7 @@ return (
           </p>
         )}
         {type === 'text' && (
-<p className={cn(
+          <p className={cn(
             typography.p,
             `text-${cssVar('card-foreground')}`,
             `mb-${cssVar('space-4')}`
@@ -84,12 +87,12 @@ return (
           </p>
         )}
         {hashtags.length > 0 && (
-<div className={cn(
+          <div className={cn(
             'flex flex-wrap',
             `gap-${cssVar('space-2')}`
           )}>
             {hashtags.map(tag => (
-<span
+              <span
                 key={tag}
                 className={cn(
                   `px-${cssVar('space-2')} py-${cssVar('space-1')}`,

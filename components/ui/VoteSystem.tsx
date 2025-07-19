@@ -74,8 +74,13 @@ export function VoteSystem({ cards, projectId }: VoteSystemProps) {
           projectId
         }),
       });
-      console.log('Vote response:', await response.clone().json());
-      if (!response.ok) throw new Error('Failed to record vote');
+      const data = await response.json();
+      console.log('Vote response:', data);
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to record vote');
+      }
+      
       setCurrentPair(([first, second]) => [second, (second + 1) % cards.length]);
       router.refresh();
     } catch (error) {

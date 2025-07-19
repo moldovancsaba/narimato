@@ -1,184 +1,34 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { TextField, Button, Select, MenuItem, FormControl, InputLabel, Chip, Box, SelectChangeEvent } from '@mui/material';
-import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form'
 
 interface CardFormProps {
-  onSubmit?: (data: any) => void;
+  onSubmit: (data: any) => void
+  defaultValues?: any
 }
 
-export default function CardForm({ onSubmit }: CardFormProps) {
-  const router = useRouter();
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    content: '',
-    type: 'text',
-    hashtags: [] as string[],
-    imageAlt: '',
-  });
-  const [currentHashtag, setCurrentHashtag] = useState('');
-  const [error, setError] = useState<string | null>(null);
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSelectChange = (e: SelectChangeEvent) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleHashtagKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && currentHashtag) {
-      e.preventDefault();
-      if (!formData.hashtags.includes(currentHashtag)) {
-        setFormData((prev) => ({
-          ...prev,
-          hashtags: [...prev.hashtags, currentHashtag],
-        }));
-      }
-      setCurrentHashtag('');
-    }
-  };
-
-  const handleDeleteHashtag = (tagToDelete: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      hashtags: prev.hashtags.filter((tag) => tag !== tagToDelete),
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    try {
-      const response = await fetch('/api/cards', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to create card');
-      }
-
-      const data = await response.json();
-      
-      if (onSubmit) {
-        onSubmit(data);
-      }
-      
-      router.push(`/cards/${data.slug}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    }
-  };
+export default function CardForm({ onSubmit, defaultValues }: CardFormProps) {
+  const { register, handleSubmit } = useForm({ defaultValues })
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
-      <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white text-center">Create New Card</h2>
-      <FormControl fullWidth>
-        <InputLabel id="type-label">Type</InputLabel>
-        <Select
-          labelId="type-label"
-          name="type"
-          value={formData.type}
-          label="Type"
-          onChange={handleSelectChange}
-        >
-          <MenuItem value="text">Text</MenuItem>
-          <MenuItem value="image">Image</MenuItem>
-        </Select>
-      </FormControl>
-
-      <TextField
-        fullWidth
-        label="Title"
-        name="title"
-        value={formData.title}
-        onChange={handleInputChange}
-        required
-      />
-
-      <TextField
-        fullWidth
-        label="Description"
-        name="description"
-        value={formData.description}
-        onChange={handleInputChange}
-        multiline
-        rows={2}
-      />
-
-      <TextField
-        fullWidth
-        label={formData.type === 'image' ? 'Image URL' : 'Content'}
-        name="content"
-        value={formData.content}
-        onChange={handleInputChange}
-        required
-        multiline={formData.type === 'text'}
-        rows={formData.type === 'text' ? 4 : 1}
-      />
-
-      {formData.type === 'image' && (
-        <TextField
-          fullWidth
-          label="Image Alt Text"
-          name="imageAlt"
-          value={formData.imageAlt}
-          onChange={handleInputChange}
-        />
-      )}
-
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div>
-        <TextField
-          fullWidth
-          label="Add Hashtags"
-          value={currentHashtag}
-          onChange={(e) => setCurrentHashtag(e.target.value)}
-          onKeyPress={handleHashtagKeyPress}
-          placeholder="Press Enter to add hashtag"
+        <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+          Title
+        </label>
+        <input
+          type="text"
+          id="title"
+          {...register('title')}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
         />
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 2 }}>
-          {formData.hashtags.map((tag) => (
-            <Chip
-              key={tag}
-              label={tag}
-              onDelete={() => handleDeleteHashtag(tag)}
-            />
-          ))}
-        </Box>
       </div>
-
-      {error && (
-        <div className="text-red-500 text-sm mt-2">{error}</div>
-      )}
-
-      <Button
+      <button
         type="submit"
-        variant="contained"
-        color="primary"
-        fullWidth
-        size="large"
+        className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
       >
-        Create Card
-      </Button>
+        Submit
+      </button>
     </form>
-  );
+  )
 }

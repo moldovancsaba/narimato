@@ -22,6 +22,13 @@ async function dbConnect() {
   }
 }
 import { Card } from '@/models/Card';
+import crypto from 'crypto';
+
+function generateMD5Hash(data: string): string {
+  const hash = crypto.createHash('md5');
+  hash.update(data);
+  return hash.digest('hex');
+}
 
 const testCards = [
   {
@@ -30,7 +37,7 @@ const testCards = [
     type: 'text',
     description: 'A sample text card for testing',
     hashtags: ['#test', '#sample'],
-    slug: 'test-card-1',
+md5: generateMD5Hash('This is a test card with some text content.'),
     globalScore: 1500,
   },
   {
@@ -39,7 +46,7 @@ const testCards = [
     type: 'text',
     description: 'Another sample card for testing',
     hashtags: ['#test', '#example'],
-    slug: 'test-card-2',
+md5: generateMD5Hash('Another test card with different content.'),
     globalScore: 1500,
   },
   {
@@ -48,7 +55,7 @@ const testCards = [
     type: 'image',
     description: 'A sample image card for testing',
     hashtags: ['#test', '#image'],
-    slug: 'test-image-card',
+md5: generateMD5Hash('https://picsum.photos/500/300'),
     imageAlt: 'Random test image',
     globalScore: 1500,
   },

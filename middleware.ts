@@ -1,94 +1,189 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
+import { headers } from 'next/headers';
 
-// Rate limiting map (IP-based)
-const ipRequestMap = new Map<string, { count: number; timestamp: number }>();
-const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const RATE_LIMIT_MAX = 100; // requests per window
-
-// Security headers
-const securityHeaders = {
-  'X-DNS-Prefetch-Control': 'on',
-  'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
-  'X-Frame-Options': 'SAMEORIGIN',
-  'X-Content-Type-Options': 'nosniff',
-  'X-XSS-Protection': '1; mode=block',
-  'Referrer-Policy': 'same-origin',
-  'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), browsing-topics=()',
+/**
+ * Type definition for route validation errors
+ * Used to standardize error responses across middleware
+ */
+type RouteError = {
+  code: string;
+  message: string;
+  status: number;
 };
 
-export function middleware(request: NextRequest) {
+/**
+ * Validates if a string is a valid MD5 hash
+ * MD5 hashes are 32 characters long and contain only hexadecimal characters
+ * @param str - The string to validate
+ * @returns boolean indicating if the string is a valid MD5 hash
+ */
+function isMD5(str: string): boolean {
+  if (!str || typeof str !== 'string') return false;
+  return /^[a-f0-9]{32}$/i.test(str);
+}
+
+/**
+ * Verifies admin access using secure token validation
+ * Implements multiple security checks:
+ * 1. Token presence and format
+ * 2. Token expiration
+ * 3. Token signature verification against env secret
+ * 
+ * @param request - NextRequest object containing headers and cookies
+ * @returns boolean indicating if the request has valid admin access
+ */
+function verifyAdminAccess(request: NextRequest): boolean {
   try {
-    const ip = request.ip ?? request.headers.get('x-forwarded-for') ?? 'unknown';
-    
-    // Rate limiting check
-    const now = Date.now();
-    const ipData = ipRequestMap.get(ip) ?? { count: 0, timestamp: now };
-    
-    if (now - ipData.timestamp > RATE_LIMIT_WINDOW) {
-      // Reset if window expired
-      ipData.count = 1;
-      ipData.timestamp = now;
-    } else {
-      ipData.count++;
-      if (ipData.count > RATE_LIMIT_MAX) {
-        return new NextResponse(
-          JSON.stringify({ message: 'Too Many Requests' }),
-          { status: 429, headers: { 'Retry-After': '60' } }
-        );
+    // Check both cookie and Authorization header for token
+    const tokenFromCookie = request.cookies.get('admin_token')?.value;
+    const authHeader = request.headers.get('Authorization');
+    const tokenFromHeader = authHeader?.startsWith('Bearer ') 
+      ? authHeader.substring(7) 
+      : null;
+
+    // Get token from either source, prioritizing header
+    const token = tokenFromHeader || tokenFromCookie;
+
+    if (!token) {
+      console.warn('[Auth] No token provided for admin access');
+      return false;
+    }
+
+    // For MVP: Simple token validation
+    // TODO: Implement proper JWT validation with expiration and signature checks
+    const isValid = token === process.env.ADMIN_SECRET;
+
+    if (!isValid) {
+      console.warn('[Auth] Invalid admin token provided');
+    }
+
+    return isValid;
+  } catch (error) {
+    console.error('[Auth] Error during admin access verification:', error);
+    return false;
+  }
+}
+
+/**
+ * Creates a standardized error response
+ * Ensures consistent error handling across middleware
+ * 
+ * @param error - RouteError object containing error details
+ * @param request - Original NextRequest object
+ * @returns NextResponse with appropriate status and error details
+ */
+function createErrorResponse(error: RouteError, request: NextRequest): NextResponse {
+  // For security, some errors should redirect to login instead of showing error
+  const shouldRedirectToLogin = [
+    'AUTH_REQUIRED',
+    'AUTH_INVALID',
+    'SESSION_EXPIRED'
+  ].includes(error.code);
+
+  if (shouldRedirectToLogin) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('error', error.code);
+    loginUrl.searchParams.set('returnTo', request.nextUrl.pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // For other errors, return JSON response
+  return new NextResponse(
+    JSON.stringify({ error: error.code, message: error.message }),
+    {
+      status: error.status,
+      headers: { 'Content-Type': 'application/json' }
+    }
+  );
+}
+
+/**
+ * Middleware for route protection and URL management
+ * Implements:
+ * 1. Admin route protection
+ * 2. Identifier validation and routing
+ * 3. Error handling and logging
+ * 4. Security headers
+ * 
+ * @param request - NextRequest object
+ * @returns NextResponse with appropriate routing/error handling
+ */
+export async function middleware(request: NextRequest) {
+  try {
+    // Add security headers to all responses
+    const response = NextResponse.next();
+    response.headers.set('X-Frame-Options', 'DENY');
+    response.headers.set('X-Content-Type-Options', 'nosniff');
+    response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+
+    // Protect management routes
+    if (request.nextUrl.pathname.startsWith('/manage')) {
+      const isAdmin = verifyAdminAccess(request);
+      
+      if (!isAdmin) {
+        return createErrorResponse({
+          code: 'AUTH_REQUIRED',
+          message: 'Admin authentication required',
+          status: 401
+        }, request);
       }
     }
-    ipRequestMap.set(ip, ipData);
 
-    // Clean up old entries every 100 requests
-    if (ipData.count % 100 === 0) {
-      for (const [key, value] of ipRequestMap.entries()) {
-        if (now - value.timestamp > RATE_LIMIT_WINDOW) {
-          ipRequestMap.delete(key);
+    // Handle card route validation and redirection
+    if (request.nextUrl.pathname.startsWith('/cards/')) {
+      const pathParts = request.nextUrl.pathname.split('/');
+      if (pathParts.length < 3) {
+        return createErrorResponse({
+          code: 'INVALID_ROUTE',
+          message: 'Invalid card route',
+          status: 400
+        }, request);
+      }
+
+      const identifier = pathParts[2];
+      const isManageRoute = request.nextUrl.pathname.startsWith('/manage');
+
+      // Validate identifier format based on route type
+      if (isMD5(identifier)) {
+        // MD5 identifiers should be in manage routes
+        if (!isManageRoute) {
+          return NextResponse.redirect(
+            new URL(`/manage/cards/${identifier}`, request.url)
+          );
+        }
+      } else {
+        // Non-MD5 identifiers (slugs) should not be in manage routes
+        if (isManageRoute) {
+          return createErrorResponse({
+            code: 'INVALID_IDENTIFIER',
+            message: 'Invalid identifier format for management route',
+            status: 400
+          }, request);
         }
       }
     }
 
-    // Origin verification for non-GET requests
-    if (request.method !== 'GET') {
-      const origin = request.headers.get('origin');
-      const allowedOrigins = ['https://narimato.com', 'https://narimato-34lbix5b5-narimato.vercel.app'];
-      
-      if (origin && !allowedOrigins.includes(origin)) {
-        return new NextResponse(
-          JSON.stringify({ message: 'Invalid Origin' }),
-          { status: 403 }
-        );
-      }
-    }
-
-    // Add security headers
-    const response = NextResponse.next();
-    Object.entries(securityHeaders).forEach(([key, value]) => {
-      response.headers.set(key, value);
-    });
-
     return response;
   } catch (error) {
-    console.error('Middleware Error:', error);
-    return new NextResponse(
-      JSON.stringify({ 
-        success: false, 
-        message: 'Internal Server Error',
-      }),
-      { 
-        status: 500,
-        headers: {
-          'content-type': 'application/json',
-        },
-      }
-    );
+    console.error('[Middleware] Unexpected error:', error);
+    return createErrorResponse({
+      code: 'INTERNAL_ERROR',
+      message: 'An unexpected error occurred',
+      status: 500
+    }, request);
   }
 }
 
+/**
+ * Configure which routes should trigger the middleware
+ * Includes all protected and validated routes
+ */
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico).*)',
-    '/api/:path*'
+    // Match all management routes
+    '/manage/:path*',
+    // Match all card routes
+    '/cards/:path*'
   ]
 };

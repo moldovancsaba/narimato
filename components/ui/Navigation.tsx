@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import { signIn, signOut, useSession } from 'next-auth/react';
 import { Menu, X } from 'lucide-react';
 
 export function Navigation() {
@@ -15,22 +14,12 @@ export function Navigation() {
     return pathname?.startsWith(path);
   };
 
-const { data: session } = useSession();
-
-  useEffect(() => {
-    console.log('Session:', session);
-  }, [session]);
-
   const navigationItems = [
-    { path: '/', label: 'Home' },
     { path: '/projects', label: 'Projects' },
-    { path: '/projects/create', label: 'Create Project' },
     { path: '/cards', label: 'Cards' },
-    { path: '/cards/create', label: 'Create Card' },
-    { path: '/dashboard', label: 'Dashboard' },
-    { path: '/leaderboard', label: 'Leaderboard' },
     { path: '/swipe', label: 'Swipe' },
     { path: '/vote', label: 'Vote' },
+    { path: '/leaderboard', label: 'Leaderboard' },
   ];
 
   return (
@@ -39,29 +28,11 @@ const { data: session } = useSession();
         <div className="flex justify-between h-16 items-center">
           {/* Logo or Brand */}
           <div className="flex-shrink-0 flex items-center">
-            <Link href="/" className="text-xl font-bold text-gray-900 dark:text-white">
+            <span className="text-xl font-bold text-gray-900 dark:text-white cursor-default">
               Narimato
-            </Link>
+            </span>
           </div>
 
-          {/* Authentication button */}
-          <div>
-            {session ? (
-              <button
-                onClick={() => signOut()}
-                className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white"
-              >
-                Sign Out
-              </button>
-            ) : (
-              <button
-                onClick={() => signIn()}
-                className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white"
-              >
-                Sign In
-              </button>
-            )}
-          </div>
 
           {/* Mobile menu button */}
           <div className="md:hidden">

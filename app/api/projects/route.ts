@@ -3,7 +3,6 @@ import mongoose from 'mongoose';
 import { Project } from '@/models/Project';
 import { validateProject, generateProjectSlug } from '@/lib/validations/project';
 import dbConnect from '@/lib/mongodb';
-import { getAuthSession } from '@/app/api/auth/[...nextauth]/route';
 import { handleError, ValidationError } from '@/lib/errors';
 
 /**
@@ -31,7 +30,7 @@ export async function GET() {
       isPublic: project.settings?.visibility === 'public'
     }));
 
-    return NextResponse.json(transformedProjects);
+    return NextResponse.json({ projects: projects });
   } catch (error) {
     return handleError(error);
   }
@@ -39,22 +38,14 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    // Get or create session (handles both authenticated and anonymous)
-    const session = await getAuthSession();
-    if (!session?.user?.id) {
-      throw new ValidationError('Authentication required');
-    }
-
     // Connect to MongoDB
     await dbConnect();
 
     // Parse request body
     const body = await req.json();
     
-    // Validate project data with authenticated user
-    const validatedData = validateProject(body, {
-      userId: session.user.id
-    });
+    // Validate project data
+    const validatedData = validateProject(body);
 
     // Generate slug if not provided
     if (!validatedData.slug) {
@@ -63,11 +54,9 @@ export async function POST(req: NextRequest) {
       console.log('[API] Generated project slug:', validatedData.slug);
     }
 
-    // Create project data with authenticated user
+    // Create project data
     const projectData = {
       ...validatedData,
-      createdBy: session.user.id,
-      isAnonymous: false,
       createdAt: new Date().toISOString() // ISO 8601 format
     };
     

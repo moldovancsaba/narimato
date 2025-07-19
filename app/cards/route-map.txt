@@ -1,0 +1,19 @@
+Route Structure for Cards:
+
+Frontend Routes:
+/cards/[slug]/page.tsx          - Display card (user-friendly URL)
+/cards/edit/[id]/page.tsx       - Edit card (uses MD5 ID)
+/cards/create/page.tsx          - Create new card
+
+API Routes:
+/api/cards/by-slug/[slug]       - Get card by slug (for display)
+/api/cards/[id]                 - Get/update card by MD5 ID (for management)
+/api/cards                      - List/create cards
+
+Example Flow:
+1. View card: /cards/my-cool-card
+2. Edit same card: /cards/edit/5f3e2a7b1c9d8e4f2a1b3c4d
+3. API calls:
+   - View: GET /api/cards/by-slug/my-cool-card
+   - Edit: GET/PUT /api/cards/5f3e2a7b1c9d8e4f2a1b3c4d
+   - Create: POST /api/cards (generates MD5 from content)

@@ -67,17 +67,18 @@ async function getCards({
 
     return {
 cards: cards.map(card => ({
-  type: card.type,
-  content: card.content,
-  title: card.title,
-  description: card.description,
-  slug: card.slug,
-  hashtags: card.hashtags,
-  translationKey: card.translationKey,
-  imageAlt: card.imageAlt,
-  createdAt: card.createdAt.toISOString(),
-  updatedAt: card.updatedAt.toISOString(),
-})),
+        _id: card._id?.toString() || '',
+        type: card.type,
+        content: card.content,
+        title: card.title,
+        description: card.description,
+        slug: card.slug,
+        hashtags: card.hashtags,
+        translationKey: card.translationKey,
+        imageAlt: card.imageAlt,
+        createdAt: card.createdAt.toISOString(),
+        updatedAt: card.updatedAt.toISOString(),
+      })),
       total,
       pages: Math.ceil(total / CARDS_PER_PAGE),
     };
@@ -119,7 +120,7 @@ export default async function CardListPage(props: any) {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold">Cards</h1>
           <a
-            href="/card/edit"
+            href="/cards/create"
             className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
           >
             Create New Card

@@ -58,10 +58,11 @@ export function CardSelector({ projectSlug, onCardAdded, onError }: CardSelector
       if (!response.ok) throw new Error('Failed to add card to project');
       
       const data = await response.json();
-      onCardAdded?.(data);
-      
       // Remove the added card from search results
       setSearchResults(prev => prev.filter(card => card._id !== cardId));
+      // Close the dialog and trigger refresh
+      onCardAdded?.(data);
+      setSearchTerm('');  // Clear the search
     } catch (error) {
       console.error('Error adding card:', error);
       onError?.(error instanceof Error ? error : new Error('Failed to add card'));

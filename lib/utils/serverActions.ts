@@ -1,6 +1,4 @@
 import { headers } from 'next/headers';
-import { getServerSession } from 'next-auth';
-
 /**
  * Validates and secures server actions
  * @param action The server action function to secure
@@ -18,14 +16,6 @@ export function secureServerAction<T>(
 
   return new Promise(async (resolve, reject) => {
     try {
-      // Authentication check
-      if (requireAuth) {
-        const session = await getServerSession();
-        if (!session) {
-          throw new Error('Authentication required');
-        }
-      }
-
       // Origin validation
       if (validateOrigin) {
         const headersList = headers();

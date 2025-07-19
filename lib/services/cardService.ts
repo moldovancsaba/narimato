@@ -6,6 +6,7 @@ import { UserSession } from '@/models/UserSession';
 import dbConnect from '@/lib/mongodb';
 import mongoose from 'mongoose';
 import { DatabaseError } from '@/lib/errors';
+import { PersonalRanking } from '@/models/PersonalRanking';
 
 export class CardService {
   /**
@@ -111,24 +112,24 @@ export class CardService {
   }
   
   /**
-   * Retrieves a card by its slug
-   * @param slug Card's slug
+   * Retrieves a card by its MD5 hash
+   * @param md5 MD5 hash of the card
    * @returns Card document if found
    */
-  static async getCardBySlug(slug: string): Promise<ICard | null> {
-    console.log(`[Card Service] Attempting to fetch card with slug: ${slug}`);
+  static async getCardByMD5(md5: string): Promise<ICard | null> {
+    console.log(`[Card Service] Attempting to fetch card with MD5: ${md5}`);
     await dbConnect();
 
     try {
-      const card = await Card.findOne({ slug, isDeleted: false });
+      const card = await Card.findOne({ md5, isDeleted: false });
       if (!card) {
-        console.warn(`[Card Service] Card not found with slug: ${slug}`);
+        console.warn(`[Card Service] Card not found with MD5: ${md5}`);
         return null;
       }
       console.log(`[Card Service] Successfully retrieved card: ${card._id}`);
       return card;
     } catch (error) {
-      console.error(`[Card Service] Error fetching card by slug ${slug}:`, error);
+      console.error(`[Card Service] Error fetching card by MD5 ${md5}:`, error);
       throw error;
     }
   }
@@ -177,30 +178,39 @@ export class CardService {
    * @param limit Number of cards to return
    * @returns Array of card documents
    */
-  static async getRandomCards(limit: number = 1, sessionId?: string): Promise<ICard[]> {
+  static async getRandomCards(limit: number = 1, sessionId?: string, projectId?: string): Promise<ICard[]> {
     await dbConnect();
     
-    // Get liked and disliked cards for the session if provided
-    let dislikedCardIds: string[] = [];
-    let likedCardIds: string[] = [];
-    if (sessionId) {
-      const session = await UserSession.findOne({ sessionId });
-      if (session) {
-        dislikedCardIds = session.dislikedCards;
-        likedCardIds = session.likedCards;
+    // Get voted cards for the session and project if provided
+    let excludedCardIds: string[] = [];
+    if (sessionId && projectId) {
+      const personalRanking = await PersonalRanking.findOne({ sessionId, projectId });
+      if (personalRanking) {
+excludedCardIds = personalRanking.rankings.map((r: { cardId: string }) => r.cardId);
       }
     }
     
-    // Combine liked and disliked IDs to exclude from results
-    const excludedCardIds = [...dislikedCardIds, ...likedCardIds];
+    // Build match criteria
+    const matchCriteria: any = {
+      isDeleted: false,
+    };
+
+    // Add project filter if projectId is provided
+    if (projectId) {
+      matchCriteria.projectRankings = {
+        $elemMatch: { projectId }
+      };
+    }
+
+    // Add exclusion for already voted cards
+    if (excludedCardIds.length > 0) {
+      matchCriteria._id = { 
+        $nin: excludedCardIds.map(id => new mongoose.Types.ObjectId(id))
+      };
+    }
     
     const cards = await Card.aggregate([
-      { 
-        $match: { 
-          isDeleted: false,
-          _id: { $nin: excludedCardIds.map(id => new mongoose.Types.ObjectId(id)) }
-        } 
-      },
+      { $match: matchCriteria },
       { $sample: { size: limit } },
     ]).exec();
     

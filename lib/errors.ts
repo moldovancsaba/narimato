@@ -8,6 +8,7 @@ interface ErrorResponse {
   message: string;
   errors?: any;
   code?: string;
+  redirect?: string;
 }
 
 // Common HTTP status codes
@@ -80,8 +81,11 @@ export class SessionValidationError extends ValidationError {
 
 // Authentication errors
 export class AuthenticationError extends APIError {
-  constructor(message: string = 'Authentication required') {
+  public redirect?: string;
+
+  constructor(message: string = 'Authentication required', options: { redirect?: string } = {}) {
     super(message, HttpStatus.UNAUTHORIZED, 'AUTH_REQUIRED');
+    this.redirect = options.redirect;
   }
 }
 
@@ -105,6 +109,10 @@ function formatErrorResponse(error: APIError): ErrorResponse {
 
   if (error.errors) {
     response.errors = error.errors;
+  }
+
+  if (error instanceof AuthenticationError && error.redirect) {
+    response.redirect = error.redirect;
   }
 
   return response;

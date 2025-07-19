@@ -6,7 +6,7 @@
  */
 
 import { useState } from 'react';
-import { useAnimation, PanInfo, AnimationControls } from 'framer-motion';
+import { useAnimation, PanInfo, animationControls } from 'framer-motion';
 import { SWIPE_ANIMATIONS, VOTE_ANIMATIONS } from '@/lib/theme/animations';
 
 interface UseInteractionAnimationsProps {

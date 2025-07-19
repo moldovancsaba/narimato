@@ -1,8 +1,10 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { Card } from '@/models';
+import { Card } from '@/models/Card';
 import mongoose from 'mongoose';
 import dbConnect from '@/lib/mongodb';
 import { z } from 'zod';
+import { slugify } from '@/lib/utils/slugify';
+import { generateMD5 } from '@/lib/utils/md5';
 
 // Schema validation for card creation
 const CardSchema = z.object({
@@ -12,6 +14,13 @@ const CardSchema = z.object({
   type: z.enum(['text', 'image']),
   hashtags: z.array(z.string()),
   imageAlt: z.string().optional(),
+  slug: z.string().optional(),
+  projectRankings: z.array(
+    z.object({
+      projectId: z.string(),
+      rank: z.number(),
+    })
+  ).optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -52,13 +61,43 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await dbConnect();
+    const body = await request.json();
     
-    const cards = await Card.find({ isDeleted: false })
-      .sort({ createdAt: -1 })
-      .limit(100);
-      
-    return NextResponse.json(cards);
+    // Validate the request body
+    const validatedData = CardSchema.parse(body);
+    
+    await dbConnect();
+
+    // Generate MD5 from content - this will be our _id
+    const md5 = generateMD5(validatedData.content);
+    
+    // Check if content already exists
+    const existingCard = await Card.findById(md5);
+    if (existingCard && !existingCard.isDeleted) {
+      return NextResponse.json(
+        { message: 'A card with this content already exists.' },
+        { status: 400 }
+      );
+    }
+
+    // Generate a display-friendly slug
+    const baseSlug = slugify(validatedData.title);
+    
+    // Create the new card using MD5 as _id
+    const card = new Card({
+      _id: md5,
+      ...validatedData,
+      slug: baseSlug,
+      isDeleted: false
+    });
+    
+    await card.save();
+    
+    return NextResponse.json({
+      success: true,
+      message: 'Card created successfully',
+      data: card
+    });
   } catch (error) {
     console.error('Error fetching cards:', error);
     return NextResponse.json(

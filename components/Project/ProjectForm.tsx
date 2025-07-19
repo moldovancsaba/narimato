@@ -10,7 +10,7 @@ import { CardSelector } from './CardSelector';
  */
 interface ProjectFormProps {
   /** Initial project data for edit mode, undefined for create mode */
-  initialData?: Partial<ProjectInput>;
+  initialData?: Partial<ProjectInput> & { _id?: string };
   /** Callback function to handle form submission */
   onSubmit: (data: ProjectInput) => Promise<void>;
   /** Optional callback function for handling cancellation */
@@ -73,11 +73,11 @@ export const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProp
 
   // Update slug only when name changes
   useEffect(() => {
-    if (name) {
+    if (name && !watch('slug')) {
       const slug = generateProjectSlug(name);
       setValue('slug', slug);
     }
-  }, [name, setValue]);
+  }, [name, setValue, watch]);
 
   /**
    * Handles form submission with proper error handling and loading states.
@@ -108,10 +108,42 @@ export const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProp
     }
   };
 
+  const validateSlug = async (slug: string): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/validate-slug', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slug,
+          collection: 'projects',
+          currentId: initialData?._id
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to validate slug');
+      }
+
+      const { isUnique } = await response.json();
+      return isUnique;
+    } catch (error) {
+      console.error('Error validating slug:', error);
+      return false;
+    }
+  };
+
   const handleFormSubmit = async (data: ProjectInput) => {
     console.log('Form submitted with data:', data);
     setIsSubmitting(true);
     setSubmitError('');
+
+    // Validate slug uniqueness
+    const isUnique = await validateSlug(data.slug);
+    if (!isUnique) {
+      setSubmitError('This URL slug is already in use. Please choose a different one.');
+      setIsSubmitting(false);
+      return;
+    }
     try {
       await onSubmit(data);
       setSubmitSuccess(true);
@@ -182,6 +214,27 @@ export const ProjectForm = ({ initialData, onSubmit, onCancel }: ProjectFormProp
         {errors.description && (
           <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
         )}
+      </div>
+
+      <div>
+        <label htmlFor="slug" className="block text-sm font-medium text-gray-700">
+          URL Slug
+        </label>
+        <div className="mt-1 flex rounded-md shadow-sm">
+          <input
+            type="text"
+            id="slug"
+            {...register('slug')}
+            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            placeholder="project-url-slug"
+          />
+        </div>
+        {errors.slug && (
+          <p className="mt-1 text-sm text-red-600">{errors.slug.message}</p>
+        )}
+        <p className="mt-1 text-xs text-gray-500">
+          The URL-friendly identifier for your project. Only lowercase letters, numbers, and hyphens are allowed.
+        </p>
       </div>
 
       <div>

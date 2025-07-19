@@ -1,5 +1,5 @@
 import { Socket } from 'socket.io';
-import { toast } from 'react-toastify';
+import toast from 'react-hot-toast';
 
 // Event type definitions
 export type CardAddedEvent = {

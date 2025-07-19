@@ -3,9 +3,11 @@
 import { Card } from './card';
 import { CardContainer } from './CardContainer';
 import { useRouter } from 'next/navigation';
+import { getCardUrl } from '@/app/middleware';
 
 interface CardListProps {
   cards: {
+    _id: string;
     type: 'image' | 'text';
     content: string;
     title: string;
@@ -35,6 +37,8 @@ export function CardList({
   hashtagFilter,
 }: CardListProps) {
   const router = useRouter();
+  // Placeholder auth state - all users have management access
+  const hasManagementAccess = true;
   return (
     <>
       {/* Results Count */}
@@ -55,7 +59,10 @@ export function CardList({
             hashtags={card.hashtags}
             createdAt={card.createdAt}
             updatedAt={card.updatedAt}
-            onClick={() => router.push(`/cards/${card.slug}`)}
+            onClick={() => {
+              console.log(`Navigating to card: ${card.slug}`);
+              router.push(getCardUrl(card, hasManagementAccess))
+            }}
             isInteractive
           />
         ))}

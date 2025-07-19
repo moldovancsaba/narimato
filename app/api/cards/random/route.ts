@@ -4,11 +4,17 @@ import { headers } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+import { NextRequest } from 'next/server';
+
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const projectId = searchParams.get('projectId') || undefined;
     const headersList = headers();
-    const sessionId = headersList.get('session-id') ?? undefined;
-    const cards = await CardService.getRandomCards(1, sessionId);
+    
+    const sessionId = headersList.get('x-session-id') || undefined;
+    // Fetch random card for specific project
+    const cards = await CardService.getRandomCards(1, sessionId, projectId);
 
     if (!cards || cards.length === 0) {
       return NextResponse.json(

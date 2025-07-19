@@ -1,34 +1,39 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IUserSession extends Document {
-  sessionId: string;
-  dislikedCards: string[]; // Array of card IDs
-  likedCards: string[]; // Array of liked card IDs
-  createdAt: Date;
-  updatedAt: Date;
+  userId: string;
+  startTime: Date;
+  endTime?: Date;
+  isActive: boolean;
+  metadata?: {
+    [key: string]: any;
+  };
 }
 
-const UserSessionSchema = new Schema<IUserSession>(
-  {
-    sessionId: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    dislikedCards: [{
-      type: String,
-      ref: 'Card',
-    }],
-    likedCards: [{
-      type: String,
-      ref: 'Card',
-    }],
+const userSessionSchema = new Schema({
+  userId: { 
+    type: String, 
+    required: true,
+    index: true
   },
-  { timestamps: true }
-);
+  startTime: { 
+    type: Date, 
+    required: true,
+    default: Date.now 
+  },
+  endTime: { 
+    type: Date 
+  },
+  isActive: { 
+    type: Boolean, 
+    required: true,
+    default: true 
+  },
+  metadata: { 
+    type: Schema.Types.Mixed 
+  }
+}, {
+  timestamps: true
+});
 
-// Create indexes for performance
-UserSessionSchema.index({ sessionId: 1 });
-UserSessionSchema.index({ createdAt: 1 }, { expireAfterSeconds: 7 * 24 * 60 * 60 }); // TTL index, session expires after 7 days
-
-export const UserSession = mongoose.models.UserSession || mongoose.model<IUserSession>('UserSession', UserSessionSchema);
+export const UserSession = mongoose.models.UserSession || mongoose.model<IUserSession>('UserSession', userSessionSchema);

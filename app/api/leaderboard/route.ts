@@ -3,7 +3,9 @@ import { LeaderboardService } from '@/lib/services/leaderboardService';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 
+// Force dynamic route - never cache
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;  // Disable caching
 
 /**
  * Validation schema for leaderboard query parameters
@@ -45,7 +47,7 @@ try {
 
     // Handle different leaderboard types with appropriate data fetching
     switch (validatedParams.type) {
-      // Global leaderboard - all cards ranked by score
+// Global leaderboard - all cards ranked by score
       case 'global':
         const globalData = await LeaderboardService.getGlobalLeaderboard(
           validatedParams.limit,
@@ -67,24 +69,6 @@ try {
           validatedParams.page
         );
         return NextResponse.json(projectData);
-
-      // Personal leaderboard - user-specific rankings
-      case 'personal':
-        const headersList = headers();
-        const sessionId = headersList.get('session-id');
-        if (!sessionId) {
-          return NextResponse.json(
-            { message: 'Session ID is required for personal leaderboard' },
-            { status: 400 }
-          );
-        }
-        const personalData = await LeaderboardService.getPersonalRankings(
-          sessionId,
-          validatedParams.projectId,
-          validatedParams.limit,
-          validatedParams.page
-        );
-        return NextResponse.json(personalData);
 
       default:
         return NextResponse.json(

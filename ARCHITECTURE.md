@@ -1,10 +1,10 @@
 # System Architecture
 
-Last Updated: 2024-01-16T16:30:00.000Z
+Last Updated: 2025-07-18T14:00:00Z
 
 ## Version Status
 
-Current Version: v5.0.0
+Current Version: v7.0.0
 Status: Active Development
 
 ## System Overview
@@ -46,20 +46,49 @@ Key Infrastructure Components:
 │   └── Grid.tsx        # Grid system
 ```
 
-### 2. Page Structure
+### 2. URL Structure & Page Organization
+
+NARIMATO follows a dual URL structure pattern for maximum usability and stability:
+
+#### User-Facing URLs (Slug-based)
+Designed for readability and SEO:
+```
+/cards/my-cool-card          # Public card view
+/projects/awesome-project    # Public project view
+/users/john-doe             # Public user profile
+```
+
+#### Management URLs (MD5-based)
+Designed for stability and unique identification:
+```
+/cards/5d41402abc4b2a76b9719d911017c592/edit      # Card management
+/projects/8d777f385d3dfec8815d20f7496026dc/edit   # Project management
+/users/7d793037a0760186574b0282f2f435e7/settings  # User settings
+```
+
+### 3. Page Structure
 ```
 /pages
-├── index.tsx            # Enhanced homepage design
-├── _app.tsx             # Application wrapper with providers
-├── card/
-│   ├── [slug].tsx       # Individual card view/edit
-│   ├── create.tsx       # Card creation interface
-│   └── list.tsx         # Card listing with filters
-├── project/[slug].tsx   # Project management
-├── vote.tsx             # Card voting interface
-├── vote.tsx             # Head-to-head voting
-├── leaderboard.tsx      # Global rankings
-└── dashboard.tsx        # Admin interface
+├── index.tsx               # Enhanced homepage design
+├── _app.tsx                # Application wrapper with providers
+├── cards/
+│   ├── [slug].tsx          # Public card view
+│   ├── [hash]/
+│   │   └── edit.tsx        # Card management interface
+│   ├── create.tsx          # Card creation interface
+│   └── list.tsx            # Card listing with filters
+├── projects/
+│   ├── [slug].tsx          # Public project view
+│   ├── [hash]/
+│   │   └── edit.tsx        # Project management interface
+│   └── create.tsx          # Project creation interface
+├── users/
+│   ├── [slug].tsx          # Public user profile
+│   └── [hash]/
+│       └── settings.tsx    # User settings interface
+├── vote.tsx                # Head-to-head voting
+├── leaderboard.tsx         # Global rankings
+└── dashboard.tsx           # Admin interface
 ```
 
 ### 3. Data & Utils Layer
@@ -132,7 +161,95 @@ graph TD
     end
 ```
 
-### Card Management Flow
+## Card Management
+
+### Card Editing System
+
+The card editing system provides a robust interface for managing and editing card content, with a focus on reliability and real-time updates.
+
+#### Components
+
+1. **CardEditForm Component**
+   - Handles card content editing
+   - Supports both text and image cards
+   - Manages card-project relationships
+   - Implements real-time validation
+   - Provides immediate feedback
+
+2. **Project Association Manager**
+   - Manages card-project relationships
+   - Handles project selection and removal
+   - Updates project references
+   - Maintains data consistency
+
+3. **Card Preview Component**
+   - Real-time preview of card changes
+   - Aspect ratio preservation
+   - Mobile/desktop preview modes
+   - Theme-aware rendering
+
+#### Edit Flow
+
+```mermaid
+graph TD
+    A[Edit Request] --> B{Card Type}
+    B -->|Image| C[Image Upload]
+    B -->|Text| D[Text Editor]
+    C --> E[Validation]
+    D --> E
+    E --> F[Project Association]
+    F --> G[Save Changes]
+    G --> H[Real-time Update]
+    H --> I[UI Refresh]
+```
+
+### Card Selection System
+
+The card selection system provides a robust interface for searching, filtering, and managing card selections within projects.
+
+#### Components
+
+1. **API Endpoint** (`/api/cards/search`)
+   - Handles card search and filtering requests
+   - Supports text search across title, description, and hashtags
+   - Implements flexible filtering options (type, score, date range)
+   - Returns paginated results with essential card data
+
+2. **useCardSelection Hook**
+   - Custom React hook for managing card selection state
+   - Features:
+     - Debounced search functionality
+     - Selection state management
+     - Error handling and loading states
+     - Type-safe interfaces
+
+#### Data Flow
+
+```mermaid
+graph TD
+    A[User Interface] -->|Search Query| B[useCardSelection Hook]
+    B -->|API Request| C[/api/cards/search]
+    C -->|MongoDB Query| D[Card Collection]
+    D -->|Results| C
+    C -->|JSON Response| B
+    B -->|Update State| A
+```
+
+#### Search Criteria
+
+The search endpoint supports the following filters:
+- Full-text search across title and description
+- Card type filtering (image/text)
+- Hashtag filtering
+- Global score threshold
+- Date range filtering
+
+#### Performance Considerations
+
+- Search requests are debounced (300ms)
+- Results are limited to 50 cards per request
+- MongoDB indexes optimize query performance
+- Response includes only essential fields
 ```mermaid
 graph TD
     A[User Action] --> B{Action Type}
@@ -322,48 +439,59 @@ type FormAction<T> =
 
 ### Security Architecture
 
-### Authentication Flow
-```mermaid
-graph TD
-    A[User Access] --> B{Has Session?}
-    B -->|No| C[Create Anonymous Session]
-    B -->|Yes| D{Session Type?}
-    C --> E[Generate UUID]
-    E --> F[Create Session Record]
-    F --> G[Set Session Cookie]
-    D -->|Anonymous| H[Limited Access]
-    D -->|Authenticated| I[Full Access]
-    H --> J[Read-Only Features]
-    H --> L[Voting with Rate Limits]
-    I --> K[All Features]
-    J --> M[Upgrade Prompt]
-    L --> M
+### Security and Access Model v7.0.0
+
+#### Core Components
+```typescript
+// Rate Limiter
+interface RateLimiter {
+  isAllowed(key: string): Promise<boolean>;
+  increment(key: string): Promise<void>;
+  getLimit(key: string): Promise<RateLimit>;
+  reset(key: string): Promise<void>;
+}
+
+// Security Monitor
+interface SecurityMonitor {
+  logEvent(event: SecurityEvent): Promise<void>;
+  detectThreats(context: RequestContext): Promise<ThreatAssessment>;
+  generateAlert(threat: Threat): Promise<void>;
+  getMetrics(): Promise<SecurityMetrics>;
+}
 ```
 
-- **Session Management**:
-  - UUID-based session identification with `session-id`
-  - Anonymous sessions automatically created for new visitors
-  - Enhanced session persistence with secure cookie handling
-  - Seamless upgrade path from anonymous to authenticated
-  - Multi-level rate limiting (IP + session-based)
-  - Session data cleanup with configurable expiration
+#### Security Features
+- Rate Limiting
+  - Multi-level rate limiting
+  - Adaptive thresholds
+  - Distributed rate tracking
+  - Automatic ban detection
 
-- **Access Levels**:
-  - Anonymous:
-    - Read-only access to public content
-    - Basic voting capabilities with rate limits
-    - Temporary data storage
-    - No content creation/editing
-  - Authenticated:
-    - Full platform access
-    - Project creation and management
-    - Unrestricted voting
-    - Persistent data storage
-  - Admin:
-    - System configuration
-    - User management
-    - Analytics access
-    - Rate limit overrides
+- Threat Protection
+  - Real-time threat detection
+  - Automated response system
+  - Security event logging
+  - Audit trail maintenance
+
+### Access Model
+```mermaid
+graph TD
+    A[User Access] --> B[Public Access]
+    B --> C[Read-Only Features]
+    B --> D[Rate-Limited Features]
+    C --> E[View Content]
+    D --> F[Voting with Limits]
+    E --> G[Browse Projects]
+    F --> H[Rate Cards]
+```
+
+#### Access Level Features
+- Public Access:
+  - Read-only access to all content
+  - Basic voting capabilities with rate limits
+  - No content creation/editing
+  - Rate-limited API access
+  - Abuse detection monitoring
 
 ### Data Validation & Safety
 - Comprehensive Zod schema validation
@@ -379,6 +507,7 @@ interface Card {
   type: 'image' | 'text';
   content: string;          // URL for images, text content for text cards
   hashtags: string[];       // Indexed for efficient filtering
+  projects: string[];       // Array of project IDs this card belongs to
   translations?: {
     [locale: string]: {
       content: string;

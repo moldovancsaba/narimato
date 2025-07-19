@@ -1,5 +1,117 @@
 # Release Notes
 
+## [v6.3.0] — 2025-07-19T18:14:37Z
+
+### Fixed
+- Resolved TypeScript errors across the codebase:
+  - Fixed CardManager import and props handling
+  - Added proper typings for socket.io interactions
+  - Fixed array destructuring and type inference in event handlers
+
+### Added
+- Added and configured missing dependencies:
+  - lodash and @types/lodash for utility functions
+  - @radix-ui/react-dialog for dialog components
+  - lucide-react for icon system
+  - socket.io and socket.io-client for real-time features
+  - pino and @types/pino for logging
+  - dotenv and @types/dotenv for environment management
+
+## [v6.2.0] — 2025-07-18T13:00:00Z
+
+### Added
+- Enhanced card editing system with:
+  - Improved project association management
+  - Real-time preview functionality
+  - Advanced validation system
+  - Optimized data consistency checks
+
+### MongoDB Optimizations
+- Improved database performance:
+  - Enhanced indexing strategy for card-project queries
+  - Optimized aggregation pipeline performance
+  - Reduced memory usage in large queries
+  - Added efficient batch operations
+
+### Changed
+- Updated card editing flow in ARCHITECTURE.md
+- Enhanced MongoDB documentation in LEARNINGS.md
+- Updated project roadmap with optimization plans
+- Marked completed tasks in task list
+
+### Fixed
+- Memory usage optimization in card-project queries
+- Query performance for large datasets
+- Data consistency in relationship operations
+- Reference integrity in card-project associations
+
+## [v6.1.4] — 2025-07-18T12:51:22Z
+
+### Changed
+- Development cycle version increment
+
+## [v6.1.3] — 2025-07-18T12:49:43Z
+
+### Fixed
+- Fixed TypeScript error in useCardSelection hook by using correct ICard interface
+
+## [v6.1.0] — 2025-07-18T08:24:00Z
+
+### URL Structure and Navigation Update
+- Enhanced URL structure with dual-pattern approach:
+  - User-facing URLs (slug-based) for readability and SEO
+  - Management URLs (MD5-based) for stability and security
+- Updated navigation system for improved usability
+- Added comprehensive documentation and examples
+- Verified all navigation paths and access controls
+
+### Added
+- URL pattern documentation in ARCHITECTURE.md
+- Navigation examples in README.md
+- New API endpoint documentation
+
+### Added
+- Enhanced card editing functionality:
+  - Two-way relationship between cards and projects
+  - Project association support in card forms
+  - Card edit page with existing data population
+- New API endpoints:
+  - PUT /api/cards/[slug] for card updates
+  - POST /api/projects/batch for fetching multiple projects
+
+### Changed
+- Updated CardForm component to support both creation and editing
+- Enhanced card detail page with associated projects display
+- Improved UI/UX for card-project relationships
+- Updated Card schema to include project associations
+
+### Documentation
+- Updated ARCHITECTURE.md with new Card schema
+- Updated TASKLIST.md to reflect completed items
+- Enhanced API documentation for new endpoints
+
+## [v6.0.0] — 2024-01-16T18:00:00.000Z
+
+### Breaking Changes
+- Removed authentication system for architectural redesign
+  - Eliminated `next-auth` dependency and related components
+  - Removed all auth-related endpoints and middleware
+  - Removed empty auth.ts middleware file
+  - Deprecated user session management
+  - Removed role-based access controls
+
+### Architectural Changes
+- Simplified application architecture by removing auth layer
+- Adjusted API routes to operate without authentication
+- Modified frontend components to work without user context
+- Updated database schemas to remove user relationships
+
+### Documentation
+- Updated all documentation to reflect auth system removal
+- Added migration guide for downstream dependencies
+- Updated architectural diagrams
+- Revised security considerations
+
 ## [v4.0.1] — 2025-07-17T00:50:48.000Z
 
 ### Deployment

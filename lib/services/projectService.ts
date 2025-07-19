@@ -12,23 +12,29 @@ interface ProjectDocument extends Document {
 }
 
 export class ProjectService {
-  /**
-   * Retrieves a project by its slug with populated cards
+/**
+   * Retrieves a project by its identifier (slug or MD5)
    * 
-   * @param slug - The unique slug identifier for the project
+   * @param identifier - The unique identifier for the project (slug or MD5)
+   * @param useSlug - If true, uses slug for lookup, otherwise uses MD5
    * @returns The project document if found, null otherwise
-   * @throws {ProjectValidationError} If the slug is invalid
+   * @throws {ProjectValidationError} If the identifier is invalid
    * @throws {DatabaseError} If there's a database connection or query error
    */
-  static async getProject(slug: string): Promise<ProjectDocument | null> {
-  console.log(`[Project Service] Attempting to fetch project with slug: ${slug}`);
+  static async getProject(identifier: string, useSlug: boolean = true): Promise<ProjectDocument | null> {
+    console.log(`[Project Service] Attempting to fetch project with ${useSlug ? 'slug' : 'MD5'}: ${identifier}`);
 
-  // Validate slug format
-  if (!slug || typeof slug !== 'string' || !/^[a-z0-9-]+$/.test(slug)) {
-    console.error(`[Project Service] Invalid slug format received: ${slug}`);
-    throw new ProjectValidationError('Invalid project slug format');
+    // Validate identifier format based on type
+    if (!identifier || typeof identifier !== 'string') {
+      console.error(`[Project Service] Invalid identifier format received: ${identifier}`);
+      throw new ProjectValidationError('Invalid project identifier format');
+    }
 
-  }
+    if (useSlug && !/^[a-z0-9-]+$/.test(identifier)) {
+      throw new ProjectValidationError('Invalid project slug format');
+    } else if (!useSlug && !/^[a-f0-9]{32}$/i.test(identifier)) {
+      throw new ProjectValidationError('Invalid project MD5 format');
+    }
 
   try {
     // Ensure database connection
@@ -37,17 +43,19 @@ export class ProjectService {
       throw new DatabaseError('Failed to establish database connection');
     }
 
-    // Find project with populated cards
-    console.log(`[Project Service] Executing database query for slug: ${slug}`);
-    const project = await Project.findOne({ slug })
-      .populate({
-        path: 'cards',
-        options: { lean: true }
-      })
-      .exec();
+    // Find project with populated cards using the appropriate identifier
+    console.log(`[Project Service] Executing database query for ${useSlug ? 'slug' : 'MD5'}: ${identifier}`);
+    const project = await Project.findOne(
+      useSlug ? { slug: identifier } : { identifierMD5: identifier }
+    )
+    .populate({
+      path: 'cards',
+      options: { lean: true }
+    })
+    .exec();
     
     if (!project) {
-      console.warn(`[Project Service] Project not found with slug: ${slug}`);
+      console.warn(`[Project Service] Project not found with ${useSlug ? 'slug' : 'MD5'}: ${identifier}`);
       return null;
     }
 

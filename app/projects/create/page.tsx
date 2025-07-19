@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { ProjectForm } from '@/components/Project/ProjectForm';
 import type { ProjectInput } from '@/lib/validations/project';
 
@@ -28,7 +27,6 @@ import type { ProjectInput } from '@/lib/validations/project';
  */
 export default function CreateProjectPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
   const [error, setError] = useState<string | null>(null);
 
   /**
@@ -36,14 +34,9 @@ export default function CreateProjectPage() {
    * @param data - Validated project data from the form
    */
 const handleCreateProject = async (data: ProjectInput) => {
-    if (!session?.user?.id) {
-      throw new Error('You must be logged in to create a project');
-    }
-
-    // Set createdBy to the current user's ID
     const projectData = {
       ...data,
-      createdBy: session.user.id
+      createdBy: 'anonymous' // Fallback since we removed auth
     };
     try {
       // Attempt to create the project via API
@@ -78,31 +71,6 @@ const handleCreateProject = async (data: ProjectInput) => {
     }
   };
 
-  // Handle unauthenticated state
-  if (status === 'loading') {
-    return (
-      <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-xl mx-auto text-center">
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!session?.user?.id) {
-    return (
-      <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-xl mx-auto text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            Authentication Required
-          </h1>
-          <p className="text-gray-600">
-            You must be logged in to create a project.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -135,7 +103,7 @@ const handleCreateProject = async (data: ProjectInput) => {
         )}
 
         <ProjectForm
-          initialData={{ createdBy: session.user.id }}
+          initialData={{ createdBy: 'anonymous' }}
           onSubmit={handleCreateProject}
         />
       </div>

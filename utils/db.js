@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import crypto from 'crypto';
 
 // MongoDB Atlas connection configuration
 if (!process.env.MONGODB_URI) {
@@ -20,6 +21,11 @@ const CardSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  md5: {
+    type: String,
+    required: true,
+    unique: true
+  },
   imageUrl: {
     type: String,
     required: function() { return this.type === 'image'; }
@@ -35,6 +41,11 @@ const CardSchema = new mongoose.Schema({
 });
 
 const ProjectSchema = new mongoose.Schema({
+  md5: {
+    type: String,
+    required: true,
+    unique: true
+  },
   name: {
     type: String,
     required: true,
@@ -125,6 +136,26 @@ const updateTimestamp = function(next) {
   this.updatedAt = new Date();
   next();
 };
+
+// Middleware to generate MD5 hash for Card
+CardSchema.pre('save', function(next) {
+  if (!this.md5) {
+    const contentToHash = this.type === 'image' ? 
+      `${this.type}:${this.imageUrl}:${this.content}` : 
+      `${this.type}:${this.content}`;
+    this.md5 = crypto.createHash('md5').update(contentToHash).digest('hex');
+  }
+  next();
+});
+
+// Middleware to generate MD5 hash for Project
+ProjectSchema.pre('save', function(next) {
+  if (!this.md5) {
+    const contentToHash = `${this.name}:${this.slug}:${this.description || ''}`;
+    this.md5 = crypto.createHash('md5').update(contentToHash).digest('hex');
+  }
+  next();
+});
 
 CardSchema.pre('save', updateTimestamp);
 ProjectSchema.pre('save', updateTimestamp);

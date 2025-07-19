@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import Link from 'next/link';
 import { ReactNode } from 'react';
 
 interface CardContainerProps {
@@ -18,6 +19,7 @@ interface CardContainerProps {
   isInteractive?: boolean;
   extraContent?: ReactNode;
   containerClassName?: string;
+  id?: string;
 }
 
 export function CardContainer({
@@ -34,12 +36,13 @@ export function CardContainer({
   isInteractive = true,
   extraContent,
   containerClassName = '',
+  id,
 }: CardContainerProps) {
   const Container = isInteractive ? motion.div : 'div';
 
   return (
     <div
-      className={`card-grid-item ${containerClassName}`}
+      className={`card-grid-item ${containerClassName} ${isInteractive ? 'cursor-pointer' : ''}`}
       data-type={type}
       onClick={onClick}
       role={onClick ? "button" : undefined}
@@ -81,6 +84,17 @@ export function CardContainer({
             </>
           )}
 
+          {/* Edit button */}
+          {id && (
+            <div className="mt-2">
+              <Link
+                href={`/cards/${id}/edit`}
+                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Edit Card
+              </Link>
+            </div>
+          )}
           {/* Extra content (like voting buttons, stats, etc.) */}
           {extraContent}
         </div>

@@ -1,22 +1,21 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { getProjectUrl } from '@/app/middleware';
+import { hasManagementAccess } from '@/app/middleware';
 import { MagnifyingGlassIcon, ArrowsUpDownIcon, StarIcon, TagIcon, BookmarkIcon } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { motion, AnimatePresence } from 'framer-motion';
 
-interface Project {
+import { IProject } from '@/lib/types';
+
+interface Project extends Omit<IProject, '_id'> {
+  _id: string;
   id: string;
-  title: string; // maps to name in the database
-  description?: string;
-  slug: string;
-  tags: Array<{ name: string; color: string }>;
-  isPublic: boolean;
+  isPublic?: boolean;
+  isDeleted?: boolean;
   isFeatured: boolean;
-  viewCount: number;
-  lastViewedAt?: string;
-  createdAt: string;
-  updatedAt: string;
 }
 
 interface ProjectActivity {
@@ -35,6 +34,8 @@ interface ProjectsMenuProps {
 }
 
 export default function ProjectsMenu({ projects, activities }: ProjectsMenuProps) {
+  // Temporary auth state placeholder - to be replaced with actual auth implementation
+  const userHasManagementAccess = true; // Placeholder for management access check
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [sortOption, setSortOption] = useState<'name' | 'recent' | 'popular'>('recent');
@@ -95,6 +96,12 @@ export default function ProjectsMenu({ projects, activities }: ProjectsMenuProps
             <option value="popular">Most Popular</option>
             <option value="name">Name</option>
           </select>
+          <Link
+            href="/projects/create"
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+          >
+            Create Project
+          </Link>
         </div>
 
         {/* Tags */}
@@ -142,10 +149,18 @@ export default function ProjectsMenu({ projects, activities }: ProjectsMenuProps
                 className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow"
               >
                 <div className="flex items-start justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    <a href={`/project/${project.slug}`} className="hover:text-blue-600">
+<h3 className="text-lg font-semibold text-gray-900 flex items-center justify-between">
+                    <Link href={getProjectUrl(project)} className="hover:text-blue-600">
                       {project.title}
-                    </a>
+</Link>
+                    {userHasManagementAccess && (
+                      <Link
+                        href={getProjectUrl(project, true)}
+                        className="text-sm text-gray-500 hover:text-blue-600"
+                      >
+                        Manage
+                      </Link>
+                    )}
                   </h3>
                   {project.isFeatured && (
                     <StarIconSolid className="w-5 h-5 text-yellow-400" />
@@ -184,9 +199,9 @@ export default function ProjectsMenu({ projects, activities }: ProjectsMenuProps
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Recently Viewed</h3>
           <div className="space-y-3">
             {recentlyViewed.map(project => (
-              <a
+<Link
                 key={project.id}
-                href={`/project/${project.slug}`}
+                href={getProjectUrl(project)}
                 className="flex items-center space-x-3 group"
               >
                 <BookmarkIcon className="w-5 h-5 text-gray-400 group-hover:text-blue-500" />
@@ -198,7 +213,7 @@ export default function ProjectsMenu({ projects, activities }: ProjectsMenuProps
                     Last viewed {new Date(project.lastViewedAt!).toLocaleDateString()}
                   </p>
                 </div>
-              </a>
+</Link>
             ))}
           </div>
         </div>
@@ -219,9 +234,12 @@ export default function ProjectsMenu({ projects, activities }: ProjectsMenuProps
                     <span className="font-medium text-gray-900">{activity.userName}</span>
                     {' '}
                     {activity.type.replace('_', ' ')}{' '}
-                    <a href={`/project/${activity.projectId}`} className="text-blue-600 hover:underline">
+<Link
+                      href={getProjectUrl({ _id: activity.projectId, slug: activity.projectId }, userHasManagementAccess)}
+                      className="text-blue-600 hover:underline"
+                    >
                       {activity.projectTitle}
-                    </a>
+</Link>
                   </p>
                   <span className="text-xs text-gray-500">
                     {new Date(activity.timestamp).toLocaleString()}
