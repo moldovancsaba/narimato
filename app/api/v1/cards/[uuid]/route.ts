@@ -42,3 +42,40 @@ export async function PATCH(request: NextRequest) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const uuid = request.nextUrl.pathname.split('/').pop();
+    if (!uuid) {
+      return NextResponse.json(
+        { error: 'UUID is required' },
+        { status: 400 }
+      );
+    }
+
+    await dbConnect();
+
+    const card = await Card.findOne({ uuid });
+
+    if (!card) {
+      return NextResponse.json(
+        { error: 'Card not found' },
+        { status: 404 }
+      );
+    }
+
+    await Card.findOneAndDelete({ uuid });
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Card deleted successfully',
+      deletedCardId: uuid
+    });
+  } catch (error) {
+    console.error('Failed to delete card:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to delete card' },
+      { status: 500 }
+    );
+  }
+}

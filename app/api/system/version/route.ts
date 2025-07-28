@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '../../../lib/utils/db';
 import { SystemVersion } from '../../../lib/models/SystemVersion';
-import { version } from '../../../../package.json';
+import packageJson from '../../../../package.json';
+
+const version = packageJson.version;
 
 /**
  * System Version API Endpoint

@@ -32,17 +32,18 @@ export default function VotePage() {
 function VoteContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [ranking, setRanking] = useState<RankingEntity | null>(null);
   const [cardA, setCardA] = useState<Card | null>(null);
   const [cardB, setCardB] = useState<Card | null>(null);
+  const [ranking, setRanking] = useState<RankingEntity | null>(null);
   const [selected, setSelected] = useState<'A' | 'B' | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [sessionVersion, setSessionVersion] = useState<number>(0);
 
   const sessionId = searchParams.get('sessionId');
   const cardId = searchParams.get('cardId');
 
   useEffect(() => {
-    // Load both cards for comparison
+    // Load both cards for comparison and get current session version
     async function loadComparison() {
       if (!sessionId || !cardId) {
         router.push('/swipe');
@@ -50,6 +51,14 @@ function VoteContent() {
       }
 
       try {
+        // Get current session version for optimistic locking
+        const sessionResponse = await fetch(`/api/v1/session/validate?sessionId=${sessionId}`);
+        const sessionData = await sessionResponse.json();
+        
+        if (sessionResponse.ok && sessionData.isValid) {
+          setSessionVersion(sessionData.version);
+        }
+        
         const response = await fetch(`/api/v1/vote/comparison?sessionId=${sessionId}&cardId=${cardId}`);
         const data = await response.json();
 
@@ -91,7 +100,9 @@ function VoteContent() {
           sessionId,
           cardA: cardA.uuid,
           cardB: cardB.uuid,
-          winner: winner === 'A' ? cardA.uuid : cardB.uuid
+          winner: winner === 'A' ? cardA.uuid : cardB.uuid,
+          version: sessionVersion,
+          timestamp: new Date().toISOString()
         })
       });
 
@@ -99,6 +110,11 @@ function VoteContent() {
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to record vote');
+      }
+
+      // Update session version for next requests (optimistic locking)
+      if (data.version) {
+        setSessionVersion(data.version);
       }
 
       // Handle next comparison or completion
