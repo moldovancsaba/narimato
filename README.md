@@ -1,3 +1,23 @@
+# NARIMATO
+
+![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
+![Next.js](https://img.shields.io/badge/Next.js-15.4.4-black.svg)
+![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)
+
+NARIMATO is an anonymous, session-based card ranking application built with Next.js, MongoDB, and real-time capabilities.
+
+**Current Version:** 2.0.0
+
+## 📚 Documentation
+
+- **[📋 Roadmap](./ROADMAP.md)** - Development roadmap with Q1-Q4 2024 plans
+- **[✅ Task List](./TASKLIST.md)** - Prioritized implementation tasks and status
+- **[📦 Release Notes](./RELEASE_NOTES.md)** - Version history and change log
+- **[🏗️ Architecture](./ARCHITECTURE.md)** - System architecture and technical overview
+- **[🧠 Learnings](./LEARNINGS.md)** - Development insights and lessons learned
+
+## 🚀 Quick Start
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
