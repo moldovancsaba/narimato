@@ -91,13 +91,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate session state allows swiping
-    // Only allow swipes when session is in 'swiping' state
-    // This prevents invalid operations during voting or completion phases
-    if (session.state !== 'swiping') {
+    // Allow swipes when session is in 'swiping' or 'voting' state
+    // 'voting' state allows left swipes to reject cards without going through comparison
+    if (session.state !== 'swiping' && session.state !== 'voting') {
       return new NextResponse(
         JSON.stringify({ 
           success: false,
-          error: `Invalid session state: ${session.state}. Expected 'swiping'`
+          error: `Invalid session state: ${session.state}. Expected 'swiping' or 'voting'`
         }),
         { status: 400 }
       );
@@ -183,6 +183,7 @@ export async function POST(request: NextRequest) {
         // First right swipe - add to ranking automatically
         session.personalRanking = [cardId];
         requiresVoting = false;
+        nextState = 'swiping';
       } else {
         // Subsequent right swipes require voting
         nextState = 'voting';
@@ -197,6 +198,10 @@ export async function POST(request: NextRequest) {
           };
         }
       }
+    } else if (direction === 'left') {
+      // Left swipes always return to swiping state (reject card)
+      nextState = 'swiping';
+      requiresVoting = false;
     }
 
     // Update session state

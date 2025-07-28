@@ -338,9 +338,9 @@ function validateStateTransition(
   
   // Define valid state transition matrix
   const validTransitions: Record<string, string[]> = {
-    'swiping': ['comparing', 'completed'],
+    'swiping': ['voting', 'comparing', 'completed'],
     'comparing': ['comparing', 'swiping', 'completed'],
-    'voting': ['comparing', 'completed'],
+    'voting': ['comparing', 'swiping', 'completed'],
     'completed': [] // Terminal state
   };
   
@@ -424,7 +424,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Comprehensive validation layer 1: Basic integrity checks
+    // Comprehensive validation layer 1: Basic integrity checks and adjust state transitions
     const newCard = cardA === winner ? cardA : cardB;
     const integralityValidation = validateRankingIntegrity(
       newCard,
@@ -434,6 +434,11 @@ export async function POST(request: NextRequest) {
       cardB,
       session.votes
     );
+
+    // If the session is in voting state and the validation passed, transition to comparing
+    if (session.state === 'voting' && integralityValidation.isValid) {
+      session.state = 'comparing';
+    }
     
     if (!integralityValidation.isValid) {
       return new NextResponse(
