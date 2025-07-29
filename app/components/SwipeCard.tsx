@@ -3,6 +3,7 @@
 import { useSpring, animated } from '@react-spring/web';
 import { useGesture } from '@use-gesture/react';
 import { useState, useEffect, useCallback } from 'react';
+import BaseCard from './BaseCard';
 
 /**
  * Interface defining the structure of card content data.
@@ -295,7 +296,7 @@ export default function SwipeCard({
         touchAction: 'none'
       }}
       className={`
-        absolute w-full max-w-md aspect-[3/4] bg-white rounded-xl shadow-xl
+        absolute card-container
         ${swipeState === 'idle' ? 'cursor-grab active:cursor-grabbing' : ''}
         ${swipeState === 'loading' ? 'opacity-50' : ''}
         ${swipeState === 'error' ? 'border-2 border-red-500' : ''}
@@ -333,27 +334,13 @@ export default function SwipeCard({
           </div>
         </div>
       )}
-      {type === 'text' ? (
-        <div className="h-full p-6 flex flex-col">
-          {title && (
-            <h2 className="text-xl font-bold mb-4">{title}</h2>
-          )}
-          <p className="text-lg flex-grow">{content.text}</p>
-        </div>
-      ) : (
-        <div className="h-full relative">
-          <img
-            src={content.mediaUrl}
-            alt={title || 'Card content'}
-            className="w-full h-full object-cover rounded-xl"
-          />
-          {title && (
-            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent">
-              <h2 className="text-xl font-bold text-white">{title}</h2>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Use BaseCard for consistent card design */}
+      <BaseCard
+        uuid={uuid}
+        type={type}
+        content={content}
+        title={title}
+      />
     </animated.div>
   );
 }

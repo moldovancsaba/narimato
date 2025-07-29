@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import BaseCard from './BaseCard';
 
 /**
  * Interface defining the structure of card content data.
@@ -32,9 +33,9 @@ interface VoteCardProps {
  * where users compare the new card against existing ranked cards.
  * 
  * Key features:
+ * - Uses universal BaseCard component for consistent design
  * - Smooth animation states for selection feedback
  * - Position-aware styling (left/right in comparison layout)
- * - Consistent rendering with SwipeCard component
  * - Hover effects for improved user experience
  * 
  * Implementation follows the ranking specification:
@@ -43,6 +44,7 @@ interface VoteCardProps {
  * - Same content rendering logic as SwipeCard for consistency
  */
 export default function VoteCard({
+  uuid,
   type,
   content,
   title,
@@ -82,35 +84,17 @@ export default function VoteCard({
       animate={isSelected ? "selected" : isSelected === false ? "unselected" : "initial"}
       variants={variants}
       whileHover={{ scale: 1.02 }}
-      onClick={onSelect}
-      className={`w-full max-w-md aspect-[3/4] bg-white rounded-xl shadow-xl cursor-pointer
-        ${position === 'left' ? 'mr-4' : 'ml-4'}`}
+      className="w-full"
     >
-      {type === 'text' && content.text ? (
-        <div className="h-full p-6 flex flex-col">
-          {title && (
-            <h2 className="text-xl font-bold mb-4">{title}</h2>
-          )}
-          <p className="text-lg flex-grow">{content.text}</p>
-        </div>
-      ) : type === 'media' && content.mediaUrl ? (
-        <div className="h-full relative">
-          <img
-            src={content.mediaUrl}
-            alt={title || 'Card content'}
-            className="w-full h-full object-cover rounded-xl"
-          />
-          {title && (
-            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent">
-              <h2 className="text-xl font-bold text-white">{title}</h2>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="h-full flex items-center justify-center text-gray-500">
-          <p>Content not available</p>
-        </div>
-      )}
+      <BaseCard
+        uuid={uuid}
+        type={type}
+        content={content}
+        title={title}
+        onClick={onSelect}
+        size="medium"
+        className="hover:shadow-xl transition-shadow duration-200"
+      />
     </motion.div>
   );
 }

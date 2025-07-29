@@ -1,11 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Fira_Code } from "next/font/google";
 import "./globals.css";
 import ChunkErrorProvider from './components/ChunkErrorProvider';
 
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
+});
+
+const firaCode = Fira_Code({
+  weight: '600',
+  subsets: ['latin'],
+  variable: '--font-fira-code',
 });
 
 export const metadata: Metadata = {
@@ -33,7 +39,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} antialiased bg-gray-100 text-gray-900`}
+        className={`${inter.variable} ${firaCode.variable} antialiased bg-gray-100 text-gray-900`}
       >
         <ChunkErrorProvider>
           {children}

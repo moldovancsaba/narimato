@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import VoteCard from '../components/VoteCard';
+import { DeckEntity } from '@/app/lib/models/DeckEntity';
 import { SESSION_FIELDS, CARD_FIELDS, VOTE_FIELDS } from '@/app/lib/constants/fieldNames';
 
 interface Card {
@@ -146,8 +147,24 @@ function VoteContent() {
           throw new Error('Failed to load next comparison');
         }
       } else {
-        // No more comparisons, return to swipe page
-        router.push('/swipe');
+        // No more comparisons, check if deck is exhausted and redirect accordingly
+        const deckResponse = await fetch(`/api/v1/deck?${SESSION_FIELDS.ID}=${sessionId}&_t=${Date.now()}`);
+        if (deckResponse.ok) {
+          const deckData = await deckResponse.json();
+          const deck = new DeckEntity(deckData.deck);
+          
+          // If deck is exhausted, go to results page
+          if (deck.isExhausted()) {
+            console.log('Voting complete and deck exhausted, redirecting to completed page');
+            router.push(`/completed?${SESSION_FIELDS.ID}=${sessionId}`);
+          } else {
+            // Still have cards to swipe, return to swipe page
+            router.push('/swipe');
+          }
+        } else {
+          // Fallback to swipe page if deck check fails
+          router.push('/swipe');
+        }
       }
     } catch (error) {
       console.error('Vote error:', error);
@@ -207,19 +224,23 @@ function VoteContent() {
     <div className="min-h-screen bg-gray-100 flex flex-col items-center pt-16">
       <h1 className="text-2xl font-bold mb-8">Which do you prefer?</h1>
       
-      <div className="flex justify-center items-center space-x-4">
-        <VoteCard
-          {...cardA}
-          position="left"
-          onSelect={() => handleSelect('A')}
-          isSelected={selected === 'A'}
-        />
-        <VoteCard
-          {...cardB}
-          position="right"
-          onSelect={() => handleSelect('B')}
-          isSelected={selected === 'B'}
-        />
+      <div className="flex justify-center items-center space-x-6 w-full max-w-4xl px-4">
+        <div className="w-full max-w-xs">
+          <VoteCard
+            {...cardA}
+            position="left"
+            onSelect={() => handleSelect('A')}
+            isSelected={selected === 'A'}
+          />
+        </div>
+        <div className="w-full max-w-xs">
+          <VoteCard
+            {...cardB}
+            position="right"
+            onSelect={() => handleSelect('B')}
+            isSelected={selected === 'B'}
+          />
+        </div>
       </div>
 
       <div className="mt-8 text-center text-gray-500">

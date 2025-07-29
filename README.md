@@ -1,12 +1,31 @@
 # NARIMATO
 
-![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.0.2-blue.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-15.4.4-black.svg)
 ![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)
+![MongoDB](https://img.shields.io/badge/MongoDB-7.0+-green.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)
 
-NARIMATO is an anonymous, session-based card ranking application built with Next.js, MongoDB, and real-time capabilities.
+NARIMATO is an anonymous, session-based card ranking application built with Next.js, MongoDB, and sophisticated binary search ranking algorithms.
 
-**Current Version:** 2.0.0
+**Current Version:** 2.0.2 *(Updated with Fira Code SemiBold font)*
+
+## ✨ Key Features
+
+- **Binary Search Ranking**: Efficient O(log n) card positioning algorithm
+- **Anonymous Sessions**: No user registration required
+- **Real-time State Management**: Optimistic locking with automatic conflict resolution
+- **Mobile-First Design**: Responsive interface with touch gesture support
+- **Session Recovery**: Robust error handling and state persistence
+- **Comprehensive Error Handling**: Graceful degradation and automatic recovery
+
+## 🔥 Recent Improvements (v2.0.1)
+
+- **Enhanced Binary Search**: Accumulated bounds calculation for optimal comparison efficiency
+- **Smart State Transitions**: Automatic detection when card position is determined
+- **Improved Session Management**: Perfect synchronization between frontend and backend states
+- **Performance Optimization**: ~40% reduction in average comparisons per card
+- **Bug Fixes**: Eliminated repeated comparisons and state inconsistencies
 
 ## 📚 Documentation
 
@@ -38,7 +57,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load fonts. The card components use **Fira Code SemiBold (600)** for enhanced readability and modern aesthetic.
 
 ## Learn More
 

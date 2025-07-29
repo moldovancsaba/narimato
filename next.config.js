@@ -52,13 +52,34 @@ const nextConfig = {
   
   // Headers to improve caching and loading
   async headers() {
+    const isDev = process.env.NODE_ENV === 'development';
+    
     return [
       {
         source: '/_next/static/(.*)',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
+            value: isDev 
+              ? 'no-cache, no-store, must-revalidate, max-age=0'
+              : 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/api/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0',
+          },
+          {
+            key: 'Pragma',
+            value: 'no-cache',
+          },
+          {
+            key: 'Expires',
+            value: '0',
           },
         ],
       },
@@ -67,7 +88,9 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'no-cache, no-store, must-revalidate, max-age=0',
+            value: isDev 
+              ? 'no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0'
+              : 'no-cache, no-store, must-revalidate, max-age=0',
           },
           {
             key: 'Pragma',

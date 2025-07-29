@@ -254,8 +254,22 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
     );
   }
 
+  // Check if deck is exhausted and redirect to results
+  useEffect(() => {
+    if (deck && deck.isExhausted() && sessionId) {
+      console.log('Deck exhausted, redirecting to completed page');
+      router.push(`/completed?${SESSION_FIELDS.ID}=${sessionId}`);
+    }
+  }, [deck, sessionId, router]);
+
   // Handle loading state
   if (!sessionId || !currentCard) {
+    // If we have a deck but no current card, check if exhausted
+    if (deck && deck.isExhausted() && sessionId) {
+      router.push(`/completed?${SESSION_FIELDS.ID}=${sessionId}`);
+      return null;
+    }
+    
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-pulse text-xl">Loading...</div>

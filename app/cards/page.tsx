@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import BaseCard from '../components/BaseCard';
 import { CARD_FIELDS } from '@/app/lib/constants/fieldNames';
 import { createUniqueKey, validateUUID } from '@/app/lib/utils/fieldValidation';
 
@@ -299,66 +300,85 @@ export default function CardsPage() {
           </div>
         </form>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {cards.map((card) => (
             <motion.div
               key={createUniqueKey('card', card[CARD_FIELDS.UUID])}
               layout
-              className={`bg-white p-6 rounded-lg shadow-md ${
+              className={`relative group ${
                 !card[CARD_FIELDS.IS_ACTIVE] ? 'opacity-50' : ''
               }`}
             >
-              <div className="flex items-start mb-4 gap-2">
-                <h3 className="text-lg font-semibold flex-grow">{card[CARD_FIELDS.TITLE] || 'Untitled'}</h3>
-                <div className="flex gap-2">
-                <button
-                  onClick={() => toggleCardStatus(card[CARD_FIELDS.UUID], card[CARD_FIELDS.IS_ACTIVE])}
-                  className={`px-3 py-1 rounded text-sm ${
-                    card[CARD_FIELDS.IS_ACTIVE]
-                      ? 'bg-red-100 text-red-600 hover:bg-red-200'
-                      : 'bg-green-100 text-green-600 hover:bg-green-200'
-                  }`}
-                >
-                  {card[CARD_FIELDS.IS_ACTIVE] ? 'Deactivate' : 'Activate'}
-                </button>
+              {/* BaseCard Display */}
+              <BaseCard
+                uuid={card[CARD_FIELDS.UUID]}
+                type={card[CARD_FIELDS.TYPE] as 'text' | 'media'}
+                content={card[CARD_FIELDS.CONTENT]}
+                title={card[CARD_FIELDS.TITLE]}
+                size="medium"
+                className="transition-all duration-200 group-hover:shadow-lg"
+              >
+                {/* Status indicator */}
+                {!card[CARD_FIELDS.IS_ACTIVE] && (
+                  <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded">
+                    Inactive
+                  </div>
+                )}
+              </BaseCard>
+
+              {/* Card Management Overlay */}
+              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-75 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => toggleCardStatus(card[CARD_FIELDS.UUID], card[CARD_FIELDS.IS_ACTIVE])}
+                    className={`px-3 py-2 rounded text-sm font-medium ${
+                      card[CARD_FIELDS.IS_ACTIVE]
+                        ? 'bg-red-500 text-white hover:bg-red-600'
+                        : 'bg-green-500 text-white hover:bg-green-600'
+                    }`}
+                  >
+                    {card[CARD_FIELDS.IS_ACTIVE] ? 'Deactivate' : 'Activate'}
+                  </button>
                   <button
                     onClick={() => handleEdit(card)}
-                    className="px-3 py-1 rounded text-sm bg-blue-100 text-blue-600 hover:bg-blue-200"
+                    className="px-3 py-2 rounded text-sm font-medium bg-blue-500 text-white hover:bg-blue-600"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => handleDelete(card[CARD_FIELDS.UUID])}
-                    className="px-3 py-1 rounded text-sm bg-red-100 text-red-600 hover:bg-red-200"
+                    className="px-3 py-2 rounded text-sm font-medium bg-red-500 text-white hover:bg-red-600"
                   >
                     Delete
                   </button>
                 </div>
               </div>
 
-              {card[CARD_FIELDS.TYPE] === 'text' ? (
-                <p className="text-gray-600 mb-4">{card[CARD_FIELDS.CONTENT].text}</p>
-              ) : (
-                <img
-                  src={card[CARD_FIELDS.CONTENT].mediaUrl}
-                  alt={card[CARD_FIELDS.TITLE] || 'Card media'}
-                  className="w-full h-48 object-cover rounded mb-4"
-                />
-              )}
-
-              <div className="flex flex-wrap gap-2">
-                {card[CARD_FIELDS.TAGS].map((tag, tagIndex) => (
-                  <span
-                    key={createUniqueKey('tag', card[CARD_FIELDS.UUID], tagIndex, tag)}
-                    className="bg-gray-100 text-gray-600 text-sm px-2 py-1 rounded"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-
-              <div className="mt-4 text-xs text-gray-400">
-                Created: {new Date(card[CARD_FIELDS.CREATED_AT]).toLocaleDateString()}
+              {/* Card Metadata */}
+              <div className="mt-3 space-y-2">
+                {/* Tags */}
+                {card[CARD_FIELDS.TAGS].length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {card[CARD_FIELDS.TAGS].slice(0, 3).map((tag, tagIndex) => (
+                      <span
+                        key={createUniqueKey('tag', card[CARD_FIELDS.UUID], tagIndex, tag)}
+                        className="bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded-full"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                    {card[CARD_FIELDS.TAGS].length > 3 && (
+                      <span className="bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded-full">
+                        +{card[CARD_FIELDS.TAGS].length - 3}
+                      </span>
+                    )}
+                  </div>
+                )}
+                
+                {/* Creation Date */}
+                <div className="text-xs text-gray-500">
+                  Created: {new Date(card[CARD_FIELDS.CREATED_AT]).toLocaleDateString()}
+                </div>
               </div>
             </motion.div>
           ))}

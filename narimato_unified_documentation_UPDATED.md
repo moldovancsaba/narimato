@@ -562,50 +562,79 @@ const SwipeableCard = ({ card, onSwipe }) => {
 
 ## 7. Ranking System
 
-### 7.1 Session Lifecycle and Swipe-Vote Logic
+### 7.1 Binary Search Ranking Algorithm
+
+NARIMATO implements a sophisticated binary search algorithm for efficient card ranking through pairwise comparisons. This system provides optimal O(log n) complexity for card positioning.
+
+#### 7.1.1 Core Algorithm Components
+
+**Search Bounds Calculation:**
+- Each vote refines the search space for a card's final position
+- Accumulated bounds are calculated from all previous votes for the card
+- Winning against a card narrows the upper bound (card ranks higher)
+- Losing against a card narrows the lower bound (card ranks lower)
+- When search bounds collapse (start >= end), the card's position is determined
+
+**Binary Search Strategy:**
+- Always compare against the middle card in the current search space
+- Efficiently eliminates half of the remaining possibilities with each vote
+- Guarantees optimal number of comparisons for any ranking position
+
+### 7.2 Session Lifecycle and State Management
+
+#### Session States:
+- **swiping**: User browsing and selecting cards from deck
+- **voting**: User in comparison phase for first card ranking
+- **comparing**: System performing binary search ranking for subsequent cards
+- **completed**: All cards processed, session finished
+
+#### State Transition Rules:
+1. **swiping → voting**: Right swipe on first card (immediate ranking)
+2. **swiping → comparing**: Right swipe on subsequent cards (binary search needed)
+3. **voting → swiping**: First card ranked, return to deck
+4. **comparing → comparing**: More comparisons needed for positioning
+5. **comparing → swiping**: Card positioned via binary search, return to deck
+6. **swiping → completed**: No more cards in deck
+
+### 7.3 Detailed Flow
 
 1. **Starting a New Ranking Session**
    - User clicks "Start Ranking"
    - System creates new DECK with:
      - All active cards in random order
      - Empty ranking list
-     - State: SWIPE
-   - Shows first CARD
+     - State: "swiping"
+   - Shows first card
 
 2. **SWIPE Phase**
    - ANY SWIPE (left or right):
      - Card is PERMANENTLY REMOVED from DECK
      - Cannot be shown in SWIPE again in this session
    - For LEFT swipes:
-     - CARD is simply discarded
+     - Card is simply discarded
      - Shows next card from remaining DECK
-     - Stays in SWIPE state
+     - Stays in "swiping" state
    - For RIGHT swipes:
-     - First right swipe → Card becomes #1 in ranking
-     - Shows next card from remaining deck
-     - Stays in swiping state
-     - Second or later right swipes:
-       - Enters voting phase with this card
+     - First right swipe → Card becomes #1 in ranking (state: swiping)
+     - Second+ right swipes → Enters binary search comparison (state: comparing)
 
-3. **Voting Phase**
-   - Shows comparison between new card and last ranked card
-   - User picks winner
-   - If new card wins:
-     - If beating #1 ranked card:
-       - New card becomes #1
-       - Returns to swiping
-     - Otherwise:
-       - Next comparison is with a randomly chosen card from those ranked ABOVE the losing card
-       - Continues until final rank is determined
-   - If new card loses:
-     - Next comparison is with a randomly chosen card from those ranked BELOW the losing card
-     - Continues until final rank is determined
-   - When no more valid comparisons are needed:
-     - New card gets its final rank
-     - Returns to swiping state
+3. **Binary Search Comparison Phase**
+   - System calculates accumulated search bounds from all previous votes
+   - If search space is empty (bounds collapsed):
+     - Card position is determined automatically
+     - Card inserted at calculated position
+     - Session state returns to "swiping"
+     - No user interaction required
+   - If search space exists:
+     - Shows comparison between new card and middle card of search space
+     - User picks winner
+     - Search bounds are updated based on result
+     - Process repeats until position is determined
 
 4. **Completion**
    - Session ends when DECK is empty (all cards have been swiped and all right-swiped cards ranked)
+   - Personal ranking is finalized
+   - Global rankings are updated with session results
 ## 8. Session Management
 
 ### 8.1 Session Lifecycle

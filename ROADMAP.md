@@ -1,6 +1,7 @@
 # NARIMATO Development Roadmap
 
-**Current Version:** 2.0.0  
+**Current Version:** 2.0.1 (Updated)
+**Date:** 2025-07-29
 **Last Updated:** 2025-01-13T12:34:56.789Z
 
 ## Q1 2024 - Foundation & Core Features
