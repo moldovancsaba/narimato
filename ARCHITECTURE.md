@@ -5,7 +5,7 @@
 
 ## System Overview
 
-NARIMATO is an anonymous, session-based card ranking application built on Next.js App Router, Vercel, MongoDB, Tailwind, Mongoose, and Socket.io.
+NARIMATO is an advanced card ranking system offering real-time capabilities and a clean, user-friendly interface. It's built with Next.js, Vercel, MongoDB, Tailwind CSS, Mongoose, and Socket.io for interactive, scalable web applications.
 
 ## Flow Diagrams
 

@@ -8,7 +8,7 @@
 
 NARIMATO is an anonymous, session-based card ranking application built with Next.js, MongoDB, and sophisticated binary search ranking algorithms.
 
-**Current Version:** 2.0.2 *(Updated with Fira Code SemiBold font)*
+**Current Version:** 2.0.2 *(Updated with enhanced UI/UX and typography)*
 
 ## ✨ Key Features
 
@@ -16,16 +16,21 @@ NARIMATO is an anonymous, session-based card ranking application built with Next
 - **Anonymous Sessions**: No user registration required
 - **Real-time State Management**: Optimistic locking with automatic conflict resolution
 - **Mobile-First Design**: Responsive interface with touch gesture support
+- **Dynamic Text Scaling**: Automatic font sizing for optimal readability
+- **Modern Typography**: Professional Fira Code SemiBold font for enhanced aesthetics
+- **Clean Card Design**: Simplified interface focused on content without title clutter
 - **Session Recovery**: Robust error handling and state persistence
 - **Comprehensive Error Handling**: Graceful degradation and automatic recovery
 
-## 🔥 Recent Improvements (v2.0.1)
+## 🔥 Recent Improvements (v2.0.2)
 
+- **Typography Enhancement**: Upgraded to Fira Code SemiBold (600) for improved readability
+- **Clean UI Design**: Removed title overlays from cards for cleaner, content-focused interface
+- **Dynamic Text Fitting**: Advanced text scaling system ensures optimal display across all card sizes
 - **Enhanced Binary Search**: Accumulated bounds calculation for optimal comparison efficiency
 - **Smart State Transitions**: Automatic detection when card position is determined
 - **Improved Session Management**: Perfect synchronization between frontend and backend states
 - **Performance Optimization**: ~40% reduction in average comparisons per card
-- **Bug Fixes**: Eliminated repeated comparisons and state inconsistencies
 
 ## 📚 Documentation
 

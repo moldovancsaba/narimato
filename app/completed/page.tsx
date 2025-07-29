@@ -79,7 +79,6 @@ export default function CompletedPage() {
                       uuid={item.cardId}
                       type={item.card.type}
                       content={item.card.content}
-                      title={item.card.title}
                       size="small"
                       className="hover:scale-105 transition-transform duration-200"
                     >

@@ -20,7 +20,6 @@ interface BaseCardProps {
   uuid?: string;                    // Unique identifier for the card
   type: 'text' | 'media';         // Content type determines rendering approach
   content: CardContent;            // The actual content to display
-  title?: string;                  // Optional title overlay
   className?: string;              // Additional CSS classes for container
   size?: 'small' | 'medium' | 'large'; // Predefined size variants
   children?: ReactNode;            // Optional overlay content (for interactive elements)
@@ -50,7 +49,6 @@ interface BaseCardProps {
 export default function BaseCard({
   type,
   content,
-  title,
   className = '',
   size = 'medium',
   children,
@@ -83,13 +81,6 @@ export default function BaseCard({
       onClick={onClick}
       style={style}
     >
-      {/* Card title - positioned at top if present */}
-      {title && (
-        <div className="card-title">
-          {title}
-        </div>
-      )}
-      
       {/* Main card content area */}
       <div className="card-content">
         {type === 'text' && content.text ? (
@@ -99,7 +90,7 @@ export default function BaseCard({
         ) : type === 'media' && content.mediaUrl ? (
           <img
             src={content.mediaUrl}
-            alt={title || 'Card content'}
+            alt="Card content"
             className="card-media"
           />
         ) : (

@@ -339,7 +339,6 @@ export default function SwipeCard({
         uuid={uuid}
         type={type}
         content={content}
-        title={title}
       />
     </animated.div>
   );

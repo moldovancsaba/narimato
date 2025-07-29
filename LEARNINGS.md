@@ -80,9 +80,26 @@
    - Optimized component re-renders with selective prop updates
    - Limited use of heavy operations in critical rendering paths
 
+### UI/UX Component Design
+1. **BaseCard Architecture**:
+   - Unified component structure provides consistent card rendering across the application
+   - Clean separation of concerns between content rendering and interactive overlays
+   - Dynamic text scaling ensures optimal readability across different card sizes
+
+2. **Typography Decisions**:
+   - Fira Code SemiBold (600) chosen for professional, technical aesthetic
+   - Monospace font provides consistent character spacing and improved readability
+   - Weight optimization ensures proper contrast against gradient backgrounds
+
+3. **Interface Simplification**:
+   - Removed title overlays to eliminate visual clutter and improve focus
+   - Clean design philosophy prioritizes content over decorative elements
+   - Consistent user experience across swipe, vote, and results interfaces
+
 ### Technical Insights
 - **State Management**: Leveraged useState and useEffect hooks for fine-grained control over state and lifecycle operations.
 - **Code Scalability**: Modularized components and common logic for future growth and maintenance ease.
+- **Component Architecture**: BaseCard serves as a universal foundation, reducing code duplication and ensuring design consistency.
 
 ## Implementation Details
 

@@ -20,7 +20,6 @@ interface VoteCardProps {
   uuid: string;                    // Unique identifier for the card
   type: 'text' | 'media';        // Content type determines rendering approach
   content: CardContent;           // The actual content to display
-  title?: string;                 // Optional title overlay
   position: 'left' | 'right';    // Card position in comparison layout
   onSelect: () => void;           // Callback when card is selected in comparison
   isSelected?: boolean;           // Current selection state for visual feedback
@@ -47,7 +46,6 @@ export default function VoteCard({
   uuid,
   type,
   content,
-  title,
   position,
   onSelect,
   isSelected
@@ -90,7 +88,6 @@ export default function VoteCard({
         uuid={uuid}
         type={type}
         content={content}
-        title={title}
         onClick={onSelect}
         size="medium"
         className="hover:shadow-xl transition-shadow duration-200"

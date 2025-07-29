@@ -314,7 +314,6 @@ export default function CardsPage() {
                 uuid={card[CARD_FIELDS.UUID]}
                 type={card[CARD_FIELDS.TYPE] as 'text' | 'media'}
                 content={card[CARD_FIELDS.CONTENT]}
-                title={card[CARD_FIELDS.TITLE]}
                 size="medium"
                 className="transition-all duration-200 group-hover:shadow-lg"
               >
