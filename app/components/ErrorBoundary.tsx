@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { handleApiError, validateSessionIntegrity, recoverSessionState, clearErrorLogs } from '../lib/utils/errorHandling';
+import { SESSION_FIELDS } from '../lib/constants/fieldNames';
 
 interface Props {
   children: React.ReactNode;
@@ -52,19 +53,30 @@ export default class ErrorBoundary extends React.Component<Props, State> {
   }
 
   async componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    const timestamp = new Date().toISOString();
+    console.error('Error caught by boundary:', error, errorInfo);
     
     // Store error details for debugging and recovery
     this.setState({ error, errorInfo });
     
-    // Log error with comprehensive context
-    console.error(`[${timestamp}] Error caught by ErrorBoundary:`, {
-      error: error.message,
-      stack: error.stack,
-      componentStack: errorInfo.componentStack,
-      sessionId: this.props.sessionId,
-      retryCount: this.retryCount
-    });
+    if (this.props.sessionId) {
+      try {
+        // Backup current state before attempting recovery
+        await this.backupSessionState(this.props.sessionId);
+        
+        // Attempt recovery from the error
+        const recovered = await this.recoverFromError(error);
+        
+        if (!recovered) {
+          // Clear corrupted state and force refresh as last resort
+          localStorage.removeItem('sessionId');
+          localStorage.removeItem('lastState');
+          window.location.reload();
+        }
+      } catch (recoveryError) {
+        console.error('Recovery failed:', recoveryError);
+        // Continue with normal error boundary behavior
+      }
+    }
     
     // Handle error through centralized error handling system
     await handleApiError(error, 'React Error Boundary', this.props.sessionId);
@@ -77,6 +89,108 @@ export default class ErrorBoundary extends React.Component<Props, State> {
     // Attempt automatic recovery if enabled and session ID is available
     if (this.props.enableRecovery && this.props.sessionId && !this.state.recoveryAttempted) {
       this.attemptRecovery();
+    }
+  }
+
+  /**
+   * Backs up current session state for recovery purposes
+   * 
+   * @param sessionId - The session ID to backup
+   */
+  private async backupSessionState(sessionId: string): Promise<void> {
+    try {
+      // Get current session state from various sources
+      const currentState = {
+        [SESSION_FIELDS.ID]: sessionId,
+        timestamp: new Date().toISOString(),
+        url: window.location.href,
+        userAgent: navigator.userAgent,
+        localStorage: {
+          [SESSION_FIELDS.ID]: localStorage.getItem(SESSION_FIELDS.ID),
+          lastState: localStorage.getItem('lastState'),
+          sessionData: localStorage.getItem(`session_${sessionId}`)
+        }
+      };
+      
+      // Store backup with timestamp
+      const backupKey = `backup_${sessionId}_${Date.now()}`;
+      localStorage.setItem(backupKey, JSON.stringify(currentState));
+      
+      // Keep only last 5 backups to prevent storage overflow
+      const backupKeys = Object.keys(localStorage)
+        .filter(key => key.startsWith(`backup_${sessionId}_`));
+      
+      if (backupKeys.length > 5) {
+        const sortedKeys = backupKeys.sort();
+        sortedKeys.slice(0, -5).forEach(key => {
+          localStorage.removeItem(key);
+        });
+      }
+      
+      console.log(`Session state backed up with key: ${backupKey}`);
+    } catch (error) {
+      console.error('Failed to backup session state:', error);
+    }
+  }
+
+  /**
+   * Attempts to recover from the specific error that occurred
+   * 
+   * @param error - The error to recover from
+   * @returns Promise<boolean> - true if recovery was successful
+   */
+  private async recoverFromError(error: Error): Promise<boolean> {
+    if (!this.props.sessionId) {
+      console.log('No session ID available for recovery');
+      return false;
+    }
+
+    console.log(`Attempting to recover from error: ${error.message}`);
+
+    try {
+      // First, try to validate current session
+      const isValidSession = await this.validateCurrentSession();
+      
+      if (isValidSession) {
+        console.log('Current session is valid, clearing error state');
+        return true;
+      }
+
+      // If session is invalid, attempt recovery using utility function
+      const recoverySuccess = await recoverSessionState(this.props.sessionId);
+      
+      if (recoverySuccess) {
+        console.log('Session recovery successful');
+        return true;
+      }
+
+      console.log('Session recovery failed');
+      return false;
+      
+    } catch (recoveryError) {
+      console.error('Error during recovery attempt:', recoveryError);
+      return false;
+    }
+  }
+
+  /**
+   * Validates if the current session is still valid
+   * 
+   * @returns Promise<boolean> - true if session is valid
+   */
+  private async validateCurrentSession(): Promise<boolean> {
+    if (!this.props.sessionId) {
+      return false;
+    }
+
+    try {
+      const response = await fetch(`/api/v1/session/validate?${SESSION_FIELDS.ID}=${this.props.sessionId}`);
+      const data = await response.json();
+      
+      return response.ok && data.isValid;
+    } catch (error) {
+      console.error('Session validation failed:', error);
+      return false;
     }
   }
 

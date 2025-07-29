@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     }
 
     return new NextResponse(
-      JSON.stringify({ ranking: session.personalRanking }),
+      JSON.stringify({ personalRanking: session.personalRanking || [] }),
       { status: 200 }
     );
   } catch (error) {

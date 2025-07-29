@@ -93,11 +93,21 @@ export default function SwipeCard({
    * This dual approach ensures both quick flicks and deliberate drags are recognized
    * while preventing accidental triggers from minor movements.
    */
+  // Store window innerWidth to avoid hydration issues
+  const [innerWidth, setInnerWidth] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Ensure this only runs on the client
+    setInnerWidth(window.innerWidth);
+  }, []);
+
   const bind = useGesture({
     onDrag: ({ down, movement: [mx], velocity: [vx], direction: [xDir] }) => {
+      if (!innerWidth) return;
+      
       // Determine if this gesture should trigger a swipe action
       // Velocity-based detection for quick flicks OR distance-based for deliberate drags
-      const trigger = Math.abs(vx) > 0.3 || Math.abs(mx) > window.innerWidth / 2;
+      const trigger = Math.abs(vx) > 0.3 || Math.abs(mx) > innerWidth / 2;
       
       // Normalize direction to -1 (left) or 1 (right)
       const dir = xDir < 0 ? -1 : 1;
@@ -177,9 +187,9 @@ export default function SwipeCard({
    * error handling, and visual feedback patterns for consistency.
    */
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    // Early return if card is not in swipeable state
+    // Early return if card is not in swipeable state or innerWidth not loaded
     // Same validation as gesture handler to maintain consistency
-    if (swipeState !== 'idle' || swipeLock) return;
+    if (swipeState !== 'idle' || swipeLock || !innerWidth) return;
     
     if (e.key === 'ArrowLeft') {
       // Mirror the gesture flow: set direction, update state, acquire lock
@@ -191,7 +201,7 @@ export default function SwipeCard({
       // Duration: 300ms for quick but visible movement
       // Rotation: -10deg for natural card-flip effect
       api.start({
-        x: -window.innerWidth,  // Move completely off-screen
+        x: -innerWidth,  // Move completely off-screen
         rot: -10,               // Slight counter-clockwise rotation
         config: { duration: 300 }
       });
@@ -226,7 +236,7 @@ export default function SwipeCard({
       
       // Animate card off-screen to the right with rotation
       api.start({
-        x: window.innerWidth,   // Move completely off-screen right
+        x: innerWidth,   // Move completely off-screen right
         rot: 10,                // Slight clockwise rotation
         config: { duration: 300 }
       });
@@ -252,7 +262,7 @@ export default function SwipeCard({
         });
     }
     // Note: Other keys are ignored to prevent unintended actions
-  }, [swipeState, swipeLock, api, onSwipe]);
+  }, [swipeState, swipeLock, api, onSwipe, innerWidth]);
 
   /**
    * Set up global keyboard event listener with proper cleanup.

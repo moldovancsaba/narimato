@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { SESSION_FIELDS, CARD_FIELDS, VOTE_FIELDS } from '../constants/fieldNames';
 
 // Define SessionState enum for enhanced state management
 enum SessionState {
@@ -9,20 +10,20 @@ enum SessionState {
 }
 
 const SwipeSchema = new mongoose.Schema({
-  cardId: { type: String, required: true },
-  direction: { type: String, enum: ['left', 'right'], required: true },
-  timestamp: { type: Date, default: Date.now }
+  [CARD_FIELDS.ID]: { type: String, required: true },
+  [VOTE_FIELDS.DIRECTION]: { type: String, enum: ['left', 'right'], required: true },
+  [VOTE_FIELDS.TIMESTAMP]: { type: Date, default: Date.now }
 });
 
 const VoteSchema = new mongoose.Schema({
-  cardA: { type: String, required: true },
-  cardB: { type: String, required: true },
-  winner: { type: String, required: true },
-  timestamp: { type: Date, default: Date.now }
+  [VOTE_FIELDS.CARD_A]: { type: String, required: true },
+  [VOTE_FIELDS.CARD_B]: { type: String, required: true },
+  [VOTE_FIELDS.WINNER]: { type: String, required: true },
+  [VOTE_FIELDS.TIMESTAMP]: { type: Date, default: Date.now }
 });
 
 const SessionSchema = new mongoose.Schema({
-  sessionId: { type: String, required: true, unique: true, index: true },
+  [SESSION_FIELDS.ID]: { type: String, required: true, unique: true, index: true },
   status: { 
     type: String, 
     enum: ['active', 'idle', 'completed', 'expired'], 
@@ -35,7 +36,7 @@ const SessionSchema = new mongoose.Schema({
     default: 'swiping',
     index: true
   },
-  version: {
+  [SESSION_FIELDS.VERSION]: {
     type: Number,
     default: 0,
     index: true
@@ -56,7 +57,7 @@ SessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 // Instance method to get right-swiped cards count
 SessionSchema.methods.getRightSwipesCount = function() {
-  return this.swipes.filter((s: { direction: string }) => s.direction === 'right').length;
+  return this.swipes.filter((s: { [key: string]: string }) => s[VOTE_FIELDS.DIRECTION] === 'right').length;
 };
 
 // Method to handle vote timeouts
@@ -141,9 +142,9 @@ SessionSchema.pre('findOneAndUpdate', function(next) {
   if (update) {
     // Increment version for optimistic locking
     if (!update.$inc) {
-      update.$inc = { version: 1 };
-    } else if (typeof update.$inc.version === 'undefined') {
-      update.$inc.version = 1;
+      update.$inc = { [SESSION_FIELDS.VERSION]: 1 };
+    } else if (typeof update.$inc[SESSION_FIELDS.VERSION] === 'undefined') {
+      update.$inc[SESSION_FIELDS.VERSION] = 1;
     }
     
     // Update lastActivity timestamp for concurrent update detection
@@ -182,21 +183,21 @@ SessionSchema.post('findOneAndUpdate', function(error: any, doc: any, next: any)
 
 // Define interfaces
 interface ISwipe {
-  cardId: string;
-  direction: 'left' | 'right';
-  timestamp: Date;
+  [CARD_FIELDS.ID]: string;
+  [VOTE_FIELDS.DIRECTION]: 'left' | 'right';
+  [VOTE_FIELDS.TIMESTAMP]: Date;
 }
 
 interface IVote {
-  cardA: string;
-  cardB: string;
-  winner: string;
-  timestamp: Date;
+  [VOTE_FIELDS.CARD_A]: string;
+  [VOTE_FIELDS.CARD_B]: string;
+  [VOTE_FIELDS.WINNER]: string;
+  [VOTE_FIELDS.TIMESTAMP]: Date;
 }
 
 // Enhanced interface with state management methods
 export interface ISession extends mongoose.Document {
-  sessionId: string;
+  [SESSION_FIELDS.ID]: string;
   status: 'active' | 'idle' | 'completed' | 'expired';
   state: 'swiping' | 'voting' | 'comparing' | 'completed';
   version: number;

@@ -3,6 +3,8 @@ import dbConnect from '@/app/lib/utils/db';
 import { Session } from '@/app/lib/models/Session';
 import { VoteRequestSchema } from '@/app/lib/validation/schemas';
 import mongoose from 'mongoose';
+import { SESSION_FIELDS, VOTE_FIELDS, API_FIELDS } from '@/app/lib/constants/fieldNames';
+import { validateUUID, validateSessionId } from '@/app/lib/utils/fieldValidation';
 
 interface NextComparison {
   newCard: string;
@@ -34,18 +36,91 @@ interface ValidationResult {
 }
 
 /**
- * Determines the next card to compare against using a strict binary search algorithm.
- * This implementation follows specification requirements for consistent ranking placement.
- * 
+ * Calculate accumulated search bounds for a card based on all its votes
+ * @param targetCardId - The card being ranked
+ * @param ranking - Current ranking
+ * @param votes - All votes in the session
+ * @returns Search bounds with start and end indices
+ */
+function calculateAccumulatedSearchBounds(
+  targetCardId: string, 
+  ranking: string[], 
+  votes: any[]
+): { start: number, end: number } {
+  let searchStart = 0;
+  let searchEnd = ranking.length;
+  
+  console.log(`\n--- BOUNDS CALCULATION DEBUG for ${targetCardId.substring(0, 8)}... ---`);
+  console.log('Initial bounds:', { searchStart, searchEnd, rankingLength: ranking.length });
+  console.log('Ranking:', ranking.map((card, idx) => `[${idx}] ${card.substring(0, 8)}...`));
+  
+  // Process all votes for this card to accumulate constraints
+  for (const vote of votes) {
+    // Check if this vote involves the target card
+    if (vote.cardA !== targetCardId && vote.cardB !== targetCardId) {
+      continue; // Skip votes not involving target card
+    }
+    
+    // Determine which card is the comparison card (the one already in ranking)
+    let comparedCardId: string;
+    let comparedCardIndex: number;
+    
+    if (vote.cardA === targetCardId) {
+      // Target card is cardA, so cardB should be the comparison card
+      comparedCardId = vote.cardB;
+      comparedCardIndex = ranking.indexOf(vote.cardB);
+    } else {
+      // Target card is cardB, so cardA should be the comparison card
+      comparedCardId = vote.cardA;
+      comparedCardIndex = ranking.indexOf(vote.cardA);
+    }
+    
+    // Skip if comparison card is not in ranking (shouldn't happen with valid votes)
+    if (comparedCardIndex === -1) {
+      console.log(`⚠️  Skipping vote: compared card ${comparedCardId.substring(0, 8)}... not in ranking`);
+      continue;
+    }
+    
+    const oldBounds = { searchStart, searchEnd };
+    
+    if (vote.winner === targetCardId) {
+      // Target card won: it ranks higher than compared card
+      // Narrow upper bound (can't be lower than this position)
+      searchEnd = Math.min(searchEnd, comparedCardIndex);
+      console.log(`✅ TARGET WON vs [${comparedCardIndex}] ${comparedCardId.substring(0, 8)}... → searchEnd: ${oldBounds.searchEnd} → ${searchEnd}`);
+    } else {
+      // Target card lost: it ranks lower than compared card  
+      // Narrow lower bound (can't be higher than this position)
+      searchStart = Math.max(searchStart, comparedCardIndex + 1);
+      console.log(`❌ TARGET LOST vs [${comparedCardIndex}] ${comparedCardId.substring(0, 8)}... → searchStart: ${oldBounds.searchStart} → ${searchStart}`);
+    }
+    
+    console.log(`   Current bounds: [${searchStart}, ${searchEnd}) = ${searchEnd - searchStart} cards`);
+    if (searchStart < searchEnd) {
+      const currentSearchSpace = ranking.slice(searchStart, searchEnd);
+      console.log(`   Current search space: ${currentSearchSpace.map((card, idx) => `[${searchStart + idx}] ${card.substring(0, 8)}...`).join(', ')}`);
+    } else {
+      console.log(`   ⚡ SEARCH SPACE EMPTY - Position determined!`);
+    }
+  }
+  
+  console.log(`\nFinal bounds: [${searchStart}, ${searchEnd}) = ${searchEnd - searchStart} cards`);
+  console.log('--- END BOUNDS CALCULATION ---\n');
+  
+  return { start: searchStart, end: searchEnd };
+}
+
+/**
+ * Determines the next card to compare against using accumulated search bounds.
  * @param newCard - The card being inserted into the ranking
  * @param currentRanking - The current ordered ranking of cards (highest to lowest)
- * @param lastComparison - The previous comparison card UUID
+ * @param allVotes - All votes in the session
  * @returns The next card UUID to compare against, or null if positioning is complete
  */
 function determineNextComparison(
   newCard: string,
   currentRanking: string[],
-  lastComparison: string
+  allVotes: any[]
 ): string | null {
   // No comparisons needed for empty rankings
   if (currentRanking.length === 0) {
@@ -57,25 +132,32 @@ function determineNextComparison(
     return null;
   }
 
-  const lastComparisonIndex = currentRanking.indexOf(lastComparison);
+  // Calculate accumulated search bounds for this card
+  const bounds = calculateAccumulatedSearchBounds(newCard, currentRanking, allVotes);
   
-  // Validation: last comparison card must exist in current ranking
-  if (lastComparisonIndex === -1) {
-    throw new Error('Invalid state: Last comparison card not found in ranking');
-  }
-
-  // Binary search strategy: systematically narrow down the position
-  // Start from the middle of the remaining search space
-  const remainingCards = currentRanking.slice(0, lastComparisonIndex);
+  console.log('Binary search accumulated bounds:', {
+    newCard,
+    searchStart: bounds.start,
+    searchEnd: bounds.end,
+    searchSpace: currentRanking.slice(bounds.start, bounds.end),
+    allVotesForCard: allVotes.filter(v => {
+      return v.cardA === newCard || v.cardB === newCard;
+    })
+  });
   
-  if (remainingCards.length === 0) {
-    // New card belongs at the top of the ranking
+  // If search space is empty, positioning is complete
+  if (bounds.start >= bounds.end) {
     return null;
   }
-
-  // Select the middle card from the remaining higher-ranked cards
-  const middleIndex = Math.floor(remainingCards.length / 2);
-  return remainingCards[middleIndex];
+  
+  // Select middle card from search space
+  const searchSpace = currentRanking.slice(bounds.start, bounds.end);
+  if (searchSpace.length === 0) {
+    return null;
+  }
+  
+  const middleIndex = Math.floor(searchSpace.length / 2);
+  return searchSpace[middleIndex];
 }
 
 /**
@@ -98,8 +180,8 @@ function validateRankingIntegrity(
     errors.push('Winner must be either cardA or cardB');
   }
 
-  // Validation 2: Cards must be different
-  if (cardA === cardB) {
+  // Validation 2: Cards must be different (except for first ranking)
+  if (cardA === cardB && currentRanking.length > 0) {
     errors.push('Cannot compare a card against itself');
   }
 
@@ -114,14 +196,29 @@ function validateRankingIntegrity(
     errors.push('Ranking contains duplicate cards');
   }
 
-  // Validation 5: Vote sequence validation
+  // Validation 5: Vote sequence validation (relaxed for binary search)
   if (sessionVotes.length > 0) {
     const lastVote = sessionVotes[sessionVotes.length - 1];
     const currentCards = [cardA, cardB];
-    const lastWinner = lastVote.winner;
     
-    if (!currentCards.includes(lastWinner)) {
-      errors.push('Vote sequence broken: current comparison must include previous winner');
+    // For binary search ranking, we need to validate that either:
+    // 1. We're continuing to rank the same new card (cardA is the new card), OR
+    // 2. One of the cards being compared is already in the ranking (cardB should be in ranking)
+    const isNewCardContinuation = newCard === cardA && currentRanking.includes(cardB);
+    const isValidBinarySearchStep = currentRanking.includes(cardB);
+    
+    console.log('Vote sequence validation debug:', {
+      isNewCardContinuation,
+      isValidBinarySearchStep,
+      newCard,
+      cardA,
+      cardB,
+      cardBInRanking: currentRanking.includes(cardB),
+      currentRanking
+    });
+    
+    if (!isNewCardContinuation && !isValidBinarySearchStep) {
+      errors.push('Vote sequence broken: comparison must involve a card from existing ranking');
     }
   }
 
@@ -147,8 +244,18 @@ function insertCardInRanking(
   winner: string,
   cardA: string,
   cardB: string,
-  auditTrail: ComparisonAudit[] = []
+  auditTrail: ComparisonAudit[] = [],
+  sessionVotes: any[] = []
 ): RankingResult {
+  console.log('insertCardInRanking called:', {
+    newCard,
+    currentRanking,
+    winner,
+    cardA,
+    cardB,
+    isNewCardWinner: winner === cardA
+  });
+  
   // Store original ranking for potential rollback
   const originalRanking = [...currentRanking];
   
@@ -192,8 +299,8 @@ function insertCardInRanking(
         newRanking = [newCard, ...currentRanking];
         finalPosition = 0;
       } else {
-        // Continue binary search in higher-ranked section
-        const nextCompareCard = determineNextComparison(newCard, currentRanking, cardB);
+        // Continue binary search in higher-ranked section  
+        const nextCompareCard = determineNextComparison(newCard, currentRanking, sessionVotes);
         
         if (nextCompareCard) {
           // More comparisons needed
@@ -221,13 +328,10 @@ function insertCardInRanking(
         finalPosition = currentRanking.length;
       } else {
         // Continue binary search in lower-ranked section
-        const lowerRankedCards = currentRanking.slice(compareCardIndex + 1);
+        const nextCompareCard = determineNextComparison(newCard, currentRanking, sessionVotes);
         
-        if (lowerRankedCards.length > 0) {
-          // Select middle card from lower section for next comparison
-          const middleIndex = Math.floor(lowerRankedCards.length / 2);
-          const nextCompareCard = lowerRankedCards[middleIndex];
-          
+        if (nextCompareCard) {
+          // More comparisons needed
           newRanking = currentRanking; // Keep current ranking
           nextComparison = {
             newCard,
@@ -281,7 +385,8 @@ async function performAtomicRankingUpdate(
   newVote: any,
   updatedRanking: string[],
   newState: string,
-  auditTrail: ComparisonAudit[]
+  auditTrail: ComparisonAudit[],
+  newCard: string
 ) {
   const mongoSession = await mongoose.startSession();
   
@@ -299,6 +404,22 @@ async function performAtomicRankingUpdate(
     session.personalRanking = updatedRanking;
     session.state = newState;
     session.version += 1;
+    
+    // If ranking is complete (no more comparisons), record the swipe
+    if (newState === 'swiping') {
+      const newCardSwipe = {
+        cardId: newCard,
+        direction: 'right',
+        timestamp: new Date().toISOString()
+      };
+      
+      // Check if swipe already exists to avoid duplicates
+      const swipeExists = session.swipes.some((swipe: any) => swipe.cardId === newCard);
+      if (!swipeExists) {
+        session.swipes.push(newCardSwipe);
+        console.log(`Added swipe record for ranked card: ${newCard}`);
+      }
+    }
     
     // Save with transaction session
     await session.save({ session: mongoSession });
@@ -375,7 +496,11 @@ export async function POST(request: NextRequest) {
     
     // Validate request body schema
     const validatedData = VoteRequestSchema.parse(body);
-    const { sessionId, cardA, cardB, winner, timestamp } = validatedData;
+    const sessionId = validatedData[SESSION_FIELDS.ID];
+    const cardA = validatedData[VOTE_FIELDS.CARD_A];
+    const cardB = validatedData[VOTE_FIELDS.CARD_B];
+    const winner = validatedData[VOTE_FIELDS.WINNER];
+    const timestamp = validatedData[VOTE_FIELDS.TIMESTAMP];
 
     await dbConnect();
     
@@ -386,8 +511,8 @@ export async function POST(request: NextRequest) {
     
     if (elapsedMs > VOTE_TIMEOUT_MS) {
       const timeoutSession = await Session.findOneAndUpdate(
-        { sessionId, status: 'active', version: body.version },
-        { $inc: { version: 1 } },
+        { [SESSION_FIELDS.ID]: sessionId, status: 'active', [SESSION_FIELDS.VERSION]: body[SESSION_FIELDS.VERSION] },
+        { $inc: { [SESSION_FIELDS.VERSION]: 1 } },
         { new: true }
       );
       
@@ -397,10 +522,10 @@ export async function POST(request: NextRequest) {
         
         return new NextResponse(
           JSON.stringify({
-            success: true,
+            [API_FIELDS.SUCCESS]: true,
             timeoutHandled: true,
-            randomWinner: timeoutSession.votes[timeoutSession.votes.length - 1].winner,
-            version: timeoutSession.version
+            randomWinner: timeoutSession.votes[timeoutSession.votes.length - 1][VOTE_FIELDS.WINNER],
+            [SESSION_FIELDS.VERSION]: timeoutSession[SESSION_FIELDS.VERSION]
           }),
           { status: 200 }
         );
@@ -409,15 +534,15 @@ export async function POST(request: NextRequest) {
 
     // Find and lock session with optimistic concurrency control
     session = await Session.findOneAndUpdate(
-      { sessionId, status: 'active', version: body.version },
-      { $inc: { version: 1 } },
+      { [SESSION_FIELDS.ID]: sessionId, status: 'active', [SESSION_FIELDS.VERSION]: body[SESSION_FIELDS.VERSION] },
+      { $inc: { [SESSION_FIELDS.VERSION]: 1 } },
       { new: true }
     );
     
     if (!session) {
       return new NextResponse(
         JSON.stringify({ 
-          error: 'Session not found or version conflict',
+          [API_FIELDS.ERROR]: 'Session not found or version conflict',
           details: 'Session may have been modified by another request'
         }),
         { status: 409 } // Conflict status for version mismatch
@@ -425,7 +550,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Comprehensive validation layer 1: Basic integrity checks and adjust state transitions
-    const newCard = cardA === winner ? cardA : cardB;
+    // Determine which card is the new card being ranked (not already in ranking)
+    const newCard = session.personalRanking.includes(cardA) ? cardB : cardA;
+    
+    // Debug logging
+    console.log('Vote validation debug:', {
+      sessionId: session.sessionId,
+      cardA,
+      cardB,
+      winner,
+      newCard,
+      currentRanking: session.personalRanking,
+      sessionVotes: session.votes.length,
+      lastVote: session.votes.length > 0 ? session.votes[session.votes.length - 1] : null
+    });
+    
     const integralityValidation = validateRankingIntegrity(
       newCard,
       session.personalRanking,
@@ -441,6 +580,12 @@ export async function POST(request: NextRequest) {
     }
     
     if (!integralityValidation.isValid) {
+      console.log('Validation failed:', {
+        errors: integralityValidation.errors,
+        warnings: integralityValidation.warnings,
+        sessionId: session.sessionId
+      });
+      
       return new NextResponse(
         JSON.stringify({
           error: 'Ranking integrity validation failed',
@@ -451,9 +596,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validation layer 2: Vote sequence verification
+    // Validation layer 2: Vote sequence verification (disabled for binary search compatibility)
+    // Binary search algorithm may compare new card against any card in the ranking, not just the last winner
     const lastVote = session.votes[session.votes.length - 1];
-    if (lastVote && cardA !== lastVote.winner && cardB !== lastVote.winner) {
+    // Commenting out strict validation that interferes with binary search
+    /*
+    if (lastVote && cardA !== lastVote.winner && cardB !== lastVote.winner && !body.isFirstRanking) {
       return new NextResponse(
         JSON.stringify({ 
           error: 'Vote sequence validation failed',
@@ -466,9 +614,11 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    */
 
     // Validation layer 3: Session state verification
-    if (session.personalRanking.length === 0) {
+    // Allow first ranking when explicitly marked as such
+    if (session.personalRanking.length === 0 && !body.isFirstRanking) {
       return new NextResponse(
         JSON.stringify({ 
           error: 'Invalid session state',
@@ -487,7 +637,8 @@ export async function POST(request: NextRequest) {
         winner,
         cardA,
         cardB,
-        auditTrail
+        auditTrail,
+        session.votes
       );
     } catch (rankingError: any) {
       return new NextResponse(
@@ -528,10 +679,10 @@ export async function POST(request: NextRequest) {
 
     // Prepare new vote record with enhanced metadata
     const newVote = {
-      cardA,
-      cardB,
-      winner,
-      timestamp: new Date(),
+      [VOTE_FIELDS.CARD_A]: cardA,
+      [VOTE_FIELDS.CARD_B]: cardB,
+      [VOTE_FIELDS.WINNER]: winner,
+      [VOTE_FIELDS.TIMESTAMP]: new Date(),
       // Additional metadata for audit purposes
       sessionVersion: session.version,
       comparisonStrategy: 'binary_search'
@@ -544,7 +695,8 @@ export async function POST(request: NextRequest) {
         newVote,
         updatedRanking.ranking,
         targetState,
-        auditTrail
+        auditTrail,
+        newCard
       );
     } catch (atomicError: any) {
       return new NextResponse(

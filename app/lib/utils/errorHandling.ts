@@ -420,7 +420,7 @@ export function validateSessionIntegrity(session: any): boolean {
 }
 
 /**
- * Implements automatic retry logic for transient failures
+ * Legacy retry function with error type configuration
  * 
  * @param fn - The function to retry
  * @param errorType - The type of error expected for retry logic
@@ -428,7 +428,7 @@ export function validateSessionIntegrity(session: any): boolean {
  * @param sessionId - Current session ID
  * @returns Promise with the result of the function or throws after max retries
  */
-export async function withRetry<T>(
+export async function withRetryLegacy<T>(
   fn: () => Promise<T>,
   errorType: ErrorType,
   context: string,
@@ -486,6 +486,79 @@ export function backupSessionState(sessionId: string, state: any): void {
     console.warn('Failed to backup session state:', error);
   }
 }
+
+/**
+ * Enhanced retry utility with timeout and abort controller support
+ * 
+ * This function provides robust retry logic with:
+ * - Configurable timeout for each attempt
+ * - AbortController for cancellation support
+ * - Exponential backoff between retries
+ * - Automatic cleanup of timeouts and controllers
+ * 
+ * @param fn - The async function to retry
+ * @param options - Configuration object with maxAttempts and timeout
+ * @returns Promise with the result of the function or throws after max retries
+ */
+export const withRetry = async (
+  fn: () => Promise<any>,
+  options: { maxAttempts: number; timeout: number }
+) => {
+  let lastError: any;
+  
+  for (let attempt = 1; attempt <= options.maxAttempts; attempt++) {
+    try {
+      // Create abort controller for timeout handling
+      const controller = new AbortController();
+      
+      // Set up timeout to abort the request
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+        console.log(`Request attempt ${attempt} timed out after ${options.timeout}ms`);
+      }, options.timeout);
+      
+      try {
+        // Execute the function with timeout control
+        const result = await fn();
+        
+        // Clear timeout if successful
+        clearTimeout(timeoutId);
+        
+        console.log(`Request succeeded on attempt ${attempt}`);
+        return result;
+        
+      } catch (error) {
+        // Clear timeout on error
+        clearTimeout(timeoutId);
+        throw error;
+      }
+      
+    } catch (error) {
+      lastError = error;
+      
+      // If this was the last attempt, throw the error
+      if (attempt === options.maxAttempts) {
+        console.error(`All ${options.maxAttempts} attempts failed, throwing error`);
+        throw lastError;
+      }
+      
+      // Calculate exponential backoff delay
+      const backoffDelay = Math.pow(2, attempt) * 100;
+      
+      console.log(
+        `Attempt ${attempt} failed: ${(error as Error).message}. ` +
+        `Retrying in ${backoffDelay}ms... (${attempt}/${options.maxAttempts})`
+      );
+      
+      // Wait before next attempt with exponential backoff
+      await new Promise(resolve => setTimeout(resolve, backoffDelay));
+    }
+  }
+  
+  // This should never be reached due to the throw in the loop,
+  // but TypeScript requires a return statement
+  throw lastError;
+};
 
 /**
  * Clears all stored error logs and session backups

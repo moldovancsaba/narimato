@@ -1,44 +1,45 @@
 import { z } from 'zod';
+import { SESSION_FIELDS, CARD_FIELDS, VOTE_FIELDS } from '../constants/fieldNames';
 
 export const SwipeRequestSchema = z.object({
-  sessionId: z.string().uuid(),
-  cardId: z.string().uuid(),
-  direction: z.enum(['left', 'right'])
+  [SESSION_FIELDS.ID]: z.string().uuid(),
+  [CARD_FIELDS.ID]: z.string().uuid(),
+  [VOTE_FIELDS.DIRECTION]: z.enum(['left', 'right'])
 });
 
 export const VoteRequestSchema = z.object({
-  sessionId: z.string().uuid(),
-  cardA: z.string().uuid(),
-  cardB: z.string().uuid(),
-  winner: z.string().uuid(),
-  timestamp: z.string().datetime({ offset: true }).default(() => new Date().toISOString())
-}).refine(data => data.winner === data.cardA || data.winner === data.cardB, {
+  [SESSION_FIELDS.ID]: z.string().uuid(),
+  [VOTE_FIELDS.CARD_A]: z.string().uuid(),
+  [VOTE_FIELDS.CARD_B]: z.string().uuid(),
+  [VOTE_FIELDS.WINNER]: z.string().uuid(),
+  [VOTE_FIELDS.TIMESTAMP]: z.string().datetime({ offset: true }).default(() => new Date().toISOString())
+}).refine(data => data[VOTE_FIELDS.WINNER] === data[VOTE_FIELDS.CARD_A] || data[VOTE_FIELDS.WINNER] === data[VOTE_FIELDS.CARD_B], {
   message: "Winner must be either cardA or cardB"
 });
 
 export const CreateCardSchema = z.object({
-  type: z.enum(['text', 'media']),
-  content: z.object({
+  [CARD_FIELDS.TYPE]: z.enum(['text', 'media']),
+  [CARD_FIELDS.CONTENT]: z.object({
     text: z.string().nullish(),
     mediaUrl: z.string().url().nullish()
   }).superRefine((data, ctx) => {
-    if (ctx.path[0] === 'type') {
+    if (ctx.path[0] === CARD_FIELDS.TYPE) {
       const type = ctx.path[1];
       if (type === 'text' && !data.text) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: 'Text content is required for text type cards',
-          path: ['content', 'text']
+          path: [CARD_FIELDS.CONTENT, 'text']
         });
       } else if (type === 'media' && !data.mediaUrl) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: 'Media URL is required for media type cards',
-          path: ['content', 'mediaUrl']
+          path: [CARD_FIELDS.CONTENT, 'mediaUrl']
         });
       }
     }
   }),
-  title: z.string().optional(),
-  tags: z.array(z.string()).optional()
+  [CARD_FIELDS.TITLE]: z.string().optional(),
+  [CARD_FIELDS.TAGS]: z.array(z.string()).optional()
 });

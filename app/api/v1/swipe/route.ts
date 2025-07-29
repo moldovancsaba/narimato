@@ -4,6 +4,77 @@ import { Session, SessionState } from '@/app/lib/models/Session';
 import { Card } from '@/app/lib/models/Card';
 import { SwipeRequestSchema } from '@/app/lib/validation/schemas';
 import { DeckEntity } from '@/app/lib/models/DeckEntity';
+import { SESSION_FIELDS, CARD_FIELDS, VOTE_FIELDS, API_FIELDS } from '@/app/lib/constants/fieldNames';
+import { validateSessionId, validateUUID } from '@/app/lib/utils/fieldValidation';
+
+/**
+ * Validates session state with version check and expiry validation.
+ * Implements comprehensive session validation to prevent stale state operations.
+ * 
+ * Why version checking:
+ * - Prevents concurrent modifications from causing inconsistent state
+ * - Ensures atomic operations maintain data integrity
+ * - Provides clear error messaging for debugging
+ * 
+ * @param sessionId - Unique identifier for the session
+ * @param version - Expected version number for optimistic locking
+ * @returns Object with validation result and session data or error message
+ */
+const validateSession = async (sessionId: string, version: number) => {
+  if (!validateSessionId(sessionId)) {
+    return { isValid: false, error: 'Invalid session ID format' };
+  }
+  
+  const session = await Session.findOne({ [SESSION_FIELDS.ID]: sessionId });
+  
+  if (!session) {
+    return { isValid: false, error: 'Session not found' };
+  }
+  
+  if (session[SESSION_FIELDS.VERSION] !== version) {
+    return { isValid: false, error: 'Session version mismatch' };
+  }
+  
+  // Check session expiry
+  if (session.expiresAt < new Date()) {
+    return { isValid: false, error: 'Session expired' };
+  }
+  
+  return { isValid: true, session };
+};
+
+/**
+ * Updates session state with atomic operations and optimistic locking.
+ * Implements safe concurrent updates to prevent race conditions.
+ * 
+ * Why atomic updates:
+ * - Ensures consistency across concurrent operations
+ * - Prevents partial state updates during failures
+ * - Provides immediate feedback on concurrent modification attempts
+ * 
+ * @param session - Current session object with version information
+ * @param newState - New state data to be applied atomically
+ * @returns Updated session object or throws error on concurrent modification
+ */
+const updateSessionState = async (session: any, newState: any) => {
+  const result = await Session.findOneAndUpdate(
+    { 
+      [SESSION_FIELDS.ID]: session[SESSION_FIELDS.ID],
+      [SESSION_FIELDS.VERSION]: session[SESSION_FIELDS.VERSION]
+    },
+    {
+      $set: { ...newState },
+      $inc: { [SESSION_FIELDS.VERSION]: 1 }
+    },
+    { new: true }
+  );
+  
+  if (!result) {
+    throw new Error('Concurrent update detected');
+  }
+  
+  return result;
+};
 
 /**
  * SwipeResponse interface defines the standardized response structure for swipe operations.
@@ -14,11 +85,11 @@ import { DeckEntity } from '@/app/lib/models/DeckEntity';
  * - votingContext: Optional context data needed for voting phase (only present when requiresVoting is true)
  */
 interface SwipeResponse {
-  success: boolean;
+  [API_FIELDS.SUCCESS]: boolean;
   requiresVoting: boolean;
   nextState: SessionState;
   votingContext?: {
-    cardId: string;
+    [CARD_FIELDS.ID]: string;
     compareWith: string;
   };
 }
@@ -48,47 +119,61 @@ export async function POST(request: NextRequest) {
     // Parse and validate input using Zod schema to ensure type safety
     // Rejects malformed requests early to prevent downstream errors
     const validatedData = SwipeRequestSchema.parse(body);
-    const { sessionId, cardId, direction } = validatedData;
+    const sessionId = validatedData[SESSION_FIELDS.ID];
+    const cardId = validatedData[CARD_FIELDS.ID];
+    const direction = validatedData[VOTE_FIELDS.DIRECTION];
 
     await dbConnect();
 
-    // 2. Lock session with optimistic locking
+    // 2. Enhanced session validation with version checking
+    // First get the current session to extract version for validation
+    const currentSession = await Session.findOne({ [SESSION_FIELDS.ID]: sessionId, status: 'active' });
+    
+    if (!currentSession) {
+      return new NextResponse(
+        JSON.stringify({ 
+          [API_FIELDS.SUCCESS]: false,
+          [API_FIELDS.ERROR]: 'Session not found or inactive'
+        }),
+        { status: 404 }
+      );
+    }
+
+    // Use enhanced validation with version checking and expiry validation
+    const validation = await validateSession(sessionId, currentSession[SESSION_FIELDS.VERSION]);
+    
+    if (!validation.isValid) {
+      const statusCode = validation.error === 'Session expired' ? 408 : 409;
+      return new NextResponse(
+        JSON.stringify({ 
+          [API_FIELDS.SUCCESS]: false,
+          [API_FIELDS.ERROR]: validation.error
+        }),
+        { status: statusCode }
+      );
+    }
+
+    // Lock session with optimistic locking after validation
     // Use findOneAndUpdate with version increment to implement optimistic locking
     // This prevents race conditions when multiple swipes occur simultaneously
-    // Why optimistic locking: Provides better performance than pessimistic locks in high-concurrency scenarios
     session = await Session.findOneAndUpdate(
-      { sessionId, status: 'active' },
-      { $inc: { version: 1 } },
+      { [SESSION_FIELDS.ID]: sessionId, [SESSION_FIELDS.VERSION]: currentSession[SESSION_FIELDS.VERSION], status: 'active' },
+      { $inc: { [SESSION_FIELDS.VERSION]: 1 } },
       { new: true }
     );
 
     if (!session) {
       return new NextResponse(
         JSON.stringify({ 
-          success: false,
-          error: 'Session not found or inactive'
+          [API_FIELDS.SUCCESS]: false,
+          [API_FIELDS.ERROR]: 'Concurrent modification detected during session lock'
         }),
-        { status: 404 }
+        { status: 409 }
       );
     }
 
     // Mark session as locked for cleanup tracking
     sessionLocked = true;
-
-    // Check for session timeout
-    // Sessions have expiration times to prevent abandoned sessions from consuming resources
-    // Auto-expire sessions that have passed their TTL to maintain system hygiene
-    if (session.expiresAt < new Date()) {
-      session.status = 'expired';
-      await session.save();
-      return new NextResponse(
-        JSON.stringify({ 
-          success: false,
-          error: 'Session has expired'
-        }),
-        { status: 408 }
-      );
-    }
 
     // Validate session state allows swiping
     // Allow swipes when session is in 'swiping' or 'voting' state
@@ -96,20 +181,20 @@ export async function POST(request: NextRequest) {
     if (session.state !== 'swiping' && session.state !== 'voting') {
       return new NextResponse(
         JSON.stringify({ 
-          success: false,
-          error: `Invalid session state: ${session.state}. Expected 'swiping' or 'voting'`
+          [API_FIELDS.SUCCESS]: false,
+          [API_FIELDS.ERROR]: `Invalid session state: ${session.state}. Expected 'swiping' or 'voting'`
         }),
         { status: 400 }
       );
     }
 
     // 3. Verify card state
-    const cards = await Card.find({ uuid: { $in: session.deck } });
+    const cards = await Card.find({ [CARD_FIELDS.UUID]: { $in: session.deck } });
     if (cards.length === 0) {
       return new NextResponse(
         JSON.stringify({ 
-          success: false,
-          error: 'No cards found in session deck'
+          [API_FIELDS.SUCCESS]: false,
+          [API_FIELDS.ERROR]: 'No cards found in session deck'
         }),
         { status: 400 }
       );
@@ -117,7 +202,7 @@ export async function POST(request: NextRequest) {
 
     // Create deck with original order
     const orderedCards = session.deck.map((uuid: string) => 
-      cards.find(card => card.uuid === uuid)
+      cards.find(card => card[CARD_FIELDS.UUID] === uuid)
     ).filter((card: any) => card !== undefined);
 
     const deck = new DeckEntity(orderedCards);
@@ -167,21 +252,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 5. Update session
-    session.swipes.push({
-      cardId,
-      direction,
-      timestamp: new Date().toISOString()
-    });
-
+    // 5. Prepare atomic state update
     let requiresVoting = false;
     let votingContext = undefined;
     let nextState = session.state;
+    let newPersonalRanking = [...session.personalRanking];
 
     if (direction === 'right') {
       if (session.personalRanking.length === 0) {
         // First right swipe - add to ranking automatically
-        session.personalRanking = [cardId];
+        newPersonalRanking = [cardId];
         requiresVoting = false;
         nextState = 'swiping';
       } else {
@@ -204,28 +284,40 @@ export async function POST(request: NextRequest) {
       requiresVoting = false;
     }
 
-    // Update session state
-    session.state = nextState;
-
     // 6. Confirm swipe in deck (this advances the current position)
     deck.confirmSwipe(cardId, direction);
 
-    // 7. Release lock by saving session
+    // 7. Atomic state update with optimistic locking
+    const newSessionState = {
+      state: nextState,
+      swipes: [
+        ...session.swipes,
+        {
+          cardId,
+          direction,
+          timestamp: new Date().toISOString()
+        }
+      ],
+      personalRanking: newPersonalRanking,
+      lastActivity: new Date()
+    };
+
     try {
-      await session.save();
+      // Use atomic update function to ensure consistency
+      session = await updateSessionState(session, newSessionState);
       sessionLocked = false;
-    } catch (saveError: any) {
-      // Handle concurrent modification
-      if (saveError.name === 'OptimisticLockError' || saveError.name === 'ConcurrentUpdateError') {
+    } catch (updateError: any) {
+      // Handle concurrent modification during atomic update
+      if (updateError.message === 'Concurrent update detected') {
         return new NextResponse(
           JSON.stringify({ 
             success: false,
-            error: 'Concurrent swipe detected'
+            error: 'Concurrent swipe detected during state update'
           }),
           { status: 409 }
         );
       }
-      throw saveError;
+      throw updateError;
     }
 
     const response: SwipeResponse = {

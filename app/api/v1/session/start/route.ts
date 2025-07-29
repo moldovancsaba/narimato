@@ -4,6 +4,7 @@ import dbConnect from '@/app/lib/utils/db';
 import { Card } from '@/app/lib/models/Card';
 import { Session } from '@/app/lib/models/Session';
 import { DeckEntity } from '@/app/lib/models/DeckEntity';
+import { SESSION_FIELDS, CARD_FIELDS, API_FIELDS } from '@/app/lib/constants/fieldNames';
 
 const SESSION_EXPIRY_HOURS = 24;
 
@@ -17,7 +18,7 @@ export async function POST() {
       // Ensure uniqueness
       { 
         $group: {
-          _id: "$uuid",
+          _id: `$${CARD_FIELDS.UUID}`,
           card: { $first: "$$ROOT" }
         }
       },
@@ -28,7 +29,7 @@ export async function POST() {
 
     if (cards.length === 0) {
       return new NextResponse(
-        JSON.stringify({ error: 'No cards available' }),
+        JSON.stringify({ [API_FIELDS.ERROR]: 'No cards available' }),
         { status: 404 }
       );
     }
@@ -38,7 +39,7 @@ export async function POST() {
       new DeckEntity(cards);
     } catch (error) {
       return new NextResponse(
-        JSON.stringify({ error: 'Invalid deck: ' + (error as Error).message }),
+        JSON.stringify({ [API_FIELDS.ERROR]: 'Invalid deck: ' + (error as Error).message }),
         { status: 400 }
       );
     }
@@ -49,8 +50,8 @@ export async function POST() {
 
     // Create new session
     const session = new Session({
-      sessionId,
-      deck: cards.map(card => card.uuid),
+      [SESSION_FIELDS.ID]: sessionId,
+      deck: cards.map(card => card[CARD_FIELDS.UUID]),
       expiresAt,
       status: 'active',
       swipes: [],
@@ -62,14 +63,14 @@ export async function POST() {
 
     return new NextResponse(
       JSON.stringify({
-        sessionId,
+        [SESSION_FIELDS.ID]: sessionId,
         expiresAt,
         deck: cards.map(card => ({
-          uuid: card.uuid,
-          type: card.type,
-          content: card.content,
-          title: card.title,
-          tags: card.tags
+          [CARD_FIELDS.UUID]: card[CARD_FIELDS.UUID],
+          [CARD_FIELDS.TYPE]: card[CARD_FIELDS.TYPE],
+          [CARD_FIELDS.CONTENT]: card[CARD_FIELDS.CONTENT],
+          [CARD_FIELDS.TITLE]: card[CARD_FIELDS.TITLE],
+          [CARD_FIELDS.TAGS]: card[CARD_FIELDS.TAGS]
         }))
       }),
       { 
@@ -82,7 +83,7 @@ export async function POST() {
   } catch (error) {
     console.error('Session creation error:', error);
     return new NextResponse(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ [API_FIELDS.ERROR]: 'Internal server error' }),
       { status: 500 }
     );
   }

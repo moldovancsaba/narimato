@@ -43,8 +43,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Preserve original deck order from session
+    const orderedCards = session.deck.map((uuid: string) => 
+      cards.find(card => card.uuid === uuid)
+    ).filter((card: any) => card !== undefined);
+
     // Map cards to expected format
-    const mappedCards = cards.map(card => ({
+    const mappedCards = orderedCards.map((card: any) => ({
       uuid: card.uuid,
       type: card.type,
       content: card.content,

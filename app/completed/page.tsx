@@ -3,13 +3,20 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { SESSION_FIELDS } from '@/app/lib/constants/fieldNames';
 
 export default function CompletedPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Clear any session storage data
-    sessionStorage.clear();
+    // Clear session-related storage data
+    if (typeof window !== 'undefined') {
+      sessionStorage.clear();
+      localStorage.removeItem(SESSION_FIELDS.ID);
+      localStorage.removeItem('lastState');
+      localStorage.removeItem('sessionVersion');
+      localStorage.removeItem('deckState');
+    }
   }, []);
 
   return (

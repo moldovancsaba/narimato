@@ -3,17 +3,42 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-const SwipeCard = dynamic(() => import('../components/SwipeCard'), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full max-w-md relative aspect-[3/4] bg-gray-100 animate-pulse rounded-lg"></div>
-  )
-});
+import { useEventAgent } from '@/app/lib/hooks/useEventAgent';
+const SwipeCard = dynamic(
+  () => import('../components/SwipeCard').catch((error) => {
+    console.warn('[SwipeCard] Dynamic import failed, retrying...', error);
+    // Retry the import after a short delay
+    return new Promise<typeof import('../components/SwipeCard')>((resolve, reject) => {
+      setTimeout(async () => {
+        try {
+          const module = await import('../components/SwipeCard');
+          resolve(module);
+        } catch (retryError) {
+          console.error('[SwipeCard] Retry failed, forcing page reload...', retryError);
+          // Force page reload as last resort
+          // Reload handled by client-side only
+          window.location.reload();
+          reject(retryError);
+        }
+      }, 1000);
+    });
+  }),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full max-w-md relative aspect-[3/4] bg-gray-100 animate-pulse rounded-lg flex items-center justify-center text-gray-500">
+        Loading card...
+      </div>
+    ),
+  }
+);
 import { DeckEntity } from '@/app/lib/models/DeckEntity';
 import ErrorBoundary from '../components/ErrorBoundary';
 
 import { Card } from '@/app/lib/types/card';
 import { handleApiError, withRetry, backupSessionState } from '@/app/lib/utils/errorHandling';
+import { SESSION_FIELDS, CARD_FIELDS, VOTE_FIELDS } from '@/app/lib/constants/fieldNames';
+import { createUniqueKey, validateSessionId, validateUUID } from '@/app/lib/utils/fieldValidation';
 
 export default function SwipePage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -25,7 +50,7 @@ export default function SwipePage() {
       onError={(error, errorInfo) => {
         // Custom error handling for swipe page
         console.error('SwipePage error:', error, errorInfo);
-        if (sessionId) {
+        if (sessionId && validateSessionId(sessionId)) {
           handleApiError(error, 'SwipePage component error', sessionId);
         }
       }}
@@ -46,121 +71,133 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
   const [error, setError] = useState<string | null>(null);
   const [personalRanking, setPersonalRanking] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const router = useRouter();
+  const { state, cardSwipedLeft, cardSwipedRight, deckExhausted, errorOccurred, startSession, deckReady } = useEventAgent();
 
   // Update parent component with session ID changes
   useEffect(() => {
     onSessionIdChange(sessionId);
   }, [sessionId, onSessionIdChange]);
 
+  // Add effect to handle page focus/visibility changes to reload deck state
   useEffect(() => {
-    // Initialize or recover session
-    async function initSession() {
-      try {
-        // Check for existing session in localStorage
-        const savedSessionId = localStorage.getItem('sessionId');
-        if (savedSessionId) {
-          // Validate existing session
-          const validateResponse = await fetch(`/api/v1/session/validate?sessionId=${savedSessionId}`);
-          const validateData = await validateResponse.json();
-          
-          if (validateResponse.ok && validateData.isValid) {
-            // Recover existing session
-            setSessionId(savedSessionId);
-            const [deckResponse, rankingResponse] = await Promise.all([
-              fetch(`/api/v1/deck?sessionId=${savedSessionId}`),
-              fetch(`/api/v1/ranking?sessionId=${savedSessionId}`)
-            ]);
-            
-            const [deckData, rankingData] = await Promise.all([
-              deckResponse.json(),
-              rankingResponse.json()
-            ]);
-            
-            if (deckResponse.ok) {
-              const newDeck = new DeckEntity(deckData.deck);
-              setDeck(newDeck);
-              setCurrentCard(newDeck.getCurrentCard());
-            }
-            
-            if (rankingResponse.ok) {
-              setPersonalRanking(rankingData.ranking);
-            }
-            
-            return;
-          }
-        }
-        
-        // Create new session if no valid session exists
-        const response = await fetch('/api/v1/session/start', {
-          method: 'POST'
-        });
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to start session');
-        }
-
-        // Save session ID in localStorage
-        localStorage.setItem('sessionId', data.sessionId);
-        setSessionId(data.sessionId);
-        const newDeck = new DeckEntity(data.deck);
-        setDeck(newDeck);
-        setCurrentCard(newDeck.getCurrentCard());
-      } catch (error) {
-        console.error('Failed to initialize session:', error);
-        setError('Failed to start or recover session. Please try again.');
-        // Recover the last known good state if available
+    const handleFocus = async () => {
+      if (sessionId && typeof window !== 'undefined') {
         try {
-          const lastState = localStorage.getItem('lastState');
-          if (lastState && deck) {
-            const { cardId } = JSON.parse(lastState);
-            const currentCard = deck.getCurrentCard();
-            if (currentCard) {
-              setCurrentCard(currentCard);
+          // Force reload deck state when page becomes visible/focused
+          const deckResponse = await fetch(`/api/v1/deck?${SESSION_FIELDS.ID}=${sessionId}&_t=${Date.now()}`);
+          if (deckResponse.ok) {
+            const deckData = await deckResponse.json();
+            const refreshedDeck = new DeckEntity(deckData.deck);
+            if (deck) {
+              refreshedDeck.setVersion(deck.getVersion());
+            }
+            setDeck(refreshedDeck);
+            setCurrentCard(refreshedDeck.getCurrentCard());
+          }
+        } catch (error) {
+          console.warn('Failed to refresh deck state:', error);
+        }
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('visibilitychange', handleFocus);
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('visibilitychange', handleFocus);
+    };
+  }, [sessionId, deck]);
+
+  useEffect(() => {
+    async function initSession() {
+      if (typeof window !== 'undefined') {
+        // Always reload session state - don't skip if sessionId exists
+        console.log('Initializing session...');
+
+        // Initialize or recover session
+        try {
+          const storedSessionId = localStorage.getItem(SESSION_FIELDS.ID);
+
+          if (storedSessionId) {
+            // Always validate and reload to get fresh state
+            const validateResponse = await fetch(`/api/v1/session/validate?${SESSION_FIELDS.ID}=${storedSessionId}&_t=${Date.now()}`);
+            if (validateResponse.ok) {
+              const validateData = await validateResponse.json();
+              if (validateData.isValid) {
+                setSessionId(storedSessionId);
+
+                // Force fresh deck state
+                const deckResponse = await fetch(`/api/v1/deck?${SESSION_FIELDS.ID}=${storedSessionId}&_t=${Date.now()}`);
+                if (deckResponse.ok) {
+                  const deckData = await deckResponse.json();
+                  const newDeck = new DeckEntity(deckData.deck);
+                  newDeck.setVersion(validateData[SESSION_FIELDS.VERSION]);
+                  
+                  // Restore deck state with existing swipes from session
+                  if (validateData.session && validateData.session.swipes) {
+                    for (const swipe of validateData.session.swipes) {
+                      try {
+                        newDeck.confirmSwipe(swipe.cardId, swipe.direction);
+                      } catch (error) {
+                        console.warn('Failed to restore swipe:', swipe, error);
+                      }
+                    }
+                  }
+                  
+                  setDeck(newDeck);
+                  setCurrentCard(newDeck.getCurrentCard());
+                  console.log('Session restored with deck state');
+                }
+                return;
+              }
             }
           }
-        } catch (recoveryError) {
-          console.error('Failed to recover state:', recoveryError);
-          // Clear potentially corrupted state
+
+          // Create new session only if no valid existing session
+          const response = await fetch('/api/v1/session/start', {
+            method: 'POST',
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            localStorage.setItem(SESSION_FIELDS.ID, data[SESSION_FIELDS.ID]);
+            setSessionId(data[SESSION_FIELDS.ID]);
+
+            const newDeck = new DeckEntity(data.deck);
+            newDeck.setVersion(data[SESSION_FIELDS.VERSION]);
+            setDeck(newDeck);
+            setCurrentCard(newDeck.getCurrentCard());
+            console.log('New session created');
+          }
+        } catch (error) {
+          console.error('Initialization error:', error);
+          setError('Session initialization failed');
+          localStorage.removeItem(SESSION_FIELDS.ID);
           localStorage.removeItem('lastState');
         }
       }
     }
 
     initSession();
-  }, []);
+  }, []); // Run once on mount
 
   const handleSwipe = useCallback(async (direction: 'left' | 'right') => {
-    if (!sessionId || !currentCard || !deck || isLoading) return;
-
+    if (!sessionId || !currentCard || isLoading) return;
+    
     setIsLoading(true);
     try {
-      // Verify we can swipe the current card
-      const current = deck.getCurrentCard();
-      if (!current) {
-        setIsLoading(false);
-        return; // Safety check
-      }
-
-      // Get current session version
-      const validateResponse = await fetch(`/api/v1/session/validate?sessionId=${sessionId}`);
-      const validateData = await validateResponse.json();
-      
-      if (!validateResponse.ok || !validateData.isValid) {
-        throw new Error('Session invalid or expired');
-      }
-
+      // Record swipe first
       const response = await fetch('/api/v1/swipe', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          sessionId,
-          cardId: currentCard.uuid,
-          direction,
-          version: validateData.version
+          [SESSION_FIELDS.ID]: sessionId,
+          [CARD_FIELDS.ID]: currentCard[CARD_FIELDS.UUID],
+          [VOTE_FIELDS.DIRECTION]: direction,
+          [SESSION_FIELDS.VERSION]: deck?.getVersion()
         })
       });
 
@@ -170,65 +207,29 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
         throw new Error(data.error || 'Failed to record swipe');
       }
 
-      // Record swipe in deck after successful API call
-      deck.recordSwipe(direction);
-
-      if (direction === 'right') {
-        // Handle voting requirements from response
-        if (data.requiresVoting) {
-          // Save current state for potential recovery
-          localStorage.setItem('lastState', JSON.stringify({
-            cardId: current.uuid,
-            deckState: deck.serialize()
-          }));
-          
-          // Transition to voting phase
-          router.push(`/vote?sessionId=${sessionId}&cardId=${current.uuid}`);
-          return;
-        }
+      // If voting required, navigate immediately before showing next card
+      if (direction === 'right' && data.requiresVoting) {
+        localStorage.setItem('lastState', JSON.stringify({
+          [CARD_FIELDS.ID]: currentCard[CARD_FIELDS.UUID],
+          deckState: deck?.serialize(),
+          [SESSION_FIELDS.VERSION]: data[SESSION_FIELDS.VERSION],
+          [VOTE_FIELDS.TIMESTAMP]: new Date().toISOString()
+        }));
+        
+        router.push(`/vote?${SESSION_FIELDS.ID}=${sessionId}&${CARD_FIELDS.ID}=${currentCard[CARD_FIELDS.UUID]}`);
+        return;
       }
 
-      // Get next card after swipe
-      const nextCard = deck.getCurrentCard();
-      setCurrentCard(nextCard);
-      
-      // Update personal ranking for right swipes
-      if (direction === 'right') {
-        const rankingResponse = await fetch(`/api/v1/ranking?sessionId=${sessionId}`);
-        const rankingData = await rankingResponse.json();
-        if (rankingResponse.ok) {
-          setPersonalRanking(rankingData.ranking);
-        }
-      }
-      
-      // If deck is exhausted, handle completion
-      if (deck.isExhausted()) {
-        // Show loading indicator while finalizing
-        setCurrentCard(null);
-        const finalRankingResponse = await fetch(`/api/v1/ranking?sessionId=${sessionId}`);
-        const finalRankingData = await finalRankingResponse.json();
-        if (finalRankingResponse.ok) {
-          setPersonalRanking(finalRankingData.ranking);
-        }
-        
-        // Clean up local storage
-        localStorage.removeItem('lastState');
-        localStorage.removeItem('sessionId');
-        
-        // Show completion state
-        router.push('/completed');
-      }
+      // Only update deck state if not navigating to vote
+      deck?.confirmSwipe(currentCard[CARD_FIELDS.UUID], direction);
+      setCurrentCard(deck?.getCurrentCard() || null);
     } catch (error) {
       console.error('Failed to handle swipe:', error);
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('Failed to process your request. Please try again.');
-      }
+      setError(error instanceof Error ? error.message : 'Failed to process swipe');
     } finally {
       setIsLoading(false);
     }
-  }, [sessionId, currentCard, deck, router, isLoading]);
+  }, [sessionId, currentCard, deck, isLoading, router]);
 
   // Handle error state
   if (error) {
@@ -241,7 +242,7 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
         <button
           onClick={() => {
             setError(null);
-            localStorage.removeItem('sessionId');
+            localStorage.removeItem(SESSION_FIELDS.ID);
             localStorage.removeItem('lastState');
             window.location.reload();
           }}
@@ -276,13 +277,13 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
 
       {/* Card display */}
       <div className="w-full max-w-md relative aspect-[3/4]">
-        {currentCard && (
-          <SwipeCard
-            key={currentCard.uuid}
-            {...currentCard}
-            onSwipe={handleSwipe}
-          />
-        )}
+      {currentCard && deck && (
+        <SwipeCard
+          key={createUniqueKey('swipe-card', currentCard[CARD_FIELDS.UUID], deck.getCurrentIndex())}
+          {...currentCard}
+          onSwipe={handleSwipe}
+        />
+      )}
       </div>
       
       {/* Swipe buttons */}
@@ -324,7 +325,7 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
           <div className="max-h-40 overflow-y-auto">
             {personalRanking.map((cardId, index) => (
               <div 
-                key={cardId}
+                key={createUniqueKey('ranking', index, cardId)}
                 className="flex items-center py-2 border-b last:border-0"
               >
                 <span className="font-bold mr-3">{index + 1}.</span>

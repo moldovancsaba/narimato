@@ -1,4 +1,5 @@
 import { Card } from '../types/card';
+import { CARD_FIELDS, SESSION_FIELDS } from '../constants/fieldNames';
 
 /**
  * DeckEntity: Manages the state and operations for a card deck in the application.
@@ -16,6 +17,48 @@ export class DeckEntity {
   private rightSwipes: Card[] = [];
   // Track cards that are prepared for swipe but not yet confirmed
   private preparedSwipes: Map<string, { cardId: string; direction: 'left' | 'right'; originalIndex: number }> = new Map();
+  
+  // Version tracking for optimistic locking - prevents concurrent modification conflicts
+  // Incremented on each state change to detect stale operations
+  private version: number = 0;
+  // ISO 8601 timestamp of last synchronization for audit trail and debugging
+  private lastSyncTimestamp: string;
+
+public getVersion(): number {
+    return this.version;
+  }
+
+  public setVersion(version: number): void {
+    this.version = version;
+    this.lastSyncTimestamp = new Date().toISOString(); // Update sync time on version change
+  }
+
+  /**
+   * Verifies if the current deck state matches the provided session state.
+   * Used for conflict detection and ensuring data consistency across sessions.
+   * Returns true if states match, false if there's a mismatch indicating potential conflict.
+   */
+  public verifyState(sessionState: any): boolean {
+    return (
+      this.currentIndex === sessionState.currentIndex &&
+      this.version === sessionState.version &&
+      this.rightSwipes.length === sessionState.rightSwipes.length
+    );
+  }
+
+  /**
+   * Enhanced state recovery from session data with version synchronization.
+   * Creates a new DeckEntity instance from persisted session state, ensuring
+   * all critical state components are properly restored including version tracking.
+   * Used for session restoration and cross-tab synchronization.
+   */
+  public static fromSessionState(sessionState: any): DeckEntity {
+    const deck = new DeckEntity(sessionState.cards);
+    deck.currentIndex = sessionState.currentIndex;
+    deck.rightSwipes = [...sessionState.rightSwipes]; // Deep copy to prevent mutation
+    deck.version = sessionState.version; // Restore version for conflict detection
+    return deck;
+  }
 
   constructor(cards: Card[]) {
     // Validate deck has cards
@@ -24,13 +67,16 @@ export class DeckEntity {
     }
 
     // Check for duplicates
-    const uuids = new Set(cards.map(card => card.uuid));
+    const uuids = new Set(cards.map(card => card[CARD_FIELDS.UUID]));
     if (uuids.size !== cards.length) {
       throw new Error('Deck cannot contain duplicate cards');
     }
 
     // Create immutable deck
     this.cards = Object.freeze([...cards]);
+    
+    // Initialize sync timestamp
+    this.lastSyncTimestamp = new Date().toISOString();
   }
 
   // Get current card without removing
@@ -39,6 +85,12 @@ export class DeckEntity {
       return null;
     }
     return this.cards[this.currentIndex];
+  }
+
+  // Get current index for tracking card position
+  // Used for generating unique React keys to prevent key collisions
+  getCurrentIndex(): number {
+    return this.currentIndex;
   }
 
   /**
@@ -55,7 +107,7 @@ export class DeckEntity {
     }
     
     // Validation: Card must match current position
-    if (currentCard.uuid !== cardId) {
+    if (currentCard[CARD_FIELDS.UUID] !== cardId) {
       return false;
     }
     
@@ -65,8 +117,8 @@ export class DeckEntity {
     }
     
     // Validation: Check if card was already swiped (in rightSwipes or past currentIndex)
-    const alreadySwiped = this.rightSwipes.some(card => card.uuid === cardId) || 
-                         this.currentIndex > this.cards.findIndex(card => card.uuid === cardId);
+    const alreadySwiped = this.rightSwipes.some(card => card[CARD_FIELDS.UUID] === cardId) || 
+                         this.currentIndex > this.cards.findIndex(card => card[CARD_FIELDS.UUID] === cardId);
     if (alreadySwiped) {
       return false;
     }
@@ -80,18 +132,18 @@ export class DeckEntity {
    */
   confirmSwipe(cardId: string, direction: 'left' | 'right'): void {
     // For initialization: if the card is not the current card, we're replaying history
-    const targetCard = this.cards.find(card => card.uuid === cardId);
+    const targetCard = this.cards.find(card => card[CARD_FIELDS.UUID] === cardId);
     if (!targetCard) {
       throw new Error(`Cannot confirm swipe: card ${cardId} not found in deck`);
     }
     
-    const targetIndex = this.cards.findIndex(card => card.uuid === cardId);
+    const targetIndex = this.cards.findIndex(card => card[CARD_FIELDS.UUID] === cardId);
     
     // If we're replaying history (card is behind current position), just track it
     if (targetIndex < this.currentIndex) {
       if (direction === 'right') {
         // Only add if not already in rightSwipes
-        if (!this.rightSwipes.some(card => card.uuid === cardId)) {
+        if (!this.rightSwipes.some(card => card[CARD_FIELDS.UUID] === cardId)) {
           this.rightSwipes.push(targetCard);
         }
       }
@@ -100,7 +152,7 @@ export class DeckEntity {
     
     // For current operations: validate it's the current card
     const currentCard = this.getCurrentCard();
-    if (!currentCard || currentCard.uuid !== cardId) {
+    if (!currentCard || currentCard[CARD_FIELDS.UUID] !== cardId) {
       throw new Error(`Cannot confirm swipe: card ${cardId} is not the current card`);
     }
     
@@ -181,12 +233,15 @@ export class DeckEntity {
     return this.preparedSwipes.size;
   }
 
-  // Serialize deck state for persistence
-  serialize(): { cards: Card[]; currentIndex: number; rightSwipes: Card[] } {
+  // Serialize deck state for persistence with version tracking
+  // Enhanced to include version and sync timestamp for robust state management
+  serialize(): { cards: Card[]; currentIndex: number; rightSwipes: Card[]; version: number; lastSyncTimestamp?: string } {
     return {
       cards: [...this.cards],
       currentIndex: this.currentIndex,
-      rightSwipes: [...this.rightSwipes]
+      rightSwipes: [...this.rightSwipes],
+      version: this.version,
+      lastSyncTimestamp: this.lastSyncTimestamp
     };
   }
 

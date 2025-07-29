@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import VoteCard from '../components/VoteCard';
-import { RankingEntity } from '@/app/lib/models/RankingEntity';
+import { SESSION_FIELDS, CARD_FIELDS, VOTE_FIELDS } from '@/app/lib/constants/fieldNames';
 
 interface Card {
   uuid: string;
@@ -32,18 +32,20 @@ export default function VotePage() {
 function VoteContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  
+  // Essential state only - simplified from complex session management
   const [cardA, setCardA] = useState<Card | null>(null);
   const [cardB, setCardB] = useState<Card | null>(null);
-  const [ranking, setRanking] = useState<RankingEntity | null>(null);
   const [selected, setSelected] = useState<'A' | 'B' | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [sessionVersion, setSessionVersion] = useState<number>(0);
 
-  const sessionId = searchParams.get('sessionId');
-  const cardId = searchParams.get('cardId');
+  const sessionId = searchParams.get(SESSION_FIELDS.ID);
+  const cardId = searchParams.get(CARD_FIELDS.ID);
 
+  // Load comparison data on mount - simplified without complex session validation
   useEffect(() => {
-    // Load both cards for comparison and get current session version
     async function loadComparison() {
       if (!sessionId || !cardId) {
         router.push('/swipe');
@@ -51,58 +53,62 @@ function VoteContent() {
       }
 
       try {
-        // Get current session version for optimistic locking
-        const sessionResponse = await fetch(`/api/v1/session/validate?sessionId=${sessionId}`);
-        const sessionData = await sessionResponse.json();
-        
-        if (sessionResponse.ok && sessionData.isValid) {
-          setSessionVersion(sessionData.version);
+        // Get session version first
+        const sessionResponse = await fetch(`/api/v1/session/validate?${SESSION_FIELDS.ID}=${sessionId}&_t=${Date.now()}`);
+        if (sessionResponse.ok) {
+          const sessionData = await sessionResponse.json();
+          if (sessionData.isValid) {
+            setSessionVersion(sessionData[SESSION_FIELDS.VERSION]);
+          }
         }
         
-        const response = await fetch(`/api/v1/vote/comparison?sessionId=${sessionId}&cardId=${cardId}`);
+        const response = await fetch(`/api/v1/vote/comparison?${SESSION_FIELDS.ID}=${sessionId}&${CARD_FIELDS.ID}=${cardId}&_t=${Date.now()}`);
         const data = await response.json();
-
+        
         if (!response.ok) {
           throw new Error(data.error || 'Failed to load comparison');
         }
-
-        // Initialize ranking with comparison cards
-        const newRanking = new RankingEntity();
-        newRanking.insertFirstCard(data.cardA);
-        setRanking(newRanking);
         
-        // Set initial comparison
-        setCardA(data.cardA);
-        setCardB(data.cardB);
+        // Check if position is already determined
+        if (data.positionDetermined) {
+          console.log('Card position already determined, returning to swipe');
+          router.push('/swipe');
+          return;
+        }
+        
+        setCardA(data[VOTE_FIELDS.CARD_A]);
+        setCardB(data[VOTE_FIELDS.CARD_B]);
       } catch (error) {
-        console.error('Failed to load comparison:', error);
+        setError('Failed to load voting interface');
       }
     }
 
     loadComparison();
   }, [sessionId, cardId, router]);
 
+  // Enhanced handleSelect function for voting with next comparison handling
   const handleSelect = async (winner: 'A' | 'B') => {
-    if (isAnimating || !sessionId || !cardA || !cardB) return;
+    console.log('handleSelect called:', { winner, isAnimating, sessionId: !!sessionId, cardA: !!cardA, cardB: !!cardB });
+    
+    if (isAnimating || !sessionId || !cardA || !cardB) {
+      console.log('handleSelect blocked by conditions:', { isAnimating, sessionId: !!sessionId, cardA: !!cardA, cardB: !!cardB });
+      return;
+    }
 
     setSelected(winner);
     setIsAnimating(true);
-    // Add transition animation
-    document.body.classList.add('animating');
 
     try {
       const response = await fetch('/api/v1/vote', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          sessionId,
-          cardA: cardA.uuid,
-          cardB: cardB.uuid,
-          winner: winner === 'A' ? cardA.uuid : cardB.uuid,
-          version: sessionVersion,
-          timestamp: new Date().toISOString()
+          [SESSION_FIELDS.ID]: sessionId,
+          [VOTE_FIELDS.CARD_A]: cardA[CARD_FIELDS.UUID],
+          [VOTE_FIELDS.CARD_B]: cardB[CARD_FIELDS.UUID],
+          [VOTE_FIELDS.WINNER]: winner === 'A' ? cardA[CARD_FIELDS.UUID] : cardB[CARD_FIELDS.UUID],
+          [VOTE_FIELDS.TIMESTAMP]: new Date().toISOString(),
+          [SESSION_FIELDS.VERSION]: sessionVersion
         })
       });
 
@@ -112,56 +118,47 @@ function VoteContent() {
         throw new Error(data.error || 'Failed to record vote');
       }
 
-      // Update session version for next requests (optimistic locking)
-      if (data.version) {
-        setSessionVersion(data.version);
-      }
+      // Update session version from response
+      setSessionVersion(data.version);
 
-      // Handle next comparison or completion
-      const handleNextComparison = async () => {
-        if (data.nextComparison) {
-          // Load next comparison
-          const nextCardA = data.nextComparison.newCard;
-          const nextCardB = data.nextComparison.compareAgainst;
-
-          // Get new comparison cards
-          const response = await fetch(`/api/v1/vote/comparison?sessionId=${sessionId}&cardId=${nextCardA.uuid}`);
-          const comparisonData = await response.json();
-          
-          if (response.ok) {
-            // Create new ranking with next comparison pair
-            const newRanking = new RankingEntity();
-            newRanking.insertFirstCard(comparisonData.cardA);
-            setRanking(newRanking);
-            
-            // Set next comparison
-            setCardA(comparisonData.cardA);
-            setCardB(comparisonData.cardB);
-          } else {
-            throw new Error(comparisonData.error || 'Failed to load next comparison');
+      // Check if there's a next comparison needed
+      if (data.nextComparison) {
+        // Stay on vote page but load the next comparison
+        const newCardA = data.nextComparison.newCard;
+        const newCardB = data.nextComparison.compareAgainst;
+        
+        // Find the card objects for the next comparison
+        const nextComparisonResponse = await fetch(`/api/v1/vote/comparison?${SESSION_FIELDS.ID}=${sessionId}&${CARD_FIELDS.ID}=${newCardA}&_t=${Date.now()}`);
+        const nextComparisonData = await nextComparisonResponse.json();
+        
+        if (nextComparisonResponse.ok) {
+          // Check if position is already determined
+          if (nextComparisonData.positionDetermined) {
+            console.log('Next card position already determined, returning to swipe');
+            router.push('/swipe');
+            return;
           }
-          setSelected(null);
-          setIsAnimating(false);
+          
+          setCardA(nextComparisonData[VOTE_FIELDS.CARD_A]);
+          setCardB(nextComparisonData[VOTE_FIELDS.CARD_B]);
+          setSelected(null); // Reset selection for next comparison
         } else {
-          // No more comparisons needed, meaning we've found the card's final position
-          // Return to swipe page to continue with new cards
-          router.push('/swipe');
+          throw new Error('Failed to load next comparison');
         }
-      };
-      
-      // Wait for animation, then handle next comparison
-      setTimeout(handleNextComparison, 500); // Match animation duration
+      } else {
+        // No more comparisons, return to swipe page
+        router.push('/swipe');
+      }
     } catch (error) {
-      console.error('Failed to handle vote:', error);
-      alert('An error occurred while processing your vote. Please try again.');
+      console.error('Vote error:', error);
+      setError('Failed to record your vote');
       setSelected(null);
+    } finally {
       setIsAnimating(false);
-      // Remove animation class
-      document.body.classList.remove('animating');
     }
   };
 
-  // Handle keyboard input
+  // Handle keyboard input for better UX
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isAnimating) return;
@@ -175,12 +172,33 @@ function VoteContent() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isAnimating]);
+  }, [isAnimating, handleSelect]);
 
+  // Render UI or error state
   if (!cardA || !cardB) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-pulse text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-center p-8 bg-white rounded-lg shadow-lg max-w-md">
+          <div className="text-red-500 text-xl mb-4">Error</div>
+          <p className="text-gray-700 mb-4">{error}</p>
+          <button 
+            onClick={() => {
+              setError(null);
+              router.push('/swipe');
+            }}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          >
+            Return to Swipe
+          </button>
+        </div>
       </div>
     );
   }
@@ -210,3 +228,5 @@ function VoteContent() {
     </div>
   );
 }
+
+// Simplified for pure UI behavior - removed extra session handling logic.

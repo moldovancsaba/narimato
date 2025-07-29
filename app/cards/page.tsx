@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { CARD_FIELDS } from '@/app/lib/constants/fieldNames';
+import { createUniqueKey, validateUUID } from '@/app/lib/utils/fieldValidation';
 
 interface Card {
   uuid: string;
@@ -88,6 +90,11 @@ export default function CardsPage() {
   };
 
   const handleDelete = async (uuid: string) => {
+    if (!validateUUID(uuid)) {
+      setError('Invalid card UUID');
+      return;
+    }
+    
     if (!confirm('Are you sure you want to delete this card?')) return;
     
     try {
@@ -108,18 +115,23 @@ export default function CardsPage() {
     if (!editedCard) return;
 
     try {
-      const response = await fetch(`/api/v1/cards/${editedCard.uuid}`, {
+      if (!validateUUID(editedCard[CARD_FIELDS.UUID])) {
+        setError('Invalid card UUID');
+        return;
+      }
+      
+      const response = await fetch(`/api/v1/cards/${editedCard[CARD_FIELDS.UUID]}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          type: editedCard.type,
-          content: editedCard.type === 'text' 
-            ? { text: editedCard.content.text }
-            : { mediaUrl: editedCard.content.mediaUrl },
-          title: editedCard.title,
-          tags: Array.isArray(editedCard.tags) ? editedCard.tags : [],
+          [CARD_FIELDS.TYPE]: editedCard[CARD_FIELDS.TYPE],
+          [CARD_FIELDS.CONTENT]: editedCard[CARD_FIELDS.TYPE] === 'text' 
+            ? { text: editedCard[CARD_FIELDS.CONTENT].text }
+            : { mediaUrl: editedCard[CARD_FIELDS.CONTENT].mediaUrl },
+          [CARD_FIELDS.TITLE]: editedCard[CARD_FIELDS.TITLE],
+          [CARD_FIELDS.TAGS]: Array.isArray(editedCard[CARD_FIELDS.TAGS]) ? editedCard[CARD_FIELDS.TAGS] : [],
         }),
       });
 
@@ -135,12 +147,17 @@ export default function CardsPage() {
 
   const toggleCardStatus = async (uuid: string, isActive: boolean) => {
     try {
+      if (!validateUUID(uuid)) {
+        setError('Invalid card UUID');
+        return;
+      }
+      
       const response = await fetch(`/api/v1/cards/${uuid}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ isActive: !isActive }),
+        body: JSON.stringify({ [CARD_FIELDS.IS_ACTIVE]: !isActive }),
       });
 
       if (!response.ok) throw new Error('Failed to update card');
@@ -285,24 +302,24 @@ export default function CardsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {cards.map((card) => (
             <motion.div
-              key={card.uuid}
+              key={createUniqueKey('card', card[CARD_FIELDS.UUID])}
               layout
               className={`bg-white p-6 rounded-lg shadow-md ${
-                !card.isActive ? 'opacity-50' : ''
+                !card[CARD_FIELDS.IS_ACTIVE] ? 'opacity-50' : ''
               }`}
             >
               <div className="flex items-start mb-4 gap-2">
-                <h3 className="text-lg font-semibold flex-grow">{card.title || 'Untitled'}</h3>
+                <h3 className="text-lg font-semibold flex-grow">{card[CARD_FIELDS.TITLE] || 'Untitled'}</h3>
                 <div className="flex gap-2">
                 <button
-                  onClick={() => toggleCardStatus(card.uuid, card.isActive)}
+                  onClick={() => toggleCardStatus(card[CARD_FIELDS.UUID], card[CARD_FIELDS.IS_ACTIVE])}
                   className={`px-3 py-1 rounded text-sm ${
-                    card.isActive
+                    card[CARD_FIELDS.IS_ACTIVE]
                       ? 'bg-red-100 text-red-600 hover:bg-red-200'
                       : 'bg-green-100 text-green-600 hover:bg-green-200'
                   }`}
                 >
-                  {card.isActive ? 'Deactivate' : 'Activate'}
+                  {card[CARD_FIELDS.IS_ACTIVE] ? 'Deactivate' : 'Activate'}
                 </button>
                   <button
                     onClick={() => handleEdit(card)}
@@ -311,7 +328,7 @@ export default function CardsPage() {
                     Edit
                   </button>
                   <button
-                    onClick={() => handleDelete(card.uuid)}
+                    onClick={() => handleDelete(card[CARD_FIELDS.UUID])}
                     className="px-3 py-1 rounded text-sm bg-red-100 text-red-600 hover:bg-red-200"
                   >
                     Delete
@@ -319,20 +336,20 @@ export default function CardsPage() {
                 </div>
               </div>
 
-              {card.type === 'text' ? (
-                <p className="text-gray-600 mb-4">{card.content.text}</p>
+              {card[CARD_FIELDS.TYPE] === 'text' ? (
+                <p className="text-gray-600 mb-4">{card[CARD_FIELDS.CONTENT].text}</p>
               ) : (
                 <img
-                  src={card.content.mediaUrl}
-                  alt={card.title || 'Card media'}
+                  src={card[CARD_FIELDS.CONTENT].mediaUrl}
+                  alt={card[CARD_FIELDS.TITLE] || 'Card media'}
                   className="w-full h-48 object-cover rounded mb-4"
                 />
               )}
 
               <div className="flex flex-wrap gap-2">
-                {card.tags.map((tag) => (
+                {card[CARD_FIELDS.TAGS].map((tag, tagIndex) => (
                   <span
-                    key={tag}
+                    key={createUniqueKey('tag', card[CARD_FIELDS.UUID], tagIndex, tag)}
                     className="bg-gray-100 text-gray-600 text-sm px-2 py-1 rounded"
                   >
                     {tag}
@@ -341,7 +358,7 @@ export default function CardsPage() {
               </div>
 
               <div className="mt-4 text-xs text-gray-400">
-                Created: {new Date(card.createdAt).toLocaleDateString()}
+                Created: {new Date(card[CARD_FIELDS.CREATED_AT]).toLocaleDateString()}
               </div>
             </motion.div>
           ))}
