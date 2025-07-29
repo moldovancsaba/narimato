@@ -26,12 +26,6 @@ export default function CardsPage() {
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState<Card | null>(null);
   const [editedCard, setEditedCard] = useState<Card | null>(null);
-  const [newCard, setNewCard] = useState({
-    type: 'text',
-    content: { text: '', mediaUrl: '' },
-    title: '',
-    tags: '',
-  });
 
   useEffect(() => {
     fetchCards();
@@ -51,39 +45,6 @@ export default function CardsPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const response = await fetch('/api/v1/cards/add', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: newCard.type,
-          content: newCard.type === 'text' 
-            ? { text: newCard.content.text }
-            : { mediaUrl: newCard.content.mediaUrl },
-          title: newCard.title,
-          tags: newCard.tags.split(',').map(tag => tag.trim()).filter(tag => tag),
-        }),
-      });
-
-      if (!response.ok) throw new Error('Failed to create card');
-      
-      // Reset form and refresh cards
-      setNewCard({
-        type: 'text',
-        content: { text: '', mediaUrl: '' },
-        title: '',
-        tags: '',
-      });
-      fetchCards();
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-      setError(errorMessage);
-    }
-  };
 
   const handleEdit = (card: Card) => {
     setIsEditing(card);
@@ -187,29 +148,37 @@ export default function CardsPage() {
       >
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Card Management</h1>
-          <button
-            onClick={async () => {
-              if (!confirm('Are you sure you want to reset the database? This will delete ALL cards, sessions, and progress data.')) return;
-              
-              try {
-                const response = await fetch('/api/v1/reset', {
-                  method: 'POST',
-                });
+          <div className="flex gap-2">
+            <a
+              href="/card-editor"
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+            >
+              Add Card
+            </a>
+            <button
+              onClick={async () => {
+                if (!confirm('Are you sure you want to reset the database? This will delete ALL cards, sessions, and progress data.')) return;
                 
-                if (!response.ok) throw new Error('Failed to reset database');
-                
-                // Refresh the cards list
-                fetchCards();
-                setError(null);
-              } catch (err) {
-                const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-                setError(errorMessage);
-              }
-            }}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-          >
-            Reset Database
-          </button>
+                try {
+                  const response = await fetch('/api/v1/reset', {
+                    method: 'POST',
+                  });
+                  
+                  if (!response.ok) throw new Error('Failed to reset database');
+                  
+                  // Refresh the cards list
+                  fetchCards();
+                  setError(null);
+                } catch (err) {
+                  const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+                  setError(errorMessage);
+                }
+              }}
+              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+            >
+              Reset Database
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -218,87 +187,6 @@ export default function CardsPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md mb-8">
-          <div className="grid grid-cols-1 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Type
-              </label>
-              <select
-                value={newCard.type}
-                onChange={(e) => setNewCard({ ...newCard, type: e.target.value as 'text' | 'media' })}
-                className="w-full p-2 border rounded"
-              >
-                <option value="text">Text</option>
-                <option value="media">Media</option>
-              </select>
-            </div>
-
-            {newCard.type === 'text' ? (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Text Content
-                </label>
-                <textarea
-                  value={newCard.content.text}
-                  onChange={(e) => setNewCard({
-                    ...newCard,
-                    content: { ...newCard.content, text: e.target.value }
-                  })}
-                  className="w-full p-2 border rounded"
-                  rows={4}
-                />
-              </div>
-            ) : (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Media URL
-                </label>
-                <input
-                  type="url"
-                  value={newCard.content.mediaUrl}
-                  onChange={(e) => setNewCard({
-                    ...newCard,
-                    content: { ...newCard.content, mediaUrl: e.target.value }
-                  })}
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Title
-              </label>
-              <input
-                type="text"
-                value={newCard.title}
-                onChange={(e) => setNewCard({ ...newCard, title: e.target.value })}
-                className="w-full p-2 border rounded"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tags (comma-separated)
-              </label>
-              <input
-                type="text"
-                value={newCard.tags}
-                onChange={(e) => setNewCard({ ...newCard, tags: e.target.value })}
-                className="w-full p-2 border rounded"
-                placeholder="tag1, tag2, tag3"
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors"
-            >
-              Add Card
-            </button>
-          </div>
-        </form>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {cards.map((card) => (

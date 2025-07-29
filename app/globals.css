@@ -156,8 +156,15 @@
   }
   
   .card-media {
-    @apply w-full h-full object-cover;
-    border-radius: var(--border-radius-lg);
+    @apply absolute inset-0 w-full h-full object-cover;
+    /* Match the container's border radius exactly */
+    border-radius: var(--border-radius-lg-mobile);
+  }
+  
+  @media (min-width: 640px) {
+    .card-media {
+      border-radius: var(--border-radius-lg);
+    }
   }
   
   /* Button Components - Mobile First */

@@ -82,23 +82,25 @@ export default function BaseCard({
       style={style}
     >
       {/* Main card content area */}
-      <div className="card-content">
-        {type === 'text' && content.text ? (
-          <div ref={textRef} className="card-text">
-            {content.text}
-          </div>
-        ) : type === 'media' && content.mediaUrl ? (
-          <img
-            src={content.mediaUrl}
-            alt="Card content"
-            className="card-media"
-          />
-        ) : (
-          <div className="text-gray-400 text-center">
-            <p>Content not available</p>
-          </div>
-        )}
-      </div>
+      {type === 'media' && content.mediaUrl ? (
+        <img
+          src={content.mediaUrl}
+          alt="Card content"
+          className="card-media"
+        />
+      ) : (
+        <div className="card-content">
+          {type === 'text' && content.text ? (
+            <div ref={textRef} className="card-text">
+              {content.text}
+            </div>
+          ) : (
+            <div className="text-gray-400 text-center">
+              <p>Content not available</p>
+            </div>
+          )}
+        </div>
+      )}
       
       {/* Optional overlay content (for interactive elements, badges, etc.) */}
       {children}
