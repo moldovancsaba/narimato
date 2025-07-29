@@ -65,9 +65,9 @@ export default function BaseCard({
   
   // Size variants with consistent aspect ratio (3:4)
   const sizeClasses = {
-    small: 'w-24 h-32',      // 96x128px - for previews/thumbnails
-    medium: 'w-full max-w-md aspect-[3/4]', // Default size - main interactions
-    large: 'w-full max-w-lg aspect-[3/4]'   // Large display - results page
+    small: 'w-24 h-32 md:w-40 md:h-56',  // Adjusted for better mobile-first scaling
+    medium: 'w-full max-w-sm sm:max-w-md aspect-[3/4]', // Default size with mobile-first adjustments
+    large: 'w-full max-w-md md:max-w-lg aspect-[3/4]'   // Large display with consistent scaling
   };
 
   return (

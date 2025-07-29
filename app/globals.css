@@ -14,11 +14,31 @@
   --danger-hover: #dc2626;
   --warning: #f59e0b;
   --info: #06b6d4;
+  
+  /* Mobile-first shadows */
+  --shadow-card-mobile: 0 4px 8px -2px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --shadow-card: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-button-mobile: 0 2px 4px -1px rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   --shadow-button: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  
+  /* Mobile-first border radius */
+  --border-radius-mobile: 8px;
   --border-radius: 12px;
+  --border-radius-lg-mobile: 12px;
   --border-radius-lg: 16px;
+  
+  /* Mobile-first spacing */
+  --spacing-mobile: 16px;
+  --spacing: 24px;
+  --spacing-lg: 32px;
+  
   --transition: all 0.2s ease-in-out;
+  
+  /* Safe area insets for mobile devices */
+  --safe-area-inset-top: env(safe-area-inset-top);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom);
+  --safe-area-inset-left: env(safe-area-inset-left);
+  --safe-area-inset-right: env(safe-area-inset-right);
 }
 
 @layer base {
@@ -47,23 +67,71 @@
 }
 
 @layer components {
-  /* Card Components */
+  /* Mobile-First Responsive Layout */
+  .mobile-container {
+    @apply w-full px-4 sm:px-6 md:px-8;
+    padding-left: max(var(--spacing-mobile), var(--safe-area-inset-left));
+    padding-right: max(var(--spacing-mobile), var(--safe-area-inset-right));
+  }
+  
+  .mobile-safe-area {
+    padding-top: var(--safe-area-inset-top);
+    padding-bottom: var(--safe-area-inset-bottom);
+    padding-left: var(--safe-area-inset-left);
+    padding-right: var(--safe-area-inset-right);
+  }
+  
+  /* Card Components - Mobile First */
   .card-container {
-    @apply relative w-full max-w-md aspect-[3/4] rounded-xl;
+    @apply relative w-full aspect-[3/4] rounded-lg sm:rounded-xl;
+    /* Mobile: smaller max-width, larger on desktop */
+    max-width: 280px;
     background: #60008a;
     background: linear-gradient(139deg, rgba(96, 0, 138, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 144, 173, 1) 100%);
-    box-shadow: var(--shadow-card);
-    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-card-mobile);
+    border-radius: var(--border-radius-lg-mobile);
     transition: var(--transition);
   }
   
-  .card-container:hover {
-    @apply scale-105;
-    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  /* Desktop enhancements */
+  @media (min-width: 640px) {
+    .card-container {
+      max-width: 320px;
+      box-shadow: var(--shadow-card);
+      border-radius: var(--border-radius-lg);
+    }
+  }
+  
+  @media (min-width: 768px) {
+    .card-container {
+      max-width: 384px;
+    }
+  }
+  
+  /* Hover effects only on desktop */
+  @media (hover: hover) and (pointer: fine) {
+    .card-container:hover {
+      @apply scale-105;
+      box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    }
+  }
+  
+  /* Touch-friendly interactions */
+  .card-container:active {
+    @apply scale-95;
+    transition: transform 0.1s ease-out;
   }
   
   .card-content {
-    @apply absolute inset-0 flex items-center justify-center p-6 text-center;
+    @apply absolute inset-0 flex items-center justify-center text-center;
+    /* Mobile: smaller padding */
+    padding: var(--spacing-mobile);
+  }
+  
+  @media (min-width: 640px) {
+    .card-content {
+      padding: var(--spacing);
+    }
   }
   
   
@@ -92,70 +160,212 @@
     border-radius: var(--border-radius-lg);
   }
   
-  /* Button Components */
+  /* Button Components - Mobile First */
   .btn {
-    @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg;
+    @apply inline-flex items-center justify-center font-medium rounded-lg;
     @apply transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2;
     @apply disabled:opacity-50 disabled:pointer-events-none;
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow-button);
+    /* Mobile: larger touch targets */
+    min-height: 44px;
+    padding: 12px 16px;
+    font-size: 14px;
+    border-radius: var(--border-radius-mobile);
+    box-shadow: var(--shadow-button-mobile);
+  }
+  
+  /* Desktop button styling */
+  @media (min-width: 640px) {
+    .btn {
+      min-height: auto;
+      padding: 8px 16px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow-button);
+    }
   }
   
   .btn-primary {
-    @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500;
+    @apply bg-blue-600 text-white focus:ring-blue-500;
+  }
+  
+  /* Hover effects only on desktop */
+  @media (hover: hover) and (pointer: fine) {
+    .btn-primary:hover {
+      @apply bg-blue-700;
+    }
   }
   
   .btn-secondary {
-    @apply bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-gray-500;
+    @apply bg-gray-100 text-gray-700 focus:ring-gray-500;
+  }
+  
+  @media (hover: hover) and (pointer: fine) {
+    .btn-secondary:hover {
+      @apply bg-gray-200;
+    }
   }
   
   .btn-success {
-    @apply bg-green-600 text-white hover:bg-green-700 focus:ring-green-500;
+    @apply bg-green-600 text-white focus:ring-green-500;
+  }
+  
+  @media (hover: hover) and (pointer: fine) {
+    .btn-success:hover {
+      @apply bg-green-700;
+    }
   }
   
   .btn-danger {
-    @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+    @apply bg-red-600 text-white focus:ring-red-500;
   }
   
+  @media (hover: hover) and (pointer: fine) {
+    .btn-danger:hover {
+      @apply bg-red-700;
+    }
+  }
+  
+  /* Button size variants */
   .btn-lg {
-    @apply px-6 py-3 text-base;
+    min-height: 52px;
+    padding: 16px 24px;
+    font-size: 16px;
+  }
+  
+  @media (min-width: 640px) {
+    .btn-lg {
+      min-height: auto;
+      padding: 12px 24px;
+    }
   }
   
   .btn-sm {
-    @apply px-3 py-1.5 text-xs;
+    min-height: 36px;
+    padding: 8px 12px;
+    font-size: 12px;
   }
   
-  /* Swipe Button Components */
+  @media (min-width: 640px) {
+    .btn-sm {
+      min-height: auto;
+      padding: 6px 12px;
+    }
+  }
+  
+  /* Swipe Button Components - Mobile First */
   .swipe-button {
-    @apply p-4 rounded-full shadow-lg transition-all duration-200 transform;
-    @apply hover:scale-110 active:scale-95 focus:outline-none focus:ring-4 focus:ring-offset-2;
+    @apply rounded-full shadow-lg transition-all duration-200 transform;
+    @apply focus:outline-none;
+    /* Mobile: larger touch targets */
+    min-width: 64px;
+    min-height: 64px;
+    padding: 16px;
+  }
+  
+  @media (min-width: 640px) {
+    .swipe-button {
+      min-width: 56px;
+      min-height: 56px;
+      padding: 16px;
+    }
+  }
+  
+  /* Touch-friendly active states */
+  .swipe-button:active {
+    @apply scale-95;
+  }
+  
+  /* Hover effects only on desktop */
+  @media (hover: hover) and (pointer: fine) {
+    .swipe-button:hover {
+      @apply scale-110;
+    }
+    
+    .swipe-button:focus {
+      @apply ring-4 ring-offset-2;
+    }
   }
 
   .swipe-button-left {
-    @apply bg-red-500 text-white hover:bg-red-600 focus:ring-red-300;
+    @apply bg-red-500 text-white;
+  }
+  
+  @media (hover: hover) and (pointer: fine) {
+    .swipe-button-left:hover {
+      @apply bg-red-600;
+    }
+    
+    .swipe-button-left:focus {
+      @apply ring-red-300;
+    }
   }
 
   .swipe-button-right {
-    @apply bg-green-500 text-white hover:bg-green-600 focus:ring-green-300;
+    @apply bg-green-500 text-white;
   }
   
-  /* Layout Components */
+  @media (hover: hover) and (pointer: fine) {
+    .swipe-button-right:hover {
+      @apply bg-green-600;
+    }
+    
+    .swipe-button-right:focus {
+      @apply ring-green-300;
+    }
+  }
+  
+  /* Layout Components - Mobile First */
   .page-container {
     @apply min-h-screen bg-gray-100 flex flex-col;
+    /* Mobile safe area support */
+    min-height: calc(100vh - var(--safe-area-inset-top) - var(--safe-area-inset-bottom));
   }
   
   .page-content {
-    @apply flex-1 flex flex-col items-center justify-center p-4;
+    @apply flex-1 flex flex-col items-center justify-center;
+    /* Mobile: smaller padding */
+    padding: var(--spacing-mobile);
+  }
+  
+  @media (min-width: 640px) {
+    .page-content {
+      padding: var(--spacing);
+    }
   }
   
   .content-card {
-    @apply bg-white p-6 md:p-8 rounded-lg shadow-md max-w-md w-full;
-    border-radius: var(--border-radius-lg);
+    @apply bg-white rounded-lg shadow-md w-full;
+    /* Mobile: smaller padding and border radius */
+    padding: var(--spacing-mobile);
+    border-radius: var(--border-radius-lg-mobile);
+    box-shadow: var(--shadow-card-mobile);
+    max-width: 100%;
+  }
+  
+  @media (min-width: 640px) {
+    .content-card {
+      padding: var(--spacing);
+      border-radius: var(--border-radius-lg);
+      box-shadow: var(--shadow-card);
+      max-width: 28rem; /* max-w-md */
+    }
   }
   
   .content-card-lg {
-    @apply bg-white p-8 md:p-12 rounded-lg shadow-lg max-w-2xl w-full;
-    border-radius: var(--border-radius-lg);
+    @apply bg-white rounded-lg shadow-lg w-full;
+    /* Mobile: smaller padding and border radius */
+    padding: calc(var(--spacing-mobile) * 1.5);
+    border-radius: var(--border-radius-lg-mobile);
+    box-shadow: var(--shadow-card-mobile);
+    max-width: 100%;
+  }
+  
+  @media (min-width: 640px) {
+    .content-card-lg {
+      padding: var(--spacing-lg);
+      border-radius: var(--border-radius-lg);
+      box-shadow: var(--shadow-card);
+      max-width: 42rem; /* max-w-2xl */
+    }
   }
   
   /* Navigation Components */

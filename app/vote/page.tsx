@@ -202,49 +202,69 @@ function VoteContent() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="text-center p-8 bg-white rounded-lg shadow-lg max-w-md">
-          <div className="text-red-500 text-xl mb-4">Error</div>
-          <p className="text-gray-700 mb-4">{error}</p>
-          <button 
-            onClick={() => {
-              setError(null);
-              router.push('/swipe');
-            }}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-          >
-            Return to Swipe
-          </button>
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 mobile-safe-area">
+        <div className="mobile-container text-center">
+          <div className="bg-white p-6 sm:p-8 rounded-lg shadow-lg max-w-md mx-auto">
+            <div className="text-red-500 text-xl mb-4">Error</div>
+            <p className="text-gray-700 mb-4">{error}</p>
+            <button 
+              onClick={() => {
+                setError(null);
+                router.push('/swipe');
+              }}
+              className="btn btn-primary w-full sm:w-auto"
+            >
+              Return to Swipe
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center pt-16">
-      <h1 className="text-2xl font-bold mb-8">Which do you prefer?</h1>
-      
-      <div className="flex justify-center items-center space-x-6 w-full max-w-4xl px-4">
-        <div className="w-full max-w-xs">
-          <VoteCard
-            {...cardA}
-            position="left"
-            onSelect={() => handleSelect('A')}
-            isSelected={selected === 'A'}
-          />
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center mobile-safe-area">
+      <div className="mobile-container w-full">
+        {/* Header */}
+        <div className="text-center pt-8 sm:pt-12 pb-6 sm:pb-8">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-balance">
+            Which do you prefer?
+          </h1>
         </div>
-        <div className="w-full max-w-xs">
-          <VoteCard
-            {...cardB}
-            position="right"
-            onSelect={() => handleSelect('B')}
-            isSelected={selected === 'B'}
-          />
+        
+        {/* Card Comparison */}
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-6 sm:gap-8 w-full max-w-4xl mx-auto">
+          <div className="w-full max-w-xs sm:max-w-sm">
+            <VoteCard
+              {...cardA}
+              position="left"
+              onSelect={() => handleSelect('A')}
+              isSelected={selected === 'A'}
+            />
+          </div>
+          
+          {/* VS Indicator */}
+          <div className="text-2xl sm:text-3xl font-bold text-gray-400 rotate-0 sm:rotate-0">
+            VS
+          </div>
+          
+          <div className="w-full max-w-xs sm:max-w-sm">
+            <VoteCard
+              {...cardB}
+              position="right"
+              onSelect={() => handleSelect('B')}
+              isSelected={selected === 'B'}
+            />
+          </div>
         </div>
-      </div>
-
-      <div className="mt-8 text-center text-gray-500">
-        <p className="text-sm">Use left/right arrow keys or click to choose</p>
+        
+        {/* Instructions */}
+        <div className="text-center mt-6 sm:mt-8 pb-8">
+          <p className="text-sm text-gray-500">
+            <span className="hidden sm:inline">Use left/right arrow keys or </span>
+            Tap to choose
+          </p>
+        </div>
       </div>
     </div>
   );
