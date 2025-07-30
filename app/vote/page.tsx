@@ -45,6 +45,14 @@ function VoteContent() {
   const sessionId = searchParams.get(SESSION_FIELDS.ID);
   const cardId = searchParams.get(CARD_FIELDS.ID);
 
+  // Add no-scroll class to body to prevent scrolling
+  useEffect(() => {
+    document.body.classList.add('no-scroll');
+    return () => {
+      document.body.classList.remove('no-scroll');
+    };
+  }, []);
+
   // Load comparison data on mount - simplified without complex session validation
   useEffect(() => {
     async function loadComparison() {
@@ -202,11 +210,11 @@ function VoteContent() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100 mobile-safe-area">
+      <div className="min-h-screen flex items-center justify-center mobile-safe-area">
         <div className="mobile-container text-center">
-          <div className="bg-white p-6 sm:p-8 rounded-lg shadow-lg max-w-md mx-auto">
-            <div className="text-red-500 text-xl mb-4">Error</div>
-            <p className="text-gray-700 mb-4">{error}</p>
+          <div className="content-card p-6 sm:p-8 max-w-md mx-auto">
+            <div className="text-danger text-xl mb-4">Error</div>
+            <p className="text-muted mb-4">{error}</p>
             <button 
               onClick={() => {
                 setError(null);
@@ -223,13 +231,10 @@ function VoteContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center mobile-safe-area">
-      <div className="mobile-container w-full">
+    <div className="h-screen w-screen fixed inset-0 flex flex-col items-center justify-center overflow-hidden bg-background text-foreground p-4" style={{ paddingBottom: '80px' }}>
         {/* Header */}
-        <div className="text-center pt-8 sm:pt-12 pb-6 sm:pb-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-balance">
-            Which do you prefer?
-          </h1>
+        <div className="text-center mb-4 flex-shrink-0">
+          <h1 className="text-2xl font-bold text-center">Vote to Rank</h1>
         </div>
         
         {/* Card Comparison */}
@@ -244,7 +249,7 @@ function VoteContent() {
           </div>
           
           {/* VS Indicator */}
-          <div className="text-2xl sm:text-3xl font-bold text-gray-400 rotate-0 sm:rotate-0">
+          <div className="vs-indicator">
             VS
           </div>
           
@@ -260,14 +265,11 @@ function VoteContent() {
         
         {/* Instructions */}
         <div className="text-center mt-6 sm:mt-8 pb-8">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted">
             <span className="hidden sm:inline">Use left/right arrow keys or </span>
             Tap to choose
           </p>
         </div>
       </div>
-    </div>
   );
 }
-
-// Simplified for pure UI behavior - removed extra session handling logic.

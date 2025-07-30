@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { generateCardSVG, svgToDataUrl, optimizeFontSize, DEFAULT_CARD_CONFIG, SVGCardConfig } from '../lib/utils/svgGenerator';
-import MobileLayout from '../components/MobileLayout';
+import PageLayout from '../components/PageLayout'; // Import PageLayout
 
 // Types for presets
 interface FontPreset {
@@ -126,7 +126,7 @@ export default function CardEditorPage() {
       
       if (testFontName) {
         name = testFontName;
-        value = `"${testFontName}", sans-serif`;
+        value = `\"${testFontName}\", sans-serif`;
         url = googleFontUrl;
       } else {
         name = `Custom ${Date.now()}`;
@@ -198,14 +198,14 @@ export default function CardEditorPage() {
       }
 
       // Extract font name and load Google Font if needed
-      const fontName = config.fontFamily?.split(',')[0].trim().replace(/["']/g, '') || 'Arial';
+      const fontName = config.fontFamily?.split(',')[0].trim().replace(/[\"\']/g, '') || 'Arial';
       const currentFontPreset = fontPresets.find(preset => preset.value === config.fontFamily);
       const fontUrl = currentFontPreset?.url || '';
       
       // Load the font first if it's a Google Font
       if (fontUrl) {
         try {
-          const existingLink = document.querySelector(`link[href="${fontUrl}"]`);
+          const existingLink = document.querySelector(`link[href=\"${fontUrl}\"]`);
           if (!existingLink) {
             const linkElement = document.createElement('link');
             linkElement.rel = 'preconnect';
@@ -289,7 +289,7 @@ export default function CardEditorPage() {
       const fontFamily = config.fontFamily || 'Arial, sans-serif';
       
       // Use a more specific font specification for Canvas
-      const canvasFontFamily = fontUrl ? `"${fontName}", ${fontFamily}` : fontFamily;
+      const canvasFontFamily = fontUrl ? `\"${fontName}\", ${fontFamily}` : fontFamily;
       ctx.font = `${fontSize}px ${canvasFontFamily}`;
       ctx.fillStyle = config.textColor || '#000000';
       ctx.textAlign = (config.textAlign as CanvasTextAlign) || 'center';
@@ -319,7 +319,7 @@ export default function CardEditorPage() {
       const lines: string[] = [];
       
       // Split by manual line breaks first
-      const manualLines = config.text.split('\n');
+      const manualLines = config.text.split('\\n');
       
       // For each manual line, check if it needs word wrapping
       manualLines.forEach(line => {
@@ -582,9 +582,9 @@ export default function CardEditorPage() {
       
       linkElement.onload = () => {
         // Apply the font to the config for preview
-        setConfig(prev => ({ ...prev, fontFamily: `"${fontName}", sans-serif` }));
+        setConfig(prev => ({ ...prev, fontFamily: `\"${fontName}\", sans-serif` }));
         setIsTestingFont(false);
-        setSuccess(`Font "${fontName}" loaded successfully! You can now save it as a preset.`);
+        setSuccess(`Font \"${fontName}\" loaded successfully! You can now save it as a preset.`);
       };
       
       linkElement.onerror = () => {
@@ -610,388 +610,360 @@ export default function CardEditorPage() {
 
 
   return (
-    <MobileLayout>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-6xl mx-auto p-4"
+    <PageLayout title="Card Editor">
+      <a 
+        href="/cards" 
+        className="btn btn-secondary mb-6"
       >
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold">PNG Card Editor</h1>
-          <a 
-            href="/cards" 
-            className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
-          >
-            Back to Cards
-          </a>
-        </div>
+        Back to Cards
+      </a>
 
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
-        )}
+      {error && (
+        <div className="status-error p-4 mb-4 rounded-lg">{error}</div>
+      )}
 
-        {success && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-            {success}
-          </div>
-        )}
+      {success && (
+        <div className="status-success p-4 mb-4 rounded-lg">{success}</div>
+      )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Editor Panel */}
-          <div className="space-y-6">
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold mb-4">Card Content</h2>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Card Text
-                  </label>
-                  <textarea
-                    value={config.text}
-                    onChange={(e) => setConfig({ ...config, text: e.target.value })}
-                    className="w-full p-3 border rounded-lg resize-vertical"
-                    rows={4}
-                    placeholder="Enter your card text here..."
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold mb-4">Styling Options</h2>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Background
-                  </label>
-                  <select
-                    value={config.backgroundColor}
-                    onChange={(e) => setConfig({ ...config, backgroundColor: e.target.value })}
-                    className="w-full p-2 border rounded"
-                  >
-                    {backgroundPresets.map((preset) => (
-                      <option key={preset.name} value={preset.value}>
-                        {preset.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Font Family
-                  </label>
-                  <select
-                    value={config.fontFamily}
-                    onChange={(e) => setConfig({ ...config, fontFamily: e.target.value })}
-                    className="w-full p-2 border rounded"
-                    style={{ fontFamily: config.fontFamily }}
-                  >
-                    {fontPresets.map((preset) => (
-                      <option key={preset.name} value={preset.value} style={{ fontFamily: preset.value }}>
-                        {preset.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Text Color
-                    </label>
-                    <input
-                      type="color"
-                      value={config.textColor}
-                      onChange={(e) => setConfig({ ...config, textColor: e.target.value })}
-                      className="w-full h-10 border rounded"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Font Size ({config.fontSize === 0 ? 'Auto' : config.fontSize + 'px'})
-                    </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="96"
-                      value={config.fontSize}
-                      onChange={(e) => setConfig({ ...config, fontSize: parseInt(e.target.value) })}
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Text Alignment
-                    </label>
-                    <select
-                      value={config.textAlign}
-                      onChange={(e) => setConfig({ ...config, textAlign: e.target.value as 'left' | 'center' | 'right' })}
-                      className="w-full p-2 border rounded"
-                    >
-                      <option value="left">Left</option>
-                      <option value="center">Center</option>
-                      <option value="right">Right</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Vertical Alignment
-                    </label>
-                    <select
-                      value={config.verticalAlign}
-                      onChange={(e) => setConfig({ ...config, verticalAlign: e.target.value as 'top' | 'middle' | 'bottom' })}
-                      className="w-full p-2 border rounded"
-                    >
-                      <option value="top">Top</option>
-                      <option value="middle">Middle</option>
-                      <option value="bottom">Bottom</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Card Width
-                    </label>
-                    <input
-                      type="number"
-                      value={config.width}
-                      onChange={(e) => setConfig({ ...config, width: parseInt(e.target.value) || 300 })}
-                      className="w-full p-2 border rounded"
-                      min="200"
-                      max="600"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Card Height
-                    </label>
-                    <input
-                      type="number"
-                      value={config.height}
-                      onChange={(e) => setConfig({ ...config, height: parseInt(e.target.value) || 400 })}
-                      className="w-full p-2 border rounded"
-                      min="200"
-                      max="800"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Padding
-                  </label>
-                  <input
-                    type="range"
-                    min="10"
-                    max="50"
-                    value={config.padding}
-                    onChange={(e) => setConfig({ ...config, padding: parseInt(e.target.value) })}
-                    className="w-full"
-                  />
-                  <span className="text-sm text-gray-500">{config.padding}px</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Preview Panel */}
-          <div className="space-y-6">
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold mb-4">Live Preview</h2>
-              
-              <div className="flex justify-center items-center min-h-[400px] bg-gray-50 rounded-lg p-4">
-                {isLoadingFont ? (
-                  <div className="text-blue-600 text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                    <p>Loading font...</p>
-                  </div>
-                ) : pngDataUrl ? (
-                  <div className="max-w-full max-h-full">
-                    <img 
-                      src={pngDataUrl} 
-                      alt="PNG Card Preview" 
-                      className="max-w-full max-h-full object-contain shadow-lg rounded-lg"
-                      style={{
-                        maxWidth: '300px',
-                        maxHeight: '400px'
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <div className="text-gray-500 text-center">
-                    <p>Enter text to see preview</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold mb-4">Actions</h2>
-              
-              <div className="space-y-4">
-                <button
-                  onClick={handleUploadToImgBB}
-                  disabled={!pngDataUrl || isUploading}
-                  className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                >
-                  {isUploading ? 'Uploading...' : 'Upload to ImgBB'}
-                </button>
-
-                {uploadedUrl && (
-                  <div className="space-y-2">
-                    <p className="text-sm text-gray-600">Uploaded URL:</p>
-                    <a 
-                      href={uploadedUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="block p-2 bg-gray-100 rounded text-sm break-all hover:bg-gray-200 transition-colors"
-                    >
-                      {uploadedUrl}
-                    </a>
-                    
-                    <button
-                      onClick={handleSaveAsCard}
-                      className="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                    >
-                      Save as Card
-                    </button>
-                  </div>
-                )}
-
-                {pngDataUrl && (
-                  <div className="space-y-2">
-                    <p className="text-sm text-gray-600">Download PNG:</p>
-                    <a
-                      href={pngDataUrl}
-                      download={`card-${Date.now()}.png`}
-                      className="block w-full px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-center transition-colors"
-                    >
-                      Download PNG File
-                    </a>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Background Management */}
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold mb-4">Manage Backgrounds</h2>
-              
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Editor Panel */}
+        <div className="space-y-6">
+          <div className="content-card">
+            <h2 className="text-xl font-semibold mb-4">Card Content</h2>
+            
+            <div className="space-y-4">
               <div>
-                <input
-                  type="text"
+                <label className="form-label">Card Text</label>
+                <textarea
+                  value={config.text}
+                  onChange={(e) => setConfig({ ...config, text: e.target.value })}
+                  onFocus={(e) => {
+                    if (e.target.value === 'Sample Card Text') {
+                      setConfig({ ...config, text: '' });
+                    }
+                  }}
+                  className="form-input"
+                  rows={4}
+                  placeholder="Enter your card text here..."
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="content-card">
+            <h2 className="text-xl font-semibold mb-4">Styling Options</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="form-label">Background</label>
+                <select
                   value={config.backgroundColor}
                   onChange={(e) => setConfig({ ...config, backgroundColor: e.target.value })}
-                  className="w-full p-2 border rounded"
-                  placeholder="Enter CSS background"
-                />
-                <div className="mt-2 flex gap-2">
-                  <button
-                    onClick={addBackgroundPreset}
-                    className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
-                  >
-                    Save Background
-                  </button>
-                </div>
-                <div className="mt-2 max-h-20 overflow-y-auto">
+                  className="form-input"
+                >
                   {backgroundPresets.map((preset) => (
-                    <div
-                      key={preset.name}
-                      className="flex justify-between items-center py-1 text-sm"
-                    >
-                      <span className="truncate mr-2">{preset.name}</span>
-                      <button
-                        onClick={() => removeBackgroundPreset(preset.name)}
-                        className="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600"
-                      >
-                        ×
-                      </button>
-                    </div>
+                    <option key={preset.name} value={preset.value}>
+                      {preset.name}
+                    </option>
                   ))}
-                </div>
+                </select>
               </div>
-            </div>
 
-            {/* Font Management */}
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold mb-4">Manage Fonts</h2>
-              
-              <div className="space-y-3">
+              <div>
+                <label className="form-label">Font Family</label>
+                <select
+                  value={config.fontFamily}
+                  onChange={(e) => setConfig({ ...config, fontFamily: e.target.value })}
+                  className="form-input"
+                  style={{ fontFamily: config.fontFamily }}
+                >
+                  {fontPresets.map((preset) => (
+                    <option key={preset.name} value={preset.value} style={{ fontFamily: preset.value }}>
+                      {preset.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Google Font URL:
-                  </label>
+                  <label className="form-label">Text Color</label>
                   <input
-                    type="text"
-                    value={googleFontUrl}
-                    onChange={(e) => setGoogleFontUrl(e.target.value)}
-                    className="w-full p-2 border rounded text-sm"
-                    placeholder="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap"
+                    type="color"
+                    value={config.textColor}
+                    onChange={(e) => setConfig({ ...config, textColor: e.target.value })}
+                    className="w-full h-10 border rounded form-input"
                   />
                 </div>
-                
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleTestGoogleFont}
-                    disabled={!googleFontUrl.trim() || isTestingFont}
-                    className="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                  >
-                    {isTestingFont ? 'Testing...' : 'Test Font'}
-                  </button>
-                  {testFontName && (
-                    <button
-                      onClick={addFontPreset}
-                      className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700"
-                    >
-                      Save "{testFontName}" as Preset
-                    </button>
-                  )}
-                </div>
-                
-                {testFontName && (
-                  <div className="p-2 bg-blue-50 rounded text-sm">
-                    <strong>Testing:</strong> {testFontName}
-                    <div
-                      className="mt-1 text-lg"
-                      style={{ fontFamily: `"${testFontName}", sans-serif` }}
-                    >
-                      Sample text in {testFontName}
-                    </div>
-                  </div>
-                )}
 
-                <div className="mt-4 max-h-20 overflow-y-auto">
-                  {fontPresets.map((preset) => (
-                    <div key={preset.name} className="flex justify-between items-center py-1 text-sm">
-                      <span className="truncate mr-2">{preset.name}</span>
-                      <button
-                        onClick={() => removeFontPreset(preset.name)}
-                        className="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
+                <div>
+                  <label className="form-label">Font Size ({config.fontSize === 0 ? 'Auto' : config.fontSize + 'px'})</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="96"
+                    value={config.fontSize}
+                    onChange={(e) => setConfig({ ...config, fontSize: parseInt(e.target.value) })}
+                    className="w-full"
+                  />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="form-label">Text Alignment</label>
+                  <select
+                    value={config.textAlign}
+                    onChange={(e) => setConfig({ ...config, textAlign: e.target.value as 'left' | 'center' | 'right' })}
+                    className="form-input"
+                  >
+                    <option value="left">Left</option>
+                    <option value="center">Center</option>
+                    <option value="right">Right</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="form-label">Vertical Alignment</label>
+                  <select
+                    value={config.verticalAlign}
+                    onChange={(e) => setConfig({ ...config, verticalAlign: e.target.value as 'top' | 'middle' | 'bottom' })}
+                    className="form-input"
+                  >
+                    <option value="top">Top</option>
+                    <option value="middle">Middle</option>
+                    <option value="bottom">Bottom</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="form-label">Card Width</label>
+                  <input
+                    type="number"
+                    value={config.width}
+                    onChange={(e) => setConfig({ ...config, width: parseInt(e.target.value) || 300 })}
+                    className="form-input"
+                    min="200"
+                    max="600"
+                  />
+                </div>
+
+                <div>
+                  <label className="form-label">Card Height</label>
+                  <input
+                    type="number"
+                    value={config.height}
+                    onChange={(e) => setConfig({ ...config, height: parseInt(e.target.value) || 400 })}
+                    className="form-input"
+                    min="200"
+                    max="800"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="form-label">Padding</label>
+                <input
+                  type="range"
+                  min="10"
+                  max="50"
+                  value={config.padding}
+                  onChange={(e) => setConfig({ ...config, padding: parseInt(e.target.value) })}
+                  className="w-full"
+                />
+                <span className="text-sm text-muted">{config.padding}px</span>
               </div>
             </div>
           </div>
         </div>
-      </motion.div>
-    </MobileLayout>
+
+        {/* Preview Panel */}
+        <div className="space-y-6">
+          <div className="content-card overflow-hidden">
+            <h2 className="text-xl font-semibold mb-4">Live Preview</h2>
+            
+            <div className="flex justify-center items-center min-h-[400px] bg-gray-50 dark:bg-gray-800 rounded-lg p-4 overflow-hidden">
+              {isLoadingFont ? (
+                <div className="text-center">
+                  <div className="loading-spinner mx-auto mb-2"></div>
+                  <p>Loading font...</p>
+                </div>
+              ) : pngDataUrl ? (
+                <div className="w-full h-full flex items-center justify-center">
+                  <img 
+                    src={pngDataUrl} 
+                    alt="PNG Card Preview" 
+                    className="max-w-full max-h-full object-contain shadow-lg rounded-lg"
+                    style={{
+                      maxWidth: 'min(100%, 300px)',
+                      maxHeight: 'min(100%, 380px)',
+                      width: 'auto',
+                      height: 'auto'
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="text-muted text-center">
+                  <p>Enter text to see preview</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="content-card">
+            <h2 className="text-xl font-semibold mb-4">Actions</h2>
+            
+            <div className="space-y-4">
+              <button
+                onClick={handleUploadToImgBB}
+                disabled={!pngDataUrl || isUploading}
+                className="btn btn-primary w-full"
+              >
+                {isUploading ? 'Uploading...' : 'Upload to ImgBB'}
+              </button>
+
+              {uploadedUrl && (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted">Uploaded URL:</p>
+                  <a 
+                    href={uploadedUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="block p-2 bg-gray-100 dark:bg-gray-700 rounded text-sm break-all hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    {uploadedUrl}
+                  </a>
+                  
+                  <button
+                    onClick={handleSaveAsCard}
+                    className="btn btn-success w-full"
+                  >
+                    Save as Card
+                  </button>
+                </div>
+              )}
+
+              {pngDataUrl && (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted">Download PNG:</p>
+                  <a
+                    href={pngDataUrl}
+                    download={`card-${Date.now()}.png`}
+                    className="btn btn-secondary w-full text-center"
+                  >
+                    Download PNG File
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Background Management */}
+          <div className="content-card">
+            <h2 className="text-xl font-semibold mb-4">Manage Backgrounds</h2>
+            
+            <div>
+              <input
+                type="text"
+                value={config.backgroundColor}
+                onChange={(e) => setConfig({ ...config, backgroundColor: e.target.value })}
+                className="form-input"
+                placeholder="Enter CSS background"
+              />
+              <div className="mt-2 flex gap-2">
+                <button
+                  onClick={addBackgroundPreset}
+                  className="btn btn-sm btn-primary"
+                >
+                  Save Background
+                </button>
+              </div>
+              <div className="mt-2 max-h-20 overflow-y-auto">
+                {backgroundPresets.map((preset) => (
+                  <div
+                    key={preset.name}
+                    className="flex justify-between items-center py-1 text-sm"
+                  >
+                    <span className="truncate mr-2">{preset.name}</span>
+                    <button
+                      onClick={() => removeBackgroundPreset(preset.name)}
+                      className="btn btn-sm btn-danger"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Font Management */}
+          <div className="content-card">
+            <h2 className="text-xl font-semibold mb-4">Manage Fonts</h2>
+            
+            <div className="space-y-3">
+              <div>
+                <label className="form-label">Google Font URL:</label>
+                <input
+                  type="text"
+                  value={googleFontUrl}
+                  onChange={(e) => setGoogleFontUrl(e.target.value)}
+                  className="form-input"
+                  placeholder="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap"
+                />
+              </div>
+              
+              <div className="flex gap-2">
+                <button
+                  onClick={handleTestGoogleFont}
+                  disabled={!googleFontUrl.trim() || isTestingFont}
+                  className="btn btn-sm btn-accent"
+                >
+                  {isTestingFont ? 'Testing...' : 'Test Font'}
+                </button>
+                {testFontName && (
+                  <button
+                    onClick={addFontPreset}
+                    className="btn btn-sm btn-success"
+                  >
+                    Save "{testFontName}" as Preset
+                  </button>
+                )}
+              </div>
+              
+              {testFontName && (
+                <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-sm">
+                  <strong>Testing:</strong> {testFontName}
+                  <div
+                    className="mt-1 text-lg"
+                    style={{ fontFamily: `\"${testFontName}\", sans-serif` }}
+                  >
+                    Sample text in {testFontName}
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-4 max-h-20 overflow-y-auto">
+                {fontPresets.map((preset) => (
+                  <div key={preset.name} className="flex justify-between items-center py-1 text-sm">
+                    <span className="truncate mr-2">{preset.name}</span>
+                    <button
+                      onClick={() => removeFontPreset(preset.name)}
+                      className="btn btn-sm btn-danger"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </PageLayout>
   );
 }

@@ -95,7 +95,7 @@ export default function BaseCard({
               {content.text}
             </div>
           ) : (
-            <div className="text-gray-400 text-center">
+            <div className="text-gray-500 dark:text-gray-400 text-center">
               <p>Content not available</p>
             </div>
           )}

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useEventAgent } from '@/app/lib/hooks/useEventAgent';
+import { useCardSize } from '@/app/hooks/useCardSize';
 const SwipeCard = dynamic(
   () => import('../components/SwipeCard').catch((error) => {
     console.warn('[SwipeCard] Dynamic import failed, retrying...', error);
@@ -26,8 +27,8 @@ const SwipeCard = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full max-w-md relative aspect-[3/4] bg-gray-100 animate-pulse rounded-lg flex items-center justify-center text-gray-500">
-        Loading card...
+      <div className="w-full h-full flex items-center justify-center card-container">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent"></div>
       </div>
     ),
   }
@@ -74,11 +75,20 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
   const [isInitialized, setIsInitialized] = useState(false);
   const router = useRouter();
   const { state, cardSwipedLeft, cardSwipedRight, deckExhausted, errorOccurred, startSession, deckReady } = useEventAgent();
+  const { cardWidth } = useCardSize();
 
   // Update parent component with session ID changes
   useEffect(() => {
     onSessionIdChange(sessionId);
   }, [sessionId, onSessionIdChange]);
+
+  // Add no-scroll class to body to prevent scrolling
+  useEffect(() => {
+    document.body.classList.add('no-scroll');
+    return () => {
+      document.body.classList.remove('no-scroll');
+    };
+  }, []);
 
   // Add effect to handle page focus/visibility changes to reload deck state
   useEffect(() => {
@@ -234,22 +244,26 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
   // Handle error state
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded max-w-md">
-          <h2 className="font-bold mb-2">Error</h2>
-          <p>{error}</p>
+      <div className="page-container">
+        <div className="page-content">
+          <div className="content-card text-center">
+            <div className="status-error p-4 mb-4 rounded-lg">
+              <h2 className="font-bold mb-2">Error</h2>
+              <p>{error}</p>
+            </div>
+            <button
+              onClick={() => {
+                setError(null);
+                localStorage.removeItem(SESSION_FIELDS.ID);
+                localStorage.removeItem('lastState');
+                window.location.reload();
+              }}
+              className="btn btn-primary"
+            >
+              Try Again
+            </button>
+          </div>
         </div>
-        <button
-          onClick={() => {
-            setError(null);
-            localStorage.removeItem(SESSION_FIELDS.ID);
-            localStorage.removeItem('lastState');
-            window.location.reload();
-          }}
-          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-        >
-          Try Again
-        </button>
       </div>
     );
   }
@@ -271,84 +285,81 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
     }
     
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-xl">Loading...</div>
+      <div className="page-container">
+        <div className="page-content">
+          <div className="content-card text-center">
+            <div className="loading-spinner mx-auto mb-4"></div>
+            <p className="text-muted">Loading session...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center pt-16 p-4">
-      {/* Progress bar */}
-      <div className="w-full max-w-md mb-8 bg-gray-200 rounded-full h-2">
-        <div 
-          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-          style={{
-            width: `${deck ? ((deck.getTotalCount() - deck.getRemainingCount()) / deck.getTotalCount()) * 100 : 0}%`
-          }}
-        />
-      </div>
+    return (
+      <div className="h-screen w-screen fixed inset-0 flex flex-col items-center justify-center overflow-hidden bg-background text-foreground p-4" style={{ paddingBottom: '80px' }}>
+        {/* Header */}
+        <div className="text-center mb-4 flex-shrink-0">
+          <h1 className="text-2xl font-bold text-center">Swipe to Vote</h1>
+        </div>
+        
+        {/* Card display with side buttons */}
+        <div className="flex items-center justify-center w-full max-w-4xl relative">
+          {/* Left (dislike) button */}
+          <button
+            onClick={() => handleSwipe('left')}
+            disabled={isLoading}
+            className="swipe-button swipe-button-left absolute left-0 z-10"
+          >
+            {isLoading ? '⏳' : '✕'}
+          </button>
+          
+          {/* Card container - using same sizing as Vote page */}
+          <div className="w-full max-w-xs sm:max-w-sm relative flex items-center justify-center">
+            {currentCard && deck && (
+              <SwipeCard
+                key={createUniqueKey('swipe-card', currentCard[CARD_FIELDS.UUID], deck.getCurrentIndex())}
+                {...currentCard}
+                onSwipe={handleSwipe}
+              />
+            )}
+          </div>
+          
+          {/* Right (like) button */}
+          <button
+            onClick={() => handleSwipe('right')}
+            disabled={isLoading}
+            className="swipe-button swipe-button-right absolute right-0 z-10"
+          >
+            {isLoading ? '⏳' : '✓'}
+          </button>
+        </div>
 
-      {/* Card display */}
-      <div className="w-full max-w-md relative aspect-[3/4]">
-      {currentCard && deck && (
-        <SwipeCard
-          key={createUniqueKey('swipe-card', currentCard[CARD_FIELDS.UUID], deck.getCurrentIndex())}
-          {...currentCard}
-          onSwipe={handleSwipe}
-        />
-      )}
-      </div>
-      
-      {/* Swipe buttons */}
-      <div className="mt-8 flex justify-center items-center space-x-8">
-        <button
-          onClick={() => handleSwipe('left')}
-          disabled={isLoading}
-          className={`p-4 rounded-full text-white shadow-lg transition-colors ${
-            isLoading 
-              ? 'bg-gray-400 cursor-not-allowed' 
-              : 'bg-red-500 hover:bg-red-600'
-          }`}
-        >
-          {isLoading ? '⏳' : '✕'}
-        </button>
-        <button
-          onClick={() => handleSwipe('right')}
-          disabled={isLoading}
-          className={`p-4 rounded-full text-white shadow-lg transition-colors ${
-            isLoading 
-              ? 'bg-gray-400 cursor-not-allowed' 
-              : 'bg-green-500 hover:bg-green-600'
-          }`}
-        >
-          {isLoading ? '⏳' : '✓'}
-        </button>
-      </div>
-
-      {/* Stats and instructions */}
-      <div className="mt-8 text-center text-gray-500">
-        <p>Cards remaining: {deck?.getRemainingCount() || 0}</p>
-        <p className="mt-2 text-sm">Use arrow keys or swipe to rate cards</p>
-      </div>
+        {/* Instructions */}
+        <div className="text-center mt-6 sm:mt-8 pb-8">
+          <p className="text-sm text-muted">
+            <span className="hidden sm:inline">Use left/right arrow keys or </span>
+            Swipe to rate cards
+          </p>
+        </div>
 
       {/* Current ranking display */}
       {personalRanking.length > 0 && (
-        <div className="mt-8 w-full max-w-md bg-white rounded-lg shadow p-4">
+        <div className="content-card mt-8 w-full max-w-md">
           <h3 className="text-lg font-semibold mb-3">Current Ranking</h3>
           <div className="max-h-40 overflow-y-auto">
             {personalRanking.map((cardId, index) => (
               <div 
                 key={createUniqueKey('ranking', index, cardId)}
-                className="flex items-center py-2 border-b last:border-0"
+                className="ranking-item-sm"
               >
                 <span className="font-bold mr-3">{index + 1}.</span>
-                <span className="text-sm text-gray-600">{cardId}</span>
+                <span className="text-sm text-secondary">{cardId}</span>
               </div>
             ))}
           </div>
         </div>
       )}
-    </div>
+      </div>
   );
 }

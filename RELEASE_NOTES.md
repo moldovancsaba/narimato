@@ -1,8 +1,50 @@
 # NARIMATO Release Notes
 
-**Current Version:** 2.0.2 (Updated)
-**Date:** 2025-07-29
-**Last Updated:** 2025-07-29T03:26:00.000Z
+**Current Version:** 2.0.3 (Updated)
+**Date:** 2025-07-30
+**Last Updated:** 2025-07-30T07:15:00.000Z
+
+## [v2.0.3] — 2025-07-30T07:15:00.000Z
+
+### 🌓 UI/UX Enhancement - Dark Mode Support
+
+This release introduces a full-featured dark mode, enhancing visual comfort and accessibility in low-light environments. The implementation leverages a class-based strategy with CSS custom properties for a seamless and consistent user experience.
+
+### ✨ Key Features
+
+- **Class-Based Toggling**: Enabled `darkMode: 'class'` in `tailwind.config.js` for manual or system-based theme switching.
+- **CSS Custom Properties**: Centralized color definitions in `app/globals.css` for both light and dark themes, improving maintainability.
+- **Global Application**: Dark mode is applied globally via the `data-theme="dark"` attribute on the `<html>` tag in `app/layout.tsx`.
+- **Component-Level Adaptation**: All components now respect the dark theme, with adjusted text colors, backgrounds, and borders.
+- **Enhanced Readability**: Carefully selected dark theme colors ensure high contrast and readability, adhering to WCAG guidelines.
+
+### 🔧 Technical Implementation
+
+- **`tailwind.config.js`**:
+  - Set `darkMode: 'class'`.
+- **`app/globals.css`**:
+  - Defined light theme variables within `:root`.
+  - Defined dark theme overrides within `[data-theme="dark"]`.
+  - Updated components to use CSS variables for colors (e.g., `bg-gray-100 dark:bg-gray-900`).
+- **`app/layout.tsx`**:
+  - Added `data-theme="dark"` to the `<html>` element to enable dark mode by default.
+  - Set `theme-color` in `viewport` to match dark mode background.
+
+### 🛠️ Files Modified
+
+- `tailwind.config.js`
+- `app/globals.css`
+- `app/layout.tsx`
+- `app/components/BaseCard.tsx`
+- `app/components/CardEditor.tsx`
+- `app/components/MobileLayout.tsx`
+- `app/components/SwipeCard.tsx`
+- `app/vote/page.tsx`
+- `app/cards/page.tsx`
+- `app/swipe/page.tsx`
+- `app/page.tsx`
+
+---
 
 ## [v2.0.2] — 2025-07-29T03:26:00.000Z
 

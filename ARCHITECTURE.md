@@ -1,7 +1,7 @@
 # NARIMATO Architecture
 
-**Current Version:** 2.0.2 (Updated)
-**Date:** 2025-07-29
+**Current Version:** 2.0.3 (Updated)
+**Date:** 2025-07-30
 
 ## System Overview
 
@@ -107,6 +107,16 @@ flowchart LR
     ErrorLog -.-> Recovery
     Recovery -.-> Session
 ```
+
+## Theming
+
+NARIMATO supports both light and dark themes to enhance user experience and accessibility. The theming system is built using CSS custom properties and a `data-theme` attribute, allowing for easy extension and modification.
+
+### Implementation
+- **Strategy**: Class-based dark mode is enabled in `tailwind.config.js` (`darkMode: 'class'`).
+- **Activation**: The dark theme is activated by adding `data-theme="dark"` to the `<html>` element in `app/layout.tsx`.
+- **CSS Variables**: A comprehensive set of CSS variables for colors, shadows, and other themeable properties is defined in `app/globals.css`. The `:root` selector defines the light theme, and the `[data-theme="dark"]` attribute selector overrides these variables for the dark theme.
+- **Usage**: Components use Tailwind CSS utility classes that are configured to respect the dark mode variant (e.g., `bg-white dark:bg-gray-900`).
 
 ## System Components
 

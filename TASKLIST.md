@@ -1,8 +1,8 @@
 # NARIMATO Task List
 
-**Current Version:** 2.0.2 (Updated)
-**Date:** 2025-07-29
-**Last Updated:** 2025-07-29T03:26:00.000Z
+**Current Version:** 2.0.3 (Updated)
+**Date:** 2025-07-30
+**Last Updated:** 2025-07-30T07:15:00.000Z
 
 ## High Priority Tasks
 
@@ -37,6 +37,15 @@
 - **Expected Delivery Date:** 2024-05-20
 - **Status:** Not Started
 - **Details:** Create an admin panel for card CRUD operations, bulk card import/export, and card categorization/tagging system. Requires authentication system.
+
+## Completed Tasks
+
+### Dark Mode Implementation
+- **Owner:** AI Agent
+- **Expected Delivery Date:** 2025-07-30
+- **Status:** Completed ✅
+- **Completion Date:** 2025-07-30T07:15:00.000Z
+- **Details:** Successfully implemented comprehensive dark mode support across the application. Features include class-based theme toggling, CSS custom properties for light/dark themes, global dark mode activation, and enhanced readability with WCAG-compliant colors.
 
 ---
 

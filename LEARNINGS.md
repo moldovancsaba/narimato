@@ -1,7 +1,7 @@
 # Development Learnings
 
-**Current Version:** 2.0.2 (Updated)
-**Date:** 2025-07-29
+**Current Version:** 2.0.3 (Updated)
+**Date:** 2025-07-30
 
 ## State Transitions  Edge Cases
 
@@ -95,6 +95,15 @@
    - Removed title overlays to eliminate visual clutter and improve focus
    - Clean design philosophy prioritizes content over decorative elements
    - Consistent user experience across swipe, vote, and results interfaces
+
+### Dark Mode Implementation
+1.  **Strategy Decision**:
+    -   Chose a CSS custom properties approach with a `data-theme` attribute for maximum flexibility and maintainability.
+    -   This allows for theme switching without a page reload and can be controlled via JavaScript.
+2.  **Implementation Details**:
+    -   Defined all theme-related values (colors, shadows) as CSS variables in `:root` for the light theme.
+    -   Created a `[data-theme="dark"]` selector to override the default variables for dark mode.
+    -   Enabled `darkMode: 'class'` in Tailwind CSS to use `dark:` variants in the codebase.
 
 ### Technical Insights
 - **State Management**: Leveraged useState and useEffect hooks for fine-grained control over state and lifecycle operations.

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import BaseCard from '../components/BaseCard';
 import { CARD_FIELDS } from '@/app/lib/constants/fieldNames';
 import { createUniqueKey, validateUUID } from '@/app/lib/utils/fieldValidation';
+import PageLayout from '../components/PageLayout'; // Import the new layout
 
 interface Card {
   uuid: string;
@@ -82,20 +83,22 @@ export default function CardsPage() {
         return;
       }
       
-      const response = await fetch(`/api/v1/cards/${editedCard[CARD_FIELDS.UUID]}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          [CARD_FIELDS.TYPE]: editedCard[CARD_FIELDS.TYPE],
-          [CARD_FIELDS.CONTENT]: editedCard[CARD_FIELDS.TYPE] === 'text' 
-            ? { text: editedCard[CARD_FIELDS.CONTENT].text }
-            : { mediaUrl: editedCard[CARD_FIELDS.CONTENT].mediaUrl },
-          [CARD_FIELDS.TITLE]: editedCard[CARD_FIELDS.TITLE],
-          [CARD_FIELDS.TAGS]: Array.isArray(editedCard[CARD_FIELDS.TAGS]) ? editedCard[CARD_FIELDS.TAGS] : [],
-        }),
-      });
+      const response = await fetch(`/api/v1/cards/${editedCard[CARD_FIELDS.UUID]}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            [CARD_FIELDS.TYPE]: editedCard[CARD_FIELDS.TYPE],
+            [CARD_FIELDS.CONTENT]: editedCard[CARD_FIELDS.TYPE] === 'text' 
+              ? { text: editedCard[CARD_FIELDS.CONTENT].text }
+              : { mediaUrl: editedCard[CARD_FIELDS.CONTENT].mediaUrl },
+            [CARD_FIELDS.TITLE]: editedCard[CARD_FIELDS.TITLE],
+            [CARD_FIELDS.TAGS]: Array.isArray(editedCard[CARD_FIELDS.TAGS]) ? editedCard[CARD_FIELDS.TAGS] : [],
+          }),
+        }
+      );
 
       if (!response.ok) throw new Error('Failed to update card');
       fetchCards();
@@ -114,15 +117,17 @@ export default function CardsPage() {
         return;
       }
       
-      const response = await fetch(`/api/v1/cards/${uuid}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ [CARD_FIELDS.IS_ACTIVE]: !isActive }),
-      });
+      const response = await fetch(`/api/v1/cards/${uuid}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ [CARD_FIELDS.IS_ACTIVE]: !isActive }),
+        }
+      );
 
-      if (!response.ok) throw new Error('Failed to update card');
+      if (!response.ok) throw new Error('Failed to update card status');
       fetchCards();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
@@ -133,150 +138,123 @@ export default function CardsPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-xl">Loading...</div>
+        <div className="loading-spinner"></div>
+        <span className="ml-2 text-lg">Loading cards...</span>
       </div>
     );
   }
 
   return (
-    <>
-    <div className="min-h-screen bg-gray-100 p-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-4xl mx-auto"
-      >
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Card Management</h1>
-          <div className="flex gap-2">
-            <a
-              href="/card-editor"
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-            >
-              Add Card
-            </a>
-            <button
-              onClick={async () => {
-                if (!confirm('Are you sure you want to reset the database? This will delete ALL cards, sessions, and progress data.')) return;
-                
-                try {
-                  const response = await fetch('/api/v1/reset', {
-                    method: 'POST',
-                  });
-                  
-                  if (!response.ok) throw new Error('Failed to reset database');
-                  
-                  // Refresh the cards list
-                  fetchCards();
-                  setError(null);
-                } catch (err) {
-                  const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-                  setError(errorMessage);
-                }
-              }}
-              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-            >
-              Reset Database
-            </button>
-          </div>
+    <PageLayout title="Card Management">
+      <div className="flex justify-end gap-2 mb-8">
+        <a href="/card-editor" className="btn btn-success">
+          Add Card
+        </a>
+        <button
+          onClick={async () => {
+            if (!confirm('Are you sure you want to reset the database? This will delete ALL cards, sessions, and progress data.')) return;
+            try {
+              const response = await fetch('/api/v1/reset', { method: 'POST' });
+              if (!response.ok) throw new Error('Failed to reset database');
+              fetchCards();
+              setError(null);
+            } catch (err) {
+              const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+              setError(errorMessage);
+            }
+          }}
+          className="btn btn-danger"
+        >
+          Reset Database
+        </button>
+      </div>
+
+      {error && (
+        <div className="status-error p-4 mb-4 rounded-lg">
+          {error}
         </div>
+      )}
 
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
-        )}
-
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {cards.map((card) => (
-            <motion.div
-              key={createUniqueKey('card', card[CARD_FIELDS.UUID])}
-              layout
-              className={`relative group ${
-                !card[CARD_FIELDS.IS_ACTIVE] ? 'opacity-50' : ''
-              }`}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {cards.map((card) => (
+          <motion.div
+            key={createUniqueKey('card', card[CARD_FIELDS.UUID])}
+            layout
+            className={`relative group ${
+              !card[CARD_FIELDS.IS_ACTIVE] ? 'opacity-50' : ''
+            }`}
+          >
+            <BaseCard
+              uuid={card[CARD_FIELDS.UUID]}
+              type={card[CARD_FIELDS.TYPE] as 'text' | 'media'}
+              content={card[CARD_FIELDS.CONTENT]}
+              size="medium"
+              className="transition-all duration-200 group-hover:shadow-lg"
             >
-              {/* BaseCard Display */}
-              <BaseCard
-                uuid={card[CARD_FIELDS.UUID]}
-                type={card[CARD_FIELDS.TYPE] as 'text' | 'media'}
-                content={card[CARD_FIELDS.CONTENT]}
-                size="medium"
-                className="transition-all duration-200 group-hover:shadow-lg"
-              >
-                {/* Status indicator */}
-                {!card[CARD_FIELDS.IS_ACTIVE] && (
-                  <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded">
-                    Inactive
-                  </div>
-                )}
-              </BaseCard>
-
-              {/* Card Management Overlay */}
-              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-75 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
-                <div className="flex flex-col gap-2">
-                  <button
-                    onClick={() => toggleCardStatus(card[CARD_FIELDS.UUID], card[CARD_FIELDS.IS_ACTIVE])}
-                    className={`px-3 py-2 rounded text-sm font-medium ${
-                      card[CARD_FIELDS.IS_ACTIVE]
-                        ? 'bg-red-500 text-white hover:bg-red-600'
-                        : 'bg-green-500 text-white hover:bg-green-600'
-                    }`}
-                  >
-                    {card[CARD_FIELDS.IS_ACTIVE] ? 'Deactivate' : 'Activate'}
-                  </button>
-                  <button
-                    onClick={() => handleEdit(card)}
-                    className="px-3 py-2 rounded text-sm font-medium bg-blue-500 text-white hover:bg-blue-600"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(card[CARD_FIELDS.UUID])}
-                    className="px-3 py-2 rounded text-sm font-medium bg-red-500 text-white hover:bg-red-600"
-                  >
-                    Delete
-                  </button>
+              {!card[CARD_FIELDS.IS_ACTIVE] && (
+                <div className="absolute top-2 right-2">
+                  <span className="status-badge status-error">Inactive</span>
                 </div>
-              </div>
+              )}
+            </BaseCard>
 
-              {/* Card Metadata */}
-              <div className="mt-3 space-y-2">
-                {/* Tags */}
-                {card[CARD_FIELDS.TAGS].length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {card[CARD_FIELDS.TAGS].slice(0, 3).map((tag, tagIndex) => (
-                      <span
-                        key={createUniqueKey('tag', card[CARD_FIELDS.UUID], tagIndex, tag)}
-                        className="bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded-full"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                    {card[CARD_FIELDS.TAGS].length > 3 && (
-                      <span className="bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded-full">
-                        +{card[CARD_FIELDS.TAGS].length - 3}
-                      </span>
-                    )}
-                  </div>
-                )}
-                
-                {/* Creation Date */}
-                <div className="text-xs text-gray-500">
-                  Created: {new Date(card[CARD_FIELDS.CREATED_AT]).toLocaleDateString()}
+            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-75 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => toggleCardStatus(card[CARD_FIELDS.UUID], card[CARD_FIELDS.IS_ACTIVE])}
+                  className={`btn btn-sm ${
+                    card[CARD_FIELDS.IS_ACTIVE]
+                      ? 'btn-danger'
+                      : 'btn-success'
+                  }`}
+                >
+                  {card[CARD_FIELDS.IS_ACTIVE] ? 'Deactivate' : 'Activate'}
+                </button>
+                <button
+                  onClick={() => handleEdit(card)}
+                  className="btn btn-sm btn-primary"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(card[CARD_FIELDS.UUID])}
+                  className="btn btn-sm btn-danger"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-3 space-y-2">
+              {card[CARD_FIELDS.TAGS].length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {card[CARD_FIELDS.TAGS].slice(0, 3).map((tag, tagIndex) => (
+                    <span
+                      key={createUniqueKey('tag', card[CARD_FIELDS.UUID], tagIndex, tag)}
+                      className="status-badge status-info"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                  {card[CARD_FIELDS.TAGS].length > 3 && (
+                    <span className="status-badge status-info">
+                      +{card[CARD_FIELDS.TAGS].length - 3}
+                    </span>
+                  )}
                 </div>
+              )}
+              
+              <div className="text-xs text-muted">
+                Created: {new Date(card[CARD_FIELDS.CREATED_AT]).toLocaleDateString()}
               </div>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-    </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
 
-    {/* Edit Modal */}
-    {isEditing && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      {isEditing && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="content-card w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Edit Card</h2>
               <button
@@ -284,7 +262,7 @@ export default function CardsPage() {
                   setIsEditing(null);
                   setEditedCard(null);
                 }}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-muted hover:text-primary"
               >
                 ✕
               </button>
@@ -292,9 +270,7 @@ export default function CardsPage() {
 
             <form onSubmit={handleEditSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Type
-                </label>
+                <label className="form-label">Type</label>
                 <select
                   value={editedCard?.type}
                   onChange={(e) => setEditedCard({ 
@@ -304,7 +280,7 @@ export default function CardsPage() {
                       ? { text: '' } 
                       : { mediaUrl: '' }
                   })}
-                  className="w-full p-2 border rounded"
+                  className="form-input"
                 >
                   <option value="text">Text</option>
                   <option value="media">Media</option>
@@ -313,24 +289,20 @@ export default function CardsPage() {
 
               {editedCard?.type === 'text' ? (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Text Content
-                  </label>
+                  <label className="form-label">Text Content</label>
                   <textarea
                     value={editedCard.content.text || ''}
                     onChange={(e) => setEditedCard({
                       ...editedCard,
                       content: { ...editedCard.content, text: e.target.value }
                     })}
-                    className="w-full p-2 border rounded"
+                    className="form-input"
                     rows={4}
                   />
                 </div>
               ) : (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Media URL
-                  </label>
+                  <label className="form-label">Media URL</label>
                   <input
                     type="url"
                     value={editedCard?.content.mediaUrl || ''}
@@ -338,27 +310,23 @@ export default function CardsPage() {
                       ...editedCard!,
                       content: { ...editedCard!.content, mediaUrl: e.target.value }
                     })}
-                    className="w-full p-2 border rounded"
+                    className="form-input"
                   />
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Title
-                </label>
+                <label className="form-label">Title</label>
                 <input
                   type="text"
                   value={editedCard?.title || ''}
                   onChange={(e) => setEditedCard({ ...editedCard!, title: e.target.value })}
-                  className="w-full p-2 border rounded"
+                  className="form-input"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tags
-                </label>
+                <label className="form-label">Tags</label>
                 <input
                   type="text"
                   value={Array.isArray(editedCard?.tags) ? editedCard.tags.join(', ') : ''}
@@ -366,7 +334,7 @@ export default function CardsPage() {
                     ...editedCard!, 
                     tags: e.target.value.split(',').map(tag => tag.trim()).filter(Boolean)
                   })}
-                  className="w-full p-2 border rounded"
+                  className="form-input"
                   placeholder="tag1, tag2, tag3"
                 />
               </div>
@@ -378,13 +346,13 @@ export default function CardsPage() {
                     setIsEditing(null);
                     setEditedCard(null);
                   }}
-                  className="px-4 py-2 text-gray-700 border rounded hover:bg-gray-50"
+                  className="btn btn-secondary"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  className="btn btn-primary"
                 >
                   Save Changes
                 </button>
@@ -393,6 +361,6 @@ export default function CardsPage() {
           </div>
         </div>
     )}
-    </>
+    </PageLayout>
   );
 }

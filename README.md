@@ -1,6 +1,6 @@
 # NARIMATO
 
-![Version](https://img.shields.io/badge/version-2.0.2-blue.svg)
+![Version](https://img.shields.io/badge/version-2.0.3-blue.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-15.4.4-black.svg)
 ![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)
 ![MongoDB](https://img.shields.io/badge/MongoDB-7.0+-green.svg)
@@ -8,7 +8,7 @@
 
 NARIMATO is an anonymous, session-based card ranking application built with Next.js, MongoDB, and sophisticated binary search ranking algorithms.
 
-**Current Version:** 2.0.2 *(Updated with enhanced UI/UX and typography)*
+**Current Version:** 2.0.3 *(Updated with Dark Mode support)*
 
 ## ✨ Key Features
 
@@ -20,7 +20,8 @@ NARIMATO is an anonymous, session-based card ranking application built with Next
 - **Modern Typography**: Professional Fira Code SemiBold font for enhanced aesthetics
 - **Clean Card Design**: Simplified interface focused on content without title clutter
 - **Session Recovery**: Robust error handling and state persistence
-- **Comprehensive Error Handling**: Graceful degradation and automatic recovery
+  - **Dark Mode Support**: Full dark mode for enhanced visual comfort.
+  - **Comprehensive Error Handling**: Graceful degradation and automatic recovery
 
 ## 🔥 Recent Improvements (v2.0.2)
 
@@ -30,6 +31,7 @@ NARIMATO is an anonymous, session-based card ranking application built with Next
 - **Enhanced Binary Search**: Accumulated bounds calculation for optimal comparison efficiency
 - **Smart State Transitions**: Automatic detection when card position is determined
 - **Improved Session Management**: Perfect synchronization between frontend and backend states
+- **Dark Mode Support**: Seamless dark mode experience for improved accessibility.
 - **Performance Optimization**: ~40% reduction in average comparisons per card
 
 ## 📚 Documentation

@@ -305,7 +305,7 @@ export default function SwipeCard({
     >
       {/* Loading overlay */}
       {swipeState === 'loading' && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-xl z-10">
+        <div className="absolute inset-0 flex items-center justify-center bg-black/20 dark:bg-black/40 rounded-xl z-10">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent"></div>
         </div>
       )}
@@ -313,7 +313,7 @@ export default function SwipeCard({
       {/* Error overlay */}
       {swipeState === 'error' && (
         <div className="absolute inset-0 flex items-center justify-center bg-red-500/20 rounded-xl z-10">
-          <div className="bg-white p-4 rounded-lg shadow-lg text-red-500 text-center">
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg text-red-600 dark:text-red-300 text-center">
             <p className="font-semibold">Error processing vote</p>
             <p className="text-sm mt-1">Please try again</p>
           </div>
@@ -328,7 +328,7 @@ export default function SwipeCard({
         `}>
           <div className={`
             text-4xl font-bold transform transition-transform
-            ${swipeDirection === 'right' ? 'text-green-500 rotate-[-30deg]' : 'text-red-500 rotate-[30deg]'}
+            ${swipeDirection === 'right' ? 'text-green-600 rotate-[-30deg]' : 'text-red-600 rotate-[30deg]'}
           `}>
             {swipeDirection === 'right' ? 'YES' : 'NO'}
           </div>
