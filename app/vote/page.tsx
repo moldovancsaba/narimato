@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import VoteCard from '../components/VoteCard';
 import { DeckEntity } from '@/app/lib/models/DeckEntity';
 import { SESSION_FIELDS, CARD_FIELDS, VOTE_FIELDS } from '@/app/lib/constants/fieldNames';
+import PageLayout from '../components/PageLayout';
 
 interface Card {
   uuid: string;
@@ -199,12 +200,46 @@ function VoteContent() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isAnimating, handleSelect]);
 
+
   // Render UI or error state
   if (!cardA || !cardB) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-xl">Loading...</div>
+      <PageLayout title="Vote to Rank">
+        <div className="h-screen w-screen fixed inset-0 overflow-hidden bg-background text-foreground">
+          <div className="page-grid-container vote-grid h-full" style={{ paddingBottom: '85px' }}>
+            
+            {/* Card 1 Loading - Row 2 (Portrait) / Column 1 (Landscape) */}
+          <div className="vote-grid-card1 grid-cell">
+            <div className="card-container">
+              <div className="text-white text-xl">Loading...</div>
+            </div>
+          </div>
+          
+          {/* VS Indicator - Row 3 (Portrait) / Column 2 (Landscape) */}
+          <div className="vote-grid-vs grid-cell">
+            <div className="vote-card-circle">
+              😈
+            </div>
+          </div>
+          
+          {/* Card 2 Loading - Row 4 (Portrait) / Column 3 (Landscape) */}
+          <div className="vote-grid-card2 grid-cell">
+            <div className="card-container">
+              <div className="text-white text-xl">Loading...</div>
+            </div>
+          </div>
+          
+          {/* Support Text - Row 5 (Portrait) / Row 3 (Landscape) */}
+          <div className="vote-grid-support grid-cell">
+            <p className="support-text text-center">
+              <span className="hidden sm:inline">Use left/right arrow keys or </span>
+              Tap to choose
+            </p>
+          </div>
+          
+        </div>
       </div>
+      </PageLayout>
     );
   }
 
@@ -231,45 +266,47 @@ function VoteContent() {
   }
 
   return (
-    <div className="h-screen w-screen fixed inset-0 flex flex-col items-center justify-center overflow-hidden bg-background text-foreground p-4" style={{ paddingBottom: '80px' }}>
-        {/* Header */}
-        <div className="text-center mb-4 flex-shrink-0">
-          <h1 className="text-2xl font-bold text-center">Vote to Rank</h1>
+    <PageLayout title="Vote to Rank">
+      <div className="h-screen w-screen fixed inset-0 overflow-hidden bg-background text-foreground">
+        <div className="page-grid-container vote-grid h-full" style={{ paddingBottom: '85px' }}>
+        
+        {/* Card 1 - Row 2 (Portrait) / Column 1 (Landscape) */}
+        <div className="vote-grid-card1 grid-cell">
+          <VoteCard
+            {...cardA}
+            position="left"
+            onSelect={() => handleSelect('A')}
+            isSelected={selected === 'A'}
+          />
         </div>
         
-        {/* Card Comparison */}
-        <div className="flex flex-col sm:flex-row justify-center items-center gap-6 sm:gap-8 w-full max-w-4xl mx-auto">
-          <div className="w-full max-w-xs sm:max-w-sm">
-            <VoteCard
-              {...cardA}
-              position="left"
-              onSelect={() => handleSelect('A')}
-              isSelected={selected === 'A'}
-            />
-          </div>
-          
-          {/* VS Indicator */}
-          <div className="vs-indicator">
-            VS
-          </div>
-          
-          <div className="w-full max-w-xs sm:max-w-sm">
-            <VoteCard
-              {...cardB}
-              position="right"
-              onSelect={() => handleSelect('B')}
-              isSelected={selected === 'B'}
-            />
+        {/* VS Indicator - Row 3 (Portrait) / Column 2 (Landscape) */}
+        <div className="vote-grid-vs grid-cell">
+          <div className="vote-card-circle">
+            😈
           </div>
         </div>
         
-        {/* Instructions */}
-        <div className="text-center mt-6 sm:mt-8 pb-8">
-          <p className="text-sm text-muted">
+        {/* Card 2 - Row 4 (Portrait) / Column 3 (Landscape) */}
+        <div className="vote-grid-card2 grid-cell">
+          <VoteCard
+            {...cardB}
+            position="right"
+            onSelect={() => handleSelect('B')}
+            isSelected={selected === 'B'}
+          />
+        </div>
+        
+        {/* Support Text - Row 5 (Portrait) / Row 3 (Landscape) */}
+        <div className="vote-grid-support grid-cell">
+          <p className="support-text text-center">
             <span className="hidden sm:inline">Use left/right arrow keys or </span>
             Tap to choose
           </p>
         </div>
+        
       </div>
+    </div>
+    </PageLayout>
   );
 }

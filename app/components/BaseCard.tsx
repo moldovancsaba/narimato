@@ -21,7 +21,7 @@ interface BaseCardProps {
   type: 'text' | 'media';         // Content type determines rendering approach
   content: CardContent;            // The actual content to display
   className?: string;              // Additional CSS classes for container
-  size?: 'small' | 'medium' | 'large'; // Predefined size variants
+  size?: 'small' | 'medium' | 'large' | 'grid'; // Predefined size variants
   children?: ReactNode;            // Optional overlay content (for interactive elements)
   onClick?: () => void;            // Optional click handler
   style?: React.CSSProperties;     // Optional inline styles for animations/transforms
@@ -67,14 +67,15 @@ export default function BaseCard({
   const sizeClasses = {
     small: 'w-24 h-32 md:w-40 md:h-56',  // Adjusted for better mobile-first scaling
     medium: 'w-full max-w-sm sm:max-w-md aspect-[3/4]', // Default size with mobile-first adjustments
-    large: 'w-full max-w-md md:max-w-lg aspect-[3/4]'   // Large display with consistent scaling
+    large: 'w-full max-w-md md:max-w-lg aspect-[3/4]',   // Large display with consistent scaling
+    grid: 'w-full h-full'  // Grid size fills container without aspect ratio constraints
   };
 
   return (
     <div
       className={`
         ${sizeClasses[size]}
-        card-container
+        ${size !== 'grid' ? 'card-container' : ''}
         ${onClick ? 'cursor-pointer' : ''}
         ${className}
       `}

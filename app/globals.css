@@ -2,6 +2,238 @@
   @apply content-card p-4;
 }
 
+/* Swipe and Vote Page Layouts */
+.page-grid-container {
+  @apply grid h-full w-full;
+  padding: 5px;
+  gap: 5px;
+  grid-template-rows: 60px 1fr;
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "title"
+    "main";
+}
+
+/* Portrait Mode */
+@media (orientation: portrait) {
+  .page-grid-container {
+    grid-template-rows: 60px 1fr;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "title"
+      "main";
+  }
+  
+  .swipe-grid {
+    grid-template-rows: 60px 1fr 80px 40px;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "title"
+      "card"
+      "buttons"
+      "support";
+  }
+  
+  .swipe-grid-title { 
+    grid-area: title;
+    border: 2px solid red !important;
+  }
+  .swipe-grid-card { 
+    grid-area: card;
+    border: 2px solid blue !important;
+  }
+  .swipe-grid-buttons {
+    grid-area: buttons;
+    @apply flex justify-center items-center gap-8;
+    border: 2px solid green !important;
+  }
+  .swipe-grid-support { 
+    grid-area: support;
+    border: 2px solid orange !important;
+  }
+
+  .swipe-grid-button-left, .swipe-grid-button-right {
+      display: none !important;
+  }
+
+  .vote-grid {
+    grid-template-rows: 60px 2fr 60px 2fr 40px;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "title"
+      "card1"
+      "vs"
+      "card2"
+      "support";
+  }
+
+  .vote-grid-title { 
+    grid-area: title;
+    border: 2px solid red !important;
+  }
+  .vote-grid-card1 { 
+    grid-area: card1;
+    border: 2px solid purple !important;
+    /* Constrain overflow to prevent cards from expanding beyond grid cell */
+    overflow: hidden;
+    height: 100%;
+  }
+  .vote-grid-vs { 
+    grid-area: vs;
+    border: 2px solid cyan !important;
+  }
+  .vote-grid-card2 { 
+    grid-area: card2;
+    border: 2px solid yellow !important;
+    /* Constrain overflow to prevent cards from expanding beyond grid cell */
+    overflow: hidden;
+    height: 100%;
+  }
+  .vote-grid-support { 
+    grid-area: support;
+    border: 2px solid orange !important;
+  }
+}
+
+/* Landscape Mode */
+@media (orientation: landscape) {
+  .page-grid-container {
+    grid-template-rows: 60px 1fr;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "title"
+      "main";
+  }
+  
+  .swipe-grid {
+    grid-template-columns: 80px 1fr 80px;
+    grid-template-rows: 60px 1fr 40px;
+    grid-template-areas:
+      "title title title"
+      "button-left card button-right"
+      "support support support";
+  }
+  .swipe-grid-title { 
+    grid-area: title;
+    border: 2px solid red !important;
+  }
+  .swipe-grid-button-left { 
+    grid-area: button-left;
+    @apply flex items-center justify-center;
+    border: 2px solid pink !important;
+  }
+  .swipe-grid-card { 
+    grid-area: card;
+    border: 2px solid blue !important;
+  }
+  .swipe-grid-button-right { 
+    grid-area: button-right;
+    @apply flex items-center justify-center;
+    border: 2px solid lightgreen !important;
+  }
+  .swipe-grid-support { 
+    grid-area: support;
+    border: 2px solid orange !important;
+  }
+
+  .swipe-grid-buttons {
+      display: none !important;
+  }
+
+  .vote-grid {
+    grid-template-columns: 1fr 60px 1fr;
+    grid-template-rows: 60px 1fr 40px;
+    grid-template-areas:
+      "title title title"
+      "card1 vs card2"
+      "support support support";
+  }
+  .vote-grid-title { 
+    grid-area: title;
+    border: 2px solid red !important;
+  }
+  .vote-grid-card1 { 
+    grid-area: card1;
+    border: 2px solid purple !important;
+    /* Constrain overflow to prevent cards from expanding beyond grid cell */
+    overflow: hidden;
+    height: 100%;
+  }
+  .vote-grid-vs { 
+    grid-area: vs;
+    border: 2px solid cyan !important;
+  }
+  .vote-grid-card2 { 
+    grid-area: card2;
+    border: 2px solid yellow !important;
+    /* Constrain overflow to prevent cards from expanding beyond grid cell */
+    overflow: hidden;
+    height: 100%;
+  }
+  .vote-grid-support { 
+    grid-area: support;
+    border: 2px solid orange !important;
+  }
+}
+
+/* Grid cell is the single source of truth for card sizing */
+.grid-cell {
+    @apply flex items-center justify-center;
+    width: 100%;
+    height: 100%;
+    /* Debug border for all grid cells */
+    border: 1px solid lime !important;
+}
+
+/* Card area specifically constrains card size */
+.swipe-grid-card.grid-cell {
+    /* This grid cell defines the card's maximum space */
+    contain: layout size;
+}
+
+/* Grid areas for all pages */
+.page-title-grid {
+  grid-area: title;
+  @apply flex items-center justify-center;
+  border: 2px solid red !important;
+}
+
+.page-main-grid {
+  grid-area: main;
+  @apply w-full h-full overflow-y-auto;
+  border: 2px solid darkgreen !important;
+}
+
+.support-text {
+  @apply text-sm font-bold;
+  color: var(--text-primary);
+  /* High contrast for dark mode */
+  @apply dark:text-white;
+}
+
+.swipe-button-circle {
+    @apply rounded-full flex items-center justify-center text-5xl shadow-lg transition-transform transform hover:scale-105 active:scale-95;
+    width: 80px;
+    height: 80px;
+    min-width: 80px;
+    min-height: 80px;
+    aspect-ratio: 1;
+}
+
+.vote-card-circle {
+    @apply rounded-full flex items-center justify-center text-5xl;
+    width: 80px;
+    height: 80px;
+    min-width: 80px;
+    min-height: 80px;
+    aspect-ratio: 1;
+    background-color: var(--primary);
+    color: var(--background);
+}
+
+.dark .vote-card-circle {
+    background-color: var(--primary-hover);
+}
 .statistic-card .text-2xl {
   color: var(--accent);
 }
@@ -171,22 +403,92 @@
   
   /* Card Components - Mobile First with Dark Mode Enhancement */
   .card-container {
-    @apply relative w-full aspect-[3/4] rounded-lg sm:rounded-xl;
-    /* Mobile: smaller max-width, larger on desktop */
-    max-width: 280px;
-    background: #60008a;
-    background: linear-gradient(139deg, rgba(96, 0, 138, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 144, 173, 1) 100%);
+    @apply relative flex items-center justify-center rounded-lg sm:rounded-xl;
+    aspect-ratio: 3 / 4;
+    /* Dark purple background - serves as loading state until content loads */
+    background: #4a148c;
     box-shadow: var(--shadow-card-mobile);
     border-radius: var(--border-radius-lg-mobile);
     transition: var(--transition);
     /* Enhanced mobile dark mode outline for better visibility */
     @apply dark:ring-1 dark:ring-white/10;
   }
+
+/* SWIPE Page Card Sizing - Proper 3:4 aspect ratio with grid constraints */
+  .swipe-grid .card-container {
+    /* Force the aspect ratio first */
+    aspect-ratio: 3 / 4;
+    /* Center the card */
+    align-self: center;
+    justify-self: center;
+    /* Size to fit within grid cell while maintaining aspect ratio */
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  /* Portrait mode: SWIPE card should be constrained by width (single card in portrait) */
+  @media (orientation: portrait) {
+    .swipe-grid .card-container {
+      /* In portrait, width is usually the limiting factor for SWIPE */
+      width: 100%;
+      height: auto; /* Let height be determined by aspect ratio */
+    }
+  }
+
+  /* Landscape mode: SWIPE card should be constrained by height */
+  @media (orientation: landscape) {
+    .swipe-grid .card-container {
+      /* In landscape, height is the limiting factor for SWIPE */
+      height: 100%;
+      width: auto; /* Let width be determined by aspect ratio */
+    }
+  }
+
+  /* VOTE Page Card Sizing - Proper 3:4 aspect ratio with grid constraints */
+  .vote-grid .card-container {
+    /* Force the aspect ratio first */
+    aspect-ratio: 3 / 4;
+    /* Center the card */
+    align-self: center;
+    justify-self: center;
+    /* Size to fit within grid cell while maintaining aspect ratio */
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  /* Portrait mode: limit by height since cards are stacked */
+  @media (orientation: portrait) {
+    .vote-grid .card-container {
+      /* In portrait, height is the limiting factor */
+      height: 100%;
+      width: auto; /* Let width be determined by aspect ratio */
+    }
+  }
+
+  /* Landscape mode: limit by height since cards are side by side */
+  @media (orientation: landscape) {
+    .vote-grid .card-container {
+      /* In landscape, height is the limiting factor for VOTE cards */
+      height: 100%;
+      width: auto; /* Let width be determined by aspect ratio */
+    }
+  }
+
+  /* Results Grid Card Sizing */
+  .results-grid .card-container {
+    /* Cards fit within their grid cell with proper aspect ratio */
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+  }
   
   /* Desktop enhancements with improved dark mode */
   @media (min-width: 640px) {
     .card-container {
-      max-width: 320px;
       box-shadow: var(--shadow-card);
       border-radius: var(--border-radius-lg);
       /* Enhanced desktop dark mode styling */
@@ -196,7 +498,6 @@
   
   @media (min-width: 768px) {
     .card-container {
-      max-width: 384px;
       /* Tablet-specific dark mode enhancements */
       @apply dark:ring-2 dark:ring-white/10;
     }
@@ -441,17 +742,28 @@
   
   /* Layout Components - Mobile First */
   .page-container {
-    @apply min-h-screen flex flex-col;
+    @apply grid w-full h-screen;
+    grid-template-rows: auto 1fr;
+    grid-template-areas: 
+      "page-title"
+      "page-main";
+    padding: 5px;
+    gap: 5px;
     background-color: var(--background);
     color: var(--text-primary);
-    /* Mobile safe area support */
-    min-height: calc(100vh - var(--safe-area-inset-top) - var(--safe-area-inset-bottom));
+    border: 3px solid darkblue !important;
+  }
+
+  .page-title-area {
+    grid-area: page-title;
+    @apply flex items-center justify-center;
+    border: 2px solid red !important;
   }
   
   .page-content {
-    @apply flex-1 flex flex-col items-center justify-center;
-    /* Mobile: smaller padding */
-    padding: var(--spacing-mobile);
+    grid-area: page-main;
+    @apply overflow-y-auto;
+    border: 2px solid darkgreen !important;
   }
   
   @media (min-width: 640px) {
@@ -471,6 +783,8 @@
     max-width: 100%;
     /* Enhanced mobile dark mode contrast */
     @apply dark:ring-1 dark:ring-white/10 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900;
+    /* Debug border for content card */
+    border: 2px solid coral !important;
   }
   
   @media (min-width: 640px) {
@@ -495,6 +809,8 @@
     max-width: 100%;
     /* Enhanced mobile dark mode styling */
     @apply dark:ring-1 dark:ring-white/10 dark:bg-gradient-to-br dark:from-gray-800/90 dark:to-gray-900/90;
+    /* Debug border for large content card */
+    border: 2px solid darkred !important;
   }
   
   @media (min-width: 640px) {
@@ -502,7 +818,7 @@
       padding: var(--spacing-lg);
       border-radius: var(--border-radius-lg);
       box-shadow: var(--shadow-card);
-      max-width: 42rem; /* max-w-2xl */
+      width: 100%;
       /* Desktop dark mode enhancements */
       @apply dark:ring-1 dark:ring-white/20 dark:backdrop-blur-md;
     }
@@ -644,36 +960,7 @@
     color: var(--text-secondary);
   }
   
-  /* Card Loading Placeholder */
-  .card-loading-placeholder {
-    @apply w-full max-w-md relative aspect-[3/4] animate-pulse rounded-lg flex items-center justify-center;
-    background-color: var(--card-background);
-    color: var(--text-muted);
-    /* Ensure it matches card-container exactly */
-    max-width: 280px;
-    background: #60008a;
-    background: linear-gradient(139deg, rgba(96, 0, 138, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 144, 173, 1) 100%);
-    box-shadow: var(--shadow-card-mobile);
-    border-radius: var(--border-radius-lg-mobile);
-    @apply dark:ring-1 dark:ring-white/10;
-  }
-  
-  /* Desktop loading placeholder */
-  @media (min-width: 640px) {
-    .card-loading-placeholder {
-      max-width: 320px;
-      box-shadow: var(--shadow-card);
-      border-radius: var(--border-radius-lg);
-      @apply dark:ring-1 dark:ring-white/15;
-    }
-  }
-  
-  @media (min-width: 768px) {
-    .card-loading-placeholder {
-      max-width: 384px;
-      @apply dark:ring-2 dark:ring-white/10;
-    }
-  }
+  /* Loading state for cards - now handled by card-container background */
   
   /* Animation Classes */
   .slide-up {
@@ -699,6 +986,26 @@
   
   .scale-in-enter {
     @apply scale-100 opacity-100;
+  }
+
+  /* Card Grid for Results (Completed, Ranks, Cards) */
+  .results-grid {
+    @apply grid w-full p-1;
+    gap: 5px;
+  }
+
+  /* Portrait: 2 columns */
+  @media (orientation: portrait) {
+    .results-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  /* Landscape: 4 columns */
+  @media (orientation: landscape) {
+    .results-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
   }
 }
 

@@ -82,14 +82,14 @@ export default function VoteCard({
       animate={isSelected ? "selected" : isSelected === false ? "unselected" : "initial"}
       variants={variants}
       whileHover={{ scale: 1.02 }}
-      className="w-full"
+      className="card-container"
     >
       <BaseCard
         uuid={uuid}
         type={type}
         content={content}
         onClick={onSelect}
-        size="medium"
+        size="grid"  // Use grid size to avoid aspect ratio conflicts
         className="hover:shadow-xl transition-shadow duration-200"
       />
     </motion.div>

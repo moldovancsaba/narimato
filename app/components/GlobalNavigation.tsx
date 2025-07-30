@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 
 const navigationItems = [
-  { href: '/', label: 'Home', icon: '🏠' },
-  { href: '/swipe', label: 'Rank', icon: '🏆' },
-  { href: '/completed', label: 'Ranks', icon: '📊' },
-  { href: '/cards', label: 'Cards', icon: '📱' },
+  { href: '/', icon: '🏠' },
+  { href: '/swipe', icon: '▶️' },
+  { href: '/ranks', icon: '🏆' },
+  { href: '/cards', icon: '🃏' },
 ];
 
 export default function GlobalNavigation() {
@@ -40,8 +40,7 @@ export default function GlobalNavigation() {
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
               )}
-              <span className="text-lg mb-1 relative z-10">{item.icon}</span>
-              <span className="text-xs font-medium relative z-10">{item.label}</span>
+              <span className="text-2xl relative z-10">{item.icon}</span>
             </Link>
           );
         })}

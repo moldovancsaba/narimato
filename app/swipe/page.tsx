@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useEventAgent } from '@/app/lib/hooks/useEventAgent';
 import { useCardSize } from '@/app/hooks/useCardSize';
+import { useOrientation } from '@/app/hooks/useOrientation';
 const SwipeCard = dynamic(
   () => import('../components/SwipeCard').catch((error) => {
     console.warn('[SwipeCard] Dynamic import failed, retrying...', error);
@@ -35,6 +36,7 @@ const SwipeCard = dynamic(
 );
 import { DeckEntity } from '@/app/lib/models/DeckEntity';
 import ErrorBoundary from '../components/ErrorBoundary';
+import PageLayout from '../components/PageLayout';
 
 import { Card } from '@/app/lib/types/card';
 import { handleApiError, withRetry, backupSessionState } from '@/app/lib/utils/errorHandling';
@@ -297,25 +299,12 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
   }
 
     return (
-      <div className="h-screen w-screen fixed inset-0 flex flex-col items-center justify-center overflow-hidden bg-background text-foreground p-4" style={{ paddingBottom: '80px' }}>
-        {/* Header */}
-        <div className="text-center mb-4 flex-shrink-0">
-          <h1 className="text-2xl font-bold text-center">Swipe to Vote</h1>
-        </div>
-        
-        {/* Card display with side buttons */}
-        <div className="flex items-center justify-center w-full max-w-4xl relative">
-          {/* Left (dislike) button */}
-          <button
-            onClick={() => handleSwipe('left')}
-            disabled={isLoading}
-            className="swipe-button swipe-button-left absolute left-0 z-10"
-          >
-            {isLoading ? '⏳' : '✕'}
-          </button>
-          
-          {/* Card container - using same sizing as Vote page */}
-          <div className="w-full max-w-xs sm:max-w-sm relative flex items-center justify-center">
+      <PageLayout title="Swipe to Vote">
+        <div className="h-screen w-screen fixed inset-0 overflow-hidden bg-background text-foreground">
+          <div className="page-grid-container swipe-grid h-full" style={{ paddingBottom: '85px' }}>
+            
+            {/* Portrait Mode: Card - Row 2 */}
+          <div className="swipe-grid-card grid-cell">
             {currentCard && deck && (
               <SwipeCard
                 key={createUniqueKey('swipe-card', currentCard[CARD_FIELDS.UUID], deck.getCurrentIndex())}
@@ -325,41 +314,56 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
             )}
           </div>
           
-          {/* Right (like) button */}
-          <button
-            onClick={() => handleSwipe('right')}
-            disabled={isLoading}
-            className="swipe-button swipe-button-right absolute right-0 z-10"
-          >
-            {isLoading ? '⏳' : '✓'}
-          </button>
-        </div>
-
-        {/* Instructions */}
-        <div className="text-center mt-6 sm:mt-8 pb-8">
-          <p className="text-sm text-muted">
-            <span className="hidden sm:inline">Use left/right arrow keys or </span>
-            Swipe to rate cards
-          </p>
-        </div>
-
-      {/* Current ranking display */}
-      {personalRanking.length > 0 && (
-        <div className="content-card mt-8 w-full max-w-md">
-          <h3 className="text-lg font-semibold mb-3">Current Ranking</h3>
-          <div className="max-h-40 overflow-y-auto">
-            {personalRanking.map((cardId, index) => (
-              <div 
-                key={createUniqueKey('ranking', index, cardId)}
-                className="ranking-item-sm"
-              >
-                <span className="font-bold mr-3">{index + 1}.</span>
-                <span className="text-sm text-secondary">{cardId}</span>
-              </div>
-            ))}
+          {/* Landscape Mode: Left Button */}
+          <div className="swipe-grid-button-left grid-cell">
+            <button
+              onClick={() => handleSwipe('left')}
+              disabled={isLoading}
+              className="swipe-button-circle bg-red-500 text-white hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
+            >
+              {isLoading ? '⏳' : '😵'}
+            </button>
           </div>
+          
+          {/* Landscape Mode: Right Button */}
+          <div className="swipe-grid-button-right grid-cell">
+            <button
+              onClick={() => handleSwipe('right')}
+              disabled={isLoading}
+              className="swipe-button-circle bg-green-500 text-white hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700"
+            >
+              {isLoading ? '⏳' : '😍'}
+            </button>
+          </div>
+          
+          {/* Portrait Mode: Buttons - Row 3 */}
+          <div className="swipe-grid-buttons grid-cell">
+            <button
+              onClick={() => handleSwipe('left')}
+              disabled={isLoading}
+              className="swipe-button-circle bg-red-500 text-white hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
+            >
+              {isLoading ? '⏳' : '😵'}
+            </button>
+            <button
+              onClick={() => handleSwipe('right')}
+              disabled={isLoading}
+              className="swipe-button-circle bg-green-500 text-white hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700"
+            >
+              {isLoading ? '⏳' : '😍'}
+            </button>
+          </div>
+          
+          {/* Support Text - Row 3/4 (Landscape/Portrait) */}
+          <div className="swipe-grid-support grid-cell">
+            <p className="support-text text-center">
+              <span className="hidden sm:inline">Use left/right arrow keys or </span>
+              Swipe to rate cards
+            </p>
+          </div>
+          
         </div>
-      )}
       </div>
+      </PageLayout>
   );
 }

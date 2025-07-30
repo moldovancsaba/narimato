@@ -33,7 +33,7 @@ export default function HomePage() {
   };
 
   return (
-    <PageLayout title="Welcome to Narimato">
+    <PageLayout title="Welcome to 几卂尺丨爪卂ㄒㄖ">
       <div className="text-center max-w-lg mx-auto">
         <p className="text-lg sm:text-xl mb-8 sm:mb-10 leading-relaxed text-balance text-muted">
           Create your personal ranking through simple swipes and votes

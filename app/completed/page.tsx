@@ -100,7 +100,7 @@ export default function CompletedPage() {
 
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Your Personal Ranking</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="results-grid">
           {ranking.map((item) => (
             <div key={item.cardId} className="relative">
               <BaseCard
