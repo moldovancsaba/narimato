@@ -36,7 +36,8 @@ export default function HomePage() {
     <PageLayout title="几卂尺丨爪卂ㄒㄖ">
       <div className="text-center max-w-lg mx-auto">
         <p className="text-lg sm:text-xl mb-8 sm:mb-10 leading-relaxed text-balance text-gray-300 dark:text-gray-400">
-          Create your personal ranking through simple swipes and votes
+          Create your personal ranking through simple swipes and votes.
+          Your preferences contribute to global ELO-based rankings.
         </p>
 
         {/* CTA Button */}

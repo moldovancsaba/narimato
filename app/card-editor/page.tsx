@@ -626,7 +626,7 @@ export default function CardEditorPage() {
         <div className="status-success p-4 mb-4 rounded-lg">{success}</div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Editor Panel */}
         <div className="space-y-6">
           <div className="content-card">
@@ -872,8 +872,11 @@ export default function CardEditorPage() {
                 value={config.backgroundColor}
                 onChange={(e) => setConfig({ ...config, backgroundColor: e.target.value })}
                 className="form-input"
-                placeholder="Enter CSS background"
+                placeholder="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
               />
+              <p className="text-xs text-muted mt-1">
+                Example gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%)
+              </p>
               <div className="mt-2 flex gap-2">
                 <button
                   onClick={addBackgroundPreset}
@@ -915,6 +918,9 @@ export default function CardEditorPage() {
                   className="form-input"
                   placeholder="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap"
                 />
+                <p className="text-xs text-muted mt-1">
+                  Example: https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap
+                </p>
               </div>
               
               <div className="flex gap-2">

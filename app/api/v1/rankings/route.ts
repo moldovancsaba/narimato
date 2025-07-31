@@ -4,7 +4,7 @@ import { PersonalRanking } from '@/app/lib/models/PersonalRanking';
 import { RankingEntity } from '@/app/lib/models/RankingEntity';
 import { Card } from '@/app/lib/types/card';
 
-// Get personal ranking for a session
+// Get personal ranking for a session (distinct from global ELO-based rankings)
 export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
   const sessionId = searchParams.get('sessionId');
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// Create or update personal ranking
+// Create or update personal ranking (individual session results, separate from global ELO system)
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();

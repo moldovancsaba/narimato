@@ -130,7 +130,7 @@ NARIMATO supports both light and dark themes to enhance user experience and acce
 - **Session**: Core session state with optimistic locking
 - **Card**: Individual card data with content validation
 - **PersonalRanking**: User-specific card rankings
-- **GlobalRanking**: Aggregate rankings across all sessions
+- **GlobalRanking**: ELO-based aggregate rankings across all sessions (primary metric: ELO rating, not total score)
 - **SystemVersion**: Application version tracking
 
 ### Frontend Components

@@ -49,12 +49,11 @@
   }
 
   .vote-grid {
-    grid-template-rows: 60px 2fr 60px 2fr;
+    grid-template-rows: 60px 1fr 1fr;
     grid-template-columns: 1fr;
     grid-template-areas:
       "title"
       "card1"
-      "vs"
       "card2";
   }
 
@@ -69,6 +68,8 @@
   }
   .vote-grid-vs { 
     grid-area: vs;
+    /* Hide VS indicator in portrait mode */
+    display: none;
   }
   .vote-grid-card2 { 
     grid-area: card2;
@@ -115,7 +116,7 @@
   }
 
   .vote-grid {
-    grid-template-columns: 1fr 60px 1fr;
+    grid-template-columns: 1fr 40px 1fr;
     grid-template-rows: 60px 1fr;
     grid-template-areas:
       "title title title"
@@ -182,11 +183,11 @@
 }
 
 .vote-card-circle {
-    @apply rounded-full flex items-center justify-center text-5xl;
-    width: 80px;
-    height: 80px;
-    min-width: 80px;
-    min-height: 80px;
+    @apply rounded-full flex items-center justify-center text-2xl;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
     aspect-ratio: 1;
     background-color: var(--primary);
     color: var(--background);

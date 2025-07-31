@@ -132,6 +132,10 @@ function CompletedContent() {
     <PageLayout title="Ranking">
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Your Personal Ranking</h2>
+        <p className="text-sm text-muted mb-4">
+          This is your personal ranking based on your voting preferences. 
+          For global rankings across all users (powered by ELO rating system), visit the <a href="/ranks" className="text-primary hover:underline">Global Rankings</a> page.
+        </p>
       <div className="results-grid">
           {ranking.map((item) => (
             <div key={item.cardId} className="relative">

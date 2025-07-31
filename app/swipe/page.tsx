@@ -29,7 +29,7 @@ const SwipeCard = dynamic(
     ssr: false,
     loading: () => (
       <div className="w-full h-full flex items-center justify-center card-container">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent"></div>
+        <InlineSpinner className="w-12 h-12 border-4 border-white border-t-transparent" />
       </div>
     ),
   }
@@ -37,6 +37,7 @@ const SwipeCard = dynamic(
 import { DeckEntity } from '@/app/lib/models/DeckEntity';
 import ErrorBoundary from '../components/ErrorBoundary';
 import PageLayout from '../components/PageLayout';
+import { PageLoader, InlineSpinner } from '../components/Spinner';
 
 import { Card } from '@/app/lib/types/card';
 import { handleApiError, withRetry, backupSessionState } from '@/app/lib/utils/errorHandling';
@@ -297,23 +298,13 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
   // Handle loading state
   if (!sessionId || !currentCard) {
     // Just return loading state - the useEffect above will handle navigation
-    
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="card-container mb-4 mx-auto" style={{width: '240px', height: '320px'}}>
-            <div className="text-white text-xl">Loading...</div>
-          </div>
-          <p className="text-muted text-lg">Loading session...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader text="Loading session..." />;
   }
 
     return (
       <PageLayout title="Swipe to Vote">
         <div className="h-screen w-screen fixed inset-0 overflow-hidden bg-background text-foreground">
-          <div className="page-grid-container swipe-grid h-full" style={{ paddingBottom: '85px' }}>
+        <div className="page-grid-container swipe-grid h-full" style={{ paddingBottom: '70px' }}>
             
             {/* Portrait Mode: Card - Row 2 */}
           <div className="swipe-grid-card grid-cell">
@@ -333,7 +324,7 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
               disabled={isLoading}
               className="swipe-button-circle bg-red-500 text-white hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
             >
-              {isLoading ? '⏳' : '😵'}
+              {isLoading ? <InlineSpinner className="w-6 h-6" /> : '😵'}
             </button>
           </div>
           
@@ -344,7 +335,7 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
               disabled={isLoading}
               className="swipe-button-circle bg-green-500 text-white hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700"
             >
-              {isLoading ? '⏳' : '😍'}
+              {isLoading ? <InlineSpinner className="w-6 h-6" /> : '😍'}
             </button>
           </div>
           
@@ -355,14 +346,14 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
               disabled={isLoading}
               className="swipe-button-circle bg-red-500 text-white hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
             >
-              {isLoading ? '⏳' : '😵'}
+              {isLoading ? <InlineSpinner className="w-6 h-6" /> : '😵'}
             </button>
             <button
               onClick={() => handleSwipe('right')}
               disabled={isLoading}
               className="swipe-button-circle bg-green-500 text-white hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700"
             >
-              {isLoading ? '⏳' : '😍'}
+              {isLoading ? <InlineSpinner className="w-6 h-6" /> : '😍'}
             </button>
           </div>
           

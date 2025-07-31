@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const PersonalRankingSchema = new mongoose.Schema({
   sessionId: { type: String, required: true, index: true },
-  ranking: [{ type: String }], // Top 10 cards only for global calculation
+  ranking: [{ type: String }], // Card rankings that contribute to ELO-based global calculations
   completedAt: { type: Date, default: Date.now, index: true },
   contributedToGlobal: { type: Boolean, default: false, index: true }
 });

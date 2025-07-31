@@ -6,7 +6,7 @@
 ![MongoDB](https://img.shields.io/badge/MongoDB-7.0+-green.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)
 
-NARIMATO is an anonymous, session-based card ranking application built with Next.js, MongoDB, and sophisticated binary search ranking algorithms.
+NARIMATO is an anonymous, session-based card ranking application built with Next.js, MongoDB, and sophisticated binary search ranking algorithms. Global rankings are powered by ELO rating system for accurate skill-based card comparisons.
 
 **Current Version:** 2.0.3 *(Updated with Dark Mode support)*
 

@@ -10,9 +10,9 @@ export async function GET() {
     // First, recalculate global rankings
     await GlobalRanking.calculateRankings();
 
-    // Get the top global rankings
+    // Get the top global rankings sorted by ELO rating
     const globalRankings = await GlobalRanking.find({})
-      .sort({ totalScore: -1, averageRank: 1, lastUpdated: -1 })
+      .sort({ eloRating: -1, winRate: -1, totalGames: -1, lastUpdated: -1 })
       .limit(50); // Limit to top 50
 
     if (!globalRankings || globalRankings.length === 0) {
@@ -45,6 +45,12 @@ export async function GET() {
         return {
           card,
           rank: index + 1,
+          eloRating: ranking.eloRating,
+          wins: ranking.wins,
+          losses: ranking.losses,
+          totalGames: ranking.totalGames,
+          winRate: ranking.winRate,
+          // Legacy fields (kept for compatibility)
           totalScore: ranking.totalScore,
           averageRank: ranking.averageRank,
           appearanceCount: ranking.appearanceCount

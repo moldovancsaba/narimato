@@ -1,14 +1,113 @@
 # NARIMATO Release Notes
 
-**Current Version:** 3.0.0 (Updated)
+**Current Version:** 3.1.0 (Updated)
 **Date:** 2025-07-31
-**Last Updated:** 2025-07-31T00:57:00.000Z
+**Last Updated:** 2025-07-31T07:16:11.000Z
+
+## [v3.1.0] — 2025-07-31T07:16:11.000Z
+
+### ✅ Step 5 Completion - ELO Rating System Manual Verification and Documentation Update
+
+This minor release completes Step 5 of the broader plan with manual verification of ELO ratings display functionality, version increment per protocol, and comprehensive documentation updates across all required files.
+
+### 🔍 Manual Verification Completed
+
+#### ELO Rating Display Verification
+- **Global Rankings Page**: ✅ ELO ratings displaying correctly as primary metric
+- **Card Information**: ✅ ELO scores, game counts, and win rates shown accurately
+- **Data Fetching**: ✅ API endpoints `/api/v1/global-rankings` working correctly
+- **UI Integration**: ✅ Rankings page showing "ELO-Based" heading and descriptions
+- **Data Accuracy**: ✅ ELO calculations using proper K-factor (32) and default rating (1000)
+
+#### Technical Implementation Verification
+- **GlobalRanking Model**: ✅ ELO rating as primary sort metric in ranking calculations
+- **Ranking Algorithm**: ✅ Proper ELO calculation with expected score functions
+- **Database Schema**: ✅ ELO rating indexed for performance (-1 descending order)
+- **API Response**: ✅ All ELO-related fields properly returned in ranking data
+
+### 📋 Version Management
+
+#### Version Increment Protocol Followed
+- **Previous Version**: 3.0.0
+- **Current Version**: 3.1.0 (minor increment for task completion)
+- **Protocol Compliance**: ✅ Minor version incremented per versioning rules
+- **Version Synchronization**: ✅ Updated across all documentation files
+
+### 📚 Documentation Updates Completed
+
+#### Files Updated with Version 3.1.0
+- **TASKLIST.md**: ✅ Version updated, Step 5 marked as completed with detailed completion entry
+- **ROADMAP.md**: ✅ Version and timestamp updated to reflect current state
+- **RELEASE_NOTES.md**: ✅ New release entry added with comprehensive details
+- **package.json**: ✅ Version incremented to 3.1.0
+
+#### Documentation Content Updates
+- **Task Completion**: Added comprehensive completion entry for ELO verification task
+- **Timestamp Compliance**: All timestamps follow ISO 8601 format with millisecond precision
+- **Version Consistency**: Ensured version 3.1.0 reflected across all documentation
+- **Task Status**: Properly moved ELO verification task from active to completed section
+
+### 🎯 Step 5 Deliverables Summary
+
+#### Manual Verification ✅
+- ELO ratings confirmed displaying correctly in development environment
+- All ranking display components functioning as intended
+- Global rankings using ELO as primary metric validated
+- User interface showing proper ELO scores, games played, and win rates
+
+#### Version Management ✅
+- Version incremented from 3.0.0 to 3.1.0 following protocol
+- All documentation files updated with new version
+- Proper minor version increment for task completion
+
+#### Documentation Updates ✅
+- ROADMAP.md updated with current version and timestamp
+- TASKLIST.md updated with task completion and new version
+- RELEASE_NOTES.md updated with comprehensive release entry
+- All timestamps in ISO 8601 format with millisecond precision
+
+### 🔧 Technical Details
+
+#### ELO System Implementation Status
+- **Primary Ranking Metric**: ELO rating successfully implemented as main ranking system
+- **Calculation Engine**: Proper ELO algorithm with K-factor 32 and default rating 1000
+- **Database Integration**: ELO ratings properly indexed and optimized for queries
+- **Frontend Display**: Rankings page correctly showing ELO-based information
+- **API Integration**: Global rankings endpoint returning accurate ELO data
+
+#### System Architecture
+- **GlobalRanking Model**: Enhanced with comprehensive ELO calculation methods
+- **Ranking API**: `/api/v1/global-rankings` endpoint optimized for ELO-based sorting
+- **Frontend Components**: Rankings page components properly displaying ELO metrics
+- **Data Flow**: Complete ELO calculation from votes to display verified
+
+### 📊 Quality Assurance
+
+#### Manual Testing Results
+- **Functional Testing**: ✅ All ELO display functionality working correctly
+- **Data Accuracy**: ✅ ELO calculations and display values verified
+- **User Interface**: ✅ Rankings page showing proper ELO information
+- **API Integration**: ✅ Backend-frontend data flow functioning correctly
+
+#### Documentation Compliance
+- **Version Protocol**: ✅ Proper version increment following established rules
+- **Documentation Standards**: ✅ All required files updated per protocol
+- **Timestamp Format**: ✅ ISO 8601 format with millisecond precision maintained
+- **Content Accuracy**: ✅ All documentation reflects current system state
+
+### 🚀 Deployment Status
+- **Development Verification**: ✅ ELO ratings confirmed working in development environment
+- **Build Compatibility**: ✅ Version 3.1.0 ready for build and deployment
+- **Documentation Sync**: ✅ All documentation synchronized with current version
+- **Task Completion**: ✅ Step 5 fully completed per protocol requirements
+
+---
 
 ## [v3.0.0] — 2025-07-31T00:57:00.000Z
 
-### 🚀 Major Release - Critical Session Completion and Ranking System Overhaul
+### 🚀 Major Release - Critical Session Completion and ELO-Based Ranking System Overhaul
 
-This major release resolves critical user-facing bugs and implements comprehensive improvements to the core session completion flow and ranking system. These fixes ensure complete data integrity and eliminate user frustration with missing cards and infinite loading states.
+This major release resolves critical user-facing bugs and implements comprehensive improvements to the core session completion flow and ranking system. **Global rankings now use ELO rating as the primary metric instead of total score**, providing more accurate skill-based comparisons. These fixes ensure complete data integrity and eliminate user frustration with missing cards and infinite loading states.
 
 ### 🎯 Critical Issues Resolved
 

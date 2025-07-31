@@ -204,6 +204,20 @@
 
 2. **Key Learning**: **Effective logging with visual markers and structured data significantly accelerates debugging complex state management issues**
 
+### ELO Rating System Implementation
+1. **Strategic Decision**:
+   - Replaced total score with ELO rating as the primary global ranking metric
+   - ELO provides more accurate skill-based comparisons than simple win counts
+   - Maintains fairness across different numbers of games played
+
+2. **Technical Implementation**:
+   - Default ELO rating: 1000 for new cards
+   - K-factor: 32 for appropriate rating volatility
+   - Expected score calculation: `1 / (1 + 10^((ratingB - ratingA) / 400))`
+   - Rating update: `newRating = currentRating + K * (actualScore - expectedScore)`
+
+3. **Key Learning**: **ELO rating system provides more meaningful global rankings than total score, especially when cards have different numbers of appearances**
+
 ## Implementation Details
 
 ### State Machine Implementation

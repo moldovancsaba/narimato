@@ -5,18 +5,18 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 
 const navigationItems = [
-  { href: '/', icon: '🏠' },
-  { href: '/swipe', icon: '▶️' },
-  { href: '/ranks', icon: '🏆' },
-  { href: '/cards', icon: '🃏' },
+  { href: '/', icon: '🏠', label: 'Home' },
+  { href: '/swipe', icon: '▶️', label: 'Start Session' },
+  { href: '/ranks', icon: '🏆', label: 'Global Rankings (ELO)' },
+  { href: '/cards', icon: '🃏', label: 'Browse Cards' },
 ];
 
 export default function GlobalNavigation() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-nav-background border-t border-border-color backdrop-blur-md mobile-safe-area">
-      <div className="flex justify-around items-center px-2 py-2 max-w-screen-xl mx-auto">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-nav-background border-t border-border-color backdrop-blur-md mobile-safe-area" style={{height: '60px'}}>
+      <div className="flex justify-around items-center px-2 py-3 max-w-screen-xl mx-auto h-full">
         {navigationItems.map((item) => {
           const isActive = pathname === item.href || 
             (item.href === '/swipe' && (pathname === '/swipe' || pathname.startsWith('/vote'))) ||

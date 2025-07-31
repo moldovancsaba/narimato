@@ -264,7 +264,7 @@ function VoteContent() {
   return (
     <PageLayout title="Vote to Rank">
       <div className="h-screen w-screen fixed inset-0 overflow-hidden bg-background text-foreground">
-        <div className="page-grid-container vote-grid h-full" style={{ paddingBottom: '85px' }}>
+        <div className="page-grid-container vote-grid h-full" style={{ paddingBottom: '60px' }}>
         
         {/* Card 1 - Row 2 (Portrait) / Column 1 (Landscape) */}
         <div className="vote-grid-card1 grid-cell">
@@ -278,6 +278,7 @@ function VoteContent() {
         </div>
         
         {/* VS Indicator - Row 3 (Portrait) / Column 2 (Landscape) */}
+        {/* Hidden in portrait mode via CSS, visible in landscape */}
         <div className="vote-grid-vs grid-cell">
           <div className="vote-card-circle">
             😈

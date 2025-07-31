@@ -15,6 +15,12 @@ interface RankedCard {
     };
   };
   rank: number;
+  eloRating: number; // ELO rating score - primary ranking metric
+  wins: number; // Number of wins in head-to-head comparisons
+  losses: number; // Number of losses in head-to-head comparisons
+  totalGames: number; // Total number of games played
+  winRate: number; // Win rate as a decimal (0.0 to 1.0)
+  // Legacy fields maintained for compatibility
   totalScore: number;
   averageRank: number;
   appearanceCount: number;
@@ -70,7 +76,11 @@ export default function RanksPage() {
   return (
     <PageLayout title="Global Rankings">
       <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Global Rankings</h2>
+        <h2 className="text-xl font-semibold mb-4">Global Rankings (ELO-Based)</h2>
+        <p className="text-sm text-muted mb-4">
+          Rankings are calculated using the ELO rating system, providing skill-based comparisons across all user sessions. 
+          ELO rating provides more accurate rankings than simple win counts.
+        </p>
       </div>
       <div className="results-grid">
         {ranking.map((item) => (
@@ -91,9 +101,12 @@ export default function RanksPage() {
                 <div className="ranking-position">#{item.rank}</div>
               </div>
               <div className="absolute bottom-2 left-2 right-2 z-10 p-2 bg-black/50 rounded-b-lg text-white text-xs">
-                <div className="flex justify-between">
-                  <span>Score: {item.totalScore}</span>
-                  <span>Avg Rank: {item.averageRank.toFixed(2)}</span>
+                <div className="flex justify-between items-center">
+                  <span>ELO: {item.eloRating || 1000}</span>
+                  <span>Games: {item.totalGames || 0}</span>
+                </div>
+                <div className="flex justify-between items-center mt-1">
+                  <span>Win Rate: {item.winRate ? (item.winRate * 100).toFixed(1) : '0.0'}%</span>
                 </div>
               </div>
             </BaseCard>
