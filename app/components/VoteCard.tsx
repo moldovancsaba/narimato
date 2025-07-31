@@ -1,5 +1,6 @@
 'use client';
 
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import BaseCard from './BaseCard';
 
@@ -10,7 +11,7 @@ import BaseCard from './BaseCard';
 interface CardContent {
   text?: string;    // Text content for text-type cards
   mediaUrl?: string; // URL for media content (images, videos)
-}
+};
 
 /**
  * Props interface for the VoteCard component.
@@ -42,7 +43,7 @@ interface VoteCardProps {
  * - Visual feedback clearly indicates selection state
  * - Same content rendering logic as SwipeCard for consistency
  */
-export default function VoteCard({
+const VoteCard = React.memo(function VoteCard({
   uuid,
   type,
   content,
@@ -61,34 +62,35 @@ export default function VoteCard({
    * Scale and opacity changes provide clear visual hierarchy
    * without being distracting during the comparison process.
    */
-  // Global scale constants referenced from CSS variables
-  // These match the values defined in globals.css --scale-* variables
-  const SCALE_INITIAL = 1;
-  const SCALE_SELECTED = 0.95;
-  const SCALE_UNSELECTED = 0.9;
-  const SCALE_HOVER = 0.95; // Scale down on hover for consistency
+  // Memoize constants and variants to prevent unnecessary re-creations
+  const scaleValues = useMemo(() => ({
+    SCALE_INITIAL: 1,
+    SCALE_SELECTED: 0.95,
+    SCALE_UNSELECTED: 0.9,
+    SCALE_HOVER: 0.95
+  }), []);
 
-  const variants = {
+  const variants = useMemo(() => ({
     initial: {
-      scale: SCALE_INITIAL, // Use global scale constant
-      opacity: 1     // Full opacity
+      scale: scaleValues.SCALE_INITIAL,
+      opacity: 1
     },
     selected: {
-      scale: SCALE_SELECTED, // Use global scale constant
-      opacity: 1     // Full opacity for emphasis
+      scale: scaleValues.SCALE_SELECTED,
+      opacity: 1
     },
     unselected: {
-      scale: SCALE_UNSELECTED, // Use global scale constant
-      opacity: 0.7   // Reduced opacity to show it's not selected
+      scale: scaleValues.SCALE_UNSELECTED,
+      opacity: 0.7
     }
-  };
+  }), [scaleValues]);
 
   return (
     <motion.div
       initial="initial"
       animate={isSelected ? "selected" : isSelected === false ? "unselected" : "initial"}
       variants={variants}
-      whileHover={{ scale: SCALE_HOVER }} // Use global scale constant for hover
+      whileHover={{ scale: scaleValues.SCALE_HOVER }} // Use global scale constant for hover
       whileTap={{ scale: 0.9 }} // Scale down when tapped/clicked
       className="card-container"
     >
@@ -102,4 +104,6 @@ export default function VoteCard({
       />
     </motion.div>
   );
-}
+});
+
+export default VoteCard;

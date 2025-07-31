@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { motion } from 'framer-motion';
 
 interface PageLayoutProps {
@@ -7,7 +8,7 @@ interface PageLayoutProps {
   title: string;
 }
 
-export default function PageLayout({ children, title }: PageLayoutProps) {
+const PageLayout = React.memo(function PageLayout({ children, title }: PageLayoutProps) {
   return (
     <div className="page-grid-container">
       <div className="page-title-grid">
@@ -22,5 +23,7 @@ export default function PageLayout({ children, title }: PageLayoutProps) {
       </motion.div>
     </div>
   );
-}
+});
+
+export default PageLayout;
 

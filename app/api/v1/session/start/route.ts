@@ -8,13 +8,23 @@ import { SESSION_FIELDS, CARD_FIELDS, API_FIELDS } from '@/app/lib/constants/fie
 
 const SESSION_EXPIRY_HOURS = 24;
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
     await dbConnect();
 
-    // Get all active cards
+    // Parse request body to get deck selection
+    const body = await request.json().catch(() => ({}));
+    const selectedTag = body.deckTag || 'all';
+
+    // Build match criteria based on deck selection
+    let matchCriteria: any = { isActive: true };
+    if (selectedTag !== 'all') {
+      matchCriteria.tags = selectedTag;
+    }
+
+    // Get cards based on selected deck
     const cards = await Card.aggregate([
-      { $match: { isActive: true } },
+      { $match: matchCriteria },
       // Ensure uniqueness
       { 
         $group: {

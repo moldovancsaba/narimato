@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode } from 'react';
+import React, { ReactNode, useMemo } from 'react';
 import { useTextFit } from '../hooks/useTextFit';
 
 /**
@@ -46,7 +46,7 @@ interface BaseCardProps {
  * - VoteCard: <BaseCard {...cardProps} className="cursor-pointer hover:scale-95" />
  * - ResultsCard: <BaseCard {...cardProps} size="small" />
  */
-export default function BaseCard({
+const BaseCard = React.memo(function BaseCard({
   type,
   content,
   className = '',
@@ -63,22 +63,25 @@ export default function BaseCard({
     size === 'small' ? 8 : 16 // Min font size based on card size
   );
   
-  // Size variants with consistent aspect ratio (3:4)
-  const sizeClasses = {
+  // Size variants with consistent aspect ratio (3:4) - memoized to prevent recreation
+  const sizeClasses = useMemo(() => ({
     small: 'w-24 h-32 md:w-40 md:h-56',  // Adjusted for better mobile-first scaling
     medium: 'w-full max-w-sm sm:max-w-md aspect-[3/4]', // Default size with mobile-first adjustments
     large: 'w-full max-w-md md:max-w-lg aspect-[3/4]',   // Large display with consistent scaling
     grid: 'w-full h-full'  // Grid size fills container without aspect ratio constraints
-  };
+  }), []);
+
+  // Memoize className calculation to prevent unnecessary re-renders
+  const containerClassName = useMemo(() => `
+    ${sizeClasses[size]}
+    ${size !== 'grid' ? 'card-container' : ''}
+    ${onClick ? 'cursor-pointer' : ''}
+    ${className}
+  `, [sizeClasses, size, onClick, className]);
 
   return (
     <div
-      className={`
-        ${sizeClasses[size]}
-        ${size !== 'grid' ? 'card-container' : ''}
-        ${onClick ? 'cursor-pointer' : ''}
-        ${className}
-      `}
+      className={containerClassName}
       onClick={onClick}
       style={style}
     >
@@ -107,4 +110,6 @@ export default function BaseCard({
       {children}
     </div>
   );
-}
+});
+
+export default BaseCard;

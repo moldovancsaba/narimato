@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -11,7 +12,7 @@ const navigationItems = [
   { href: '/cards', icon: '🃏', label: 'Browse Cards' },
 ];
 
-export default function GlobalNavigation() {
+const GlobalNavigation = React.memo(function GlobalNavigation() {
   const pathname = usePathname();
 
   return (
@@ -47,4 +48,6 @@ export default function GlobalNavigation() {
       </div>
     </nav>
   );
-}
+});
+
+export default GlobalNavigation;

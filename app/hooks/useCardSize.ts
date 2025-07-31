@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 
 const getCardWidth = (width: number) => {
   if (width >= 768) return 320; // sm:max-w-sm
@@ -11,17 +11,23 @@ const getCardWidth = (width: number) => {
 export const useCardSize = () => {
   const [cardWidth, setCardWidth] = useState(256);
 
+  // Memoize the resize handler to prevent recreation on every render
+  const handleResize = useCallback(() => {
+    setCardWidth(getCardWidth(window.innerWidth));
+  }, []);
+
   useEffect(() => {
-    const handleResize = () => {
-      setCardWidth(getCardWidth(window.innerWidth));
-    };
 
     if (typeof window !== 'undefined') {
       handleResize();
       window.addEventListener('resize', handleResize);
       return () => window.removeEventListener('resize', handleResize);
     }
-  }, []);
+  }, [handleResize]);
 
-  return { cardWidth, cardHeight: cardWidth / 0.75 };
+  // Memoize the return object to prevent unnecessary re-renders in consumers
+  return useMemo(() => ({
+    cardWidth,
+    cardHeight: cardWidth / 0.75
+  }), [cardWidth]);
 };

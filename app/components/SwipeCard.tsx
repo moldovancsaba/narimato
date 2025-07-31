@@ -1,8 +1,8 @@
 'use client';
 
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSpring, animated } from '@react-spring/web';
 import { useSwipeable } from 'react-swipeable';
-import { useState, useEffect, useCallback } from 'react';
 import BaseCard from './BaseCard';
 
 /**
@@ -53,7 +53,7 @@ interface SwipeCardProps {
  * 5. State updates based on success/failure
  * 6. Lock releases after timeout to allow next interaction
  */
-export default function SwipeCard({ 
+const SwipeCard = React.memo(function SwipeCard({ 
   uuid, 
   type, 
   content, 
@@ -328,4 +328,6 @@ const handlers = useSwipeable({
       />
     </animated.div>
   );
-}
+});
+
+export default SwipeCard;

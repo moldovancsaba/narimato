@@ -1,13 +1,30 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { SESSION_FIELDS } from '@/app/lib/constants/fieldNames';
 import PageLayout from './components/PageLayout';
 
 export default function HomePage() {
   const router = useRouter();
-  const [isStarting, setIsStarting] = useState(false);
+const [isStarting, setIsStarting] = useState(false);
+  const [decks, setDecks] = useState([]);
+  const [selectedDeck, setSelectedDeck] = useState('all');
+
+useEffect(() => {
+    const fetchDecks = async () => {
+      try {
+        const response = await fetch('/api/v1/decks');
+        if (!response.ok) throw new Error('Failed to fetch decks');
+        const data = await response.json();
+        setDecks(data.decks);
+      } catch (error) {
+        console.error('Error fetching decks:', error);
+      }
+    };
+
+    fetchDecks();
+  }, []);
 
   const handleStart = async () => {
     if (isStarting) return; // Prevent double-clicks
@@ -21,6 +38,16 @@ export default function HomePage() {
       // Clear any other potential cached session data
       localStorage.removeItem('sessionVersion');
       localStorage.removeItem('deckState');
+      // Pass selected deck to session start API
+      const response = await fetch('/api/v1/session/start', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ deckTag: selectedDeck }),
+      });
+
+      if (!response.ok) throw new Error('Failed to create session');
     }
     
     try {
@@ -40,7 +67,25 @@ export default function HomePage() {
           Your preferences contribute to global ELO-based rankings.
         </p>
 
-        {/* CTA Button */}
+        {/* Deck Selection */}
+        <div className="mb-6">
+          <label htmlFor="deck" className="block text-sm font-medium text-gray-700">
+            Select a Deck
+          </label>
+          <select
+            id="deck"
+            name="deck"
+            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+            value={selectedDeck}
+            onChange={(e) => setSelectedDeck(e.target.value)}
+          >
+            {decks.map((deck) => (
+              <option key={deck.tag} value={deck.tag}>
+                {deck.displayName} ({deck.cardCount} cards)
+              </option>
+            ))}
+          </select>
+        </div>
         <button
           onClick={handleStart}
           disabled={isStarting}

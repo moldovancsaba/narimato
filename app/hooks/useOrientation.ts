@@ -1,18 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 export function useOrientation() {
   const [orientation, setOrientation] = useState('portrait');
 
-  useEffect(() => {
-    const getOrientation = () => {
-      return window.matchMedia("(orientation: portrait)").matches ? 'portrait' : 'landscape';
-    };
+  // Memoize getOrientation function to prevent recreation
+  const getOrientation = useCallback(() => {
+    return window.matchMedia("(orientation: portrait)").matches ? 'portrait' : 'landscape';
+  }, []);
 
-    const handleResize = () => {
-      setOrientation(getOrientation());
-    };
+  // Memoize handleResize to prevent unnecessary event listener updates
+  const handleResize = useCallback(() => {
+    setOrientation(getOrientation());
+  }, [getOrientation]);
+
+  useEffect(() => {
 
     if (typeof window !== 'undefined') {
       setOrientation(getOrientation());
@@ -24,7 +27,7 @@ export function useOrientation() {
         window.removeEventListener('resize', handleResize);
       }
     };
-  }, []);
+  }, [handleResize, getOrientation]);
 
   return orientation;
 }

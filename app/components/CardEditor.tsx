@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { generateCardSVG, svgToDataUrl, optimizeFontSize } from '../lib/utils/svgGenerator';
 import { uploadPngToImgBBWithRetry } from '../lib/services/imgbbService';
 
@@ -8,11 +8,11 @@ const CardEditor = () => {
   const [uploadUrl, setUploadUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleTextChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setText(e.target.value);
-  };
+  }, []);
 
-  const handleGenerateSVG = async () => {
+  const handleGenerateSVG = useCallback(async () => {
     try {
       setError(null);
 
@@ -52,7 +52,7 @@ const CardEditor = () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     }
-  };
+  }, [text]);
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900 p-4 sm:p-6" style={{ minHeight: 'calc(100vh - 80px)' }}>
