@@ -373,6 +373,12 @@
     transition: var(--transition);
     /* Enhanced mobile dark mode outline for better visibility */
     @apply dark:ring-1 dark:ring-white/10;
+    /* Gradient border */
+    border: 2px solid transparent;
+    background-image: linear-gradient(#4a148c, #4a148c), 
+                      linear-gradient(45deg, #00f0ff, #5773ff, #ff007a, #00f0ff);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
   }
 
 /* SWIPE Page Card Sizing - Proper 3:4 aspect ratio with grid constraints */
@@ -945,13 +951,14 @@
   /* Card Grid for Results (Completed, Ranks, Cards) */
   .results-grid {
     @apply grid w-full p-1;
-    gap: 5px;
+    gap: 16px; /* Increased from 5px for better spacing */
   }
 
   /* Portrait: 2 columns */
   @media (orientation: portrait) {
     .results-grid {
       grid-template-columns: repeat(2, 1fr);
+      gap: 20px; /* Even larger gap for portrait mode */
     }
   }
 
@@ -959,6 +966,7 @@
   @media (orientation: landscape) {
     .results-grid {
       grid-template-columns: repeat(4, 1fr);
+      gap: 12px; /* Slightly smaller gap for landscape to fit more cards */
     }
   }
 }

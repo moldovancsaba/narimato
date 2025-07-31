@@ -71,7 +71,6 @@ export default function RanksPage() {
     <PageLayout title="Global Rankings">
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Global Rankings</h2>
-        <p className="text-center text-muted">Top cards ranked by the community.</p>
       </div>
       <div className="results-grid">
         {ranking.map((item) => (

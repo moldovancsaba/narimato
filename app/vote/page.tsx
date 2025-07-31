@@ -228,35 +228,14 @@ function VoteContent() {
   // Render UI or error state
   if (!cardA || !cardB) {
     return (
-      <PageLayout title="Vote to Rank">
-        <div className="h-screen w-screen fixed inset-0 overflow-hidden bg-background text-foreground">
-          <div className="page-grid-container vote-grid h-full" style={{ paddingBottom: '85px' }}>
-            
-            {/* Card 1 Loading - Row 2 (Portrait) / Column 1 (Landscape) */}
-          <div className="vote-grid-card1 grid-cell">
-            <div className="card-container">
-              <div className="text-white text-xl">Loading...</div>
-            </div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="card-container mb-4 mx-auto" style={{width: '240px', height: '320px'}}>
+            <div className="text-white text-xl">Loading...</div>
           </div>
-          
-          {/* VS Indicator - Row 3 (Portrait) / Column 2 (Landscape) */}
-          <div className="vote-grid-vs grid-cell">
-            <div className="vote-card-circle">
-              😈
-            </div>
-          </div>
-          
-          {/* Card 2 Loading - Row 4 (Portrait) / Column 3 (Landscape) */}
-          <div className="vote-grid-card2 grid-cell">
-            <div className="card-container">
-              <div className="text-white text-xl">Loading...</div>
-            </div>
-          </div>
-          
-          
+          <p className="text-muted text-lg">Loading next pair...</p>
         </div>
       </div>
-      </PageLayout>
     );
   }
 
@@ -290,6 +269,7 @@ function VoteContent() {
         {/* Card 1 - Row 2 (Portrait) / Column 1 (Landscape) */}
         <div className="vote-grid-card1 grid-cell">
           <VoteCard
+            key={`vote-card-a-${cardA.uuid}`}
             {...cardA}
             position="left"
             onSelect={() => handleSelect('A')}
@@ -307,6 +287,7 @@ function VoteContent() {
         {/* Card 2 - Row 4 (Portrait) / Column 3 (Landscape) */}
         <div className="vote-grid-card2 grid-cell">
           <VoteCard
+            key={`vote-card-b-${cardB.uuid}`}
             {...cardB}
             position="right"
             onSelect={() => handleSelect('B')}

@@ -35,7 +35,7 @@ export default function HomePage() {
   return (
     <PageLayout title="几卂尺丨爪卂ㄒㄖ">
       <div className="text-center max-w-lg mx-auto">
-        <p className="text-lg sm:text-xl mb-8 sm:mb-10 leading-relaxed text-balance text-muted">
+        <p className="text-lg sm:text-xl mb-8 sm:mb-10 leading-relaxed text-balance text-gray-300 dark:text-gray-400">
           Create your personal ranking through simple swipes and votes
         </p>
 
@@ -60,7 +60,7 @@ export default function HomePage() {
         </button>
 
         {/* Privacy Notice */}
-        <p className="mt-6 sm:mt-8 text-sm text-balance text-muted">
+        <p className="mt-6 sm:mt-8 text-sm text-balance text-gray-400 dark:text-gray-500">
           No registration required • Your rankings are private
         </p>
       </div>

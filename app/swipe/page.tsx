@@ -299,12 +299,12 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
     // Just return loading state - the useEffect above will handle navigation
     
     return (
-      <div className="page-container">
-        <div className="page-content">
-          <div className="content-card text-center">
-            <div className="loading-spinner mx-auto mb-4"></div>
-            <p className="text-muted">Loading session...</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="card-container mb-4 mx-auto" style={{width: '240px', height: '320px'}}>
+            <div className="text-white text-xl">Loading...</div>
           </div>
+          <p className="text-muted text-lg">Loading session...</p>
         </div>
       </div>
     );
