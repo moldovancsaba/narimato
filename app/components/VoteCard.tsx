@@ -61,17 +61,24 @@ export default function VoteCard({
    * Scale and opacity changes provide clear visual hierarchy
    * without being distracting during the comparison process.
    */
+  // Global scale constants referenced from CSS variables
+  // These match the values defined in globals.css --scale-* variables
+  const SCALE_INITIAL = 1;
+  const SCALE_SELECTED = 0.95;
+  const SCALE_UNSELECTED = 0.9;
+  const SCALE_HOVER = 0.95; // Scale down on hover for consistency
+
   const variants = {
     initial: {
-      scale: 1,      // Normal size
+      scale: SCALE_INITIAL, // Use global scale constant
       opacity: 1     // Full opacity
     },
     selected: {
-      scale: 1.05,   // Slightly enlarged to show selection
+      scale: SCALE_SELECTED, // Use global scale constant
       opacity: 1     // Full opacity for emphasis
     },
     unselected: {
-      scale: 0.95,   // Slightly smaller to de-emphasize
+      scale: SCALE_UNSELECTED, // Use global scale constant
       opacity: 0.7   // Reduced opacity to show it's not selected
     }
   };
@@ -81,7 +88,8 @@ export default function VoteCard({
       initial="initial"
       animate={isSelected ? "selected" : isSelected === false ? "unselected" : "initial"}
       variants={variants}
-      whileHover={{ scale: 1.02 }}
+      whileHover={{ scale: SCALE_HOVER }} // Use global scale constant for hover
+      whileTap={{ scale: 0.9 }} // Scale down when tapped/clicked
       className="card-container"
     >
       <BaseCard

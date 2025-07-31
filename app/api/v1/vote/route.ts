@@ -593,17 +593,18 @@ async function performAtomicRankingUpdate(
       auditEntries: auditTrail.length
     });
     
-    // If session was completed, save results after transaction is committed
-    if (session.status === 'completed') {
-      try {
-        console.log(`💾 Session completed - attempting to save results after transaction commit...`);
-        await saveSessionResults(session);
-        console.log(`✅ Session results saved successfully after completion for ${session.sessionId}`);
-      } catch (resultsError) {
-        console.error(`❌ Failed to save session results after completion:`, resultsError);
-        // Don't throw error - session completion should not fail due to results saving
+      // If session was completed, save results after transaction is committed
+      if (session.status === 'completed') {
+        try {
+          console.log(`💾 Session completed - attempting to save results after transaction commit...`);
+          const { saveSessionResults } = await import('@/app/lib/utils/sessionResultsUtils');
+          await saveSessionResults(session);
+          console.log(`✅ Session results saved successfully after completion for ${session.sessionId}`);
+        } catch (resultsError) {
+          console.error(`❌ Failed to save session results after completion:`, resultsError);
+          // Don't throw error - session completion should not fail due to results saving
+        }
       }
-    }
     
   } catch (error) {
     // Rollback transaction on any failure

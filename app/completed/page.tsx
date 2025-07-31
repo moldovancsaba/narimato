@@ -11,7 +11,7 @@ export default function CompletedPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center">
+        <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 80px)' }}>
           <div className="loading-spinner"></div>
           <span className="ml-2 text-lg">Loading results...</span>
         </div>
@@ -108,7 +108,7 @@ function CompletedContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 80px)' }}>
         <div className="loading-spinner"></div>
         <span className="ml-2 text-lg">Loading results...</span>
       </div>

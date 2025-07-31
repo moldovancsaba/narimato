@@ -21,7 +21,7 @@ export default function VotePage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center">
+        <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 80px)' }}>
           <div className="animate-pulse text-xl">Loading...</div>
         </div>
       }
@@ -228,11 +228,8 @@ function VoteContent() {
   // Render UI or error state
   if (!cardA || !cardB) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="flex items-center justify-center bg-background" style={{ height: 'calc(100vh - 80px)' }}>
         <div className="text-center">
-          <div className="card-container mb-4 mx-auto" style={{width: '240px', height: '320px'}}>
-            <div className="text-white text-xl">Loading...</div>
-          </div>
           <p className="text-muted text-lg">Loading next pair...</p>
         </div>
       </div>
@@ -241,7 +238,7 @@ function VoteContent() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center mobile-safe-area">
+      <div className="flex items-center justify-center mobile-safe-area" style={{ height: 'calc(100vh - 80px)' }}>
         <div className="mobile-container text-center">
           <div className="content-card p-6 sm:p-8 max-w-md mx-auto">
             <div className="text-danger text-xl mb-4">Error</div>
@@ -263,8 +260,8 @@ function VoteContent() {
 
   return (
     <PageLayout title="Vote to Rank">
-      <div className="h-screen w-screen fixed inset-0 overflow-hidden bg-background text-foreground">
-        <div className="page-grid-container vote-grid h-full" style={{ paddingBottom: '60px' }}>
+      <div className="w-screen fixed inset-0 overflow-hidden bg-background text-foreground" style={{ height: 'calc(100vh - 80px)' }}>
+        <div className="page-grid-container vote-grid h-full">
         
         {/* Card 1 - Row 2 (Portrait) / Column 1 (Landscape) */}
         <div className="vote-grid-card1 grid-cell">

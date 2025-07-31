@@ -292,7 +292,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
       // Show recovery in progress state
       if (this.state.isRecovering) {
         return (
-          <div className="flex items-center justify-center min-h-screen bg-gray-100">
+          <div className="flex items-center justify-center bg-gray-100" style={{ minHeight: 'calc(100vh - 80px)' }}>
             <div className="bg-white p-8 rounded-lg shadow-lg text-center max-w-md">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
               <h2 className="text-xl font-bold text-gray-800 mb-2">Recovering...</h2>
@@ -313,7 +313,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
       const isSessionError = errorMessage.includes('session') || errorMessage.includes('expired');
       
       return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
+        <div className="flex items-center justify-center bg-gray-100 p-4" style={{ minHeight: 'calc(100vh - 80px)' }}>
           <div className="bg-white p-8 rounded-lg shadow-lg text-center max-w-md w-full">
             {/* Error Icon */}
             <div className="mx-auto mb-4 w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">

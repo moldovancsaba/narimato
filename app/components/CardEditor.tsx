@@ -55,7 +55,7 @@ const CardEditor = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6">
+    <div className="bg-gray-50 dark:bg-gray-900 p-4 sm:p-6" style={{ minHeight: 'calc(100vh - 80px)' }}>
       <div className="max-w-4xl mx-auto">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
           <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-900 dark:text-gray-100">Card Editor</h1>

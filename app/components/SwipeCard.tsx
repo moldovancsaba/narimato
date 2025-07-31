@@ -1,7 +1,7 @@
 'use client';
 
 import { useSpring, animated } from '@react-spring/web';
-import { useGesture } from '@use-gesture/react';
+import { useSwipeable } from 'react-swipeable';
 import { useState, useEffect, useCallback } from 'react';
 import BaseCard from './BaseCard';
 
@@ -73,6 +73,9 @@ export default function SwipeCard({
   // Essential for maintaining data consistency and preventing duplicate API calls
   const [swipeLock, setSwipeLock] = useState(false);
 
+  // Track window width for keyboard animation calculations
+  const [innerWidth, setInnerWidth] = useState<number>(0);
+
   // Initialize react-spring animation system for smooth card movements
   // Configuration values optimized for responsive feel:
   // - tension: 300 (high responsiveness)
@@ -94,87 +97,53 @@ export default function SwipeCard({
    * This dual approach ensures both quick flicks and deliberate drags are recognized
    * while preventing accidental triggers from minor movements.
    */
-  // Store window innerWidth to avoid hydration issues
-  const [innerWidth, setInnerWidth] = useState<number | null>(null);
+// Initialize swipeable handlers for smoother gestures
+const handlers = useSwipeable({
+  onSwipedLeft: () => {
+    if (swipeState === 'idle' && !swipeLock) {
+      setSwipeDirection('left');
+      setSwipeState('swiping');
+      setSwipeLock(true);
 
-  useEffect(() => {
-    // Ensure this only runs on the client
-    setInnerWidth(window.innerWidth);
-  }, []);
-
-  const bind = useGesture({
-    onDrag: ({ down, movement: [mx], velocity: [vx], direction: [xDir] }) => {
-      if (!innerWidth) return;
-      
-      // Determine if this gesture should trigger a swipe action
-      // Velocity-based detection for quick flicks OR distance-based for deliberate drags
-      const trigger = Math.abs(vx) > 0.3 || Math.abs(mx) > innerWidth / 2;
-      
-      // Normalize direction to -1 (left) or 1 (right)
-      const dir = xDir < 0 ? -1 : 1;
-      
-      // Process swipe only when:
-      // - User has released the drag (!down)
-      // - Trigger conditions are met
-      // - Card is in idle state (not already processing)
-      // - No concurrent swipe lock is active
-      if (!down && trigger && swipeState === 'idle' && !swipeLock) {
-        const direction = dir > 0 ? 'right' : 'left';
-        setSwipeDirection(direction);
-        setSwipeState('swiping');
-        setSwipeLock(true); // Prevent concurrent swipes
-        
-        // Execute the swipe callback with comprehensive error handling
-        // This follows the async pattern to handle server communication
-        onSwipe(direction)
-          .then(() => {
-            setSwipeState('voted');
-            // Delay lock release to prevent rapid successive swipes
-            // 500ms provides visual feedback time and prevents UI confusion
-            setTimeout(() => setSwipeLock(false), 500);
-          })
-          .catch(() => {
-            setSwipeState('error');
-            // Reset card to original position on error
-            // Immediate: false ensures smooth return animation
-            api.start({
-              x: 0,
-              rot: 0,
-              scale: 1,
-              immediate: false
-            });
-            // Extended timeout for error state visibility
-            // 2000ms allows user to read error message
-            setTimeout(() => {
-              setSwipeState('idle');
-              setSwipeLock(false);
-            }, 2000);
-          });
-      }
-      
-      // Update animation based on current drag state
-      api.start(() => {
-        // Follow finger during drag, return to center when released
-        const x = down ? mx : 0;
-        
-        // Progressive rotation based on movement
-        // Base rotation from movement + velocity boost on trigger
-        const rot = mx / 100 + (trigger ? dir * 10 * vx : 0);
-        
-        // Slight scale increase during interaction for tactile feedback
-        const scale = down ? 1.1 : 1;
-        
-        return {
-          x,
-          rot,
-          scale,
-          // Immediate updates during drag for responsiveness
-          // Smooth transitions when released
-          immediate: down
-        };
-      });
+      onSwipe('left')
+        .then(() => {
+          setSwipeState('voted');
+          setTimeout(() => setSwipeLock(false), 500);
+        })
+        .catch(() => {
+          setSwipeState('error');
+          api.start({ x: 0, rot: 0, scale: 1, immediate: false });
+          setTimeout(() => {
+            setSwipeState('idle');
+            setSwipeLock(false);
+          }, 2000);
+        });
     }
-  });
+  },
+  onSwipedRight: () => {
+    if (swipeState === 'idle' && !swipeLock) {
+      setSwipeDirection('right');
+      setSwipeState('swiping');
+      setSwipeLock(true);
+
+      onSwipe('right')
+        .then(() => {
+          setSwipeState('voted');
+          setTimeout(() => setSwipeLock(false), 500);
+        })
+        .catch(() => {
+          setSwipeState('error');
+          api.start({ x: 0, rot: 0, scale: 1, immediate: false });
+          setTimeout(() => {
+            setSwipeState('idle');
+            setSwipeLock(false);
+          }, 2000);
+        });
+    }
+  },
+  preventScrollOnSwipe: true,
+  trackMouse: true
+});
 
   /**
    * Keyboard event handler for accessibility and power user support.
@@ -266,6 +235,24 @@ export default function SwipeCard({
   }, [swipeState, swipeLock, api, onSwipe, innerWidth]);
 
   /**
+   * Initialize and track window width for keyboard animation calculations.
+   * This ensures keyboard swipe animations move cards completely off-screen.
+   */
+  useEffect(() => {
+    const updateInnerWidth = () => {
+      setInnerWidth(window.innerWidth);
+    };
+    
+    // Set initial width
+    updateInnerWidth();
+    
+    // Track resize events
+    window.addEventListener('resize', updateInnerWidth);
+    
+    return () => window.removeEventListener('resize', updateInnerWidth);
+  }, []);
+
+  /**
    * Set up global keyboard event listener with proper cleanup.
    * 
    * Why global listener:
@@ -286,12 +273,11 @@ export default function SwipeCard({
 
   return (
     <animated.div
-      {...bind()}
+      {...handlers}
       style={{
-        transform: 'perspective(1500px)',
         x,
         y: 0,
-        scale,
+        scale, // Use react-spring scale value
         rotateZ: rot,
         touchAction: 'none'
       }}

@@ -37,7 +37,7 @@ const SwipeCard = dynamic(
 import { DeckEntity } from '@/app/lib/models/DeckEntity';
 import ErrorBoundary from '../components/ErrorBoundary';
 import PageLayout from '../components/PageLayout';
-import { PageLoader, InlineSpinner } from '../components/Spinner';
+import { InlineSpinner } from '../components/Spinner';
 
 import { Card } from '@/app/lib/types/card';
 import { handleApiError, withRetry, backupSessionState } from '@/app/lib/utils/errorHandling';
@@ -298,13 +298,23 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
   // Handle loading state
   if (!sessionId || !currentCard) {
     // Just return loading state - the useEffect above will handle navigation
-    return <PageLoader text="Loading session..." />;
+    return (
+      <div className="flex items-center justify-center bg-background" style={{ height: 'calc(100vh - 80px)' }}>
+        <div className="text-center">
+          <p className="text-muted text-lg">Loading session...</p>
+        </div>
+      </div>
+    );
   }
 
     return (
-      <PageLayout title="Swipe to Vote">
-        <div className="h-screen w-screen fixed inset-0 overflow-hidden bg-background text-foreground">
+        <div className="w-screen fixed inset-0 overflow-hidden bg-background text-foreground" style={{ height: 'calc(100vh - 80px)' }}>
         <div className="page-grid-container swipe-grid h-full">
+            
+            {/* Title Area - Row 1 */}
+            <div className="swipe-grid-title page-title-grid">
+              <h1 className="text-3xl font-bold text-center">Swipe to Vote</h1>
+            </div>
             
             {/* Portrait Mode: Card - Row 2 */}
           <div className="swipe-grid-card grid-cell">
@@ -360,6 +370,5 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
           
         </div>
       </div>
-      </PageLayout>
   );
 }

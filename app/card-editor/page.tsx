@@ -489,6 +489,8 @@ export default function CardEditorPage() {
       const result = await uploadResponse.json();
       if (result.success) {
         setUploadedUrl(result.imageUrl);
+        // Auto-fill the URL input field when upload is successful
+        setConfig(prev => ({ ...prev, imageUrl: result.imageUrl }));
         setSuccess('Successfully uploaded to Imgbb!');
       } else {
         throw new Error(result.error || 'Upload failed');
@@ -527,7 +529,41 @@ export default function CardEditorPage() {
       setSuccess('Card saved successfully!');
       
       // Reset form
-      setConfig({ ...DEFAULT_CARD_CONFIG, text: '' });
+      setConfig({ ...DEFAULT_CARD_CONFIG, text: '', imageUrl: '' });
+      setUploadedUrl('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save card');
+    }
+  };
+
+  const handleSaveCardFromUrl = async () => {
+    if (!config.imageUrl || !config.imageUrl.trim()) {
+      setError('Please enter an image URL');
+      return;
+    }
+
+    try {
+      setError('');
+      
+      const response = await fetch('/api/v1/cards/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'media',
+          content: { mediaUrl: config.imageUrl },
+          title: config.text.substring(0, 50) + (config.text.length > 50 ? '...' : '') || 'Card from URL',
+          tags: ['url-generated'],
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to save card');
+      
+      setSuccess('Card saved successfully from URL!');
+      
+      // Reset form
+      setConfig({ ...DEFAULT_CARD_CONFIG, text: '', imageUrl: '' });
       setUploadedUrl('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save card');
@@ -646,6 +682,16 @@ export default function CardEditorPage() {
                   className="form-input"
                   rows={4}
                   placeholder="Enter your card text here..."
+                />
+              </div>
+              <div>
+                <label className="form-label">Card Image URL</label>
+                <input
+                  type="text"
+                  value={config.imageUrl}
+                  onChange={(e) => setConfig({ ...config, imageUrl: e.target.value })}
+                  className="form-input"
+                  placeholder="Enter image URL here..."
                 />
               </div>
             </div>
@@ -815,8 +861,8 @@ export default function CardEditorPage() {
           </div>
 
           <div className="content-card">
-            <h2 className="text-xl font-semibold mb-4">Actions</h2>
-            
+            <h2 className="text-xl font-semibold mb-4">Actions (Reordered)</h2>
+
             <div className="space-y-4">
               <button
                 onClick={handleUploadToImgBB}
@@ -826,26 +872,24 @@ export default function CardEditorPage() {
                 {isUploading ? 'Uploading...' : 'Upload to ImgBB'}
               </button>
 
-              {uploadedUrl && (
-                <div className="space-y-2">
-                  <p className="text-sm text-muted">Uploaded URL:</p>
-                  <a 
-                    href={uploadedUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="block p-2 bg-gray-100 dark:bg-gray-700 rounded text-sm break-all hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                  >
-                    {uploadedUrl}
-                  </a>
-                  
-                  <button
-                    onClick={handleSaveAsCard}
-                    className="btn btn-success w-full"
-                  >
-                    Save as Card
-                  </button>
-                </div>
-              )}
+              <div>
+                <p className="text-sm text-muted mb-2">URL:</p>
+                <input
+                  type="text"
+                  value={config.imageUrl}
+                  onChange={(e) => setConfig({ ...config, imageUrl: e.target.value })}
+                  className="form-input"
+                  placeholder="Enter image URL or upload to fill this..."
+                />
+              </div>
+
+              <button
+                onClick={handleSaveAsCard}
+                disabled={!config.imageUrl || !config.imageUrl.trim()}
+                className="btn btn-success w-full"
+              >
+                Save as Card
+              </button>
 
               {pngDataUrl && (
                 <div className="space-y-2">

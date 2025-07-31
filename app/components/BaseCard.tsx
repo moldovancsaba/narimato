@@ -43,7 +43,7 @@ interface BaseCardProps {
  * 
  * Usage Examples:
  * - SwipeCard: <BaseCard {...cardProps} className="absolute cursor-grab" />
- * - VoteCard: <BaseCard {...cardProps} className="cursor-pointer hover:scale-105" />
+ * - VoteCard: <BaseCard {...cardProps} className="cursor-pointer hover:scale-95" />
  * - ResultsCard: <BaseCard {...cardProps} size="small" />
  */
 export default function BaseCard({

@@ -59,7 +59,7 @@ export const LoadingCard: React.FC<{ width?: string; height?: string; className?
 // Full Page Loading Component
 export const PageLoader: React.FC<{ text?: string }> = ({ text = 'Loading...' }) => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="flex items-center justify-center bg-background" style={{ minHeight: 'calc(100vh - 80px)' }}>
       <div className="text-center">
         <LoadingCard className="mx-auto mb-4" />
         <p className="text-muted text-lg">{text}</p>

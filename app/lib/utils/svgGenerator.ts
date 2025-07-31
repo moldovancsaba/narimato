@@ -11,6 +11,7 @@ export interface SVGCardConfig {
   textAlign?: 'left' | 'center' | 'right';
   verticalAlign?: 'top' | 'middle' | 'bottom';
   borderRadius?: number;
+  imageUrl?: string;
 }
 
 export const DEFAULT_CARD_CONFIG: SVGCardConfig = {

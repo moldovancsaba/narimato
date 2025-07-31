@@ -1,8 +1,32 @@
 # NARIMATO Release Notes
 
-**Current Version:** 3.1.0 (Updated)
+**Current Version:** 3.2.1 (Updated)
 **Date:** 2025-07-31
-**Last Updated:** 2025-07-31T07:16:11.000Z
+**Last Updated:** 2025-07-31T10:16:53.000Z
+
+## [v3.2.1] — 2025-07-31T10:16:53.000Z
+
+### UI Improvements
+- Centered loading states on swipe and vote pages for enhanced UX
+- Fixed styling issues with loading cards and improved card borders
+- Added unique keys to VoteCard components for smoother transitions
+- Introduced gradient borders for cards with cyan/blue/pink theme
+- Improved spacing in results grids and text contrast on main page
+
+### UI Layout Fixes
+- Resolved layout issues on portrait mode for buttons
+- Improved grid layout constraints for mobile UX
+- Incremented button height to prevent overlap
+
+### Webpack Cache Fixes
+- Fixed webpack cache corruption related to PackFileCacheStrategy
+- Cleared erroneous .next cache directory
+- Application now runs without cache warnings
+
+### Documentation Updates
+- Comprehensive updates to ROADMAP.md, TASKLIST.md, and RELEASE_NOTES.md
+
+---
 
 ## [v3.1.0] — 2025-07-31T07:16:11.000Z
 

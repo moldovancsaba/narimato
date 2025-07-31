@@ -4,7 +4,9 @@
 
 /* Swipe and Vote Page Layouts */
 .page-grid-container {
-  @apply grid h-full w-full;
+  @apply grid w-full;
+  /* Account for bottom navigation height (80px) consistent with VOTE/SWIPE landscape approach */
+  height: calc(100vh - 80px);
   padding: 5px;
   gap: 5px;
   grid-template-rows: 60px 1fr;
@@ -38,6 +40,9 @@
   }
   .swipe-grid-card { 
     grid-area: card;
+    /* Constrain overflow to prevent cards from expanding beyond grid cell */
+    overflow: hidden;
+    height: 100%;
   }
   .swipe-grid-buttons {
     grid-area: buttons;
@@ -174,7 +179,7 @@
 }
 
 .swipe-button-circle {
-    @apply rounded-full flex items-center justify-center text-5xl shadow-lg transition-transform transform hover:scale-105 active:scale-95;
+    @apply rounded-full flex items-center justify-center text-5xl shadow-lg transition-transform transform hover:scale-95 active:scale-90;
     width: 80px;
     height: 80px;
     min-width: 80px;
@@ -251,6 +256,14 @@
   --spacing-lg: 32px;
   
   --transition: all 0.2s ease-in-out;
+  
+  /* Global scale values for consistent interactive scaling */
+  --scale-initial: 1;
+  --scale-hover: 0.95;
+  --scale-selected: 0.95;
+  --scale-unselected: 0.9;
+  --scale-default: 1;
+  --scale-active: 0.9;
   
   /* Safe area insets for mobile devices */
   --safe-area-inset-top: env(safe-area-inset-top);
@@ -367,8 +380,8 @@
   .card-container {
     @apply relative flex items-center justify-center rounded-lg sm:rounded-xl;
     aspect-ratio: 3 / 4;
-    /* Dark purple background - serves as loading state until content loads */
-    background: #4a148c;
+    /* Subtle gradient background - serves as loading state until content loads */
+    background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899);
     box-shadow: var(--shadow-card-mobile);
     border-radius: var(--border-radius-lg-mobile);
     transition: var(--transition);
@@ -376,45 +389,55 @@
     @apply dark:ring-1 dark:ring-white/10;
     /* Gradient border */
     border: 2px solid transparent;
-    background-image: linear-gradient(#4a148c, #4a148c), 
+    background-image: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899), 
                       linear-gradient(45deg, #00f0ff, #5773ff, #ff007a, #00f0ff);
     background-origin: border-box;
     background-clip: padding-box, border-box;
   }
 
-/* SWIPE Page Card Sizing - Proper 3:4 aspect ratio with grid constraints */
+/* SWIPE Page Card Sizing - Grid-constrained with proper aspect ratio */
   .swipe-grid .card-container {
-    /* Force the aspect ratio first */
-    aspect-ratio: 3 / 4;
-    /* Center the card */
+    /* Center the card within grid cell */
     align-self: center;
     justify-self: center;
-    /* Size to fit within grid cell while maintaining aspect ratio */
-    width: auto;
-    height: auto;
+    /* Respect grid cell boundaries */
     max-width: 100%;
     max-height: 100%;
+    /* Maintain aspect ratio */
+    aspect-ratio: 3 / 4;
+    /* Size to fit within grid cell */
+    width: auto;
+    height: 100%;
+    /* Prevent overflow */
+    contain: layout size style;
+    position: relative;
   }
 
-  /* Portrait mode: SWIPE card should be constrained by width (single card in portrait) */
+  /* Portrait mode: SWIPE card fits within card grid area height */
   @media (orientation: portrait) {
     .swipe-grid .card-container {
-      /* In portrait, width is usually the limiting factor for SWIPE */
-      width: 100%;
-      height: auto; /* Let height be determined by aspect ratio */
+      /* Grid cell height is the constraint - card must fit within */
+      height: 100%;
+      width: auto; /* Width determined by aspect ratio */
+      /* Ensure we don't exceed grid cell boundaries */
+      max-width: 100%;
+      max-height: 100%;
     }
   }
 
-  /* Landscape mode: SWIPE card should be constrained by height */
+  /* Landscape mode: SWIPE card fits within card grid area height */
   @media (orientation: landscape) {
     .swipe-grid .card-container {
-      /* In landscape, height is the limiting factor for SWIPE */
+      /* Grid cell height is still the constraint */
       height: 100%;
-      width: auto; /* Let width be determined by aspect ratio */
+      width: auto; /* Width determined by aspect ratio */
+      /* Ensure we don't exceed grid cell boundaries */
+      max-width: 100%;
+      max-height: 100%;
     }
   }
 
-  /* VOTE Page Card Sizing - Proper 3:4 aspect ratio with grid constraints */
+  /* VOTE Page Card Sizing - Grid-constrained with proper aspect ratio */
   .vote-grid .card-container {
     /* Force the aspect ratio first */
     aspect-ratio: 3 / 4;
@@ -423,7 +446,7 @@
     justify-self: center;
     /* Size to fit within grid cell while maintaining aspect ratio */
     width: auto;
-    height: auto;
+    height: 100%; /* Use full grid cell height */
     max-width: 100%;
     max-height: 100%;
   }
@@ -478,17 +501,15 @@
     }
   }
   
-  /* Hover effects only on desktop */
+  /* Hover effects only on desktop - removed scaling to prevent overflow */
   @media (hover: hover) and (pointer: fine) {
     .card-container:hover {
-      @apply scale-105;
       box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
     }
   }
   
-  /* Touch-friendly interactions */
+  /* Touch-friendly interactions - removed scaling to prevent overflow */
   .card-container:active {
-    @apply scale-95;
     transition: transform 0.1s ease-out;
   }
   
@@ -666,13 +687,13 @@
   
   /* Touch-friendly active states */
   .swipe-button:active {
-    @apply scale-95;
+    @apply scale-90;
   }
   
   /* Hover effects only on desktop */
   @media (hover: hover) and (pointer: fine) {
     .swipe-button:hover {
-      @apply scale-110;
+      @apply scale-90;
     }
     
     .swipe-button:focus {
@@ -710,7 +731,9 @@
   
   /* Layout Components - Mobile First */
   .page-container {
-    @apply grid w-full h-screen;
+    @apply grid w-full;
+    /* Account for bottom navigation height (80px) */
+    height: calc(100vh - 80px);
     grid-template-rows: auto 1fr;
     grid-template-areas: 
       "page-title"
@@ -942,7 +965,7 @@
   }
   
   .scale-in {
-    @apply transform transition-all duration-200 ease-out scale-95 opacity-0;
+    @apply transform transition-all duration-200 ease-out scale-90 opacity-0;
   }
   
   .scale-in-enter {
