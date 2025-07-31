@@ -146,27 +146,8 @@ export default function CardsPage() {
 
   return (
     <PageLayout title="Card Management">
-      <div className="flex justify-end gap-2 mb-8">
-        <a href="/card-editor" className="btn btn-success">
-          Add Card
-        </a>
-        <button
-          onClick={async () => {
-            if (!confirm('Are you sure you want to reset the database? This will delete ALL cards, sessions, and progress data.')) return;
-            try {
-              const response = await fetch('/api/v1/reset', { method: 'POST' });
-              if (!response.ok) throw new Error('Failed to reset database');
-              fetchCards();
-              setError(null);
-            } catch (err) {
-              const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-              setError(errorMessage);
-            }
-          }}
-          className="btn btn-danger"
-        >
-          Reset Database
-        </button>
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-4">All Cards</h2>
       </div>
 
       {error && (

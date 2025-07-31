@@ -52,6 +52,7 @@ export async function POST() {
     const session = new Session({
       [SESSION_FIELDS.ID]: sessionId,
       deck: cards.map(card => card[CARD_FIELDS.UUID]),
+      totalCards: cards.length,
       expiresAt,
       status: 'active',
       swipes: [],

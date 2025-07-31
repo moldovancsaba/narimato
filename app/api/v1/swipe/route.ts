@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/app/lib/utils/db';
 import { Session, SessionState } from '@/app/lib/models/Session';
 import { Card } from '@/app/lib/models/Card';
+import { SessionResults } from '@/app/lib/models/SessionResults';
 import { SwipeRequestSchema } from '@/app/lib/validation/schemas';
 import { DeckEntity } from '@/app/lib/models/DeckEntity';
 import { SESSION_FIELDS, CARD_FIELDS, VOTE_FIELDS, API_FIELDS } from '@/app/lib/constants/fieldNames';
@@ -77,6 +78,76 @@ const updateSessionState = async (session: any, newState: any) => {
 };
 
 /**
+ * Automatically saves session results when a session is completed
+ * @param session - The completed session
+ */
+const saveSessionResults = async (session: any) => {
+  try {
+    // Get all cards from the personal ranking with their details
+    const cardIds = session.personalRanking || [];
+    const cards = await Card.find({ uuid: { $in: cardIds } });
+    
+    // Create a map for quick card lookup
+    const cardMap = new Map();
+    cards.forEach(card => {
+      cardMap.set(card.uuid, {
+        uuid: card.uuid,
+        type: card.type,
+        content: card.content,
+        title: card.title
+      });
+    });
+
+    // Build the personal ranking with card details
+    const personalRankingWithDetails = cardIds.map((cardId: string, index: number) => {
+      const card = cardMap.get(cardId);
+      return {
+        cardId,
+        card,
+        rank: index + 1
+      };
+    }).filter((item: any) => item.card); // Filter out any cards that weren't found
+
+    // Calculate session statistics
+    const sessionStatistics = {
+      totalCards: session.totalCards || 0,
+      cardsRanked: session.personalRanking?.length || 0,
+      cardsDiscarded: (session.totalCards || 0) - (session.personalRanking?.length || 0),
+      totalSwipes: session.swipes?.length || 0,
+      totalVotes: session.votes?.length || 0,
+      completionRate: session.totalCards ? Math.round(((session.personalRanking?.length || 0) / session.totalCards) * 100) : 0
+    };
+
+    // Check if results already exist for this session
+    const existingResults = await SessionResults.findOne({ sessionId: session.sessionId });
+    
+    if (existingResults) {
+      // Update existing results
+      existingResults.personalRanking = personalRankingWithDetails;
+      existingResults.sessionStatistics = sessionStatistics;
+      existingResults.updatedAt = new Date();
+      await existingResults.save();
+      console.log(`Updated existing session results for ${session.sessionId}`);
+    } else {
+      // Create new session results
+      const sessionResults = new SessionResults({
+        sessionId: session.sessionId,
+        personalRanking: personalRankingWithDetails,
+        sessionStatistics,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      await sessionResults.save();
+      console.log(`Created new session results for ${session.sessionId}`);
+    }
+  } catch (error) {
+    console.error(`Failed to save session results for ${session.sessionId}:`, error);
+    // Don't throw error - session completion should not fail due to results saving
+  }
+};
+
+/**
  * SwipeResponse interface defines the standardized response structure for swipe operations.
  * This ensures consistent API responses and enables proper frontend state management.
  * - success: Indicates if the swipe operation completed successfully
@@ -88,6 +159,7 @@ interface SwipeResponse {
   [API_FIELDS.SUCCESS]: boolean;
   requiresVoting: boolean;
   nextState: SessionState;
+  sessionCompleted?: boolean;
   votingContext?: {
     [CARD_FIELDS.ID]: string;
     compareWith: string;
@@ -287,9 +359,40 @@ export async function POST(request: NextRequest) {
     // 6. Confirm swipe in deck (this advances the current position)
     deck.confirmSwipe(cardId, direction);
 
-    // 7. Atomic state update with optimistic locking
+    // 7. Check if deck is exhausted - but only complete session for LEFT swipes
+    // For RIGHT swipes that require voting, let the voting process complete first
+    if (deck.isExhausted()) {
+      console.log(`🎊 DECK EXHAUSTION DETECTED in swipe endpoint - Session ${session.sessionId}:`, {
+        cardId,
+        direction,
+        totalCardsInDeck: orderedCards.length,
+        totalSwipes: session.swipes.length + 1, // +1 for the current swipe
+        personalRankingLength: newPersonalRanking.length,
+        currentState: session.state,
+        wasRequiringVoting: requiresVoting,
+        nextState: requiresVoting ? 'voting' : 'completed'
+      });
+      
+      // Only complete the session immediately for LEFT swipes or first RIGHT swipe
+      // For RIGHT swipes that require voting, let the voting process handle completion
+      if (direction === 'left' || !requiresVoting) {
+        console.log(`🏁 Completing session immediately - no voting required`);
+        nextState = 'completed';
+        session.status = 'completed';
+        session.completedAt = new Date();
+        console.log(`✅ Session ${session.sessionId} marked as completed via swipe endpoint`);
+      } else {
+        console.log(`🗳️ Last card requires voting - session will complete after voting process`);
+        // Keep the voting requirement - session will be completed by the vote endpoint
+        // when it detects deck exhaustion after the final vote
+      }
+    }
+
+    // Atomic state update with optimistic locking
     const newSessionState = {
       state: nextState,
+      status: session.status,
+      completedAt: session.completedAt,
       swipes: [
         ...session.swipes,
         {
@@ -306,6 +409,11 @@ export async function POST(request: NextRequest) {
       // Use atomic update function to ensure consistency
       session = await updateSessionState(session, newSessionState);
       sessionLocked = false;
+      
+      // Automatically save session results if session is completed
+      if (session.status === 'completed') {
+        await saveSessionResults(session);
+      }
     } catch (updateError: any) {
       // Handle concurrent modification during atomic update
       if (updateError.message === 'Concurrent update detected') {
@@ -324,6 +432,7 @@ export async function POST(request: NextRequest) {
       success: true,
       requiresVoting,
       nextState: session.state as SessionState,
+      sessionCompleted: session.status === 'completed',
       votingContext
     };
 

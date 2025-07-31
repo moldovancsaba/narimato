@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/app/lib/utils/db';
 import { Session } from '@/app/lib/models/Session';
+import { Card } from '@/app/lib/models/Card';
+import { SessionResults } from '@/app/lib/models/SessionResults';
 import { VoteRequestSchema } from '@/app/lib/validation/schemas';
+import { DeckEntity } from '@/app/lib/models/DeckEntity';
 import mongoose from 'mongoose';
-import { SESSION_FIELDS, VOTE_FIELDS, API_FIELDS } from '@/app/lib/constants/fieldNames';
+import { SESSION_FIELDS, VOTE_FIELDS, API_FIELDS, CARD_FIELDS } from '@/app/lib/constants/fieldNames';
 import { validateUUID, validateSessionId } from '@/app/lib/utils/fieldValidation';
 
 interface NextComparison {
@@ -311,13 +314,26 @@ function insertCardInRanking(
           };
           finalPosition = -1; // Position not yet determined
         } else {
-          // Insert at the position just above the comparison card
+          // No more comparisons needed - determine final position from accumulated bounds
+          const bounds = calculateAccumulatedSearchBounds(newCard, currentRanking, sessionVotes);
+          const insertPosition = bounds.start;
+          
           newRanking = [
-            ...currentRanking.slice(0, compareCardIndex),
+            ...currentRanking.slice(0, insertPosition),
             newCard,
-            ...currentRanking.slice(compareCardIndex)
+            ...currentRanking.slice(insertPosition)
           ];
-          finalPosition = compareCardIndex;
+          finalPosition = insertPosition;
+          
+          console.log(`🎯 Search space empty - card position determined, inserting card and updating session state`);
+          console.log(`📍 Card position determined and inserted:`, {
+            cardId: `${newCard.substring(0, 8)}...`,
+            insertPosition,
+            previousRanking: currentRanking.map(c => `${c.substring(0, 8)}...`),
+            newRanking: newRanking.map(c => `${c.substring(0, 8)}...`),
+            sessionState: 'comparing → swiping',
+            timestamp: new Date().toISOString()
+          });
         }
       }
     } else {
@@ -339,13 +355,25 @@ function insertCardInRanking(
           };
           finalPosition = -1; // Position not yet determined
         } else {
-          // Insert right after the comparison card
+          // No more comparisons needed - determine final position from accumulated bounds
+          const bounds = calculateAccumulatedSearchBounds(newCard, currentRanking, sessionVotes);
+          const insertPosition = bounds.start;
+          
           newRanking = [
-            ...currentRanking.slice(0, compareCardIndex + 1),
+            ...currentRanking.slice(0, insertPosition),
             newCard,
-            ...currentRanking.slice(compareCardIndex + 1)
+            ...currentRanking.slice(insertPosition)
           ];
-          finalPosition = compareCardIndex + 1;
+          finalPosition = insertPosition;
+          
+          console.log(`Search space empty - card position determined, inserting card and updating session state`);
+          console.log(`Card position determined and inserted:`, {
+            cardId: `${newCard.substring(0, 8)}...`,
+            insertPosition,
+            previousRanking: currentRanking.map(c => `${c.substring(0, 8)}...`),
+            newRanking: newRanking.map(c => `${c.substring(0, 8)}...`),
+            sessionState: 'comparing → swiping'
+          });
         }
       }
     }
@@ -375,6 +403,93 @@ function insertCardInRanking(
 }
 
 const VOTE_TIMEOUT_MS = 60000; // 60 seconds
+
+/**
+ * Automatically saves session results when a session is completed
+ * @param session - The completed session
+ */
+const saveSessionResults = async (session: any) => {
+  try {
+    console.log('🔍 saveSessionResults called with session data:', {
+      sessionId: session.sessionId,
+      personalRanking: session.personalRanking,
+      personalRankingLength: session.personalRanking?.length || 0,
+      totalCards: session.totalCards,
+      swipesCount: session.swipes?.length || 0,
+      votesCount: session.votes?.length || 0,
+      status: session.status,
+      state: session.state
+    });
+    
+    // Get all cards from the personal ranking with their details
+    const cardIds = session.personalRanking || [];
+    const cards = await Card.find({ uuid: { $in: cardIds } });
+    
+    console.log('🃏 Found cards for ranking:', {
+      requestedCardIds: cardIds,
+      foundCards: cards.length,
+      foundCardIds: cards.map(c => c.uuid)
+    });
+    
+    // Create a map for quick card lookup
+    const cardMap = new Map();
+    cards.forEach(card => {
+      cardMap.set(card.uuid, {
+        uuid: card.uuid,
+        type: card.type,
+        content: card.content,
+        title: card.title
+      });
+    });
+
+    // Build the personal ranking with card details
+    const personalRankingWithDetails = cardIds.map((cardId: string, index: number) => {
+      const card = cardMap.get(cardId);
+      return {
+        cardId,
+        card,
+        rank: index + 1
+      };
+    }).filter((item: any) => item.card); // Filter out any cards that weren't found
+
+    // Calculate session statistics
+    const sessionStatistics = {
+      totalCards: session.totalCards || 0,
+      cardsRanked: session.personalRanking?.length || 0,
+      cardsDiscarded: (session.totalCards || 0) - (session.personalRanking?.length || 0),
+      totalSwipes: session.swipes?.length || 0,
+      totalVotes: session.votes?.length || 0,
+      completionRate: session.totalCards ? Math.round(((session.personalRanking?.length || 0) / session.totalCards) * 100) : 0
+    };
+
+    // Check if results already exist for this session
+    const existingResults = await SessionResults.findOne({ sessionId: session.sessionId });
+    
+    if (existingResults) {
+      // Update existing results
+      existingResults.personalRanking = personalRankingWithDetails;
+      existingResults.sessionStatistics = sessionStatistics;
+      existingResults.updatedAt = new Date();
+      await existingResults.save();
+      console.log(`Updated existing session results for ${session.sessionId}`);
+    } else {
+      // Create new session results
+      const sessionResults = new SessionResults({
+        sessionId: session.sessionId,
+        personalRanking: personalRankingWithDetails,
+        sessionStatistics,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      await sessionResults.save();
+      console.log(`Created new session results for ${session.sessionId}`);
+    }
+  } catch (error) {
+    console.error(`Failed to save session results for ${session.sessionId}:`, error);
+    // Don't throw error - session completion should not fail due to results saving
+  }
+};
 
 /**
  * Performs atomic session update with rollback capability.
@@ -419,6 +534,50 @@ async function performAtomicRankingUpdate(
         session.swipes.push(newCardSwipe);
         console.log(`Added swipe record for ranked card: ${newCard}`);
       }
+      
+      // Check if deck is exhausted after the swipe
+      const cards = await Card.find({ [CARD_FIELDS.UUID]: { $in: session.deck } });
+      if (cards.length > 0) {
+        const orderedCards = session.deck.map((uuid: string) => 
+          cards.find(card => card[CARD_FIELDS.UUID] === uuid)
+        ).filter((card: any) => card !== undefined);
+        
+        const deck = new DeckEntity(orderedCards);
+        
+        // Initialize deck with all swipes to check if exhausted
+        const swipedCardIds = session.swipes.map((swipe: any) => swipe.cardId);
+        for (const swipedCardId of swipedCardIds) {
+          const swipe = session.swipes.find((s: any) => s.cardId === swipedCardId);
+          if (swipe) {
+            deck.confirmSwipe(swipedCardId, swipe.direction);
+          }
+        }
+        
+        // If deck is exhausted, mark session as completed
+        if (deck.isExhausted()) {
+          console.log(`🎊 DECK EXHAUSTION DETECTED - Completing session ${session.sessionId}:`, {
+            totalCardsInDeck: cards.length,
+            totalSwipes: session.swipes.length,
+            totalVotes: session.votes.length,
+            personalRankingLength: session.personalRanking.length,
+            lastCard: newCard.substring(0, 8) + '...',
+            currentState: session.state,
+            currentStatus: session.status
+          });
+          
+          session.state = 'completed';
+          session.status = 'completed';
+          session.completedAt = new Date();
+          
+          console.log(`✅ Session ${session.sessionId} marked as completed - deck exhausted`);
+          console.log(`📊 Final session state before saving to database:`, {
+            personalRanking: session.personalRanking.map((id: string) => id.substring(0, 8) + '...'),
+            totalCards: session.totalCards,
+            swipesCount: session.swipes.length,
+            votesCount: session.votes.length
+          });
+        }
+      }
     }
     
     // Save with transaction session
@@ -433,6 +592,18 @@ async function performAtomicRankingUpdate(
       stateTransition: `${originalState} → ${newState}`,
       auditEntries: auditTrail.length
     });
+    
+    // If session was completed, save results after transaction is committed
+    if (session.status === 'completed') {
+      try {
+        console.log(`💾 Session completed - attempting to save results after transaction commit...`);
+        await saveSessionResults(session);
+        console.log(`✅ Session results saved successfully after completion for ${session.sessionId}`);
+      } catch (resultsError) {
+        console.error(`❌ Failed to save session results after completion:`, resultsError);
+        // Don't throw error - session completion should not fail due to results saving
+      }
+    }
     
   } catch (error) {
     // Rollback transaction on any failure
@@ -462,7 +633,7 @@ function validateStateTransition(
     'swiping': ['voting', 'comparing', 'completed'],
     'comparing': ['comparing', 'swiping', 'completed'],
     'voting': ['comparing', 'swiping', 'completed'],
-    'completed': [] // Terminal state
+    'completed': ['completed'] // Allow completed sessions to stay completed
   };
   
   // Check if transition is allowed
@@ -511,7 +682,7 @@ export async function POST(request: NextRequest) {
     
     if (elapsedMs > VOTE_TIMEOUT_MS) {
       const timeoutSession = await Session.findOneAndUpdate(
-        { [SESSION_FIELDS.ID]: sessionId, status: 'active', [SESSION_FIELDS.VERSION]: body[SESSION_FIELDS.VERSION] },
+        { [SESSION_FIELDS.ID]: sessionId, status: { $in: ['active', 'completed'] }, [SESSION_FIELDS.VERSION]: body[SESSION_FIELDS.VERSION] },
         { $inc: { [SESSION_FIELDS.VERSION]: 1 } },
         { new: true }
       );
@@ -534,18 +705,49 @@ export async function POST(request: NextRequest) {
 
     // Find and lock session with optimistic concurrency control
     session = await Session.findOneAndUpdate(
-      { [SESSION_FIELDS.ID]: sessionId, status: 'active', [SESSION_FIELDS.VERSION]: body[SESSION_FIELDS.VERSION] },
+      { [SESSION_FIELDS.ID]: sessionId, status: { $in: ['active', 'completed'] }, [SESSION_FIELDS.VERSION]: body[SESSION_FIELDS.VERSION] },
       { $inc: { [SESSION_FIELDS.VERSION]: 1 } },
       { new: true }
     );
     
     if (!session) {
+      // Try to find the session without version check to provide better error info
+      const existingSession = await Session.findOne({ [SESSION_FIELDS.ID]: sessionId, status: { $in: ['active', 'completed'] } });
+      
+      if (!existingSession) {
+        return new NextResponse(
+          JSON.stringify({ 
+            [API_FIELDS.ERROR]: 'Session not found',
+            details: 'Session does not exist or is not active/completed'
+          }),
+          { status: 404 }
+        );
+      } else {
+        // Session exists but version mismatch - return current version for sync
+        return new NextResponse(
+          JSON.stringify({ 
+            [API_FIELDS.ERROR]: 'Session version conflict',
+            details: 'Session has been modified by another request',
+            currentVersion: existingSession[SESSION_FIELDS.VERSION],
+            expectedVersion: body[SESSION_FIELDS.VERSION],
+            sessionStatus: existingSession.status,
+            sessionState: existingSession.state
+          }),
+          { status: 409 } // Conflict status for version mismatch
+        );
+      }
+    }
+
+    // Check if session is already completed - redirect to results instead of voting
+    if (session.status === 'completed') {
       return new NextResponse(
-        JSON.stringify({ 
-          [API_FIELDS.ERROR]: 'Session not found or version conflict',
-          details: 'Session may have been modified by another request'
+        JSON.stringify({
+          success: true,
+          sessionCompleted: true,
+          message: 'Session is already completed',
+          version: session.version
         }),
-        { status: 409 } // Conflict status for version mismatch
+        { status: 200 }
       );
     }
 
@@ -716,6 +918,7 @@ export async function POST(request: NextRequest) {
         currentRanking: session.personalRanking,
         nextComparison: updatedRanking.nextComparison,
         returnToSwipe: !updatedRanking.nextComparison,
+        sessionCompleted: session.status === 'completed',
         version: session.version,
         // Additional response metadata
         validationsPassed: [

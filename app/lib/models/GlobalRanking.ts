@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { Session } from './Session';
 
 // Constants
 const RECENT_SESSIONS_LIMIT = 100;
@@ -28,7 +29,7 @@ export interface IGlobalRankingModel extends mongoose.Model<IGlobalRanking> {
 // Add methods for tie-breaking and ranking calculation
 GlobalRankingSchema.statics.calculateRankings = async function() {
   // Get completed sessions with personal rankings
-  const completedSessions = await mongoose.model('Session').find({
+  const completedSessions = await Session.find({
     status: 'completed',
     personalRanking: { $exists: true, $ne: [] },
     completedAt: { $exists: true }

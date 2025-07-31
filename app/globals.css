@@ -25,31 +25,23 @@
   }
   
   .swipe-grid {
-    grid-template-rows: 60px 1fr 80px 40px;
+    grid-template-rows: 60px 1fr 80px;
     grid-template-columns: 1fr;
     grid-template-areas:
       "title"
       "card"
-      "buttons"
-      "support";
+      "buttons";
   }
   
   .swipe-grid-title { 
     grid-area: title;
-    border: 2px solid red !important;
   }
   .swipe-grid-card { 
     grid-area: card;
-    border: 2px solid blue !important;
   }
   .swipe-grid-buttons {
     grid-area: buttons;
     @apply flex justify-center items-center gap-8;
-    border: 2px solid green !important;
-  }
-  .swipe-grid-support { 
-    grid-area: support;
-    border: 2px solid orange !important;
   }
 
   .swipe-grid-button-left, .swipe-grid-button-right {
@@ -57,41 +49,32 @@
   }
 
   .vote-grid {
-    grid-template-rows: 60px 2fr 60px 2fr 40px;
+    grid-template-rows: 60px 2fr 60px 2fr;
     grid-template-columns: 1fr;
     grid-template-areas:
       "title"
       "card1"
       "vs"
-      "card2"
-      "support";
+      "card2";
   }
 
   .vote-grid-title { 
     grid-area: title;
-    border: 2px solid red !important;
   }
   .vote-grid-card1 { 
     grid-area: card1;
-    border: 2px solid purple !important;
     /* Constrain overflow to prevent cards from expanding beyond grid cell */
     overflow: hidden;
     height: 100%;
   }
   .vote-grid-vs { 
     grid-area: vs;
-    border: 2px solid cyan !important;
   }
   .vote-grid-card2 { 
     grid-area: card2;
-    border: 2px solid yellow !important;
     /* Constrain overflow to prevent cards from expanding beyond grid cell */
     overflow: hidden;
     height: 100%;
-  }
-  .vote-grid-support { 
-    grid-area: support;
-    border: 2px solid orange !important;
   }
 }
 
@@ -107,33 +90,24 @@
   
   .swipe-grid {
     grid-template-columns: 80px 1fr 80px;
-    grid-template-rows: 60px 1fr 40px;
+    grid-template-rows: 60px 1fr;
     grid-template-areas:
       "title title title"
-      "button-left card button-right"
-      "support support support";
+      "button-left card button-right";
   }
   .swipe-grid-title { 
     grid-area: title;
-    border: 2px solid red !important;
   }
   .swipe-grid-button-left { 
     grid-area: button-left;
     @apply flex items-center justify-center;
-    border: 2px solid pink !important;
   }
   .swipe-grid-card { 
     grid-area: card;
-    border: 2px solid blue !important;
   }
   .swipe-grid-button-right { 
     grid-area: button-right;
     @apply flex items-center justify-center;
-    border: 2px solid lightgreen !important;
-  }
-  .swipe-grid-support { 
-    grid-area: support;
-    border: 2px solid orange !important;
   }
 
   .swipe-grid-buttons {
@@ -142,48 +116,37 @@
 
   .vote-grid {
     grid-template-columns: 1fr 60px 1fr;
-    grid-template-rows: 60px 1fr 40px;
+    grid-template-rows: 60px 1fr;
     grid-template-areas:
       "title title title"
-      "card1 vs card2"
-      "support support support";
+      "card1 vs card2";
   }
   .vote-grid-title { 
     grid-area: title;
-    border: 2px solid red !important;
   }
   .vote-grid-card1 { 
     grid-area: card1;
-    border: 2px solid purple !important;
     /* Constrain overflow to prevent cards from expanding beyond grid cell */
     overflow: hidden;
     height: 100%;
   }
   .vote-grid-vs { 
     grid-area: vs;
-    border: 2px solid cyan !important;
   }
   .vote-grid-card2 { 
     grid-area: card2;
-    border: 2px solid yellow !important;
     /* Constrain overflow to prevent cards from expanding beyond grid cell */
     overflow: hidden;
     height: 100%;
   }
-  .vote-grid-support { 
-    grid-area: support;
-    border: 2px solid orange !important;
-  }
 }
 
 /* Grid cell is the single source of truth for card sizing */
-.grid-cell {
+  .grid-cell {
     @apply flex items-center justify-center;
     width: 100%;
     height: 100%;
-    /* Debug border for all grid cells */
-    border: 1px solid lime !important;
-}
+  }
 
 /* Card area specifically constrains card size */
 .swipe-grid-card.grid-cell {
@@ -192,17 +155,15 @@
 }
 
 /* Grid areas for all pages */
-.page-title-grid {
-  grid-area: title;
-  @apply flex items-center justify-center;
-  border: 2px solid red !important;
-}
+  .page-title-grid {
+    grid-area: title;
+    @apply flex items-center justify-center;
+  }
 
-.page-main-grid {
-  grid-area: main;
-  @apply w-full h-full overflow-y-auto;
-  border: 2px solid darkgreen !important;
-}
+  .page-main-grid {
+    grid-area: main;
+    @apply w-full h-full overflow-y-auto;
+  }
 
 .support-text {
   @apply text-sm font-bold;
@@ -751,19 +712,16 @@
     gap: 5px;
     background-color: var(--background);
     color: var(--text-primary);
-    border: 3px solid darkblue !important;
   }
 
   .page-title-area {
     grid-area: page-title;
     @apply flex items-center justify-center;
-    border: 2px solid red !important;
   }
   
   .page-content {
     grid-area: page-main;
     @apply overflow-y-auto;
-    border: 2px solid darkgreen !important;
   }
   
   @media (min-width: 640px) {
@@ -783,8 +741,6 @@
     max-width: 100%;
     /* Enhanced mobile dark mode contrast */
     @apply dark:ring-1 dark:ring-white/10 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900;
-    /* Debug border for content card */
-    border: 2px solid coral !important;
   }
   
   @media (min-width: 640px) {
@@ -809,8 +765,6 @@
     max-width: 100%;
     /* Enhanced mobile dark mode styling */
     @apply dark:ring-1 dark:ring-white/10 dark:bg-gradient-to-br dark:from-gray-800/90 dark:to-gray-900/90;
-    /* Debug border for large content card */
-    border: 2px solid darkred !important;
   }
   
   @media (min-width: 640px) {

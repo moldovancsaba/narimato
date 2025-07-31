@@ -1,7 +1,7 @@
 # Development Learnings
 
-**Current Version:** 2.0.3 (Updated)
-**Date:** 2025-07-30
+**Current Version:** 3.0.0 (Updated)
+**Date:** 2025-07-31
 
 ## State Transitions  Edge Cases
 
@@ -109,6 +109,100 @@
 - **State Management**: Leveraged useState and useEffect hooks for fine-grained control over state and lifecycle operations.
 - **Code Scalability**: Modularized components and common logic for future growth and maintenance ease.
 - **Component Architecture**: BaseCard serves as a universal foundation, reducing code duplication and ensuring design consistency.
+
+## Critical Session Completion Issues (v3.0.0)
+
+### Last Voted Card Missing from Rankings
+1. **Root Cause Analysis**:
+   - Binary search algorithm had edge cases where final card insertion was incomplete
+   - Search space collapse detection was not properly triggering card insertion
+   - Accumulated bounds calculation needed to consider all previous votes, not just current comparison
+
+2. **Solution Implementation**:
+   - Enhanced `calculateAccumulatedSearchBounds()` function to process entire vote history
+   - Improved position determination logic when search space becomes empty (bounds.start >= bounds.end)
+   - Added comprehensive logging to track bounds calculation and card insertion
+
+3. **Key Learning**: **Binary search algorithms require careful handling of edge cases where the search space collapses to a single position**
+
+### "Loading Session..." Infinite State on Left Swipe
+1. **Root Cause Analysis**:
+   - Frontend was not properly handling `sessionCompleted` flag from swipe API responses
+   - Session completion detection relied only on client-side deck exhaustion check
+   - Backend correctly detected exhaustion and set completion flag, but frontend ignored it
+
+2. **Solution Implementation**:
+   - Added proper `sessionCompleted` flag handling in frontend swipe response processing
+   - Prioritized session completion over other response flags (requiresVoting, etc.)
+   - Implemented immediate redirect to results page when completion detected
+
+3. **Key Learning**: **Always handle all API response flags in priority order - session completion should take precedence over other state changes**
+
+### Last Right-Swiped Card Bypassing Vote Process
+1. **Root Cause Analysis**:
+   - Deck exhaustion check occurred before voting requirements were evaluated
+   - Session completion was happening immediately even when card needed voting
+   - Order of operations in swipe endpoint was incorrect for final card scenarios
+
+2. **Solution Implementation**:
+   - Reordered swipe endpoint logic to check voting requirements before session completion
+   - Added conditional completion logic: immediate for left swipes, deferred for right swipes requiring votes
+   - Enhanced logging to track deck exhaustion decisions and voting requirements
+
+3. **Key Learning**: **Order of operations matters critically in state management - evaluate all requirements before making final state transitions**
+
+### Binary Search Bounds Calculation Enhancement
+1. **Technical Implementation**:
+   ```typescript
+   // Enhanced bounds calculation processes all votes for target card
+   function calculateAccumulatedSearchBounds(targetCardId, ranking, votes) {
+     let searchStart = 0;
+     let searchEnd = ranking.length;
+     
+     // Process ALL votes involving this card to accumulate constraints
+     for (const vote of votes) {
+       if (vote.cardA === targetCardId || vote.cardB === targetCardId) {
+         // Determine comparison card and its position
+         const comparedCardId = vote.cardA === targetCardId ? vote.cardB : vote.cardA;
+         const comparedIndex = ranking.indexOf(comparedCardId);
+         
+         if (vote.winner === targetCardId) {
+           // Target won: ranks higher, narrow upper bound
+           searchEnd = Math.min(searchEnd, comparedIndex);
+         } else {
+           // Target lost: ranks lower, narrow lower bound  
+           searchStart = Math.max(searchStart, comparedIndex + 1);
+         }
+       }
+     }
+     
+     return { start: searchStart, end: searchEnd };
+   }
+   ```
+
+2. **Key Learning**: **Accumulated constraints from all previous decisions provide more accurate positioning than individual comparisons**
+
+### Session Completion Flow Architecture
+1. **Improved State Machine Logic**:
+   - **Left Swipe + Deck Exhaustion**: Immediate session completion
+   - **Right Swipe + Deck Exhaustion + No Votes Needed**: Immediate completion (first card scenario)
+   - **Right Swipe + Deck Exhaustion + Votes Needed**: Defer completion until voting finished
+
+2. **Frontend-Backend Communication**:
+   - Backend provides clear completion signals via `sessionCompleted` flag
+   - Frontend respects completion signals regardless of other state indicators
+   - Comprehensive logging ensures troubleshooting visibility
+
+3. **Key Learning**: **Complex state machines require clear separation of concerns and explicit communication protocols between layers**
+
+### Debugging and Logging Strategy
+1. **Comprehensive Logging Implementation**:
+   - Added emoji-prefixed logs for easy visual scanning (🎊, 🗳️, 📊, etc.)
+   - Included card ID truncation for readable logs without full UUIDs
+   - Captured state transitions with before/after snapshots
+   - Logged both successful operations and error conditions
+
+2. **Key Learning**: **Effective logging with visual markers and structured data significantly accelerates debugging complex state management issues**
 
 ## Implementation Details
 

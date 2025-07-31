@@ -18,8 +18,8 @@ const searchParams = request.nextUrl.searchParams;
 
     await dbConnect();
 
-    // Find session and validate
-    const session = await Session.findOne({ sessionId, status: 'active' });
+    // Find session and validate (accept both active and completed sessions for voting)
+    const session = await Session.findOne({ sessionId, status: { $in: ['active', 'completed'] } });
     if (!session) {
       return new NextResponse(
         JSON.stringify({ error: 'Session not found or inactive' }),
@@ -166,7 +166,7 @@ const searchParams = request.nextUrl.searchParams;
         
         // Update session state to swiping since ranking is complete
         const updatedSession = await Session.findOneAndUpdate(
-          { sessionId, status: 'active' },
+          { sessionId, status: { $in: ['active', 'completed'] } },
           {
             $set: {
               personalRanking: newRanking,

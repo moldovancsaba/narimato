@@ -219,6 +219,22 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
         throw new Error(data.error || 'Failed to record swipe');
       }
 
+      console.log('Swipe response received:', {
+        direction,
+        requiresVoting: data.requiresVoting,
+        sessionCompleted: data.sessionCompleted,
+        nextState: data.nextState
+      });
+
+      // Check if session is completed first (highest priority)
+      if (data.sessionCompleted) {
+        console.log('Session completed via swipe - redirecting to results');
+        // Clear any polling intervals and redirect immediately
+        localStorage.removeItem('lastState');
+        router.push(`/completed?${SESSION_FIELDS.ID}=${sessionId}`);
+        return;
+      }
+
       // If voting required, navigate immediately before showing next card
       if (direction === 'right' && data.requiresVoting) {
         localStorage.setItem('lastState', JSON.stringify({
@@ -232,7 +248,7 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
         return;
       }
 
-      // Only update deck state if not navigating to vote
+      // Only update deck state if not navigating to vote or results
       deck?.confirmSwipe(currentCard[CARD_FIELDS.UUID], direction);
       setCurrentCard(deck?.getCurrentCard() || null);
     } catch (error) {
@@ -280,11 +296,7 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
 
   // Handle loading state
   if (!sessionId || !currentCard) {
-    // If we have a deck but no current card, check if exhausted
-    if (deck && deck.isExhausted() && sessionId) {
-      router.push(`/completed?${SESSION_FIELDS.ID}=${sessionId}`);
-      return null;
-    }
+    // Just return loading state - the useEffect above will handle navigation
     
     return (
       <div className="page-container">
@@ -354,13 +366,6 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
             </button>
           </div>
           
-          {/* Support Text - Row 3/4 (Landscape/Portrait) */}
-          <div className="swipe-grid-support grid-cell">
-            <p className="support-text text-center">
-              <span className="hidden sm:inline">Use left/right arrow keys or </span>
-              Swipe to rate cards
-            </p>
-          </div>
           
         </div>
       </div>

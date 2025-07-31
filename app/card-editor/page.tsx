@@ -964,6 +964,35 @@ export default function CardEditorPage() {
           </div>
         </div>
       </div>
+
+      {/* Reset Database Section */}
+      <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
+        <div className="content-card">
+          <h2 className="text-xl font-semibold mb-4 text-red-600 dark:text-red-400">Danger Zone</h2>
+          <p className="text-sm text-muted mb-4">
+            This will permanently delete ALL cards, sessions, and progress data. This action cannot be undone.
+          </p>
+          <button
+            onClick={async () => {
+              if (!confirm('Are you sure you want to reset the database? This will delete ALL cards, sessions, and progress data.')) return;
+              try {
+                const response = await fetch('/api/v1/reset', { method: 'POST' });
+                if (!response.ok) throw new Error('Failed to reset database');
+                setSuccess('Database reset successfully!');
+                setError('');
+                // Reload presets after reset
+                loadPresets();
+              } catch (err) {
+                const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+                setError(errorMessage);
+              }
+            }}
+            className="btn btn-danger"
+          >
+            Reset Database
+          </button>
+        </div>
+      </div>
     </PageLayout>
   );
 }

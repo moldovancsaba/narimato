@@ -42,6 +42,7 @@ const SessionSchema = new mongoose.Schema({
     index: true
   },
   deck: [{ type: String, ref: 'Card' }], // Array of card UUIDs
+  totalCards: { type: Number, default: 0 }, // Total number of cards in deck
   createdAt: { type: Date, default: Date.now, index: true },
   lastActivity: { type: Date, default: Date.now, index: true },
   completedAt: { type: Date, default: null },

@@ -42,6 +42,7 @@ function VoteContent() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sessionVersion, setSessionVersion] = useState<number>(0);
+  const [isFirstRanking, setIsFirstRanking] = useState<boolean>(false);
 
   const sessionId = searchParams.get(SESSION_FIELDS.ID);
   const cardId = searchParams.get(CARD_FIELDS.ID);
@@ -88,6 +89,7 @@ function VoteContent() {
         
         setCardA(data[VOTE_FIELDS.CARD_A]);
         setCardB(data[VOTE_FIELDS.CARD_B]);
+        setIsFirstRanking(data.isFirstRanking || false);
       } catch (error) {
         setError('Failed to load voting interface');
       }
@@ -118,18 +120,54 @@ function VoteContent() {
           [VOTE_FIELDS.CARD_B]: cardB[CARD_FIELDS.UUID],
           [VOTE_FIELDS.WINNER]: winner === 'A' ? cardA[CARD_FIELDS.UUID] : cardB[CARD_FIELDS.UUID],
           [VOTE_FIELDS.TIMESTAMP]: new Date().toISOString(),
-          [SESSION_FIELDS.VERSION]: sessionVersion
+          [SESSION_FIELDS.VERSION]: sessionVersion,
+          isFirstRanking: isFirstRanking
         })
       });
 
-      const data = await response.json();
+      let data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to record vote');
+        // Handle version conflicts by refreshing session version
+        if (response.status === 409 && data.currentVersion) {
+          console.log('Version conflict detected, updating to current version:', data.currentVersion);
+          setSessionVersion(data.currentVersion);
+          // Retry the vote with updated version
+          const retryResponse = await fetch('/api/v1/vote', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              [SESSION_FIELDS.ID]: sessionId,
+              [VOTE_FIELDS.CARD_A]: cardA[CARD_FIELDS.UUID],
+              [VOTE_FIELDS.CARD_B]: cardB[CARD_FIELDS.UUID],
+              [VOTE_FIELDS.WINNER]: winner === 'A' ? cardA[CARD_FIELDS.UUID] : cardB[CARD_FIELDS.UUID],
+              [VOTE_FIELDS.TIMESTAMP]: new Date().toISOString(),
+              [SESSION_FIELDS.VERSION]: data.currentVersion,
+              isFirstRanking: isFirstRanking
+            })
+          });
+          
+          const retryData = await retryResponse.json();
+          if (!retryResponse.ok) {
+            throw new Error(retryData.error || 'Failed to record vote after version sync');
+          }
+          
+          // Use retry data for further processing
+          data = retryData;
+        } else {
+          throw new Error(data.error || 'Failed to record vote');
+        }
       }
 
       // Update session version from response
       setSessionVersion(data.version);
+
+      // Check if session is completed
+      if (data.sessionCompleted) {
+        console.log('Session completed during voting, redirecting to completed page');
+        router.push(`/completed?${SESSION_FIELDS.ID}=${sessionId}`);
+        return;
+      }
 
       // Check if there's a next comparison needed
       if (data.nextComparison) {
@@ -156,24 +194,10 @@ function VoteContent() {
           throw new Error('Failed to load next comparison');
         }
       } else {
-        // No more comparisons, check if deck is exhausted and redirect accordingly
-        const deckResponse = await fetch(`/api/v1/deck?${SESSION_FIELDS.ID}=${sessionId}&_t=${Date.now()}`);
-        if (deckResponse.ok) {
-          const deckData = await deckResponse.json();
-          const deck = new DeckEntity(deckData.deck);
-          
-          // If deck is exhausted, go to results page
-          if (deck.isExhausted()) {
-            console.log('Voting complete and deck exhausted, redirecting to completed page');
-            router.push(`/completed?${SESSION_FIELDS.ID}=${sessionId}`);
-          } else {
-            // Still have cards to swipe, return to swipe page
-            router.push('/swipe');
-          }
-        } else {
-          // Fallback to swipe page if deck check fails
-          router.push('/swipe');
-        }
+        // No more comparisons needed for this card, return to swipe page
+        // The backend will handle session completion detection when deck is exhausted
+        console.log('Card voting completed, returning to swipe page');
+        router.push('/swipe');
       }
     } catch (error) {
       console.error('Vote error:', error);
@@ -229,13 +253,6 @@ function VoteContent() {
             </div>
           </div>
           
-          {/* Support Text - Row 5 (Portrait) / Row 3 (Landscape) */}
-          <div className="vote-grid-support grid-cell">
-            <p className="support-text text-center">
-              <span className="hidden sm:inline">Use left/right arrow keys or </span>
-              Tap to choose
-            </p>
-          </div>
           
         </div>
       </div>
@@ -297,13 +314,6 @@ function VoteContent() {
           />
         </div>
         
-        {/* Support Text - Row 5 (Portrait) / Row 3 (Landscape) */}
-        <div className="vote-grid-support grid-cell">
-          <p className="support-text text-center">
-            <span className="hidden sm:inline">Use left/right arrow keys or </span>
-            Tap to choose
-          </p>
-        </div>
         
       </div>
     </div>
