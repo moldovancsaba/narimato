@@ -277,9 +277,8 @@ function VoteContent() {
           />
         </div>
         
-        {/* VS Indicator - Row 3 (Portrait) / Column 2 (Landscape) */}
-        {/* Hidden in portrait mode via CSS, visible in landscape */}
-        <div className="vote-grid-vs grid-cell">
+        {/* VS Indicator - Only visible in landscape mode */}
+        <div className="vote-grid-vs grid-cell hidden landscape:flex">
           <div className="vote-card-circle">
             😈
           </div>

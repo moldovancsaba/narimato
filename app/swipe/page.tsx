@@ -304,7 +304,7 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
     return (
       <PageLayout title="Swipe to Vote">
         <div className="h-screen w-screen fixed inset-0 overflow-hidden bg-background text-foreground">
-        <div className="page-grid-container swipe-grid h-full" style={{ paddingBottom: '70px' }}>
+        <div className="page-grid-container swipe-grid h-full">
             
             {/* Portrait Mode: Card - Row 2 */}
           <div className="swipe-grid-card grid-cell">
