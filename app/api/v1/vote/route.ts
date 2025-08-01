@@ -3,6 +3,7 @@ import dbConnect from '@/app/lib/utils/db';
 import { Play } from '@/app/lib/models/Play';
 import { Card } from '@/app/lib/models/Card';
 import { SessionResults } from '@/app/lib/models/SessionResults';
+import { GlobalRanking } from '@/app/lib/models/GlobalRanking';
 import { VoteRequestSchema } from '@/app/lib/validation/schemas';
 import { DeckEntity } from '@/app/lib/models/DeckEntity';
 import mongoose from 'mongoose';
@@ -639,15 +640,25 @@ async function performAtomicRankingUpdate(
       auditEntries: auditTrail.length
     });
     
-      // If play was completed, save results after transaction is committed
+      // If play was completed, save results and update global rankings after transaction is committed
       if (play.status === 'completed') {
         try {
           console.log(`💾 Play completed - attempting to save results after transaction commit...`);
           await savePlayResults(play);
           console.log(`✅ Play results saved successfully after completion for ${play.playUuid}`);
+          
+          // ✅ CRITICAL FIX: Trigger automatic global ranking recalculation
+          console.log(`🎯 Triggering global ranking recalculation after session completion...`);
+          await GlobalRanking.calculateRankings();
+          console.log(`✅ Global rankings updated successfully after session completion`);
+          
         } catch (resultsError) {
-          console.error(`❌ Failed to save play results after completion:`, resultsError);
-          // Don't throw error - play completion should not fail due to results saving
+          console.error(`❌ Failed to save play results or update rankings after completion:`, resultsError);
+          // Don't throw error - play completion should not fail due to results/ranking saving
+          // But log it for monitoring
+          if (resultsError instanceof Error && resultsError.message.includes('ranking')) {
+            console.error(`🚨 RANKING UPDATE FAILED for session ${play.playUuid}:`, resultsError.message);
+          }
         }
       }
     

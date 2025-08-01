@@ -18,28 +18,30 @@ export const VoteRequestSchema = z.object({
 });
 
 export const CreateCardSchema = z.object({
+  [CARD_FIELDS.UUID]: z.string().uuid().optional(), // UUID is generated server-side
   [CARD_FIELDS.TYPE]: z.enum(['text', 'media']),
   [CARD_FIELDS.CONTENT]: z.object({
     text: z.string().nullish(),
     mediaUrl: z.string().url().nullish()
-  }).superRefine((data, ctx) => {
-    if (ctx.path[0] === CARD_FIELDS.TYPE) {
-      const type = ctx.path[1];
-      if (type === 'text' && !data.text) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Text content is required for text type cards',
-          path: [CARD_FIELDS.CONTENT, 'text']
-        });
-      } else if (type === 'media' && !data.mediaUrl) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Media URL is required for media type cards',
-          path: [CARD_FIELDS.CONTENT, 'mediaUrl']
-        });
-      }
-    }
   }),
   [CARD_FIELDS.TITLE]: z.string().optional(),
   [CARD_FIELDS.TAGS]: z.array(z.string()).optional()
+}).superRefine((data, ctx) => {
+  // Validate content based on card type
+  const type = data[CARD_FIELDS.TYPE];
+  const content = data[CARD_FIELDS.CONTENT];
+  
+  if (type === 'text' && (!content.text || content.text.trim() === '')) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Text content is required for text type cards',
+      path: [CARD_FIELDS.CONTENT, 'text']
+    });
+  } else if (type === 'media' && !content.mediaUrl) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Media URL is required for media type cards',
+      path: [CARD_FIELDS.CONTENT, 'mediaUrl']
+    });
+  }
 });

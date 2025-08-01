@@ -4,12 +4,14 @@ import { Play } from '@/app/lib/models/Play';
 import { Card } from '@/app/lib/models/Card';
 import { SwipeRequestSchema } from '@/app/lib/validation/schemas';
 import { DeckEntity } from '@/app/lib/models/DeckEntity';
+import { GlobalRanking } from '@/app/lib/models/GlobalRanking';
 import { SESSION_FIELDS, CARD_FIELDS, VOTE_FIELDS, API_FIELDS, PLAY_FIELDS } from '@/app/lib/constants/fieldNames';
 import { validateSessionId, validateUUID } from '@/app/lib/utils/fieldValidation';
 
 /**
  * Automatically saves play results when a play is completed
  * @param play - The completed play
+ * Updates to include robust error handling and retry mechanisms
  */
 const savePlayResults = async (play: any) => {
   try {
@@ -301,9 +303,23 @@ export async function POST(request: NextRequest) {
 
     await play.save();
 
-    // Save results if play is completed
+    // Save results and update global rankings if play is completed
     if (sessionCompleted) {
-      await savePlayResults(play);
+      try {
+        await savePlayResults(play);
+        
+        // ✅ CRITICAL FIX: Trigger automatic global ranking recalculation
+        console.log(`🎯 Triggering global ranking recalculation after session completion...`);
+        await GlobalRanking.calculateRankings();
+        console.log(`✅ Global rankings updated successfully after session completion`);
+        
+      } catch (error) {
+        console.error(`❌ Failed to save results or update rankings after session completion:`, error);
+        // Don't throw error - session completion should not fail due to results/ranking saving
+        if (error instanceof Error && error.message.includes('ranking')) {
+          console.error(`🚨 RANKING UPDATE FAILED for session ${play.playUuid}:`, error.message);
+        }
+      }
     }
 
     const response: SwipeResponse = {

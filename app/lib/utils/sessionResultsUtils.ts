@@ -112,28 +112,29 @@ export const savePlayResults = async (play: any) => {
       completionRate: play.totalCards ? Math.round(((play.personalRanking?.length || 0) / play.totalCards) * 100) : 0
     };
 
-    // Check if results already exist for this play
-    const existingResults = await SessionResults.findOne({ sessionId: play.playUuid });
+    // Use atomic upsert to handle race conditions
+    const result = await SessionResults.findOneAndUpdate(
+      { sessionId: play.playUuid },
+      {
+        $set: {
+          personalRanking: personalRankingWithDetails,
+          sessionStatistics: playStatistics,
+          updatedAt: new Date()
+        },
+        $setOnInsert: {
+          createdAt: new Date()
+        }
+      },
+      { 
+        upsert: true, 
+        new: true 
+      }
+    );
     
-    if (existingResults) {
-      // Update existing results
-      existingResults.personalRanking = personalRankingWithDetails;
-      existingResults.sessionStatistics = playStatistics;
-      existingResults.updatedAt = new Date();
-      await existingResults.save();
-      console.log(`Updated existing play results for ${play.playUuid}`);
+    if (result) {
+      console.log(`✓ Play results saved/updated atomically for ${play.playUuid}`);
     } else {
-      // Create new play results
-      const playResults = new SessionResults({
-        sessionId: play.playUuid,
-        personalRanking: personalRankingWithDetails,
-        sessionStatistics: playStatistics,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-
-      await playResults.save();
-      console.log(`Created new play results for ${play.playUuid}`);
+      console.warn(`⚠️ Failed to save play results for ${play.playUuid}`);
     }
   } catch (error) {
     console.error(`Failed to save play results for ${play.playUuid}:`, error);

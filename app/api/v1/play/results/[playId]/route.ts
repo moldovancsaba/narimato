@@ -77,25 +77,32 @@ export async function GET(
 
     if (livePlay && livePlay.status === 'completed') {
 
-      // Try to save the play results now
+      // Try to save the play results now with race condition handling
       try {
         await savePlayResults(livePlay);
-
-        // Retry fetching the saved results
-        const newlySavedResults = await SessionResults.findOne({ sessionId: playId });
-        if (newlySavedResults) {
-          console.log(`Successfully saved and retrieved results for play ${playId}`);
-          return NextResponse.json({
-            personalRanking: newlySavedResults.personalRanking,
-            statistics: newlySavedResults.sessionStatistics,
-            isShared: true,
-            createdAt: newlySavedResults.createdAt,
-            updatedAt: newlySavedResults.updatedAt
-          });
+        console.log(`✓ Results saved for play ${playId}`);
+      } catch (saveError: any) {
+        // Handle duplicate key error gracefully - it means results were already saved by another request
+        if (saveError.code === 11000) {
+          console.log(`⚠️ Results already exist for play ${playId} (race condition handled)`);
+        } else {
+          console.error(`Failed to save play results for ${playId}:`, saveError);
         }
-      } catch (saveError) {
-        console.error(`Failed to save play results for ${playId}:`, saveError);
-        // Don't return error here, continue to check other options
+      }
+      
+      // Always try to fetch the saved results (they should exist now)
+      const newlySavedResults = await SessionResults.findOne({ sessionId: playId });
+      if (newlySavedResults) {
+        console.log(`Successfully retrieved results for play ${playId}`);
+        return NextResponse.json({
+          personalRanking: newlySavedResults.personalRanking,
+          statistics: newlySavedResults.sessionStatistics,
+          isShared: true,
+          createdAt: newlySavedResults.createdAt,
+          updatedAt: newlySavedResults.updatedAt
+        });
+      } else {
+        console.error(`Results not found after save attempt for play ${playId}`);
       }
     }
 

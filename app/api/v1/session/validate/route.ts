@@ -3,6 +3,7 @@ import dbConnect from '@/app/lib/utils/db';
 import { Play } from '@/app/lib/models/Play';
 import { SESSION_FIELDS, API_FIELDS, PLAY_FIELDS } from '@/app/lib/constants/fieldNames';
 import { validateSessionId } from '@/app/lib/utils/fieldValidation';
+import { forceCompletionCheckAndUpdate, validatePlayState } from '@/app/lib/utils/playCompletionUtils';
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,6 +30,18 @@ export async function GET(request: NextRequest) {
     const version = play?.version || 0;
 
     console.log(`🔍 Play validation for ${playUuid.substring(0, 8)}...: ${play ? 'VALID' : 'INVALID'}`);
+
+if (play && play.status === 'active') {
+      const completionUpdated = await forceCompletionCheckAndUpdate(play);
+      if (completionUpdated) {
+        console.log(`🔄 Play ${play.playUuid} was stuck and force-completed during validation`);
+      }
+    }
+
+    const stateValidation = validatePlayState(play);
+    if (!stateValidation.isValid) {
+      console.warn(`⚠️ Play ${play.playUuid} has state inconsistencies:`, stateValidation.issues);
+    }
 
     return new NextResponse(
       JSON.stringify({ 

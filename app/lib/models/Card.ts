@@ -51,6 +51,7 @@ CardSchema.pre('save', function(next) {
   if (this.isModified()) {
     this.updatedAt = new Date();
   }
+  this.isActive = this.isActive ?? true; // Default to active if not set
   next();
 });
 

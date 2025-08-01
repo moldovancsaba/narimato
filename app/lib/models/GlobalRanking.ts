@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
-import { Session } from './Session';
-import { VOTE_FIELDS } from '../constants/fieldNames';
+import { Play } from './Play';
+import { VOTE_FIELDS, PLAY_FIELDS } from '../constants/fieldNames';
 
 // Constants
 const RECENT_SESSIONS_LIMIT = 500; // Increased for better ELO accuracy
@@ -51,24 +51,28 @@ function updateEloRating(currentRating: number, expectedScore: number, actualSco
 
 // Add methods for ELO-based ranking calculation
 GlobalRankingSchema.statics.calculateRankings = async function() {
-  console.log('Starting ELO-based global ranking calculation...');
+  console.log('🎯 Starting ELO-based global ranking calculation...');
   
-  // Get completed sessions with votes
-  const completedSessions = await Session.find({
-    status: 'completed',
+  const startTime = Date.now();
+  let errorCount = 0;
+  let warningCount = 0;
+  
+  // ✅ CRITICAL FIX: Query Play model instead of Session model
+  const completedPlays = await Play.find({
+    [PLAY_FIELDS.STATUS]: 'completed',
     votes: { $exists: true, $ne: [] },
-    completedAt: { $exists: true }
+    [PLAY_FIELDS.COMPLETED_AT]: { $exists: true }
   })
-    .sort({ completedAt: -1 })
+    .sort({ [PLAY_FIELDS.COMPLETED_AT]: -1 })
     .limit(RECENT_SESSIONS_LIMIT)
     .select('votes completedAt');
 
-  if (completedSessions.length === 0) {
-    console.log('No completed sessions with votes found for ELO calculation');
+  if (completedPlays.length === 0) {
+    console.log('No completed plays with votes found for ELO calculation');
     return;
   }
 
-  console.log(`Processing ${completedSessions.length} completed sessions for ELO calculation`);
+  console.log(`Processing ${completedPlays.length} completed plays for ELO calculation`);
 
   // Get all existing rankings to start with current ELO ratings
   const existingRankings = await this.find({});
@@ -88,18 +92,48 @@ GlobalRankingSchema.statics.calculateRankings = async function() {
   // Process all votes to update ELO ratings
   const allVotes: Array<{ cardA: string; cardB: string; winner: string; timestamp: Date }> = [];
   
-  completedSessions.forEach(session => {
-    if (session.votes && Array.isArray(session.votes)) {
-      session.votes.forEach((vote: any) => {
-        if (vote[VOTE_FIELDS.CARD_A] && vote[VOTE_FIELDS.CARD_B] && vote[VOTE_FIELDS.WINNER]) {
-          allVotes.push({
-            cardA: vote[VOTE_FIELDS.CARD_A],
-            cardB: vote[VOTE_FIELDS.CARD_B],
-            winner: vote[VOTE_FIELDS.WINNER],
-            timestamp: vote[VOTE_FIELDS.TIMESTAMP] || session.completedAt
-          });
+  completedPlays.forEach(play => {
+    if (play.votes && Array.isArray(play.votes)) {
+      play.votes.forEach((vote: any, voteIndex: number) => {
+        // ✅ CRITICAL FIX: Add comprehensive vote validation
+        try {
+          if (vote[VOTE_FIELDS.CARD_A] && vote[VOTE_FIELDS.CARD_B] && vote[VOTE_FIELDS.WINNER]) {
+            // Validate that winner is one of the two cards being compared
+            if (vote[VOTE_FIELDS.WINNER] !== vote[VOTE_FIELDS.CARD_A] && vote[VOTE_FIELDS.WINNER] !== vote[VOTE_FIELDS.CARD_B]) {
+              console.warn(`⚠️ Invalid vote in play ${play.playUuid || 'unknown'} [${voteIndex}]: winner '${vote[VOTE_FIELDS.WINNER]}' is not cardA '${vote[VOTE_FIELDS.CARD_A]}' or cardB '${vote[VOTE_FIELDS.CARD_B]}'`);
+              warningCount++;
+              return; // Skip this invalid vote
+            }
+            
+            // Validate that cards are different
+            if (vote[VOTE_FIELDS.CARD_A] === vote[VOTE_FIELDS.CARD_B]) {
+              console.warn(`⚠️ Invalid vote in play ${play.playUuid || 'unknown'} [${voteIndex}]: cardA and cardB are the same (${vote[VOTE_FIELDS.CARD_A]})`);
+              warningCount++;
+              return; // Skip this invalid vote
+            }
+            
+            allVotes.push({
+              cardA: vote[VOTE_FIELDS.CARD_A],
+              cardB: vote[VOTE_FIELDS.CARD_B],
+              winner: vote[VOTE_FIELDS.WINNER],
+              timestamp: vote[VOTE_FIELDS.TIMESTAMP] || play.completedAt
+            });
+          } else {
+            console.warn(`⚠️ Incomplete vote data in play ${play.playUuid || 'unknown'} [${voteIndex}]:`, {
+              hasCardA: !!vote[VOTE_FIELDS.CARD_A],
+              hasCardB: !!vote[VOTE_FIELDS.CARD_B],
+              hasWinner: !!vote[VOTE_FIELDS.WINNER]
+            });
+            warningCount++;
+          }
+        } catch (voteError) {
+          console.error(`❌ Error processing vote in play ${play.playUuid || 'unknown'} [${voteIndex}]:`, voteError);
+          errorCount++;
         }
       });
+    } else {
+      console.warn(`⚠️ Play ${play.playUuid || 'unknown'} has no valid votes array`);
+      warningCount++;
     }
   });
 
@@ -185,18 +219,36 @@ GlobalRankingSchema.statics.calculateRankings = async function() {
   });
 
   if (bulkOps.length > 0) {
-    await this.bulkWrite(bulkOps);
-    console.log(`Updated ELO ratings for ${bulkOps.length} cards based on ${allVotes.length} votes from ${completedSessions.length} sessions`);
-    
-    // Log some statistics
-    const ratings = Array.from(eloRatings.values());
-    const avgRating = ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
-    const minRating = Math.min(...ratings);
-    const maxRating = Math.max(...ratings);
-    
-    console.log(`ELO Statistics - Avg: ${Math.round(avgRating)}, Min: ${minRating}, Max: ${maxRating}`);
+    try {
+      await this.bulkWrite(bulkOps);
+      
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+      
+      console.log(`✅ Updated ELO ratings for ${bulkOps.length} cards based on ${allVotes.length} votes from ${completedPlays.length} plays`);
+      
+      // Log some statistics
+      const ratings = Array.from(eloRatings.values());
+      const avgRating = ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length;
+      const minRating = Math.min(...ratings);
+      const maxRating = Math.max(...ratings);
+      
+      console.log(`📊 ELO Statistics - Avg: ${Math.round(avgRating)}, Min: ${minRating}, Max: ${maxRating}`);
+      console.log(`⏱️ Ranking calculation completed in ${duration}ms`);
+      
+      if (errorCount > 0 || warningCount > 0) {
+        console.log(`🚨 Ranking calculation completed with ${errorCount} errors and ${warningCount} warnings`);
+      } else {
+        console.log(`✅ Ranking calculation completed successfully with no errors or warnings`);
+      }
+      
+    } catch (bulkWriteError) {
+      console.error(`❌ CRITICAL: Failed to update ELO ratings in database:`, bulkWriteError);
+      throw new Error(`Ranking update failed: ${bulkWriteError instanceof Error ? bulkWriteError.message : 'Database write error'}`);
+    }
   } else {
-    console.log('No cards found to update ELO ratings');
+    console.log('⚠️ No cards found to update ELO ratings');
+    console.log(`⏱️ Ranking calculation completed in ${Date.now() - startTime}ms (no updates needed)`);
   }
 };
 
