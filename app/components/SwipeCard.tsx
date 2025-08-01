@@ -246,21 +246,21 @@ const SwipeCard = React.memo(function SwipeCard({
       className={`
         absolute card-container
         ${swipeState === 'idle' ? 'cursor-grab active:cursor-grabbing' : ''}
-        ${swipeState === 'loading' ? 'opacity-50' : ''}
-        ${swipeState === 'error' ? 'border-2 border-red-500' : ''}
-        ${swipeState === 'voted' ? 'opacity-0 transition-opacity duration-300' : ''}
+        ${swipeState === 'loading' ? 'swipe-loading' : ''}
+        ${swipeState === 'error' ? 'swipe-error' : ''}
+        ${swipeState === 'voted' ? 'swipe-voted' : ''}
       `}
     >
       {/* Loading overlay */}
       {swipeState === 'loading' && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/20 dark:bg-black/40 rounded-xl z-10">
+        <div className="swipe-overlay swipe-loading-overlay">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent"></div>
         </div>
       )}
       
       {/* Error overlay */}
       {swipeState === 'error' && (
-        <div className="absolute inset-0 flex items-center justify-center bg-red-500/20 rounded-xl z-10">
+        <div className="swipe-overlay swipe-error-overlay">
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg text-red-600 dark:text-red-300 text-center">
             <p className="font-semibold">Error processing vote</p>
             <p className="text-sm mt-1">Please try again</p>
@@ -271,12 +271,12 @@ const SwipeCard = React.memo(function SwipeCard({
       {/* Vote direction indicator */}
       {swipeState === 'swiping' && (
         <div className={`
-          absolute inset-0 flex items-center justify-center rounded-xl z-10
-          ${swipeDirection === 'right' ? 'bg-green-500/20' : 'bg-red-500/20'}
+          swipe-overlay
+          ${swipeDirection === 'right' ? 'swipe-direction-right' : 'swipe-direction-left'}
         `}>
           <div className={`
-            text-4xl font-bold transform transition-transform
-            ${swipeDirection === 'right' ? 'text-green-600 rotate-[-30deg]' : 'text-red-600 rotate-[30deg]'}
+            swipe-direction-text
+            ${swipeDirection === 'right' ? 'swipe-direction-text-right' : 'swipe-direction-text-left'}
           `}>
             {swipeDirection === 'right' ? 'YES' : 'NO'}
           </div>

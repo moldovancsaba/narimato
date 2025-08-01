@@ -11,7 +11,7 @@ export default function CompletedPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 80px)' }}>
+        <div className="flex items-center justify-center page-height">
           <div className="loading-spinner"></div>
           <span className="ml-2 text-lg">Loading results...</span>
         </div>
@@ -135,7 +135,7 @@ const urlPlayId = searchParams.get('sessionId'); // Using sessionId parameter na
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 80px)' }}>
+      <div className="flex items-center justify-center page-height">
         <div className="loading-spinner"></div>
         <span className="ml-2 text-lg">Loading results...</span>
       </div>
@@ -255,7 +255,7 @@ const urlPlayId = searchParams.get('sessionId'); // Using sessionId parameter na
                 className="transition-transform duration-200"
               >
                 <div className="absolute -top-2 -left-2 z-20">
-                  <div className="ranking-position">#{item.rank}</div>
+                  <div className={`ranking-position ${item.rank === 1 ? 'ranking-position-first' : ''}`}>#{item.rank}</div>
                 </div>
               </BaseCard>
             </div>
@@ -266,7 +266,7 @@ const urlPlayId = searchParams.get('sessionId'); // Using sessionId parameter na
       {statistics && (
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-4">Session Statistics</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="stats-grid">
               <div className="statistic-card">
                 <div className="text-2xl font-bold text-primary">{statistics.totalCards}</div>
                 <div className="text-sm text-muted">Total Cards</div>

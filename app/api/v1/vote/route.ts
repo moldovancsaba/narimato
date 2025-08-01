@@ -451,7 +451,7 @@ const savePlayResults = async (play: any) => {
           cardId,
           allRequestedIds: cardIds,
           foundCardIds: cards.map(c => c.uuid),
-          missingCards: cardIds.filter(id => !cardMap.has(id))
+          missingCards: cardIds.filter((id: string) => !cardMap.has(id))
         });
       }
       return {
@@ -471,7 +471,7 @@ const savePlayResults = async (play: any) => {
       originalRankingLength: cardIds.length,
       finalRankingLength: personalRankingWithDetails.length,
       filteredOutCount: cardIds.length - personalRankingWithDetails.length,
-      finalRanking: personalRankingWithDetails.map(item => ({cardId: item.cardId, rank: item.rank}))
+      finalRanking: personalRankingWithDetails.map((item: any) => ({cardId: item.cardId, rank: item.rank}))
     });
 
     // Calculate play statistics

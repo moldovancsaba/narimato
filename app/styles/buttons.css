@@ -1,0 +1,209 @@
+  /* Button Components - Mobile First */
+  .btn {
+    @apply inline-flex items-center justify-center font-medium rounded-lg;
+    @apply transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply disabled:opacity-50 disabled:pointer-events-none;
+    /* Mobile: larger touch targets */
+    min-height: 44px;
+    padding: 12px 16px;
+    font-size: 14px;
+    border-radius: var(--border-radius-mobile);
+    box-shadow: var(--shadow-button-mobile);
+  }
+  
+  /* Desktop button styling */
+  @media (min-width: 640px) {
+    .btn {
+      min-height: auto;
+      padding: 8px 16px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow-button);
+    }
+  }
+  
+  .btn-primary {
+    @apply bg-blue-700 text-white focus:ring-blue-500; /* Enhanced contrast */
+    @apply dark:bg-blue-600 dark:focus:ring-blue-400;
+  }
+  
+  /* Hover effects only on desktop */
+  @media (hover: hover) and (pointer: fine) {
+    .btn-primary:hover {
+      @apply bg-blue-700 dark:bg-blue-600;
+    }
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-200 text-gray-800 focus:ring-gray-500; /* Enhanced contrast */
+    @apply dark:bg-gray-600 dark:text-gray-100 dark:focus:ring-gray-400;
+  }
+  
+  @media (hover: hover) and (pointer: fine) {
+    .btn-secondary:hover {
+      @apply bg-gray-200 dark:bg-gray-600;
+    }
+  }
+  
+  .btn-success {
+    @apply bg-green-700 text-white focus:ring-green-500; /* Enhanced contrast */
+    @apply dark:bg-green-600 dark:focus:ring-green-400;
+  }
+  
+  @media (hover: hover) and (pointer: fine) {
+    .btn-success:hover {
+      @apply bg-green-700 dark:bg-green-600;
+    }
+  }
+  
+  .btn-danger {
+    @apply bg-red-700 text-white focus:ring-red-500; /* Enhanced contrast */
+    @apply dark:bg-red-600 dark:focus:ring-red-400;
+  }
+  
+  @media (hover: hover) and (pointer: fine) {
+    .btn-danger:hover {
+      @apply bg-red-700 dark:bg-red-600;
+    }
+  }
+  
+  .btn-accent {
+    @apply bg-purple-600 text-white focus:ring-purple-500;
+    @apply dark:bg-purple-500 dark:focus:ring-purple-400;
+  }
+  
+  @media (hover: hover) and (pointer: fine) {
+    .btn-accent:hover {
+      @apply bg-purple-700 dark:bg-purple-600;
+    }
+  }
+  
+  .btn-disabled {
+    @apply bg-gray-400 text-gray-600 cursor-not-allowed;
+    @apply dark:bg-gray-600 dark:text-gray-400;
+  }
+  
+  /* Button size variants */
+  .btn-lg {
+    min-height: 52px;
+    padding: 16px 24px;
+    font-size: 16px;
+  }
+  
+  @media (min-width: 640px) {
+    .btn-lg {
+      min-height: auto;
+      padding: 12px 24px;
+    }
+  }
+  
+  .btn-sm {
+    min-height: 36px;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  @media (min-width: 640px) {
+    .btn-sm {
+      min-height: auto;
+      padding: 6px 12px;
+    }
+  }
+  
+  /* Swipe Button Components - Mobile First */
+  .swipe-button {
+    @apply rounded-full shadow-lg transition-all duration-200 transform text-4xl;
+    @apply focus:outline-none;
+    /* Mobile: larger touch targets */
+    width: 80px;
+    height: 80px;
+  }
+
+  @media (min-width: 640px) {
+    .swipe-button {
+      width: 72px;
+      height: 72px;
+    }
+  }
+  
+  /* Touch-friendly active states */
+  .swipe-button:active {
+    @apply scale-90;
+  }
+  
+  /* Hover effects only on desktop */
+  @media (hover: hover) and (pointer: fine) {
+    .swipe-button:hover {
+      @apply scale-90;
+    }
+    
+    .swipe-button:focus {
+      @apply ring-4 ring-offset-2;
+    }
+  }
+
+  .swipe-button-left {
+    @apply bg-red-500 text-white;
+  }
+  
+  @media (hover: hover) and (pointer: fine) {
+    .swipe-button-left:hover {
+      @apply bg-red-600;
+    }
+    
+    .swipe-button-left:focus {
+      @apply ring-red-300;
+    }
+  }
+
+  .swipe-button-right {
+    @apply bg-green-500 text-white;
+  }
+  
+  @media (hover: hover) and (pointer: fine) {
+    .swipe-button-right:hover {
+      @apply bg-green-600;
+    }
+    
+    .swipe-button-right:focus {
+      @apply ring-green-300;
+    }
+  }
+
+  /* Support text and circles */
+  .support-text {
+    @apply text-sm font-bold;
+    color: var(--text-primary);
+    /* High contrast for dark mode */
+    @apply dark:text-white;
+  }
+
+  .swipe-button-circle {
+    @apply rounded-full flex items-center justify-center text-5xl shadow-lg transition-transform transform hover:scale-95 active:scale-90;
+    width: 80px;
+    height: 80px;
+    min-width: 80px;
+    min-height: 80px;
+    aspect-ratio: 1;
+  }
+
+  .vote-card-circle {
+    @apply rounded-full flex items-center justify-center text-2xl;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    aspect-ratio: 1;
+    background-color: var(--primary);
+    color: var(--background);
+  }
+
+  .dark .vote-card-circle {
+    background-color: var(--primary-hover);
+  }
+
+  /* Navigation Components */
+  .nav-button {
+    @apply flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-lg;
+    @apply text-gray-700 hover:bg-gray-100 transition-colors duration-200;
+    @apply dark:text-gray-200 dark:hover:bg-gray-700;
+  }

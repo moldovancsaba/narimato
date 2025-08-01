@@ -90,10 +90,9 @@ const BaseCard = React.memo(function BaseCard({
         <img
           src={content.mediaUrl}
           alt="Card content"
-          className="card-media"
+          className="card-media card-no-select"
           draggable={false}
           onDragStart={(e) => e.preventDefault()}
-          style={{ userSelect: 'none', pointerEvents: 'none' }}
         />
       ) : (
         <div className="card-content">

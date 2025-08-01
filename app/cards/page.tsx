@@ -137,7 +137,7 @@ export default function CardsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 80px)' }}>
+      <div className="flex items-center justify-center page-height">
         <div className="loading-spinner"></div>
         <span className="ml-2 text-lg">Loading cards...</span>
       </div>
@@ -145,7 +145,7 @@ export default function CardsPage() {
   }
 
   return (
-    <PageLayout title="Card Management">
+    <PageLayout title="Card Management" className="gradient-bg-2layer">
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-4">All Cards</h2>
       </div>
@@ -179,7 +179,7 @@ export default function CardsPage() {
               )}
             </BaseCard>
 
-            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-75 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+            <div className="card-overlay card-overlay-hover rounded-lg">
               <div className="flex flex-col gap-2">
                 <button
                   onClick={() => toggleCardStatus(card[CARD_FIELDS.UUID], card[CARD_FIELDS.IS_ACTIVE])}
@@ -234,8 +234,8 @@ export default function CardsPage() {
       </div>
 
       {isEditing && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="content-card w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="modal-backdrop">
+          <div className="modal-content">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Edit Card</h2>
               <button

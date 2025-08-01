@@ -259,9 +259,13 @@ function VoteContent() {
   }
 
   return (
-    <PageLayout title="Vote to Rank">
-      <div className="w-screen fixed inset-0 overflow-hidden bg-background text-foreground mobile-safe-container">
-        <div className="page-grid-container vote-grid h-full">
+    <div className="w-screen fixed inset-0 overflow-hidden bg-background text-foreground mobile-safe-container">
+      <div className="page-grid-container vote-grid gradient-bg-2layer h-full">
+        
+        {/* Title - Row 1 */}
+        <div className="vote-grid-title grid-cell">
+          <h1 className="text-3xl font-bold text-center">Vote to Rank</h1>
+        </div>
         
         {/* Card 1 - Row 2 (Portrait) / Column 1 (Landscape) */}
         <div className="vote-grid-card1 grid-cell">
@@ -275,7 +279,7 @@ function VoteContent() {
         </div>
         
         {/* VS Indicator - Only visible in landscape mode */}
-        <div className="vote-grid-vs grid-cell hidden landscape:flex">
+        <div className="vote-grid-vs grid-cell landscape-show">
           <div className="vote-card-circle">
             😈
           </div>
@@ -295,6 +299,5 @@ function VoteContent() {
         
       </div>
     </div>
-    </PageLayout>
   );
 }

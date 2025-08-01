@@ -147,7 +147,7 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 80px)' }}>
+      <div className="flex items-center justify-center page-height">
         <div className="loading-spinner"></div>
         <span className="ml-2 text-lg">Loading decks...</span>
       </div>
@@ -164,7 +164,9 @@ export default function HomePage() {
           </p>
         </div>
         
-        <h2 className="text-xl font-semibold mb-4 text-center">Choose a Deck</h2>
+        <div className="text-center mb-6">
+          <h2 className="text-xl font-semibold">Choose a Deck</h2>
+        </div>
       </div>
 
       {error && (

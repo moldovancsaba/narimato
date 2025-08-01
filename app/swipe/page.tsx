@@ -314,7 +314,7 @@ function SwipeContent({ onPlayIdChange }: SwipeContentProps) {
 
     return (
         <div className="w-screen fixed inset-0 overflow-hidden bg-background text-foreground mobile-safe-container">
-        <div className="page-grid-container swipe-grid h-full">
+        <div className="page-grid-container swipe-grid gradient-bg-2layer h-full">
             
             {/* Title Area - Row 1 */}
             <div className="swipe-grid-title page-title-grid">

@@ -665,7 +665,7 @@ export default function CardEditorPage() {
         <div className="status-success p-4 mb-4 rounded-lg">{success}</div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="editor-grid">
         {/* Editor Panel */}
         <div className="space-y-6">
           <div className="content-card">
@@ -835,7 +835,7 @@ export default function CardEditorPage() {
           <div className="content-card overflow-hidden">
             <h2 className="text-xl font-semibold mb-4">Live Preview</h2>
             
-            <div className="flex justify-center items-center min-h-[400px] bg-gray-50 dark:bg-gray-800 rounded-lg p-4 overflow-hidden">
+            <div className="preview-container">
               {isLoadingFont ? (
                 <div className="text-center">
                   <div className="loading-spinner mx-auto mb-2"></div>

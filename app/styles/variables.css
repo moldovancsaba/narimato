@@ -1,0 +1,101 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Light theme colors */
+  --background: #f9fafb;
+  --foreground: #171717;
+  --primary: #102a43; /* Improved for WCAG contrast */
+  --primary-hover: #2563eb;
+  --secondary: #243b53; /* Improved for WCAG contrast */
+  --success: #1c4532; /* Improved for WCAG contrast */
+  --success-hover: #146356; /* Improved for WCAG contrast */
+  --danger: #b91c1c; /* Improved for WCAG contrast */
+  --danger-hover: #bb2525; /* Improved for WCAG contrast */
+  --warning: #b45309; /* Improved for WCAG contrast */
+  --info: #06b6d4;
+  
+  /* Additional theme variables */
+  --card-background: #ffffff;
+  --text-primary: #171717;
+  --text-secondary: #374151; /* Improved for WCAG contrast */
+  --text-muted: #6b7280; /* Improved for WCAG contrast */
+  --border-color: #e5e7eb;
+  --input-background: #ffffff;
+  --nav-background: #f9fafb;
+  --accent: #8b5cf6;
+  --accent-hover: #7c3aed;
+  
+  /* Mobile-first shadows - light theme */
+  --shadow-card-mobile: 0 4px 8px -2px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-card: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-button-mobile: 0 2px 4px -1px rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-button: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  
+  /* Mobile-first border radius */
+  --border-radius-mobile: 8px;
+  --border-radius: 12px;
+  --border-radius-lg-mobile: 12px;
+  --border-radius-lg: 16px;
+  
+  /* Mobile-first spacing */
+  --spacing-mobile: 16px;
+  --spacing: 24px;
+  --spacing-lg: 32px;
+  
+  --transition: all 0.2s ease-in-out;
+  
+  /* Global scale values for consistent interactive scaling */
+  --scale-initial: 1;
+  --scale-hover: 0.95;
+  --scale-selected: 0.95;
+  --scale-unselected: 0.9;
+  --scale-default: 1;
+  --scale-active: 0.9;
+  
+  /* Safe area insets for mobile devices */
+  --safe-area-inset-top: env(safe-area-inset-top);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom);
+  --safe-area-inset-left: env(safe-area-inset-left);
+  --safe-area-inset-right: env(safe-area-inset-right);
+}
+
+/* Dark theme overrides */
+[data-theme="dark"] {
+  /* Dark theme colors */
+  --background: #0a0a0a;
+  --foreground: #f5f5f5;
+  --primary: #1e3a8a; /* Improved for WCAG contrast */
+  --primary-hover: #3b82f6;
+  --secondary: #64748b; /* Improved for WCAG contrast */
+  --success: #065f46; /* Improved for WCAG contrast */
+  --success-hover: #0e9f6e; /* Improved for WCAG contrast */
+  --danger: #c53030; /* Improved for WCAG contrast */
+  --danger-hover: #e53e3e; /* Improved for WCAG contrast */
+  --warning: #dd6b20; /* Improved for WCAG contrast */
+  --info: #38bdf8;
+  
+  /* Additional theme variables - dark */
+  --card-background: #1a1a1a;
+  --text-primary: #f5f5f5;
+  --text-secondary: #94a3b8; /* Improved for WCAG contrast */
+  --text-muted: #4b5563; /* Improved for WCAG contrast */
+  --border-color: #374151;
+  --input-background: #1f2937;
+  --nav-background: #111827;
+  --accent: #a78bfa;
+  --accent-hover: #8b5cf6;
+  
+  /* Dark theme shadows - enhanced for mobile-first approach */
+  --shadow-card-mobile: 0 4px 8px -2px rgb(255 255 255 / 0.05), 0 2px 4px -2px rgb(255 255 255 / 0.1);
+  --shadow-card: 0 10px 15px -3px rgb(255 255 255 / 0.08), 0 4px 6px -4px rgb(255 255 255 / 0.12);
+  --shadow-button-mobile: 0 2px 4px -1px rgb(255 255 255 / 0.05), 0 1px 2px -1px rgb(255 255 255 / 0.08);
+  --shadow-button: 0 4px 6px -1px rgb(255 255 255 / 0.08), 0 2px 4px -2px rgb(255 255 255 / 0.1);
+  
+  /* Enhanced dark mode variables for better mobile visibility */
+  --mobile-bg-overlay: rgba(255, 255, 255, 0.03);
+  --mobile-border-highlight: rgba(255, 255, 255, 0.1);
+  --desktop-bg-overlay: rgba(255, 255, 255, 0.05);
+  --desktop-border-highlight: rgba(255, 255, 255, 0.15);
+}

@@ -14,7 +14,7 @@ const GlobalNavigation = React.memo(function GlobalNavigation() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-nav-background border-t border-border-color backdrop-blur-md mobile-safe-area" style={{height: '60px'}}>
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-nav-background border-t border-border-color backdrop-blur-md mobile-safe-area nav-height">
       <div className="flex justify-around items-center px-2 py-3 max-w-screen-xl mx-auto h-full">
         {navigationItems.map((item) => {
           const isActive = pathname === item.href || 

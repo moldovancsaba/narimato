@@ -6,11 +6,12 @@ import { motion } from 'framer-motion';
 interface PageLayoutProps {
   children: React.ReactNode;
   title: string;
+  className?: string;
 }
 
-const PageLayout = React.memo(function PageLayout({ children, title }: PageLayoutProps) {
+const PageLayout = React.memo(function PageLayout({ children, title, className }: PageLayoutProps) {
   return (
-    <div className="page-grid-container">
+    <div className={`page-grid-container ${className || ''}`}>
       <div className="page-title-grid">
         <h1 className="text-3xl font-bold text-center">{title}</h1>
       </div>

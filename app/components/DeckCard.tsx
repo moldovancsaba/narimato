@@ -27,7 +27,7 @@ export default function DeckCard({
       className="relative group cursor-pointer"
       onClick={onClick}
     >
-      <div className="card-container transition-all duration-200 group-hover:shadow-lg" style={{ background: 'linear-gradient(135deg, #8b5cf6, #a855f7, #c084fc)' }}>
+      <div className="card-container transition-all duration-200 group-hover:shadow-lg deck-card-gradient">
         {/* Main content */}
         <div className="card-content">
           <div className="text-center">
@@ -42,14 +42,14 @@ export default function DeckCard({
 
         {/* Loading state */}
         {isLoading && (
-          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
+          <div className="card-overlay card-overlay-loading rounded-lg">
             <div className="loading-spinner mr-2"></div>
             <span className="text-white">Starting...</span>
           </div>
         )}
 
         {/* Hover effect */}
-        <div className="absolute inset-0 bg-white bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+        <div className="card-overlay card-overlay-deck-hover rounded-lg">
           <div className="font-semibold bg-black bg-opacity-50 px-4 py-2 rounded-lg flex items-center gap-2" style={{ color: 'var(--primary)' }}>
             {showRankingsIcon && (
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">

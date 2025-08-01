@@ -44,7 +44,7 @@ export default function RootLayout({
         style={{
           backgroundColor: 'var(--background)',
           color: 'var(--text-primary)',
-          paddingBottom: '80px' // Space for bottom navigation
+          paddingBottom: '80px'
         }}
       >
         <ChunkErrorProvider>

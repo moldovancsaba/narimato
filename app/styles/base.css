@@ -1,0 +1,46 @@
+body {
+  background-color: var(--background);
+  color: var(--text-primary);
+  @apply antialiased;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  @apply font-semibold tracking-tight gradient-title;
+}
+
+.gradient-title {
+  background: linear-gradient(90deg, #00f0ff, #5773ff, #ff007a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Dark mode gradient adjustment for better visibility */
+.dark .gradient-title {
+  background: linear-gradient(90deg, #22d3ee, #818cf8, #fb7185);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+h1 {
+  @apply text-3xl md:text-4xl;
+}
+
+h2 {
+  @apply text-2xl md:text-3xl;
+}
+
+h3 {
+  @apply text-xl md:text-2xl;
+}
+
+/* No scroll class to prevent scrolling on specific pages */
+body.no-scroll {
+  overflow: hidden;
+  height: 100vh;
+  position: fixed;
+  width: 100%;
+}
