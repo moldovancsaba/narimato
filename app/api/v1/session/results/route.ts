@@ -10,7 +10,16 @@ export async function GET(request: NextRequest) {
 
     if (!sessionId) {
       return new NextResponse(
-        JSON.stringify({ error: 'Session ID is required' }),
+        JSON.stringify({ 
+          error: 'Session ID is required',
+          errorCode: 'MISSING_SESSION_ID',
+          details: 'A valid session ID must be provided to retrieve results.',
+          suggestions: [
+            'Complete a voting session first',
+            'Check that you\'re accessing this from a completed session',
+            'Try starting a new session'
+          ]
+        }),
         { status: 400 }
       );
     }
@@ -21,7 +30,16 @@ export async function GET(request: NextRequest) {
     const session = await Session.findOne({ sessionId });
     if (!session) {
       return new NextResponse(
-        JSON.stringify({ error: 'Session not found' }),
+        JSON.stringify({ 
+          error: 'Session not found',
+          errorCode: 'SESSION_NOT_FOUND',
+          details: 'This session may have expired or never existed. Live sessions are temporary and may not be available after some time.',
+          suggestions: [
+            'Try completing a new session',
+            'Check if the session ID is correct',
+            'Recent sessions may take a moment to become available'
+          ]
+        }),
         { status: 404 }
       );
     }

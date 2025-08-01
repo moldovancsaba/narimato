@@ -70,9 +70,19 @@ export async function GET(
       }
     }
 
-    // If no saved results found, return error
+    // If no saved results found, return detailed error information
+    console.log(`Session ${sessionId} not found in either saved results or live sessions`);
     return NextResponse.json(
-      { error: 'Session results not found or not shareable' },
+      { 
+        error: 'Session results not found or not shareable',
+        errorCode: 'SESSION_NOT_FOUND',
+        details: 'This session may have expired, was never completed, or the results have not been saved yet.',
+        suggestions: [
+          'Try completing a new session',
+          'Check if the session link is correct',
+          'The session may need a few moments to process results'
+        ]
+      },
       { status: 404 }
     );
 

@@ -28,7 +28,7 @@ function CompletedContent() {
   const [ranking, setRanking] = useState<any[]>([]);
   const [statistics, setStatistics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<any>(null);
   const [isShared, setIsShared] = useState(false);
   const [shareableUrl, setShareableUrl] = useState<string>('');
 
@@ -45,7 +45,7 @@ function CompletedContent() {
             const data = await response.json();
             
             if (data.error) {
-              setError(data.error);
+              setError(data);
             } else {
               setRanking(data.personalRanking || []);
               setStatistics(data.statistics || {});
@@ -64,7 +64,7 @@ function CompletedContent() {
               const data = await response.json();
               
               if (data.error) {
-                setError(data.error);
+              setError({ ...data });
               } else {
                 setRanking(data.personalRanking || []);
                 setStatistics(data.statistics || {});
@@ -116,13 +116,68 @@ function CompletedContent() {
   }
 
   if (error) {
+    // Handle detailed error response vs simple string error
+    const isDetailedError = typeof error === 'object' && error.errorCode;
+    const errorMessage = isDetailedError ? error.error : error;
+    const errorDetails = isDetailedError ? error.details : null;
+    const errorSuggestions = isDetailedError ? error.suggestions : [];
+    
     return (
-      <PageLayout title="Error">
-        <div className="status-error p-4 rounded-lg">{error}</div>
-        <div className="mt-8 flex justify-center">
-          <button onClick={() => router.push('/')} className="btn btn-primary">
-            Go Home
-          </button>
+      <PageLayout title="Unable to Load Results">
+        <div className="max-w-2xl mx-auto">
+          {/* Main Error Message */}
+          <div className="status-error p-6 rounded-lg mb-6">
+            <h2 className="text-xl font-semibold mb-2">⚠️ {errorMessage}</h2>
+            {errorDetails && (
+              <p className="text-sm mb-4 opacity-90">{errorDetails}</p>
+            )}
+          </div>
+          
+          {/* Recovery Suggestions */}
+          {errorSuggestions.length > 0 && (
+            <div className="content-card mb-6">
+              <h3 className="text-lg font-semibold mb-3">💡 What you can try:</h3>
+              <ul className="space-y-2">
+                {errorSuggestions.map((suggestion: string, index: number) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <span className="text-primary mt-1">•</span>
+                    <span className="text-sm">{suggestion}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button 
+              onClick={() => router.push('/')} 
+              className="btn btn-primary"
+            >
+              🏠 Start New Session
+            </button>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="btn btn-secondary"
+            >
+              🔄 Try Again
+            </button>
+            <button 
+              onClick={() => router.push('/ranks')} 
+              className="btn btn-secondary"
+            >
+              📊 View Global Rankings
+            </button>
+          </div>
+          
+          {/* Additional Help */}
+          <div className="mt-8 p-4 bg-muted/30 rounded-lg text-center">
+            <p className="text-sm text-muted">
+              If this problem persists, the session may have expired or the link might be invalid.
+              <br />
+              Creating a new session usually resolves this issue.
+            </p>
+          </div>
         </div>
       </PageLayout>
     );
