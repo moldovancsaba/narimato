@@ -28,6 +28,13 @@ export default function DeckCard({
       onClick={onClick}
     >
       <div className="card-container transition-all duration-200 group-hover:shadow-lg deck-card-gradient">
+        {/* Deck Tag at Top */}
+        <div className="absolute top-0 left-0 right-0 z-10 flex justify-center pt-3">
+          <div className="deck-tag-badge">
+            #{tag}
+          </div>
+        </div>
+
         {/* Main content */}
         <div className="card-content">
           <div className="text-center">

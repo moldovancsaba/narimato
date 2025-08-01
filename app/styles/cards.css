@@ -269,3 +269,14 @@
       @apply dark:ring-2 dark:ring-white/15;
     }
   }
+  
+  /* Deck Tag Badge */
+  .deck-tag-badge {
+    @apply px-3 py-1 rounded-full text-xs font-bold text-white;
+    background: linear-gradient(135deg, rgba(0, 240, 255, 0.9), rgba(87, 115, 255, 0.9));
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    /* Enhanced visibility in dark mode */
+    @apply dark:border-white/30;
+  }
