@@ -7,9 +7,7 @@ import { motion } from 'framer-motion';
 
 const navigationItems = [
   { href: '/', icon: '🏠', label: 'Home' },
-  { href: '/swipe', icon: '▶️', label: 'Start Session' },
-  { href: '/ranks', icon: '🏆', label: 'Global Rankings (ELO)' },
-  { href: '/cards', icon: '🃏', label: 'Browse Cards' },
+  { href: '/ranks', icon: '🏆', label: 'Global Rankings (ELO)' }
 ];
 
 const GlobalNavigation = React.memo(function GlobalNavigation() {
@@ -20,8 +18,7 @@ const GlobalNavigation = React.memo(function GlobalNavigation() {
       <div className="flex justify-around items-center px-2 py-3 max-w-screen-xl mx-auto h-full">
         {navigationItems.map((item) => {
           const isActive = pathname === item.href || 
-            (item.href === '/swipe' && (pathname === '/swipe' || pathname.startsWith('/vote'))) ||
-            (item.href === '/cards' && (pathname === '/cards' || pathname === '/card-editor'));
+            (item.href === '/ranks' && pathname.startsWith('/ranks'));
           
           return (
             <Link
