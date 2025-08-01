@@ -476,6 +476,11 @@
     height: 100%; /* Use full grid cell height */
     max-width: 100%;
     max-height: 100%;
+    /* Remove complex layered background that causes dark overlay */
+    background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899) !important;
+    background-image: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899) !important;
+    background-origin: padding-box !important;
+    background-clip: padding-box !important;
   }
 
   /* Portrait mode: limit by height since cards are stacked */
