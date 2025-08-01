@@ -142,7 +142,7 @@ const SwipeCard = React.memo(function SwipeCard({
       x,
       rot,
       scale,
-      config: { friction: active ? 15 : 12, tension: active ? 1000 : isGone ? 600 : 700 },
+      config: active ? { friction: 15, tension: 1000 } : isGone ? { duration: 150 } : { friction: 12, tension: 700 },
     });
 
     if (isGone) {
