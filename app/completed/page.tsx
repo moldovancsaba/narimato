@@ -59,34 +59,60 @@ function CompletedContent() {
           // This is a fresh completion - fetch from current session
           const sessionId = localStorage.getItem(SESSION_FIELDS.ID);
           if (sessionId) {
-            try {
-              const response = await fetch(`/api/v1/session/results?sessionId=${sessionId}`);
-              const data = await response.json();
-              
-              if (data.error) {
-              setError({ ...data });
-              } else {
-                setRanking(data.personalRanking || []);
-                setStatistics(data.statistics || {});
+            // Add retry logic to handle race condition between session completion and results saving
+            const maxRetries = 3;
+            const retryDelay = 1000; // 1 second
+            
+            let retryCount = 0;
+            let success = false;
+            
+            while (retryCount < maxRetries && !success) {
+              try {
+                const response = await fetch(`/api/v1/session/results?sessionId=${sessionId}`);
+                const data = await response.json();
                 
-                // Automatically save results for sharing
-                try {
-                  const saveResponse = await fetch('/api/v1/session/save-results', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ [SESSION_FIELDS.ID]: sessionId })
-                  });
-                  
-                  const saveData = await saveResponse.json();
-                  if (saveData.success) {
-                    setShareableUrl(`${window.location.origin}${saveData.shareableUrl}`);
+                if (data.error) {
+                  if (retryCount < maxRetries - 1) {
+                    console.log(`Results not ready yet, retrying in ${retryDelay}ms... (attempt ${retryCount + 1}/${maxRetries})`);
+                    await new Promise(resolve => setTimeout(resolve, retryDelay));
+                    retryCount++;
+                    continue;
+                  } else {
+                    setError({ ...data });
+                    break;
                   }
-                } catch (saveError) {
-                  console.warn('Failed to save results for sharing:', saveError);
+                } else {
+                  setRanking(data.personalRanking || []);
+                  setStatistics(data.statistics || {});
+                  success = true;
+                  
+                  // Automatically save results for sharing
+                  try {
+                    const saveResponse = await fetch('/api/v1/session/save-results', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ [SESSION_FIELDS.ID]: sessionId })
+                    });
+                    
+                    const saveData = await saveResponse.json();
+                    if (saveData.success) {
+                      setShareableUrl(`${window.location.origin}${saveData.shareableUrl}`);
+                    }
+                  } catch (saveError) {
+                    console.warn('Failed to save results for sharing:', saveError);
+                  }
+                }
+              } catch (err) {
+                if (retryCount < maxRetries - 1) {
+                  console.log(`Network error, retrying in ${retryDelay}ms... (attempt ${retryCount + 1}/${maxRetries})`);
+                  await new Promise(resolve => setTimeout(resolve, retryDelay));
+                  retryCount++;
+                  continue;
+                } else {
+                  setError('Failed to load session results.');
+                  break;
                 }
               }
-            } catch (err) {
-              setError('Failed to load session results.');
             }
             
             // Clean up session data

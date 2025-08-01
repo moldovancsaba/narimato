@@ -604,7 +604,6 @@ async function performAtomicRankingUpdate(
       if (session.status === 'completed') {
         try {
           console.log(`💾 Session completed - attempting to save results after transaction commit...`);
-          const { saveSessionResults } = await import('@/app/lib/utils/sessionResultsUtils');
           await saveSessionResults(session);
           console.log(`✅ Session results saved successfully after completion for ${session.sessionId}`);
         } catch (resultsError) {

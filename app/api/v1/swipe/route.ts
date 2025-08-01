@@ -6,7 +6,6 @@ import { SwipeRequestSchema } from '@/app/lib/validation/schemas';
 import { DeckEntity } from '@/app/lib/models/DeckEntity';
 import { SESSION_FIELDS, CARD_FIELDS, VOTE_FIELDS, API_FIELDS } from '@/app/lib/constants/fieldNames';
 import { validateSessionId, validateUUID } from '@/app/lib/utils/fieldValidation';
-import { saveSessionResults } from '@/app/lib/utils/sessionResultsUtils';
 
 /**
  * Validates session state with version check and expiry validation.
@@ -75,6 +74,95 @@ const updateSessionState = async (session: any, newState: any) => {
   }
   
   return result;
+};
+
+/**
+ * Automatically saves session results when a session is completed
+ * @param session - The completed session
+ */
+const saveSessionResults = async (session: any) => {
+  try {
+    const { SessionResults } = await import('@/app/lib/models/SessionResults');
+    
+    console.log('🔍 saveSessionResults called with session data:', {
+      sessionId: session.sessionId,
+      personalRanking: session.personalRanking,
+      personalRankingLength: session.personalRanking?.length || 0,
+      totalCards: session.totalCards,
+      swipesCount: session.swipes?.length || 0,
+      votesCount: session.votes?.length || 0,
+      status: session.status,
+      state: session.state
+    });
+    
+    // Get all cards from the personal ranking with their details
+    const cardIds = session.personalRanking || [];
+    const cards = await Card.find({ uuid: { $in: cardIds } });
+    
+    console.log('🃏 Found cards for ranking:', {
+      requestedCardIds: cardIds,
+      foundCards: cards.length,
+      foundCardIds: cards.map(c => c.uuid)
+    });
+    
+    // Create a map for quick card lookup
+    const cardMap = new Map();
+    cards.forEach(card => {
+      cardMap.set(card.uuid, {
+        uuid: card.uuid,
+        type: card.type,
+        content: card.content,
+        title: card.title
+      });
+    });
+
+    // Build the personal ranking with card details
+    const personalRankingWithDetails = cardIds.map((cardId: string, index: number) => {
+      const card = cardMap.get(cardId);
+      return {
+        cardId,
+        card,
+        rank: index + 1
+      };
+    }).filter((item: any) => item.card); // Filter out any cards that weren't found
+
+    // Calculate session statistics
+    const sessionStatistics = {
+      totalCards: session.totalCards || 0,
+      cardsRanked: session.personalRanking?.length || 0,
+      cardsDiscarded: (session.totalCards || 0) - (session.personalRanking?.length || 0),
+      totalSwipes: session.swipes?.length || 0,
+      totalVotes: session.votes?.length || 0,
+      completionRate: session.totalCards ? Math.round(((session.personalRanking?.length || 0) / session.totalCards) * 100) : 0
+    };
+
+    // Check if results already exist for this session
+    const existingResults = await SessionResults.findOne({ sessionId: session.sessionId });
+    
+    if (existingResults) {
+      // Update existing results
+      existingResults.personalRanking = personalRankingWithDetails;
+      existingResults.sessionStatistics = sessionStatistics;
+      existingResults.updatedAt = new Date();
+      await existingResults.save();
+      console.log(`Updated existing session results for ${session.sessionId}`);
+    } else {
+      // Create new session results
+      const sessionResults = new SessionResults({
+        sessionId: session.sessionId,
+        personalRanking: personalRankingWithDetails,
+        sessionStatistics,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      await sessionResults.save();
+      console.log(`Created new session results for ${session.sessionId}`);
+    }
+  } catch (error) {
+    console.error(`Failed to save session results for ${session.sessionId}:`, error);
+    // Don't throw error - session completion should not fail due to results saving
+  }
 };
 
 
