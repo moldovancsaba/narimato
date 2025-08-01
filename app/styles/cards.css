@@ -317,3 +317,8 @@
   .group:hover .card-overlay-deck-hover {
     opacity: 1;
   }
+  
+  /* Show overlay on hover for cards management page */
+  .group:hover .card-overlay-hover {
+    opacity: 1;
+  }

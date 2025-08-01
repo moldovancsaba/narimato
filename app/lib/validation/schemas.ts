@@ -31,6 +31,7 @@ export const CreateCardSchema = z.object({
   const type = data[CARD_FIELDS.TYPE];
   const content = data[CARD_FIELDS.CONTENT];
   
+  // Validate that at least one content type is provided
   if (type === 'text' && (!content.text || content.text.trim() === '')) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,

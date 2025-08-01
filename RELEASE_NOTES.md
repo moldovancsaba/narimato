@@ -1,8 +1,142 @@
 # NARIMATO Release Notes
 
-**Current Version:** 3.4.0 (Updated)
-**Date:** 2025-07-31
-**Last Updated:** 2025-07-31T18:53:49.000Z
+**Current Version:** 3.6.0 (Updated)
+**Date:** 2025-08-01
+**Last Updated:** 2025-08-01T20:47:05.000Z
+
+## [v3.6.0] — 2025-08-01T20:47:05.000Z
+
+### 🎨 Card Editor Enhancement - Image-Only and Mixed Content Support
+
+This release introduces significant improvements to the card editor, enabling full support for image-only cards, mixed content (text + image), and enhanced preset management. The PNG editor now allows users to create cards with any combination of text and images, providing complete creative flexibility.
+
+### ✨ Core Card Editor Improvements
+
+#### Image-Only Card Support
+- **No Text Required**: Cards can now be created with only an image background, without requiring any text content
+- **Background Image Integration**: Images are properly scaled and positioned using CSS object-fit cover behavior
+- **Preview Generation**: PNG preview generation works seamlessly for image-only cards
+- **Canvas Rendering**: Enhanced canvas rendering properly handles image-only scenarios
+
+#### Mixed Content Capabilities
+- **Text + Image Combinations**: Support for cards with both text overlay and background images
+- **Semi-transparent Overlays**: Optional background color overlays improve text readability over images
+- **Flexible Text Positioning**: Text can be positioned over images with proper contrast handling
+- **Dynamic Font Loading**: Google Fonts load properly for text overlays on image backgrounds
+
+#### Enhanced PNG Generation
+- **Canvas-Based Rendering**: All cards are rendered as PNG images using HTML5 Canvas API
+- **Cross-Origin Support**: Proper handling of cross-origin images with CORS support
+- **Image Scaling**: Smart image scaling maintains aspect ratios using cover behavior
+- **Font Optimization**: Enhanced font loading with proper Canvas API integration
+
+### 🛠️ Technical Implementation
+
+#### Canvas Rendering Engine
+- **Image Loading**: Robust image loading with proper error handling and fallbacks
+- **Aspect Ratio Preservation**: Smart scaling algorithm maintains image proportions
+- **Cross-Origin Handling**: Proper CORS handling for external image resources
+- **GPU Acceleration**: Canvas operations optimized for hardware acceleration
+
+#### SVG Generator Updates
+- **Conditional Text Rendering**: SVG generation only includes text elements when text content exists
+- **Image Pattern Support**: Enhanced SVG pattern definitions for background images
+- **Mixed Content Handling**: Proper layering of background images and text overlays
+
+#### Preset Management Improvements
+- **Database Storage**: All presets (fonts and backgrounds) are stored in MongoDB Atlas
+- **System vs Custom Presets**: Clear distinction between system presets and user-created ones
+- **CRUD Operations**: Full Create, Read, Update, Delete operations for preset management
+- **Error Handling**: Enhanced error messages for preset operations
+
+### 🎯 User Experience Enhancements
+
+#### Flexible Card Creation
+- **No Content Restrictions**: Users can create cards with text only, image only, or both
+- **Real-time Preview**: Live preview updates for all content combinations
+- **Enhanced UI Messages**: Updated preview messages to reflect image-only capability
+- **Improved Validation**: Relaxed validation allows more creative freedom
+
+#### Preset System Improvements
+- **Google Fonts Integration**: Easy testing and saving of Google Font presets
+- **Custom Background Support**: Support for gradients, solid colors, and image backgrounds
+- **Preset Deletion**: Working delete functionality for custom presets
+- **Visual Feedback**: Clear success and error messages for all preset operations
+
+### 🔧 Technical Details
+
+#### Files Modified
+- **Card Editor Page** (`app/card-editor/page.tsx`): Enhanced preview generation and content validation
+- **SVG Generator** (`app/lib/utils/svgGenerator.ts`): Conditional text rendering for image-only cards
+- **Validation Schema** (`app/lib/validation/schemas.ts`): Maintained proper validation for media cards
+- **Package Configuration** (`package.json`): Version increment to 3.6.0
+
+#### API Improvements
+- **Preset Management**: Font and background preset CRUD operations working correctly
+- **Image Upload**: ImgBB integration functioning properly for PNG uploads
+- **Card Creation**: Enhanced card creation API handles all content types
+
+#### Error Resolution
+- **Preview Generation**: Fixed issue preventing image-only card previews
+- **Preset Deletion**: Resolved "Font/Background preset not found or is a system preset" errors
+- **Content Validation**: Proper validation for mixed and image-only content
+
+### 📊 Quality Assurance
+
+#### Manual Testing Completed
+- ✅ **Image-Only Cards**: Successfully created and saved cards with only background images
+- ✅ **Text-Only Cards**: Traditional text-only cards continue to work properly
+- ✅ **Mixed Content**: Cards with both text and background images render correctly
+- ✅ **Preset Management**: Font and background presets can be added and deleted
+- ✅ **PNG Generation**: All card types generate proper PNG previews
+- ✅ **Upload Process**: ImgBB uploads working for all card types
+
+#### Technical Validation
+- ✅ **Build Process**: Successful compilation with zero errors
+- ✅ **Canvas Rendering**: All image scaling and text positioning working correctly
+- ✅ **Database Operations**: Preset CRUD operations functioning properly
+- ✅ **API Integration**: All endpoints responding correctly
+
+### 🛠️ Bug Fixes
+
+#### Card Editor Issues
+- **Preview Generation Block**: Fixed issue where empty text prevented image-only previews
+- **Content Validation**: Relaxed frontend validation to allow image-only cards
+- **Canvas Text Rendering**: Text rendering now properly skipped for image-only cards
+
+#### Preset Management
+- **Delete Operations**: Fixed preset deletion returning proper success/error responses
+- **System Preset Protection**: Maintained protection for system presets while allowing custom deletions
+- **Error Messages**: Enhanced error handling with proper user feedback
+
+### 📈 Impact Metrics
+
+#### User Experience
+- **Creative Flexibility**: Users can now create any type of card content
+- **Workflow Efficiency**: Streamlined card creation process for all content types
+- **Error Reduction**: Eliminated blocking errors for image-only card creation
+
+#### Technical Performance
+- **Canvas Optimization**: Efficient image rendering with proper memory management
+- **Database Efficiency**: Optimized preset storage and retrieval operations
+- **API Response Times**: Maintained fast response times for all card operations
+
+### 🚀 Deployment Status
+- **Build Status**: ✅ Successful compilation with zero errors
+- **Feature Testing**: ✅ All card types (image-only, text-only, mixed) working correctly
+- **Preset Management**: ✅ CRUD operations functioning properly
+- **Upload Integration**: ✅ ImgBB integration working for all card types
+- **Database Operations**: ✅ MongoDB Atlas operations stable and efficient
+
+### 🎯 Future Enhancements
+
+The enhanced card editor foundation enables:
+- **Advanced Image Filters**: Built-in image filters and effects
+- **Template System**: Pre-designed card templates for quick creation
+- **Batch Operations**: Multiple card creation and editing capabilities
+- **Export Options**: Additional export formats beyond PNG
+
+---
 
 ## [v3.4.0] — 2025-08-01T08:16:00.000Z
 

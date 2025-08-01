@@ -192,10 +192,11 @@ export default function CardEditorPage() {
     try {
       setError('');
       
-      if (!config.text.trim()) {
-        setPngDataUrl('');
-        return;
-      }
+      // Allow generation with image only (no text required)
+      // if (!config.text.trim() && !config.imageUrl?.trim()) {
+      //   setPngDataUrl('');
+      //   return;
+      // }
 
       // Extract font name and load Google Font if needed
       const fontName = config.fontFamily?.split(',')[0].trim().replace(/[\"\']/g, '') || 'Arial';
@@ -264,9 +265,68 @@ export default function CardEditorPage() {
       canvas.width = config.width || 300;
       canvas.height = config.height || 400;
 
-      // Handle gradient background
+      // Handle background (image, gradient, or solid color)
       const backgroundColor = config.backgroundColor || '#ffffff';
-      if (backgroundColor.includes('gradient')) {
+      const hasImageBackground = config.imageUrl && config.imageUrl.trim();
+      
+      if (hasImageBackground) {
+        // Load and draw background image first
+        try {
+          const img = new Image();
+          img.crossOrigin = 'anonymous'; // Allow cross-origin images
+          
+          await new Promise((resolve, reject) => {
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error('Failed to load background image'));
+            img.src = config.imageUrl!;
+          });
+          
+          // Draw image as background with cover behavior
+          const imgAspect = img.width / img.height;
+          const canvasAspect = canvas.width / canvas.height;
+          
+          let drawWidth, drawHeight, drawX, drawY;
+          
+          if (imgAspect > canvasAspect) {
+            // Image is wider than canvas
+            drawHeight = canvas.height;
+            drawWidth = drawHeight * imgAspect;
+            drawX = (canvas.width - drawWidth) / 2;
+            drawY = 0;
+          } else {
+            // Image is taller than canvas
+            drawWidth = canvas.width;
+            drawHeight = drawWidth / imgAspect;
+            drawX = 0;
+            drawY = (canvas.height - drawHeight) / 2;
+          }
+          
+          ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+          
+          // Optional: Add a semi-transparent overlay to improve text readability
+          if (backgroundColor !== 'transparent' && !backgroundColor.includes('gradient')) {
+            ctx.fillStyle = backgroundColor + '80'; // Add 50% opacity
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          }
+        } catch (imageError) {
+          console.warn('Failed to load background image, using fallback:', imageError);
+          // Fallback to solid color or gradient
+          if (backgroundColor.includes('gradient')) {
+            const colorMatches = backgroundColor.match(/#[a-fA-F0-9]{6}|#[a-fA-F0-9]{3}/g);
+            if (colorMatches && colorMatches.length >= 2) {
+              const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+              gradient.addColorStop(0, colorMatches[0]);
+              gradient.addColorStop(1, colorMatches[1]);
+              ctx.fillStyle = gradient;
+            } else {
+              ctx.fillStyle = colorMatches ? colorMatches[0] : '#667eea';
+            }
+          } else {
+            ctx.fillStyle = backgroundColor;
+          }
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+      } else if (backgroundColor.includes('gradient')) {
         // Extract colors from gradient for simple rendering
         const colorMatches = backgroundColor.match(/#[a-fA-F0-9]{6}|#[a-fA-F0-9]{3}/g);
         if (colorMatches && colorMatches.length >= 2) {
@@ -279,10 +339,11 @@ export default function CardEditorPage() {
           // Fallback to first color or default
           ctx.fillStyle = colorMatches ? colorMatches[0] : '#667eea';
         }
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
       } else {
         ctx.fillStyle = backgroundColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // Set text properties
       const fontSize = config.fontSize || 24;
@@ -314,55 +375,57 @@ export default function CardEditorPage() {
         ctx.textBaseline = 'bottom';
       }
 
-      // Draw text with proper line wrapping and containment
-      const maxWidth = canvas.width - (2 * (config.padding || 20));
-      const lines: string[] = [];
-      
-      // Split by manual line breaks first
-      const manualLines = config.text.split('\\n');
-      
-      // For each manual line, check if it needs word wrapping
-      manualLines.forEach(line => {
-        if (ctx.measureText(line).width <= maxWidth) {
-          lines.push(line);
-        } else {
-          // Word wrap this line
-          const words = line.split(' ');
-          let currentLine = '';
-          
-          words.forEach(word => {
-            const testLine = currentLine + (currentLine ? ' ' : '') + word;
-            if (ctx.measureText(testLine).width <= maxWidth) {
-              currentLine = testLine;
-            } else {
-              if (currentLine) {
-                lines.push(currentLine);
+      // Draw text with proper line wrapping and containment (only if text exists)
+      if (config.text && config.text.trim()) {
+        const maxWidth = canvas.width - (2 * (config.padding || 20));
+        const lines: string[] = [];
+        
+        // Split by manual line breaks first
+        const manualLines = config.text.split('\\n');
+        
+        // For each manual line, check if it needs word wrapping
+        manualLines.forEach(line => {
+          if (ctx.measureText(line).width <= maxWidth) {
+            lines.push(line);
+          } else {
+            // Word wrap this line
+            const words = line.split(' ');
+            let currentLine = '';
+            
+            words.forEach(word => {
+              const testLine = currentLine + (currentLine ? ' ' : '') + word;
+              if (ctx.measureText(testLine).width <= maxWidth) {
+                currentLine = testLine;
+              } else {
+                if (currentLine) {
+                  lines.push(currentLine);
+                }
+                currentLine = word;
               }
-              currentLine = word;
+            });
+            
+            if (currentLine) {
+              lines.push(currentLine);
             }
-          });
-          
-          if (currentLine) {
-            lines.push(currentLine);
           }
+        });
+        
+        const lineHeight = fontSize * 1.2;
+        const totalHeight = lines.length * lineHeight;
+        
+        // Adjust y position for multiple lines
+        if (config.verticalAlign === 'middle') {
+          y = (canvas.height - totalHeight) / 2 + fontSize / 2;
+        } else if (config.verticalAlign === 'top') {
+          y = (config.padding || 20) + fontSize;
+        } else if (config.verticalAlign === 'bottom') {
+          y = canvas.height - (config.padding || 20) - totalHeight + fontSize;
         }
-      });
-      
-      const lineHeight = fontSize * 1.2;
-      const totalHeight = lines.length * lineHeight;
-      
-      // Adjust y position for multiple lines
-      if (config.verticalAlign === 'middle') {
-        y = (canvas.height - totalHeight) / 2 + fontSize / 2;
-      } else if (config.verticalAlign === 'top') {
-        y = (config.padding || 20) + fontSize;
-      } else if (config.verticalAlign === 'bottom') {
-        y = canvas.height - (config.padding || 20) - totalHeight + fontSize;
-      }
 
-      lines.forEach((line, index) => {
-        ctx.fillText(line, x, y + (index * lineHeight));
-      });
+        lines.forEach((line, index) => {
+          ctx.fillText(line, x, y + (index * lineHeight));
+        });
+      }
 
       // Convert to PNG data URL
       const dataUrl = canvas.toDataURL('image/png');
@@ -666,7 +729,7 @@ export default function CardEditorPage() {
       )}
 
       <div className="editor-grid">
-        {/* Editor Panel */}
+        {/* Column 1: Card Content + Styling Options */}
         <div className="space-y-6">
           <div className="content-card">
             <h2 className="text-xl font-semibold mb-4">Card Content</h2>
@@ -688,14 +751,17 @@ export default function CardEditorPage() {
                 />
               </div>
               <div>
-                <label className="form-label">Card Image URL</label>
+                <label className="form-label">Card Image URL (Background for Text)</label>
                 <input
                   type="text"
-                  value={config.imageUrl}
+                  value={config.imageUrl || ''}
                   onChange={(e) => setConfig({ ...config, imageUrl: e.target.value })}
                   className="form-input"
-                  placeholder="Enter image URL here..."
+                  placeholder="Enter image URL for background..."
                 />
+                <p className="text-xs text-muted mt-1">
+                  Optional: Add an image background behind the text
+                </p>
               </div>
             </div>
           </div>
@@ -752,7 +818,7 @@ export default function CardEditorPage() {
                   <input
                     type="range"
                     min="0"
-                    max="96"
+                    max="192"
                     value={config.fontSize}
                     onChange={(e) => setConfig({ ...config, fontSize: parseInt(e.target.value) })}
                     className="w-full"
@@ -830,7 +896,7 @@ export default function CardEditorPage() {
           </div>
         </div>
 
-        {/* Preview Panel */}
+        {/* Column 2: Live Preview + Actions */}
         <div className="space-y-6">
           <div className="content-card overflow-hidden">
             <h2 className="text-xl font-semibold mb-4">Live Preview</h2>
@@ -857,14 +923,14 @@ export default function CardEditorPage() {
                 </div>
               ) : (
                 <div className="text-muted text-center">
-                  <p>Enter text to see preview</p>
+                  <p>Enter text or image URL to see preview</p>
                 </div>
               )}
             </div>
           </div>
 
           <div className="content-card">
-            <h2 className="text-xl font-semibold mb-4">Actions (Reordered)</h2>
+            <h2 className="text-xl font-semibold mb-4">Actions</h2>
 
             <div className="space-y-4">
               <button
@@ -876,13 +942,13 @@ export default function CardEditorPage() {
               </button>
 
               <div>
-                <p className="text-sm text-muted mb-2">URL:</p>
+                <p className="text-sm text-muted mb-2">Generated Image URL:</p>
                 <input
                   type="text"
-                  value={config.imageUrl}
-                  onChange={(e) => setConfig({ ...config, imageUrl: e.target.value })}
-                  className="form-input"
-                  placeholder="Enter image URL or upload to fill this..."
+                  value={uploadedUrl || ''}
+                  readOnly
+                  className="form-input bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 cursor-not-allowed"
+                  placeholder="Upload image to get URL..."
                 />
               </div>
 
@@ -908,6 +974,10 @@ export default function CardEditorPage() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Column 3: Manage Backgrounds + Manage Fonts */}
+        <div className="space-y-6">
 
           {/* Background Management */}
           <div className="content-card">

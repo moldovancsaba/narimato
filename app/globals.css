@@ -6,6 +6,7 @@
 @import './styles/gradients.css';
 @import './styles/cards.css';
 @import './styles/buttons.css';
+@import './styles/forms.css';
 
 /* Remaining styles that don't fit in other modules */
 .statistic-card {

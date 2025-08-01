@@ -183,15 +183,28 @@ export function generateCardSVG(config: SVGCardConfig): string {
       break;
   }
 
-  // Create gradient definition if needed
+  // Create gradient definition or image pattern if needed
   const finalBackgroundColor = backgroundColor || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
   const isGradient = finalBackgroundColor.includes('gradient');
+  const hasImageUrl = config.imageUrl && config.imageUrl.trim();
   const gradientId = 'cardGradient';
+  const imagePatternId = 'cardImagePattern';
   
   let backgroundDef = '';
   let backgroundFill = finalBackgroundColor;
   
-  if (isGradient) {
+  if (hasImageUrl) {
+    // Use image as background with optional overlay  
+    const finalWidth = width || 300;
+    const finalHeight = height || 400;
+    backgroundDef = `
+    <defs>
+      <pattern id="${imagePatternId}" patternUnits="objectBoundingBox" width="1" height="1">
+        <image href="${config.imageUrl}" width="${finalWidth}" height="${finalHeight}" preserveAspectRatio="xMidYMid slice" />
+      </pattern>
+    </defs>`;
+    backgroundFill = `url(#${imagePatternId})`;
+  } else if (isGradient) {
     // Parse gradient (simplified for common cases)
     const gradientMatch = finalBackgroundColor.match(/linear-gradient\(([^)]+)\)/);
     if (gradientMatch) {
@@ -233,11 +246,11 @@ export function generateCardSVG(config: SVGCardConfig): string {
     }
   }
   
-  // Generate text elements
-  const textElements = lines.map((line, index) => {
+  // Generate text elements (only if text exists)
+  const textElements = text && text.trim() ? lines.map((line, index) => {
     const y = startY + (index * lineHeight);
     return `<text x="${x}" y="${y}" font-family="${fontFamily || 'Arial, sans-serif'}" font-size="${fontSize || 24}" fill="${textColor || '#ffffff'}" text-anchor="${textAnchor}">${escapeXml(line)}</text>`;
-  }).join('\n    ');
+  }).join('\n    ') : '';
 
   const finalWidth = width || 300;
   const finalHeight = height || 400;

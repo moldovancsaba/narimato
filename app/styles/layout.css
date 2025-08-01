@@ -157,3 +157,37 @@
       display: flex;
     }
   }
+  
+  /* Card Editor Layout */
+  .editor-grid {
+    @apply grid w-full gap-6;
+    /* Default mobile: single column */
+    grid-template-columns: 1fr;
+  }
+  
+  /* Portrait mode: 2 columns */
+  @media (orientation: portrait) and (min-width: 768px) {
+    .editor-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+  }
+  
+  /* Landscape mode: 3 equal columns */
+  @media (orientation: landscape) and (min-width: 1024px) {
+    .editor-grid {
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+    }
+    
+    /* Adjust spacing for landscape layout */
+    .editor-grid > div {
+      max-height: calc(100vh - 200px);
+      overflow-y: auto;
+    }
+  }
+  
+  /* Preview container specific styling */
+  .preview-container {
+    @apply min-h-[300px] flex items-center justify-center bg-gray-50 dark:bg-gray-800 rounded-lg;
+  }
