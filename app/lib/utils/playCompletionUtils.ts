@@ -73,18 +73,20 @@ export async function checkPlayCompletion(play: any): Promise<PlayCompletionResu
     console.warn('Failed to check deck exhaustion via DeckEntity:', error);
   }
 
-  // Strategy 2: Mathematical verification - all cards processed
+  // Strategy 2: Mathematical verification - all cards have been swiped (left or right)
+  // This correctly handles the case where the last card is swiped right but still in voting process
   if (metrics.totalCards > 0 && metrics.totalSwipes >= metrics.totalCards) {
-    console.log(`✅ Play completion detected: All cards processed mathematically`);
+    console.log(`✅ Play completion detected: All cards have been swiped`);
     return {
       shouldComplete: true,
-      reason: `All ${metrics.totalCards} cards have been processed (${metrics.totalSwipes} swipes)`,
+      reason: `All ${metrics.totalCards} cards have been swiped (${metrics.totalSwipes} total swipes: ${metrics.rightSwipes} right, ${metrics.leftSwipes} left)`,
       completionType: 'all_cards_processed',
       metrics
     };
   }
-
-  // Strategy 3: Cross-verification - sum of personal ranking and left swipes equals total cards
+  
+  // Strategy 4: Cross-verification - sum of personal ranking and left swipes equals total cards
+  // This is a fallback for edge cases where swipe counting might be inconsistent
   const processedCards = metrics.personalRankingLength + metrics.leftSwipes;
   if (metrics.totalCards > 0 && processedCards >= metrics.totalCards) {
     console.log(`✅ Play completion detected: All cards accounted for (ranked + discarded)`);

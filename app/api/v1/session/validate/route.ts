@@ -31,11 +31,15 @@ export async function GET(request: NextRequest) {
 
     console.log(`🔍 Play validation for ${playUuid.substring(0, 8)}...: ${play ? 'VALID' : 'INVALID'}`);
 
-if (play && play.status === 'active') {
+// Only force-complete plays that are in 'swiping' state and should be completed
+    // Do NOT force-complete plays in 'voting' state as they have active voting processes
+    if (play && play.status === 'active' && play.state === 'swiping') {
       const completionUpdated = await forceCompletionCheckAndUpdate(play);
       if (completionUpdated) {
-        console.log(`🔄 Play ${play.playUuid} was stuck and force-completed during validation`);
+        console.log(`🔄 Play ${play.playUuid} was stuck in swiping state and force-completed during validation`);
       }
+    } else if (play && play.status === 'active' && play.state === 'voting') {
+      console.log(`🗳️ Play ${play.playUuid} is in voting state - allowing voting process to complete naturally`);
     }
 
     const stateValidation = validatePlayState(play);

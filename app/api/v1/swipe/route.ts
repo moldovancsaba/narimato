@@ -52,12 +52,33 @@ const savePlayResults = async (play: any) => {
     // Build the personal ranking with card details
     const personalRankingWithDetails = cardIds.map((cardId: string, index: number) => {
       const card = cardMap.get(cardId);
+      if (!card) {
+        console.error(`⚠️  MISSING CARD in savePlayResults (swipe): Card ${cardId} from personalRanking not found in database query`, {
+          cardId,
+          allRequestedIds: cardIds,
+          foundCardIds: cards.map(c => c.uuid),
+          missingCards: cardIds.filter(id => !cardMap.has(id))
+        });
+      }
       return {
         cardId,
         card,
         rank: index + 1
       };
-    }).filter((item: any) => item.card); // Filter out any cards that weren't found
+    }).filter((item: any) => {
+      if (!item.card) {
+        console.error(`😱 FILTERING OUT CARD from results (swipe): ${item.cardId} - not found in database`);
+        return false;
+      }
+      return true;
+    });
+    
+    console.log(`📊 Final personalRankingWithDetails (swipe):`, {
+      originalRankingLength: cardIds.length,
+      finalRankingLength: personalRankingWithDetails.length,
+      filteredOutCount: cardIds.length - personalRankingWithDetails.length,
+      finalRanking: personalRankingWithDetails.map(item => ({cardId: item.cardId, rank: item.rank}))
+    });
 
     // Calculate play statistics
     const sessionStatistics = {
