@@ -569,13 +569,12 @@ async function performAtomicRankingUpdate(
           session.status = 'completed';
           session.completedAt = new Date();
           
-          // Extend expiry time for completed sessions to preserve results for sharing
-          // Set expiry to 7 days from completion instead of original 24 hours
-          const extendedExpiry = new Date();
-          extendedExpiry.setDate(extendedExpiry.getDate() + 7);
-          session.expiresAt = extendedExpiry;
+          // Remove expiry for completed sessions to preserve results indefinitely for sharing
+          // Set expiresAt far in the future to effectively disable TTL cleanup
+          const noExpiry = new Date('2099-12-31T23:59:59.999Z');
+          session.expiresAt = noExpiry;
           
-          console.log(`📅 Extended session expiry to ${extendedExpiry.toISOString()} for completed session`);
+          console.log(`📅 Removed expiry for completed session - will persist indefinitely for sharing`);
           
           console.log(`✅ Session ${session.sessionId} marked as completed - deck exhausted`);
           console.log(`📊 Final session state before saving to database:`, {
