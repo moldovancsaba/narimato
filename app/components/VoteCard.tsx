@@ -76,12 +76,12 @@ const VoteCard = React.memo(function VoteCard({
       opacity: 1
     },
     selected: {
-      scale: scaleValues.SCALE_SELECTED,
+      scale: scaleValues.SCALE_INITIAL,
       opacity: 1
     },
     unselected: {
-      scale: scaleValues.SCALE_UNSELECTED,
-      opacity: 0.7
+      scale: scaleValues.SCALE_INITIAL,
+      opacity: 0.3
     }
   }), [scaleValues]);
 
@@ -90,8 +90,7 @@ const VoteCard = React.memo(function VoteCard({
       initial="initial"
       animate={isSelected ? "selected" : isSelected === false ? "unselected" : "initial"}
       variants={variants}
-      whileHover={{ scale: scaleValues.SCALE_HOVER }} // Use global scale constant for hover
-      whileTap={{ scale: 0.9 }} // Scale down when tapped/clicked
+      transition={{ duration: 0.2, ease: "easeOut" }}
       className="card-container"
     >
       <BaseCard
@@ -100,7 +99,7 @@ const VoteCard = React.memo(function VoteCard({
         content={content}
         onClick={onSelect}
         size="grid"  // Use grid size to avoid aspect ratio conflicts
-        className="hover:shadow-xl transition-shadow duration-200"
+        className=""
       />
     </motion.div>
   );

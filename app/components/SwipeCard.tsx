@@ -142,15 +142,15 @@ const SwipeCard = React.memo(function SwipeCard({
       x,
       rot,
       scale,
-      config: { friction: active ? 15 : 12, tension: active ? 1000 : isGone ? 400 : 700 },
+      config: { friction: active ? 15 : 12, tension: active ? 1000 : isGone ? 600 : 700 },
     });
 
     if (isGone) {
-      // Trigger swipe based on direction using consolidated handler (faster timeout)
+      // Trigger swipe based on direction using consolidated handler (very fast timeout)
       setTimeout(() => {
         if (xDir < 0) handleSwipeAction('left');
         else handleSwipeAction('right');
-      }, 80);
+      }, 50);
     }
   });
   
@@ -173,21 +173,21 @@ const SwipeCard = React.memo(function SwipeCard({
     if (swipeState !== 'idle' || swipeLock || !innerWidth) return;
     
     if (e.key === 'ArrowLeft') {
-      // Animate card off-screen to the left with rotation (faster)
+      // Animate card off-screen to the left with rotation (very fast)
       api.start({
         x: -innerWidth,  // Move completely off-screen
         rot: -10,               // Slight counter-clockwise rotation
-        config: { duration: 200 }
+        config: { duration: 150 }
       });
       
       // Use consolidated swipe handler
       handleSwipeAction('left');
     } else if (e.key === 'ArrowRight') {
-      // Animate card off-screen to the right with rotation (faster)
+      // Animate card off-screen to the right with rotation (very fast)
       api.start({
         x: innerWidth,   // Move completely off-screen right
         rot: 10,                // Slight clockwise rotation
-        config: { duration: 200 }
+        config: { duration: 150 }
       });
       
       // Use consolidated swipe handler
