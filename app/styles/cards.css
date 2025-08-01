@@ -280,3 +280,40 @@
     /* Enhanced visibility in dark mode */
     @apply dark:border-white/30;
   }
+  
+  /* Card Overlay - Generic centered overlay for most use cases */
+  .card-overlay {
+    @apply absolute inset-0 flex items-center justify-center;
+    background: rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+  }
+  
+  /* Card Overlay Bottom - Positioned at bottom for deck cards */
+  .card-overlay-bottom {
+    @apply absolute bottom-0 left-0 right-0 flex items-center justify-center;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 0.75rem;
+    border-bottom-left-radius: inherit;
+    border-bottom-right-radius: inherit;
+  }
+  
+  /* Loading state overlay positioned at bottom */
+  .card-overlay-loading {
+    @apply flex items-center justify-center;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    z-index: 20;
+  }
+  
+  /* Hover effect overlay positioned at bottom */
+  .card-overlay-deck-hover {
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+    z-index: 10;
+  }
+  
+  /* Show overlay on group hover */
+  .group:hover .card-overlay-deck-hover {
+    opacity: 1;
+  }

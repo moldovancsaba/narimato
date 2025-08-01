@@ -38,25 +38,22 @@ export default function DeckCard({
         {/* Main content */}
         <div className="card-content">
           <div className="text-center">
-            <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--primary)' }}>
-              {displayName}
-            </h3>
             <p className="text-lg" style={{ color: 'var(--text-muted)' }}>
               {cardCount} cards
             </p>
           </div>
         </div>
 
-        {/* Loading state */}
+        {/* Loading state - positioned at bottom */}
         {isLoading && (
-          <div className="card-overlay card-overlay-loading rounded-lg">
+          <div className="card-overlay-bottom card-overlay-loading rounded-b-lg">
             <div className="loading-spinner mr-2"></div>
             <span className="text-white">Starting...</span>
           </div>
         )}
 
-        {/* Hover effect */}
-        <div className="card-overlay card-overlay-deck-hover rounded-lg">
+        {/* Hover effect - positioned at bottom */}
+        <div className="card-overlay-bottom card-overlay-deck-hover rounded-b-lg">
           <div className="font-semibold bg-black bg-opacity-50 px-4 py-2 rounded-lg flex items-center gap-2" style={{ color: 'var(--primary)' }}>
             {showRankingsIcon && (
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
