@@ -81,7 +81,7 @@ const VoteCard = React.memo(function VoteCard({
     },
     unselected: {
       scale: scaleValues.SCALE_INITIAL,
-      opacity: 0.3
+      opacity: 1
     }
   }), [scaleValues]);
 
