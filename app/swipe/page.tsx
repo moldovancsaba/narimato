@@ -322,7 +322,13 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
               <SwipeCard
                 key={createUniqueKey('swipe-card', currentCard[CARD_FIELDS.UUID], deck.getCurrentIndex())}
                 {...currentCard}
-                onSwipe={handleSwipe}
+                onSwipe={async (dir) => {
+                  if (dir === 'left') {
+                    await handleSwipe('left');
+                  } else if (dir === 'right') {
+                    await handleSwipe('right');
+                  }
+                }}
               />
             )}
           </div>

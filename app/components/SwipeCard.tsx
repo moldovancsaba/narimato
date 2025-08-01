@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSpring, animated } from '@react-spring/web';
 import { useSwipeable } from 'react-swipeable';
+import { useDrag } from '@use-gesture/react';
 import BaseCard from './BaseCard';
 
 /**
@@ -97,53 +98,63 @@ const SwipeCard = React.memo(function SwipeCard({
    * This dual approach ensures both quick flicks and deliberate drags are recognized
    * while preventing accidental triggers from minor movements.
    */
-// Initialize swipeable handlers for smoother gestures
-const handlers = useSwipeable({
-  onSwipedLeft: () => {
-    if (swipeState === 'idle' && !swipeLock) {
-      setSwipeDirection('left');
-      setSwipeState('swiping');
-      setSwipeLock(true);
-
-      onSwipe('left')
-        .then(() => {
-          setSwipeState('voted');
-          setTimeout(() => setSwipeLock(false), 500);
-        })
-        .catch(() => {
-          setSwipeState('error');
-          api.start({ x: 0, rot: 0, scale: 1, immediate: false });
-          setTimeout(() => {
-            setSwipeState('idle');
-            setSwipeLock(false);
-          }, 2000);
-        });
+// Consolidated swipe handler to prevent concurrent swipes
+  const handleSwipeAction = useCallback((direction: 'left' | 'right') => {
+    console.log('Swipe action triggered:', { direction, swipeState, swipeLock });
+    
+    if (swipeState !== 'idle' || swipeLock) {
+      console.warn('Concurrent swipe detected during state update');
+      return;
     }
-  },
-  onSwipedRight: () => {
-    if (swipeState === 'idle' && !swipeLock) {
-      setSwipeDirection('right');
-      setSwipeState('swiping');
-      setSwipeLock(true);
+    
+    setSwipeDirection(direction);
+    setSwipeState('swiping');
+    setSwipeLock(true);
 
-      onSwipe('right')
-        .then(() => {
-          setSwipeState('voted');
-          setTimeout(() => setSwipeLock(false), 500);
-        })
-        .catch(() => {
-          setSwipeState('error');
-          api.start({ x: 0, rot: 0, scale: 1, immediate: false });
-          setTimeout(() => {
-            setSwipeState('idle');
-            setSwipeLock(false);
-          }, 2000);
-        });
+    onSwipe(direction)
+      .then(() => {
+        setSwipeState('voted');
+        setTimeout(() => setSwipeLock(false), 500);
+      })
+      .catch((error) => {
+        console.error('Swipe error:', error);
+        setSwipeState('error');
+        api.start({ x: 0, rot: 0, scale: 1, immediate: false });
+        setTimeout(() => {
+          setSwipeState('idle');
+          setSwipeLock(false);
+        }, 2000);
+      });
+  }, [swipeState, swipeLock, onSwipe, api]);
+
+  // Initialize drag gesture handler for visual feedback during swipe
+  const bind = useDrag(({ active, movement: [mx], direction: [xDir], velocity: [vx] }) => {
+    // Only handle drags when card is in idle state
+    if (swipeState !== 'idle' || swipeLock) return;
+    
+    const trigger = Math.abs(mx) > innerWidth * 0.2; // 20% of screen width
+    const isGone = !active && trigger;
+    const x = isGone ? (200 + window.innerWidth) * xDir : active ? mx : 0;
+    const rot = mx / 100 + (isGone ? xDir * 10 * vx : 0);
+    const scale = active ? 1.1 : 1;
+    
+    api.start({
+      x,
+      rot,
+      scale,
+      config: { friction: 50, tension: active ? 800 : isGone ? 200 : 500 },
+    });
+
+    if (isGone) {
+      // Trigger swipe based on direction using consolidated handler
+      setTimeout(() => {
+        if (xDir < 0) handleSwipeAction('left');
+        else handleSwipeAction('right');
+      }, 150);
     }
-  },
-  preventScrollOnSwipe: true,
-  trackMouse: true
-});
+  });
+  
+// Remove useSwipeable to prevent conflicts - useDrag handles all gestures
 
   /**
    * Keyboard event handler for accessibility and power user support.
@@ -162,48 +173,16 @@ const handlers = useSwipeable({
     if (swipeState !== 'idle' || swipeLock || !innerWidth) return;
     
     if (e.key === 'ArrowLeft') {
-      // Mirror the gesture flow: set direction, update state, acquire lock
-      setSwipeDirection('left');
-      setSwipeState('swiping');
-      setSwipeLock(true);
-      
       // Animate card off-screen to the left with rotation
-      // Duration: 300ms for quick but visible movement
-      // Rotation: -10deg for natural card-flip effect
       api.start({
         x: -innerWidth,  // Move completely off-screen
         rot: -10,               // Slight counter-clockwise rotation
         config: { duration: 300 }
       });
       
-      // Process the swipe with identical error handling as gesture
-      onSwipe('left')
-        .then(() => {
-          setSwipeState('voted');
-          // Same timing as gesture handler for consistency
-          setTimeout(() => setSwipeLock(false), 500);
-        })
-        .catch(() => {
-          setSwipeState('error');
-          // Reset card position with smooth animation
-          api.start({
-            x: 0,
-            rot: 0,
-            scale: 1,
-            immediate: false  // Smooth return for better UX
-          });
-          // Extended error visibility timeout
-          setTimeout(() => {
-            setSwipeState('idle');
-            setSwipeLock(false);
-          }, 2000);
-        });
+      // Use consolidated swipe handler
+      handleSwipeAction('left');
     } else if (e.key === 'ArrowRight') {
-      // Identical logic to left swipe but with opposite direction
-      setSwipeDirection('right');
-      setSwipeState('swiping');
-      setSwipeLock(true);
-      
       // Animate card off-screen to the right with rotation
       api.start({
         x: innerWidth,   // Move completely off-screen right
@@ -211,28 +190,11 @@ const handlers = useSwipeable({
         config: { duration: 300 }
       });
       
-      // Process right swipe with same error handling pattern
-      onSwipe('right')
-        .then(() => {
-          setSwipeState('voted');
-          setTimeout(() => setSwipeLock(false), 500);
-        })
-        .catch(() => {
-          setSwipeState('error');
-          api.start({
-            x: 0,
-            rot: 0,
-            scale: 1,
-            immediate: false
-          });
-          setTimeout(() => {
-            setSwipeState('idle');
-            setSwipeLock(false);
-          }, 2000);
-        });
+      // Use consolidated swipe handler
+      handleSwipeAction('right');
     }
     // Note: Other keys are ignored to prevent unintended actions
-  }, [swipeState, swipeLock, api, onSwipe, innerWidth]);
+  }, [swipeState, swipeLock, api, innerWidth, handleSwipeAction]);
 
   /**
    * Initialize and track window width for keyboard animation calculations.
@@ -273,7 +235,7 @@ const handlers = useSwipeable({
 
   return (
     <animated.div
-      {...handlers}
+      {...bind()}
       style={{
         x,
         y: 0,
