@@ -40,11 +40,29 @@ export default function DeckRankingsPage() {
   useEffect(() => {
     const fetchDeckRankings = async () => {
       try {
-        const response = await fetch(`/api/v1/global-rankings?deck=${encodeURIComponent(deckTag)}`);
+        console.log('Fetching deck rankings for:', deckTag);
+        
+        // Add cache busting and explicit headers for mobile browsers
+        const response = await fetch(`/api/v1/global-rankings?deck=${encodeURIComponent(deckTag)}&_t=${Date.now()}`, {
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
+        
+        console.log('Response status:', response.status);
+        console.log('Response URL:', response.url);
+        
         if (!response.ok) {
-          throw new Error('Failed to fetch deck rankings');
+          const errorText = await response.text();
+          console.error('Response error:', errorText);
+          throw new Error(`Failed to fetch deck rankings: ${response.status} ${response.statusText}`);
         }
+        
         const data = await response.json();
+        console.log('Response data:', data);
+        
         if (data.error) {
           setError(data.error);
         } else {
@@ -54,6 +72,7 @@ export default function DeckRankingsPage() {
           }
         }
       } catch (err) {
+        console.error('Error fetching deck rankings:', err);
         setError(err instanceof Error ? err.message : 'An unknown error occurred');
       } finally {
         setLoading(false);

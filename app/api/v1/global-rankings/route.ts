@@ -24,13 +24,20 @@ export async function GET(request: Request) {
     const filteredCardIds = filteredCards.map(card => card.uuid);
 
     if (filteredCardIds.length === 0) {
-      return NextResponse.json({
+      const response = NextResponse.json({
         rankings: [],
         deckTag,
         message: deckTag 
           ? `No rankings available for deck "${deckTag}" yet. Complete some sessions to generate rankings!`
           : 'No global rankings available yet. Complete some sessions to generate rankings!'
       });
+      
+      // Add cache control headers
+      response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      response.headers.set('Pragma', 'no-cache');
+      response.headers.set('Expires', '0');
+      
+      return response;
     }
 
     // Get the top global rankings for the filtered cards, sorted by ELO rating
@@ -39,13 +46,20 @@ export async function GET(request: Request) {
       .limit(50); // Limit to top 50
 
     if (!globalRankings || globalRankings.length === 0) {
-      return NextResponse.json({
+      const response = NextResponse.json({
         rankings: [],
         deckTag,
         message: deckTag 
           ? `No rankings available for deck "${deckTag}" yet. Complete some sessions to generate rankings!`
           : 'No global rankings available yet. Complete some sessions to generate rankings!'
       });
+      
+      // Add cache control headers
+      response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      response.headers.set('Pragma', 'no-cache');
+      response.headers.set('Expires', '0');
+      
+      return response;
     }
 
     // Fetch card details for each ranking
@@ -84,12 +98,19 @@ export async function GET(request: Request) {
       })
       .filter(Boolean); // Remove null entries
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       rankings: rankedCards,
       deckTag,
       totalRanked: rankedCards.length,
       lastUpdated: globalRankings[0]?.lastUpdated || new Date()
     });
+    
+    // Add cache control headers for mobile browsers
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+    
+    return response;
 
   } catch (error) {
     console.error('Failed to fetch global rankings:', error);
