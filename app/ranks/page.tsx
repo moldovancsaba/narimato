@@ -1,48 +1,34 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import PageLayout from '@/app/components/PageLayout';
-import BaseCard from '@/app/components/BaseCard';
-import { motion } from 'framer-motion';
+import DeckCard from '@/app/components/DeckCard';
 
-interface RankedCard {
-  card: {
-    uuid: string;
-    type: 'text' | 'media';
-    content: {
-      text?: string;
-      mediaUrl?: string;
-    };
-  };
-  rank: number;
-  eloRating: number; // ELO rating score - primary ranking metric
-  wins: number; // Number of wins in head-to-head comparisons
-  losses: number; // Number of losses in head-to-head comparisons
-  totalGames: number; // Total number of games played
-  winRate: number; // Win rate as a decimal (0.0 to 1.0)
-  // Legacy fields maintained for compatibility
-  totalScore: number;
-  averageRank: number;
-  appearanceCount: number;
+interface Deck {
+  tag: string;
+  cardCount: number;
+  displayName: string;
 }
 
 export default function RanksPage() {
-  const [ranking, setRanking] = useState<RankedCard[]>([]);
+  const router = useRouter();
+  const [decks, setDecks] = useState<Deck[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchGlobalRanks = async () => {
+    const fetchDecks = async () => {
       try {
-        const response = await fetch('/api/v1/global-rankings');
+        const response = await fetch('/api/v1/decks');
         if (!response.ok) {
-          throw new Error('Failed to fetch global rankings');
+          throw new Error('Failed to fetch decks');
         }
         const data = await response.json();
         if (data.error) {
           setError(data.error);
         } else {
-          setRanking(data.rankings);
+          setDecks(data.decks);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -51,15 +37,19 @@ export default function RanksPage() {
       }
     };
 
-    fetchGlobalRanks();
+    fetchDecks();
   }, []);
+
+  const handleDeckSelect = (deckTag: string) => {
+    router.push(`/ranks/${deckTag}`);
+  };
 
   if (loading) {
     return (
       <PageLayout title="Global Rankings">
         <div className="flex justify-center items-center">
           <div className="loading-spinner"></div>
-          <span className="ml-2 text-lg">Loading Global Rankings...</span>
+          <span className="ml-2 text-lg">Loading Decks...</span>
         </div>
       </PageLayout>
     );
@@ -76,42 +66,36 @@ export default function RanksPage() {
   return (
     <PageLayout title="Global Rankings">
       <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Global Rankings (ELO-Based)</h2>
+        <h2 className="text-xl font-semibold mb-4">Choose a Deck to View Rankings</h2>
         <p className="text-sm text-muted mb-4">
-          Rankings are calculated using the ELO rating system, providing skill-based comparisons across all user sessions. 
-          ELO rating provides more accurate rankings than simple win counts.
+          Select a deck below to view its ELO-based global rankings. Rankings are calculated using 
+          skill-based comparisons across all user sessions for cards within that specific deck.
         </p>
       </div>
-      <div className="results-grid">
-        {ranking.map((item) => (
-          <motion.div
-            key={item.card.uuid}
-            className="relative"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <BaseCard
-              uuid={item.card.uuid}
-              type={item.card.type}
-              content={item.card.content}
-              size="medium"
-            >
-              <div className="absolute -top-2 -left-2 z-20">
-                <div className="ranking-position">#{item.rank}</div>
-              </div>
-              <div className="absolute bottom-2 left-2 right-2 z-10 p-2 bg-black/50 rounded-b-lg text-white text-xs">
-                <div className="flex justify-between items-center">
-                  <span>ELO: {item.eloRating || 1000}</span>
-                  <span>Games: {item.totalGames || 0}</span>
-                </div>
-                <div className="flex justify-between items-center mt-1">
-                  <span>Win Rate: {item.winRate ? (item.winRate * 100).toFixed(1) : '0.0'}%</span>
-                </div>
-              </div>
-            </BaseCard>
-          </motion.div>
-        ))}
+      
+      {decks.length === 0 ? (
+        <div className="text-center p-8">
+          <p className="text-muted">No decks available yet. Add some cards to create decks!</p>
+        </div>
+      ) : (
+        <div className="results-grid">
+          {decks.map((deck) => (
+            <DeckCard
+              key={deck.tag}
+              tag={deck.tag}
+              displayName={deck.displayName}
+              cardCount={deck.cardCount}
+              onClick={() => handleDeckSelect(deck.tag)}
+              showRankingsIcon={true}
+            />
+          ))}
+        </div>
+      )}
+      
+      <div className="text-center mt-8">
+        <p className="text-sm text-muted">
+          Rankings are updated in real-time based on all completed sessions
+        </p>
       </div>
     </PageLayout>
   );

@@ -3,22 +3,48 @@ import dbConnect from '@/app/lib/utils/db';
 import { GlobalRanking, IGlobalRanking } from '@/app/lib/models/GlobalRanking';
 import { Card } from '@/app/lib/models/Card';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     await dbConnect();
+
+    // Get deck filter from URL search params
+    const { searchParams } = new URL(request.url);
+    const deckTag = searchParams.get('deck');
 
     // First, recalculate global rankings
     await GlobalRanking.calculateRankings();
 
-    // Get the top global rankings sorted by ELO rating
-    const globalRankings = await GlobalRanking.find({})
+    // Get card IDs based on deck filter
+    let cardFilter: any = { isActive: true };
+    if (deckTag) {
+      cardFilter = { ...cardFilter, tags: deckTag };
+    }
+    
+    const filteredCards = await Card.find(cardFilter, { uuid: 1 });
+    const filteredCardIds = filteredCards.map(card => card.uuid);
+
+    if (filteredCardIds.length === 0) {
+      return NextResponse.json({
+        rankings: [],
+        deckTag,
+        message: deckTag 
+          ? `No rankings available for deck "${deckTag}" yet. Complete some sessions to generate rankings!`
+          : 'No global rankings available yet. Complete some sessions to generate rankings!'
+      });
+    }
+
+    // Get the top global rankings for the filtered cards, sorted by ELO rating
+    const globalRankings = await GlobalRanking.find({ cardId: { $in: filteredCardIds } })
       .sort({ eloRating: -1, winRate: -1, totalGames: -1, lastUpdated: -1 })
       .limit(50); // Limit to top 50
 
     if (!globalRankings || globalRankings.length === 0) {
       return NextResponse.json({
         rankings: [],
-        message: 'No global rankings available yet. Complete some sessions to generate rankings!'
+        deckTag,
+        message: deckTag 
+          ? `No rankings available for deck "${deckTag}" yet. Complete some sessions to generate rankings!`
+          : 'No global rankings available yet. Complete some sessions to generate rankings!'
       });
     }
 
@@ -60,6 +86,7 @@ export async function GET() {
 
     return NextResponse.json({
       rankings: rankedCards,
+      deckTag,
       totalRanked: rankedCards.length,
       lastUpdated: globalRankings[0]?.lastUpdated || new Date()
     });

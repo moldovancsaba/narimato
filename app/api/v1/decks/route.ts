@@ -29,21 +29,12 @@ export async function GET() {
       }
     ]);
 
-    // Add an "All Cards" deck option
-    const totalCards = await Card.countDocuments({ isActive: true });
-    
-    const decks = [
-      {
-        tag: 'all',
-        cardCount: totalCards,
-        displayName: 'All Cards'
-      },
-      ...deckStats.map(deck => ({
-        tag: deck.tag,
-        cardCount: deck.cardCount,
-        displayName: `#${deck.tag}`
-      }))
-    ];
+    // Create decks from tag statistics (no "All Cards" deck)
+    const decks = deckStats.map(deck => ({
+      tag: deck.tag,
+      cardCount: deck.cardCount,
+      displayName: `#${deck.tag}`
+    }));
 
     return new NextResponse(
       JSON.stringify({

@@ -78,15 +78,15 @@ const SwipeCard = React.memo(function SwipeCard({
   const [innerWidth, setInnerWidth] = useState<number>(0);
 
   // Initialize react-spring animation system for smooth card movements
-  // Configuration values optimized for responsive feel:
-  // - tension: 300 (high responsiveness)
-  // - friction: 20 (smooth but not sluggish)
+  // Configuration values optimized for fast, responsive feel:
+  // - tension: 500 (very high responsiveness)
+  // - friction: 15 (reduced friction for snappier movement)
   const [{ x, y, scale, rot }, api] = useSpring(() => ({
     x: 0,        // Horizontal position (px)
     y: 0,        // Vertical position (px, unused but preserved for future)
     scale: 1,    // Card scale factor (1.0 = normal size)
     rot: 0,      // Rotation angle in degrees
-    config: { tension: 300, friction: 20 }
+    config: { tension: 500, friction: 15 }
   }));
 
   /**
@@ -142,15 +142,15 @@ const SwipeCard = React.memo(function SwipeCard({
       x,
       rot,
       scale,
-      config: { friction: 50, tension: active ? 800 : isGone ? 200 : 500 },
+      config: { friction: active ? 15 : 12, tension: active ? 1000 : isGone ? 400 : 700 },
     });
 
     if (isGone) {
-      // Trigger swipe based on direction using consolidated handler
+      // Trigger swipe based on direction using consolidated handler (faster timeout)
       setTimeout(() => {
         if (xDir < 0) handleSwipeAction('left');
         else handleSwipeAction('right');
-      }, 150);
+      }, 80);
     }
   });
   
@@ -173,21 +173,21 @@ const SwipeCard = React.memo(function SwipeCard({
     if (swipeState !== 'idle' || swipeLock || !innerWidth) return;
     
     if (e.key === 'ArrowLeft') {
-      // Animate card off-screen to the left with rotation
+      // Animate card off-screen to the left with rotation (faster)
       api.start({
         x: -innerWidth,  // Move completely off-screen
         rot: -10,               // Slight counter-clockwise rotation
-        config: { duration: 300 }
+        config: { duration: 200 }
       });
       
       // Use consolidated swipe handler
       handleSwipeAction('left');
     } else if (e.key === 'ArrowRight') {
-      // Animate card off-screen to the right with rotation
+      // Animate card off-screen to the right with rotation (faster)
       api.start({
         x: innerWidth,   // Move completely off-screen right
         rot: 10,                // Slight clockwise rotation
-        config: { duration: 300 }
+        config: { duration: 200 }
       });
       
       // Use consolidated swipe handler
