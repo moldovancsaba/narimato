@@ -1,8 +1,23 @@
 /**
  * Event-Driven State Machine for Managing Narimato Workflow
  * 
- * This agent manages when each service (swipe, vote, ranking) should be active
- * and handles all state transitions properly.
+ * ARCHITECTURAL PURPOSE:
+ * - Centralizes all workflow state transitions in one place to prevent invalid state combinations
+ * - Ensures UI components can only perform actions valid for current state
+ * - Provides single source of truth for session progress tracking
+ * - Implements fail-safe patterns where errors don't leave system in inconsistent state
+ * 
+ * BUSINESS LOGIC RATIONALE:
+ * - INITIALIZING: Ensures all dependencies (session, deck) are ready before user interaction
+ * - SWIPING: Main interaction mode - user evaluates cards one by one
+ * - VOTING: Comparative ranking phase - positions cards relative to each other
+ * - COMPLETED: Terminal state - prevents further modifications to final ranking
+ * - ERROR: Recovery state - allows system reset without data loss
+ * 
+ * SECURITY CONSIDERATIONS:
+ * - All state transitions are validated to prevent client manipulation
+ * - Context data is immutable to external components (returned as copies)
+ * - Session data is never exposed directly - only through controlled getters
  */
 
 import { SESSION_FIELDS, CARD_FIELDS, VOTE_FIELDS } from '../constants/fieldNames';

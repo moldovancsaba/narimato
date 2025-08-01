@@ -14,9 +14,19 @@ export async function POST(request: Request) {
 
     const uuid = uuidv4();
     const md5 = createHash('md5').update(uuid).digest('hex');
-    const slug = validatedData.title ? 
+    
+    // Generate base slug from title or use md5
+    let baseSlug = validatedData.title ? 
       validatedData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : 
       md5.substring(0, 8);
+    
+    // Ensure slug uniqueness by checking for duplicates
+    let slug = baseSlug;
+    let counter = 1;
+    while (await Card.findOne({ slug })) {
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
     
     const card = new Card({
       uuid,

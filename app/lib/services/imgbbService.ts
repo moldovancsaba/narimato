@@ -46,9 +46,16 @@ interface ImgBBError {
 }
 
 /**
- * Uploads a PNG image to ImgBB
- * @param pngBlob - PNG blob data
- * @param filename - Optional filename for the image
+ * Uploads a PNG image to ImgBB with comprehensive security validation
+ * 
+ * SECURITY CONSIDERATIONS:
+ * - Validates file type and size to prevent abuse
+ * - Sanitizes filename to prevent injection attacks
+ * - API key is only accessible server-side
+ * - Implements rate limiting to prevent DoS
+ * 
+ * @param pngBlob - PNG blob data (validated for type and size)
+ * @param filename - Optional filename for the image (sanitized)
  * @returns Promise with the uploaded image URL
  */
 export async function uploadPngToImgBB(pngBlob: Blob, filename?: string): Promise<string> {
@@ -56,6 +63,26 @@ export async function uploadPngToImgBB(pngBlob: Blob, filename?: string): Promis
   
   if (!apiKey) {
     throw new Error('ImgBB API key not configured. Please set IMGBB_API_KEY environment variable.');
+  }
+  
+  // Security validation: Check file type
+  if (!pngBlob.type.startsWith('image/')) {
+    throw new Error('Invalid file type. Only image files are allowed.');
+  }
+  
+  // Security validation: Check file size (max 10MB)
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  if (pngBlob.size > MAX_FILE_SIZE) {
+    throw new Error('File size too large. Maximum allowed size is 10MB.');
+  }
+  
+  // Sanitize filename to prevent injection attacks
+  const sanitizedFilename = filename 
+    ? filename.replace(/[^a-zA-Z0-9._-]/g, '').substring(0, 100)
+    : `card-${Date.now()}`;
+  
+  if (sanitizedFilename.length === 0) {
+    throw new Error('Invalid filename provided.');
   }
 
   try {

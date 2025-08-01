@@ -4,109 +4,127 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { SESSION_FIELDS } from '@/app/lib/constants/fieldNames';
 import PageLayout from './components/PageLayout';
+import DeckCard from './components/DeckCard';
+
+interface Deck {
+  tag: string;
+  cardCount: number;
+  displayName: string;
+}
 
 export default function HomePage() {
   const router = useRouter();
-const [isStarting, setIsStarting] = useState(false);
-  const [decks, setDecks] = useState([]);
-  const [selectedDeck, setSelectedDeck] = useState('all');
+  const [isStarting, setIsStarting] = useState(false);
+  const [decks, setDecks] = useState<Deck[]>([]);
+  const [selectedDeck, setSelectedDeck] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-useEffect(() => {
+  useEffect(() => {
     const fetchDecks = async () => {
       try {
+        setLoading(true);
         const response = await fetch('/api/v1/decks');
         if (!response.ok) throw new Error('Failed to fetch decks');
         const data = await response.json();
         setDecks(data.decks);
       } catch (error) {
         console.error('Error fetching decks:', error);
+        setError('Failed to load decks');
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchDecks();
   }, []);
 
-  const handleStart = async () => {
+  const handleStart = async (selectedTag: string) => {
     if (isStarting) return; // Prevent double-clicks
     
     setIsStarting(true);
+    setSelectedDeck(selectedTag);
     
-    // Clear session-related localStorage items to ensure fresh start
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(SESSION_FIELDS.ID);
-      localStorage.removeItem('lastState');
-      // Clear any other potential cached session data
-      localStorage.removeItem('sessionVersion');
-      localStorage.removeItem('deckState');
+    try {
+      // Clear session-related localStorage items to ensure fresh start
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(SESSION_FIELDS.ID);
+        localStorage.removeItem('lastState');
+        localStorage.removeItem('sessionVersion');
+        localStorage.removeItem('deckState');
+      }
+      
       // Pass selected deck to session start API
       const response = await fetch('/api/v1/session/start', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ deckTag: selectedDeck }),
+        body: JSON.stringify({ deckTag: selectedTag }),
       });
 
       if (!response.ok) throw new Error('Failed to create session');
-    }
-    
-    try {
+      
+      // Store the session ID so the swipe page can use it
+      const sessionData = await response.json();
+      if (typeof window !== 'undefined' && sessionData.sessionId) {
+        localStorage.setItem(SESSION_FIELDS.ID, sessionData.sessionId);
+      }
+      
       // Navigate to swipe page
       router.push('/swipe');
     } catch (error) {
-      console.error('Failed to navigate:', error);
+      console.error('Failed to start session:', error);
+      setError('Failed to start session');
       setIsStarting(false);
+      setSelectedDeck('');
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 80px)' }}>
+        <div className="loading-spinner"></div>
+        <span className="ml-2 text-lg">Loading decks...</span>
+      </div>
+    );
+  }
+
   return (
     <PageLayout title="几卂尺丨爪卂ㄒㄖ">
-      <div className="text-center max-w-lg mx-auto">
-        <p className="text-lg sm:text-xl mb-8 sm:mb-10 leading-relaxed text-balance text-gray-300 dark:text-gray-400">
-          Create your personal ranking through simple swipes and votes.
-          Your preferences contribute to global ELO-based rankings.
-        </p>
-
-        {/* Deck Selection */}
-        <div className="mb-6">
-          <label htmlFor="deck" className="block text-sm font-medium text-gray-700">
-            Select a Deck
-          </label>
-          <select
-            id="deck"
-            name="deck"
-            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-            value={selectedDeck}
-            onChange={(e) => setSelectedDeck(e.target.value)}
-          >
-            {decks.map((deck) => (
-              <option key={deck.tag} value={deck.tag}>
-                {deck.displayName} ({deck.cardCount} cards)
-              </option>
-            ))}
-          </select>
+      <div className="mb-8">
+        <div className="text-center max-w-2xl mx-auto mb-8">
+          <p className="text-lg sm:text-xl leading-relaxed text-balance text-gray-300 dark:text-gray-400">
+            Create your personal ranking through simple swipes and votes.
+            Your preferences contribute to global ELO-based rankings.
+          </p>
         </div>
-        <button
-          onClick={handleStart}
-          disabled={isStarting}
-          className={`btn btn-lg w-full sm:w-auto sm:min-w-[200px] ${
-            isStarting
-              ? 'opacity-50 cursor-not-allowed'
-              : 'btn-primary'
-          }`}
-        >
-          {isStarting ? (
-            <>
-              <div className="loading-spinner mr-2"></div>
-              Starting...
-            </>
-          ) : (
-            'Start Ranking'
-          )}
-        </button>
+        
+        <h2 className="text-xl font-semibold mb-4 text-center">Choose a Deck</h2>
+      </div>
 
-        {/* Privacy Notice */}
-        <p className="mt-6 sm:mt-8 text-sm text-balance text-gray-400 dark:text-gray-500">
+      {error && (
+        <div className="status-error p-4 mb-4 rounded-lg">
+          {error}
+        </div>
+      )}
+
+      <div className="results-grid">
+        {decks.map((deck) => (
+          <DeckCard
+            key={deck.tag}
+            tag={deck.tag}
+            displayName={deck.displayName}
+            cardCount={deck.cardCount}
+            onClick={() => handleStart(deck.tag)}
+            isLoading={isStarting && deck.tag === selectedDeck}
+          />
+        ))}
+      </div>
+
+      {/* Privacy Notice */}
+      <div className="text-center mt-8">
+        <p className="text-sm text-balance text-gray-400 dark:text-gray-500">
           No registration required • Your rankings are private
         </p>
       </div>

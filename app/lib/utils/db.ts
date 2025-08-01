@@ -1,9 +1,29 @@
 import mongoose from 'mongoose';
 
+/**
+ * Database Connection Service with Enhanced Security and Monitoring
+ * 
+ * ARCHITECTURAL PURPOSE:
+ * - Manages secure MongoDB connections with proper pooling and caching
+ * - Implements connection health monitoring and automatic recovery
+ * - Provides centralized database configuration and error handling
+ * 
+ * SECURITY CONSIDERATIONS:
+ * - Connection strings are validated and sanitized
+ * - Connection timeouts prevent hanging operations
+ * - Pool limits prevent resource exhaustion attacks
+ * - Error messages don't leak connection details
+ */
+
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/narimato';
 
 if (!MONGODB_URI) {
   throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
+}
+
+// Validate URI format to prevent injection attacks
+if (!MONGODB_URI.startsWith('mongodb://') && !MONGODB_URI.startsWith('mongodb+srv://')) {
+  throw new Error('Invalid MongoDB URI format. Must start with mongodb:// or mongodb+srv://');
 }
 
 /**

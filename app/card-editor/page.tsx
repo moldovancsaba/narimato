@@ -503,8 +503,11 @@ export default function CardEditorPage() {
   };
 
   const handleSaveAsCard = async () => {
-    if (!uploadedUrl) {
-      setError('Please upload the card image first');
+    // Use uploadedUrl if available, otherwise use the URL from config.imageUrl
+    const imageUrl = uploadedUrl || config.imageUrl?.trim();
+    
+    if (!imageUrl) {
+      setError('Please either upload an image or enter an image URL');
       return;
     }
 
@@ -518,9 +521,9 @@ export default function CardEditorPage() {
         },
         body: JSON.stringify({
           type: 'media',
-          content: { mediaUrl: uploadedUrl },
-          title: config.text.substring(0, 50) + (config.text.length > 50 ? '...' : ''),
-          tags: ['svg-generated'],
+          content: { mediaUrl: imageUrl },
+          title: config.text.substring(0, 50) + (config.text.length > 50 ? '...' : '') || 'Card from URL',
+          tags: uploadedUrl ? ['svg-generated'] : ['url-generated'],
         }),
       });
 
@@ -885,10 +888,10 @@ export default function CardEditorPage() {
 
               <button
                 onClick={handleSaveAsCard}
-                disabled={!config.imageUrl || !config.imageUrl.trim()}
+                disabled={(!uploadedUrl && (!config.imageUrl || !config.imageUrl.trim()))}
                 className="btn btn-success w-full"
               >
-                Save as Card
+                {uploadedUrl ? 'Save Uploaded Card' : 'Save Card from URL'}
               </button>
 
               {pngDataUrl && (

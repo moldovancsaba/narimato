@@ -1,14 +1,21 @@
 /**
  * Error Handling Utilities for Narimato Application
  * 
- * This module provides comprehensive error handling and recovery mechanisms
- * for managing API failures, session state recovery, and data integrity.
+ * ARCHITECTURAL PURPOSE:
+ * - Centralizes all error handling logic to ensure consistent behavior across the application
+ * - Provides automatic recovery mechanisms to minimize user disruption
+ * - Implements secure error reporting that doesn't leak sensitive information
  * 
- * Key features:
- * - Automatic retry logic with exponential backoff
- * - Session state recovery and validation
- * - API error categorization and handling
- * - Local storage backup and restoration
+ * BUSINESS LOGIC RATIONALE:
+ * - Different error types require different recovery strategies (network vs validation)
+ * - Session recovery prevents data loss during temporary failures
+ * - Exponential backoff prevents overwhelming servers during outages
+ * 
+ * SECURITY CONSIDERATIONS:
+ * - Error messages are sanitized to prevent information leakage
+ * - Retry attempts are rate-limited to prevent DoS attacks
+ * - Sensitive data is never logged or stored in error details
+ * - Local storage usage is controlled to prevent storage exhaustion attacks
  */
 
 import { ISession } from '../models/Session';
