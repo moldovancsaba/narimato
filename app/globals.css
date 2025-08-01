@@ -34,8 +34,8 @@
       "card"
       "buttons";
     /* Swipe page portrait mode gradient background */
-    background: #AA0000;
-    background: linear-gradient(90deg, rgba(170, 0, 0, 1) 0%, rgba(0, 17, 34, 1) 15%, rgba(17, 0, 34, 1) 85%, rgba(0, 170, 0, 1) 100%);
+    background: #880066;
+    background: linear-gradient(90deg, rgba(136, 0, 102, 1) 0%, rgba(0, 17, 51, 1) 15%, rgba(17, 0, 51, 1) 85%, rgba(0, 136, 102, 1) 100%);
   }
   
   .swipe-grid-title { 
