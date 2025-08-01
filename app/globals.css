@@ -533,6 +533,11 @@
     .card-container:hover {
       box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
     }
+    
+    /* Remove dark hover shadow for vote cards */
+    .vote-grid .card-container:hover {
+      box-shadow: var(--shadow-card);
+    }
   }
   
   /* Touch-friendly interactions - removed scaling to prevent overflow */
