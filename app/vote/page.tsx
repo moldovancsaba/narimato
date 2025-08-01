@@ -21,7 +21,7 @@ export default function VotePage() {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 80px)' }}>
+        <div className="flex items-center justify-center mobile-safe-container">
           <div className="animate-pulse text-xl">Loading...</div>
         </div>
       }
@@ -228,7 +228,7 @@ function VoteContent() {
   // Render UI or error state
   if (!cardA || !cardB) {
     return (
-      <div className="flex items-center justify-center bg-background" style={{ height: 'calc(100vh - 80px)' }}>
+      <div className="flex items-center justify-center bg-background mobile-safe-container">
         <div className="text-center">
           <p className="text-muted text-lg">Loading next pair...</p>
         </div>
@@ -238,7 +238,7 @@ function VoteContent() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center mobile-safe-area" style={{ height: 'calc(100vh - 80px)' }}>
+      <div className="flex items-center justify-center mobile-safe-container">
         <div className="mobile-container text-center">
           <div className="content-card p-6 sm:p-8 max-w-md mx-auto">
             <div className="text-danger text-xl mb-4">Error</div>
@@ -260,7 +260,7 @@ function VoteContent() {
 
   return (
     <PageLayout title="Vote to Rank">
-      <div className="w-screen fixed inset-0 overflow-hidden bg-background text-foreground" style={{ height: 'calc(100vh - 80px)' }}>
+      <div className="w-screen fixed inset-0 overflow-hidden bg-background text-foreground mobile-safe-container">
         <div className="page-grid-container vote-grid h-full">
         
         {/* Card 1 - Row 2 (Portrait) / Column 1 (Landscape) */}

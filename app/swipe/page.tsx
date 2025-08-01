@@ -299,7 +299,7 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
   if (!sessionId || !currentCard) {
     // Just return loading state - the useEffect above will handle navigation
     return (
-      <div className="flex items-center justify-center bg-background" style={{ height: 'calc(100vh - 80px)' }}>
+      <div className="flex items-center justify-center bg-background mobile-safe-container">
         <div className="text-center">
           <p className="text-muted text-lg">Loading session...</p>
         </div>
@@ -308,7 +308,7 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
   }
 
     return (
-        <div className="w-screen fixed inset-0 overflow-hidden bg-background text-foreground" style={{ height: 'calc(100vh - 80px)' }}>
+        <div className="w-screen fixed inset-0 overflow-hidden bg-background text-foreground mobile-safe-container">
         <div className="page-grid-container swipe-grid h-full">
             
             {/* Title Area - Row 1 */}
