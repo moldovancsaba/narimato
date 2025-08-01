@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/app/lib/utils/db';
-import { Session } from '@/app/lib/models/Session';
+import { Play } from '@/app/lib/models/Play';
 import { Card } from '@/app/lib/models/Card';
 import { SessionResults } from '@/app/lib/models/SessionResults';
 import { VoteRequestSchema } from '@/app/lib/validation/schemas';
 import { DeckEntity } from '@/app/lib/models/DeckEntity';
 import mongoose from 'mongoose';
-import { SESSION_FIELDS, VOTE_FIELDS, API_FIELDS, CARD_FIELDS } from '@/app/lib/constants/fieldNames';
+import { SESSION_FIELDS, VOTE_FIELDS, API_FIELDS, CARD_FIELDS, PLAY_FIELDS } from '@/app/lib/constants/fieldNames';
 import { validateUUID, validateSessionId } from '@/app/lib/utils/fieldValidation';
 
 interface NextComparison {
@@ -408,21 +408,21 @@ const VOTE_TIMEOUT_MS = 60000; // 60 seconds
  * Automatically saves session results when a session is completed
  * @param session - The completed session
  */
-const saveSessionResults = async (session: any) => {
+const savePlayResults = async (play: any) => {
   try {
-    console.log('🔍 saveSessionResults called with session data:', {
-      sessionId: session.sessionId,
-      personalRanking: session.personalRanking,
-      personalRankingLength: session.personalRanking?.length || 0,
-      totalCards: session.totalCards,
-      swipesCount: session.swipes?.length || 0,
-      votesCount: session.votes?.length || 0,
-      status: session.status,
-      state: session.state
+    console.log('🔍 savePlayResults called with play data:', {
+      playUuid: play.playUuid,
+      personalRanking: play.personalRanking,
+      personalRankingLength: play.personalRanking?.length || 0,
+      totalCards: play.totalCards,
+      swipesCount: play.swipes?.length || 0,
+      votesCount: play.votes?.length || 0,
+      status: play.status,
+      state: play.state
     });
     
     // Get all cards from the personal ranking with their details
-    const cardIds = session.personalRanking || [];
+    const cardIds = play.personalRanking || [];
     const cards = await Card.find({ uuid: { $in: cardIds } });
     
     console.log('🃏 Found cards for ranking:', {
@@ -452,42 +452,42 @@ const saveSessionResults = async (session: any) => {
       };
     }).filter((item: any) => item.card); // Filter out any cards that weren't found
 
-    // Calculate session statistics
-    const sessionStatistics = {
-      totalCards: session.totalCards || 0,
-      cardsRanked: session.personalRanking?.length || 0,
-      cardsDiscarded: (session.totalCards || 0) - (session.personalRanking?.length || 0),
-      totalSwipes: session.swipes?.length || 0,
-      totalVotes: session.votes?.length || 0,
-      completionRate: session.totalCards ? Math.round(((session.personalRanking?.length || 0) / session.totalCards) * 100) : 0
+    // Calculate play statistics
+    const playStatistics = {
+      totalCards: play.totalCards || 0,
+      cardsRanked: play.personalRanking?.length || 0,
+      cardsDiscarded: (play.totalCards || 0) - (play.personalRanking?.length || 0),
+      totalSwipes: play.swipes?.length || 0,
+      totalVotes: play.votes?.length || 0,
+      completionRate: play.totalCards ? Math.round(((play.personalRanking?.length || 0) / play.totalCards) * 100) : 0
     };
 
-    // Check if results already exist for this session
-    const existingResults = await SessionResults.findOne({ sessionId: session.sessionId });
+    // Check if results already exist for this play
+    const existingResults = await SessionResults.findOne({ sessionId: play.playUuid });
     
     if (existingResults) {
       // Update existing results
       existingResults.personalRanking = personalRankingWithDetails;
-      existingResults.sessionStatistics = sessionStatistics;
+      existingResults.sessionStatistics = playStatistics;
       existingResults.updatedAt = new Date();
       await existingResults.save();
-      console.log(`Updated existing session results for ${session.sessionId}`);
+      console.log(`Updated existing play results for ${play.playUuid}`);
     } else {
-      // Create new session results
-      const sessionResults = new SessionResults({
-        sessionId: session.sessionId,
+      // Create new play results
+      const playResults = new SessionResults({
+        sessionId: play.playUuid,
         personalRanking: personalRankingWithDetails,
-        sessionStatistics,
+        sessionStatistics: playStatistics,
         createdAt: new Date(),
         updatedAt: new Date()
       });
 
-      await sessionResults.save();
-      console.log(`Created new session results for ${session.sessionId}`);
+      await playResults.save();
+      console.log(`Created new play results for ${play.playUuid}`);
     }
   } catch (error) {
-    console.error(`Failed to save session results for ${session.sessionId}:`, error);
-    // Don't throw error - session completion should not fail due to results saving
+    console.error(`Failed to save play results for ${play.playUuid}:`, error);
+    // Don't throw error - play completion should not fail due to results saving
   }
 };
 
@@ -496,7 +496,7 @@ const saveSessionResults = async (session: any) => {
  * Uses MongoDB transactions to ensure data consistency.
  */
 async function performAtomicRankingUpdate(
-  session: any,
+  play: any,
   newVote: any,
   updatedRanking: string[],
   newState: string,
@@ -510,15 +510,15 @@ async function performAtomicRankingUpdate(
     await mongoSession.startTransaction();
     
     // Store original state for potential rollback
-    const originalRanking = [...session.personalRanking];
-    const originalState = session.state;
-    const originalVersion = session.version;
+    const originalRanking = [...play.personalRanking];
+    const originalState = play.state;
+    const originalVersion = play.version;
     
     // Apply updates within transaction
-    session.votes.push(newVote);
-    session.personalRanking = updatedRanking;
-    session.state = newState;
-    session.version += 1;
+    play.votes.push(newVote);
+    play.personalRanking = updatedRanking;
+    play.state = newState;
+    play.version += 1;
     
     // If ranking is complete (no more comparisons), record the swipe
     if (newState === 'swiping') {
@@ -529,86 +529,125 @@ async function performAtomicRankingUpdate(
       };
       
       // Check if swipe already exists to avoid duplicates
-      const swipeExists = session.swipes.some((swipe: any) => swipe.cardId === newCard);
+      const swipeExists = play.swipes.some((swipe: any) => swipe.cardId === newCard);
       if (!swipeExists) {
-        session.swipes.push(newCardSwipe);
+        play.swipes.push(newCardSwipe);
         console.log(`Added swipe record for ranked card: ${newCard}`);
       }
       
       // Check if deck is exhausted after the swipe
-      const cards = await Card.find({ [CARD_FIELDS.UUID]: { $in: session.deck } });
+      const cards = await Card.find({ [CARD_FIELDS.UUID]: { $in: play.deck } });
       if (cards.length > 0) {
-        const orderedCards = session.deck.map((uuid: string) => 
+        const orderedCards = play.deck.map((uuid: string) => 
           cards.find(card => card[CARD_FIELDS.UUID] === uuid)
         ).filter((card: any) => card !== undefined);
         
         const deck = new DeckEntity(orderedCards);
         
         // Initialize deck with all swipes to check if exhausted
-        const swipedCardIds = session.swipes.map((swipe: any) => swipe.cardId);
+        const swipedCardIds = play.swipes.map((swipe: any) => swipe.cardId);
         for (const swipedCardId of swipedCardIds) {
-          const swipe = session.swipes.find((s: any) => s.cardId === swipedCardId);
+          const swipe = play.swipes.find((s: any) => s.cardId === swipedCardId);
           if (swipe) {
             deck.confirmSwipe(swipedCardId, swipe.direction);
           }
         }
         
-        // If deck is exhausted, mark session as completed
+        // If deck is exhausted, mark play as completed
         if (deck.isExhausted()) {
-          console.log(`🎊 DECK EXHAUSTION DETECTED - Completing session ${session.sessionId}:`, {
+          console.log(`🎊 DECK EXHAUSTION DETECTED in vote endpoint - Completing play ${play.playUuid}:`, {
             totalCardsInDeck: cards.length,
-            totalSwipes: session.swipes.length,
-            totalVotes: session.votes.length,
-            personalRankingLength: session.personalRanking.length,
+            totalSwipes: play.swipes.length,
+            totalVotes: play.votes.length,
+            personalRankingLength: play.personalRanking.length,
             lastCard: newCard.substring(0, 8) + '...',
-            currentState: session.state,
-            currentStatus: session.status
+            currentState: play.state,
+            currentStatus: play.status
           });
           
-          session.state = 'completed';
-          session.status = 'completed';
-          session.completedAt = new Date();
+          play.state = 'completed';
+          play.status = 'completed';
+          play.completedAt = new Date();
           
-          // Remove expiry for completed sessions to preserve results indefinitely for sharing
+          // Remove expiry for completed plays to preserve results indefinitely for sharing
           // Set expiresAt far in the future to effectively disable TTL cleanup
           const noExpiry = new Date('2099-12-31T23:59:59.999Z');
-          session.expiresAt = noExpiry;
+          play.expiresAt = noExpiry;
           
-          console.log(`📅 Removed expiry for completed session - will persist indefinitely for sharing`);
+          console.log(`📅 Removed expiry for completed play - will persist indefinitely for sharing`);
           
-          console.log(`✅ Session ${session.sessionId} marked as completed - deck exhausted`);
-          console.log(`📊 Final session state before saving to database:`, {
-            personalRanking: session.personalRanking.map((id: string) => id.substring(0, 8) + '...'),
-            totalCards: session.totalCards,
-            swipesCount: session.swipes.length,
-            votesCount: session.votes.length
+          console.log(`✅ Play ${play.playUuid} marked as completed via vote endpoint - deck exhausted`);
+          console.log(`📊 Final play state before saving to database:`, {
+            personalRanking: play.personalRanking.map((id: string) => id.substring(0, 8) + '...'),
+            totalCards: play.totalCards,
+            swipesCount: play.swipes.length,
+            votesCount: play.votes.length
           });
+        } else {
+          // Additional check: if all cards have been processed but deck exhaustion wasn't detected
+          // This handles edge cases where the deck state might be inconsistent
+          const totalCardsInDeck = cards.length;
+          const totalProcessedCards = play.swipes.length;
+          const personalRankingLength = play.personalRanking.length;
+          const totalLeftSwipes = play.swipes.filter((s: any) => s.direction === 'left').length;
+          const totalRightSwipes = play.swipes.filter((s: any) => s.direction === 'right').length;
+          
+          console.log(`🔍 Additional completion check in vote endpoint:`, {
+            totalCardsInDeck,
+            totalProcessedCards,
+            personalRankingLength,
+            totalLeftSwipes,
+            totalRightSwipes,
+            allCardsProcessed: totalProcessedCards >= totalCardsInDeck,
+            playState: play.state,
+            playStatus: play.status
+          });
+          
+          // Check if all cards have been processed (either swiped left or ranked)
+          if (totalProcessedCards >= totalCardsInDeck) {
+            console.log(`🎊 All cards processed - Completing play ${play.playUuid} via vote endpoint fallback:`, {
+              totalCards: totalCardsInDeck,
+              swipes: totalProcessedCards,
+              ranked: personalRankingLength,
+              discarded: totalLeftSwipes
+            });
+            
+            play.state = 'completed';
+            play.status = 'completed';
+            play.completedAt = new Date();
+            
+            // Remove expiry for completed plays
+            const noExpiry = new Date('2099-12-31T23:59:59.999Z');
+            play.expiresAt = noExpiry;
+            
+            console.log(`✅ Play ${play.playUuid} marked as completed via vote endpoint fallback`);
+          }
         }
       }
     }
     
     // Save with transaction session
-    await session.save({ session: mongoSession });
+    await play.save({ session: mongoSession });
     
     // Commit transaction if all operations succeed
     await mongoSession.commitTransaction();
     
-    console.log(`Atomic update completed for session ${session.sessionId}:`, {
+    console.log(`Atomic update completed for play ${play.playUuid}:`, {
       previousRanking: originalRanking,
       newRanking: updatedRanking,
       stateTransition: `${originalState} → ${newState}`,
       auditEntries: auditTrail.length
     });
     
-      // If session was completed, save results after transaction is committed
-      if (session.status === 'completed') {
+      // If play was completed, save results after transaction is committed
+      if (play.status === 'completed') {
         try {
-          console.log(`💾 Session completed - attempting to save results after transaction commit...`);
-          await saveSessionResults(session);
-          console.log(`✅ Session results saved successfully after completion for ${session.sessionId}`);
+          console.log(`💾 Play completed - attempting to save results after transaction commit...`);
+          await savePlayResults(play);
+          console.log(`✅ Play results saved successfully after completion for ${play.playUuid}`);
         } catch (resultsError) {
-          console.error(`❌ Failed to save session results after completion:`, resultsError);
-          // Don't throw error - session completion should not fail due to results saving
+          console.error(`❌ Failed to save play results after completion:`, resultsError);
+          // Don't throw error - play completion should not fail due to results saving
         }
       }
     
@@ -667,14 +706,14 @@ function validateStateTransition(
 export async function POST(request: NextRequest) {
   // Initialize audit trail for this operation
   const auditTrail: ComparisonAudit[] = [];
-  let session: any = null;
+let play: any = null;
   
   try {
     const body = await request.json();
     
     // Validate request body schema
     const validatedData = VoteRequestSchema.parse(body);
-    const sessionId = validatedData[SESSION_FIELDS.ID];
+    const playUuid = validatedData[SESSION_FIELDS.ID]; // Frontend sends sessionId but it's actually playUuid
     const cardA = validatedData[VOTE_FIELDS.CARD_A];
     const cardB = validatedData[VOTE_FIELDS.CARD_B];
     const winner = validatedData[VOTE_FIELDS.WINNER];
@@ -688,22 +727,22 @@ export async function POST(request: NextRequest) {
     const elapsedMs = now.getTime() - voteTime.getTime();
     
     if (elapsedMs > VOTE_TIMEOUT_MS) {
-      const timeoutSession = await Session.findOneAndUpdate(
-        { [SESSION_FIELDS.ID]: sessionId, status: { $in: ['active', 'completed'] }, [SESSION_FIELDS.VERSION]: body[SESSION_FIELDS.VERSION] },
-        { $inc: { [SESSION_FIELDS.VERSION]: 1 } },
+      const timeoutPlay = await Play.findOneAndUpdate(
+        { [PLAY_FIELDS.UUID]: playUuid, status: { $in: ['active', 'completed'] }, version: body[SESSION_FIELDS.VERSION] },
+        { $inc: { version: 1 } },
         { new: true }
       );
       
-      if (timeoutSession) {
-        await timeoutSession.handleVoteTimeout(cardA, cardB);
-        await timeoutSession.save();
+      if (timeoutPlay) {
+        await timeoutPlay.handleVoteTimeout(cardA, cardB);
+        await timeoutPlay.save();
         
         return new NextResponse(
           JSON.stringify({
             [API_FIELDS.SUCCESS]: true,
             timeoutHandled: true,
-            randomWinner: timeoutSession.votes[timeoutSession.votes.length - 1][VOTE_FIELDS.WINNER],
-            [SESSION_FIELDS.VERSION]: timeoutSession[SESSION_FIELDS.VERSION]
+            randomWinner: timeoutPlay.votes[timeoutPlay.votes.length - 1][VOTE_FIELDS.WINNER],
+            version: timeoutPlay.version
           }),
           { status: 200 }
         );
@@ -711,34 +750,34 @@ export async function POST(request: NextRequest) {
     }
 
     // Find and lock session with optimistic concurrency control
-    session = await Session.findOneAndUpdate(
-      { [SESSION_FIELDS.ID]: sessionId, status: { $in: ['active', 'completed'] }, [SESSION_FIELDS.VERSION]: body[SESSION_FIELDS.VERSION] },
-      { $inc: { [SESSION_FIELDS.VERSION]: 1 } },
+play = await Play.findOneAndUpdate(
+      { [PLAY_FIELDS.UUID]: playUuid, status: { $in: ['active', 'completed'] }, version: body[SESSION_FIELDS.VERSION] },
+      { $inc: { version: 1 } },
       { new: true }
     );
     
-    if (!session) {
-      // Try to find the session without version check to provide better error info
-      const existingSession = await Session.findOne({ [SESSION_FIELDS.ID]: sessionId, status: { $in: ['active', 'completed'] } });
+if (!play) {
+      // Try to find the play without version check to provide better error info
+      const existingPlay = await Play.findOne({ [PLAY_FIELDS.UUID]: playUuid, status: { $in: ['active', 'completed'] } });
       
-      if (!existingSession) {
+      if (!existingPlay) {
         return new NextResponse(
           JSON.stringify({ 
-            [API_FIELDS.ERROR]: 'Session not found',
-            details: 'Session does not exist or is not active/completed'
+            [API_FIELDS.ERROR]: 'Play not found',
+            details: 'Play does not exist or is not active/completed'
           }),
           { status: 404 }
         );
       } else {
-        // Session exists but version mismatch - return current version for sync
+        // Play exists but version mismatch - return current version for sync
         return new NextResponse(
           JSON.stringify({ 
-            [API_FIELDS.ERROR]: 'Session version conflict',
-            details: 'Session has been modified by another request',
-            currentVersion: existingSession[SESSION_FIELDS.VERSION],
+            [API_FIELDS.ERROR]: 'Play version conflict',
+            details: 'Play has been modified by another request',
+            currentVersion: existingPlay.version,
             expectedVersion: body[SESSION_FIELDS.VERSION],
-            sessionStatus: existingSession.status,
-            sessionState: existingSession.state
+            playStatus: existingPlay.status,
+            playState: existingPlay.state
           }),
           { status: 409 } // Conflict status for version mismatch
         );
@@ -746,53 +785,66 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if session is already completed - redirect to results instead of voting
-    if (session.status === 'completed') {
+if (play.status === 'completed') {
       return new NextResponse(
         JSON.stringify({
           success: true,
-          sessionCompleted: true,
-          message: 'Session is already completed',
-          version: session.version
+          playCompleted: true,
+          message: 'Play is already completed',
+          version: play.version
         }),
         { status: 200 }
       );
     }
 
+    // Ensure play session is valid and active before processing votes
+    if (play.status !== 'active') {
+      return new NextResponse(
+        JSON.stringify({
+          error: 'Invalid play session',
+          details: `Play session status is '${play.status}', expected 'active'`,
+          playUuid: play.playUuid,
+          currentStatus: play.status
+        }),
+        { status: 400 }
+      );
+    }
+
     // Comprehensive validation layer 1: Basic integrity checks and adjust state transitions
     // Determine which card is the new card being ranked (not already in ranking)
-    const newCard = session.personalRanking.includes(cardA) ? cardB : cardA;
+const newCard = play.personalRanking.includes(cardA) ? cardB : cardA;
     
     // Debug logging
     console.log('Vote validation debug:', {
-      sessionId: session.sessionId,
+playUuid: play.playUuid,
       cardA,
       cardB,
       winner,
       newCard,
-      currentRanking: session.personalRanking,
-      sessionVotes: session.votes.length,
-      lastVote: session.votes.length > 0 ? session.votes[session.votes.length - 1] : null
+currentRanking: play.personalRanking,
+playVotes: play.votes.length,
+      lastVote: play.votes.length > 0 ? play.votes[play.votes.length - 1] : null
     });
     
     const integralityValidation = validateRankingIntegrity(
       newCard,
-      session.personalRanking,
+      play.personalRanking,
       winner,
       cardA,
       cardB,
-      session.votes
+      play.votes
     );
 
     // If the session is in voting state and the validation passed, transition to comparing
-    if (session.state === 'voting' && integralityValidation.isValid) {
-      session.state = 'comparing';
+if (play.state === 'voting' && integralityValidation.isValid) {
+      play.state = 'comparing';
     }
     
     if (!integralityValidation.isValid) {
       console.log('Validation failed:', {
         errors: integralityValidation.errors,
         warnings: integralityValidation.warnings,
-        sessionId: session.sessionId
+        playUuid: play.playUuid
       });
       
       return new NextResponse(
@@ -807,7 +859,7 @@ export async function POST(request: NextRequest) {
 
     // Validation layer 2: Vote sequence verification (disabled for binary search compatibility)
     // Binary search algorithm may compare new card against any card in the ranking, not just the last winner
-    const lastVote = session.votes[session.votes.length - 1];
+    const lastVote = play.votes[play.votes.length - 1];
     // Commenting out strict validation that interferes with binary search
     /*
     if (lastVote && cardA !== lastVote.winner && cardB !== lastVote.winner && !body.isFirstRanking) {
@@ -827,7 +879,7 @@ export async function POST(request: NextRequest) {
 
     // Validation layer 3: Session state verification
     // Allow first ranking when explicitly marked as such
-    if (session.personalRanking.length === 0 && !body.isFirstRanking) {
+    if (play.personalRanking.length === 0 && !body.isFirstRanking) {
       return new NextResponse(
         JSON.stringify({ 
           error: 'Invalid session state',
@@ -841,13 +893,13 @@ export async function POST(request: NextRequest) {
     let updatedRanking: RankingResult;
     try {
       updatedRanking = insertCardInRanking(
-        newCard,
-        session.personalRanking,
+newCard,
+        play.personalRanking,
         winner,
         cardA,
         cardB,
         auditTrail,
-        session.votes
+        play.votes
       );
     } catch (rankingError: any) {
       return new NextResponse(
@@ -868,7 +920,7 @@ export async function POST(request: NextRequest) {
     // Validation layer 4: State transition validation
     const targetState = updatedRanking.nextComparison ? 'comparing' : 'swiping';
     const stateValidation = validateStateTransition(
-      session.state,
+play.state,
       targetState,
       !!updatedRanking.nextComparison
     );
@@ -879,7 +931,7 @@ export async function POST(request: NextRequest) {
           error: 'State transition validation failed',
           details: stateValidation.errors,
           warnings: stateValidation.warnings,
-          currentState: session.state,
+          currentState: play.state,
           targetState
         }),
         { status: 400 }
@@ -891,16 +943,16 @@ export async function POST(request: NextRequest) {
       [VOTE_FIELDS.CARD_A]: cardA,
       [VOTE_FIELDS.CARD_B]: cardB,
       [VOTE_FIELDS.WINNER]: winner,
-      [VOTE_FIELDS.TIMESTAMP]: new Date(),
+[VOTE_FIELDS.TIMESTAMP]: new Date(),
       // Additional metadata for audit purposes
-      sessionVersion: session.version,
+      playVersion: play.version,
       comparisonStrategy: 'binary_search'
     };
 
     // Perform atomic update with transaction support
     try {
-      await performAtomicRankingUpdate(
-        session,
+await performAtomicRankingUpdate(
+        play,
         newVote,
         updatedRanking.ranking,
         targetState,
@@ -922,11 +974,11 @@ export async function POST(request: NextRequest) {
     return new NextResponse(
       JSON.stringify({
         success: true,
-        currentRanking: session.personalRanking,
+currentRanking: play.personalRanking,
         nextComparison: updatedRanking.nextComparison,
         returnToSwipe: !updatedRanking.nextComparison,
-        sessionCompleted: session.status === 'completed',
-        version: session.version,
+        playCompleted: play.status === 'completed',
+        version: play.version,
         // Additional response metadata
         validationsPassed: [
           'integrity_check',
@@ -950,7 +1002,7 @@ export async function POST(request: NextRequest) {
           'Pragma': 'no-cache',
           'Expires': '0',
           'X-Vote-Audit-Count': auditTrail.length.toString(),
-          'X-Session-Version': session.version.toString()
+          'X-Play-Version': play.version.toString()
         }
       }
     );
@@ -959,7 +1011,7 @@ export async function POST(request: NextRequest) {
     console.error('Vote processing error:', {
       error: error.message,
       stack: error.stack,
-      sessionId: session?.sessionId,
+playUuid: play?.playUuid,
       auditTrailLength: auditTrail.length
     });
     

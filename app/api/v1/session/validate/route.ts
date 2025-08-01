@@ -1,47 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/app/lib/utils/db';
-import { Session } from '@/app/lib/models/Session';
-import { SESSION_FIELDS, API_FIELDS } from '@/app/lib/constants/fieldNames';
+import { Play } from '@/app/lib/models/Play';
+import { SESSION_FIELDS, API_FIELDS, PLAY_FIELDS } from '@/app/lib/constants/fieldNames';
 import { validateSessionId } from '@/app/lib/utils/fieldValidation';
 
 export async function GET(request: NextRequest) {
   try {
-    const sessionId = request.nextUrl.searchParams.get(SESSION_FIELDS.ID);
+    // Note: sessionId parameter is actually playUuid in the new architecture
+    const playUuid = request.nextUrl.searchParams.get(SESSION_FIELDS.ID);
     
-    if (!sessionId || !validateSessionId(sessionId)) {
+    if (!playUuid || !validateSessionId(playUuid)) {
       return new NextResponse(
-        JSON.stringify({ [API_FIELDS.ERROR]: 'Valid session ID is required' }),
+        JSON.stringify({ [API_FIELDS.ERROR]: 'Valid play ID is required' }),
         { status: 400 }
       );
     }
 
     await dbConnect();
 
-    // Find session and check if it's still valid
-    const session = await Session.findOne({ 
-      [SESSION_FIELDS.ID]: sessionId,
-      status: 'active',
-      expiresAt: { $gt: new Date() }
+    // Find play session and check if it's still valid (accept both active and completed)
+    const play = await Play.findOne({ 
+      [PLAY_FIELDS.UUID]: playUuid,
+      [PLAY_FIELDS.STATUS]: { $in: ['active', 'completed'] },
+      [PLAY_FIELDS.EXPIRES_AT]: { $gt: new Date() }
     });
 
     // Include version in the response for optimistic locking
-    const version = session?.[SESSION_FIELDS.VERSION] || 0;
+    const version = play?.version || 0;
+
+    console.log(`🔍 Play validation for ${playUuid.substring(0, 8)}...: ${play ? 'VALID' : 'INVALID'}`);
 
     return new NextResponse(
       JSON.stringify({ 
-        isValid: !!session,
-        state: session?.state || null,
-        status: session?.status || null,
+        isValid: !!play,
+        state: play?.state || null,
+        status: play?.status || null,
         [SESSION_FIELDS.VERSION]: version,
-        session: session ? {
-          swipes: session.swipes || [],
-          personalRanking: session.personalRanking || []
+        session: play ? {
+          swipes: play.swipes || [],
+          personalRanking: play.personalRanking || [],
+          deckUuid: play.deckUuid,
+          deckTag: play.deckTag
         } : null
       }),
       { status: 200 }
     );
   } catch (error) {
-    console.error('Session validation error:', error);
+    console.error('Play validation error:', error);
     return new NextResponse(
       JSON.stringify({ [API_FIELDS.ERROR]: 'Internal server error' }),
       { status: 500 }

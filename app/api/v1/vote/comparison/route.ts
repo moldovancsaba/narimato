@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/app/lib/utils/db';
-import { Session } from '@/app/lib/models/Session';
+import { Play } from '@/app/lib/models/Play';
 import { Card } from '@/app/lib/models/Card';
+import { PLAY_FIELDS } from '@/app/lib/constants/fieldNames';
 
 export async function GET(request: NextRequest) {
   try {
-const searchParams = request.nextUrl.searchParams;
-    const sessionId = searchParams.get('sessionId');
+    const searchParams = request.nextUrl.searchParams;
+    // Note: sessionId parameter is actually playUuid in the new architecture
+    const playUuid = searchParams.get('sessionId');
     const cardId = searchParams.get('cardId');
 
-    if (!sessionId || !cardId) {
+    if (!playUuid || !cardId) {
       return new NextResponse(
         JSON.stringify({ error: 'Missing required parameters' }),
         { status: 400 }
@@ -18,17 +20,20 @@ const searchParams = request.nextUrl.searchParams;
 
     await dbConnect();
 
-    // Find session and validate (accept both active and completed sessions for voting)
-    const session = await Session.findOne({ sessionId, status: { $in: ['active', 'completed'] } });
-    if (!session) {
+    // Find play and validate (accept both active and completed)
+    const play = await Play.findOne({ 
+      [PLAY_FIELDS.UUID]: playUuid, 
+      [PLAY_FIELDS.STATUS]: { $in: ['active', 'completed'] } 
+    });
+    if (!play) {
       return new NextResponse(
-        JSON.stringify({ error: 'Session not found or inactive' }),
+        JSON.stringify({ error: 'Play not found or inactive' }),
         { status: 404 }
       );
     }
 
     // If no ranked cards yet, this is the first card to be ranked
-    if (session.personalRanking.length === 0) {
+    if (play.personalRanking.length === 0) {
       // For the first card, return it as both A and B to show in UI
       const card = await Card.findOne({ uuid: cardId });
       if (!card) {
@@ -63,8 +68,8 @@ const searchParams = request.nextUrl.searchParams;
     
     console.log('Vote comparison API - determining next comparison:', {
       cardId,
-      personalRanking: session.personalRanking,
-      votesCount: session.votes.length
+      personalRanking: play.personalRanking,
+      votesCount: play.votes.length
     });
     
     // Calculate accumulated search bounds for this card across all votes
@@ -133,40 +138,40 @@ const searchParams = request.nextUrl.searchParams;
     }
     
     // Check if there are any previous votes to determine the next comparison
-    if (session.votes.length === 0) {
+    if (play.votes.length === 0) {
       // First comparison: start with the middle card of the ranking
-      const middleIndex = Math.floor(session.personalRanking.length / 2);
-      compareCardId = session.personalRanking[middleIndex];
+      const middleIndex = Math.floor(play.personalRanking.length / 2);
+      compareCardId = play.personalRanking[middleIndex];
       console.log('First comparison - using middle card:', { middleIndex, compareCardId });
     } else {
       // Calculate accumulated search bounds for this card
-      const bounds = calculateSearchBounds(cardId, session.personalRanking, session.votes);
+      const bounds = calculateSearchBounds(cardId, play.personalRanking, play.votes);
       
       console.log('Accumulated search bounds:', {
         cardId,
         searchStart: bounds.start,
         searchEnd: bounds.end,
-        searchSpace: session.personalRanking.slice(bounds.start, bounds.end),
-        allVotesForCard: session.votes.filter((v: any) => {
+        searchSpace: play.personalRanking.slice(bounds.start, bounds.end),
+        allVotesForCard: play.votes.filter((v: any) => {
           return v.cardA === cardId || v.cardB === cardId;
         })
       });
       
-      // If search space is empty, positioning is complete - insert card and update session state
+      // If search space is empty, positioning is complete - insert card and update play state
       if (bounds.start >= bounds.end) {
-        console.log('Search space empty - card position determined, inserting card and updating session state');
+        console.log('Search space empty - card position determined, inserting card and updating play state');
         
         // Insert card at the determined position
         const insertPosition = bounds.start;
         const newRanking = [
-          ...session.personalRanking.slice(0, insertPosition),
+          ...play.personalRanking.slice(0, insertPosition),
           cardId,
-          ...session.personalRanking.slice(insertPosition)
+          ...play.personalRanking.slice(insertPosition)
         ];
         
-        // Update session state to swiping since ranking is complete
-        const updatedSession = await Session.findOneAndUpdate(
-          { sessionId, status: { $in: ['active', 'completed'] } },
+        // Update play state to swiping since ranking is complete
+        const updatedPlay = await Play.findOneAndUpdate(
+          { [PLAY_FIELDS.UUID]: playUuid, [PLAY_FIELDS.STATUS]: { $in: ['active', 'completed'] } },
           {
             $set: {
               personalRanking: newRanking,
@@ -177,9 +182,9 @@ const searchParams = request.nextUrl.searchParams;
           { new: true }
         );
         
-        if (!updatedSession) {
+        if (!updatedPlay) {
           return new NextResponse(
-            JSON.stringify({ error: 'Failed to update session state' }),
+            JSON.stringify({ error: 'Failed to update play state' }),
             { status: 500 }
           );
         }
@@ -187,9 +192,9 @@ const searchParams = request.nextUrl.searchParams;
         console.log('Card position determined and inserted:', {
           cardId: cardId.substring(0, 8) + '...',
           insertPosition,
-          previousRanking: session.personalRanking.map((id: string) => id.substring(0, 8) + '...'),
+          previousRanking: play.personalRanking.map((id: string) => id.substring(0, 8) + '...'),
           newRanking: newRanking.map((id: string) => id.substring(0, 8) + '...'),
-          sessionState: 'comparing → swiping'
+          playState: 'comparing → swiping'
         });
         
         return new NextResponse(
@@ -203,7 +208,7 @@ const searchParams = request.nextUrl.searchParams;
         );
       } else {
         // Select middle card from the valid search space
-        const searchSpace = session.personalRanking.slice(bounds.start, bounds.end);
+        const searchSpace = play.personalRanking.slice(bounds.start, bounds.end);
         const middleIndex = Math.floor(searchSpace.length / 2);
         compareCardId = searchSpace[middleIndex];
         console.log('Selected middle from accumulated search space:', { 
@@ -242,6 +247,8 @@ const searchParams = request.nextUrl.searchParams;
         { status: 404 }
       );
     }
+
+    console.log(`Comparing cards for ${playUuid.substring(0, 8)}...: ${cardId.substring(0, 8)}... vs ${compareCardId.substring(0, 8)}...`);
 
     return new NextResponse(
       JSON.stringify({

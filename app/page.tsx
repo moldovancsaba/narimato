@@ -25,12 +25,33 @@ export default function HomePage() {
       try {
         setLoading(true);
         const response = await fetch('/api/v1/decks');
-        if (!response.ok) throw new Error('Failed to fetch decks');
-        const data = await response.json();
-        setDecks(data.decks);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Decks API error response:', errorText);
+          throw new Error(`Failed to fetch decks: ${response.status}`);
+        }
+        
+        const responseText = await response.text();
+        console.log('Decks API response text:', responseText);
+        
+        if (!responseText) {
+          throw new Error('Empty response from decks API');
+        }
+        
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          console.error('Response text that failed to parse:', responseText);
+          throw new Error('Invalid JSON response from decks API');
+        }
+        
+        setDecks(data.decks || []);
       } catch (error) {
         console.error('Error fetching decks:', error);
-        setError('Failed to load decks');
+        setError(`Failed to load decks: ${error instanceof Error ? error.message : 'Unknown error'}`);
       } finally {
         setLoading(false);
       }
@@ -46,36 +67,79 @@ export default function HomePage() {
     setSelectedDeck(selectedTag);
     
     try {
-      // Clear session-related localStorage items to ensure fresh start
+      // Debug: Log localStorage state before cleanup
       if (typeof window !== 'undefined') {
+        const beforeCleanup = {
+          sessionId: localStorage.getItem(SESSION_FIELDS.ID),
+          browserSessionId: localStorage.getItem('browserSessionId'),
+          lastState: localStorage.getItem('lastState'),
+          sessionVersion: localStorage.getItem('sessionVersion'),
+          deckState: localStorage.getItem('deckState')
+        };
+        console.log('🧹 LocalStorage state before cleanup:', beforeCleanup);
+        
+        // Clear session-related localStorage items to ensure fresh start
         localStorage.removeItem(SESSION_FIELDS.ID);
         localStorage.removeItem('lastState');
         localStorage.removeItem('sessionVersion');
         localStorage.removeItem('deckState');
+        
+        console.log('✅ Cleaned up localStorage for new play');
       }
       
-      // Pass selected deck to session start API
-      const response = await fetch('/api/v1/session/start', {
+      // Get or create browser session ID for analytics
+      let browserSessionId = null;
+      if (typeof window !== 'undefined') {
+        browserSessionId = localStorage.getItem('browserSessionId');
+        if (!browserSessionId) {
+          browserSessionId = crypto.randomUUID();
+          localStorage.setItem('browserSessionId', browserSessionId);
+        }
+      }
+      
+      // Pass selected deck to play start API
+      const response = await fetch('/api/v1/play/start', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ deckTag: selectedTag }),
+        body: JSON.stringify({ 
+          deckTag: selectedTag,
+          sessionId: browserSessionId
+        }),
       });
 
-      if (!response.ok) throw new Error('Failed to create session');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Play start API error response:', errorText);
+        throw new Error(`Failed to create play: ${response.status}`);
+      }
       
-      // Store the session ID so the swipe page can use it
-      const sessionData = await response.json();
-      if (typeof window !== 'undefined' && sessionData.sessionId) {
-        localStorage.setItem(SESSION_FIELDS.ID, sessionData.sessionId);
+      const responseText = await response.text();
+      console.log('Play start API response text:', responseText);
+      
+      if (!responseText) {
+        throw new Error('Empty response from play start API');
+      }
+      
+      let playData;
+      try {
+        playData = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        console.error('Response text that failed to parse:', responseText);
+        throw new Error('Invalid JSON response from play start API');
+      }
+      
+      if (typeof window !== 'undefined' && playData.playUuid) {
+        localStorage.setItem(SESSION_FIELDS.ID, playData.playUuid);
       }
       
       // Navigate to swipe page
       router.push('/swipe');
     } catch (error) {
-      console.error('Failed to start session:', error);
-      setError('Failed to start session');
+      console.error('Failed to start play:', error);
+      setError(`Failed to start play: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setIsStarting(false);
       setSelectedDeck('');
     }

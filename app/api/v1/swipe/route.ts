@@ -1,102 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/app/lib/utils/db';
-import { Session, SessionState } from '@/app/lib/models/Session';
+import { Play } from '@/app/lib/models/Play';
 import { Card } from '@/app/lib/models/Card';
 import { SwipeRequestSchema } from '@/app/lib/validation/schemas';
 import { DeckEntity } from '@/app/lib/models/DeckEntity';
-import { SESSION_FIELDS, CARD_FIELDS, VOTE_FIELDS, API_FIELDS } from '@/app/lib/constants/fieldNames';
+import { SESSION_FIELDS, CARD_FIELDS, VOTE_FIELDS, API_FIELDS, PLAY_FIELDS } from '@/app/lib/constants/fieldNames';
 import { validateSessionId, validateUUID } from '@/app/lib/utils/fieldValidation';
 
 /**
- * Validates session state with version check and expiry validation.
- * Implements comprehensive session validation to prevent stale state operations.
- * 
- * Why version checking:
- * - Prevents concurrent modifications from causing inconsistent state
- * - Ensures atomic operations maintain data integrity
- * - Provides clear error messaging for debugging
- * 
- * @param sessionId - Unique identifier for the session
- * @param version - Expected version number for optimistic locking
- * @returns Object with validation result and session data or error message
+ * Automatically saves play results when a play is completed
+ * @param play - The completed play
  */
-const validateSession = async (sessionId: string, version: number) => {
-  if (!validateSessionId(sessionId)) {
-    return { isValid: false, error: 'Invalid session ID format' };
-  }
-  
-  const session = await Session.findOne({ [SESSION_FIELDS.ID]: sessionId });
-  
-  if (!session) {
-    return { isValid: false, error: 'Session not found' };
-  }
-  
-  if (session[SESSION_FIELDS.VERSION] !== version) {
-    return { isValid: false, error: 'Session version mismatch' };
-  }
-  
-  // Check session expiry
-  if (session.expiresAt < new Date()) {
-    return { isValid: false, error: 'Session expired' };
-  }
-  
-  return { isValid: true, session };
-};
-
-/**
- * Updates session state with atomic operations and optimistic locking.
- * Implements safe concurrent updates to prevent race conditions.
- * 
- * Why atomic updates:
- * - Ensures consistency across concurrent operations
- * - Prevents partial state updates during failures
- * - Provides immediate feedback on concurrent modification attempts
- * 
- * @param session - Current session object with version information
- * @param newState - New state data to be applied atomically
- * @returns Updated session object or throws error on concurrent modification
- */
-const updateSessionState = async (session: any, newState: any) => {
-  const result = await Session.findOneAndUpdate(
-    { 
-      [SESSION_FIELDS.ID]: session[SESSION_FIELDS.ID],
-      [SESSION_FIELDS.VERSION]: session[SESSION_FIELDS.VERSION]
-    },
-    {
-      $set: { ...newState },
-      $inc: { [SESSION_FIELDS.VERSION]: 1 }
-    },
-    { new: true }
-  );
-  
-  if (!result) {
-    throw new Error('Concurrent update detected');
-  }
-  
-  return result;
-};
-
-/**
- * Automatically saves session results when a session is completed
- * @param session - The completed session
- */
-const saveSessionResults = async (session: any) => {
+const savePlayResults = async (play: any) => {
   try {
     const { SessionResults } = await import('@/app/lib/models/SessionResults');
     
-    console.log('🔍 saveSessionResults called with session data:', {
-      sessionId: session.sessionId,
-      personalRanking: session.personalRanking,
-      personalRankingLength: session.personalRanking?.length || 0,
-      totalCards: session.totalCards,
-      swipesCount: session.swipes?.length || 0,
-      votesCount: session.votes?.length || 0,
-      status: session.status,
-      state: session.state
+    console.log('🔍 savePlayResults called with play data:', {
+      playUuid: play.playUuid,
+      personalRanking: play.personalRanking,
+      personalRankingLength: play.personalRanking?.length || 0,
+      totalCards: play.totalCards,
+      swipesCount: play.swipes?.length || 0,
+      votesCount: play.votes?.length || 0,
+      status: play.status,
+      state: play.state
     });
     
     // Get all cards from the personal ranking with their details
-    const cardIds = session.personalRanking || [];
+    const cardIds = play.personalRanking || [];
     const cards = await Card.find({ uuid: { $in: cardIds } });
     
     console.log('🃏 Found cards for ranking:', {
@@ -126,18 +57,18 @@ const saveSessionResults = async (session: any) => {
       };
     }).filter((item: any) => item.card); // Filter out any cards that weren't found
 
-    // Calculate session statistics
+    // Calculate play statistics
     const sessionStatistics = {
-      totalCards: session.totalCards || 0,
-      cardsRanked: session.personalRanking?.length || 0,
-      cardsDiscarded: (session.totalCards || 0) - (session.personalRanking?.length || 0),
-      totalSwipes: session.swipes?.length || 0,
-      totalVotes: session.votes?.length || 0,
-      completionRate: session.totalCards ? Math.round(((session.personalRanking?.length || 0) / session.totalCards) * 100) : 0
+      totalCards: play.totalCards || 0,
+      cardsRanked: play.personalRanking?.length || 0,
+      cardsDiscarded: (play.totalCards || 0) - (play.personalRanking?.length || 0),
+      totalSwipes: play.swipes?.length || 0,
+      totalVotes: play.votes?.length || 0,
+      completionRate: play.totalCards ? Math.round(((play.personalRanking?.length || 0) / play.totalCards) * 100) : 0
     };
 
-    // Check if results already exist for this session
-    const existingResults = await SessionResults.findOne({ sessionId: session.sessionId });
+    // Check if results already exist for this play (use playUuid as sessionId for now)
+    const existingResults = await SessionResults.findOne({ sessionId: play.playUuid });
     
     if (existingResults) {
       // Update existing results
@@ -145,39 +76,30 @@ const saveSessionResults = async (session: any) => {
       existingResults.sessionStatistics = sessionStatistics;
       existingResults.updatedAt = new Date();
       await existingResults.save();
-      console.log(`Updated existing session results for ${session.sessionId}`);
+      console.log(`Updated existing play results for ${play.playUuid}`);
     } else {
-      // Create new session results
-      const sessionResults = new SessionResults({
-        sessionId: session.sessionId,
+      // Create new play results (use playUuid as sessionId for compatibility)
+      const playResults = new SessionResults({
+        sessionId: play.playUuid,
         personalRanking: personalRankingWithDetails,
         sessionStatistics,
         createdAt: new Date(),
         updatedAt: new Date()
       });
 
-      await sessionResults.save();
-      console.log(`Created new session results for ${session.sessionId}`);
+      await playResults.save();
+      console.log(`Created new play results for ${play.playUuid}`);
     }
   } catch (error) {
-    console.error(`Failed to save session results for ${session.sessionId}:`, error);
-    // Don't throw error - session completion should not fail due to results saving
+    console.error(`Failed to save play results for ${play.playUuid}:`, error);
+    // Don't throw error - play completion should not fail due to results saving
   }
 };
 
-
-/**
- * SwipeResponse interface defines the standardized response structure for swipe operations.
- * This ensures consistent API responses and enables proper frontend state management.
- * - success: Indicates if the swipe operation completed successfully
- * - requiresVoting: Determines if the frontend should transition to voting phase
- * - nextState: The new session state after processing the swipe
- * - votingContext: Optional context data needed for voting phase (only present when requiresVoting is true)
- */
 interface SwipeResponse {
   [API_FIELDS.SUCCESS]: boolean;
   requiresVoting: boolean;
-  nextState: SessionState;
+  nextState: string;
   sessionCompleted?: boolean;
   votingContext?: {
     [CARD_FIELDS.ID]: string;
@@ -185,123 +107,79 @@ interface SwipeResponse {
   };
 }
 
-/**
- * POST /api/v1/swipe
- * 
- * Processes card swipe actions with atomic operations and comprehensive error handling.
- * Implements the correct event order: validate → lock → verify → process → update → remove → release.
- * 
- * Why this approach:
- * - Optimistic locking prevents concurrent swipe conflicts
- * - Atomic operations ensure data consistency
- * - Comprehensive error handling covers all failure scenarios
- * - Proper state transitions maintain session integrity
- */
 export async function POST(request: NextRequest) {
-  // Track session lock state for cleanup in finally block
-  // This ensures proper resource management even during exceptions
-  let sessionLocked = false;
-  let session: any = null;
-
   try {
     const body = await request.json();
     
-    // 1. Validate request
-    // Parse and validate input using Zod schema to ensure type safety
-    // Rejects malformed requests early to prevent downstream errors
+    // Validate request
     const validatedData = SwipeRequestSchema.parse(body);
-    const sessionId = validatedData[SESSION_FIELDS.ID];
+    const playUuid = validatedData[SESSION_FIELDS.ID]; // Frontend sends this as sessionId but it's playUuid
     const cardId = validatedData[CARD_FIELDS.ID];
     const direction = validatedData[VOTE_FIELDS.DIRECTION];
 
     await dbConnect();
 
-    // 2. Enhanced session validation with version checking
-    // First get the current session to extract version for validation
-    const currentSession = await Session.findOne({ [SESSION_FIELDS.ID]: sessionId, status: 'active' });
+    // Find the play
+    const play = await Play.findOne({ 
+      [PLAY_FIELDS.UUID]: playUuid, 
+      [PLAY_FIELDS.STATUS]: 'active' 
+    });
     
-    if (!currentSession) {
+    if (!play) {
       return new NextResponse(
         JSON.stringify({ 
           [API_FIELDS.SUCCESS]: false,
-          [API_FIELDS.ERROR]: 'Session not found or inactive'
+          [API_FIELDS.ERROR]: 'Play not found or inactive'
         }),
         { status: 404 }
       );
     }
 
-    // Use enhanced validation with version checking and expiry validation
-    const validation = await validateSession(sessionId, currentSession[SESSION_FIELDS.VERSION]);
-    
-    if (!validation.isValid) {
-      const statusCode = validation.error === 'Session expired' ? 408 : 409;
+    // Check play expiry
+    if (play.expiresAt < new Date()) {
       return new NextResponse(
         JSON.stringify({ 
           [API_FIELDS.SUCCESS]: false,
-          [API_FIELDS.ERROR]: validation.error
+          [API_FIELDS.ERROR]: 'Play expired'
         }),
-        { status: statusCode }
+        { status: 408 }
       );
     }
 
-    // Lock session with optimistic locking after validation
-    // Use findOneAndUpdate with version increment to implement optimistic locking
-    // This prevents race conditions when multiple swipes occur simultaneously
-    session = await Session.findOneAndUpdate(
-      { [SESSION_FIELDS.ID]: sessionId, [SESSION_FIELDS.VERSION]: currentSession[SESSION_FIELDS.VERSION], status: 'active' },
-      { $inc: { [SESSION_FIELDS.VERSION]: 1 } },
-      { new: true }
-    );
-
-    if (!session) {
+    // Validate play state allows swiping
+    if (play.state !== 'swiping' && play.state !== 'voting') {
       return new NextResponse(
         JSON.stringify({ 
           [API_FIELDS.SUCCESS]: false,
-          [API_FIELDS.ERROR]: 'Concurrent modification detected during session lock'
-        }),
-        { status: 409 }
-      );
-    }
-
-    // Mark session as locked for cleanup tracking
-    sessionLocked = true;
-
-    // Validate session state allows swiping
-    // Allow swipes when session is in 'swiping' or 'voting' state
-    // 'voting' state allows left swipes to reject cards without going through comparison
-    if (session.state !== 'swiping' && session.state !== 'voting') {
-      return new NextResponse(
-        JSON.stringify({ 
-          [API_FIELDS.SUCCESS]: false,
-          [API_FIELDS.ERROR]: `Invalid session state: ${session.state}. Expected 'swiping' or 'voting'`
+          [API_FIELDS.ERROR]: `Invalid play state: ${play.state}. Expected 'swiping' or 'voting'`
         }),
         { status: 400 }
       );
     }
 
-    // 3. Verify card state
-    const cards = await Card.find({ [CARD_FIELDS.UUID]: { $in: session.deck } });
+    // Get cards for the deck
+    const cards = await Card.find({ [CARD_FIELDS.UUID]: { $in: play.deck } });
     if (cards.length === 0) {
       return new NextResponse(
         JSON.stringify({ 
           [API_FIELDS.SUCCESS]: false,
-          [API_FIELDS.ERROR]: 'No cards found in session deck'
+          [API_FIELDS.ERROR]: 'No cards found in play deck'
         }),
         { status: 400 }
       );
     }
 
     // Create deck with original order
-    const orderedCards = session.deck.map((uuid: string) => 
+    const orderedCards = play.deck.map((uuid: string) => 
       cards.find(card => card[CARD_FIELDS.UUID] === uuid)
     ).filter((card: any) => card !== undefined);
 
     const deck = new DeckEntity(orderedCards);
     
     // Initialize deck with already swiped cards
-    const swipedCardIds = session.swipes.map((swipe: any) => swipe.cardId);
+    const swipedCardIds = play.swipes.map((swipe: any) => swipe.cardId);
     for (const swipedCardId of swipedCardIds) {
-      const swipe = session.swipes.find((s: any) => s.cardId === swipedCardId);
+      const swipe = play.swipes.find((s: any) => s.cardId === swipedCardId);
       if (swipe) {
         deck.confirmSwipe(swipedCardId, swipe.direction);
       }
@@ -321,7 +199,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for duplicate swipes
-    const existingSwipe = session.swipes.some((swipe: { cardId: string }) => swipe.cardId === cardId);
+    const existingSwipe = play.swipes.some((swipe: { cardId: string }) => swipe.cardId === cardId);
     if (existingSwipe) {
       return new NextResponse(
         JSON.stringify({ 
@@ -332,7 +210,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Process swipe - prepare for state changes
+    // Process swipe
     if (!deck.prepareSwipe(cardId)) {
       return new NextResponse(
         JSON.stringify({ 
@@ -343,14 +221,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 5. Prepare atomic state update
+    // Prepare state update
     let requiresVoting = false;
     let votingContext = undefined;
-    let nextState = session.state;
-    let newPersonalRanking = [...session.personalRanking];
+    let nextState = play.state;
+    let newPersonalRanking = [...play.personalRanking];
 
     if (direction === 'right') {
-      if (session.personalRanking.length === 0) {
+      if (play.personalRanking.length === 0) {
         // First right swipe - add to ranking automatically
         newPersonalRanking = [cardId];
         requiresVoting = false;
@@ -361,7 +239,7 @@ export async function POST(request: NextRequest) {
         requiresVoting = true;
         
         // Get comparison card for voting
-        const compareWith = session.getNextComparisonCard(cardId);
+        const compareWith = play.getNextComparisonCard(cardId);
         if (compareWith) {
           votingContext = {
             cardId,
@@ -375,93 +253,68 @@ export async function POST(request: NextRequest) {
       requiresVoting = false;
     }
 
-    // 6. Confirm swipe in deck (this advances the current position)
+    // Confirm swipe in deck (this advances the current position)
     deck.confirmSwipe(cardId, direction);
 
-    // 7. Check if deck is exhausted - but only complete session for LEFT swipes
-    // For RIGHT swipes that require voting, let the voting process complete first
+    // Check if deck is exhausted
+    let sessionCompleted = false;
     if (deck.isExhausted()) {
-      console.log(`🎊 DECK EXHAUSTION DETECTED in swipe endpoint - Session ${session.sessionId}:`, {
+      console.log(`🎊 DECK EXHAUSTION DETECTED in swipe endpoint - Play ${play.playUuid}:`, {
         cardId,
         direction,
         totalCardsInDeck: orderedCards.length,
-        totalSwipes: session.swipes.length + 1, // +1 for the current swipe
+        totalSwipes: play.swipes.length + 1, // +1 for the current swipe
         personalRankingLength: newPersonalRanking.length,
-        currentState: session.state,
+        currentState: play.state,
         wasRequiringVoting: requiresVoting,
         nextState: requiresVoting ? 'voting' : 'completed'
       });
       
-      // Only complete the session immediately for LEFT swipes or first RIGHT swipe
+      // Only complete the play immediately for LEFT swipes or first RIGHT swipe
       // For RIGHT swipes that require voting, let the voting process handle completion
       if (direction === 'left' || !requiresVoting) {
-        console.log(`🏁 Completing session immediately - no voting required`);
+        console.log(`🏁 Completing play immediately - no voting required`);
         nextState = 'completed';
-        session.status = 'completed';
-        session.completedAt = new Date();
+        play.status = 'completed';
+        play.completedAt = new Date();
         
-        // Remove expiry for completed sessions to preserve results indefinitely for sharing
-        // Set expiresAt far in the future to effectively disable TTL cleanup
+        // Remove expiry for completed plays to preserve results indefinitely for sharing
         const noExpiry = new Date('2099-12-31T23:59:59.999Z');
-        session.expiresAt = noExpiry;
+        play.expiresAt = noExpiry;
         
-        console.log(`📅 Removed expiry for completed session - will persist indefinitely for sharing`);
-        console.log(`✅ Session ${session.sessionId} marked as completed via swipe endpoint`);
+        sessionCompleted = true;
+        console.log(`✅ Play ${play.playUuid} marked as completed via swipe endpoint`);
       } else {
-        console.log(`🗳️ Last card requires voting - session will complete after voting process`);
-        // Keep the voting requirement - session will be completed by the vote endpoint
-        // when it detects deck exhaustion after the final vote
+        console.log(`🗳️ Last card requires voting - play will complete after voting process`);
       }
     }
 
-    // Atomic state update with optimistic locking
-    const newSessionState = {
-      state: nextState,
-      status: session.status,
-      completedAt: session.completedAt,
-      expiresAt: session.expiresAt, // Include updated expiresAt if session was completed
-      swipes: [
-        ...session.swipes,
-        {
-          cardId,
-          direction,
-          timestamp: new Date().toISOString()
-        }
-      ],
-      personalRanking: newPersonalRanking,
-      lastActivity: new Date()
-    };
+    // Update play state
+    play.state = nextState;
+    play.swipes.push({
+      cardId,
+      direction,
+      timestamp: new Date()
+    });
+    play.personalRanking = newPersonalRanking;
+    play.lastActivity = new Date();
 
-    try {
-      // Use atomic update function to ensure consistency
-      session = await updateSessionState(session, newSessionState);
-      sessionLocked = false;
-      
-      // Automatically save session results if session is completed
-      if (session.status === 'completed') {
-        await saveSessionResults(session);
-      }
-    } catch (updateError: any) {
-      // Handle concurrent modification during atomic update
-      if (updateError.message === 'Concurrent update detected') {
-        return new NextResponse(
-          JSON.stringify({ 
-            success: false,
-            error: 'Concurrent swipe detected during state update'
-          }),
-          { status: 409 }
-        );
-      }
-      throw updateError;
+    await play.save();
+
+    // Save results if play is completed
+    if (sessionCompleted) {
+      await savePlayResults(play);
     }
 
     const response: SwipeResponse = {
       success: true,
       requiresVoting,
-      nextState: session.state as SessionState,
-      sessionCompleted: session.status === 'completed',
+      nextState: play.state,
+      sessionCompleted,
       votingContext
     };
+
+    console.log(`👆 Swipe processed for ${playUuid.substring(0, 8)}...: ${direction} on ${cardId.substring(0, 8)}..., next state: ${nextState}`);
 
     return new NextResponse(
       JSON.stringify(response),
@@ -490,17 +343,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Handle network/database failures
-    if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
-      return new NextResponse(
-        JSON.stringify({ 
-          success: false,
-          error: 'Network failure - database unavailable'
-        }),
-        { status: 503 }
-      );
-    }
-
     // Generic error handler
     return new NextResponse(
       JSON.stringify({ 
@@ -509,18 +351,5 @@ export async function POST(request: NextRequest) {
       }),
       { status: 500 }
     );
-  } finally {
-    // Ensure session lock is released even on errors
-    if (sessionLocked && session) {
-      try {
-        // Rollback version increment on failure to maintain consistency
-        await Session.findOneAndUpdate(
-          { sessionId: session.sessionId },
-          { $inc: { version: -1 } }
-        );
-      } catch (rollbackError) {
-        console.error('Failed to rollback session version:', rollbackError);
-      }
-    }
   }
 }

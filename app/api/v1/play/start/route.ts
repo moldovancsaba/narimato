@@ -1,22 +1,23 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import dbConnect from '@/app/lib/utils/db';
 import { Card } from '@/app/lib/models/Card';
 import { Play } from '@/app/lib/models/Play';
 import { DeckEntity } from '@/app/lib/models/DeckEntity';
-import { SESSION_FIELDS, CARD_FIELDS, API_FIELDS, PLAY_FIELDS, DECK_FIELDS } from '@/app/lib/constants/fieldNames';
+import { CARD_FIELDS, API_FIELDS, PLAY_FIELDS, DECK_FIELDS } from '@/app/lib/constants/fieldNames';
 import { generateDeckUuid } from '@/app/lib/utils/deckUuid';
+import { savePlayResults } from '@/app/lib/utils/sessionResultsUtils';
 
-const SESSION_EXPIRY_HOURS = 24;
+const PLAY_EXPIRY_HOURS = 24;
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     await dbConnect();
 
     // Parse request body to get deck selection and session info
     const body = await request.json().catch(() => ({}));
     const selectedTag = body.deckTag || 'all';
-    const sessionId = body.sessionId || uuidv4(); // Use provided session or create new one
+    const sessionId = body.sessionId; // Browser session ID for analytics
 
     // Build match criteria based on deck selection
     let matchCriteria: any = { isActive: true };
@@ -64,12 +65,31 @@ export async function POST(request: Request) {
     const playUuid = uuidv4();
     
     const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + SESSION_EXPIRY_HOURS);
+    expiresAt.setHours(expiresAt.getHours() + PLAY_EXPIRY_HOURS);
+
+    // Close any existing active plays for this session before creating new
+    if (sessionId) {
+      const activePlays = await Play.find({ sessionId, status: 'active' });
+      for (const activePlay of activePlays) {
+        activePlay.status = 'completed';
+        activePlay.state = 'completed';
+        activePlay.completedAt = new Date();
+        const noExpiry = new Date('2099-12-31T23:59:59.999Z');
+        activePlay.expiresAt = noExpiry;
+        await activePlay.save();
+        try {
+          await savePlayResults(activePlay);
+          console.log(`Hard closed existing active play: ${activePlay.playUuid}`);
+        } catch (saveError) {
+          console.warn(`Failed to save results for closed play ${activePlay.playUuid}:`, saveError);
+        }
+      }
+    }
 
     // Create new play session with proper UUID architecture
     const play = new Play({
       [PLAY_FIELDS.UUID]: playUuid,
-      [PLAY_FIELDS.SESSION_ID]: sessionId,
+      [PLAY_FIELDS.SESSION_ID]: sessionId, // Browser session for analytics
       [PLAY_FIELDS.DECK_UUID]: deckUuid,
       [PLAY_FIELDS.STATUS]: 'active',
       [PLAY_FIELDS.STATE]: 'swiping',
@@ -84,20 +104,20 @@ export async function POST(request: Request) {
 
     await play.save();
 
-    console.log(`🎮 New play session created:`, {
+    console.log(`🎮 New play created:`, {
       playUuid: playUuid.substring(0, 8) + '...',
-      sessionId: sessionId.substring(0, 8) + '...',
+      sessionId: sessionId ? sessionId.substring(0, 8) + '...' : 'none',
       deckUuid: deckUuid.substring(0, 8) + '...',
       deckTag: selectedTag,
-      totalCards: cards.length
+      totalCards: cards.length,
+      timestamp: new Date().toISOString()
     });
+    
 
     return new NextResponse(
       JSON.stringify({
-        // Legacy compatibility - return sessionId but actually it's playUuid
-        [SESSION_FIELDS.ID]: playUuid, // Frontend expects this field name but gets playUuid
         [PLAY_FIELDS.UUID]: playUuid,
-        browserSessionId: sessionId, // Browser session ID using different field name
+        browserSessionId: sessionId, // Browser session ID for analytics
         [DECK_FIELDS.UUID]: deckUuid,
         deckTag: selectedTag,
         expiresAt,
@@ -117,7 +137,7 @@ export async function POST(request: Request) {
       }
     );
   } catch (error) {
-    console.error('Play session creation error:', error);
+    console.error('Play creation error:', error);
     return new NextResponse(
       JSON.stringify({ [API_FIELDS.ERROR]: 'Internal server error' }),
       { status: 500 }

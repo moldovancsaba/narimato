@@ -36,12 +36,12 @@ function CompletedContent() {
     const loadResults = async () => {
       if (typeof window !== 'undefined') {
         // Check if there's a sessionId in URL parameters (shared link)
-        const urlSessionId = searchParams.get('sessionId');
+const urlPlayId = searchParams.get('sessionId'); // Using sessionId parameter name for backward compatibility
         
-        if (urlSessionId) {
+        if (urlPlayId) {
           // This is a shared link - fetch from saved results
           try {
-            const response = await fetch(`/api/v1/session/results/${urlSessionId}`);
+            const response = await fetch(`/api/v1/play/results/${urlPlayId}`);
             const data = await response.json();
             
             if (data.error) {
@@ -50,15 +50,15 @@ function CompletedContent() {
               setRanking(data.personalRanking || []);
               setStatistics(data.statistics || {});
               setIsShared(true);
-              setShareableUrl(`${window.location.origin}/completed?sessionId=${urlSessionId}`);
+              setShareableUrl(`${window.location.origin}/completed?sessionId=${urlPlayId}`);
             }
           } catch (err) {
             setError('Failed to load shared session results.');
           }
         } else {
           // This is a fresh completion - fetch from current session
-          const sessionId = localStorage.getItem(SESSION_FIELDS.ID);
-          if (sessionId) {
+          const playId = localStorage.getItem(SESSION_FIELDS.ID);
+          if (playId) {
             // Add retry logic to handle race condition between session completion and results saving
             const maxRetries = 3;
             const retryDelay = 1000; // 1 second
@@ -68,7 +68,7 @@ function CompletedContent() {
             
             while (retryCount < maxRetries && !success) {
               try {
-                const response = await fetch(`/api/v1/session/results?sessionId=${sessionId}`);
+                const response = await fetch(`/api/v1/play/results?sessionId=${playId}`); // Using sessionId parameter name for backward compatibility
                 const data = await response.json();
                 
                 if (data.error) {
@@ -91,7 +91,7 @@ function CompletedContent() {
                     const saveResponse = await fetch('/api/v1/session/save-results', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ [SESSION_FIELDS.ID]: sessionId })
+                      body: JSON.stringify({ [SESSION_FIELDS.ID]: playId })
                     });
                     
                     const saveData = await saveResponse.json();
@@ -115,12 +115,13 @@ function CompletedContent() {
               }
             }
             
-            // Clean up session data
+            // Clean up play data but keep browser session ID for analytics
             sessionStorage.clear();
-            localStorage.removeItem(SESSION_FIELDS.ID);
+            localStorage.removeItem(SESSION_FIELDS.ID); // Remove play UUID
             localStorage.removeItem('lastState');
             localStorage.removeItem('sessionVersion');
             localStorage.removeItem('deckState');
+            // Keep browserSessionId for analytics continuity
           } else {
             setError('No session found.');
           }
@@ -210,14 +211,40 @@ function CompletedContent() {
   }
   
   return (
-    <PageLayout title="Ranking">
+    <PageLayout title="Your Ranking">
+      {/* Share Section - moved above the ranked cards */}
+      {shareableUrl && (
+        <div className="mb-8">
+          <div className="content-card">
+            <h3 className="text-lg font-semibold mb-3">{isShared ? 'Share it' : 'Share Your Results'}</h3>
+            <p className="text-sm text-muted mb-3">
+              {isShared 
+                ? 'These results have been shared with you.' 
+                : 'Share your ranking results with others using this link:'}
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={shareableUrl}
+                readOnly
+                className="form-input flex-1 text-sm"
+              />
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(shareableUrl);
+                  // You could add a toast notification here
+                }}
+                className="btn btn-primary"
+              >
+                Copy Link
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Your Personal Ranking</h2>
-        <p className="text-sm text-muted mb-4">
-          This is your personal ranking based on your voting preferences. 
-          For global rankings across all users (powered by ELO rating system), visit the <a href="/ranks" className="text-primary hover:underline">Global Rankings</a> page.
-        </p>
-      <div className="results-grid">
+        <div className="results-grid">
           {ranking.map((item) => (
             <div key={item.cardId} className="relative">
               <BaseCard
@@ -264,37 +291,6 @@ function CompletedContent() {
                 <div className="text-2xl font-bold text-success">{statistics.completionRate}%</div>
                 <div className="text-sm text-muted">Completion Rate</div>
               </div>
-          </div>
-        </div>
-      )}
-
-      {/* Share Section */}
-      {shareableUrl && (
-        <div className="mb-8">
-          <div className="content-card">
-            <h3 className="text-lg font-semibold mb-3">{isShared ? 'Shared Results' : 'Share Your Results'}</h3>
-            <p className="text-sm text-muted mb-3">
-              {isShared 
-                ? 'These results have been shared with you.' 
-                : 'Share your ranking results with others using this link:'}
-            </p>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={shareableUrl}
-                readOnly
-                className="form-input flex-1 text-sm"
-              />
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(shareableUrl);
-                  // You could add a toast notification here
-                }}
-                className="btn btn-primary"
-              >
-                Copy Link
-              </button>
-            </div>
           </div>
         </div>
       )}

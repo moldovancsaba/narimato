@@ -1,38 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/app/lib/utils/db';
-import { Session } from '@/app/lib/models/Session';
+import { Play } from '@/app/lib/models/Play';
 import { Card } from '@/app/lib/models/Card';
+import { PLAY_FIELDS } from '@/app/lib/constants/fieldNames';
 
 export async function GET(request: NextRequest) {
   try {
-    const sessionId = request.nextUrl.searchParams.get('sessionId');
+    // Note: sessionId parameter is actually playUuid in the new architecture
+    const playUuid = request.nextUrl.searchParams.get('sessionId');
     
-    if (!sessionId) {
+    if (!playUuid) {
       return new NextResponse(
-        JSON.stringify({ error: 'Session ID is required' }),
+        JSON.stringify({ error: 'Play ID is required' }),
         { status: 400 }
       );
     }
 
     await dbConnect();
 
-    // Find session and check if it's still valid
-    const session = await Session.findOne({ 
-      sessionId,
-      status: 'active',
-      expiresAt: { $gt: new Date() }
+    // Find play and check if it's still valid
+    const play = await Play.findOne({ 
+      [PLAY_FIELDS.UUID]: playUuid,
+      [PLAY_FIELDS.STATUS]: 'active',
+      [PLAY_FIELDS.EXPIRES_AT]: { $gt: new Date() }
     });
 
-    if (!session) {
+    if (!play) {
       return new NextResponse(
-        JSON.stringify({ error: 'Session not found or inactive' }),
+        JSON.stringify({ error: 'Play not found or inactive' }),
         { status: 404 }
       );
     }
 
     // Get all cards in deck
     const cards = await Card.find({ 
-      uuid: { $in: session.deck },
+      uuid: { $in: play.deck },
       isActive: true
     });
 
@@ -43,8 +45,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Preserve original deck order from session
-    const orderedCards = session.deck.map((uuid: string) => 
+    // Preserve original deck order from play
+    const orderedCards = play.deck.map((uuid: string) => 
       cards.find(card => card.uuid === uuid)
     ).filter((card: any) => card !== undefined);
 
@@ -56,6 +58,8 @@ export async function GET(request: NextRequest) {
       title: card.title,
       tags: card.tags
     }));
+
+    console.log(`🎴 Deck retrieved for ${playUuid.substring(0, 8)}...: ${mappedCards.length} cards`);
 
     return new NextResponse(
       JSON.stringify({ deck: mappedCards }),

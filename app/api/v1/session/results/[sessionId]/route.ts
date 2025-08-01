@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/app/lib/utils/db';
 import { SessionResults } from '@/app/lib/models/SessionResults';
-import { Session } from '@/app/lib/models/Session';
+import { Play } from '@/app/lib/models/Play';
 import { validateSessionId } from '@/app/lib/utils/fieldValidation';
-import { saveSessionResults } from '@/app/lib/utils/sessionResultsUtils';
+import { saveSessionResults, savePlayResults } from '@/app/lib/utils/sessionResultsUtils';
+import { PLAY_FIELDS } from '@/app/lib/constants/fieldNames';
 
 interface RouteParams {
   params: Promise<{ sessionId: string }>;
@@ -40,22 +41,22 @@ export async function GET(
       });
     }
 
-    console.log(`No saved results found for session ${sessionId}, checking live session...`);
+    console.log(`No saved results found for session ${sessionId}, checking live play...`);
     
-    // If no saved results found, try to get from live session and save
-    const liveSession = await Session.findOne({ sessionId });
+    // If no saved results found, try to get from live play and save
+    const livePlay = await Play.findOne({ [PLAY_FIELDS.UUID]: sessionId });
     
-    if (liveSession && liveSession.status === 'completed') {
-      console.log(`Found completed live session for ${sessionId}, attempting to save results...`);
+    if (livePlay && livePlay.status === 'completed') {
+      console.log(`Found completed live play for ${sessionId}, attempting to save results...`);
       
-      // Try to save the session results now
+      // Try to save the play results now
       try {
-        await saveSessionResults(liveSession);
+        await savePlayResults(livePlay);
         
         // Retry fetching the saved results
         const newlySavedResults = await SessionResults.findOne({ sessionId });
         if (newlySavedResults) {
-          console.log(`Successfully saved and retrieved results for session ${sessionId}`);
+          console.log(`Successfully saved and retrieved results for play ${sessionId}`);
           return NextResponse.json({
             personalRanking: newlySavedResults.personalRanking,
             statistics: newlySavedResults.sessionStatistics,
@@ -65,7 +66,7 @@ export async function GET(
           });
         }
       } catch (saveError) {
-        console.error(`Failed to save session results for ${sessionId}:`, saveError);
+        console.error(`Failed to save play results for ${sessionId}:`, saveError);
         // Don't return error here, continue to check other options
       }
     }

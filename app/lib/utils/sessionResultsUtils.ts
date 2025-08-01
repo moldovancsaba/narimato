@@ -70,3 +70,73 @@ export const saveSessionResults = async (session: any) => {
     throw error; // Re-throw so callers can handle appropriately
   }
 };
+
+/**
+ * Utility function to save play results to the SessionResults collection
+ * This is used when a play is completed to create shareable results
+ */
+export const savePlayResults = async (play: any) => {
+  try {
+    // Get all cards from the personal ranking with their details
+    const cardIds = play.personalRanking || [];
+    const cards = await Card.find({ uuid: { $in: cardIds } });
+    
+    // Create a map for quick card lookup
+    const cardMap = new Map();
+    cards.forEach(card => {
+      cardMap.set(card.uuid, {
+        uuid: card.uuid,
+        type: card.type,
+        content: card.content,
+        title: card.title
+      });
+    });
+
+    // Build the personal ranking with card details
+    const personalRankingWithDetails = cardIds.map((cardId: string, index: number) => {
+      const card = cardMap.get(cardId);
+      return {
+        cardId,
+        card,
+        rank: index + 1
+      };
+    }).filter((item: any) => item.card); // Filter out any cards that weren't found
+
+    // Calculate play statistics
+    const playStatistics = {
+      totalCards: play.totalCards || 0,
+      cardsRanked: play.personalRanking?.length || 0,
+      cardsDiscarded: (play.totalCards || 0) - (play.personalRanking?.length || 0),
+      totalSwipes: play.swipes?.length || 0,
+      totalVotes: play.votes?.length || 0,
+      completionRate: play.totalCards ? Math.round(((play.personalRanking?.length || 0) / play.totalCards) * 100) : 0
+    };
+
+    // Check if results already exist for this play
+    const existingResults = await SessionResults.findOne({ sessionId: play.playUuid });
+    
+    if (existingResults) {
+      // Update existing results
+      existingResults.personalRanking = personalRankingWithDetails;
+      existingResults.sessionStatistics = playStatistics;
+      existingResults.updatedAt = new Date();
+      await existingResults.save();
+      console.log(`Updated existing play results for ${play.playUuid}`);
+    } else {
+      // Create new play results
+      const playResults = new SessionResults({
+        sessionId: play.playUuid,
+        personalRanking: personalRankingWithDetails,
+        sessionStatistics: playStatistics,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      await playResults.save();
+      console.log(`Created new play results for ${play.playUuid}`);
+    }
+  } catch (error) {
+    console.error(`Failed to save play results for ${play.playUuid}:`, error);
+    throw error; // Re-throw so callers can handle appropriately
+  }
+};

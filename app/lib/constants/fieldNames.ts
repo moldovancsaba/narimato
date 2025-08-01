@@ -13,6 +13,19 @@ export const SESSION_FIELDS = {
   UPDATED_AT: 'updatedAt'
 } as const;
 
+// Play-related field names (individual game sessions)
+export const PLAY_FIELDS = {
+  ID: 'playId',
+  UUID: 'playUuid',
+  SESSION_ID: 'sessionId',
+  DECK_UUID: 'deckUuid',
+  STATUS: 'status',
+  STATE: 'state',
+  CREATED_AT: 'createdAt',
+  COMPLETED_AT: 'completedAt',
+  EXPIRES_AT: 'expiresAt'
+} as const;
+
 // Card-related field names
 export const CARD_FIELDS = {
   ID: 'cardId',
@@ -29,8 +42,10 @@ export const CARD_FIELDS = {
 // Deck-related field names
 export const DECK_FIELDS = {
   ID: 'deckId',
+  UUID: 'deckUuid',
   NAME: 'name',
   CARDS: 'cards',
+  TAG: 'tag',
   CURRENT_INDEX: 'currentIndex',
   SWIPE_COUNT: 'swipeCount',
   VERSION: 'version',
@@ -65,6 +80,7 @@ export const VALIDATION_PATTERNS = {
 
 // Type definitions for better type safety
 export type SessionFieldKeys = keyof typeof SESSION_FIELDS;
+export type PlayFieldKeys = keyof typeof PLAY_FIELDS;
 export type CardFieldKeys = keyof typeof CARD_FIELDS;
 export type DeckFieldKeys = keyof typeof DECK_FIELDS;
 export type VoteFieldKeys = keyof typeof VOTE_FIELDS;

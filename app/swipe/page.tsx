@@ -45,31 +45,31 @@ import { SESSION_FIELDS, CARD_FIELDS, VOTE_FIELDS } from '@/app/lib/constants/fi
 import { createUniqueKey, validateSessionId, validateUUID } from '@/app/lib/utils/fieldValidation';
 
 export default function SwipePage() {
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [playId, setPlayId] = useState<string | null>(null);
   
   return (
     <ErrorBoundary 
-      sessionId={sessionId || undefined}
+      sessionId={playId || undefined} // Keep sessionId prop name for ErrorBoundary compatibility
       enableRecovery={true}
       onError={(error, errorInfo) => {
         // Custom error handling for swipe page
         console.error('SwipePage error:', error, errorInfo);
-        if (sessionId && validateSessionId(sessionId)) {
-          handleApiError(error, 'SwipePage component error', sessionId);
+        if (playId && validateSessionId(playId)) { // validateSessionId works for UUIDs
+          handleApiError(error, 'SwipePage component error', playId);
         }
       }}
     >
-      <SwipeContent onSessionIdChange={setSessionId} />
+      <SwipeContent onPlayIdChange={setPlayId} />
     </ErrorBoundary>
   );
 }
 
 interface SwipeContentProps {
-  onSessionIdChange: (sessionId: string | null) => void;
+  onPlayIdChange: (playId: string | null) => void;
 }
 
-function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
-  const [sessionId, setSessionId] = useState<string | null>(null);
+function SwipeContent({ onPlayIdChange }: SwipeContentProps) {
+  const [playId, setPlayId] = useState<string | null>(null);
   const [deck, setDeck] = useState<DeckEntity | null>(null);
   const [currentCard, setCurrentCard] = useState<Card | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -80,10 +80,10 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
   const { state, cardSwipedLeft, cardSwipedRight, deckExhausted, errorOccurred, startSession, deckReady } = useEventAgent();
   const { cardWidth } = useCardSize();
 
-  // Update parent component with session ID changes
+  // Update parent component with play ID changes
   useEffect(() => {
-    onSessionIdChange(sessionId);
-  }, [sessionId, onSessionIdChange]);
+    onPlayIdChange(playId);
+  }, [playId, onPlayIdChange]);
 
   // Add no-scroll class to body to prevent scrolling
   useEffect(() => {
@@ -96,10 +96,10 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
   // Add effect to handle page focus/visibility changes to reload deck state
   useEffect(() => {
     const handleFocus = async () => {
-      if (sessionId && typeof window !== 'undefined') {
+      if (playId && typeof window !== 'undefined') {
         try {
-          // Force reload deck state when page becomes visible/focused
-          const deckResponse = await fetch(`/api/v1/deck?${SESSION_FIELDS.ID}=${sessionId}&_t=${Date.now()}`);
+          // Force reload deck state when page becomes visible/focused (using sessionId param for backward compatibility)
+          const deckResponse = await fetch(`/api/v1/deck?sessionId=${playId}&_t=${Date.now()}`);
           if (deckResponse.ok) {
             const deckData = await deckResponse.json();
             const refreshedDeck = new DeckEntity(deckData.deck);
@@ -122,34 +122,41 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('visibilitychange', handleFocus);
     };
-  }, [sessionId, deck]);
+  }, [playId, deck]);
 
   useEffect(() => {
-    async function initSession() {
+    async function initPlay() {
       if (typeof window !== 'undefined') {
-        // Always reload session state - don't skip if sessionId exists
-        console.log('Initializing session...');
+        // Always reload play state - don't skip if playId exists
+        console.log('Initializing play...');
 
-        // Initialize or recover session
+        // Initialize or recover play
         try {
-          const storedSessionId = localStorage.getItem(SESSION_FIELDS.ID);
+          const storedPlayId = localStorage.getItem(SESSION_FIELDS.ID);
 
-          if (storedSessionId) {
-            // Always validate and reload to get fresh state
-            const validateResponse = await fetch(`/api/v1/session/validate?${SESSION_FIELDS.ID}=${storedSessionId}&_t=${Date.now()}`);
+          if (storedPlayId) {
+            // Always validate and reload to get fresh state (using sessionId param for backward compatibility)
+            const validateResponse = await fetch(`/api/v1/session/validate?sessionId=${storedPlayId}&_t=${Date.now()}`);
             if (validateResponse.ok) {
               const validateData = await validateResponse.json();
               if (validateData.isValid) {
-                setSessionId(storedSessionId);
+                // Check if play is completed, if so redirect to results
+                if (validateData.status === 'completed') {
+                  console.log('Play is completed, redirecting to results page');
+                  router.push(`/completed?sessionId=${storedPlayId}`);
+                  return;
+                }
+                
+                setPlayId(storedPlayId);
 
                 // Force fresh deck state
-                const deckResponse = await fetch(`/api/v1/deck?${SESSION_FIELDS.ID}=${storedSessionId}&_t=${Date.now()}`);
+                const deckResponse = await fetch(`/api/v1/deck?sessionId=${storedPlayId}&_t=${Date.now()}`);
                 if (deckResponse.ok) {
                   const deckData = await deckResponse.json();
                   const newDeck = new DeckEntity(deckData.deck);
                   newDeck.setVersion(validateData[SESSION_FIELDS.VERSION]);
                   
-                  // Restore deck state with existing swipes from session
+                  // Restore deck state with existing swipes from play
                   if (validateData.session && validateData.session.swipes) {
                     for (const swipe of validateData.session.swipes) {
                       try {
@@ -162,43 +169,41 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
                   
                   setDeck(newDeck);
                   setCurrentCard(newDeck.getCurrentCard());
-                  console.log('Session restored with deck state');
+                  console.log('Play restored with deck state');
                 }
                 return;
+              } else {
+                console.log('Stored play ID is invalid, redirecting to home to start new play');
+                localStorage.removeItem(SESSION_FIELDS.ID); // Clean up invalid play ID
+                router.push('/');
+                return;
               }
+            } else {
+              console.log('Play validation failed, redirecting to home to start new play');
+              localStorage.removeItem(SESSION_FIELDS.ID); // Clean up invalid play ID
+              router.push('/');
+              return;
             }
           }
 
-          // Create new session only if no valid existing session
-          const response = await fetch('/api/v1/session/start', {
-            method: 'POST',
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            localStorage.setItem(SESSION_FIELDS.ID, data[SESSION_FIELDS.ID]);
-            setSessionId(data[SESSION_FIELDS.ID]);
-
-            const newDeck = new DeckEntity(data.deck);
-            newDeck.setVersion(data[SESSION_FIELDS.VERSION]);
-            setDeck(newDeck);
-            setCurrentCard(newDeck.getCurrentCard());
-            console.log('New session created');
-          }
+          // No stored play ID found, redirect to home to start a new play
+          console.log('No stored play ID found, redirecting to home page to start new play');
+          router.push('/');
+          return;
         } catch (error) {
           console.error('Initialization error:', error);
-          setError('Session initialization failed');
+          setError('Play initialization failed');
           localStorage.removeItem(SESSION_FIELDS.ID);
           localStorage.removeItem('lastState');
         }
       }
     }
 
-    initSession();
-  }, []); // Run once on mount
+    initPlay();
+  }, [router]); // Run once on mount
 
   const handleSwipe = useCallback(async (direction: 'left' | 'right') => {
-    if (!sessionId || !currentCard || isLoading) return;
+    if (!playId || !currentCard || isLoading) return;
     
     setIsLoading(true);
     try {
@@ -207,7 +212,7 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          [SESSION_FIELDS.ID]: sessionId,
+          [SESSION_FIELDS.ID]: playId, // Using SESSION_FIELDS.ID for backward compatibility
           [CARD_FIELDS.ID]: currentCard[CARD_FIELDS.UUID],
           [VOTE_FIELDS.DIRECTION]: direction,
           [SESSION_FIELDS.VERSION]: deck?.getVersion()
@@ -227,12 +232,12 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
         nextState: data.nextState
       });
 
-      // Check if session is completed first (highest priority)
+      // Check if play is completed first (highest priority)
       if (data.sessionCompleted) {
-        console.log('Session completed via swipe - redirecting to results');
+        console.log('Play completed via swipe - redirecting to results');
         // Clear any polling intervals and redirect immediately
         localStorage.removeItem('lastState');
-        router.push(`/completed?${SESSION_FIELDS.ID}=${sessionId}`);
+        router.push(`/completed?sessionId=${playId}`); // Using sessionId param for backward compatibility
         return;
       }
 
@@ -245,7 +250,7 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
           [VOTE_FIELDS.TIMESTAMP]: new Date().toISOString()
         }));
         
-        router.push(`/vote?${SESSION_FIELDS.ID}=${sessionId}&${CARD_FIELDS.ID}=${currentCard[CARD_FIELDS.UUID]}`);
+        router.push(`/vote?sessionId=${playId}&${CARD_FIELDS.ID}=${currentCard[CARD_FIELDS.UUID]}`); // Using sessionId param for backward compatibility
         return;
       }
 
@@ -258,7 +263,7 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [sessionId, currentCard, deck, isLoading, router]);
+  }, [playId, currentCard, deck, isLoading, router]);
 
   // Handle error state
   if (error) {
@@ -289,19 +294,19 @@ function SwipeContent({ onSessionIdChange }: SwipeContentProps) {
 
   // Check if deck is exhausted and redirect to results
   useEffect(() => {
-    if (deck && deck.isExhausted() && sessionId) {
+    if (deck && deck.isExhausted() && playId) {
       console.log('Deck exhausted, redirecting to completed page');
-      router.push(`/completed?${SESSION_FIELDS.ID}=${sessionId}`);
+      router.push(`/completed?sessionId=${playId}`); // Using sessionId param for backward compatibility
     }
-  }, [deck, sessionId, router]);
+  }, [deck, playId, router]);
 
   // Handle loading state
-  if (!sessionId || !currentCard) {
+  if (!playId || !currentCard) {
     // Just return loading state - the useEffect above will handle navigation
     return (
       <div className="flex items-center justify-center bg-background mobile-safe-container">
         <div className="text-center">
-          <p className="text-muted text-lg">Loading session...</p>
+          <p className="text-muted text-lg">Loading play...</p>
         </div>
       </div>
     );
