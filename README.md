@@ -8,7 +8,7 @@
 
 NARIMATO is an anonymous, session-based card ranking application built with Next.js, MongoDB, and sophisticated binary search ranking algorithms. Global rankings are powered by ELO rating system for accurate skill-based card comparisons.
 
-**Current Version:** 2.0.3 *(Updated with Dark Mode support)*
+**Current Version:** 3.4.0 *(Major Swipe Animation Enhancement)*
 
 ## ✨ Key Features
 
@@ -23,16 +23,14 @@ NARIMATO is an anonymous, session-based card ranking application built with Next
   - **Dark Mode Support**: Full dark mode for enhanced visual comfort.
   - **Comprehensive Error Handling**: Graceful degradation and automatic recovery
 
-## 🔥 Recent Improvements (v2.0.2)
+## 🔥 Recent Improvements (v3.4.0)
 
-- **Typography Enhancement**: Upgraded to Fira Code SemiBold (600) for improved readability
-- **Clean UI Design**: Removed title overlays from cards for cleaner, content-focused interface
-- **Dynamic Text Fitting**: Advanced text scaling system ensures optimal display across all card sizes
-- **Enhanced Binary Search**: Accumulated bounds calculation for optimal comparison efficiency
-- **Smart State Transitions**: Automatic detection when card position is determined
-- **Improved Session Management**: Perfect synchronization between frontend and backend states
-- **Dark Mode Support**: Seamless dark mode experience for improved accessibility.
-- **Performance Optimization**: ~40% reduction in average comparisons per card
+- **Sophisticated Swipe Animations**: Real-time drag feedback with smooth spring animations and rotation effects using react-spring and use-gesture
+- **Consolidated Gesture Handling**: Unified swipe detection using useDrag for both desktop and mobile, with keyboard support
+- **Major Conflict Resolution**: Removed useSwipeable conflicts to prevent concurrent swipe errors and race conditions
+- **Comprehensive Cross-Platform Support**: Full touch and mouse support with smooth transitions across devices and orientations
+- **Persistence and Error Handling**: Improved state management and error reporting for robust functionality
+- **Responsive and Accessible Design**: Improved experience in both portrait and landscape modes with accessible keyboard controls
 
 ## 📚 Documentation
 
