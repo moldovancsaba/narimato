@@ -311,6 +311,14 @@ export async function POST(request: NextRequest) {
         nextState = 'completed';
         session.status = 'completed';
         session.completedAt = new Date();
+        
+        // Extend expiry time for completed sessions to preserve results for sharing
+        // Set expiry to 7 days from completion instead of original 24 hours
+        const extendedExpiry = new Date();
+        extendedExpiry.setDate(extendedExpiry.getDate() + 7);
+        session.expiresAt = extendedExpiry;
+        
+        console.log(`📅 Extended session expiry to ${extendedExpiry.toISOString()} for completed session`);
         console.log(`✅ Session ${session.sessionId} marked as completed via swipe endpoint`);
       } else {
         console.log(`🗳️ Last card requires voting - session will complete after voting process`);
