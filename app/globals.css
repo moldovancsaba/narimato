@@ -33,6 +33,9 @@
       "title"
       "card"
       "buttons";
+    /* Swipe page portrait mode gradient background */
+    background: #AA0000;
+    background: linear-gradient(90deg, rgba(170, 0, 0, 1) 0%, rgba(0, 17, 34, 1) 15%, rgba(17, 0, 34, 1) 85%, rgba(0, 170, 0, 1) 100%);
   }
   
   .swipe-grid-title { 
@@ -47,6 +50,9 @@
   .swipe-grid-buttons {
     grid-area: buttons;
     @apply flex justify-center items-center gap-8;
+    /* Hide buttons in portrait mode but keep the space */
+    opacity: 0;
+    pointer-events: none;
   }
 
   .swipe-grid-button-left, .swipe-grid-button-right {

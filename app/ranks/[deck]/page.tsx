@@ -118,16 +118,6 @@ export default function DeckRankingsPage() {
   return (
     <PageLayout title={`#${deckTag} Rankings`}>
       <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <button
-            onClick={handleBackToDecks}
-            className="text-blue-500 hover:text-blue-400 flex items-center gap-2"
-          >
-            ← Back to Decks
-          </button>
-        </div>
-        
-        <h2 className="text-xl font-semibold mb-4">#{deckTag} Global Rankings (ELO-Based)</h2>
         <p className="text-sm text-muted mb-4">
           Rankings for cards in the #{deckTag} deck, calculated using the ELO rating system 
           based on head-to-head comparisons across all user sessions.
@@ -148,9 +138,6 @@ export default function DeckRankingsPage() {
         </div>
       ) : (
         <>
-          <div className="mb-4 text-sm text-muted">
-            Showing {ranking.length} ranked cards from #{deckTag}
-          </div>
           
           <div className="results-grid">
             {ranking.map((item) => (
@@ -183,18 +170,6 @@ export default function DeckRankingsPage() {
                 </BaseCard>
               </motion.div>
             ))}
-          </div>
-          
-          <div className="text-center mt-8">
-            <p className="text-sm text-muted mb-4">
-              Rankings are updated in real-time • Only cards from #{deckTag} are shown
-            </p>
-            <button
-              onClick={handleBackToDecks}
-              className="btn btn-secondary"
-            >
-              View Other Decks
-            </button>
           </div>
         </>
       )}
