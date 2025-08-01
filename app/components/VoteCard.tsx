@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
+import React from 'react';
 import BaseCard from './BaseCard';
 
 /**
@@ -51,47 +50,12 @@ const VoteCard = React.memo(function VoteCard({
   onSelect,
   isSelected
 }: VoteCardProps) {
-  /**
-   * Animation variants for Framer Motion state transitions.
-   * 
-   * States:
-   * - initial: Default state when no selection has been made
-   * - selected: Visual emphasis when this card is chosen
-   * - unselected: Subdued appearance when other card is chosen
-   * 
-   * Scale and opacity changes provide clear visual hierarchy
-   * without being distracting during the comparison process.
-   */
-  // Memoize constants and variants to prevent unnecessary re-creations
-  const scaleValues = useMemo(() => ({
-    SCALE_INITIAL: 1,
-    SCALE_SELECTED: 0.95,
-    SCALE_UNSELECTED: 0.9,
-    SCALE_HOVER: 0.95
-  }), []);
-
-  const variants = useMemo(() => ({
-    initial: {
-      scale: scaleValues.SCALE_INITIAL,
-      opacity: 1
-    },
-    selected: {
-      scale: scaleValues.SCALE_INITIAL,
-      opacity: 1
-    },
-    unselected: {
-      scale: scaleValues.SCALE_INITIAL,
-      opacity: 1
-    }
-  }), [scaleValues]);
+  // Removed all animations and opacity changes for clean appearance
 
   return (
-    <motion.div
-      initial="initial"
-      animate={isSelected ? "selected" : isSelected === false ? "unselected" : "initial"}
-      variants={variants}
-      transition={{ duration: 0.2, ease: "easeOut" }}
-      className="card-container"
+    <div 
+      className="card-container transition-all duration-300 ease-out hover:border-white vote-card-fade"
+      key={uuid} // Force re-render when card changes for fade effect
     >
       <BaseCard
         uuid={uuid}
@@ -101,7 +65,7 @@ const VoteCard = React.memo(function VoteCard({
         size="grid"  // Use grid size to avoid aspect ratio conflicts
         className=""
       />
-    </motion.div>
+    </div>
   );
 });
 
