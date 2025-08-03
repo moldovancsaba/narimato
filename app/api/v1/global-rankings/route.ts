@@ -17,7 +17,16 @@ export async function GET(request: Request) {
     // Get card IDs based on deck filter
     let cardFilter: any = { isActive: true };
     if (deckTag) {
-      cardFilter = { ...cardFilter, tags: deckTag };
+      // Cards can be filtered by:
+      // 1. Their own name (if they match the deck tag)
+      // 2. Having the deck tag in their hashtags array (if they are children)
+      cardFilter = { 
+        ...cardFilter, 
+        $or: [
+          { name: deckTag }, // Card's own name matches
+          { hashtags: deckTag } // Card has this tag in its hashtags array
+        ]
+      };
     }
     
     const filteredCards = await Card.find(cardFilter, { uuid: 1 });
@@ -69,10 +78,16 @@ export async function GET(request: Request) {
     // Create a map for quick card lookup
     const cardMap = new Map();
     cards.forEach(card => {
+      // Derive type from card content - if it has imageUrl it's media, otherwise text
+      const cardType = card.body?.imageUrl ? 'media' : 'text';
+      
       cardMap.set(card.uuid, {
         uuid: card.uuid,
-        type: card.type,
-        content: card.content
+        type: cardType,
+        content: {
+          text: card.body?.textContent,
+          mediaUrl: card.body?.imageUrl
+        }
       });
     });
 
