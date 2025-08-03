@@ -1,6 +1,6 @@
 # Development Learnings
 
-**Current Version:** 3.6.3 (Updated)
+**Current Version:** 3.6.4 (Updated)
 **Date:** 2025-08-03
 
 ## State Transitions  Edge Cases
@@ -283,6 +283,42 @@
    - Enhanced user experience with consistent visual presentation
 
 3. **Key Learning**: **Standardizing media rendering through a single field (body.imageUrl) eliminates inconsistencies and simplifies component logic**
+
+### Global Rankings API Fix
+1. **Root Cause Analysis**:
+   - Global rankings API was using incorrect field mappings for hashtag filtering
+   - Card filtering logic was looking for non-existent `tags` field instead of `hashtags` array
+   - Card data mapping was using non-existent `type` and `content` fields from Card model
+   - Missing support for parent-child hashtag relationships in query logic
+
+2. **Solution Implementation**:
+   - Fixed card filtering to use proper `$or` query with `name` and `hashtags` fields
+   - Implemented support for both parent cards (by name) and child cards (by hashtag reference)
+   - Corrected card type derivation from `body.imageUrl` presence (media vs text)
+   - Fixed content mapping to use proper `body.textContent` and `body.imageUrl` structure
+
+3. **Technical Details**:
+   ```javascript
+   // Fixed filtering logic
+   cardFilter = { 
+     ...cardFilter, 
+     $or: [
+       { name: deckTag }, // Parent card matches
+       { hashtags: deckTag } // Child card has hashtag reference
+     ]
+   };
+   
+   // Fixed data mapping
+   {
+     type: card.body?.imageUrl ? 'media' : 'text',
+     content: {
+       text: card.body?.textContent,
+       mediaUrl: card.body?.imageUrl
+     }
+   }
+   ```
+
+4. **Key Learning**: **API endpoints must align with actual data model schemas, especially when using dynamic hashtag hierarchies - field mappings and query logic must account for both parent-child relationships and proper data structure**
 
 ## Implementation Details
 

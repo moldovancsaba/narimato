@@ -1,6 +1,6 @@
 # NARIMATO Development Roadmap
 
-**Current Version:** 3.6.3
+**Current Version:** 3.6.4
 **Date:** 2025-08-02
 **Last Updated:** 2025-08-02T23:10:48.000Z
 

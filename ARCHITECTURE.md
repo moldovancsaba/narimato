@@ -1,6 +1,6 @@
 # NARIMATO Architecture
 
-**Current Version:** 3.6.3 (Play-Based System Update)
+**Current Version:** 3.6.4 (Global Rankings Fix)
 **Date:** 2025-08-02
 **Last Updated:** 2025-08-02T23:10:48.000Z
 

@@ -1,6 +1,6 @@
 # NARIMATO
 
-![Version](https://img.shields.io/badge/version-3.6.3-blue.svg)
+![Version](https://img.shields.io/badge/version-3.6.4-blue.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-15.4.4-black.svg)
 ![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)
 ![MongoDB](https://img.shields.io/badge/MongoDB-7.0+-green.svg)
@@ -8,7 +8,7 @@
 
 NARIMATO is an anonymous, session-based card ranking application built with Next.js, MongoDB, and sophisticated binary search ranking algorithms. Global rankings are powered by ELO rating system for accurate skill-based card comparisons.
 
-**Current Version:** 3.6.3 *(Play-Based Architecture with Hashtag Hierarchy)*
+**Current Version:** 3.6.4 *(Play-Based Architecture with Global Rankings Fix)*
 
 ## ✨ Key Features
 
@@ -37,9 +37,10 @@ NARIMATO is an anonymous, session-based card ranking application built with Next
 - **Unified Documentation**: Complete alignment of technical specification with current system architecture
 
 ### Build and Performance Fixes
-- **Arrow Function Syntax**: Fixed critical build-breaking typo in `app/ranks/page.tsx` where `=e` was incorrectly written instead of `=>` in map function
+- **Global Rankings API Fix**: Resolved issue where completed Play sessions weren't showing in global rankings due to incorrect hashtag filtering
 - **Session Completion Bug**: Resolved critical bugs where play sessions remained in 'active' status preventing results retrieval
 - **Card Rendering Standardization**: Unified all card displays to use `body.imageUrl` for consistent media rendering
+- **Build Stability**: Fixed critical build-breaking syntax errors and verified successful compilation
 - **Quality Assurance**: Verified successful build execution and complete system functionality
 
 ## 🔥 Previous Improvements (v3.6.1)

@@ -1,6 +1,6 @@
 # NARIMATO Task List
 
-**Current Version:** 3.6.3
+**Current Version:** 3.6.4
 **Date:** 2025-08-02
 **Last Updated:** 2025-08-02T23:10:48.000Z
 
@@ -57,6 +57,13 @@
 - **Details:** Create an admin panel for card CRUD operations, bulk card import/export, and card categorization/tagging system. Requires authentication system.
 
 ## Completed Tasks
+
+### Fix Global Rankings API Hashtag Filtering
+- **Owner:** AI Agent
+- **Expected Delivery Date:** 2025-08-03
+- **Status:** Completed ✅
+- **Completion Date:** 2025-08-03T12:08:33.000Z
+- **Details:** Successfully resolved critical issue where global rankings were not displaying for completed Play sessions. Fixed incorrect field mappings in global rankings API: corrected card filtering to use `hashtags` array instead of non-existent `tags` field, implemented proper parent-child hashtag relationship support with `$or` query logic, fixed card data mapping to derive type from `body.imageUrl` and use proper content structure. This resolves the "No rankings available for deck '#skills'" issue.
 
 ### Fix Play Session Completion State Bug
 - **Owner:** AI Agent

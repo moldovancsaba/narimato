@@ -36,8 +36,32 @@ The Hashtag Hierarchy System in NARIMATO provides a flexible, multi-level organi
 ## Technical Implementation
 
 - **Hierarchical Validation**: System performs validation checks to maintain hierarchy integrity and prevent misconfigurations.
-- **Efficient Querying**: Optimized queries support rapid updates and card selections.
+- **Efficient Querying**: Optimized queries support rapid updates and card selections using MongoDB `$or` operators for parent-child relationships.
+- **Global Rankings Integration**: Rankings API properly filters cards using both direct name matches and hashtag array references.
+- **Data Model Alignment**: Card filtering logic correctly uses `hashtags` array field instead of deprecated `tags` field.
 - **Seamless Transition**: Smooth transition from deck-based systems to hashtag hierarchies, maintaining consistency in play sessions.
+
+### API Implementation Details
+
+```javascript
+// Proper hashtag filtering for global rankings
+cardFilter = { 
+  isActive: true,
+  $or: [
+    { name: deckTag }, // Parent card matches directly
+    { hashtags: deckTag } // Child card contains hashtag reference
+  ]
+};
+
+// Correct card data mapping
+{
+  type: card.body?.imageUrl ? 'media' : 'text',
+  content: {
+    text: card.body?.textContent,
+    mediaUrl: card.body?.imageUrl
+  }
+}
+```
 
 ## Conclusion
 
