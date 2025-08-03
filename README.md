@@ -1,6 +1,6 @@
 # NARIMATO
 
-![Version](https://img.shields.io/badge/version-2.0.3-blue.svg)
+![Version](https://img.shields.io/badge/version-3.6.3-blue.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-15.4.4-black.svg)
 ![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)
 ![MongoDB](https://img.shields.io/badge/MongoDB-7.0+-green.svg)
@@ -8,7 +8,7 @@
 
 NARIMATO is an anonymous, session-based card ranking application built with Next.js, MongoDB, and sophisticated binary search ranking algorithms. Global rankings are powered by ELO rating system for accurate skill-based card comparisons.
 
-**Current Version:** 3.4.0 *(Major Swipe Animation Enhancement)*
+**Current Version:** 3.6.3 *(Play-Based Architecture with Hashtag Hierarchy)*
 
 ## ✨ Key Features
 
@@ -16,21 +16,57 @@ NARIMATO is an anonymous, session-based card ranking application built with Next
 - **Anonymous Sessions**: No user registration required
 - **Real-time State Management**: Optimistic locking with automatic conflict resolution
 - **Mobile-First Design**: Responsive interface with touch gesture support
+- **Advanced Card Editor**: Comprehensive card creation and editing with live preview
+- **Hashtag Management**: Smart hashtag editor with predictive suggestions
+- **Play-Based Sessions**: Individual ranking sessions with dynamic card selection
+- **Hashtag Hierarchy System**: Multi-level card organization through parent-child hashtag relationships
 - **Dynamic Text Scaling**: Automatic font sizing for optimal readability
 - **Modern Typography**: Professional Fira Code SemiBold font for enhanced aesthetics
 - **Clean Card Design**: Simplified interface focused on content without title clutter
 - **Session Recovery**: Robust error handling and state persistence
-  - **Dark Mode Support**: Full dark mode for enhanced visual comfort.
-  - **Comprehensive Error Handling**: Graceful degradation and automatic recovery
+- **Dark Mode Support**: Full dark mode for enhanced visual comfort
+- **Comprehensive Error Handling**: Graceful degradation and automatic recovery
 
-## 🔥 Recent Improvements (v3.4.0)
+## 🔥 Recent Improvements (v3.6.3)
 
-- **Sophisticated Swipe Animations**: Real-time drag feedback with smooth spring animations and rotation effects using react-spring and use-gesture
-- **Consolidated Gesture Handling**: Unified swipe detection using useDrag for both desktop and mobile, with keyboard support
-- **Major Conflict Resolution**: Removed useSwipeable conflicts to prevent concurrent swipe errors and race conditions
-- **Comprehensive Cross-Platform Support**: Full touch and mouse support with smooth transitions across devices and orientations
-- **Persistence and Error Handling**: Improved state management and error reporting for robust functionality
-- **Responsive and Accessible Design**: Improved experience in both portrait and landscape modes with accessible keyboard controls
+### Play-Based Architecture Implementation
+- **Session Management Overhaul**: Migrated from deck-based Sessions to Play-based architecture for better state management
+- **Hashtag Hierarchy System**: Implemented sophisticated multi-level card organization using parent-child hashtag relationships
+- **Dynamic Card Selection**: Cards are now selected dynamically based on user-chosen deck tags instead of static deck structures
+- **API Modernization**: Updated all endpoints to use Play model (`/api/v1/play/start`, `/api/v1/play/results`) replacing session-based endpoints
+- **Unified Documentation**: Complete alignment of technical specification with current system architecture
+
+### Build and Performance Fixes
+- **Arrow Function Syntax**: Fixed critical build-breaking typo in `app/ranks/page.tsx` where `=e` was incorrectly written instead of `=>` in map function
+- **Session Completion Bug**: Resolved critical bugs where play sessions remained in 'active' status preventing results retrieval
+- **Card Rendering Standardization**: Unified all card displays to use `body.imageUrl` for consistent media rendering
+- **Quality Assurance**: Verified successful build execution and complete system functionality
+
+## 🔥 Previous Improvements (v3.6.1)
+
+### Card Editor Enhancements
+- **Enhanced Card Editor**: Complete redesign supporting both new card creation and existing card editing
+- **UUID Display**: Prominent display of card UUIDs when editing existing cards
+- **Smart Hashtag Editor**: Advanced hashtag management with:
+  - Predictive text suggestions based on common hashtags
+  - Enter to add, click X to remove functionality
+  - Keyboard navigation with arrow keys
+  - Duplicate prevention and visual feedback
+- **URL-Friendly Slugs**: Editable slug input with automatic formatting for SEO-friendly URLs
+- **Dual Card Types**: Support for both text and media cards with type-specific validation
+- **Seamless Navigation**: Direct editing from card list page with proper state management
+
+### Technical Improvements
+- **Suspense Boundary Fix**: Resolved Next.js useSearchParams SSR issues
+- **Schema Optimization**: Fixed Mongoose duplicate index warnings for cleaner builds
+- **Form Validation**: Comprehensive validation for card types and required fields
+- **Live Preview Integration**: Real-time preview updates with new card fields
+
+### Previous Features (v3.4.0)
+- **Sophisticated Swipe Animations**: Real-time drag feedback with smooth spring animations
+- **Consolidated Gesture Handling**: Unified swipe detection for desktop and mobile
+- **Cross-Platform Support**: Full touch and mouse support with smooth transitions
+- **Responsive Design**: Improved experience across all device orientations
 
 ## 📚 Documentation
 

@@ -1,7 +1,7 @@
 # Development Learnings
 
-**Current Version:** 3.0.0 (Updated)
-**Date:** 2025-07-31
+**Current Version:** 3.6.3 (Updated)
+**Date:** 2025-08-03
 
 ## State Transitions  Edge Cases
 
@@ -217,6 +217,72 @@
    - Rating update: `newRating = currentRating + K * (actualScore - expectedScore)`
 
 3. **Key Learning**: **ELO rating system provides more meaningful global rankings than total score, especially when cards have different numbers of appearances**
+
+## Play-Based Architecture Migration (v3.6.3)
+
+### Deck to Play Model Transition
+1. **Architectural Decision**:
+   - Migrated from static deck-based Sessions to dynamic Play-based sessions
+   - Replaced fixed deck structures with hashtag-based card selection
+   - Implemented real-time card fetching based on user-selected deck tags
+   - Enhanced state management through Play model lifecycle
+
+2. **Key Implementation Insights**:
+   - Play model provides better session isolation and state consistency
+   - Dynamic card selection allows for more flexible content organization
+   - Hashtag hierarchy enables multi-level card categorization without rigid structures
+   - Session completion logic simplified through Play-centric workflow
+
+3. **Technical Benefits**:
+   - Eliminated 404 errors from deprecated `/api/v1/decks` endpoints
+   - Improved API consistency with Play-focused endpoints (`/api/v1/play/start`, `/api/v1/play/results`)
+   - Enhanced scalability through dynamic content loading
+   - Better separation of concerns between card management and session logic
+
+### Hashtag Hierarchy System Implementation
+1. **Design Philosophy**:
+   - Parent-child relationships enable natural card organization
+   - Tags serve as both categorization and playability markers
+   - Minimum card threshold ensures meaningful ranking experiences
+   - Dynamic deck generation replaces static deck management
+
+2. **Technical Implementation Learnings**:
+   - Card hierarchy validation prevents circular dependencies
+   - Playable cards filtering based on DECK_RULES.MIN_CARDS_FOR_PLAYABLE = 2
+   - Efficient querying through hashtag indexing
+   - Real-time category count updates enhance user experience
+
+3. **Key Learning**: **Hashtag-based hierarchies provide more flexible content organization than rigid deck structures while maintaining playability rules**
+
+### Session Completion Bug Resolution
+1. **Root Cause Analysis**:
+   - Play sessions stuck in 'active' status due to incomplete state transitions
+   - Results endpoint 404 errors from outdated API structure
+   - Session completion detection failing on final card processing
+   - State machine inconsistencies between frontend and backend
+
+2. **Solution Implementation**:
+   - Updated Play model with proper completion state management
+   - Fixed API endpoint routing for results retrieval
+   - Enhanced completion detection logic for edge cases
+   - Synchronized frontend-backend state transitions
+
+3. **Key Learning**: **Play-based architecture provides cleaner session lifecycle management than deck-based sessions, especially for completion state handling**
+
+### Card Rendering Standardization
+1. **Implementation Decision**:
+   - Unified all card displays to use `body.imageUrl` for media rendering
+   - Removed inconsistent image source handling across components
+   - Standardized card preview and display logic
+   - Enhanced BaseCard component for consistent rendering
+
+2. **Benefits Realized**:
+   - Eliminated rendering inconsistencies between card editors and displays
+   - Simplified media handling logic across all components
+   - Improved maintainability through single source of truth for card images
+   - Enhanced user experience with consistent visual presentation
+
+3. **Key Learning**: **Standardizing media rendering through a single field (body.imageUrl) eliminates inconsistencies and simplifies component logic**
 
 ## Implementation Details
 

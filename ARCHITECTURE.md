@@ -1,11 +1,12 @@
 # NARIMATO Architecture
 
-**Current Version:** 3.4.0 (Updated)
-**Date:** 2025-07-30
+**Current Version:** 3.6.3 (Play-Based System Update)
+**Date:** 2025-08-02
+**Last Updated:** 2025-08-02T23:10:48.000Z
 
 ## System Overview
 
-NARIMATO evolves with the latest swipe animation enhancements, offering dynamic real-time feedback through smooth spring-based interactions. Built with Next.js, @use-gesture/react, and @react-spring/web, it provides an engaging, responsive user experience on both desktop and mobile platforms.
+NARIMATO is a comprehensive card ranking application featuring advanced content management capabilities. Built with Next.js, MongoDB, and sophisticated UI components, it provides a complete ecosystem for card creation, editing, and ranking with features including smart hashtag management, deck organization, and real-time collaborative ranking.
 
 ## Flow Diagrams
 
@@ -13,7 +14,7 @@ NARIMATO evolves with the latest swipe animation enhancements, offering dynamic 
 ```mermaid
 graph TD
     A[Start] --> B[Session Creation]
-    B --> C[Deck Generation]
+    B -- C[Hashtag-Based Selection]
     C --> D[Swipe Phase]
     D --> |Left Swipe| D
     D --> |Right Swipe| E[Vote Phase]
@@ -123,19 +124,35 @@ NARIMATO supports both light and dark themes to enhance user experience and acce
 ### Core API Endpoints
 - **Session Management**: `/api/v1/session/start`, `/api/v1/session/validate`
 - **Card Operations**: `/api/v1/swipe`, `/api/v1/vote`, `/api/v1/vote/comparison`
+- **Card Management**: `/api/v1/cards`, `/api/v1/cards/[uuid]`, `/api/v1/cards/add`
+- **Play Sessions**: `/api/v1/play/start`, `/api/v1/play/results`
 - **Data Retrieval**: `/api/v1/deck`, `/api/v1/ranking`, `/api/v1/rankings`
-- **System Utilities**: `/api/v1/reset`, `/api/system/version`
+- **Content Management**: `/api/v1/presets/fonts`, `/api/v1/presets/backgrounds`
+- **System Utilities**: `/api/v1/reset`, `/api/system/version`, `/api/v1/upload/imgbb`
 
 ### Database Models
 - **Session**: Core session state with optimistic locking
-- **Card**: Individual card data with content validation
+- **Card**: Individual card data with content validation, hashtags, and slug support
+- **Play**: Dynamic session management with hashtag-based card selection
 - **PersonalRanking**: User-specific card rankings
 - **GlobalRanking**: ELO-based aggregate rankings across all sessions (primary metric: ELO rating, not total score)
 - **SystemVersion**: Application version tracking
+- **FontPreset**: Customizable font configurations for card styling
+- **BackgroundPreset**: Background and styling presets for visual customization
+
+### Deck Playability Rules
+- **Minimum Card Threshold**: DECK_RULES.MIN_CARDS_FOR_PLAYABLE = 2 (defined in constants/fieldNames.ts)
+- **Purpose**: Ensures meaningful ranking experiences by requiring at least 2 cards for comparison
+- **Implementation**: Enforced in cardHierarchy.ts filtering logic, cards API responses, and play start API validation
+- **User Experience Impact**: Prevents single-card deck sessions that provide no ranking/comparison opportunities
 
 ### Frontend Components
 - **SwipeCard**: Interactive swipe interface with advanced gesture support and real-time animations
 - **VoteCard**: Comparison voting interface
+- **CardEditor**: Comprehensive card creation and editing interface with live preview
+- **HashtagEditor**: Smart hashtag management with predictive suggestions and keyboard navigation
+- **CardManagement**: Deck-card association interface for organizing content
+- **DeckEditor**: Complete deck creation and management system
 - **ErrorBoundary**: Comprehensive error handling and recovery
 
 ## Swipe Animation Architecture

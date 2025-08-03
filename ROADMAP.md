@@ -1,25 +1,22 @@
 # NARIMATO Development Roadmap
 
-**Current Version:** 3.3.0
-**Date:** 2025-07-31
-**Last Updated:** 2025-08-01T16:19:23.789Z
+**Current Version:** 3.6.3
+**Date:** 2025-08-02
+**Last Updated:** 2025-08-02T23:10:48.000Z
 
 ## Q1 2024 - Foundation & Core Features
 
 ### Critical Priority
-- **Play Session Completion State Bug Fix**  
-  - Session state management stuck in 'active' status
-  - Completion detection logic failure
-  - Results endpoint 404 errors
-  - Immediate investigation required
-  - Dependencies: Session state debugging, database query analysis
+- **Session Management Enhancements (Completed)**
+  - Migrated play sessions to Play-based management, resolving 'active' status bugs
+  - Improved completion detection logic and resolved all 404 errors
+  - Dependencies on updated Play model implementation
 
 ### High Priority
-- **Enhanced Session Management**  
-  - Session persistence across browser refreshes
-  - Multi-device session synchronization
-  - Advanced session recovery mechanisms
-  - Dependencies: MongoDB schema updates, Socket.io improvements
+- **Dynamic Card Selection and Play Management**
+  - Fully integrated Play model with dynamic card selection
+  - Enhanced hashtag-based card organization
+  - Dependencies: Updated APIs and hashtag hierarchy improvements
 
 - **Performance Optimization**  
   - Database query optimization for large card datasets
@@ -57,6 +54,8 @@
 
 - **Advanced Ranking Algorithms**  
   - ✅ ELO rating system implementation (COMPLETED - now primary global ranking metric)
+  - ✅ Database migration to UUID-based multi-level card system (COMPLETED - 2025-08-02T22:55:20.162Z)
+  - ✅ Minimum card threshold for playable decks (COMPLETED - 2025-08-02T23:10:48.000Z - improved UX by ensuring meaningful ranking experiences)
   - Weighted ranking based on user preferences
   - Machine learning integration for recommendation
   - Dependencies: ML pipeline, advanced analytics

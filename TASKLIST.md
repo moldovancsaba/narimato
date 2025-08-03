@@ -1,23 +1,22 @@
 # NARIMATO Task List
 
-**Current Version:** 3.3.0
-**Date:** 2025-07-31
-**Last Updated:** 2025-08-01T16:19:23.789Z
+**Current Version:** 3.6.3
+**Date:** 2025-08-02
+**Last Updated:** 2025-08-02T23:10:48.000Z
 
 ## High Priority Tasks
 
-### Fix Play Session Completion State Bug
-- **Owner:** AI Agent
-- **Expected Delivery Date:** 2025-08-01
-- **Status:** In Progress
-- **Created:** 2025-08-01T16:19:23.789Z
-- **Details:** Critical bug where play sessions remain in 'active' status with 'swiping' state even when user navigates to completion page. Session f18262f4-6ed1-40f9-8a01-d1960e4c67b7 shows personalRanking: 3, swipes: 6, votes: 3 but status remains 'active'. This prevents results retrieval and causes 404 errors on /api/v1/play/results endpoint. Investigation needed in session state management, completion detection logic, and database update mechanisms.
+### Enhance Hashtag Hierarchy System
+- **Owner:** AI Agent  
+- **Expected Delivery Date:** 2025-09-01
+- **Status:** Not Started
+- **Details:** Implement advanced features for the hashtag hierarchy system including: parent-child relationship validation, circular dependency detection, automatic hierarchy suggestions based on existing cards, enhanced filtering and search capabilities, and improved UI for managing complex hierarchies.
 
-### Implement Enhanced Session Management
+### Optimize Play Session Performance
 - **Owner:** John Doe
-- **Expected Delivery Date:** 2024-01-31
-- **Status:** In Progress
-- **Details:** Implement session persistence across browser refreshes, multi-device session synchronization, advanced session recovery mechanisms. Dependencies include MongoDB schema updates and Socket.io improvements.
+- **Expected Delivery Date:** 2024-12-31
+- **Status:** Not Started
+- **Details:** Optimize Play session performance including: faster card selection queries, improved caching for hashtag hierarchies, enhanced session state persistence, and reduced database queries for dynamic card fetching.
 
 ### Performance Optimization
 - **Owner:** Jane Smith
@@ -58,6 +57,27 @@
 - **Details:** Create an admin panel for card CRUD operations, bulk card import/export, and card categorization/tagging system. Requires authentication system.
 
 ## Completed Tasks
+
+### Fix Play Session Completion State Bug
+- **Owner:** AI Agent
+- **Expected Delivery Date:** 2025-08-03
+- **Status:** Completed ✅
+- **Completion Date:** 2025-08-03T11:38:40.000Z
+- **Details:** Successfully resolved critical bug where play sessions remained in 'active' status preventing completion. Updated Play model implementation, fixed completion detection logic, resolved all 404 errors on /api/v1/play/results endpoint, and improved session state management. Migrated from Session-based to Play-based architecture for better state consistency.
+
+### Implement Minimum Card Threshold for Playable Cards
+- **Owner:** AI Agent
+- **Expected Delivery Date:** 2025-08-02
+- **Status:** Completed ✅
+- **Completion Date:** 2025-08-02T23:10:48.000Z
+- **Details:** Successfully implemented a minimum card threshold rule to ensure only decks with sufficient cards for meaningful ranking experiences are displayed as playable options. Added DECK_RULES.MIN_CARDS_FOR_PLAYABLE = 2 constant, updated backend filtering logic in cardHierarchy.ts and cards API, added defensive checks in play start API, and enhanced user experience by preventing single-card deck sessions that provide no comparison opportunities. This resolves issues where users could start play sessions with only 1 card, which resulted in poor UX since no meaningful ranking/comparison was possible.
+
+### Fix Deck System Migration to Multi-Card Level System
+- **Owner:** AI Agent
+- **Expected Delivery Date:** 2025-08-02
+- **Status:** Completed ✅
+- **Completion Date:** 2025-08-02T20:51:30.000Z
+- **Details:** Successfully migrated the application from the deprecated deck-based system to the new multi-card level hierarchy system. Resolved 404 errors by updating `/api/v1/decks` calls to `/api/v1/cards?type=playable`, implemented proper data mapping from cards to deck-like UI structures, updated play session logic to use `cardName` instead of `deckTag`, and adapted both home page and rankings page to work with the new card hierarchy. All frontend components now properly display playable cards as categories without requiring the deprecated Deck model.
 
 ### Assess Models and Type Definitions
 - **Owner:** AI Agent
