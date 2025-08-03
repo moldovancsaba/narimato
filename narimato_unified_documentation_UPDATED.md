@@ -1,6 +1,8 @@
-#NARIMATO - Technical Specification v2.0
+#NARIMATO - Technical Specification v2.1
 
 This document is a single source of truth for NARIMATO development
+
+**Latest Update (January 2025):** Major session completion and card rendering system fixes implemented
 
 ## Table of Contents
 1. [Project Overview](#1-project-overview)
@@ -47,20 +49,6 @@ A visual content unit displayed to users.
 - `createdAt`: Creation timestamp
 - `updatedAt`: Last modification timestamp
 
-### 2.2 Deck
-A randomized, fixed collection of cards assigned to a session at startup.
-
-**Properties:**
-- **Immutability**: Order and composition cannot change once generated
-- **Uniqueness**: Each session receives a unique deck instance
-- **Generation**: Randomly selected from active card pool at session creation
-- **Constraints**: No duplicate cards within a single deck
-
-**Deck Mutation Rules:**
-- ❌ **Cannot** add/remove cards during active session
-- ❌ **Cannot** reorder cards once generated  
-- ✅ **Can** mark cards as inactive (affects future decks only)
-- ✅ **Can** handle deleted cards gracefully (session continues, card skipped)
 
 ### 2.3 Session
 An anonymous container for all user interactions within a single ranking cycle.
@@ -128,11 +116,11 @@ Comparative evaluation between cards to establish precise ranking order.
 ## 3. User Flow
 
 ### Phase 1: Swipe
-1. User receives a deck of randomized cards
-2. Cards are presented one at a time
+1. User selects a deck tag (like 'all', 'react', etc.) to determine available cards
+2. Cards are presented one at a time based on selected deck tag
 3. User swipes right (like) or left (dislike)
 4. First right swipe is stored automatically
-5. Second right swipe triggers voting phase
+5. Second right swipe triggers voting phase.
 
 ### Phase 2: Vote
 1. New right-swiped card is compared against existing ranked cards
@@ -142,7 +130,7 @@ Comparative evaluation between cards to establish precise ranking order.
 5. Process repeats for each subsequent right swipe
 
 ### Phase 3: Completion
-1. Session ends when deck is exhausted or user exits
+1. Session ends when all cards have been swiped or the user exits
 2. Personal ranking is finalized
 3. Global rankings are updated immediately
 4. Results are displayed to user
@@ -158,13 +146,53 @@ Comparative evaluation between cards to establish precise ranking order.
 // Mongoose Schema
 const CardSchema = new mongoose.Schema({
   uuid: { type: String, required: true, unique: true, index: true },
-  type: { type: String, enum: ['text', 'media'], required: true },
-  content: {
-    text: { type: String, required: function() { return this.type === 'text'; } },
-    mediaUrl: { type: String, required: function() { return this.type === 'media'; } }
+  name: {
+    type: String,
+    required: true,
+    unique: true,
+    index: true,
+    validate: {
+      validator: function(name) {
+        return name.startsWith('#') && name.length > 1 && /^#[A-Z0-9_-]+$/i.test(name);
+      },
+      message: 'Name must be a valid hashtag starting with # and containing only letters, numbers, hyphens, and underscores'
+    }
   },
-  title: { type: String, default: '' },
-  tags: [{ type: String }],
+  body: {
+    imageUrl: {
+      type: String,
+      required: false,
+      validate: {
+        validator: function(url) {
+          if (!url) return true;
+          return /^https?:\\/.+/.test(url);
+        },
+        message: 'Image URL must be a valid HTTP/HTTPS URL'
+      }
+    },
+    textContent: {
+      type: String,
+      required: false
+    },
+    background: {
+      type: BackgroundStyleSchema,
+      required: false,
+      default: {
+        type: 'color',
+        value: '#667eea',
+        textColor: '#ffffff'
+      }
+    }
+  },
+  hashtags: [{
+    type: String,
+    validate: {
+      validator: function(hashtag) {
+        return hashtag.startsWith('#') && /^#[A-Z0-9_-]+$/i.test(hashtag);
+      },
+      message: 'Each hashtag must start with # and contain only letters, numbers, hyphens, and underscores'
+    }
+  }],
   isActive: { type: Boolean, default: true, index: true },
   createdAt: { type: Date, default: Date.now, index: true },
   updatedAt: { type: Date, default: Date.now }
@@ -174,40 +202,52 @@ const CardSchema = new mongoose.Schema({
 CardSchema.index({ isActive: 1, createdAt: -1 });
 ```
 
-#### Sessions Collection
+#### Play Collection
 ```javascript
-const SessionSchema = new mongoose.Schema({
-  sessionId: { type: String, required: true, unique: true, index: true },
-  status: { 
-    type: String, 
-    enum: ['active', 'idle', 'completed', 'expired'], 
+const PlaySchema = new mongoose.Schema({
+  playUuid: { type: String, required: true, unique: true, index: true },
+  sessionId: { type: String, required: true, index: true },
+  deckUuid: { type: String, required: true, index: true },
+  status: {
+    type: String,
+    enum: ['active', 'idle', 'completed', 'expired'],
     default: 'active',
-    index: true 
+    index: true
   },
-  deck: [{ type: String, ref: 'Card' }], // Array of card UUIDs
-  createdAt: { type: Date, default: Date.now, index: true },
-  lastActivity: { type: Date, default: Date.now, index: true },
-  completedAt: { type: Date, default: null },
-  expiresAt: { type: Date, required: true, index: true },
-  
+  state: {
+    type: String,
+    enum: ['swiping', 'voting', 'comparing', 'completed'],
+    default: 'swiping',
+    index: true
+  },
+  version: {
+    type: Number,
+    default: 0,
+    index: true
+  },
+  deck: [{ type: String, ref: 'Card' }],
+  deckTag: { type: String, required: true },
+  totalCards: { type: Number, default: 0 },
   swipes: [{
     cardId: { type: String, required: true },
     direction: { type: String, enum: ['left', 'right'], required: true },
     timestamp: { type: Date, default: Date.now }
   }],
-  
   votes: [{
     cardA: { type: String, required: true },
     cardB: { type: String, required: true },
     winner: { type: String, required: true },
     timestamp: { type: Date, default: Date.now }
   }],
-  
-  personalRanking: [{ type: String }] // Ordered array of card UUIDs
+  personalRanking: [{ type: String }],
+  createdAt: { type: Date, default: Date.now, index: true },
+  lastActivity: { type: Date, default: Date.now, index: true },
+  completedAt: { type: Date, default: null },
+  expiresAt: { type: Date, required: true }
 });
 
 // TTL Index for automatic cleanup
-SessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+PlaySchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 ```
 
 #### Global Rankings Collection
@@ -286,18 +326,22 @@ export const CreateCardSchema = z.object({
   - `429`: Rate Limited
   - `500`: Internal Server Error
 
-### 5.1 Create Session
-**Endpoint:** `POST /api/v1/session/start`
+### 5.1 Create Play Session
+**Endpoint:** `POST /api/v1/play/start`
 
 **Request:**
 ```json
-{} // Empty body
+{
+  "deckTag": "string"
+}
 ```
 
 **Response:**
 ```json
 {
-  "sessionId": "uuid",
+  "playUuid": "uuid",
+  "browserSessionId": "uuid",
+  "deckTag": "string",
   "expiresAt": "ISO8601",
   "deck": [
     {
@@ -314,29 +358,7 @@ export const CreateCardSchema = z.object({
 }
 ```
 
-**Zod Schema:** `CreateSessionSchema`
-
-### 5.2 Record Swipe
-**Endpoint:** `GET /api/deck`
-
-**Response:**
-```json
-{
-  "sessionId": "uuid",
-  "cards": [
-    {
-      "uuid": "string",
-      "type": "text | media",
-      "content": {
-        "text": "string",
-        "mediaUrl": "string"
-      },
-      "title": "string",
-      "tags": ["string"]
-    }
-  ]
-}
-```
+**Zod Schema:** `CreatePlaySchema`
 
 ### 5.2 Record Swipe
 **Endpoint:** `POST /api/v1/swipe`
@@ -600,10 +622,9 @@ NARIMATO implements a sophisticated binary search algorithm for efficient card r
 
 1. **Starting a New Ranking Session**
    - User clicks "Start Ranking"
-   - System creates new DECK with:
-     - All active cards in random order
-     - Empty ranking list
-     - State: "swiping"
+   - Server assigns a play session using the selected `deckTag`
+   - Cards fetched based on tag hierarchy, presented in order
+   - State set to "swiping"
    - Shows first card
 
 2. **SWIPE Phase**
@@ -632,16 +653,17 @@ NARIMATO implements a sophisticated binary search algorithm for efficient card r
      - Process repeats until position is determined
 
 4. **Completion**
-   - Session ends when DECK is empty (all cards have been swiped and all right-swiped cards ranked)
+   - Session ends when all cards have been swiped
    - Personal ranking is finalized
    - Global rankings are updated with session results
-## 8. Session Management
+## 8. Play Management
 
-### 8.1 Session Lifecycle
-1. **Creation:** New session ID generated on deck request
+### 8.1 Play Lifecycle
+1. **Creation:** New play UUID generated upon user selecting a deck tag
 2. **Active:** User progresses through swipe and vote phases
 3. **Completion:** All interactions recorded, ranking finalized
-4. **Expiration:** Sessions older than 24 hours are archived
+4. **Expiration:** Plays older than 24 hours are archived
+5. **Selection:** Cards selected based on the chosen tag, maintaining a hierarchy of parent-child relationships
 
 ### 8.2 Data Persistence
 - **Primary:** Client-side storage (localStorage)

@@ -2,31 +2,33 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import BaseCard from '../components/BaseCard';
-import { CARD_FIELDS } from '@/app/lib/constants/fieldNames';
+import { useRouter } from 'next/navigation';
 import { createUniqueKey, validateUUID } from '@/app/lib/utils/fieldValidation';
 import PageLayout from '../components/PageLayout'; // Import the new layout
 
 interface Card {
   uuid: string;
-  type: 'text' | 'media';
-  content: {
-    text?: string;
-    mediaUrl?: string;
+  name: string; // #HASHTAG
+  body: {
+    imageUrl?: string;
+    textContent?: string;
+    background?: {
+      type: 'color' | 'gradient' | 'pattern';
+      value: string;
+      textColor?: string;
+    };
   };
-  title?: string;
-  tags: string[];
+  hashtags: string[]; // Parent relationships
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
 export default function CardsPage() {
+  const router = useRouter();
   const [cards, setCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState<Card | null>(null);
-  const [editedCard, setEditedCard] = useState<Card | null>(null);
 
   useEffect(() => {
     fetchCards();
@@ -48,8 +50,7 @@ export default function CardsPage() {
 
 
   const handleEdit = (card: Card) => {
-    setIsEditing(card);
-    setEditedCard({ ...card });
+    router.push(`/card-editor?uuid=${card.uuid}`);
   };
 
   const handleDelete = async (uuid: string) => {
@@ -73,42 +74,6 @@ export default function CardsPage() {
     }
   };
 
-  const handleEditSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editedCard) return;
-
-    try {
-      if (!validateUUID(editedCard[CARD_FIELDS.UUID])) {
-        setError('Invalid card UUID');
-        return;
-      }
-      
-      const response = await fetch(`/api/v1/cards/${editedCard[CARD_FIELDS.UUID]}`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            [CARD_FIELDS.TYPE]: editedCard[CARD_FIELDS.TYPE],
-            [CARD_FIELDS.CONTENT]: editedCard[CARD_FIELDS.TYPE] === 'text' 
-              ? { text: editedCard[CARD_FIELDS.CONTENT].text }
-              : { mediaUrl: editedCard[CARD_FIELDS.CONTENT].mediaUrl },
-            [CARD_FIELDS.TITLE]: editedCard[CARD_FIELDS.TITLE],
-            [CARD_FIELDS.TAGS]: Array.isArray(editedCard[CARD_FIELDS.TAGS]) ? editedCard[CARD_FIELDS.TAGS] : [],
-          }),
-        }
-      );
-
-      if (!response.ok) throw new Error('Failed to update card');
-      fetchCards();
-      setIsEditing(null);
-      setEditedCard(null);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-      setError(errorMessage);
-    }
-  };
 
   const toggleCardStatus = async (uuid: string, isActive: boolean) => {
     try {
@@ -123,7 +88,7 @@ export default function CardsPage() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ [CARD_FIELDS.IS_ACTIVE]: !isActive }),
+          body: JSON.stringify({ isActive: !isActive }),
         }
       );
 
@@ -146,8 +111,14 @@ export default function CardsPage() {
 
   return (
     <PageLayout title="Card Management" className="gradient-bg-2layer">
-      <div className="mb-8">
+      <div className="mb-8 flex justify-between items-center">
         <h2 className="text-xl font-semibold mb-4">All Cards</h2>
+        <button
+          onClick={() => router.push('/card-editor')}
+          className="btn btn-primary"
+        >
+          Create New Card
+        </button>
       </div>
 
       {error && (
@@ -159,37 +130,53 @@ export default function CardsPage() {
       <div className="results-grid">
         {cards.map((card) => (
           <motion.div
-            key={createUniqueKey('card', card[CARD_FIELDS.UUID])}
+            key={createUniqueKey('card', card.uuid)}
             layout
             className={`relative group ${
-              !card[CARD_FIELDS.IS_ACTIVE] ? 'opacity-50' : ''
+              !card.isActive ? 'opacity-50' : ''
             }`}
           >
-            <BaseCard
-              uuid={card[CARD_FIELDS.UUID]}
-              type={card[CARD_FIELDS.TYPE] as 'text' | 'media'}
-              content={card[CARD_FIELDS.CONTENT]}
-              size="medium"
-              className="transition-all duration-200 group-hover:shadow-lg"
-            >
-              {!card[CARD_FIELDS.IS_ACTIVE] && (
+            {/* Card Preview - Display name and basic info */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg min-h-[200px] flex flex-col justify-between">
+              <div>
+                <h3 className="font-semibold text-lg mb-2">{card.name}</h3>
+                {card.body?.imageUrl && (
+                  <div className="mb-2">
+                    <img 
+                      src={card.body.imageUrl} 
+                      alt={card.name}
+                      className="w-full h-32 object-cover rounded"
+                      onError={(e) => {
+                        // Hide broken images
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
+                {card.body?.textContent && (
+                  <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3">
+                    {card.body.textContent}
+                  </p>
+                )}
+              </div>
+              {!card.isActive && (
                 <div className="absolute top-2 right-2">
                   <span className="status-badge status-error">Inactive</span>
                 </div>
               )}
-            </BaseCard>
+            </div>
 
             <div className="card-overlay card-overlay-hover rounded-lg">
               <div className="flex flex-col gap-2">
                 <button
-                  onClick={() => toggleCardStatus(card[CARD_FIELDS.UUID], card[CARD_FIELDS.IS_ACTIVE])}
+                  onClick={() => toggleCardStatus(card.uuid, card.isActive)}
                   className={`btn btn-sm ${
-                    card[CARD_FIELDS.IS_ACTIVE]
+                    card.isActive
                       ? 'btn-danger'
                       : 'btn-success'
                   }`}
                 >
-                  {card[CARD_FIELDS.IS_ACTIVE] ? 'Deactivate' : 'Activate'}
+                  {card.isActive ? 'Deactivate' : 'Activate'}
                 </button>
                 <button
                   onClick={() => handleEdit(card)}
@@ -198,7 +185,7 @@ export default function CardsPage() {
                   Edit
                 </button>
                 <button
-                  onClick={() => handleDelete(card[CARD_FIELDS.UUID])}
+                  onClick={() => handleDelete(card.uuid)}
                   className="btn btn-sm btn-danger"
                 >
                   Delete
@@ -207,141 +194,31 @@ export default function CardsPage() {
             </div>
 
             <div className="mt-3 space-y-2">
-              {card[CARD_FIELDS.TAGS].length > 0 && (
+              {card.hashtags && card.hashtags.length > 0 && (
                 <div className="flex flex-wrap gap-1">
-                  {card[CARD_FIELDS.TAGS].slice(0, 3).map((tag, tagIndex) => (
+                  {card.hashtags.slice(0, 3).map((hashtag, tagIndex) => (
                     <span
-                      key={createUniqueKey('tag', card[CARD_FIELDS.UUID], tagIndex, tag)}
+                      key={createUniqueKey('hashtag', card.uuid, tagIndex, hashtag)}
                       className="status-badge status-info"
                     >
-                      {tag}
+                      {hashtag}
                     </span>
                   ))}
-                  {card[CARD_FIELDS.TAGS].length > 3 && (
+                  {card.hashtags.length > 3 && (
                     <span className="status-badge status-info">
-                      +{card[CARD_FIELDS.TAGS].length - 3}
+                      +{card.hashtags.length - 3}
                     </span>
                   )}
                 </div>
               )}
               
               <div className="text-xs text-muted">
-                Created: {new Date(card[CARD_FIELDS.CREATED_AT]).toLocaleDateString()}
+                Created: {new Date(card.createdAt).toLocaleDateString()}
               </div>
             </div>
           </motion.div>
         ))}
       </div>
-
-      {isEditing && (
-        <div className="modal-backdrop">
-          <div className="modal-content">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Edit Card</h2>
-              <button
-                onClick={() => {
-                  setIsEditing(null);
-                  setEditedCard(null);
-                }}
-                className="text-muted hover:text-primary"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleEditSubmit} className="space-y-4">
-              <div>
-                <label className="form-label">Type</label>
-                <select
-                  value={editedCard?.type}
-                  onChange={(e) => setEditedCard({ 
-                    ...editedCard!, 
-                    type: e.target.value as 'text' | 'media',
-                    content: e.target.value === 'text' 
-                      ? { text: '' } 
-                      : { mediaUrl: '' }
-                  })}
-                  className="form-input"
-                >
-                  <option value="text">Text</option>
-                  <option value="media">Media</option>
-                </select>
-              </div>
-
-              {editedCard?.type === 'text' ? (
-                <div>
-                  <label className="form-label">Text Content</label>
-                  <textarea
-                    value={editedCard.content.text || ''}
-                    onChange={(e) => setEditedCard({
-                      ...editedCard,
-                      content: { ...editedCard.content, text: e.target.value }
-                    })}
-                    className="form-input"
-                    rows={4}
-                  />
-                </div>
-              ) : (
-                <div>
-                  <label className="form-label">Media URL</label>
-                  <input
-                    type="url"
-                    value={editedCard?.content.mediaUrl || ''}
-                    onChange={(e) => setEditedCard({
-                      ...editedCard!,
-                      content: { ...editedCard!.content, mediaUrl: e.target.value }
-                    })}
-                    className="form-input"
-                  />
-                </div>
-              )}
-
-              <div>
-                <label className="form-label">Title</label>
-                <input
-                  type="text"
-                  value={editedCard?.title || ''}
-                  onChange={(e) => setEditedCard({ ...editedCard!, title: e.target.value })}
-                  className="form-input"
-                />
-              </div>
-
-              <div>
-                <label className="form-label">Tags</label>
-                <input
-                  type="text"
-                  value={Array.isArray(editedCard?.tags) ? editedCard.tags.join(', ') : ''}
-                  onChange={(e) => setEditedCard({ 
-                    ...editedCard!, 
-                    tags: e.target.value.split(',').map(tag => tag.trim()).filter(Boolean)
-                  })}
-                  className="form-input"
-                  placeholder="tag1, tag2, tag3"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 mt-6">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsEditing(null);
-                    setEditedCard(null);
-                  }}
-                  className="btn btn-secondary"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                >
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-    )}
     </PageLayout>
   );
 }

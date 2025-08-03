@@ -15,10 +15,18 @@ import mongoose from 'mongoose';
  * - Error messages don't leak connection details
  */
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/narimato';
+const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
   throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
+}
+
+// TypeScript assertion: at this point MONGODB_URI is guaranteed to be a string
+const mongoUri: string = MONGODB_URI;
+
+// Enforce Atlas-only connection - no localhost allowed
+if (MONGODB_URI.includes('localhost') || MONGODB_URI.includes('127.0.0.1')) {
+  throw new Error('Localhost MongoDB connections are prohibited. Use only MongoDB Atlas from .env.local');
 }
 
 // Validate URI format to prevent injection attacks
@@ -62,7 +70,7 @@ async function dbConnect() {
       bufferCommands: false,
     };
 
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+    cached.promise = mongoose.connect(mongoUri, opts).then((mongoose) => {
       return mongoose;
     });
   }

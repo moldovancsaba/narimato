@@ -18,17 +18,22 @@ export default function RanksPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchDecks = async () => {
+    const fetchCards = async () => {
       try {
-        const response = await fetch('/api/v1/decks');
+        const response = await fetch('/api/v1/cards?type=playable');
         if (!response.ok) {
-          throw new Error('Failed to fetch decks');
+          throw new Error('Failed to fetch cards');
         }
         const data = await response.json();
         if (data.error) {
           setError(data.error);
         } else {
-          setDecks(data.decks);
+          const mappedDecks = (data.cards || []).map((card: any) => ({
+            tag: card.name,
+            cardCount: card.childCount || 0,
+            displayName: card.body?.textContent || card.name.substring(1),
+          }));
+          setDecks(mappedDecks);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -37,11 +42,13 @@ export default function RanksPage() {
       }
     };
 
-    fetchDecks();
+    fetchCards();
   }, []);
 
   const handleDeckSelect = (deckTag: string) => {
-    router.push(`/ranks/${deckTag}`);
+    // Remove the # symbol from the tag for URL routing
+    const cleanTag = deckTag.startsWith('#') ? deckTag.substring(1) : deckTag;
+    router.push(`/ranks/${cleanTag}`);
   };
 
   if (loading) {
@@ -49,7 +56,7 @@ export default function RanksPage() {
       <PageLayout title="Global Rankings">
         <div className="flex justify-center items-center">
           <div className="loading-spinner"></div>
-          <span className="ml-2 text-lg">Loading Decks...</span>
+          <span className="ml-2 text-lg">Loading Categories...</span>
         </div>
       </PageLayout>
     );
@@ -66,16 +73,16 @@ export default function RanksPage() {
   return (
     <PageLayout title="Global Rankings">
       <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Choose a Deck to View Rankings</h2>
+        <h2 className="text-xl font-semibold mb-4">Choose a Category to View Rankings</h2>
         <p className="text-sm text-muted mb-4">
-          Select a deck below to view its ELO-based global rankings. Rankings are calculated using 
-          skill-based comparisons across all user sessions for cards within that specific deck.
+          Select a category below to view its ELO-based global rankings. Rankings are calculated using 
+          skill-based comparisons across all user sessions for cards within that specific category.
         </p>
       </div>
       
       {decks.length === 0 ? (
         <div className="text-center p-8">
-          <p className="text-muted">No decks available yet. Add some cards to create decks!</p>
+          <p className="text-muted">No categories available yet. Add some cards to create categories!</p>
         </div>
       ) : (
         <div className="results-grid">

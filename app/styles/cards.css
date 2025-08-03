@@ -287,6 +287,8 @@
     background: rgba(0, 0, 0, 0.6);
     opacity: 0;
     transition: opacity 0.2s ease-in-out;
+    /* Ensure buttons are not blocked when overlay is hidden */
+    pointer-events: none;
   }
   
   /* Card Overlay Bottom - Positioned at bottom for deck cards */
@@ -296,6 +298,7 @@
     padding: 0.75rem;
     border-bottom-left-radius: inherit;
     border-bottom-right-radius: inherit;
+    pointer-events: auto;
   }
   
   /* Loading state overlay positioned at bottom */
@@ -304,6 +307,7 @@
     background: rgba(0, 0, 0, 0.8);
     color: white;
     z-index: 20;
+    pointer-events: auto;
   }
   
   /* Hover effect overlay positioned at bottom */
@@ -311,14 +315,33 @@
     opacity: 0;
     transition: opacity 0.2s ease-in-out;
     z-index: 10;
+    pointer-events: none;
+  }
+  
+  /* Hover effect overlay for cards management page */
+  .card-overlay-hover {
+    opacity: 0.1; /* Slightly visible for debugging */
+    transition: opacity 0.2s ease-in-out;
+    z-index: 10;
+    pointer-events: none;
+    /* Make it visible with a debug border */
+    border: 1px dashed rgba(255, 0, 0, 0.3);
   }
   
   /* Show overlay on group hover */
   .group:hover .card-overlay-deck-hover {
     opacity: 1;
+    pointer-events: auto;
   }
   
   /* Show overlay on hover for cards management page */
   .group:hover .card-overlay-hover {
     opacity: 1;
+    pointer-events: auto;
+  }
+  
+  /* Alternative: Show overlay on any hover over the card container */
+  .relative:hover .card-overlay-hover {
+    opacity: 1 !important;
+    pointer-events: auto !important;
   }

@@ -5,7 +5,6 @@ import { Card } from '@/app/lib/models/Card';
 import { SessionResults } from '@/app/lib/models/SessionResults';
 import { GlobalRanking } from '@/app/lib/models/GlobalRanking';
 import { VoteRequestSchema } from '@/app/lib/validation/schemas';
-import { DeckEntity } from '@/app/lib/models/DeckEntity';
 import mongoose from 'mongoose';
 import { SESSION_FIELDS, VOTE_FIELDS, API_FIELDS, CARD_FIELDS, PLAY_FIELDS } from '@/app/lib/constants/fieldNames';
 import { validateUUID, validateSessionId } from '@/app/lib/utils/fieldValidation';
@@ -435,11 +434,21 @@ const savePlayResults = async (play: any) => {
     // Create a map for quick card lookup
     const cardMap = new Map();
     cards.forEach(card => {
+      // Derive type from card content - if it has imageUrl it's media, otherwise text
+      const cardType = card.body?.imageUrl ? 'media' : 'text';
+      
       cardMap.set(card.uuid, {
         uuid: card.uuid,
-        type: card.type,
-        content: card.content,
-        title: card.title
+        type: cardType, // Add derived type field
+        body: {
+          textContent: card.body?.textContent,
+          imageUrl: card.body?.imageUrl
+        },
+        content: {
+          text: card.body?.textContent,
+          mediaUrl: card.body?.imageUrl
+        },
+        title: card.name
       });
     });
 
@@ -557,17 +566,14 @@ async function performAtomicRankingUpdate(
         console.log(`Added swipe record for ranked card: ${newCard}`);
       }
       
-      // Check if deck is exhausted after the swipe
+      // Check if all cards are exhausted after the swipe
       const cards = await Card.find({ [CARD_FIELDS.UUID]: { $in: play.deck } });
       if (cards.length > 0) {
         const orderedCards = play.deck.map((uuid: string) => 
           cards.find(card => card[CARD_FIELDS.UUID] === uuid)
         ).filter((card: any) => card !== undefined);
         
-        const deck = new DeckEntity(orderedCards);
-        
-        // Initialize deck with all swipes to check if exhausted
-        // CRITICAL FIX: Include the current new card swipe in exhaustion check
+        // Include the current new card swipe in exhaustion check
         const allSwipesIncludingCurrent = [...play.swipes];
         
         // Ensure the newly ranked card has a swipe record for exhaustion calculation
@@ -581,22 +587,16 @@ async function performAtomicRankingUpdate(
           });
         }
         
-        console.log(`📊 Deck exhaustion check with all swipes:`, {
+        console.log(`📊 Card exhaustion check with all swipes:`, {
           totalCardsInDeck: orderedCards.length,
           totalSwipesForCheck: allSwipesIncludingCurrent.length,
           newlyRankedCard: newCard.substring(0, 8) + '...',
           allSwipeCardIds: allSwipesIncludingCurrent.map(s => s.cardId.substring(0, 8) + '...')
         });
         
-        for (const swipedCardId of allSwipesIncludingCurrent.map(s => s.cardId)) {
-          const swipe = allSwipesIncludingCurrent.find((s: any) => s.cardId === swipedCardId);
-          if (swipe) {
-            deck.confirmSwipe(swipedCardId, swipe.direction);
-          }
-        }
-        
-        // If deck is exhausted, mark play as completed
-        if (deck.isExhausted()) {
+        // Check if all cards have been swiped
+        const totalSwipesAfterThis = allSwipesIncludingCurrent.length;
+        if (totalSwipesAfterThis >= orderedCards.length) {
           console.log(`🎊 DECK EXHAUSTION DETECTED in vote endpoint - Completing play ${play.playUuid}:`, {
             totalCardsInDeck: cards.length,
             totalSwipes: play.swipes.length,

@@ -178,7 +178,17 @@ const urlPlayId = searchParams.get('sessionId'); // Using sessionId parameter na
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button 
-              onClick={() => router.push('/')} 
+              onClick={() => {
+                // Clear all session data before starting new session
+                if (typeof window !== 'undefined') {
+                  localStorage.removeItem(SESSION_FIELDS.ID);
+                  localStorage.removeItem('lastState');
+                  localStorage.removeItem('sessionVersion');
+                  localStorage.removeItem('deckState');
+                  sessionStorage.clear();
+                }
+                router.push('/');
+              }} 
               className="btn btn-primary"
             >
               🏠 Start New Session
@@ -248,9 +258,11 @@ const urlPlayId = searchParams.get('sessionId'); // Using sessionId parameter na
           {ranking.map((item) => (
             <div key={item.cardId} className="relative">
               <BaseCard
-                uuid={item.cardId}
-                type={item.card.type}
-                content={item.card.content}
+                uuid={item.card.uuid}
+                type="media"
+                content={{
+                  mediaUrl: item.card.body.imageUrl
+                }}
                 size="medium"
                 className="transition-transform duration-200"
               >

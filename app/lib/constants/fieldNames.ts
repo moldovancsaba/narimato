@@ -78,6 +78,14 @@ export const VALIDATION_PATTERNS = {
   SESSION_ID: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 } as const;
 
+// Deck playability rules and thresholds
+export const DECK_RULES = {
+  // Minimum number of child cards required for a deck to be considered playable
+  // This ensures users have a meaningful ranking experience with sufficient content to compare
+  // A deck with only 1 card provides no comparison opportunities, while 2+ cards enable proper swiping/ranking
+  MIN_CARDS_FOR_PLAYABLE: 2
+} as const;
+
 // Type definitions for better type safety
 export type SessionFieldKeys = keyof typeof SESSION_FIELDS;
 export type PlayFieldKeys = keyof typeof PLAY_FIELDS;

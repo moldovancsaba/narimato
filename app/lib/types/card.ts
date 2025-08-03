@@ -1,13 +1,21 @@
+// Background style interface to match the database model
+interface BackgroundStyle {
+  type: 'color' | 'gradient' | 'pattern';
+  value: string;
+  textColor?: string;
+}
+
+// Updated Card interface to match current database schema (ICard from models/Card.ts)
 export interface Card {
   uuid: string;
-  type: 'text' | 'media';
-  content: {
-    text?: string;
-    mediaUrl?: string;
+  name: string; // #HASHTAG
+  body: {
+    imageUrl?: string;
+    textContent?: string;
+    background?: BackgroundStyle;
   };
-  title?: string;
-  tags?: string[];
-  isActive?: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
+  hashtags: string[]; // Array of #HASHTAG references to parent cards
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }

@@ -34,10 +34,10 @@ const SwipeCard = dynamic(
     ),
   }
 );
-import { DeckEntity } from '@/app/lib/models/DeckEntity';
 import ErrorBoundary from '../components/ErrorBoundary';
 import PageLayout from '../components/PageLayout';
 import { InlineSpinner } from '../components/Spinner';
+import sessionManager from '@/app/lib/utils/sessionManager';
 
 import { Card } from '@/app/lib/types/card';
 import { handleApiError, withRetry, backupSessionState } from '@/app/lib/utils/errorHandling';
@@ -70,12 +70,13 @@ interface SwipeContentProps {
 
 function SwipeContent({ onPlayIdChange }: SwipeContentProps) {
   const [playId, setPlayId] = useState<string | null>(null);
-  const [deck, setDeck] = useState<DeckEntity | null>(null);
+  const [cards, setCards] = useState<Card[]>([]);
   const [currentCard, setCurrentCard] = useState<Card | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [personalRanking, setPersonalRanking] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [shouldRenderContent, setShouldRenderContent] = useState(false);
   const router = useRouter();
   const { state, cardSwipedLeft, cardSwipedRight, deckExhausted, errorOccurred, startSession, deckReady } = useEventAgent();
   const { cardWidth } = useCardSize();
@@ -98,16 +99,18 @@ function SwipeContent({ onPlayIdChange }: SwipeContentProps) {
     const handleFocus = async () => {
       if (playId && typeof window !== 'undefined') {
         try {
-          // Force reload deck state when page becomes visible/focused (using sessionId param for backward compatibility)
-          const deckResponse = await fetch(`/api/v1/deck?sessionId=${playId}&_t=${Date.now()}`);
-          if (deckResponse.ok) {
-            const deckData = await deckResponse.json();
-            const refreshedDeck = new DeckEntity(deckData.deck);
-            if (deck) {
-              refreshedDeck.setVersion(deck.getVersion());
+          // Force reload play state when page becomes visible/focused
+          const validateResponse = await fetch(`/api/v1/session/validate?sessionId=${playId}&_t=${Date.now()}`);
+          if (validateResponse.ok) {
+            const validateData = await validateResponse.json();
+            if (validateData.isValid && validateData.session) {
+              setCards(validateData.session.deck || []);
+              // Find current card from play state
+              const playState = validateData.session;
+              const swipedCardIds = playState.swipes?.map((s: any) => s.cardId) || [];
+              const currentCardFromState = playState.deck?.find((card: Card) => !swipedCardIds.includes(card.uuid));
+              setCurrentCard(currentCardFromState || null);
             }
-            setDeck(refreshedDeck);
-            setCurrentCard(refreshedDeck.getCurrentCard());
           }
         } catch (error) {
           console.warn('Failed to refresh deck state:', error);
@@ -122,79 +125,118 @@ function SwipeContent({ onPlayIdChange }: SwipeContentProps) {
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('visibilitychange', handleFocus);
     };
-  }, [playId, deck]);
+  }, [playId, cards]);
 
   useEffect(() => {
     async function initPlay() {
       if (typeof window !== 'undefined') {
-        // Always reload play state - don't skip if playId exists
-        console.log('Initializing play...');
+        console.log('🔄 Initializing play session...');
 
-        // Initialize or recover play
         try {
           const storedPlayId = localStorage.getItem(SESSION_FIELDS.ID);
 
           if (storedPlayId) {
-            // Always validate and reload to get fresh state (using sessionId param for backward compatibility)
-            const validateResponse = await fetch(`/api/v1/session/validate?sessionId=${storedPlayId}&_t=${Date.now()}`);
-            if (validateResponse.ok) {
-              const validateData = await validateResponse.json();
-              if (validateData.isValid) {
-                // Check if play is completed, if so redirect to results
-                if (validateData.status === 'completed') {
-                  console.log('Play is completed, redirecting to results page');
-                  router.push(`/completed?sessionId=${storedPlayId}`);
-                  return;
-                }
-                
-                setPlayId(storedPlayId);
-
-                // Force fresh deck state
-                const deckResponse = await fetch(`/api/v1/deck?sessionId=${storedPlayId}&_t=${Date.now()}`);
-                if (deckResponse.ok) {
-                  const deckData = await deckResponse.json();
-                  const newDeck = new DeckEntity(deckData.deck);
-                  newDeck.setVersion(validateData[SESSION_FIELDS.VERSION]);
-                  
-                  // Restore deck state with existing swipes from play
-                  if (validateData.session && validateData.session.swipes) {
-                    for (const swipe of validateData.session.swipes) {
-                      try {
-                        newDeck.confirmSwipe(swipe.cardId, swipe.direction);
-                      } catch (error) {
-                        console.warn('Failed to restore swipe:', swipe, error);
-                      }
-                    }
-                  }
-                  
-                  setDeck(newDeck);
-                  setCurrentCard(newDeck.getCurrentCard());
-                  console.log('Play restored with deck state');
-                }
-                return;
-              } else {
-                console.log('Stored play ID is invalid, redirecting to home to start new play');
-                localStorage.removeItem(SESSION_FIELDS.ID); // Clean up invalid play ID
-                router.push('/');
-                return;
+            console.log('📝 Found stored play ID, validating session:', storedPlayId);
+            
+            // CRITICAL: Disable all caching for session validation to prevent stale state
+            const validateResponse = await fetch(`/api/v1/session/validate?sessionId=${storedPlayId}&_t=${Date.now()}`, {
+              method: 'GET',
+              headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
               }
-            } else {
-              console.log('Play validation failed, redirecting to home to start new play');
-              localStorage.removeItem(SESSION_FIELDS.ID); // Clean up invalid play ID
+            });
+            
+            if (!validateResponse.ok) {
+              console.warn('❌ Session validation failed, clearing all data and redirecting to home');
+              // Clear ALL possible session data
+              localStorage.clear();
+              sessionStorage.clear();
               router.push('/');
               return;
             }
+
+            const validateData = await validateResponse.json();
+            console.log('✅ Session validation response:', {
+              isValid: validateData.isValid,
+              status: validateData.status,
+              hasSession: !!validateData.session
+            });
+            
+            // If session is invalid, redirect to home
+            if (!validateData.isValid) {
+              console.log('🧹 Session invalid, clearing all data and redirecting to home');
+              // Clear ALL possible session data
+              localStorage.clear();
+              sessionStorage.clear();
+              router.push('/');
+              return;
+            }
+            
+            // If session is completed, redirect to results page
+            if (validateData.status === 'completed') {
+              console.log('🏁 Session completed, redirecting to results page');
+              router.push(`/completed?sessionId=${storedPlayId}`);
+              return;
+            }
+
+            // If we reach here, session is valid and active - but still check for state consistency
+            if (!validateData.session || !validateData.session.deck || validateData.session.deck.length === 0) {
+              console.warn('❌ Session has no valid deck, clearing and redirecting to home');
+              localStorage.clear();
+              sessionStorage.clear();
+              router.push('/');
+              return;
+            }
+
+            // Use server data as single source of truth
+            const serverDeck = validateData.session.deck;
+            const serverSwipes = validateData.session.swipes || [];
+            const swipedCardIds = serverSwipes.map((s: any) => s.cardId);
+            const currentCardFromServer = serverDeck.find((card: Card) => !swipedCardIds.includes(card.uuid));
+
+            // If no current card available, check if session is completed
+            if (!currentCardFromServer) {
+              // If session is already marked as completed, redirect to results
+              if (validateData.status === 'completed') {
+                console.log('🏁 No more cards to swipe and session is completed, redirecting to results');
+                router.push(`/completed?sessionId=${storedPlayId}`);
+                return;
+              } else {
+                // Session is active but no cards available - mark as completed and redirect to results
+                console.log('🏁 No more cards to swipe, session should be completed - redirecting to results');
+                router.push(`/completed?sessionId=${storedPlayId}`);
+                return;
+              }
+            }
+
+            // Set state from server data
+            setPlayId(storedPlayId);
+            setCards(serverDeck);
+            setCurrentCard(currentCardFromServer);
+            setIsInitialized(true);
+            
+            console.log('🎯 Session restored from server state:', {
+              playId: storedPlayId,
+              totalCards: serverDeck.length,
+              swipedCards: swipedCardIds.length,
+              currentCard: currentCardFromServer.uuid
+            });
+            return;
           }
 
           // No stored play ID found, redirect to home to start a new play
-          console.log('No stored play ID found, redirecting to home page to start new play');
+          console.log('🏠 No stored play ID found, redirecting to home page');
           router.push('/');
           return;
         } catch (error) {
-          console.error('Initialization error:', error);
-          setError('Play initialization failed');
-          localStorage.removeItem(SESSION_FIELDS.ID);
-          localStorage.removeItem('lastState');
+          console.error('💥 Play initialization error:', error);
+          // On any error, clear everything and redirect to home
+          localStorage.clear();
+          sessionStorage.clear();
+          router.push('/');
+          return;
         }
       }
     }
@@ -204,28 +246,41 @@ function SwipeContent({ onPlayIdChange }: SwipeContentProps) {
 
   const handleSwipe = useCallback(async (direction: 'left' | 'right') => {
     if (!playId || !currentCard || isLoading) return;
+
+    // Track and manage current state
+    sessionManager.updateCurrentCard(currentCard[CARD_FIELDS.UUID]);
     
     setIsLoading(true);
     try {
-      // Record swipe first
+      // Record swipe with no caching
+      sessionManager.updateCurrentCard(currentCard[CARD_FIELDS.UUID]);
       const response = await fetch('/api/v1/swipe', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        },
         body: JSON.stringify({
-          [SESSION_FIELDS.ID]: playId, // Using SESSION_FIELDS.ID for backward compatibility
+          [SESSION_FIELDS.ID]: playId,
           [CARD_FIELDS.ID]: currentCard[CARD_FIELDS.UUID],
-          [VOTE_FIELDS.DIRECTION]: direction,
-          [SESSION_FIELDS.VERSION]: deck?.getVersion()
+          [VOTE_FIELDS.DIRECTION]: direction
         })
       });
 
       const data = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to record swipe');
+        console.error('💥 Swipe failed:', data);
+        // On any swipe failure, clear session and redirect to home
+        localStorage.clear();
+        sessionStorage.clear();
+        router.push('/');
+        return;
       }
 
-      console.log('Swipe response received:', {
+      console.log('✅ Swipe successful:', {
         direction,
         requiresVoting: data.requiresVoting,
         sessionCompleted: data.sessionCompleted,
@@ -234,10 +289,9 @@ function SwipeContent({ onPlayIdChange }: SwipeContentProps) {
 
       // Check if play is completed first (highest priority)
       if (data.sessionCompleted) {
-        console.log('Play completed via swipe - redirecting to results');
-        // Clear any polling intervals and redirect immediately
+        console.log('🏁 Play completed via swipe - redirecting to results');
         localStorage.removeItem('lastState');
-        router.push(`/completed?sessionId=${playId}`); // Using sessionId param for backward compatibility
+        router.push(`/completed?sessionId=${playId}`);
         return;
       }
 
@@ -245,25 +299,51 @@ function SwipeContent({ onPlayIdChange }: SwipeContentProps) {
       if (direction === 'right' && data.requiresVoting) {
         localStorage.setItem('lastState', JSON.stringify({
           [CARD_FIELDS.ID]: currentCard[CARD_FIELDS.UUID],
-          deckState: deck?.serialize(),
-          [SESSION_FIELDS.VERSION]: data[SESSION_FIELDS.VERSION],
           [VOTE_FIELDS.TIMESTAMP]: new Date().toISOString()
         }));
         
-        router.push(`/vote?sessionId=${playId}&${CARD_FIELDS.ID}=${currentCard[CARD_FIELDS.UUID]}`); // Using sessionId param for backward compatibility
+        router.push(`/vote?sessionId=${playId}&${CARD_FIELDS.ID}=${currentCard[CARD_FIELDS.UUID]}`);
         return;
       }
 
-      // Only update deck state if not navigating to vote or results
-      deck?.confirmSwipe(currentCard[CARD_FIELDS.UUID], direction);
-      setCurrentCard(deck?.getCurrentCard() || null);
+      // Update current card - refresh play state with no caching
+      const validateResponse = await fetch(`/api/v1/session/validate?sessionId=${playId}&_t=${Date.now()}`, {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+      
+      if (validateResponse.ok) {
+        const validateData = await validateResponse.json();
+        if (validateData.isValid && validateData.session) {
+          const swipedCardIds = validateData.session.swipes?.map((s: any) => s.cardId) || [];
+          const nextCard = validateData.session.deck?.find((card: Card) => !swipedCardIds.includes(card.uuid));
+          setCurrentCard(nextCard || null);
+        } else {
+          // Session invalid after swipe, clear and redirect
+          localStorage.clear();
+          sessionStorage.clear();
+          router.push('/');
+        }
+      } else {
+        // Validation failed after swipe, clear and redirect
+        localStorage.clear();
+        sessionStorage.clear();
+        router.push('/');
+      }
     } catch (error) {
-      console.error('Failed to handle swipe:', error);
-      setError(error instanceof Error ? error.message : 'Failed to process swipe');
+      console.error('💥 Swipe error:', error);
+      // On any error, clear session and redirect to home
+      localStorage.clear();
+      sessionStorage.clear();
+      router.push('/');
     } finally {
       setIsLoading(false);
     }
-  }, [playId, currentCard, deck, isLoading, router]);
+  }, [playId, currentCard, cards, isLoading, router]);
 
   // Handle error state
   if (error) {
@@ -272,19 +352,20 @@ function SwipeContent({ onPlayIdChange }: SwipeContentProps) {
         <div className="page-content">
           <div className="content-card text-center">
             <div className="status-error p-4 mb-4 rounded-lg">
-              <h2 className="font-bold mb-2">Error</h2>
+              <h2 className="font-bold mb-2">Session Error</h2>
               <p>{error}</p>
+              <p className="text-sm mt-2 text-muted">Returning to home for a fresh start.</p>
             </div>
             <button
               onClick={() => {
-                setError(null);
-                localStorage.removeItem(SESSION_FIELDS.ID);
-                localStorage.removeItem('lastState');
-                window.location.reload();
+                // Clear everything and redirect to home
+                localStorage.clear();
+                sessionStorage.clear();
+                router.push('/');
               }}
               className="btn btn-primary"
             >
-              Try Again
+              Start New Session
             </button>
           </div>
         </div>
@@ -292,16 +373,23 @@ function SwipeContent({ onPlayIdChange }: SwipeContentProps) {
     );
   }
 
-  // Check if deck is exhausted and redirect to results
+  // Check if all cards are swiped and redirect to results
   useEffect(() => {
-    if (deck && deck.isExhausted() && playId) {
-      console.log('Deck exhausted, redirecting to completed page');
+    if (cards.length > 0 && !currentCard && playId) {
+      console.log('All cards swiped, redirecting to completed page');
       router.push(`/completed?sessionId=${playId}`); // Using sessionId param for backward compatibility
     }
-  }, [deck, playId, router]);
+  }, [cards, currentCard, playId, router]);
 
   // Handle loading state
-  if (!playId || !currentCard) {
+  // Ensure all hooks render before any conditional returns
+  useEffect(() => {
+    if (isInitialized) {
+      setShouldRenderContent(true);
+    }
+  }, [isInitialized]);
+
+  if (!shouldRenderContent) {
     // Just return loading state - the useEffect above will handle navigation
     return (
       <div className="flex items-center justify-center bg-background mobile-safe-container">
@@ -323,10 +411,15 @@ function SwipeContent({ onPlayIdChange }: SwipeContentProps) {
             
             {/* Portrait Mode: Card - Row 2 */}
           <div className="swipe-grid-card grid-cell">
-            {currentCard && deck && (
+            {currentCard && (
               <SwipeCard
-                key={createUniqueKey('swipe-card', currentCard[CARD_FIELDS.UUID], deck.getCurrentIndex())}
-                {...currentCard}
+                key={createUniqueKey('swipe-card', currentCard[CARD_FIELDS.UUID], Date.now())}
+                uuid={currentCard.uuid}
+                type="media"
+                content={{
+                  mediaUrl: currentCard.body?.imageUrl
+                }}
+                title={currentCard.name}
                 onSwipe={async (dir) => {
                   if (dir === 'left') {
                     await handleSwipe('left');

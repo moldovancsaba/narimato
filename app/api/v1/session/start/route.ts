@@ -3,9 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import dbConnect from '@/app/lib/utils/db';
 import { Card } from '@/app/lib/models/Card';
 import { Play } from '@/app/lib/models/Play';
-import { DeckEntity } from '@/app/lib/models/DeckEntity';
-import { SESSION_FIELDS, CARD_FIELDS, API_FIELDS, PLAY_FIELDS, DECK_FIELDS } from '@/app/lib/constants/fieldNames';
-import { generateDeckUuid } from '@/app/lib/utils/deckUuid';
+import { SESSION_FIELDS, CARD_FIELDS, API_FIELDS, PLAY_FIELDS } from '@/app/lib/constants/fieldNames';
 
 const SESSION_EXPIRY_HOURS = 24;
 
@@ -46,19 +44,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create deck entity to validate uniqueness and immutability
-    try {
-      new DeckEntity(cards);
-    } catch (error) {
-      return new NextResponse(
-        JSON.stringify({ [API_FIELDS.ERROR]: 'Invalid deck: ' + (error as Error).message }),
-        { status: 400 }
-      );
-    }
-
-    // Generate consistent deck UUID based on selected cards and tag
+    // Extract card UUIDs for play creation
     const cardUuids = cards.map(card => card[CARD_FIELDS.UUID]);
-    const deckUuid = generateDeckUuid(selectedTag, cardUuids);
     
     // Generate unique play UUID for this specific game session
     const playUuid = uuidv4();
@@ -66,11 +53,11 @@ export async function POST(request: Request) {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + SESSION_EXPIRY_HOURS);
 
-    // Create new play session with proper UUID architecture
+    // Create new play session
     const play = new Play({
       [PLAY_FIELDS.UUID]: playUuid,
       [PLAY_FIELDS.SESSION_ID]: sessionId,
-      [PLAY_FIELDS.DECK_UUID]: deckUuid,
+      [PLAY_FIELDS.DECK_UUID]: playUuid, // Use playUuid as deck identifier for now
       [PLAY_FIELDS.STATUS]: 'active',
       [PLAY_FIELDS.STATE]: 'swiping',
       deck: cardUuids,
@@ -87,7 +74,6 @@ export async function POST(request: Request) {
     console.log(`🎮 New play session created:`, {
       playUuid: playUuid.substring(0, 8) + '...',
       sessionId: sessionId.substring(0, 8) + '...',
-      deckUuid: deckUuid.substring(0, 8) + '...',
       deckTag: selectedTag,
       totalCards: cards.length
     });
@@ -98,7 +84,6 @@ export async function POST(request: Request) {
         [SESSION_FIELDS.ID]: playUuid, // Frontend expects this field name but gets playUuid
         [PLAY_FIELDS.UUID]: playUuid,
         browserSessionId: sessionId, // Browser session ID using different field name
-        [DECK_FIELDS.UUID]: deckUuid,
         deckTag: selectedTag,
         expiresAt,
         deck: cards.map(card => ({

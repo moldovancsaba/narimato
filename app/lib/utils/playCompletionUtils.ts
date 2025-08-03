@@ -1,5 +1,4 @@
 import { Card } from '../models/Card';
-import { DeckEntity } from '../models/DeckEntity';
 import { CARD_FIELDS } from '../constants/fieldNames';
 
 /**
@@ -40,37 +39,26 @@ export async function checkPlayCompletion(play: any): Promise<PlayCompletionResu
     lastActivity: play.lastActivity
   });
 
-  // Strategy 1: Check deck exhaustion using DeckEntity
+  // Strategy 1: Check if all deck cards have been swiped
+  // Simple check: if we have swipes for all cards in the deck, it's exhausted
   try {
-    const cards = await Card.find({ [CARD_FIELDS.UUID]: { $in: play.deck } });
-    if (cards.length > 0) {
-      const orderedCards = play.deck.map((uuid: string) => 
-        cards.find((card: any) => card[CARD_FIELDS.UUID] === uuid)
-      ).filter((card: any) => card !== undefined);
-      
-      const deck = new DeckEntity(orderedCards);
-      
-      // Initialize deck with all swipes to check if exhausted
-      const swipedCardIds = play.swipes?.map((swipe: any) => swipe.cardId) || [];
-      for (const swipedCardId of swipedCardIds) {
-        const swipe = play.swipes.find((s: any) => s.cardId === swipedCardId);
-        if (swipe) {
-          deck.confirmSwipe(swipedCardId, swipe.direction);
-        }
-      }
-      
-      if (deck.isExhausted()) {
-        console.log(`✅ Play completion detected: Deck exhausted via DeckEntity`);
-        return {
-          shouldComplete: true,
-          reason: 'Deck has been exhausted - all cards have been swiped',
-          completionType: 'deck_exhausted',
-          metrics
-        };
-      }
+    const swipedCardIds = new Set(play.swipes?.map((swipe: any) => swipe.cardId) || []);
+    const deckCardIds = new Set(play.deck || []);
+    
+    // Check if all deck cards have been swiped
+    const allCardsSwiped = [...deckCardIds].every(cardId => swipedCardIds.has(cardId));
+    
+    if (allCardsSwiped && deckCardIds.size > 0) {
+      console.log(`✅ Play completion detected: All deck cards have been swiped`);
+      return {
+        shouldComplete: true,
+        reason: `All ${deckCardIds.size} deck cards have been swiped`,
+        completionType: 'deck_exhausted',
+        metrics
+      };
     }
   } catch (error) {
-    console.warn('Failed to check deck exhaustion via DeckEntity:', error);
+    console.warn('Failed to check deck exhaustion:', error);
   }
 
   // Strategy 2: Mathematical verification - all cards have been swiped (left or right)

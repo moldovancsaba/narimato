@@ -254,23 +254,12 @@ export async function recoverSessionState(sessionId: string): Promise<boolean> {
       return false;
     }
     
-    // Step 2: Session is valid, synchronize local state
+    // Step 2: Session is valid, use existing session data from validation response
     try {
-      const [deckResponse, rankingResponse] = await Promise.all([
-        fetch(`/api/v1/deck?sessionId=${sessionId}`),
-        fetch(`/api/v1/ranking?sessionId=${sessionId}`)
-      ]);
-      
-      const [deckData, rankingData] = await Promise.all([
-        deckResponse.json(),
-        rankingResponse.json()
-      ]);
-      
-      // Store synchronized state for future recovery
+      // Use session data already retrieved from validation
       const syncState = {
         sessionId,
-        deck: deckData.deck || [],
-        ranking: rankingData.ranking || [],
+        session: validateData.session || {},
         timestamp: new Date().toISOString(),
         version: validateData.version
       };

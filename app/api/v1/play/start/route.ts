@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import dbConnect from '@/app/lib/utils/db';
-import { Card } from '@/app/lib/models/Card';
+import { Card, ICard } from '@/app/lib/models/Card';
 import { Play } from '@/app/lib/models/Play';
-import { DeckEntity } from '@/app/lib/models/DeckEntity';
-import { CARD_FIELDS, API_FIELDS, PLAY_FIELDS, DECK_FIELDS } from '@/app/lib/constants/fieldNames';
-import { generateDeckUuid } from '@/app/lib/utils/deckUuid';
+import { getChildren, isPlayable } from '@/app/lib/utils/cardHierarchy';
+import { DECK_RULES } from '@/app/lib/constants/fieldNames';
 import { savePlayResults } from '@/app/lib/utils/sessionResultsUtils';
 
 const PLAY_EXPIRY_HOURS = 24;
@@ -16,50 +15,63 @@ export async function POST(request: NextRequest) {
 
     // Parse request body to get deck selection and session info
     const body = await request.json().catch(() => ({}));
-    const selectedTag = body.deckTag || 'all';
+    const selectedCardName = body.cardName; // The #HASHTAG name of the card to play
     const sessionId = body.sessionId; // Browser session ID for analytics
 
-    // Build match criteria based on deck selection
-    let matchCriteria: any = { isActive: true };
-    if (selectedTag !== 'all') {
-      matchCriteria.tags = selectedTag;
-    }
-
-    // Get cards based on selected deck
-    const cards = await Card.aggregate([
-      { $match: matchCriteria },
-      // Ensure uniqueness
-      { 
-        $group: {
-          _id: `$${CARD_FIELDS.UUID}`,
-          card: { $first: "$$ROOT" }
-        }
-      },
-      { $replaceRoot: { newRoot: "$card" } },
-      // Random ordering
-      { $sample: { size: 999999 } } // Large number to get all cards in random order
-    ]);
-
-    if (cards.length === 0) {
+    if (!selectedCardName) {
       return new NextResponse(
-        JSON.stringify({ [API_FIELDS.ERROR]: 'No cards available' }),
-        { status: 404 }
-      );
-    }
-
-    // Create deck entity to validate uniqueness and immutability
-    try {
-      new DeckEntity(cards);
-    } catch (error) {
-      return new NextResponse(
-        JSON.stringify({ [API_FIELDS.ERROR]: 'Invalid deck: ' + (error as Error).message }),
+        JSON.stringify({ error: 'Card name is required' }),
         { status: 400 }
       );
     }
 
-    // Generate consistent deck UUID based on selected cards and tag
-    const cardUuids = cards.map(card => card[CARD_FIELDS.UUID]);
-    const deckUuid = generateDeckUuid(selectedTag, cardUuids);
+    // Ensure hashtag format
+    const cardName = selectedCardName.startsWith('#') ? selectedCardName : `#${selectedCardName}`;
+
+    // Check if the card exists and is playable (has children)
+    const parentCard = await Card.findOne({ name: cardName, isActive: true });
+    if (!parentCard) {
+      return new NextResponse(
+        JSON.stringify({ error: 'Card not found' }),
+        { status: 404 }
+      );
+    }
+
+    const playableCheck = await isPlayable(cardName);
+    if (!playableCheck) {
+      return new NextResponse(
+        JSON.stringify({ error: 'Card has no children to play' }),
+        { status: 400 }
+      );
+    }
+
+    // Get all children cards for this parent
+    const childCards = await getChildren(cardName);
+    
+    // Shuffle the cards randomly
+    const cards = childCards.sort(() => Math.random() - 0.5);
+
+    if (cards.length === 0) {
+      return new NextResponse(
+        JSON.stringify({ error: 'No cards available' }),
+        { status: 404 }
+      );
+    }
+
+    // Defensive check: Ensure deck meets minimum card threshold for meaningful ranking
+    // This prevents play sessions with insufficient cards (e.g., single-card decks)
+    if (cards.length < DECK_RULES.MIN_CARDS_FOR_PLAYABLE) {
+      return new NextResponse(
+        JSON.stringify({ 
+          error: `Insufficient cards for meaningful ranking. This deck has ${cards.length} card(s), but at least ${DECK_RULES.MIN_CARDS_FOR_PLAYABLE} cards are required.` 
+        }),
+        { status: 400 }
+      );
+    }
+
+    // Generate card UUIDs and deck UUID
+    const cardUuids = cards.map(card => card.uuid);
+    const deckUuid = uuidv4(); // Simple UUID for this play session
     
     // Generate unique play UUID for this specific game session
     const playUuid = uuidv4();
@@ -67,10 +79,14 @@ export async function POST(request: NextRequest) {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + PLAY_EXPIRY_HOURS);
 
-    // Close any existing active plays for this session before creating new
+    // CRITICAL: Force close ALL existing active plays for this session before creating new
+    // This ensures clean session state and prevents card state mismatches
     if (sessionId) {
       const activePlays = await Play.find({ sessionId, status: 'active' });
+      console.log(`🧹 Found ${activePlays.length} active plays to close for session ${sessionId?.substring(0, 8)}...`);
+      
       for (const activePlay of activePlays) {
+        console.log(`🔄 Force closing play ${activePlay.playUuid?.substring(0, 8)}... to prevent state conflicts`);
         activePlay.status = 'completed';
         activePlay.state = 'completed';
         activePlay.completedAt = new Date();
@@ -79,24 +95,24 @@ export async function POST(request: NextRequest) {
         await activePlay.save();
         try {
           await savePlayResults(activePlay);
-          console.log(`Hard closed existing active play: ${activePlay.playUuid}`);
+          console.log(`✅ Hard closed existing active play: ${activePlay.playUuid?.substring(0, 8)}...`);
         } catch (saveError) {
-          console.warn(`Failed to save results for closed play ${activePlay.playUuid}:`, saveError);
+          console.warn(`⚠️ Failed to save results for closed play ${activePlay.playUuid?.substring(0, 8)}...:`, saveError);
         }
       }
     }
 
-    // Create new play session with proper UUID architecture
+    // Create new play session
     const play = new Play({
-      [PLAY_FIELDS.UUID]: playUuid,
-      [PLAY_FIELDS.SESSION_ID]: sessionId, // Browser session for analytics
-      [PLAY_FIELDS.DECK_UUID]: deckUuid,
-      [PLAY_FIELDS.STATUS]: 'active',
-      [PLAY_FIELDS.STATE]: 'swiping',
+      playUuid,
+      sessionId,
+      deckUuid,
+      status: 'active',
+      state: 'swiping',
       deck: cardUuids,
-      deckTag: selectedTag,
+      deckTag: cardName,
       totalCards: cards.length,
-      [PLAY_FIELDS.EXPIRES_AT]: expiresAt,
+      expiresAt,
       swipes: [],
       votes: [],
       personalRanking: []
@@ -108,25 +124,23 @@ export async function POST(request: NextRequest) {
       playUuid: playUuid.substring(0, 8) + '...',
       sessionId: sessionId ? sessionId.substring(0, 8) + '...' : 'none',
       deckUuid: deckUuid.substring(0, 8) + '...',
-      deckTag: selectedTag,
+      cardName,
       totalCards: cards.length,
       timestamp: new Date().toISOString()
     });
     
-
     return new NextResponse(
       JSON.stringify({
-        [PLAY_FIELDS.UUID]: playUuid,
-        browserSessionId: sessionId, // Browser session ID for analytics
-        [DECK_FIELDS.UUID]: deckUuid,
-        deckTag: selectedTag,
+        playUuid,
+        browserSessionId: sessionId,
+        deckUuid,
+        cardName,
         expiresAt,
         deck: cards.map(card => ({
-          [CARD_FIELDS.UUID]: card[CARD_FIELDS.UUID],
-          [CARD_FIELDS.TYPE]: card[CARD_FIELDS.TYPE],
-          [CARD_FIELDS.CONTENT]: card[CARD_FIELDS.CONTENT],
-          [CARD_FIELDS.TITLE]: card[CARD_FIELDS.TITLE],
-          [CARD_FIELDS.TAGS]: card[CARD_FIELDS.TAGS]
+          uuid: card.uuid,
+          name: card.name,
+          body: card.body,
+          hashtags: card.hashtags
         }))
       }),
       { 
@@ -139,7 +153,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Play creation error:', error);
     return new NextResponse(
-      JSON.stringify({ [API_FIELDS.ERROR]: 'Internal server error' }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500 }
     );
   }

@@ -1,40 +1,81 @@
 import mongoose from 'mongoose';
 
+// Background style interface
+interface BackgroundStyle {
+  type: 'color' | 'gradient' | 'pattern';
+  value: string; // Color hex, gradient CSS, or pattern name
+  textColor?: string; // Text color for readability
+}
+
+const BackgroundStyleSchema = new mongoose.Schema({
+  type: { type: String, enum: ['color', 'gradient', 'pattern'], required: true },
+  value: { type: String, required: true },
+  textColor: { type: String, default: '#ffffff' }
+}, { _id: false });
+
 const CardSchema = new mongoose.Schema({
-  slug: { type: String, required: true, unique: true, sparse: true },
-  md5: { type: String, required: true, unique: true, index: true },
-  uuid: { type: String, required: true, unique: true, index: true },
-  type: { type: String, enum: ['text', 'media'], required: true },
-  content: {
-    text: { 
-      type: String,
+  // Core identification
+  uuid: { 
+    type: String, 
+    required: true, 
+    unique: true, 
+    index: true 
+  },
+  
+  // Card name (hashtag) - this defines the card identity
+  name: { 
+    type: String, 
+    required: true, 
+    unique: true,
+    index: true,
+    validate: {
+      validator: function(name: string) {
+        return name.startsWith('#') && name.length > 1 && /^#[A-Z0-9_-]+$/i.test(name);
+      },
+      message: 'Name must be a valid hashtag starting with # and containing only letters, numbers, hyphens, and underscores'
+    }
+  },
+  
+  // Card body content
+  body: {
+    imageUrl: { 
+      type: String, 
       required: false,
       validate: {
-        validator: function(this: { type: string; content: { text?: string; mediaUrl?: string } }) {
-          if (this.type === 'text') {
-            return this.content.text != null;
-          }
-          return true;
+        validator: function(url: string) {
+          if (!url) return true; // Optional field
+          return /^https?:\/\/.+/.test(url);
         },
-        message: 'Text content is required for text type cards'
+        message: 'Image URL must be a valid HTTP/HTTPS URL'
       }
     },
-    mediaUrl: { 
-      type: String,
+    textContent: { 
+      type: String, 
+      required: false 
+    },
+    background: { 
+      type: BackgroundStyleSchema, 
       required: false,
-      validate: {
-        validator: function(this: { type: string; content: { text?: string; mediaUrl?: string } }) {
-          if (this.type === 'media') {
-            return this.content.mediaUrl != null;
-          }
-          return true;
-        },
-        message: 'Media URL is required for media type cards'
+      default: {
+        type: 'color',
+        value: '#667eea',
+        textColor: '#ffffff'
       }
     }
   },
-  title: { type: String, default: '' },
-  tags: [{ type: String }],
+  
+  // Hashtags for parent-child relationships
+  hashtags: [{ 
+    type: String,
+    validate: {
+      validator: function(hashtag: string) {
+        return hashtag.startsWith('#') && /^#[A-Z0-9_-]+$/i.test(hashtag);
+      },
+      message: 'Each hashtag must start with # and contain only letters, numbers, hyphens, and underscores'
+    }
+  }],
+  
+  // Meta fields
   isActive: { type: Boolean, default: true, index: true },
   createdAt: { type: Date, default: Date.now, index: true },
   updatedAt: { type: Date, default: Date.now }
@@ -66,20 +107,21 @@ CardSchema.set('toJSON', {
 
 // Define the interface for the Card document
 export interface ICard extends mongoose.Document {
-  slug: string;
-  md5: string;
   uuid: string;
-  type: 'text' | 'media';
-  content: {
-    text?: string;
-    mediaUrl?: string;
+  name: string; // #HASHTAG
+  body: {
+    imageUrl?: string;
+    textContent?: string;
+    background?: BackgroundStyle;
   };
-  title: string;
-  tags: string[];
+  hashtags: string[]; // Array of #HASHTAG references to parent cards
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
+
+// Export the background style interface
+export type { BackgroundStyle };
 
 // Export both the model and its interface
 export const Card = mongoose.models.Card || mongoose.model<ICard>('Card', CardSchema);

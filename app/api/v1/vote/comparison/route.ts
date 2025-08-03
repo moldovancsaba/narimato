@@ -47,15 +47,13 @@ export async function GET(request: NextRequest) {
         JSON.stringify({
           cardA: {
             uuid: card.uuid,
-            type: card.type,
-            content: card.content,
-            title: card.title
+            name: card.name,
+            body: card.body
           },
           cardB: {
             uuid: card.uuid,
-            type: card.type,
-            content: card.content,
-            title: card.title
+            name: card.name,
+            body: card.body
           },
           isFirstRanking: true
         }),
@@ -254,15 +252,13 @@ export async function GET(request: NextRequest) {
       JSON.stringify({
         cardA: {
           uuid: newCard.uuid,
-          type: newCard.type,
-          content: newCard.content,
-          title: newCard.title
+          name: newCard.name,
+          body: newCard.body
         },
         cardB: {
           uuid: compareCard.uuid,
-          type: compareCard.type,
-          content: compareCard.content,
-          title: compareCard.title
+          name: compareCard.name,
+          body: compareCard.body
         }
       }),
       { status: 200 }

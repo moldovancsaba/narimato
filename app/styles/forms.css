@@ -6,8 +6,8 @@
 
 .form-input {
   @apply w-full px-3 py-2 border rounded-lg transition-colors duration-200;
-  background-color: var(--input-background);
-  color: var(--text-primary);
+  background-color: var(--input-background) !important;
+  color: var(--text-primary) !important;
   border-color: var(--border-color);
 }
 
@@ -25,15 +25,18 @@
 input.form-input,
 textarea.form-input,
 select.form-input {
-  background-color: var(--input-background);
-  color: var(--text-primary);
+  background-color: var(--input-background) !important;
+  color: var(--text-primary) !important;
   border: 1px solid var(--border-color);
 }
 
 /* Ensure proper styling in dark mode */
-[data-theme="dark"] .form-input {
-  background-color: var(--input-background);
-  color: var(--text-primary);
+[data-theme="dark"] .form-input,
+[data-theme="dark"] input.form-input,
+[data-theme="dark"] textarea.form-input,
+[data-theme="dark"] select.form-input {
+  background-color: var(--input-background) !important;
+  color: var(--text-primary) !important;
   border-color: var(--border-color);
 }
 
@@ -77,4 +80,34 @@ select.form-input {
   background-color: var(--background);
   color: var(--text-secondary);
   cursor: default;
+}
+
+/* Emergency fallback styling to prevent white text on white background */
+.form-input {
+  /* Light mode fallbacks */
+  background: white !important;
+  color: #171717 !important;
+}
+
+[data-theme="dark"] .form-input,
+[data-theme="dark"] input.form-input,
+[data-theme="dark"] textarea.form-input,
+[data-theme="dark"] select.form-input {
+  /* Dark mode fallbacks */
+  background: #1f2937 !important;
+  color: #f5f5f5 !important;
+}
+
+/* Override with CSS variables when they work properly */
+.form-input {
+  background-color: var(--input-background, white) !important;
+  color: var(--text-primary, #171717) !important;
+}
+
+[data-theme="dark"] .form-input,
+[data-theme="dark"] input.form-input,
+[data-theme="dark"] textarea.form-input,
+[data-theme="dark"] select.form-input {
+  background-color: var(--input-background, #1f2937) !important;
+  color: var(--text-primary, #f5f5f5) !important;
 }

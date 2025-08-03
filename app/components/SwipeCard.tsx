@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSpring, animated } from '@react-spring/web';
-import { useSwipeable } from 'react-swipeable';
 import { useDrag } from '@use-gesture/react';
 import BaseCard from './BaseCard';
 

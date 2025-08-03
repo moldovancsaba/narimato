@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import { createHash } from 'crypto';
 import dbConnect from '@/app/lib/utils/db';
 import { Card } from '@/app/lib/models/Card';
 import { GlobalRanking } from '@/app/lib/models/GlobalRanking';
@@ -17,7 +16,6 @@ export async function POST(request: Request) {
 
     // Use provided UUID or generate new one
     const uuid = validatedData.uuid && validateUUID(validatedData.uuid) ? validatedData.uuid : uuidv4();
-    const md5 = createHash('md5').update(uuid).digest('hex');
     
     // Check for UUID uniqueness
     const existingCard = await Card.findOne({ uuid });
@@ -28,23 +26,17 @@ export async function POST(request: Request) {
       );
     }
     
-    // Generate base slug from title or use md5
-    let baseSlug = validatedData.title ? 
-      validatedData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : 
-      md5.substring(0, 8);
-    
-    // Ensure slug uniqueness by checking for duplicates
-    let slug = baseSlug;
-    let counter = 1;
-    while (await Card.findOne({ slug })) {
-      slug = `${baseSlug}-${counter}`;
-      counter++;
+    // Check for name uniqueness (hashtag must be unique)
+    const existingName = await Card.findOne({ name: validatedData.name });
+    if (existingName) {
+      return NextResponse.json(
+        { error: 'Card with this name (hashtag) already exists' },
+        { status: 409 }
+      );
     }
     
     const card = new Card({
       uuid,
-      md5,
-      slug,
       ...validatedData,
       isActive: true,
       createdAt: new Date(),
@@ -52,6 +44,7 @@ export async function POST(request: Request) {
     });
 
     await card.save();
+    
     
     // ✅ CRITICAL FIX: Initialize ELO rating for new card to prevent ranking sync issues
     try {

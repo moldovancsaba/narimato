@@ -11,10 +11,9 @@ const SessionResultsSchema = new mongoose.Schema({
     cardId: { type: String, required: true },
     card: {
       uuid: { type: String, required: true },
-      type: { type: String, enum: ['text', 'media'], required: true },
-      content: {
-        text: { type: String },
-        mediaUrl: { type: String }
+      body: {
+        textContent: { type: String },
+        imageUrl: { type: String }
       },
       title: { type: String }
     },
@@ -46,10 +45,9 @@ export interface ISessionResults extends mongoose.Document {
     cardId: string;
     card: {
       uuid: string;
-      type: 'text' | 'media';
-      content: {
-        text?: string;
-        mediaUrl?: string;
+      body: {
+        textContent?: string;
+        imageUrl?: string;
       };
       title?: string;
     };

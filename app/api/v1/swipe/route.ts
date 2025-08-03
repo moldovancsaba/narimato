@@ -3,7 +3,6 @@ import dbConnect from '@/app/lib/utils/db';
 import { Play } from '@/app/lib/models/Play';
 import { Card } from '@/app/lib/models/Card';
 import { SwipeRequestSchema } from '@/app/lib/validation/schemas';
-import { DeckEntity } from '@/app/lib/models/DeckEntity';
 import { GlobalRanking } from '@/app/lib/models/GlobalRanking';
 import { SESSION_FIELDS, CARD_FIELDS, VOTE_FIELDS, API_FIELDS, PLAY_FIELDS } from '@/app/lib/constants/fieldNames';
 import { validateSessionId, validateUUID } from '@/app/lib/utils/fieldValidation';
@@ -41,11 +40,21 @@ const savePlayResults = async (play: any) => {
     // Create a map for quick card lookup
     const cardMap = new Map();
     cards.forEach(card => {
+      // Derive type from card content - if it has imageUrl it's media, otherwise text
+      const cardType = card.body?.imageUrl ? 'media' : 'text';
+      
       cardMap.set(card.uuid, {
         uuid: card.uuid,
-        type: card.type,
-        content: card.content,
-        title: card.title
+        type: cardType, // Add derived type field
+        body: {
+          textContent: card.body?.textContent,
+          imageUrl: card.body?.imageUrl
+        },
+        content: {
+          text: card.body?.textContent,
+          mediaUrl: card.body?.imageUrl
+        },
+        title: card.name
       });
     });
 
@@ -133,12 +142,21 @@ interface SwipeResponse {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log('🔍 Swipe request received:', {
+      body,
+      bodyType: typeof body,
+      sessionId: body[SESSION_FIELDS.ID],
+      cardId: body[CARD_FIELDS.ID],
+      direction: body[VOTE_FIELDS.DIRECTION]
+    });
     
     // Validate request
     const validatedData = SwipeRequestSchema.parse(body);
     const playUuid = validatedData[SESSION_FIELDS.ID]; // Frontend sends this as sessionId but it's playUuid
     const cardId = validatedData[CARD_FIELDS.ID];
     const direction = validatedData[VOTE_FIELDS.DIRECTION];
+    
+    console.log('✅ Swipe validation successful:', { playUuid, cardId, direction });
 
     await dbConnect();
 
@@ -192,30 +210,49 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create deck with original order
-    const orderedCards = play.deck.map((uuid: string) => 
-      cards.find(card => card[CARD_FIELDS.UUID] === uuid)
-    ).filter((card: any) => card !== undefined);
+    // Create a map for fast card lookup
+    const cardMap = new Map();
+    cards.forEach(card => {
+      cardMap.set(card[CARD_FIELDS.UUID], card);
+    });
 
-    const deck = new DeckEntity(orderedCards);
+    // Create ordered cards array maintaining exact deck order
+    const orderedCards = play.deck.map((uuid: string) => cardMap.get(uuid)).filter(Boolean);
     
-    // Initialize deck with already swiped cards
+    // Find current card from play state
     const swipedCardIds = play.swipes.map((swipe: any) => swipe.cardId);
-    for (const swipedCardId of swipedCardIds) {
-      const swipe = play.swipes.find((s: any) => s.cardId === swipedCardId);
-      if (swipe) {
-        deck.confirmSwipe(swipedCardId, swipe.direction);
-      }
-    }
+    const currentCard = orderedCards.find((card: any) => !swipedCardIds.includes(card.uuid));
     
-    const currentCard = deck.getCurrentCard();
+    console.log('🎯 Card state verification:', {
+      requestedCardId: cardId,
+      currentCardId: currentCard?.uuid || 'none',
+      swipedCardIds,
+      totalCards: orderedCards.length,
+      orderedCardIds: orderedCards.map((c: any) => c?.uuid || 'undefined'),
+      playState: play.state,
+      totalSwipes: play.swipes.length
+    });
 
     // Verify current card matches the requested card
     if (!currentCard || currentCard.uuid !== cardId) {
+      console.error('❌ Card state mismatch:', {
+        expectedCurrentCard: currentCard?.uuid || 'none',
+        requestedCard: cardId,
+        allCards: orderedCards.map((c: any) => c?.uuid),
+        swipedCards: swipedCardIds,
+        remainingCards: orderedCards.filter((c: any) => !swipedCardIds.includes(c?.uuid)).map((c: any) => c?.uuid)
+      });
+      
       return new NextResponse(
         JSON.stringify({ 
           success: false,
-          error: 'Invalid card state - card is not current'
+          error: 'Invalid card state - card is not current',
+          debug: {
+            expectedCurrentCard: currentCard?.uuid || 'none',
+            requestedCard: cardId,
+            swipedCards: swipedCardIds,
+            totalCards: orderedCards.length
+          }
         }),
         { status: 400 }
       );
@@ -233,14 +270,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Process swipe
-    if (!deck.prepareSwipe(cardId)) {
+    // Validate card is swipeable (not already swiped)
+    if (swipedCardIds.includes(cardId)) {
       return new NextResponse(
         JSON.stringify({ 
           success: false,
-          error: 'Failed to prepare swipe'
+          error: 'Card has already been swiped'
         }),
-        { status: 400 }
+        { status: 409 }
       );
     }
 
@@ -276,12 +313,10 @@ export async function POST(request: NextRequest) {
       requiresVoting = false;
     }
 
-    // Confirm swipe in deck (this advances the current position)
-    deck.confirmSwipe(cardId, direction);
-
-    // Check if deck is exhausted
+    // Check if all cards will be swiped after this swipe
     let sessionCompleted = false;
-    if (deck.isExhausted()) {
+    const totalSwipesAfterThis = play.swipes.length + 1;
+    if (totalSwipesAfterThis >= orderedCards.length) {
       console.log(`🎊 DECK EXHAUSTION DETECTED in swipe endpoint - Play ${play.playUuid}:`, {
         cardId,
         direction,

@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { generateCardSVG, svgToDataUrl, optimizeFontSize, DEFAULT_CARD_CONFIG, SVGCardConfig } from '../lib/utils/svgGenerator';
-import PageLayout from '../components/PageLayout'; // Import PageLayout
+import React, { useState, useCallback, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { v4 as uuidv4 } from 'uuid';
+import PageLayout from '../components/PageLayout';
 
 // Types for presets
 interface FontPreset {
@@ -21,30 +21,97 @@ interface BackgroundPreset {
   isSystem?: boolean;
 }
 
-export default function CardEditorPage() {
-  const [config, setConfig] = useState<SVGCardConfig>({
-    ...DEFAULT_CARD_CONFIG,
-    text: 'Sample Card Text',
-  });
+// Card interface for new hashtag-based model
+interface Card {
+  uuid: string;
+  name: string; // #HASHTAG
+  body: {
+    imageUrl?: string;
+    textContent?: string;
+    background?: {
+      type: 'color' | 'gradient' | 'pattern';
+      value: string;
+      textColor?: string;
+    };
+  };
+  hashtags: string[]; // Parent relationships
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
+function CardEditorContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const cardUuid = searchParams.get('uuid');
+  const isEditing = Boolean(cardUuid);
+  
+  // 1st Column - General Information
+  const [cardName, setCardName] = useState(''); // #hashtag - required
+  const [cardUUID, setCardUUID] = useState(cardUuid || uuidv4()); // UUID - immediately generated
+  const [cardHashtags, setCardHashtags] = useState<string[]>([]); // list of #hashtags
+  const [hashtagSuggestions, setHashtagSuggestions] = useState<string[]>([]);
+  const [hashtagInput, setHashtagInput] = useState('');
+  
+  // Body fields
+  const [imageUrl, setImageUrl] = useState(''); // img url - not required
+  const [textContent, setTextContent] = useState(''); // text - not required
+  const [cssBackground, setCssBackground] = useState('linear-gradient(135deg, #667eea 0%, #764ba2 100%)'); // css bg - default
+  const [cardSize, setCardSize] = useState('300:400'); // card size - width:height format
+  
+  // Typography
+  const [selectedFont, setSelectedFont] = useState('Arial, sans-serif');
+  const [fontSize, setFontSize] = useState(24); // max 192px
+  const [padding, setPadding] = useState(20); // max 192px
+  const [textColor, setTextColor] = useState('#000000'); // hex with transparency
+  const [horizontalAlign, setHorizontalAlign] = useState<'left' | 'center' | 'right'>('center');
+  const [verticalAlign, setVerticalAlign] = useState<'top' | 'middle' | 'bottom'>('middle');
+  
+  // 2nd Column - Live Preview & Actions
+  const [pngDataUrl, setPngDataUrl] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadedUrl, setUploadedUrl] = useState('');
+  
+  // 3rd Column - Management
   const [backgroundPresets, setBackgroundPresets] = useState<BackgroundPreset[]>([]);
   const [fontPresets, setFontPresets] = useState<FontPreset[]>([]);
-  const [isLoadingPresets, setIsLoadingPresets] = useState(true);
+  const [allCards, setAllCards] = useState<Card[]>([]);
+  const [childrenCards, setChildrenCards] = useState<Card[]>([]);
+  
+  // CSS Background Management
+  const [cssInput, setCssInput] = useState('');
+  const [cssBgName, setCssBgName] = useState('');
+  
+  // Font Management
+  const [fontInput, setFontInput] = useState(''); // Google font URL
+  const [fontName, setFontName] = useState('');
+  
+  // Children Cards Management
+  const [cardSearchQuery, setCardSearchQuery] = useState('');
+  const [cardSearchSuggestions, setCardSearchSuggestions] = useState<Card[]>([]);
+  
+  // UI State
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-  const [googleFontUrl, setGoogleFontUrl] = useState('');
-  const [testFontName, setTestFontName] = useState('');
-  const [isTestingFont, setIsTestingFont] = useState(false);
+  // Load initial data
+  useEffect(() => {
+    loadInitialData();
+  }, []);
 
-  // Load presets from database on component mount
-  const loadPresets = useCallback(async () => {
+  const loadInitialData = async () => {
+    setLoading(true);
     try {
-      setIsLoadingPresets(true);
-      
-      // Initialize system presets if needed
+      // Load presets
       await fetch('/api/v1/presets/init', { method: 'POST' });
       
-      // Load font presets
-      const fontResponse = await fetch('/api/v1/presets/fonts');
+      const [fontResponse, backgroundResponse, cardsResponse] = await Promise.all([
+        fetch('/api/v1/presets/fonts'),
+        fetch('/api/v1/presets/backgrounds'),
+        fetch('/api/v1/cards')
+      ]);
+      
       if (fontResponse.ok) {
         const fontData = await fontResponse.json();
         if (fontData.success) {
@@ -52,249 +119,84 @@ export default function CardEditorPage() {
         }
       }
       
-      // Load background presets
-      const backgroundResponse = await fetch('/api/v1/presets/backgrounds');
       if (backgroundResponse.ok) {
         const backgroundData = await backgroundResponse.json();
         if (backgroundData.success) {
           setBackgroundPresets(backgroundData.data);
         }
       }
-    } catch (error) {
-      console.error('Error loading presets:', error);
-      setError('Failed to load presets from database');
-    } finally {
-      setIsLoadingPresets(false);
-    }
-  }, []);
-
-  // Fix the setError dependency issue
-  const [error, setError] = useState<string>('');
-  const [success, setSuccess] = useState<string>('');
-  const [isLoadingFont, setIsLoadingFont] = useState(false);
-
-  useEffect(() => {
-    loadPresets();
-  }, [loadPresets]);
-
-  const addBackgroundPreset = useCallback(async () => {
-    try {
-      const name = `Custom ${Date.now()}`;
-      const value = config.backgroundColor || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
       
-      const response = await fetch('/api/v1/presets/backgrounds', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, value })
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          setBackgroundPresets(prev => [...prev, result.data]);
-          setSuccess('Background preset saved successfully!');
-        } else {
-          setError(result.error || 'Failed to save background preset');
+      if (cardsResponse.ok) {
+        const cardsData = await cardsResponse.json();
+        if (cardsData.success) {
+          setAllCards(cardsData.cards);
         }
       }
-    } catch (error) {
-      setError('Failed to save background preset');
-    }
-  }, [config.backgroundColor]);
-
-  const removeBackgroundPreset = useCallback(async (name: string) => {
-    try {
-      const response = await fetch(`/api/v1/presets/backgrounds?name=${encodeURIComponent(name)}`, {
-        method: 'DELETE'
-      });
       
-      if (response.ok) {
-        setBackgroundPresets(prev => prev.filter(preset => preset.name !== name));
-        setSuccess('Background preset deleted successfully!');
-      } else {
-        const result = await response.json();
-        setError(result.error || 'Failed to delete background preset');
-      }
-    } catch (error) {
-      setError('Failed to delete background preset');
-    }
-  }, []);
-
-  const addFontPreset = useCallback(async () => {
-    try {
-      let name, value, url;
-      
-      if (testFontName) {
-        name = testFontName;
-        value = `\"${testFontName}\", sans-serif`;
-        url = googleFontUrl;
-      } else {
-        name = `Custom ${Date.now()}`;
-        value = config.fontFamily || 'Arial, sans-serif';
-        url = '';
-      }
-      
-      const response = await fetch('/api/v1/presets/fonts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, value, url })
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          setFontPresets(prev => [...prev, result.data]);
-          setSuccess('Font preset saved successfully!');
-          if (testFontName) {
-            setTestFontName('');
-            setGoogleFontUrl('');
+      // If editing, load card data
+      if (isEditing && cardUuid) {
+        const cardResponse = await fetch(`/api/v1/cards/${cardUuid}`);
+        if (cardResponse.ok) {
+          const cardData = await cardResponse.json();
+          if (cardData.success && cardData.card) {
+            const card = cardData.card;
+            setCardName(card.name || '');
+            setCardHashtags(card.hashtags || []);
+            setImageUrl(card.body?.imageUrl || '');
+            setTextContent(card.body?.textContent || '');
+            setCssBackground(card.body?.background?.value || cssBackground);
+            
+            // Find children cards
+            const children = allCards.filter(c => c.hashtags.includes(card.name));
+            setChildrenCards(children);
           }
-        } else {
-          setError(result.error || 'Failed to save font preset');
         }
       }
-    } catch (error) {
-      setError('Failed to save font preset');
-    }
-  }, [config.fontFamily, testFontName, googleFontUrl]);
-
-  const removeFontPreset = useCallback(async (name: string) => {
-    try {
-      setError('');
-      const response = await fetch(`/api/v1/presets/fonts?name=${encodeURIComponent(name)}`, {
-        method: 'DELETE'
-      });
       
-      const result = await response.json();
-      
-      if (response.ok && result.success) {
-        const currentPreset = fontPresets.find(p => p.value === config.fontFamily);
-        if (currentPreset && currentPreset.name === name) {
-          setConfig(prevConfig => ({ ...prevConfig, fontFamily: 'Arial, sans-serif' }));
-        }
-        setFontPresets(prev => prev.filter(preset => preset.name !== name));
-        setSuccess('Font preset deleted successfully!');
-      } else {
-        setError(result.error || 'Failed to delete font preset');
-      }
-    } catch (error) {
-      console.error('Delete font preset error:', error);
-      setError('Failed to delete font preset');
+    } catch (err) {
+      setError('Failed to load initial data');
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
-  }, [config.fontFamily, fontPresets]);
-  
-  const [pngDataUrl, setPngDataUrl] = useState<string>('');
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadedUrl, setUploadedUrl] = useState<string>('');
+  };
 
-  // Generate PNG preview using Canvas API with proper font loading
+  // Generate PNG preview
   const generatePngPreview = useCallback(async () => {
     try {
-      setError('');
+      const [width, height] = cardSize.split(':').map(n => parseInt(n) || 300);
       
-      // Allow generation with image only (no text required)
-      // if (!config.text.trim() && !config.imageUrl?.trim()) {
-      //   setPngDataUrl('');
-      //   return;
-      // }
-
-      // Extract font name and load Google Font if needed
-      const fontName = config.fontFamily?.split(',')[0].trim().replace(/[\"\']/g, '') || 'Arial';
-      const currentFontPreset = fontPresets.find(preset => preset.value === config.fontFamily);
-      const fontUrl = currentFontPreset?.url || '';
-      
-      // Load the font first if it's a Google Font
-      if (fontUrl) {
-        try {
-          const existingLink = document.querySelector(`link[href=\"${fontUrl}\"]`);
-          if (!existingLink) {
-            const linkElement = document.createElement('link');
-            linkElement.rel = 'preconnect';
-            linkElement.href = 'https://fonts.googleapis.com';
-            document.head.appendChild(linkElement);
-            
-            const linkElement2 = document.createElement('link');
-            linkElement2.rel = 'preconnect';
-            linkElement2.href = 'https://fonts.gstatic.com';
-            linkElement2.crossOrigin = 'anonymous';
-            document.head.appendChild(linkElement2);
-            
-            const fontLinkElement = document.createElement('link');
-            fontLinkElement.rel = 'stylesheet';
-            fontLinkElement.href = fontUrl;
-            document.head.appendChild(fontLinkElement);
-            
-            // Wait for font to load using FontFace API
-            await new Promise((resolve) => {
-              if ('fonts' in document) {
-                document.fonts.ready.then(() => {
-                  // Additional delay to ensure font is available for canvas
-                  setTimeout(resolve, 500);
-                });
-              } else {
-                // Fallback for older browsers
-                setTimeout(resolve, 2000);
-              }
-            });
-          } else {
-            // Font already loaded, small delay to ensure it's ready
-            await new Promise(resolve => setTimeout(resolve, 100));
-          }
-        } catch (fontError) {
-          console.warn('Font loading failed for PNG, using fallback:', fontError);
-        }
-      } else if (!['Arial', 'Helvetica', 'Times', 'Georgia', 'Verdana'].includes(fontName)) {
-        // Try to load as Google Font
-        try {
-          await loadGoogleFont(fontName);
-          await new Promise(resolve => setTimeout(resolve, 500));
-        } catch (fontError) {
-          console.warn('Google Font loading failed for PNG, using fallback:', fontError);
-        }
-      }
-
-      // Create canvas  
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        setError('Failed to create canvas context');
-        return;
-      }
-
-      // Set canvas size
-      canvas.width = config.width || 300;
-      canvas.height = config.height || 400;
-
-      // Handle background (image, gradient, or solid color)
-      const backgroundColor = config.backgroundColor || '#ffffff';
-      const hasImageBackground = config.imageUrl && config.imageUrl.trim();
+      if (!ctx) return;
       
-      if (hasImageBackground) {
-        // Load and draw background image first
+      canvas.width = width;
+      canvas.height = height;
+      
+      // Draw background
+      if (imageUrl && imageUrl.trim()) {
         try {
           const img = new Image();
-          img.crossOrigin = 'anonymous'; // Allow cross-origin images
+          img.crossOrigin = 'anonymous';
           
           await new Promise((resolve, reject) => {
             img.onload = () => resolve(img);
-            img.onerror = () => reject(new Error('Failed to load background image'));
-            img.src = config.imageUrl!;
+            img.onerror = reject;
+            img.src = imageUrl;
           });
           
-          // Draw image as background with cover behavior
+          // Draw image with cover behavior
           const imgAspect = img.width / img.height;
           const canvasAspect = canvas.width / canvas.height;
           
           let drawWidth, drawHeight, drawX, drawY;
           
           if (imgAspect > canvasAspect) {
-            // Image is wider than canvas
             drawHeight = canvas.height;
             drawWidth = drawHeight * imgAspect;
             drawX = (canvas.width - drawWidth) / 2;
             drawY = 0;
           } else {
-            // Image is taller than canvas
             drawWidth = canvas.width;
             drawHeight = drawWidth / imgAspect;
             drawX = 0;
@@ -302,228 +204,135 @@ export default function CardEditorPage() {
           }
           
           ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
-          
-          // Optional: Add a semi-transparent overlay to improve text readability
-          if (backgroundColor !== 'transparent' && !backgroundColor.includes('gradient')) {
-            ctx.fillStyle = backgroundColor + '80'; // Add 50% opacity
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-          }
-        } catch (imageError) {
-          console.warn('Failed to load background image, using fallback:', imageError);
-          // Fallback to solid color or gradient
-          if (backgroundColor.includes('gradient')) {
-            const colorMatches = backgroundColor.match(/#[a-fA-F0-9]{6}|#[a-fA-F0-9]{3}/g);
-            if (colorMatches && colorMatches.length >= 2) {
-              const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-              gradient.addColorStop(0, colorMatches[0]);
-              gradient.addColorStop(1, colorMatches[1]);
-              ctx.fillStyle = gradient;
-            } else {
-              ctx.fillStyle = colorMatches ? colorMatches[0] : '#667eea';
-            }
-          } else {
-            ctx.fillStyle = backgroundColor;
-          }
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        } catch {
+          // Fallback to CSS background
+          drawCssBackground();
         }
-      } else if (backgroundColor.includes('gradient')) {
-        // Extract colors from gradient for simple rendering
-        const colorMatches = backgroundColor.match(/#[a-fA-F0-9]{6}|#[a-fA-F0-9]{3}/g);
-        if (colorMatches && colorMatches.length >= 2) {
-          // Create a linear gradient
-          const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-          gradient.addColorStop(0, colorMatches[0]);
-          gradient.addColorStop(1, colorMatches[1]);
-          ctx.fillStyle = gradient;
-        } else {
-          // Fallback to first color or default
-          ctx.fillStyle = colorMatches ? colorMatches[0] : '#667eea';
-        }
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
       } else {
-        ctx.fillStyle = backgroundColor;
+        drawCssBackground();
+      }
+      
+      function drawCssBackground() {
+        if (!ctx) return;
+        
+        if (cssBackground.includes('gradient')) {
+          const colorMatches = cssBackground.match(/#[a-fA-F0-9]{6}|#[a-fA-F0-9]{3}/g);
+          if (colorMatches && colorMatches.length >= 2) {
+            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            gradient.addColorStop(0, colorMatches[0]);
+            gradient.addColorStop(1, colorMatches[1]);
+            ctx.fillStyle = gradient;
+          } else {
+            ctx.fillStyle = colorMatches ? colorMatches[0] : '#667eea';
+          }
+        } else {
+          ctx.fillStyle = cssBackground;
+        }
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
-
-      // Set text properties
-      const fontSize = config.fontSize || 24;
-      const fontFamily = config.fontFamily || 'Arial, sans-serif';
       
-      // Use a more specific font specification for Canvas
-      const canvasFontFamily = fontUrl ? `\"${fontName}\", ${fontFamily}` : fontFamily;
-      ctx.font = `${fontSize}px ${canvasFontFamily}`;
-      ctx.fillStyle = config.textColor || '#000000';
-      ctx.textAlign = (config.textAlign as CanvasTextAlign) || 'center';
-      ctx.textBaseline = 'middle';
-
-      // Calculate text position
-      let x = canvas.width / 2;
-      if (config.textAlign === 'left') {
-        x = config.padding || 20;
-        ctx.textAlign = 'left';
-      } else if (config.textAlign === 'right') {
-        x = canvas.width - (config.padding || 20);
-        ctx.textAlign = 'right';
-      }
-
-      let y = canvas.height / 2;
-      if (config.verticalAlign === 'top') {
-        y = (config.padding || 20) + fontSize;
-        ctx.textBaseline = 'top';
-      } else if (config.verticalAlign === 'bottom') {
-        y = canvas.height - (config.padding || 20);
-        ctx.textBaseline = 'bottom';
-      }
-
-      // Draw text with proper line wrapping and containment (only if text exists)
-      if (config.text && config.text.trim()) {
-        const maxWidth = canvas.width - (2 * (config.padding || 20));
+      // Draw text if provided
+      if (textContent && textContent.trim()) {
+        ctx.font = `${fontSize}px ${selectedFont}`;
+        ctx.fillStyle = textColor;
+        ctx.textAlign = horizontalAlign as CanvasTextAlign;
+        ctx.textBaseline = verticalAlign === 'top' ? 'top' : verticalAlign === 'bottom' ? 'bottom' : 'middle';
+        
+        let x = canvas.width / 2;
+        if (horizontalAlign === 'left') {
+          x = padding;
+          ctx.textAlign = 'left';
+        } else if (horizontalAlign === 'right') {
+          x = canvas.width - padding;
+          ctx.textAlign = 'right';
+        }
+        
+        let y = canvas.height / 2;
+        if (verticalAlign === 'top') {
+          y = padding + fontSize;
+        } else if (verticalAlign === 'bottom') {
+          y = canvas.height - padding;
+        }
+        
+        // Word wrap
+        const maxWidth = canvas.width - (2 * padding);
+        const words = textContent.split(' ');
         const lines: string[] = [];
+        let currentLine = '';
         
-        // Split by manual line breaks first
-        const manualLines = config.text.split('\\n');
-        
-        // For each manual line, check if it needs word wrapping
-        manualLines.forEach(line => {
-          if (ctx.measureText(line).width <= maxWidth) {
-            lines.push(line);
+        words.forEach(word => {
+          const testLine = currentLine + (currentLine ? ' ' : '') + word;
+          if (ctx.measureText(testLine).width <= maxWidth) {
+            currentLine = testLine;
           } else {
-            // Word wrap this line
-            const words = line.split(' ');
-            let currentLine = '';
-            
-            words.forEach(word => {
-              const testLine = currentLine + (currentLine ? ' ' : '') + word;
-              if (ctx.measureText(testLine).width <= maxWidth) {
-                currentLine = testLine;
-              } else {
-                if (currentLine) {
-                  lines.push(currentLine);
-                }
-                currentLine = word;
-              }
-            });
-            
             if (currentLine) {
               lines.push(currentLine);
             }
+            currentLine = word;
           }
         });
         
-        const lineHeight = fontSize * 1.2;
-        const totalHeight = lines.length * lineHeight;
-        
-        // Adjust y position for multiple lines
-        if (config.verticalAlign === 'middle') {
-          y = (canvas.height - totalHeight) / 2 + fontSize / 2;
-        } else if (config.verticalAlign === 'top') {
-          y = (config.padding || 20) + fontSize;
-        } else if (config.verticalAlign === 'bottom') {
-          y = canvas.height - (config.padding || 20) - totalHeight + fontSize;
+        if (currentLine) {
+          lines.push(currentLine);
         }
-
+        
+        const lineHeight = fontSize * 1.2;
+        
+        if (verticalAlign === 'middle') {
+          y = (canvas.height - lines.length * lineHeight) / 2 + fontSize / 2;
+        }
+        
         lines.forEach((line, index) => {
           ctx.fillText(line, x, y + (index * lineHeight));
         });
       }
-
-      // Convert to PNG data URL
+      
       const dataUrl = canvas.toDataURL('image/png');
       setPngDataUrl(dataUrl);
       
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate PNG preview');
+      console.error('Failed to generate preview:', err);
     }
-  }, [config, fontPresets]);
-
-  // Move declaration above useEffect to avoid using before declaration
-  const loadGoogleFont = useCallback(async (fontName: string): Promise<void> => {
-    // Clean up font name
-    const cleanFontName = fontName.trim();
-    
-    // If already loaded, return immediately
-    if (loadedFontsRef.current.has(cleanFontName)) {
-      return Promise.resolve();
-    }
-
-    // If currently loading, return existing promise
-    if (loadingPromisesRef.current.has(cleanFontName)) {
-      return loadingPromisesRef.current.get(cleanFontName)!;
-    }
-
-    // Check if it's a system font
-    const systemFonts = [
-      'Arial', 'Helvetica', 'Times', 'Times New Roman', 'Courier', 'Courier New',
-      'Verdana', 'Georgia', 'Palatino', 'Garamond', 'Bookman', 'Comic Sans MS',
-      'Trebuchet MS', 'Arial Black', 'Impact', 'sans-serif', 'serif', 'monospace',
-      'cursive', 'fantasy'
-    ];
-    
-    if (systemFonts.includes(cleanFontName)) {
-      loadedFontsRef.current.add(cleanFontName);
-      return Promise.resolve();
-    }
-
-    // Check if link already exists in document
-    const existingLink = document.querySelector(`link[href*="family=${cleanFontName.replace(/\s+/g, '+')}"]`);
-    if (existingLink) {
-      loadedFontsRef.current.add(cleanFontName);
-      return Promise.resolve();
-    }
-
-    // Create new loading promise
-    const loadingPromise = new Promise<void>((resolve, reject) => {
-      setIsLoadingFont(true);
-      
-      const fontLink = document.createElement('link');
-      fontLink.rel = 'stylesheet';
-      fontLink.href = `https://fonts.googleapis.com/css2?family=${cleanFontName.replace(/\s+/g, '+')}:wght@300;400;500;600;700&display=swap`;
-      
-      const cleanup = () => {
-        loadingPromisesRef.current.delete(cleanFontName);
-        setIsLoadingFont(false);
-      };
-      
-      fontLink.onload = () => {
-        loadedFontsRef.current.add(cleanFontName);
-        cleanup();
-        resolve();
-      };
-      
-      fontLink.onerror = () => {
-        cleanup();
-        reject(new Error(`Failed to load font: ${cleanFontName}`));
-      };
-
-      // Add timeout to prevent hanging
-      setTimeout(() => {
-        if (loadingPromisesRef.current.has(cleanFontName)) {
-          cleanup();
-          reject(new Error(`Font loading timeout: ${cleanFontName}`));
-        }
-      }, 10000);
-
-      document.head.appendChild(fontLink);
-    });
-
-    // Store the promise
-    loadingPromisesRef.current.set(cleanFontName, loadingPromise);
-    
-    return loadingPromise;
-  }, []);
-
-  // Ref to track loaded fonts and loading promises without causing re-render
-  const loadedFontsRef = useRef(new Set<string>());
-  const loadingPromisesRef = useRef(new Map<string, Promise<void>>());
-
+  }, [cardSize, imageUrl, cssBackground, textContent, selectedFont, fontSize, textColor, horizontalAlign, verticalAlign, padding]);
 
   useEffect(() => {
     generatePngPreview();
   }, [generatePngPreview]);
 
-  const handleUploadToImgBB = async () => {
-    if (!pngDataUrl) {
-      setError('No content to upload');
+  // Get hashtag suggestions
+  const getHashtagSuggestions = useCallback((query: string) => {
+    if (!query.trim()) return [];
+    const suggestions = allCards
+      .map(card => card.name)
+      .filter(name => name.toLowerCase().includes(query.toLowerCase()))
+      .slice(0, 10);
+    return suggestions;
+  }, [allCards]);
+
+  // Handle hashtag input change
+  const handleHashtagInputChange = (value: string) => {
+    setHashtagInput(value);
+    setHashtagSuggestions(getHashtagSuggestions(value));
+  };
+
+  // Add hashtag
+  const addHashtag = (hashtag: string) => {
+    if (!cardHashtags.includes(hashtag)) {
+      setCardHashtags(prev => [...prev, hashtag]);
+    }
+    setHashtagInput('');
+    setHashtagSuggestions([]);
+  };
+
+  // Remove hashtag
+  const removeHashtag = (hashtag: string) => {
+    setCardHashtags(prev => prev.filter(h => h !== hashtag));
+  };
+
+  // Generate action - export PNG, upload to imgbb, create card
+  const handleGenerate = async () => {
+    if (!pngDataUrl || !cardName.trim()) {
+      setError('Card name is required');
       return;
     }
 
@@ -532,13 +341,12 @@ export default function CardEditorPage() {
     setSuccess('');
 
     try {
-      // Convert data URL to blob directly
+      // Convert PNG to blob and upload to ImgBB
       const response = await fetch(pngDataUrl);
       const blob = await response.blob();
       
       const formData = new FormData();
       formData.append('image', blob, `card-${Date.now()}.png`);
-      formData.append('filename', `card-${Date.now()}`);
 
       const uploadResponse = await fetch('/api/v1/upload/imgbb', {
         method: 'POST',
@@ -549,176 +357,286 @@ export default function CardEditorPage() {
         throw new Error('Upload failed');
       }
 
-      const result = await uploadResponse.json();
-      if (result.success) {
-        setUploadedUrl(result.imageUrl);
-        // Auto-fill the URL input field when upload is successful
-        setConfig(prev => ({ ...prev, imageUrl: result.imageUrl }));
-        setSuccess('Successfully uploaded to Imgbb!');
+      const uploadResult = await uploadResponse.json();
+      if (!uploadResult.success) {
+        throw new Error(uploadResult.error || 'Upload failed');
+      }
+
+      setUploadedUrl(uploadResult.imageUrl);
+
+      // Create card with all data
+      const cardResponse = await fetch('/api/v1/cards/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: cardName.startsWith('#') ? cardName : `#${cardName}`,
+          uuid: cardUUID,
+          body: {
+            imageUrl: uploadResult.imageUrl,
+            textContent: textContent || undefined,
+            background: {
+              type: 'gradient',
+              value: cssBackground,
+              textColor: textColor
+            }
+          },
+          hashtags: cardHashtags,
+          isActive: true
+        }),
+      });
+
+      if (!cardResponse.ok) {
+        throw new Error('Failed to create card');
+      }
+
+      const cardResult = await cardResponse.json();
+      if (cardResult.success) {
+        setSuccess('Card generated and saved successfully!');
+        if (!isEditing) {
+          // Reset form for new card
+          setCardName('');
+          setTextContent('');
+          setImageUrl('');
+          setCardHashtags([]);
+          setCardUUID(uuidv4());
+        }
       } else {
-        throw new Error(result.error || 'Upload failed');
+        throw new Error(cardResult.error || 'Failed to create card');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to upload PNG');
+      setError(err instanceof Error ? err.message : 'Failed to generate card');
     } finally {
       setIsUploading(false);
     }
   };
 
-  const handleSaveAsCard = async () => {
-    // Use uploadedUrl if available, otherwise use the URL from config.imageUrl
-    const imageUrl = uploadedUrl || config.imageUrl?.trim();
-    
-    if (!imageUrl) {
-      setError('Please either upload an image or enter an image URL');
+  // Update action - modify only name and hashtags
+  const handleUpdate = async () => {
+    if (!isEditing || !cardUuid || !cardName.trim()) {
+      setError('Card name is required');
       return;
     }
 
     try {
       setError('');
       
-      const response = await fetch('/api/v1/cards/add', {
-        method: 'POST',
+      const response = await fetch(`/api/v1/cards/${cardUuid}`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          type: 'media',
-          content: { mediaUrl: imageUrl },
-          title: config.text.substring(0, 50) + (config.text.length > 50 ? '...' : '') || 'Card from URL',
-          tags: uploadedUrl ? ['svg-generated'] : ['url-generated'],
+          name: cardName.startsWith('#') ? cardName : `#${cardName}`,
+          hashtags: cardHashtags
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to save card');
-      
-      setSuccess('Card saved successfully!');
-      
-      // Reset form
-      setConfig({ ...DEFAULT_CARD_CONFIG, text: '', imageUrl: '' });
-      setUploadedUrl('');
+      if (!response.ok) {
+        throw new Error('Failed to update card');
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        setSuccess('Card updated successfully!');
+      } else {
+        throw new Error(result.error || 'Failed to update card');
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save card');
+      setError(err instanceof Error ? err.message : 'Failed to update card');
     }
   };
 
-  const handleSaveCardFromUrl = async () => {
-    if (!config.imageUrl || !config.imageUrl.trim()) {
-      setError('Please enter an image URL');
+  // ImgOnly action - use image URL directly
+  const handleImgOnly = async () => {
+    if (!imageUrl.trim() || !cardName.trim()) {
+      setError('Card name and image URL are required');
       return;
     }
 
     try {
       setError('');
       
-      const response = await fetch('/api/v1/cards/add', {
-        method: 'POST',
+      const endpoint = isEditing ? `/api/v1/cards/${cardUuid}` : '/api/v1/cards/add';
+      const method = isEditing ? 'PATCH' : 'POST';
+      
+      const requestBody: any = {
+        name: cardName.startsWith('#') ? cardName : `#${cardName}`,
+        body: {
+          imageUrl: imageUrl,
+          textContent: textContent || undefined,
+          background: {
+            type: 'gradient',
+            value: cssBackground,
+            textColor: textColor
+          }
+        },
+        hashtags: cardHashtags,
+        isActive: true
+      };
+      
+      if (!isEditing) {
+        requestBody.uuid = cardUUID;
+      }
+      
+      const response = await fetch(endpoint, {
+        method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          type: 'media',
-          content: { mediaUrl: config.imageUrl },
-          title: config.text.substring(0, 50) + (config.text.length > 50 ? '...' : '') || 'Card from URL',
-          tags: ['url-generated'],
-        }),
+        body: JSON.stringify(requestBody),
       });
 
-      if (!response.ok) throw new Error('Failed to save card');
-      
-      setSuccess('Card saved successfully from URL!');
-      
-      // Reset form
-      setConfig({ ...DEFAULT_CARD_CONFIG, text: '', imageUrl: '' });
-      setUploadedUrl('');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save card');
-    }
-  };
-
-  // Extract font name from Google Font URL
-  const extractFontNameFromUrl = (url: string): string => {
-    try {
-      const urlObj = new URL(url);
-      const familyParam = urlObj.searchParams.get('family');
-      if (familyParam) {
-        // Handle both simple and complex font families
-        // e.g., "Space+Grotesk:wght@300..700" becomes "Space Grotesk"
-        return familyParam.split(':')[0].replace(/\+/g, ' ');
-      }
-      return '';
-    } catch {
-      return '';
-    }
-  };
-
-  // Load Google Font from URL and apply to preview
-  const handleTestGoogleFont = useCallback(async () => {
-    if (!googleFontUrl.trim()) {
-      setError('Please enter a Google Font URL');
-      return;
-    }
-
-    setIsTestingFont(true);
-    setError('');
-
-    try {
-      // Extract font name from URL
-      const fontName = extractFontNameFromUrl(googleFontUrl);
-      if (!fontName) {
-        throw new Error('Could not extract font name from URL. Please check the URL format.');
+      if (!response.ok) {
+        throw new Error(`Failed to ${isEditing ? 'update' : 'save'} card`);
       }
 
-      setTestFontName(fontName);
-
-      // Create link element to load the font
-      const linkElement = document.createElement('link');
-      linkElement.rel = 'stylesheet';
-      linkElement.href = googleFontUrl;
-
-      // Remove existing test font links
-      const existingTestLinks = document.querySelectorAll('link[data-test-font="true"]');
-      existingTestLinks.forEach(link => link.remove());
-
-      linkElement.setAttribute('data-test-font', 'true');
-      
-      linkElement.onload = () => {
-        // Apply the font to the config for preview
-        setConfig(prev => ({ ...prev, fontFamily: `\"${fontName}\", sans-serif` }));
-        setIsTestingFont(false);
-        setSuccess(`Font \"${fontName}\" loaded successfully! You can now save it as a preset.`);
-      };
-      
-      linkElement.onerror = () => {
-        setIsTestingFont(false);
-        setError('Failed to load font from the provided URL. Please check if the URL is correct.');
-      };
-
-      document.head.appendChild(linkElement);
-
-      // Timeout for loading
-      setTimeout(() => {
-        if (isTestingFont) {
-          setIsTestingFont(false);
-          setError('Font loading timeout. Please try again or check the URL.');
+      const result = await response.json();
+      if (result.success) {
+        setSuccess(`Card ${isEditing ? 'updated' : 'saved'} successfully!`);
+        if (!isEditing) {
+          // Reset form for new card
+          setCardName('');
+          setTextContent('');
+          setImageUrl('');
+          setCardHashtags([]);
+          setCardUUID(uuidv4());
         }
-      }, 10000);
-
+      } else {
+        throw new Error(result.error || `Failed to ${isEditing ? 'update' : 'save'} card`);
+      }
     } catch (err) {
-      setIsTestingFont(false);
-      setError(err instanceof Error ? err.message : 'Failed to test font');
+      setError(err instanceof Error ? err.message : `Failed to ${isEditing ? 'update' : 'save'} card`);
     }
-  }, [googleFontUrl, isTestingFont]);
+  };
 
+  // Save CSS background
+  const handleSaveCssBackground = async () => {
+    if (!cssBgName.trim()) {
+      setError('CSS background name is required');
+      return;
+    }
 
+    try {
+      const response = await fetch('/api/v1/presets/backgrounds', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          name: cssBgName, 
+          value: cssInput || cssBackground 
+        })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setBackgroundPresets(prev => [...prev, result.data]);
+          setSuccess('CSS background saved successfully!');
+          setCssBgName('');
+          setCssInput('');
+        } else {
+          setError(result.error || 'Failed to save CSS background');
+        }
+      }
+    } catch (error) {
+      setError('Failed to save CSS background');
+    }
+  };
+
+  // Delete CSS background
+  const handleDeleteCssBackground = async (name: string) => {
+    try {
+      const response = await fetch(`/api/v1/presets/backgrounds?name=${encodeURIComponent(name)}`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        setBackgroundPresets(prev => prev.filter(preset => preset.name !== name));
+        setSuccess('CSS background deleted successfully!');
+      } else {
+        const result = await response.json();
+        setError(result.error || 'Failed to delete CSS background');
+      }
+    } catch (error) {
+      setError('Failed to delete CSS background');
+    }
+  };
+
+  // Save font
+  const handleSaveFont = async () => {
+    if (!fontName.trim() || !fontInput.trim()) {
+      setError('Font name and URL are required');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/v1/presets/fonts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          name: fontName, 
+          value: `"${fontName}", sans-serif`,
+          url: fontInput 
+        })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setFontPresets(prev => [...prev, result.data]);
+          setSuccess('Font saved successfully!');
+          setFontName('');
+          setFontInput('');
+        } else {
+          setError(result.error || 'Failed to save font');
+        }
+      }
+    } catch (error) {
+      setError('Failed to save font');
+    }
+  };
+
+  // Delete font
+  const handleDeleteFont = async (name: string) => {
+    try {
+      const response = await fetch(`/api/v1/presets/fonts?name=${encodeURIComponent(name)}`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        setFontPresets(prev => prev.filter(preset => preset.name !== name));
+        setSuccess('Font deleted successfully!');
+      } else {
+        const result = await response.json();
+        setError(result.error || 'Failed to delete font');
+      }
+    } catch (error) {
+      setError('Failed to delete font');
+    }
+  };
+
+  const handleBack = () => {
+    router.push('/cards');
+  };
+  
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center page-height">
+        <div className="loading-spinner"></div>
+        <span className="ml-2 text-lg">Loading card editor...</span>
+      </div>
+    );
+  }
+  
   return (
-    <PageLayout title="Card Editor">
-      <a 
-        href="/cards" 
+    <PageLayout title={isEditing ? `Edit Card - ${cardUUID}` : "Card Editor"}>
+      <button 
+        onClick={handleBack}
         className="btn btn-secondary mb-6"
       >
         Back to Cards
-      </a>
+      </button>
 
       {error && (
         <div className="status-error p-4 mb-4 rounded-lg">{error}</div>
@@ -728,53 +646,120 @@ export default function CardEditorPage() {
         <div className="status-success p-4 mb-4 rounded-lg">{success}</div>
       )}
 
-      <div className="editor-grid">
-        {/* Column 1: Card Content + Styling Options */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* 1st Column: General Information & Typography */}
         <div className="space-y-6">
+          {/* General */}
           <div className="content-card">
-            <h2 className="text-xl font-semibold mb-4">Card Content</h2>
+            <h2 className="text-xl font-semibold mb-4">General</h2>
             
             <div className="space-y-4">
+              {/* Card Name #hashtag (required) */}
               <div>
-                <label className="form-label">Card Text</label>
-                <textarea
-                  value={config.text}
-                  onChange={(e) => setConfig({ ...config, text: e.target.value })}
-                  onFocus={(e) => {
-                    if (e.target.value === 'Sample Card Text') {
-                      setConfig({ ...config, text: '' });
-                    }
-                  }}
-                  className="form-input"
-                  rows={4}
-                  placeholder="Enter your card text here..."
-                />
-              </div>
-              <div>
-                <label className="form-label">Card Image URL (Background for Text)</label>
+                <label className="form-label">Name (required)</label>
                 <input
                   type="text"
-                  value={config.imageUrl || ''}
-                  onChange={(e) => setConfig({ ...config, imageUrl: e.target.value })}
+                  value={cardName}
+                  onChange={(e) => setCardName(e.target.value)}
                   className="form-input"
-                  placeholder="Enter image URL for background..."
+                  placeholder="#my-card-name"
                 />
-                <p className="text-xs text-muted mt-1">
-                  Optional: Add an image background behind the text
-                </p>
+                <p className="text-xs text-muted mt-1">Must start with # to be a hashtag</p>
+              </div>
+
+              {/* Card UUID (auto-generated, required) */}
+              <div>
+                <label className="form-label">Card UUID (automatically generated)</label>
+                <input
+                  type="text"
+                  value={cardUUID}
+                  readOnly
+                  className="form-input cursor-not-allowed"
+                />
+              </div>
+
+              {/* Hashtags with predictive filtering */}
+              <div>
+                <label className="form-label">Hashtags (top 10 suggestions)</label>
+                <input
+                  type="text"
+                  value={hashtagInput}
+                  onChange={(e) => handleHashtagInputChange(e.target.value)}
+                  className="form-input"
+                  placeholder="Search for hashtags..."
+                />
+                
+                {/* Hashtag suggestions */}
+                {hashtagSuggestions.length > 0 && (
+                  <div className="mt-2 max-h-32 overflow-y-auto border rounded bg-white dark:bg-gray-800">
+                    {hashtagSuggestions.map((suggestion, index) => (
+                      <button
+                        key={index}
+                        onClick={() => addHashtag(suggestion)}
+                        className="block w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Selected hashtags */}
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {cardHashtags.map((hashtag, index) => (
+                    <span
+                      key={index}
+                      className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-sm flex items-center gap-1"
+                    >
+                      {hashtag}
+                      <button
+                        onClick={() => removeHashtag(hashtag)}
+                        className="text-blue-600 hover:text-blue-800 ml-1"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
 
+          {/* Body */}
           <div className="content-card">
-            <h2 className="text-xl font-semibold mb-4">Styling Options</h2>
+            <h2 className="text-xl font-semibold mb-4">Body</h2>
             
             <div className="space-y-4">
+              {/* Image URL (optional) */}
               <div>
-                <label className="form-label">Background</label>
+                <label className="form-label">Img URL (optional)</label>
+                <input
+                  type="text"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                  className="form-input"
+                  placeholder="https://example.com/image.jpg"
+                />
+              </div>
+
+              {/* Text (optional) */}
+              <div>
+                <label className="form-label">Text (optional)</label>
+                <textarea
+                  value={textContent}
+                  onChange={(e) => setTextContent(e.target.value)}
+                  className="form-input"
+                  rows={3}
+                  placeholder="Enter text content..."
+                />
+              </div>
+
+              {/* CSS Background (optional with default) */}
+              <div>
+                <label className="form-label">CSS BG (optional, default selected)</label>
                 <select
-                  value={config.backgroundColor}
-                  onChange={(e) => setConfig({ ...config, backgroundColor: e.target.value })}
+                  value={cssBackground}
+                  onChange={(e) => setCssBackground(e.target.value)}
                   className="form-input"
                 >
                   {backgroundPresets.map((preset) => (
@@ -785,13 +770,33 @@ export default function CardEditorPage() {
                 </select>
               </div>
 
+              {/* Card Size (width:height format) */}
               <div>
-                <label className="form-label">Font Family</label>
-                <select
-                  value={config.fontFamily}
-                  onChange={(e) => setConfig({ ...config, fontFamily: e.target.value })}
+                <label className="form-label">Card Size (width:height)</label>
+                <input
+                  type="text"
+                  value={cardSize}
+                  onChange={(e) => setCardSize(e.target.value)}
                   className="form-input"
-                  style={{ fontFamily: config.fontFamily }}
+                  placeholder="300:400"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Typography */}
+          <div className="content-card">
+            <h2 className="text-xl font-semibold mb-4">Typography</h2>
+            
+            <div className="space-y-4">
+              {/* Font selection */}
+              <div>
+                <label className="form-label">Font</label>
+                <select
+                  value={selectedFont}
+                  onChange={(e) => setSelectedFont(e.target.value)}
+                  className="form-input"
+                  style={{ fontFamily: selectedFont }}
                 >
                   {fontPresets.map((preset) => (
                     <option key={preset.name} value={preset.value} style={{ fontFamily: preset.value }}>
@@ -801,219 +806,198 @@ export default function CardEditorPage() {
                 </select>
               </div>
 
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="form-label">Text Color</label>
-                  <input
-                    type="color"
-                    value={config.textColor}
-                    onChange={(e) => setConfig({ ...config, textColor: e.target.value })}
-                    className="w-full h-10 border rounded form-input"
-                  />
-                </div>
-
-                <div>
-                  <label className="form-label">Font Size ({config.fontSize === 0 ? 'Auto' : config.fontSize + 'px'})</label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="192"
-                    value={config.fontSize}
-                    onChange={(e) => setConfig({ ...config, fontSize: parseInt(e.target.value) })}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="form-label">Text Alignment</label>
-                  <select
-                    value={config.textAlign}
-                    onChange={(e) => setConfig({ ...config, textAlign: e.target.value as 'left' | 'center' | 'right' })}
-                    className="form-input"
-                  >
-                    <option value="left">Left</option>
-                    <option value="center">Center</option>
-                    <option value="right">Right</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="form-label">Vertical Alignment</label>
-                  <select
-                    value={config.verticalAlign}
-                    onChange={(e) => setConfig({ ...config, verticalAlign: e.target.value as 'top' | 'middle' | 'bottom' })}
-                    className="form-input"
-                  >
-                    <option value="top">Top</option>
-                    <option value="middle">Middle</option>
-                    <option value="bottom">Bottom</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="form-label">Card Width</label>
-                  <input
-                    type="number"
-                    value={config.width}
-                    onChange={(e) => setConfig({ ...config, width: parseInt(e.target.value) || 300 })}
-                    className="form-input"
-                    min="200"
-                    max="600"
-                  />
-                </div>
-
-                <div>
-                  <label className="form-label">Card Height</label>
-                  <input
-                    type="number"
-                    value={config.height}
-                    onChange={(e) => setConfig({ ...config, height: parseInt(e.target.value) || 400 })}
-                    className="form-input"
-                    min="200"
-                    max="800"
-                  />
-                </div>
-              </div>
-
+              {/* Font size slider (max 192px) */}
               <div>
-                <label className="form-label">Padding</label>
+                <label className="form-label">Font Size ({fontSize}px)</label>
                 <input
                   type="range"
-                  min="10"
-                  max="50"
-                  value={config.padding}
-                  onChange={(e) => setConfig({ ...config, padding: parseInt(e.target.value) })}
+                  min="8"
+                  max="192"
+                  value={fontSize}
+                  onChange={(e) => setFontSize(parseInt(e.target.value))}
                   className="w-full"
                 />
-                <span className="text-sm text-muted">{config.padding}px</span>
               </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Column 2: Live Preview + Actions */}
-        <div className="space-y-6">
-          <div className="content-card overflow-hidden">
-            <h2 className="text-xl font-semibold mb-4">Live Preview</h2>
-            
-            <div className="preview-container">
-              {isLoadingFont ? (
-                <div className="text-center">
-                  <div className="loading-spinner mx-auto mb-2"></div>
-                  <p>Loading font...</p>
-                </div>
-              ) : pngDataUrl ? (
-                <div className="w-full h-full flex items-center justify-center">
-                  <img 
-                    src={pngDataUrl} 
-                    alt="PNG Card Preview" 
-                    className="max-w-full max-h-full object-contain shadow-lg rounded-lg"
-                    style={{
-                      maxWidth: 'min(100%, 300px)',
-                      maxHeight: 'min(100%, 380px)',
-                      width: 'auto',
-                      height: 'auto'
-                    }}
-                  />
-                </div>
-              ) : (
-                <div className="text-muted text-center">
-                  <p>Enter text or image URL to see preview</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="content-card">
-            <h2 className="text-xl font-semibold mb-4">Actions</h2>
-
-            <div className="space-y-4">
-              <button
-                onClick={handleUploadToImgBB}
-                disabled={!pngDataUrl || isUploading}
-                className="btn btn-primary w-full"
-              >
-                {isUploading ? 'Uploading...' : 'Upload to ImgBB'}
-              </button>
-
+              {/* Padding slider (max 192px) */}
               <div>
-                <p className="text-sm text-muted mb-2">Generated Image URL:</p>
+                <label className="form-label">Padding ({padding}px)</label>
                 <input
-                  type="text"
-                  value={uploadedUrl || ''}
-                  readOnly
-                  className="form-input bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 cursor-not-allowed"
-                  placeholder="Upload image to get URL..."
+                  type="range"
+                  min="0"
+                  max="192"
+                  value={padding}
+                  onChange={(e) => setPadding(parseInt(e.target.value))}
+                  className="w-full"
                 />
               </div>
 
+              {/* Text color with transparency */}
+              <div>
+                <label className="form-label">Text Color</label>
+                <input
+                  type="color"
+                  value={textColor}
+                  onChange={(e) => setTextColor(e.target.value)}
+                  className="w-full h-10 border rounded form-input"
+                />
+              </div>
+
+              {/* Horizontal alignment */}
+              <div>
+                <label className="form-label">Text Horizontal Alignment</label>
+                <select
+                  value={horizontalAlign}
+                  onChange={(e) => setHorizontalAlign(e.target.value as 'left' | 'center' | 'right')}
+                  className="form-input"
+                >
+                  <option value="left">Left</option>
+                  <option value="center">Center</option>
+                  <option value="right">Right</option>
+                </select>
+              </div>
+
+              {/* Vertical alignment */}
+              <div>
+                <label className="form-label">Text Vertical Alignment</label>
+                <select
+                  value={verticalAlign}
+                  onChange={(e) => setVerticalAlign(e.target.value as 'top' | 'middle' | 'bottom')}
+                  className="form-input"
+                >
+                  <option value="top">Top</option>
+                  <option value="middle">Middle</option>
+                  <option value="bottom">Bottom</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 2nd Column: Live Preview & Record Actions */}
+        <div className="space-y-6">
+          {/* Live Preview */}
+          <div className="content-card">
+            <h2 className="text-xl font-semibold mb-4">Live Preview</h2>
+            
+            <div className="preview-container min-h-[400px] flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+              {pngDataUrl ? (
+                <img 
+                  src={pngDataUrl} 
+                  alt="Card Preview" 
+                  className="max-w-full max-h-full object-contain shadow-lg rounded-lg"
+                />
+              ) : (
+                <div className="text-muted text-center">
+                  <p>Preview will appear here</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Record Actions */}
+          <div className="content-card">
+            <h2 className="text-xl font-semibold mb-4">Record</h2>
+
+            <div className="space-y-3">
+              {/* Generate Button */}
               <button
-                onClick={handleSaveAsCard}
-                disabled={(!uploadedUrl && (!config.imageUrl || !config.imageUrl.trim()))}
+                onClick={handleGenerate}
+                disabled={!cardName.trim() || isUploading}
+                className="btn btn-primary w-full"
+              >
+                🎨 {isUploading ? 'Generating...' : 'Generate'}
+              </button>
+              <p className="text-xs text-muted">Exports live preview to PNG, uploads to imgbb.com, creates card with all data</p>
+
+              {/* Update Button (only for editing) */}
+              {isEditing && (
+                <>
+                  <button
+                    onClick={handleUpdate}
+                    disabled={!cardName.trim()}
+                    className="btn btn-accent w-full"
+                  >
+                    ✏️ Update
+                  </button>
+                  <p className="text-xs text-muted">Modifies only card name and hashtags, does not change visual</p>
+                </>
+              )}
+
+              {/* ImgOnly Button */}
+              <button
+                onClick={handleImgOnly}
+                disabled={!cardName.trim() || !imageUrl.trim()}
                 className="btn btn-success w-full"
               >
-                {uploadedUrl ? 'Save Uploaded Card' : 'Save Card from URL'}
+                🔗 ImgOnly
               </button>
+              <p className="text-xs text-muted">Uses image URL directly as card visual and creates card with info</p>
 
-              {pngDataUrl && (
-                <div className="space-y-2">
-                  <p className="text-sm text-muted">Download PNG:</p>
-                  <a
-                    href={pngDataUrl}
-                    download={`card-${Date.now()}.png`}
-                    className="btn btn-secondary w-full text-center"
-                  >
-                    Download PNG File
-                  </a>
+              {/* Generated URL Display */}
+              {uploadedUrl && (
+                <div className="mt-4">
+                  <p className="text-sm text-muted mb-2">Generated Image URL:</p>
+                  <input
+                    type="text"
+                    value={uploadedUrl}
+                    readOnly
+                    className="form-input cursor-not-allowed"
+                  />
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Column 3: Manage Backgrounds + Manage Fonts */}
+        {/* 3rd Column: Management Features */}
         <div className="space-y-6">
-
-          {/* Background Management */}
+          {/* Manage CSS BG */}
           <div className="content-card">
-            <h2 className="text-xl font-semibold mb-4">Manage Backgrounds</h2>
+            <h2 className="text-xl font-semibold mb-4">Manage CSS BG</h2>
             
-            <div>
-              <input
-                type="text"
-                value={config.backgroundColor}
-                onChange={(e) => setConfig({ ...config, backgroundColor: e.target.value })}
-                className="form-input"
-                placeholder="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-              />
-              <p className="text-xs text-muted mt-1">
-                Example gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%)
-              </p>
-              <div className="mt-2 flex gap-2">
-                <button
-                  onClick={addBackgroundPreset}
-                  className="btn btn-sm btn-primary"
-                >
-                  Save Background
-                </button>
+            <div className="space-y-3">
+              <div>
+                <label className="form-label">CSS Input</label>
+                <input
+                  type="text"
+                  value={cssInput}
+                  onChange={(e) => setCssInput(e.target.value)}
+                  className="form-input"
+                  placeholder="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                />
               </div>
-              <div className="mt-2 max-h-20 overflow-y-auto">
+              
+              <div>
+                <label className="form-label">CSS BG Name</label>
+                <input
+                  type="text"
+                  value={cssBgName}
+                  onChange={(e) => setCssBgName(e.target.value)}
+                  className="form-input"
+                  placeholder="My Background"
+                />
+              </div>
+              
+              <button
+                onClick={handleSaveCssBackground}
+                disabled={!cssBgName.trim()}
+                className="btn btn-primary w-full"
+              >
+                Save to List
+              </button>
+              
+              {/* CSS List */}
+              <div className="max-h-32 overflow-y-auto">
+                <h3 className="text-sm font-medium mb-2">CSS List</h3>
                 {backgroundPresets.map((preset) => (
-                  <div
-                    key={preset.name}
-                    className="flex justify-between items-center py-1 text-sm"
-                  >
+                  <div key={preset.name} className="flex justify-between items-center py-1 text-sm">
                     <span className="truncate mr-2">{preset.name}</span>
                     <button
-                      onClick={() => removeBackgroundPreset(preset.name)}
+                      onClick={() => handleDeleteCssBackground(preset.name)}
                       className="btn btn-sm btn-danger"
                     >
-                      ×
+                      Delete
                     </button>
                   </div>
                 ))}
@@ -1021,101 +1005,139 @@ export default function CardEditorPage() {
             </div>
           </div>
 
-          {/* Font Management */}
+          {/* Manage Fonts */}
           <div className="content-card">
             <h2 className="text-xl font-semibold mb-4">Manage Fonts</h2>
             
             <div className="space-y-3">
               <div>
-                <label className="form-label">Google Font URL:</label>
+                <label className="form-label">Font Input (Google Font URL)</label>
                 <input
                   type="text"
-                  value={googleFontUrl}
-                  onChange={(e) => setGoogleFontUrl(e.target.value)}
+                  value={fontInput}
+                  onChange={(e) => setFontInput(e.target.value)}
                   className="form-input"
-                  placeholder="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap"
+                  placeholder="https://fonts.googleapis.com/css2?family=..."
                 />
-                <p className="text-xs text-muted mt-1">
-                  Example: https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap
-                </p>
               </div>
               
-              <div className="flex gap-2">
-                <button
-                  onClick={handleTestGoogleFont}
-                  disabled={!googleFontUrl.trim() || isTestingFont}
-                  className="btn btn-sm btn-accent"
-                >
-                  {isTestingFont ? 'Testing...' : 'Test Font'}
-                </button>
-                {testFontName && (
-                  <button
-                    onClick={addFontPreset}
-                    className="btn btn-sm btn-success"
-                  >
-                    Save "{testFontName}" as Preset
-                  </button>
-                )}
+              <div>
+                <label className="form-label">Font Name</label>
+                <input
+                  type="text"
+                  value={fontName}
+                  onChange={(e) => setFontName(e.target.value)}
+                  className="form-input"
+                  placeholder="Space Grotesk"
+                />
               </div>
               
-              {testFontName && (
-                <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-sm">
-                  <strong>Testing:</strong> {testFontName}
-                  <div
-                    className="mt-1 text-lg"
-                    style={{ fontFamily: `\"${testFontName}\", sans-serif` }}
-                  >
-                    Sample text in {testFontName}
-                  </div>
-                </div>
-              )}
-
-              <div className="mt-4 max-h-20 overflow-y-auto">
+              <button
+                onClick={handleSaveFont}
+                disabled={!fontName.trim() || !fontInput.trim()}
+                className="btn btn-primary w-full"
+              >
+                Save to List
+              </button>
+              
+              {/* Font List */}
+              <div className="max-h-32 overflow-y-auto">
+                <h3 className="text-sm font-medium mb-2">Font List</h3>
                 {fontPresets.map((preset) => (
                   <div key={preset.name} className="flex justify-between items-center py-1 text-sm">
                     <span className="truncate mr-2">{preset.name}</span>
                     <button
-                      onClick={() => removeFontPreset(preset.name)}
+                      onClick={() => handleDeleteFont(preset.name)}
                       className="btn btn-sm btn-danger"
                     >
-                      ×
+                      Delete
                     </button>
                   </div>
                 ))}
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Reset Database Section */}
-      <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
-        <div className="content-card">
-          <h2 className="text-xl font-semibold mb-4 text-red-600 dark:text-red-400">Danger Zone</h2>
-          <p className="text-sm text-muted mb-4">
-            This will permanently delete ALL cards, sessions, and progress data. This action cannot be undone.
-          </p>
-          <button
-            onClick={async () => {
-              if (!confirm('Are you sure you want to reset the database? This will delete ALL cards, sessions, and progress data.')) return;
-              try {
-                const response = await fetch('/api/v1/reset', { method: 'POST' });
-                if (!response.ok) throw new Error('Failed to reset database');
-                setSuccess('Database reset successfully!');
-                setError('');
-                // Reload presets after reset
-                loadPresets();
-              } catch (err) {
-                const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-                setError(errorMessage);
-              }
-            }}
-            className="btn btn-danger"
-          >
-            Reset Database
-          </button>
+          {/* Manage Children Cards */}
+          <div className="content-card">
+            <h2 className="text-xl font-semibold mb-4">Manage Children Cards</h2>
+            
+            <div className="space-y-3">
+              {/* List of cards */}
+              <div className="max-h-32 overflow-y-auto">
+                <h3 className="text-sm font-medium mb-2">Cards containing "{cardName}"</h3>
+                {childrenCards.length > 0 ? (
+                  childrenCards.map((card) => (
+                    <div key={card.uuid} className="flex justify-between items-center py-1 text-sm">
+                      <span className="truncate mr-2">{card.name}</span>
+                      <button
+                        onClick={() => {
+                          // Logic to remove current card's hashtag from this child card
+                        }}
+                        className="btn btn-sm btn-danger"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted">No children cards found</p>
+                )}
+              </div>
+              
+              {/* Search cards */}
+              <div>
+                <label className="form-label">Search Cards</label>
+                <input
+                  type="text"
+                  value={cardSearchQuery}
+                  onChange={(e) => {
+                    setCardSearchQuery(e.target.value);
+                    const suggestions = allCards.filter(card => 
+                      card.name.toLowerCase().includes(e.target.value.toLowerCase())
+                    ).slice(0, 10);
+                    setCardSearchSuggestions(suggestions);
+                  }}
+                  className="form-input"
+                  placeholder="Search cards..."
+                />
+                
+                {/* Search results with Add buttons */}
+                {cardSearchSuggestions.length > 0 && (
+                  <div className="mt-2 max-h-32 overflow-y-auto border rounded bg-white dark:bg-gray-800">
+                    {cardSearchSuggestions.map((card) => (
+                      <div key={card.uuid} className="flex justify-between items-center px-3 py-2 text-sm">
+                        <span className="truncate mr-2">{card.name}</span>
+                        <button
+                          onClick={() => {
+                            // Logic to add current card's hashtag to this card
+                          }}
+                          className="btn btn-sm btn-success"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </PageLayout>
+  );
+}
+
+export default function CardEditorPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center page-height">
+        <div className="loading-spinner"></div>
+        <span className="ml-2 text-lg">Loading editor...</span>
+      </div>
+    }>
+      <CardEditorContent />
+    </Suspense>
   );
 }

@@ -27,10 +27,10 @@ interface RankedCard {
   appearanceCount: number;
 }
 
-export default function DeckRankingsPage() {
+export default function CardRankingsPage() {
   const params = useParams();
   const router = useRouter();
-  const deckTag = params.deck as string;
+  const cardName = params.deck as string; // Note: URL param is still 'deck' for compatibility
   
   const [ranking, setRanking] = useState<RankedCard[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,12 +38,14 @@ export default function DeckRankingsPage() {
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchDeckRankings = async () => {
+    const fetchCardRankings = async () => {
       try {
-        console.log('Fetching deck rankings for:', deckTag);
+        // Add hash symbol back for API call if not present
+        const deckParam = cardName.startsWith('#') ? cardName : `#${cardName}`;
+        console.log('Fetching card rankings for:', deckParam);
         
         // Add cache busting and explicit headers for mobile browsers
-        const response = await fetch(`/api/v1/global-rankings?deck=${encodeURIComponent(deckTag)}&_t=${Date.now()}`, {
+        const response = await fetch(`/api/v1/global-rankings?deck=${encodeURIComponent(deckParam)}&_t=${Date.now()}`, {
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
@@ -57,7 +59,7 @@ export default function DeckRankingsPage() {
         if (!response.ok) {
           const errorText = await response.text();
           console.error('Response error:', errorText);
-          throw new Error(`Failed to fetch deck rankings: ${response.status} ${response.statusText}`);
+          throw new Error(`Failed to fetch card rankings: ${response.status} ${response.statusText}`);
         }
         
         const data = await response.json();
@@ -72,25 +74,25 @@ export default function DeckRankingsPage() {
           }
         }
       } catch (err) {
-        console.error('Error fetching deck rankings:', err);
+        console.error('Error fetching card rankings:', err);
         setError(err instanceof Error ? err.message : 'An unknown error occurred');
       } finally {
         setLoading(false);
       }
     };
 
-    if (deckTag) {
-      fetchDeckRankings();
+    if (cardName) {
+      fetchCardRankings();
     }
-  }, [deckTag]);
+  }, [cardName]);
 
-  const handleBackToDecks = () => {
+  const handleBackToCategories = () => {
     router.push('/ranks');
   };
 
   if (loading) {
     return (
-      <PageLayout title={`#${deckTag} Rankings`}>
+      <PageLayout title={`${cardName.startsWith('#') ? cardName : '#' + cardName} Rankings`}>
         <div className="flex justify-center items-center">
           <div className="loading-spinner"></div>
           <span className="ml-2 text-lg">Loading Rankings...</span>
@@ -105,10 +107,10 @@ export default function DeckRankingsPage() {
         <div className="text-center">
           <div className="status-error p-4 rounded-lg mb-4">{error}</div>
           <button
-            onClick={handleBackToDecks}
+            onClick={handleBackToCategories}
             className="btn btn-primary"
           >
-            ← Back to Decks
+            ← Back to Categories
           </button>
         </div>
       </PageLayout>
@@ -116,10 +118,10 @@ export default function DeckRankingsPage() {
   }
 
   return (
-    <PageLayout title={`#${deckTag} Rankings`}>
+    <PageLayout title={`${cardName.startsWith('#') ? cardName : '#' + cardName} Rankings`}>
       <div className="mb-8">
         <p className="text-sm text-muted mb-4">
-          Rankings for cards in the #{deckTag} deck, calculated using the ELO rating system 
+          Rankings for cards in the {cardName.startsWith('#') ? cardName : '#' + cardName} category, calculated using the ELO rating system
           based on head-to-head comparisons across all user sessions.
         </p>
       </div>
@@ -130,10 +132,10 @@ export default function DeckRankingsPage() {
             <p className="text-blue-400">{message}</p>
           </div>
           <button
-            onClick={handleBackToDecks}
+            onClick={handleBackToCategories}
             className="btn btn-primary"
           >
-            Choose Another Deck
+            Choose Another Category
           </button>
         </div>
       ) : (

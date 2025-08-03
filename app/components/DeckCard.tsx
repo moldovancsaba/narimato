@@ -31,7 +31,7 @@ export default function DeckCard({
         {/* Deck Tag at Top */}
         <div className="absolute top-0 left-0 right-0 z-10 flex justify-center pt-3">
           <div className="deck-tag-badge">
-            #{tag}
+            {tag.startsWith('#') ? tag : `#${tag}`}
           </div>
         </div>
 

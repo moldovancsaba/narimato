@@ -18,31 +18,25 @@ export const VoteRequestSchema = z.object({
 });
 
 export const CreateCardSchema = z.object({
-  [CARD_FIELDS.UUID]: z.string().uuid().optional(), // UUID is generated server-side
-  [CARD_FIELDS.TYPE]: z.enum(['text', 'media']),
-  [CARD_FIELDS.CONTENT]: z.object({
-    text: z.string().nullish(),
-    mediaUrl: z.string().url().nullish()
+  uuid: z.string().uuid().optional(), // UUID is generated server-side or provided by client
+  name: z.string().min(2).refine((name) => {
+    return name.startsWith('#') && /^#[A-Z0-9_-]+$/i.test(name);
+  }, {
+    message: 'Name must be a valid hashtag starting with # and containing only letters, numbers, hyphens, and underscores'
   }),
-  [CARD_FIELDS.TITLE]: z.string().optional(),
-  [CARD_FIELDS.TAGS]: z.array(z.string()).optional()
-}).superRefine((data, ctx) => {
-  // Validate content based on card type
-  const type = data[CARD_FIELDS.TYPE];
-  const content = data[CARD_FIELDS.CONTENT];
-  
-  // Validate that at least one content type is provided
-  if (type === 'text' && (!content.text || content.text.trim() === '')) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Text content is required for text type cards',
-      path: [CARD_FIELDS.CONTENT, 'text']
-    });
-  } else if (type === 'media' && !content.mediaUrl) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Media URL is required for media type cards',
-      path: [CARD_FIELDS.CONTENT, 'mediaUrl']
-    });
-  }
+  body: z.object({
+    imageUrl: z.string().url().optional(),
+    textContent: z.string().optional(),
+    background: z.object({
+      type: z.enum(['color', 'gradient', 'pattern']),
+      value: z.string(),
+      textColor: z.string().optional()
+    }).optional()
+  }).optional(),
+  hashtags: z.array(z.string().refine((hashtag) => {
+    return hashtag.startsWith('#') && /^#[A-Z0-9_-]+$/i.test(hashtag);
+  }, {
+    message: 'Each hashtag must start with # and contain only letters, numbers, hyphens, and underscores'
+  })).optional(),
+  isActive: z.boolean().optional()
 });

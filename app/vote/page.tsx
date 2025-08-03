@@ -3,7 +3,6 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import VoteCard from '../components/VoteCard';
-import { DeckEntity } from '@/app/lib/models/DeckEntity';
 import { SESSION_FIELDS, CARD_FIELDS, VOTE_FIELDS } from '@/app/lib/constants/fieldNames';
 import PageLayout from '../components/PageLayout';
 
@@ -87,8 +86,18 @@ function VoteContent() {
           return;
         }
         
-        setCardA(data[VOTE_FIELDS.CARD_A]);
-        setCardB(data[VOTE_FIELDS.CARD_B]);
+        // Map the card data to match the expected VoteCard structure
+        const mapCardData = (card: any): Card => ({
+          uuid: card.uuid,
+          type: 'media',
+          content: {
+            mediaUrl: card.body?.imageUrl
+          },
+          title: card.name
+        });
+        
+        setCardA(mapCardData(data[VOTE_FIELDS.CARD_A]));
+        setCardB(mapCardData(data[VOTE_FIELDS.CARD_B]));
         setIsFirstRanking(data.isFirstRanking || false);
       } catch (error) {
         setError('Failed to load voting interface');
@@ -187,8 +196,18 @@ function VoteContent() {
             return;
           }
           
-          setCardA(nextComparisonData[VOTE_FIELDS.CARD_A]);
-          setCardB(nextComparisonData[VOTE_FIELDS.CARD_B]);
+          // Map the next comparison card data to match the expected structure
+          const mapCardData = (card: any): Card => ({
+            uuid: card.uuid,
+            type: 'media',
+            content: {
+              mediaUrl: card.body?.imageUrl
+            },
+            title: card.name
+          });
+          
+          setCardA(mapCardData(nextComparisonData[VOTE_FIELDS.CARD_A]));
+          setCardB(mapCardData(nextComparisonData[VOTE_FIELDS.CARD_B]));
           setSelected(null); // Reset selection for next comparison
         } else {
           throw new Error('Failed to load next comparison');

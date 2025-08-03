@@ -1,8 +1,359 @@
 # NARIMATO Release Notes
 
-**Current Version:** 3.6.0 (Updated)
-**Date:** 2025-08-01
-**Last Updated:** 2025-08-01T20:47:05.000Z
+**Current Version:** 3.6.3 (Updated)
+**Date:** 2025-08-02
+**Last Updated:** 2025-08-02T23:10:48.000Z
+
+## [v3.6.3] — 2025-08-02T23:10:48.000Z
+
+### 🎯 User Experience Enhancement - Minimum Card Threshold for Playable Decks
+
+This patch release implements a critical user experience improvement by establishing minimum card requirements for playable decks, ensuring users only see categories that provide meaningful ranking experiences.
+
+### ✨ Core Feature Implementation
+
+#### Minimum Card Threshold Rule
+- **Threshold Value**: DECK_RULES.MIN_CARDS_FOR_PLAYABLE = 2 cards minimum
+- **Purpose**: Prevents single-card deck sessions that provide no comparison opportunities
+- **Impact**: Users now only see decks with sufficient content for meaningful ranking experiences
+- **Location**: Centralized constant defined in `app/lib/constants/fieldNames.ts`
+
+#### Backend Filtering Logic
+- **Card Hierarchy Updates**: Modified `getPlayableCards()` and `isPlayable()` functions in `cardHierarchy.ts`
+- **Database Filtering**: Updated MongoDB aggregation pipeline to filter decks with `childCount >= MIN_CARDS_FOR_PLAYABLE`
+- **API Consistency**: Cards API endpoint `/api/v1/cards?type=playable` now uses updated filtering logic
+- **Consistent Validation**: All playability checks now use the centralized threshold constant
+
+#### Defensive API Validation
+- **Play Start Protection**: Added validation in `/api/v1/play/start` endpoint to prevent sessions with insufficient cards
+- **Clear Error Messages**: Informative error responses when attempting to start play with below-threshold decks
+- **Early Detection**: Validation occurs before session creation to prevent poor user experiences
+
+### 🛠️ Technical Implementation Details
+
+#### File Modifications
+- **app/lib/constants/fieldNames.ts**: Added DECK_RULES constant with MIN_CARDS_FOR_PLAYABLE threshold
+- **app/lib/utils/cardHierarchy.ts**: Updated filtering logic in getPlayableCards() and isPlayable() functions
+- **app/api/v1/cards/route.ts**: Enhanced to use consistent playability logic with minimum threshold
+- **app/api/v1/play/start/route.ts**: Added defensive checks to prevent insufficient card play sessions
+
+#### Code Quality Improvements
+- **Strategic Comments**: Added comprehensive "why" comments explaining the user experience rationale
+- **Architectural Consistency**: Centralized threshold management for easy maintenance and updates
+- **Error Handling**: Clear, user-friendly error messages when threshold requirements aren't met
+
+### 📊 User Experience Impact
+
+#### Problem Resolution
+- **Single-Card Sessions**: Eliminated play sessions with only 1 card that provided no ranking value
+- **Poor UX Prevention**: Users no longer encounter meaningless "ranking" experiences with insufficient content
+- **Clear Expectations**: Only decks with meaningful comparison opportunities are presented as options
+
+#### Enhanced Interface
+- **Consistent Filtering**: Home page and rankings page now show identical, properly filtered deck lists
+- **Improved Reliability**: Defensive validation prevents edge cases where insufficient decks might slip through
+- **Better Feedback**: Clear error messages if users somehow attempt to start inadequate sessions
+
+### 🎯 Quality Assurance
+
+#### Testing Verification
+- ✅ **Deck Filtering**: Verified that only decks with 2+ cards appear as playable options
+- ✅ **API Consistency**: Confirmed all endpoints use consistent minimum threshold validation
+- ✅ **Error Handling**: Tested defensive checks prevent insufficient card play sessions
+- ✅ **UI Consistency**: Home page and rankings page show identical filtered results
+
+#### Implementation Validation
+- ✅ **Centralized Constants**: Confirmed threshold defined in single location for maintainability
+- ✅ **Strategic Comments**: Verified all modified code includes explanatory comments
+- ✅ **Documentation Updates**: All technical documents updated with new rule information
+
+### 🚀 Deployment Status
+- **Build Compatibility**: ✅ Changes compile successfully with no errors
+- **API Integration**: ✅ All endpoints properly implement threshold validation
+- **Database Performance**: ✅ Filtering logic efficiently excludes insufficient decks
+- **User Experience**: ✅ Only meaningful, playable decks displayed to users
+
+### 📋 Version Management
+- **Version Increment**: 3.6.2 → 3.6.3 (patch increment per protocol)
+- **Documentation Updates**: TASKLIST.md, ROADMAP.md, ARCHITECTURE.md, and RELEASE_NOTES.md updated
+- **Timestamp Compliance**: All timestamps in ISO 8601 format with millisecond precision
+
+---
+
+## [v3.6.2] — 2025-08-02T20:51:30.000Z
+
+### 🔧 System Architecture Migration - Multi-Card Level System
+
+This patch release successfully migrates NARIMATO from the deprecated deck-based architecture to the new multi-card level hierarchy system, resolving critical 404 errors and modernizing the application's data flow.
+
+### ✨ Core Issue Resolution
+
+#### 404 Error Fix
+- **Problem**: "Failed to fetch decks: 404" errors occurring on home page and rankings page
+- **Root Cause**: Frontend trying to access `/api/v1/decks` endpoint which was removed during system architecture migration
+- **Solution**: Updated all API calls to use `/api/v1/cards?type=playable` to retrieve cards with children (playable categories)
+- **Impact**: Eliminated all 404 errors and restored full functionality
+
+#### Frontend Modernization
+- **Data Mapping**: Implemented sophisticated mapping from card data to deck-like UI structures
+- **Property Translation**: 
+  - `card.name` (hashtag) → `tag` for component props
+  - `card.body.textContent` or `card.name.substring(1)` → `displayName` for user-friendly titles
+  - `card.childCount` → `cardCount` for category size display
+- **UI Consistency**: Maintained existing DeckCard component interface while using new data source
+
+#### API Parameter Updates
+- **Play Session Logic**: Updated from `deckTag` parameter to `cardName` parameter in `/api/v1/play/start` requests
+- **Parameter Format**: Ensures full hashtag format (e.g., `#SPORT`) is passed to maintain API compatibility
+- **Backward Compatibility**: Changes align with existing backend expectations
+
+### 🎯 Technical Implementation Details
+
+#### File Modifications
+- **app/page.tsx**: 
+  - Replaced `/api/v1/decks` fetch with `/api/v1/cards?type=playable`
+  - Implemented card-to-deck data mapping with proper fallbacks
+  - Updated play session initiation to use `cardName` parameter
+  - Enhanced error messages and loading states
+- **app/ranks/page.tsx**:
+  - Migrated to cards API with same data mapping approach
+  - Maintained existing ranking selection functionality
+  - Updated UI text from "decks" to "categories" for clarity
+
+#### Data Transformation Logic
+```typescript
+const mappedDecks = (data.cards || []).map((card: any) => ({
+  _id: card.uuid,
+  hashtag: card.name, // Full hashtag like #SPORT
+  slug: card.name.substring(1).toLowerCase(), // Remove # and lowercase
+  title: card.body?.textContent || card.name.substring(1), // Use text content or name without #
+  description: card.body?.textContent || `${card.name.substring(1)} category`,
+  cardCount: card.childCount || 0,
+  // ... additional properties
+}));
+```
+
+### 🛠️ Quality Assurance
+
+#### Manual Testing Completed
+- ✅ **Home Page Loading**: Categories load properly without 404 errors
+- ✅ **Data Display**: Card counts and names display correctly
+- ✅ **Category Selection**: Category selection works for both home page and rankings
+- ✅ **Play Session Start**: Play sessions initiate correctly with new `cardName` parameter
+- ✅ **Error Handling**: Proper error messages and loading states throughout
+
+#### API Integration Verification
+- ✅ **Cards API Response**: `/api/v1/cards?type=playable` returns expected data structure
+- ✅ **Play Start API**: `/api/v1/play/start` accepts `cardName` parameter correctly
+- ✅ **Data Mapping**: All card properties map correctly to expected UI format
+- ✅ **Component Compatibility**: DeckCard component works seamlessly with new data structure
+
+### 📊 Impact Metrics
+
+#### User Experience
+- **Error Elimination**: 100% reduction in 404 errors on home and rankings pages
+- **Functionality Restoration**: Full restoration of category selection and play session initiation
+- **UI Consistency**: Maintained familiar user interface while using modernized backend
+- **Performance**: No degradation in loading times or responsiveness
+
+#### Developer Experience
+- **Code Modernization**: Aligned frontend with current backend architecture
+- **Maintainability**: Simplified data flow using single card-based API
+- **Documentation**: Updated inline comments and error messages for clarity
+
+### 🚀 Deployment Status
+- **Build Compatibility**: ✅ Changes compile successfully with no TypeScript errors
+- **API Integration**: ✅ All endpoints responding correctly with expected data
+- **Component Functionality**: ✅ All UI components working with new data structure
+- **Error Resolution**: ✅ Original 404 errors completely resolved
+
+### 🎯 Migration Benefits
+
+This migration provides:
+1. **Architectural Consistency**: Frontend now properly uses the multi-card level system
+2. **Error Elimination**: Resolved all deck-related 404 errors
+3. **Future-Proofing**: Application now uses current architecture patterns
+4. **Simplified Maintenance**: Single card-based API reduces complexity
+5. **Enhanced Scalability**: Hierarchical card system supports unlimited depth
+
+### 📋 Version Management
+- **Version Increment**: 3.6.1 → 3.6.2 (patch increment per protocol)
+- **Documentation Updates**: README.md, TASKLIST.md, and RELEASE_NOTES.md updated
+- **Package.json**: Version synchronized across all files
+
+---
+
+## [v3.6.1] — 2025-08-02T19:20:11.000Z
+
+### 🔧 Build Fix - Arrow Function Syntax Error Resolution
+
+This patch release addresses a critical build-breaking syntax error in the ranks page that was preventing successful compilation.
+
+#### 🐛 Bug Fixes
+- **Arrow Function Syntax**: Fixed typo in `app/ranks/page.tsx` line 31 where `=e` was incorrectly written instead of `=>` in the map function
+- **Build Compilation**: Restored successful TypeScript compilation and Next.js build process
+- **Rankings Page**: Ensured proper functionality of the global rankings category selection page
+
+#### 📊 Technical Details
+- **File Modified**: `app/ranks/page.tsx` - corrected arrow function syntax in card mapping
+- **Build Status**: ✅ Successful compilation with zero errors
+- **Impact**: Critical fix enabling deployment and development workflow continuation
+
+#### 🚀 Quality Assurance
+- ✅ **Build Validation**: Confirmed successful `npm run build` execution
+- ✅ **Syntax Verification**: Validated proper JavaScript/TypeScript syntax
+- ✅ **Page Functionality**: Verified ranks page loads and functions correctly
+
+---
+
+## [v3.6.1] — 2025-08-02T19:20:11.000Z
+
+### 🎨 Enhanced Card Editor - Complete Redesign with Advanced Features
+
+This release introduces a comprehensive redesign of the card editor, transforming it from a basic creation tool into a powerful content management system. The enhanced editor supports both new card creation and existing card editing with advanced features including smart hashtag management, UUID display, URL-friendly slugs, and seamless navigation.
+
+### ✨ Card Editor Enhancements
+
+#### Advanced Editing Capabilities
+- **Dual Mode Operation**: Complete support for both creating new cards and editing existing ones
+- **UUID Display**: Prominent display of card UUIDs when editing existing cards for easy identification
+- **Seamless Navigation**: Direct editing from card list page with proper state management and data loading
+- **Form Validation**: Comprehensive validation for card types and required fields with real-time feedback
+- **Live Preview Integration**: Real-time preview updates reflecting all new card fields and changes
+
+#### Smart Hashtag Management System
+- **Predictive Hashtag Editor**: Advanced hashtag input component with intelligent suggestions
+- **Common Hashtag Database**: Built-in database of common hashtags (funny, educational, technology, etc.)
+- **Interactive Suggestions**: Real-time filtering and display of relevant hashtag suggestions
+- **Keyboard Navigation**: Full arrow key navigation support for suggestion selection
+- **Visual Feedback**: Modern pill-style hashtag display with hover effects and animations
+- **Duplicate Prevention**: Smart prevention of duplicate hashtags with case-insensitive matching
+- **Easy Management**: Click 'X' to remove, Enter to add, with backspace support for quick editing
+
+#### URL-Friendly Slug System
+- **SEO Optimization**: Editable slug input with automatic URL-friendly formatting
+- **Real-time Formatting**: Automatic conversion of text to lowercase with hyphen replacement
+- **Character Validation**: Only allows letters, numbers, and hyphens for proper URL structure
+- **Placeholder Guidance**: Clear examples and descriptions for user understanding
+- **Live Preview**: Slug changes reflected immediately in the preview system
+
+#### Enhanced Card Type Support
+- **Dual Card Types**: Complete support for both text and media cards with type-specific validation
+- **Dynamic Content Fields**: Form fields adapt based on selected card type (text vs media)
+- **Type-Specific Validation**: Different validation rules for text cards (require text) vs media cards (require URL)
+- **Seamless Type Switching**: Easy switching between card types with proper state management
+
+### 🔧 Technical Improvements
+
+#### API Infrastructure
+- **GET Endpoint for Cards**: New `/api/v1/cards/[uuid]` GET method for fetching individual cards
+- **Enhanced Card Updates**: Improved PATCH endpoint handling for comprehensive card updates
+- **Field Validation**: Server-side validation for all new card fields (slug, hashtags, etc.)
+- **Response Optimization**: Streamlined API responses with proper error handling
+
+#### Frontend Architecture
+- **Suspense Boundary Fix**: Resolved Next.js useSearchParams SSR issues with proper Suspense wrapping
+- **Component Separation**: Clean separation between CardEditorContent and wrapper components
+- **State Management**: Sophisticated state management for card loading, editing, and saving
+- **Error Handling**: Comprehensive error handling with user-friendly messages
+
+#### Database Schema Optimization
+- **Index Optimization**: Fixed Mongoose duplicate index warnings for cleaner builds
+- **Schema Consistency**: Ensured proper index creation without duplication
+- **Performance**: Optimized database queries for card retrieval and updates
+
+### 🎯 User Experience Improvements
+
+#### Intuitive Interface Design
+- **Organized Layout**: Clear separation of card information, content, and styling sections
+- **Context-Aware UI**: Different interfaces for creating vs editing existing cards
+- **Visual Hierarchy**: Improved information architecture with proper spacing and grouping
+- **Professional Styling**: Consistent design language with proper contrast and readability
+
+#### Enhanced Workflow
+- **Direct Editing Access**: Click "Edit" on any card in `/cards` to open the full editor
+- **Context Preservation**: Editor remembers card state and provides easy navigation back to card list
+- **Progress Indication**: Clear loading states and progress feedback throughout the editing process
+- **Action Feedback**: Comprehensive success and error messages for all user actions
+
+### 🛠️ Component Architecture
+
+#### New HashtagEditor Component
+- **Reusable Design**: Standalone component that can be used across the application
+- **Props Interface**: Clean props interface with onChange handlers and customization options
+- **State Management**: Internal state management for suggestions, selections, and input handling
+- **Accessibility**: Proper ARIA labels and keyboard navigation support
+- **Performance**: Optimized rendering with proper React patterns (useCallback, useMemo)
+
+#### Enhanced Card Editor Structure
+- **Section Organization**: Logical grouping of card information, content, and styling options
+- **Conditional Rendering**: Smart conditional rendering based on card type and editing mode
+- **Form Integration**: Proper form handling with validation and submission logic
+- **Preview Integration**: Seamless integration with existing live preview system
+
+### 📊 Technical Implementation Details
+
+#### Files Modified
+- **Card Editor Page** (`app/card-editor/page.tsx`): Complete redesign with enhanced functionality
+- **Cards List Page** (`app/cards/page.tsx`): Updated to use navigation-based editing
+- **HashtagEditor Component** (`app/components/HashtagEditor.tsx`): New component for hashtag management
+- **Card API Route** (`app/api/v1/cards/[uuid]/route.ts`): Added GET method for card retrieval
+- **Deck Model** (`app/lib/models/Deck.ts`): Fixed duplicate index warnings
+
+#### API Enhancements
+- **Individual Card Retrieval**: New GET endpoint for fetching cards by UUID
+- **Enhanced Card Updates**: Improved PATCH handling for all card fields
+- **Error Handling**: Better error responses and validation messages
+- **Data Consistency**: Proper handling of card types and content validation
+
+### 🚀 Quality Assurance
+
+#### Manual Testing Completed
+- ✅ **Card Creation**: New card creation with all field types working correctly
+- ✅ **Card Editing**: Existing card editing with proper data loading and updates
+- ✅ **Hashtag Management**: Add, remove, and suggest hashtags functioning properly
+- ✅ **Slug Generation**: URL-friendly slug creation and validation working
+- ✅ **Type Switching**: Seamless switching between text and media card types
+- ✅ **Navigation**: Proper navigation between cards list and editor
+- ✅ **Form Validation**: All validation rules working correctly for different scenarios
+
+#### Build Validation
+- ✅ **Compilation**: Successful TypeScript compilation with zero errors
+- ✅ **Next.js Build**: Clean Next.js build without warnings or errors
+- ✅ **Index Warnings**: Resolved all Mongoose duplicate index warnings
+- ✅ **Suspense Issues**: Fixed all useSearchParams Suspense boundary issues
+
+### 🎯 Impact Metrics
+
+#### Developer Experience
+- **Code Quality**: Cleaner component architecture with better separation of concerns
+- **Maintainability**: Modular components that are easier to maintain and extend
+- **Type Safety**: Enhanced TypeScript coverage with proper interfaces
+- **Build Performance**: Faster builds with resolved warnings and optimized code
+
+#### User Experience
+- **Feature Completeness**: Comprehensive card editing experience matching modern standards
+- **Workflow Efficiency**: Streamlined process for both creating and editing cards
+- **Data Integrity**: Better data management with proper validation and error handling
+- **Interface Consistency**: Uniform design language across the application
+
+### 🚀 Deployment Status
+- **Build Status**: ✅ Successful compilation with zero errors or warnings
+- **Feature Testing**: ✅ All card editor features working correctly in development
+- **API Integration**: ✅ All endpoints responding correctly with proper data
+- **Database Operations**: ✅ Card CRUD operations functioning properly
+- **Navigation Flow**: ✅ Seamless navigation between card list and editor
+
+### 🎯 Future Enhancements
+
+The enhanced card editor foundation enables future improvements:
+- **Bulk Card Operations**: Multiple card editing and batch operations
+- **Card Templates**: Pre-designed templates for quick card creation
+- **Advanced Validation**: More sophisticated validation rules and real-time feedback
+- **Card Analytics**: Usage statistics and performance metrics for cards
+- **Import/Export**: Bulk import and export capabilities for card data
+
+---
 
 ## [v3.6.0] — 2025-08-01T20:47:05.000Z
 

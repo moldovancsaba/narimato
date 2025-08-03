@@ -16,9 +16,11 @@ export const saveSessionResults = async (session: any) => {
     cards.forEach(card => {
       cardMap.set(card.uuid, {
         uuid: card.uuid,
-        type: card.type,
-        content: card.content,
-        title: card.title
+        body: {
+          textContent: card.body?.textContent,
+          imageUrl: card.body?.imageUrl
+        },
+        title: card.name
       });
     });
 
@@ -84,11 +86,16 @@ export const savePlayResults = async (play: any) => {
     // Create a map for quick card lookup
     const cardMap = new Map();
     cards.forEach(card => {
+      // Derive type from card content - if it has imageUrl it's media, otherwise text
+      const cardType = card.body?.imageUrl ? 'media' : 'text';
+      
       cardMap.set(card.uuid, {
         uuid: card.uuid,
-        type: card.type,
-        content: card.content,
-        title: card.title
+        body: {
+          textContent: card.body?.textContent,
+          imageUrl: card.body?.imageUrl
+        },
+        title: card.name
       });
     });
 
