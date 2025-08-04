@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/app/lib/utils/db';
+import { createOrgAwareRoute } from '@/app/lib/middleware/organization';
+import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { Play } from '@/app/lib/models/Play';
 import { Card } from '@/app/lib/models/Card';
 import { SessionResults } from '@/app/lib/models/SessionResults';
@@ -8,6 +9,7 @@ import { VoteRequestSchema } from '@/app/lib/validation/schemas';
 import mongoose from 'mongoose';
 import { SESSION_FIELDS, VOTE_FIELDS, API_FIELDS, CARD_FIELDS, PLAY_FIELDS } from '@/app/lib/constants/fieldNames';
 import { validateUUID, validateSessionId } from '@/app/lib/utils/fieldValidation';
+import { savePlayResults } from '@/app/lib/utils/sessionResultsUtils';
 
 interface NextComparison {
   newCard: string;
@@ -404,123 +406,7 @@ function insertCardInRanking(
 
 const VOTE_TIMEOUT_MS = 60000; // 60 seconds
 
-/**
- * Automatically saves session results when a session is completed
- * @param session - The completed session
- */
-const savePlayResults = async (play: any) => {
-  try {
-    console.log('🔍 savePlayResults called with play data:', {
-      playUuid: play.playUuid,
-      personalRanking: play.personalRanking,
-      personalRankingLength: play.personalRanking?.length || 0,
-      totalCards: play.totalCards,
-      swipesCount: play.swipes?.length || 0,
-      votesCount: play.votes?.length || 0,
-      status: play.status,
-      state: play.state
-    });
-    
-    // Get all cards from the personal ranking with their details
-    const cardIds = play.personalRanking || [];
-    const cards = await Card.find({ uuid: { $in: cardIds } });
-    
-    console.log('🃏 Found cards for ranking:', {
-      requestedCardIds: cardIds,
-      foundCards: cards.length,
-      foundCardIds: cards.map(c => c.uuid)
-    });
-    
-    // Create a map for quick card lookup
-    const cardMap = new Map();
-    cards.forEach(card => {
-      // Derive type from card content - if it has imageUrl it's media, otherwise text
-      const cardType = card.body?.imageUrl ? 'media' : 'text';
-      
-      cardMap.set(card.uuid, {
-        uuid: card.uuid,
-        type: cardType, // Add derived type field
-        body: {
-          textContent: card.body?.textContent,
-          imageUrl: card.body?.imageUrl
-        },
-        content: {
-          text: card.body?.textContent,
-          mediaUrl: card.body?.imageUrl
-        },
-        title: card.name
-      });
-    });
-
-    // Build the personal ranking with card details
-    const personalRankingWithDetails = cardIds.map((cardId: string, index: number) => {
-      const card = cardMap.get(cardId);
-      if (!card) {
-        console.error(`⚠️  MISSING CARD in savePlayResults: Card ${cardId} from personalRanking not found in database query`, {
-          cardId,
-          allRequestedIds: cardIds,
-          foundCardIds: cards.map(c => c.uuid),
-          missingCards: cardIds.filter((id: string) => !cardMap.has(id))
-        });
-      }
-      return {
-        cardId,
-        card,
-        rank: index + 1
-      };
-    }).filter((item: any) => {
-      if (!item.card) {
-        console.error(`😱 FILTERING OUT CARD from results: ${item.cardId} - not found in database`);
-        return false;
-      }
-      return true;
-    });
-    
-    console.log(`📊 Final personalRankingWithDetails:`, {
-      originalRankingLength: cardIds.length,
-      finalRankingLength: personalRankingWithDetails.length,
-      filteredOutCount: cardIds.length - personalRankingWithDetails.length,
-      finalRanking: personalRankingWithDetails.map((item: any) => ({cardId: item.cardId, rank: item.rank}))
-    });
-
-    // Calculate play statistics
-    const playStatistics = {
-      totalCards: play.totalCards || 0,
-      cardsRanked: play.personalRanking?.length || 0,
-      cardsDiscarded: (play.totalCards || 0) - (play.personalRanking?.length || 0),
-      totalSwipes: play.swipes?.length || 0,
-      totalVotes: play.votes?.length || 0,
-      completionRate: play.totalCards ? Math.round(((play.personalRanking?.length || 0) / play.totalCards) * 100) : 0
-    };
-
-    // Check if results already exist for this play
-    const existingResults = await SessionResults.findOne({ sessionId: play.playUuid });
-    
-    if (existingResults) {
-      // Update existing results
-      existingResults.personalRanking = personalRankingWithDetails;
-      existingResults.sessionStatistics = playStatistics;
-      existingResults.updatedAt = new Date();
-      await existingResults.save();
-      console.log(`Updated existing play results for ${play.playUuid}`);
-    } else {
-      // Create new play results
-      const playResults = new SessionResults({
-        sessionId: play.playUuid,
-        personalRanking: personalRankingWithDetails,
-        sessionStatistics: playStatistics,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-
-      await playResults.save();
-      console.log(`Created new play results for ${play.playUuid}`);
-    }
-  } catch (error) {
-    console.error(`Failed to save play results for ${play.playUuid}:`, error);
-    // Don't throw error - play completion should not fail due to results saving
-  }
-};
+// Note: savePlayResults function is imported from utils
 
 /**
  * Performs atomic session update with rollback capability.
@@ -532,9 +418,11 @@ async function performAtomicRankingUpdate(
   updatedRanking: string[],
   newState: string,
   auditTrail: ComparisonAudit[],
-  newCard: string
+  newCard: string,
+  CardModel: any,
+  connection: any
 ) {
-  const mongoSession = await mongoose.startSession();
+  const mongoSession = await connection.startSession();
   
   try {
     // Start transaction for atomic updates
@@ -567,7 +455,7 @@ async function performAtomicRankingUpdate(
       }
       
       // Check if all cards are exhausted after the swipe
-      const cards = await Card.find({ [CARD_FIELDS.UUID]: { $in: play.deck } });
+      const cards = await CardModel.find({ [CARD_FIELDS.UUID]: { $in: play.deck } });
       if (cards.length > 0) {
         const orderedCards = play.deck.map((uuid: string) => 
           cards.find(card => card[CARD_FIELDS.UUID] === uuid)
@@ -685,12 +573,13 @@ async function performAtomicRankingUpdate(
       if (play.status === 'completed') {
         try {
           console.log(`💾 Play completed - attempting to save results after transaction commit...`);
-          await savePlayResults(play);
+          await savePlayResults(play, connection);
           console.log(`✅ Play results saved successfully after completion for ${play.playUuid}`);
           
           // ✅ CRITICAL FIX: Trigger automatic global ranking recalculation
           console.log(`🎯 Triggering global ranking recalculation after session completion...`);
-          await GlobalRanking.calculateRankings();
+          const GlobalRankingModel = connection.model('GlobalRanking', GlobalRanking.schema);
+          await GlobalRankingModel.calculateRankings();
           console.log(`✅ Global rankings updated successfully after session completion`);
           
         } catch (resultsError) {
@@ -755,7 +644,7 @@ function validateStateTransition(
   };
 }
 
-export async function POST(request: NextRequest) {
+export const POST = createOrgAwareRoute(async (request, { organizationId }) => {
   // Initialize audit trail for this operation
   const auditTrail: ComparisonAudit[] = [];
 let play: any = null;
@@ -771,7 +660,12 @@ let play: any = null;
     const winner = validatedData[VOTE_FIELDS.WINNER];
     const timestamp = validatedData[VOTE_FIELDS.TIMESTAMP];
 
-    await dbConnect();
+    const connectDb = createOrgDbConnect(organizationId);
+    const connection = await connectDb();
+    
+    // Get models bound to this specific connection
+    const PlayModel = connection.model('Play', Play.schema);
+    const CardModel = connection.model('Card', Card.schema);
     
     // Timeout handling with early return
     const voteTime = new Date(timestamp);
@@ -779,7 +673,7 @@ let play: any = null;
     const elapsedMs = now.getTime() - voteTime.getTime();
     
     if (elapsedMs > VOTE_TIMEOUT_MS) {
-      const timeoutPlay = await Play.findOneAndUpdate(
+      const timeoutPlay = await PlayModel.findOneAndUpdate(
         { [PLAY_FIELDS.UUID]: playUuid, status: { $in: ['active', 'completed'] }, version: body[SESSION_FIELDS.VERSION] },
         { $inc: { version: 1 } },
         { new: true }
@@ -802,7 +696,7 @@ let play: any = null;
     }
 
     // Find and lock session with optimistic concurrency control
-play = await Play.findOneAndUpdate(
+play = await PlayModel.findOneAndUpdate(
       { [PLAY_FIELDS.UUID]: playUuid, status: { $in: ['active', 'completed'] }, version: body[SESSION_FIELDS.VERSION] },
       { $inc: { version: 1 } },
       { new: true }
@@ -810,7 +704,7 @@ play = await Play.findOneAndUpdate(
     
 if (!play) {
       // Try to find the play without version check to provide better error info
-      const existingPlay = await Play.findOne({ [PLAY_FIELDS.UUID]: playUuid, status: { $in: ['active', 'completed'] } });
+      const existingPlay = await PlayModel.findOne({ [PLAY_FIELDS.UUID]: playUuid, status: { $in: ['active', 'completed'] } });
       
       if (!existingPlay) {
         return new NextResponse(
@@ -1009,7 +903,9 @@ await performAtomicRankingUpdate(
         updatedRanking.ranking,
         targetState,
         auditTrail,
-        newCard
+        newCard,
+        CardModel,
+        connection
       );
     } catch (atomicError: any) {
       return new NextResponse(
@@ -1100,4 +996,4 @@ playUuid: play?.playUuid,
       { status: 500 }
     );
   }
-}
+});

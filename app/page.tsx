@@ -17,6 +17,8 @@ interface PlayableCard {
   publicUrl: string | null;
   createdAt: string;
   updatedAt: string;
+  imageUrl?: string;
+  cardSize?: string;
   styling?: {
     textColor: string;
     backgroundColor: string;
@@ -84,6 +86,8 @@ export default function HomePage() {
           publicUrl: null,
           createdAt: card.createdAt,
           updatedAt: card.updatedAt,
+          imageUrl: card.body?.imageUrl, // Add image URL
+          cardSize: card.cardSize, // Add card size for aspect ratio
           styling: card.body?.background ? {
             textColor: card.body.background.textColor || '#ffffff',
             backgroundColor: card.body.background.value || '#667eea',
@@ -232,6 +236,8 @@ export default function HomePage() {
             cardCount={card.cardCount}
             onClick={() => handleStart(card.hashtag)}
             isLoading={isStarting && card.hashtag === selectedCard}
+            imageUrl={card.imageUrl}
+            cardSize={card.cardSize}
           />
         ))}
       </div>

@@ -1,35 +1,36 @@
   /* Card Components - Mobile First with Dark Mode Enhancement */
   .card-container {
     @apply relative flex items-center justify-center rounded-lg sm:rounded-xl;
-    aspect-ratio: 3 / 4;
-    /* Subtle gradient background - serves as loading state until content loads */
-    background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899);
+    /* Dynamic aspect ratio set via inline styles by BaseCard - no fallback needed */
+    /* Simple background color instead of gradient to provide card visibility */
+    background-color: #4a5568; /* Gray-600 as neutral background */
     box-shadow: var(--shadow-card-mobile);
     border-radius: var(--border-radius-lg-mobile);
     transition: var(--transition);
     /* Enhanced mobile dark mode outline for better visibility */
-    @apply dark:ring-1 dark:ring-white/10;
-    /* Gradient border */
-    border: 2px solid transparent;
-    background-image: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899), 
-                      linear-gradient(45deg, #00f0ff, #5773ff, #ff007a, #00f0ff);
-    background-origin: border-box;
-    background-clip: padding-box, border-box;
+    @apply dark:ring-1 dark:ring-white/10 dark:bg-gray-700;
+    
+    /* GLOBAL FALLBACK: Ensure NO card can ever be 1x1px */
+    min-width: 80px !important;
+    min-height: 100px !important;
   }
 
-  /* SWIPE Page Card Sizing - Grid-constrained with proper aspect ratio */
+  /* SWIPE Page Card Sizing - Grid-constrained with dynamic aspect ratio */
   .swipe-grid .card-container {
     /* Center the card within grid cell */
     align-self: center;
     justify-self: center;
-    /* Respect grid cell boundaries */
+    /* Respect grid cell boundaries and maintain aspect ratio */
     max-width: 100%;
     max-height: 100%;
-    /* Maintain aspect ratio */
-    aspect-ratio: 3 / 4;
-    /* Size to fit within grid cell */
+    /* Size to fit within constraints while maintaining aspect ratio */
     width: auto;
-    height: 100%;
+    height: 80%; /* Use most of available height */
+    /* CRITICAL: Ensure minimum visible dimensions */
+    min-width: 200px;
+    min-height: 250px;
+    /* Center positioning */
+    margin: auto;
     /* Prevent overflow */
     contain: layout size style;
     position: relative;
@@ -59,10 +60,9 @@
     }
   }
 
-  /* VOTE Page Card Sizing - Grid-constrained with proper aspect ratio */
+  /* VOTE Page Card Sizing - Grid-constrained with dynamic aspect ratio */
   .vote-grid .card-container {
-    /* Force the aspect ratio first */
-    aspect-ratio: 3 / 4;
+    /* Dynamic aspect ratio set via inline styles */
     /* Center the card */
     align-self: center;
     justify-self: center;
@@ -71,6 +71,9 @@
     height: 100%; /* Use full grid cell height */
     max-width: 100%;
     max-height: 100%;
+    /* CRITICAL: Ensure minimum visible dimensions */
+    min-width: 150px;
+    min-height: 200px;
   }
 
   /* Portrait mode: limit by height since cards are stacked */
@@ -91,12 +94,24 @@
     }
   }
 
-  /* Results Grid Card Sizing */
+  /* Results Grid Card Sizing - for main page, completed page, rankings */
   .results-grid .card-container {
     /* Cards fit within their grid cell with proper aspect ratio */
     width: 100%;
     height: auto;
     max-width: 100%;
+    /* CRITICAL: Ensure minimum visible dimensions */
+    min-width: 120px;
+    min-height: 160px; /* Minimum height to ensure cards are visible */
+    /* Let aspect ratio determine proportions above minimum */
+  }
+  
+  /* Default card container sizing for medium/large sizes */
+  .card-container:not(.results-grid .card-container):not(.swipe-grid .card-container):not(.vote-grid .card-container) {
+    /* For standalone cards (like on main page), constrain by width */
+    width: 100%;
+    height: auto;
+    max-width: 20rem; /* max-w-sm equivalent */
   }
   
   /* Desktop enhancements with improved dark mode */
@@ -173,9 +188,10 @@
   }
   
   .card-media {
-    @apply absolute inset-0 w-full h-full object-cover;
+    @apply absolute inset-0 w-full h-full object-contain;
     /* Match the container's border radius exactly */
     border-radius: var(--border-radius-lg-mobile);
+    display: block;
   }
   
   @media (min-width: 640px) {
@@ -344,4 +360,51 @@
   .relative:hover .card-overlay-hover {
     opacity: 1 !important;
     pointer-events: auto !important;
+  }
+  
+  /* Swipe Animation Overlays */
+  .swipe-overlay {
+    @apply absolute inset-0 flex items-center justify-center;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    pointer-events: none;
+    z-index: 30;
+  }
+  
+  .swipe-loading-overlay {
+    @apply swipe-overlay;
+    background: rgba(0, 0, 0, 0.6);
+  }
+  
+  .swipe-error-overlay {
+    @apply swipe-overlay;
+    background: rgba(220, 38, 38, 0.2);
+  }
+  
+  .swipe-direction-right {
+    background: rgba(34, 197, 94, 0.3);
+  }
+  
+  .swipe-direction-left {
+    background: rgba(239, 68, 68, 0.3);
+  }
+  
+  .swipe-direction-text {
+    @apply text-6xl font-bold text-white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    animation: swipe-text-pulse 0.5s ease-in-out;
+  }
+  
+  .swipe-direction-text-right {
+    color: #22c55e;
+  }
+  
+  .swipe-direction-text-left {
+    color: #ef4444;
+  }
+  
+  @keyframes swipe-text-pulse {
+    0% { transform: scale(0.8); opacity: 0; }
+    50% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
   }

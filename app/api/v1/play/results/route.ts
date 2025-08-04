@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/app/lib/utils/db';
+import { getOrganizationContext } from '@/app/lib/middleware/organization';
+import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { SessionResults } from '@/app/lib/models/SessionResults';
 import { Play } from '@/app/lib/models/Play';
 import { PLAY_FIELDS } from '@/app/lib/constants/fieldNames';
@@ -12,7 +13,16 @@ export async function GET(
   const playId = searchParams.get('sessionId'); // use sessionId for backward compatibility
 
   try {
-    await dbConnect();
+    // Get organization context
+    const orgContext = await getOrganizationContext(request);
+    const organizationId = orgContext?.organizationId || 'default';
+
+    const connectDb = createOrgDbConnect(organizationId);
+    const connection = await connectDb();
+    
+    // Register connection-specific models
+    const SessionResultsModel = connection.model('SessionResults', SessionResults.schema);
+    const PlayModel = connection.model('Play', Play.schema);
 
     if (!playId) {
       return NextResponse.json(
@@ -24,7 +34,7 @@ export async function GET(
     console.log(`Fetching play results for playId: ${playId}`);
 
     // Try to find saved play results first
-    const savedResults = await SessionResults.findOne({ sessionId: playId });
+    const savedResults = await SessionResultsModel.findOne({ sessionId: playId });
 
     if (savedResults) {
       console.log(`Found saved results for play ${playId}`);
@@ -40,7 +50,7 @@ export async function GET(
     console.log(`No saved results found for play ${playId}, checking live play...`);
 
     // If no saved results found, try to get from live play and save
-    const livePlay = await Play.findOne({ [PLAY_FIELDS.UUID]: playId });
+    const livePlay = await PlayModel.findOne({ [PLAY_FIELDS.UUID]: playId });
 
     if (livePlay) {
       console.log(`Found live play for ${playId}:`, {
@@ -76,7 +86,7 @@ export async function GET(
 
     // Try to save the play results now with race condition handling
       try {
-        await savePlayResults(livePlay);
+        await savePlayResults(livePlay, connection);
         console.log(`✓ Results saved for play ${playId}`);
       } catch (saveError: any) {
         // Handle duplicate key error gracefully - it means results were already saved by another request
@@ -88,7 +98,7 @@ export async function GET(
       }
       
       // Always try to fetch the saved results (they should exist now)
-      const newlySavedResults = await SessionResults.findOne({ sessionId: playId });
+      const newlySavedResults = await SessionResultsModel.findOne({ sessionId: playId });
       if (newlySavedResults) {
         console.log(`Successfully retrieved results for play ${playId}`);
         return NextResponse.json({

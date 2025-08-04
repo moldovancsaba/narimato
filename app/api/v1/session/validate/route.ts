@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/app/lib/utils/db';
+import { createOrgAwareRoute } from '@/app/lib/middleware/organization';
+import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { Play } from '@/app/lib/models/Play';
 import { Card } from '@/app/lib/models/Card';
 import { SESSION_FIELDS, API_FIELDS, PLAY_FIELDS } from '@/app/lib/constants/fieldNames';
 import { validateSessionId } from '@/app/lib/utils/fieldValidation';
 import { forceCompletionCheckAndUpdate, validatePlayState } from '@/app/lib/utils/playCompletionUtils';
 
-export async function GET(request: NextRequest) {
+export const GET = createOrgAwareRoute(async (request, { organizationId }) => {
   try {
     // Note: sessionId parameter is actually playUuid in the new architecture
     const playUuid = request.nextUrl.searchParams.get(SESSION_FIELDS.ID);
@@ -17,8 +18,14 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       );
     }
+    
+    // Create database connection
+    const connectDb = createOrgDbConnect(organizationId);
+    const connection = await connectDb();
 
-    await dbConnect();
+    // Get models bound to this specific connection
+    const PlayModel = connection.model('Play', Play.schema);
+    const CardModel = connection.model('Card', Card.schema);
 
     // Apply no-cache headers to response
     const noCacheHeaders = {
@@ -28,7 +35,7 @@ export async function GET(request: NextRequest) {
     };
 
     // Find play session and check if it's still valid (accept both active and completed)
-    const play = await Play.findOne({ 
+    const play = await PlayModel.findOne({ 
       [PLAY_FIELDS.UUID]: playUuid,
       [PLAY_FIELDS.STATUS]: { $in: ['active', 'completed'] },
       [PLAY_FIELDS.EXPIRES_AT]: { $gt: new Date() }
@@ -60,7 +67,7 @@ export async function GET(request: NextRequest) {
     if (play && play.deck && play.deck.length > 0) {
       try {
         // Fetch all cards for this play's deck using the UUIDs stored in play.deck
-        const cards = await Card.find({ 
+        const cards = await CardModel.find({ 
           uuid: { $in: play.deck },
           isActive: true 
         }).lean(); // Use lean() for better performance
@@ -107,4 +114,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

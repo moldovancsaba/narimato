@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import dbConnect from '@/app/lib/utils/db';
+import { getOrganizationContext } from '@/app/lib/middleware/organization';
+import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { Card } from '@/app/lib/models/Card';
 import { Play } from '@/app/lib/models/Play';
 import { SESSION_FIELDS, CARD_FIELDS, API_FIELDS, PLAY_FIELDS } from '@/app/lib/constants/fieldNames';
@@ -9,7 +10,16 @@ const SESSION_EXPIRY_HOURS = 24;
 
 export async function POST(request: Request) {
   try {
-    await dbConnect();
+    // Get organization context
+    const orgContext = await getOrganizationContext(request);
+    const organizationId = orgContext?.organizationId || 'default';
+
+    const connectDb = createOrgDbConnect(organizationId);
+    const connection = await connectDb();
+    
+    // Register connection-specific models
+    const CardModel = connection.model('Card', Card.schema);
+    const PlayModel = connection.model('Play', Play.schema);
 
     // Parse request body to get deck selection and session info
     const body = await request.json().catch(() => ({}));
@@ -23,7 +33,7 @@ export async function POST(request: Request) {
     }
 
     // Get cards based on selected deck
-    const cards = await Card.aggregate([
+    const cards = await CardModel.aggregate([
       { $match: matchCriteria },
       // Ensure uniqueness
       { 
@@ -54,7 +64,7 @@ export async function POST(request: Request) {
     expiresAt.setHours(expiresAt.getHours() + SESSION_EXPIRY_HOURS);
 
     // Create new play session
-    const play = new Play({
+    const play = new PlayModel({
       [PLAY_FIELDS.UUID]: playUuid,
       [PLAY_FIELDS.SESSION_ID]: sessionId,
       [PLAY_FIELDS.DECK_UUID]: playUuid, // Use playUuid as deck identifier for now

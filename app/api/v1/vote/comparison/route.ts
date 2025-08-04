@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/app/lib/utils/db';
+import { createOrgAwareRoute } from '@/app/lib/middleware/organization';
+import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { Play } from '@/app/lib/models/Play';
 import { Card } from '@/app/lib/models/Card';
 import { PLAY_FIELDS } from '@/app/lib/constants/fieldNames';
 
-export async function GET(request: NextRequest) {
+export const GET = createOrgAwareRoute(async (request, { organizationId }) => {
   try {
     const searchParams = request.nextUrl.searchParams;
     // Note: sessionId parameter is actually playUuid in the new architecture
@@ -18,10 +19,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    await dbConnect();
+    const connectDb = createOrgDbConnect(organizationId);
+    const connection = await connectDb();
+    
+    // Get models bound to this specific connection
+    const PlayModel = connection.model('Play', Play.schema);
+    const CardModel = connection.model('Card', Card.schema);
 
     // Find play and validate (accept both active and completed)
-    const play = await Play.findOne({ 
+    const play = await PlayModel.findOne({
       [PLAY_FIELDS.UUID]: playUuid, 
       [PLAY_FIELDS.STATUS]: { $in: ['active', 'completed'] } 
     });
@@ -35,7 +41,7 @@ export async function GET(request: NextRequest) {
     // If no ranked cards yet, this is the first card to be ranked
     if (play.personalRanking.length === 0) {
       // For the first card, return it as both A and B to show in UI
-      const card = await Card.findOne({ uuid: cardId });
+      const card = await CardModel.findOne({ uuid: cardId });
       if (!card) {
         return new NextResponse(
           JSON.stringify({ error: 'Card not found' }),
@@ -168,7 +174,7 @@ export async function GET(request: NextRequest) {
         ];
         
         // Update play state to swiping since ranking is complete
-        const updatedPlay = await Play.findOneAndUpdate(
+        const updatedPlay = await PlayModel.findOneAndUpdate(
           { [PLAY_FIELDS.UUID]: playUuid, [PLAY_FIELDS.STATUS]: { $in: ['active', 'completed'] } },
           {
             $set: {
@@ -219,8 +225,8 @@ export async function GET(request: NextRequest) {
 
     // Get both cards and verify they exist
     const [newCard, compareCard] = await Promise.all([
-      Card.findOne({ uuid: cardId }),
-      Card.findOne({ uuid: compareCardId })
+      CardModel.findOne({ uuid: cardId }),
+      CardModel.findOne({ uuid: compareCardId })
     ]);
 
     if (!newCard) {
@@ -269,5 +275,5 @@ export async function GET(request: NextRequest) {
       JSON.stringify({ error: 'Internal server error' }),
       { status: 500 }
     );
-  }
 }
+});

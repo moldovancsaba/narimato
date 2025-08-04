@@ -1,18 +1,29 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '../../../lib/utils/db';
-import { Card } from '../../../lib/models/Card';
-import { Session } from '../../../lib/models/Session';
-import { PersonalRanking } from '../../../lib/models/PersonalRanking';
+import { getOrganizationContext } from '@/app/lib/middleware/organization';
+import { createOrgDbConnect } from '@/app/lib/utils/db';
+import { Card } from '@/app/lib/models/Card';
+import { Session } from '@/app/lib/models/Session';
+import { PersonalRanking } from '@/app/lib/models/PersonalRanking';
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
-    await dbConnect();
+    // Get organization context
+    const orgContext = await getOrganizationContext(request);
+    const organizationId = orgContext?.organizationId || 'default';
+
+    const connectDb = createOrgDbConnect(organizationId);
+    const connection = await connectDb();
+    
+    // Register connection-specific models
+    const CardModel = connection.model('Card', Card.schema);
+    const SessionModel = connection.model('Session', Session.schema);
+    const PersonalRankingModel = connection.model('PersonalRanking', PersonalRanking.schema);
     
     // Delete all documents from all collections
     await Promise.all([
-      Card.deleteMany({}),
-      Session.deleteMany({}),
-      PersonalRanking.deleteMany({})
+      CardModel.deleteMany({}),
+      SessionModel.deleteMany({}),
+      PersonalRankingModel.deleteMany({})
     ]);
 
     return NextResponse.json({ message: 'Database reset successful' });

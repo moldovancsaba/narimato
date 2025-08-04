@@ -111,3 +111,92 @@ select.form-input {
   background-color: var(--input-background, #1f2937) !important;
   color: var(--text-primary, #f5f5f5) !important;
 }
+
+/* Hashtag Selector Styles */
+.hashtag-selector {
+  @apply space-y-2;
+}
+
+.hashtag-suggestions {
+  @apply absolute top-full left-0 right-0 z-50 max-h-48 overflow-y-auto;
+  @apply border border-gray-300 dark:border-gray-600 rounded-lg;
+  @apply bg-white dark:bg-gray-800 shadow-lg;
+  margin-top: 2px;
+  /* Force background colors to override any inherited styles */
+  background-color: white !important;
+}
+
+/* Dark mode background for suggestions */
+[data-theme="dark"] .hashtag-suggestions,
+.dark .hashtag-suggestions {
+  background-color: #374151 !important; /* Dark gray background for better contrast */
+}
+
+.hashtag-suggestion {
+  @apply block w-full text-left px-3 py-2 text-sm transition-colors;
+  @apply hover:bg-gray-100 dark:hover:bg-gray-700;
+  @apply border-0 bg-transparent;
+/* Set stark text color for enhanced contrast in both light and dark modes */
+  color: #1f2937 !important; /* Near-black text for high contrast in light mode */
+}
+
+/* Ultra-strong overrides for hashtag text visibility */
+.hashtag-suggestion,
+.hashtag-suggestion * {
+  color: #000000 !important; /* Pure black text for maximum contrast in light mode */
+  background-color: transparent !important;
+}
+
+/* Dark mode text color for hashtag suggestions */
+[data-theme="dark"] .hashtag-suggestion,
+[data-theme="dark"] .hashtag-suggestion *,
+.dark .hashtag-suggestion,
+.dark .hashtag-suggestion * {
+  color: #ffffff !important; /* Pure white text for maximum contrast in dark mode */
+  background-color: transparent !important;
+}
+
+/* Hover states with ultra-strong contrast */
+.hashtag-suggestion:hover,
+.hashtag-suggestion:hover * {
+  color: #000000 !important; /* Pure black on light hover */
+  background-color: #f3f4f6 !important; /* Light gray hover background */
+}
+
+[data-theme="dark"] .hashtag-suggestion:hover,
+[data-theme="dark"] .hashtag-suggestion:hover *,
+.dark .hashtag-suggestion:hover,
+.dark .hashtag-suggestion:hover * {
+  color: #ffffff !important; /* Pure white on dark hover */
+  background-color: #4b5563 !important; /* Dark gray hover background */
+}
+
+.hashtag-suggestion:first-child {
+  @apply rounded-t-lg;
+}
+
+.hashtag-suggestion:last-child {
+  @apply rounded-b-lg;
+}
+
+.hashtag-selected-container {
+  @apply flex flex-wrap gap-2 mt-2;
+}
+
+.hashtag-badge {
+  @apply inline-flex items-center gap-1 px-2 py-1 rounded text-sm font-medium;
+  @apply bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200;
+  @apply transition-colors;
+}
+
+.hashtag-remove {
+  @apply ml-1 text-blue-600 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-100;
+  @apply border-0 bg-transparent p-0 leading-none;
+  @apply transition-colors cursor-pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.hashtag-remove:hover {
+  @apply scale-110;
+}

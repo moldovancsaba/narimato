@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/app/lib/utils/db';
+import { createOrgAwareRoute } from '@/app/lib/middleware/organization';
+import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { Card } from '@/app/lib/models/Card';
 
-export async function GET(request: NextRequest) {
+export const GET = createOrgAwareRoute(async (request, { organizationId }) => {
   try {
     const uuid = request.nextUrl.pathname.split('/').pop();
     if (!uuid) {
@@ -12,9 +13,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    await dbConnect();
+    // Create organization-specific database connection
+    const connectDb = createOrgDbConnect(organizationId);
+    const connection = await connectDb();
+    const CardModel = connection.model('Card', Card.schema);
 
-    const card = await Card.findOne({ uuid });
+    const card = await CardModel.findOne({ uuid });
 
     if (!card) {
       return NextResponse.json(
@@ -31,9 +35,9 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
-export async function PATCH(request: NextRequest) {
+export const PATCH = createOrgAwareRoute(async (request, { organizationId }) => {
   try {
     const uuid = request.nextUrl.pathname.split('/').pop();
     if (!uuid) {
@@ -44,9 +48,12 @@ export async function PATCH(request: NextRequest) {
     }
     const body = await request.json();
 
-    await dbConnect();
+    // Create organization-specific database connection
+    const connectDb = createOrgDbConnect(organizationId);
+    const connection = await connectDb();
+    const CardModel = connection.model('Card', Card.schema);
 
-    const card = await Card.findOne({ uuid });
+    const card = await CardModel.findOne({ uuid });
 
     if (!card) {
       return NextResponse.json(
@@ -55,7 +62,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const updatedCard = await Card.findOneAndUpdate(
+    const updatedCard = await CardModel.findOneAndUpdate(
       { uuid },
       { 
         ...body,
@@ -63,7 +70,6 @@ export async function PATCH(request: NextRequest) {
       },
       { new: true }
     );
-
 
     return NextResponse.json({ success: true, card: updatedCard });
   } catch (error) {
@@ -73,9 +79,9 @@ export async function PATCH(request: NextRequest) {
       { status: 400 }
     );
   }
-}
+});
 
-export async function DELETE(request: NextRequest) {
+export const DELETE = createOrgAwareRoute(async (request, { organizationId }) => {
   try {
     const uuid = request.nextUrl.pathname.split('/').pop();
     if (!uuid) {
@@ -85,9 +91,12 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    await dbConnect();
+    // Create organization-specific database connection
+    const connectDb = createOrgDbConnect(organizationId);
+    const connection = await connectDb();
+    const CardModel = connection.model('Card', Card.schema);
 
-    const card = await Card.findOne({ uuid });
+    const card = await CardModel.findOne({ uuid });
 
     if (!card) {
       return NextResponse.json(
@@ -96,7 +105,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    await Card.findOneAndDelete({ uuid });
+    await CardModel.findOneAndDelete({ uuid });
 
     return NextResponse.json({ 
       success: true, 
@@ -110,4 +119,4 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

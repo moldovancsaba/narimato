@@ -1,8 +1,8 @@
-# The Great Aspect Ratio War: A Complete Evolution
+# Dynamic Aspect Ratio Management: Card Layout Evolution
 
 ## Executive Summary
 
-This document chronicles the complete journey of implementing proper 3:4 aspect ratio management for cards in the VOTE and SWIPE pages. What started as a simple layout issue became a comprehensive overhaul of the grid system, component architecture, and responsive design approach.
+This document chronicles the complete journey of implementing dynamic aspect ratio management for cards throughout the application. Cards now use their individual cardSize properties to determine their aspect ratios, allowing for flexible and varied card layouts without hardcoded constraints.
 
 ## The Evolution Timeline
 
@@ -17,7 +17,7 @@ This document chronicles the complete journey of implementing proper 3:4 aspect 
 ```css
 /* Original card styling */
 .card-container {
-  @apply relative w-full aspect-[3/4] rounded-lg sm:rounded-xl;
+  @apply relative w-full rounded-lg sm:rounded-xl;
   max-width: 280px; /* Fixed sizes */
   background: linear-gradient(139deg, rgba(96, 0, 138, 1) 0%, rgba(9, 9, 121, 1) 35%, rgba(0, 144, 173, 1) 100%);
 }
@@ -120,8 +120,8 @@ interface BaseCardProps {
 
 const sizeClasses = {
   small: 'w-24 h-32 md:w-40 md:h-56',
-  medium: 'w-full max-w-sm sm:max-w-md aspect-[3/4]',
-  large: 'w-full max-w-md md:max-w-lg aspect-[3/4]',
+  medium: 'w-full max-w-sm sm:max-w-md',
+  large: 'w-full max-w-md md:max-w-lg',
   grid: 'w-full h-full'  // No aspect ratio constraints
 };
 
@@ -154,7 +154,7 @@ return (
 **The Challenge:**
 After fixing visibility, cards were either:
 - Filling grid cells completely (ignoring aspect ratio)
-- Having wrong aspect ratios (closer to 1:1 than 3:4)
+- Not respecting their individual cardSize aspect ratios
 
 **The Breakthrough - Orientation-Specific Constraints:**
 
@@ -163,7 +163,7 @@ The key insight was understanding which dimension should be the "limiting factor
 ```css
 /* SWIPE Page - Single card scenarios */
 .swipe-grid .card-container {
-  aspect-ratio: 3 / 4;
+  /* Dynamic aspect ratio set via inline styles by BaseCard */
   align-self: center;
   justify-self: center;
   width: auto;
@@ -192,7 +192,7 @@ The key insight was understanding which dimension should be the "limiting factor
 ```css
 /* VOTE Page - Dual card scenarios */
 .vote-grid .card-container {
-  aspect-ratio: 3 / 4;
+  /* Dynamic aspect ratio set via inline styles by BaseCard */
   align-self: center;
   justify-self: center;
   width: auto;
@@ -254,8 +254,8 @@ The key insight was understanding which dimension should be the "limiting factor
 - **Grid:** Perfect for 2D layouts with specific area assignments
 - **Flexbox:** Better for 1D layouts and component-level alignment
 
-### 2. Aspect Ratio Management Principles
-- Always set `aspect-ratio` first
+### 2. Dynamic Aspect Ratio Management Principles
+- Let each card define its own aspect ratio via cardSize property
 - Identify the "limiting dimension" for each scenario
 - Use `auto` for the calculated dimension
 - Avoid conflicting width/height declarations
@@ -276,7 +276,7 @@ The key insight was understanding which dimension should be the "limiting factor
 ```
 1. Grid defines available space
    ↓
-2. card-container applies aspect-ratio: 3/4
+2. BaseCard applies dynamic aspect-ratio from cardSize property
    ↓
 3. Orientation media queries set limiting dimension
    ↓
@@ -327,4 +327,4 @@ What started as a "simple" aspect ratio fix became a complete architectural over
 4. Orientation-specific optimization
 5. Comprehensive testing across devices
 
-**Final result:** Perfect 3:4 aspect ratio cards across all pages and orientations. 🎉
+**Final result:** Dynamic aspect ratio cards that respect individual cardSize properties across all pages and orientations. 🎉

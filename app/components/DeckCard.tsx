@@ -9,6 +9,8 @@ interface DeckCardProps {
   onClick: () => void;
   isLoading?: boolean;
   showRankingsIcon?: boolean;
+  imageUrl?: string;
+  cardSize?: string;
 }
 
 export default function DeckCard({ 
@@ -17,7 +19,9 @@ export default function DeckCard({
   cardCount, 
   onClick, 
   isLoading = false,
-  showRankingsIcon = false
+  showRankingsIcon = false,
+  imageUrl,
+  cardSize
 }: DeckCardProps) {
   return (
     <motion.div
@@ -27,7 +31,12 @@ export default function DeckCard({
       className="relative group cursor-pointer"
       onClick={onClick}
     >
-      <div className="card-container transition-all duration-200 group-hover:shadow-lg deck-card-gradient">
+      <div 
+        className="card-container transition-all duration-200 group-hover:shadow-lg deck-card-gradient"
+        style={cardSize ? {
+          aspectRatio: cardSize.replace(':', ' / ')
+        } : {}}
+      >
         {/* Deck Tag at Top */}
         <div className="absolute top-0 left-0 right-0 z-10 flex justify-center pt-3">
           <div className="deck-tag-badge">
@@ -35,7 +44,26 @@ export default function DeckCard({
           </div>
         </div>
 
-        {/* Main content */}
+        {/* Card Image Background */}
+        {imageUrl && (
+          <img
+            src={imageUrl}
+            alt={`${tag} category`}
+            className="card-media card-no-select"
+            draggable={false}
+            onDragStart={(e) => e.preventDefault()}
+            onLoad={(e) => {
+              const img = e.target as HTMLImageElement;
+              const container = img.closest('.card-container') as HTMLElement;
+              if (container && img.naturalWidth && img.naturalHeight) {
+                const aspectRatio = img.naturalWidth / img.naturalHeight;
+                container.style.aspectRatio = aspectRatio.toString();
+              }
+            }}
+          />
+        )}
+
+        {/* Main content overlay */}
         <div className="card-content">
           <div className="text-center">
             <p className="text-lg" style={{ color: 'var(--text-muted)' }}>

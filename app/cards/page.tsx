@@ -145,7 +145,7 @@ export default function CardsPage() {
                     <img 
                       src={card.body.imageUrl} 
                       alt={card.name}
-                      className="w-full h-32 object-cover rounded"
+                      className="w-full h-32 object-contain rounded"
                       onError={(e) => {
                         // Hide broken images
                         (e.target as HTMLImageElement).style.display = 'none';

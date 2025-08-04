@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '../../../lib/utils/db';
+import { connectMasterDb } from '../../../lib/utils/db';
 import { SystemVersion } from '../../../lib/models/SystemVersion';
 import packageJson from '../../../../package.json';
 
@@ -16,7 +16,7 @@ const version = packageJson.version;
 // GET /api/system/version - Get current system version
 export async function GET(request: NextRequest) {
   try {
-    await dbConnect();
+    await connectMasterDb();
 
     const environment = process.env.NODE_ENV === 'production' ? 'production' : 'development';
     const currentVersion = await SystemVersion.getCurrentVersion(environment);
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
 // POST /api/system/version - Record new version deployment
 export async function POST(request: NextRequest) {
   try {
-    await dbConnect();
+    await connectMasterDb();
 
     const body = await request.json();
     
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
 // PUT /api/system/version/migration - Update migration status
 export async function PUT(request: NextRequest) {
   try {
-    await dbConnect();
+    await connectMasterDb();
 
     const body = await request.json();
     const { applicationVersion, environment = 'development', status } = body;

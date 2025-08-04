@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/app/lib/utils/db';
+import { getOrganizationContext } from '@/app/lib/middleware/organization';
+import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { SessionResults } from '@/app/lib/models/SessionResults';
 import { Play } from '@/app/lib/models/Play';
 import { validateSessionId } from '@/app/lib/utils/fieldValidation';
@@ -16,7 +17,16 @@ export async function GET(
 ) {
   const { sessionId } = await context.params;
   try {
-    await dbConnect();
+    // Get organization context
+    const orgContext = await getOrganizationContext(request);
+    const organizationId = orgContext?.organizationId || 'default';
+    
+    const connectDb = createOrgDbConnect(organizationId);
+    const connection = await connectDb();
+    
+    // Get models bound to this specific connection
+    const PlayModel = connection.model('Play', Play.schema);
+    const SessionResultsModel = connection.model('SessionResults', SessionResults.schema);
     
     if (!sessionId || !validateSessionId(sessionId)) {
       return NextResponse.json(
@@ -28,7 +38,7 @@ export async function GET(
     console.log(`Fetching session results for sessionId: ${sessionId}`);
 
     // Try to find saved session results first
-    const savedResults = await SessionResults.findOne({ sessionId });
+    const savedResults = await SessionResultsModel.findOne({ sessionId });
     
     if (savedResults) {
       console.log(`Found saved results for session ${sessionId}`);
@@ -44,17 +54,17 @@ export async function GET(
     console.log(`No saved results found for session ${sessionId}, checking live play...`);
     
     // If no saved results found, try to get from live play and save
-    const livePlay = await Play.findOne({ [PLAY_FIELDS.UUID]: sessionId });
+    const livePlay = await PlayModel.findOne({ [PLAY_FIELDS.UUID]: sessionId });
     
     if (livePlay && livePlay.status === 'completed') {
       console.log(`Found completed live play for ${sessionId}, attempting to save results...`);
       
       // Try to save the play results now
       try {
-        await savePlayResults(livePlay);
+        await savePlayResults(livePlay, connection);
         
         // Retry fetching the saved results
-        const newlySavedResults = await SessionResults.findOne({ sessionId });
+        const newlySavedResults = await SessionResultsModel.findOne({ sessionId });
         if (newlySavedResults) {
           console.log(`Successfully saved and retrieved results for play ${sessionId}`);
           return NextResponse.json({

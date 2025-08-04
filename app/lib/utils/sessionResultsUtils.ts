@@ -1,15 +1,23 @@
 import { Card } from '@/app/lib/models/Card';
 import { SessionResults } from '@/app/lib/models/SessionResults';
+import { Connection } from 'mongoose';
 
 /**
  * Utility function to save session results to the SessionResults collection
  * This is used when a session is completed to create shareable results
+ * 
+ * @param session - The session object containing personalRanking and other data
+ * @param connection - The organization-specific mongoose connection to use
  */
-export const saveSessionResults = async (session: any) => {
+export const saveSessionResults = async (session: any, connection: Connection) => {
   try {
+    // Get connection-specific models
+    const CardModel = connection.model('Card', Card.schema);
+    const SessionResultsModel = connection.model('SessionResults', SessionResults.schema);
+    
     // Get all cards from the personal ranking with their details
     const cardIds = session.personalRanking || [];
-    const cards = await Card.find({ uuid: { $in: cardIds } });
+    const cards = await CardModel.find({ uuid: { $in: cardIds } });
     
     // Create a map for quick card lookup
     const cardMap = new Map();
@@ -45,7 +53,7 @@ export const saveSessionResults = async (session: any) => {
     };
 
     // Check if results already exist for this session
-    const existingResults = await SessionResults.findOne({ sessionId: session.sessionId });
+    const existingResults = await SessionResultsModel.findOne({ sessionId: session.sessionId });
     
     if (existingResults) {
       // Update existing results
@@ -56,7 +64,7 @@ export const saveSessionResults = async (session: any) => {
       console.log(`Updated existing session results for ${session.sessionId}`);
     } else {
       // Create new session results
-      const sessionResults = new SessionResults({
+      const sessionResults = new SessionResultsModel({
         sessionId: session.sessionId,
         personalRanking: personalRankingWithDetails,
         sessionStatistics,
@@ -76,12 +84,19 @@ export const saveSessionResults = async (session: any) => {
 /**
  * Utility function to save play results to the SessionResults collection
  * This is used when a play is completed to create shareable results
+ * 
+ * @param play - The play object containing personalRanking and other data
+ * @param connection - The organization-specific mongoose connection to use
  */
-export const savePlayResults = async (play: any) => {
+export const savePlayResults = async (play: any, connection: Connection) => {
   try {
+    // Get connection-specific models
+    const CardModel = connection.model('Card', Card.schema);
+    const SessionResultsModel = connection.model('SessionResults', SessionResults.schema);
+
     // Get all cards from the personal ranking with their details
     const cardIds = play.personalRanking || [];
-    const cards = await Card.find({ uuid: { $in: cardIds } });
+    const cards = await CardModel.find({ uuid: { $in: cardIds } });
     
     // Create a map for quick card lookup
     const cardMap = new Map();
@@ -120,7 +135,7 @@ export const savePlayResults = async (play: any) => {
     };
 
     // Use atomic upsert to handle race conditions
-    const result = await SessionResults.findOneAndUpdate(
+    const result = await SessionResultsModel.findOneAndUpdate(
       { sessionId: play.playUuid },
       {
         $set: {

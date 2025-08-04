@@ -14,6 +14,7 @@ export interface Card {
     textContent?: string;
     background?: BackgroundStyle;
   };
+  cardSize?: string; // Card size in "width:height" format (e.g., "300:400")
   hashtags: string[]; // Array of #HASHTAG references to parent cards
   isActive: boolean;
   createdAt: Date;

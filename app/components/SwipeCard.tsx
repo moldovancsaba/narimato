@@ -12,6 +12,7 @@ import BaseCard from './BaseCard';
 interface CardContent {
   text?: string;    // Text content for text-type cards
   mediaUrl?: string; // URL for media content (images, videos)
+  cardSize: string; // Card size in "width:height" format (e.g., "300:400") - MANDATORY
 }
 
 /**
@@ -172,21 +173,21 @@ const SwipeCard = React.memo(function SwipeCard({
     if (swipeState !== 'idle' || swipeLock || !innerWidth) return;
     
     if (e.key === 'ArrowLeft') {
-      // Animate card off-screen to the left with rotation (very fast)
+      // Animate card off-screen to the left with rotation
       api.start({
         x: -innerWidth,  // Move completely off-screen
-        rot: -10,               // Slight counter-clockwise rotation
-        config: { duration: 150 }
+        rot: -10,        // Slight counter-clockwise rotation
+        config: { duration: 300 } // Increased duration for visibility
       });
       
       // Use consolidated swipe handler
       handleSwipeAction('left');
     } else if (e.key === 'ArrowRight') {
-      // Animate card off-screen to the right with rotation (very fast)
+      // Animate card off-screen to the right with rotation
       api.start({
         x: innerWidth,   // Move completely off-screen right
-        rot: 10,                // Slight clockwise rotation
-        config: { duration: 150 }
+        rot: 10,         // Slight clockwise rotation
+        config: { duration: 300 } // Increased duration for visibility
       });
       
       // Use consolidated swipe handler
@@ -243,7 +244,7 @@ const SwipeCard = React.memo(function SwipeCard({
         touchAction: 'none'
       }}
       className={`
-        absolute card-container
+        absolute w-full h-full
         ${swipeState === 'idle' ? 'cursor-grab active:cursor-grabbing' : ''}
         ${swipeState === 'loading' ? 'swipe-loading' : ''}
         ${swipeState === 'error' ? 'swipe-error' : ''}
@@ -286,6 +287,9 @@ const SwipeCard = React.memo(function SwipeCard({
         uuid={uuid}
         type={type}
         content={content}
+        size="grid"
+        className="aspect-adjust"
+        // Adjust card size based on card content size
       />
     </animated.div>
   );

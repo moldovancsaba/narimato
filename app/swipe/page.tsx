@@ -94,48 +94,19 @@ function SwipeContent({ onPlayIdChange }: SwipeContentProps) {
     };
   }, []);
 
-  // Add effect to handle page focus/visibility changes to reload deck state
-  useEffect(() => {
-    const handleFocus = async () => {
-      if (playId && typeof window !== 'undefined') {
-        try {
-          // Force reload play state when page becomes visible/focused
-          const validateResponse = await fetch(`/api/v1/session/validate?sessionId=${playId}&_t=${Date.now()}`);
-          if (validateResponse.ok) {
-            const validateData = await validateResponse.json();
-            if (validateData.isValid && validateData.session) {
-              setCards(validateData.session.deck || []);
-              // Find current card from play state
-              const playState = validateData.session;
-              const swipedCardIds = playState.swipes?.map((s: any) => s.cardId) || [];
-              const currentCardFromState = playState.deck?.find((card: Card) => !swipedCardIds.includes(card.uuid));
-              setCurrentCard(currentCardFromState || null);
-            }
-          }
-        } catch (error) {
-          console.warn('Failed to refresh deck state:', error);
-        }
-      }
-    };
+  // Focus/visibility handler removed to prevent infinite validation loops
 
-    window.addEventListener('focus', handleFocus);
-    window.addEventListener('visibilitychange', handleFocus);
+  useEffect(() => {
+    let isMounted = true; // React Strict Mode guard
     
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-      window.removeEventListener('visibilitychange', handleFocus);
-    };
-  }, [playId, cards]);
-
-  useEffect(() => {
     async function initPlay() {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && isMounted) {
         console.log('🔄 Initializing play session...');
 
         try {
           const storedPlayId = localStorage.getItem(SESSION_FIELDS.ID);
 
-          if (storedPlayId) {
+          if (storedPlayId && isMounted) {
             console.log('📝 Found stored play ID, validating session:', storedPlayId);
             
             // CRITICAL: Disable all caching for session validation to prevent stale state
@@ -148,6 +119,8 @@ function SwipeContent({ onPlayIdChange }: SwipeContentProps) {
               }
             });
             
+            if (!isMounted) return; // Check if component still mounted
+            
             if (!validateResponse.ok) {
               console.warn('❌ Session validation failed, clearing all data and redirecting to home');
               // Clear ALL possible session data
@@ -158,6 +131,9 @@ function SwipeContent({ onPlayIdChange }: SwipeContentProps) {
             }
 
             const validateData = await validateResponse.json();
+            
+            if (!isMounted) return; // Check if component still mounted
+            
             console.log('✅ Session validation response:', {
               isValid: validateData.isValid,
               status: validateData.status,
@@ -211,11 +187,13 @@ function SwipeContent({ onPlayIdChange }: SwipeContentProps) {
               }
             }
 
-            // Set state from server data
-            setPlayId(storedPlayId);
-            setCards(serverDeck);
-            setCurrentCard(currentCardFromServer);
-            setIsInitialized(true);
+            // Only set state if component is still mounted
+            if (isMounted) {
+              setPlayId(storedPlayId);
+              setCards(serverDeck);
+              setCurrentCard(currentCardFromServer);
+              setIsInitialized(true);
+            }
             
             console.log('🎯 Session restored from server state:', {
               playId: storedPlayId,
@@ -227,21 +205,30 @@ function SwipeContent({ onPlayIdChange }: SwipeContentProps) {
           }
 
           // No stored play ID found, redirect to home to start a new play
-          console.log('🏠 No stored play ID found, redirecting to home page');
-          router.push('/');
+          if (isMounted) {
+            console.log('🏠 No stored play ID found, redirecting to home page');
+            router.push('/');
+          }
           return;
         } catch (error) {
           console.error('💥 Play initialization error:', error);
           // On any error, clear everything and redirect to home
-          localStorage.clear();
-          sessionStorage.clear();
-          router.push('/');
+          if (isMounted) {
+            localStorage.clear();
+            sessionStorage.clear();
+            router.push('/');
+          }
           return;
         }
       }
     }
 
     initPlay();
+    
+    // Cleanup function to prevent state updates on unmounted component
+    return () => {
+      isMounted = false;
+    };
   }, [router]); // Run once on mount
 
   const handleSwipe = useCallback(async (direction: 'left' | 'right') => {
@@ -343,7 +330,7 @@ function SwipeContent({ onPlayIdChange }: SwipeContentProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [playId, currentCard, cards, isLoading, router]);
+  }, [playId, currentCard, isLoading, router]); // Removed 'cards' dependency to prevent infinite loop
 
   // Handle error state
   if (error) {
@@ -416,9 +403,10 @@ function SwipeContent({ onPlayIdChange }: SwipeContentProps) {
                 key={createUniqueKey('swipe-card', currentCard[CARD_FIELDS.UUID], Date.now())}
                 uuid={currentCard.uuid}
                 type="media"
-                content={{
-                  mediaUrl: currentCard.body?.imageUrl
-                }}
+              content={{
+                  mediaUrl: currentCard.body?.imageUrl,
+                  cardSize: currentCard.cardSize || '300:400' // Fallback aspect ratio
+              }}
                 title={currentCard.name}
                 onSwipe={async (dir) => {
                   if (dir === 'left') {

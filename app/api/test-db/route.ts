@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/app/lib/utils/db';
+import { connectMasterDb } from '@/app/lib/utils/db';
 
 export async function GET() {
   try {
@@ -7,13 +7,11 @@ export async function GET() {
     console.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
     console.log('MONGODB_URI value:', process.env.MONGODB_URI ? 'Set (length: ' + process.env.MONGODB_URI.length + ')' : 'Not set');
     
-    const mongoose = await dbConnect();
+    await connectMasterDb();
     
     return NextResponse.json({
       success: true,
-      message: 'Database connection successful',
-      database: mongoose.connection.db?.databaseName,
-      readyState: mongoose.connection.readyState,
+      message: 'Master database connection successful',
       envVarExists: !!process.env.MONGODB_URI
     });
   } catch (error) {

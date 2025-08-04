@@ -139,7 +139,7 @@ export default function CardManagement({ deckHashtag }: CardManagementProps) {
         <img
           src={card.mediaUrl}
           alt={card.text}
-          className="w-full h-24 object-cover rounded"
+          className="w-full h-24 object-contain rounded"
         />
       );
     }

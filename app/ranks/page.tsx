@@ -9,6 +9,8 @@ interface Deck {
   tag: string;
   cardCount: number;
   displayName: string;
+  imageUrl?: string;
+  cardSize?: string;
 }
 
 export default function RanksPage() {
@@ -32,6 +34,8 @@ export default function RanksPage() {
             tag: card.name,
             cardCount: card.childCount || 0,
             displayName: card.body?.textContent || card.name.substring(1),
+            imageUrl: card.body?.imageUrl, // Add image URL
+            cardSize: card.cardSize, // Add card size for aspect ratio
           }));
           setDecks(mappedDecks);
         }
@@ -94,6 +98,8 @@ export default function RanksPage() {
               cardCount={deck.cardCount}
               onClick={() => handleDeckSelect(deck.tag)}
               showRankingsIcon={true}
+              imageUrl={deck.imageUrl}
+              cardSize={deck.cardSize}
             />
           ))}
         </div>

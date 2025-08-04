@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import dbConnect from '@/app/lib/utils/db';
+import { createOrgAwareRoute } from '@/app/lib/middleware/organization';
+import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { Card, ICard } from '@/app/lib/models/Card';
 import { Play } from '@/app/lib/models/Play';
 import { getChildren, isPlayable } from '@/app/lib/utils/cardHierarchy';
@@ -9,9 +10,14 @@ import { savePlayResults } from '@/app/lib/utils/sessionResultsUtils';
 
 const PLAY_EXPIRY_HOURS = 24;
 
-export async function POST(request: NextRequest) {
+export const POST = createOrgAwareRoute(async (request, { organizationId }) => {
   try {
-    await dbConnect();
+    const connectDb = createOrgDbConnect(organizationId);
+    const connection = await connectDb();
+    
+    // Get models bound to this specific connection
+    const CardModel = connection.model('Card', Card.schema);
+    const PlayModel = connection.model('Play', Play.schema);
 
     // Parse request body to get deck selection and session info
     const body = await request.json().catch(() => ({}));
@@ -29,7 +35,7 @@ export async function POST(request: NextRequest) {
     const cardName = selectedCardName.startsWith('#') ? selectedCardName : `#${selectedCardName}`;
 
     // Check if the card exists and is playable (has children)
-    const parentCard = await Card.findOne({ name: cardName, isActive: true });
+    const parentCard = await CardModel.findOne({ name: cardName, isActive: true });
     if (!parentCard) {
       return new NextResponse(
         JSON.stringify({ error: 'Card not found' }),
@@ -37,7 +43,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const playableCheck = await isPlayable(cardName);
+    const playableCheck = await isPlayable(organizationId, cardName);
     if (!playableCheck) {
       return new NextResponse(
         JSON.stringify({ error: 'Card has no children to play' }),
@@ -46,7 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get all children cards for this parent
-    const childCards = await getChildren(cardName);
+    const childCards = await getChildren(organizationId, cardName);
     
     // Shuffle the cards randomly
     const cards = childCards.sort(() => Math.random() - 0.5);
@@ -82,7 +88,7 @@ export async function POST(request: NextRequest) {
     // CRITICAL: Force close ALL existing active plays for this session before creating new
     // This ensures clean session state and prevents card state mismatches
     if (sessionId) {
-      const activePlays = await Play.find({ sessionId, status: 'active' });
+      const activePlays = await PlayModel.find({ sessionId, status: 'active' });
       console.log(`🧹 Found ${activePlays.length} active plays to close for session ${sessionId?.substring(0, 8)}...`);
       
       for (const activePlay of activePlays) {
@@ -94,7 +100,7 @@ export async function POST(request: NextRequest) {
         activePlay.expiresAt = noExpiry;
         await activePlay.save();
         try {
-          await savePlayResults(activePlay);
+          await savePlayResults(activePlay, connection);
           console.log(`✅ Hard closed existing active play: ${activePlay.playUuid?.substring(0, 8)}...`);
         } catch (saveError) {
           console.warn(`⚠️ Failed to save results for closed play ${activePlay.playUuid?.substring(0, 8)}...:`, saveError);
@@ -103,7 +109,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new play session
-    const play = new Play({
+    const play = new PlayModel({
       playUuid,
       sessionId,
       deckUuid,
@@ -157,4 +163,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

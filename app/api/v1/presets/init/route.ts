@@ -1,12 +1,22 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/app/lib/utils/db';
+import { getOrganizationContext } from '@/app/lib/middleware/organization';
+import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { FontPreset } from '@/app/lib/models/FontPreset';
 import { BackgroundPreset } from '@/app/lib/models/BackgroundPreset';
 
 // POST - Initialize system presets
-export async function POST() {
+export async function POST(request: Request) {
   try {
-    await dbConnect();
+    // Extract organization context
+    const orgContext = await getOrganizationContext(request);
+    const organizationId = orgContext?.organizationId || 'default';
+
+    const connectDb = createOrgDbConnect(organizationId);
+    const connection = await connectDb();
+
+    // Use connection-specific models
+    const FontPresetModel = connection.model('FontPreset', FontPreset.schema);
+    const BackgroundPresetModel = connection.model('BackgroundPreset', BackgroundPreset.schema);
     
     // Default font presets
     const defaultFontPresets = [
@@ -32,9 +42,9 @@ export async function POST() {
     const fontResults = [];
     for (const preset of defaultFontPresets) {
       try {
-        const existingFont = await FontPreset.findOne({ name: preset.name });
+        const existingFont = await FontPresetModel.findOne({ name: preset.name });
         if (!existingFont) {
-          const newFont = new FontPreset(preset);
+          const newFont = new FontPresetModel(preset);
           await newFont.save();
           fontResults.push(`Created font preset: ${preset.name}`);
         } else {
@@ -49,9 +59,9 @@ export async function POST() {
     const backgroundResults = [];
     for (const preset of defaultBackgroundPresets) {
       try {
-        const existingBackground = await BackgroundPreset.findOne({ name: preset.name });
+        const existingBackground = await BackgroundPresetModel.findOne({ name: preset.name });
         if (!existingBackground) {
-          const newBackground = new BackgroundPreset(preset);
+          const newBackground = new BackgroundPresetModel(preset);
           await newBackground.save();
           backgroundResults.push(`Created background preset: ${preset.name}`);
         } else {

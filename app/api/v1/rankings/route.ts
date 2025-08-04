@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/app/lib/utils/db'
+import { getOrganizationContext } from '@/app/lib/middleware/organization';
+import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { PersonalRanking } from '@/app/lib/models/PersonalRanking';
 import { RankingEntity } from '@/app/lib/models/RankingEntity';
 import { Card } from '@/app/lib/types/card';
@@ -18,9 +19,17 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    await dbConnect();
+    // Get organization context
+    const orgContext = await getOrganizationContext(req);
+    const organizationId = orgContext?.organizationId || 'default';
 
-    const ranking = await PersonalRanking.findOne({ sessionId, userId });
+    const connectDb = createOrgDbConnect(organizationId);
+    const connection = await connectDb();
+    
+    // Register connection-specific models
+    const PersonalRankingModel = connection.model('PersonalRanking', PersonalRanking.schema);
+
+    const ranking = await PersonalRankingModel.findOne({ sessionId, userId });
     if (!ranking) {
       return NextResponse.json(
         { error: 'Ranking not found' },
@@ -61,12 +70,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    await dbConnect();
+    // Get organization context
+    const orgContext = await getOrganizationContext(req);
+    const organizationId = orgContext?.organizationId || 'default';
+
+    const connectDb = createOrgDbConnect(organizationId);
+    const connection = await connectDb();
+    
+    // Register connection-specific models
+    const PersonalRankingModel = connection.model('PersonalRanking', PersonalRanking.schema);
 
     // Find or create ranking
-    let ranking = await PersonalRanking.findOne({ sessionId, userId });
+    let ranking = await PersonalRankingModel.findOne({ sessionId, userId });
     if (!ranking) {
-      ranking = new PersonalRanking({
+      ranking = new PersonalRankingModel({
         sessionId,
         userId,
         rankedCards: []

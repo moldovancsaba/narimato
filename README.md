@@ -1,6 +1,6 @@
 # NARIMATO
 
-![Version](https://img.shields.io/badge/version-3.6.4-blue.svg)
+![Version](https://img.shields.io/badge/version-3.7.0-blue.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-15.4.4-black.svg)
 ![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)
 ![MongoDB](https://img.shields.io/badge/MongoDB-7.0+-green.svg)
@@ -8,7 +8,7 @@
 
 NARIMATO is an anonymous, session-based card ranking application built with Next.js, MongoDB, and sophisticated binary search ranking algorithms. Global rankings are powered by ELO rating system for accurate skill-based card comparisons.
 
-**Current Version:** 3.6.4 *(Play-Based Architecture with Global Rankings Fix)*
+**Current Version:** 3.7.0 *(Comprehensive Card Management Refactor)*
 
 ## ✨ Key Features
 
@@ -27,7 +27,28 @@ NARIMATO is an anonymous, session-based card ranking application built with Next
 - **Dark Mode Support**: Full dark mode for enhanced visual comfort
 - **Comprehensive Error Handling**: Graceful degradation and automatic recovery
 
-## 🔥 Recent Improvements (v3.6.3)
+## 🔥 Recent Improvements (v3.7.0)
+
+### Comprehensive Card Management Refactor
+- **Unified Card Editor**: Complete refactor merging duplicate components into a single, streamlined interface supporting both creation and editing modes
+- **Enhanced MongoDB Schema**: Optimized Card model with improved validation, indexing, and comprehensive documentation for better performance and maintainability
+- **Refactored Backend APIs**: Standardized `/api/v1/cards` endpoints with proper RESTful design (POST for creation, PATCH for updates) and enhanced Zod validation
+- **Improved Error Handling**: Comprehensive error handling with structured responses and emoji-prefixed logging for better debugging
+- **Enhanced Type Safety**: Complete TypeScript coverage with standardized schemas for requests and responses
+
+### Database and Performance Enhancements
+- **Optimized Indexes**: Added performance indexes for hashtag hierarchy queries, text search, and aspect ratio compatibility
+- **Enhanced Validation**: Comprehensive field validation with referential integrity checks for parent-child hashtag relationships
+- **Improved Logging**: Structured logging with visual emoji markers for easy operation tracking and debugging
+- **Standardized Responses**: Unified API response format with meta fields (isPlayable, isRoot, childCount) computed consistently
+
+### Card Editor Improvements
+- **Live Preview Integration**: Real-time canvas-based preview generation with proper image loading and text rendering
+- **Enhanced Form Validation**: Client-side and server-side validation with detailed error messages and field-specific feedback
+- **Improved User Experience**: Streamlined interface with consistent typography, layout, and responsive design
+- **Legacy Component Cleanup**: Removed redundant CardEditor component, consolidating all functionality into the unified editor
+
+## 🔥 Previous Improvements (v3.6.3)
 
 ### Play-Based Architecture Implementation
 - **Session Management Overhaul**: Migrated from deck-based Sessions to Play-based architecture for better state management

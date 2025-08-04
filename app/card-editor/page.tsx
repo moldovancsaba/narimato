@@ -4,6 +4,7 @@ import React, { useState, useCallback, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import PageLayout from '../components/PageLayout';
+import HashtagSelector from '../components/HashtagSelector';
 
 // Types for presets
 interface FontPreset {
@@ -34,13 +35,14 @@ interface Card {
       textColor?: string;
     };
   };
+  cardSize?: string; // Card size in "width:height" format (e.g., "300:400")
   hashtags: string[]; // Parent relationships
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
-function CardEditorContent() {
+function CardEditor() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const cardUuid = searchParams.get('uuid');
@@ -58,6 +60,8 @@ function CardEditorContent() {
   const [textContent, setTextContent] = useState(''); // text - not required
   const [cssBackground, setCssBackground] = useState('linear-gradient(135deg, #667eea 0%, #764ba2 100%)'); // css bg - default
   const [cardSize, setCardSize] = useState('300:400'); // card size - width:height format
+  const [imageWidth, setImageWidth] = useState(0);
+  const [imageHeight, setImageHeight] = useState(0);
   
   // Typography
   const [selectedFont, setSelectedFont] = useState('Arial, sans-serif');
@@ -95,10 +99,10 @@ function CardEditorContent() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Load initial data
+// Load initial data and handle URL change
   useEffect(() => {
     loadInitialData();
-  }, []);
+  }, [cardUuid]);
 
   const loadInitialData = async () => {
     setLoading(true);
@@ -145,6 +149,7 @@ function CardEditorContent() {
             setImageUrl(card.body?.imageUrl || '');
             setTextContent(card.body?.textContent || '');
             setCssBackground(card.body?.background?.value || cssBackground);
+            setCardSize(card.cardSize || '300:400'); // Load saved card size from database
             
             // Find children cards
             const children = allCards.filter(c => c.hashtags.includes(card.name));
@@ -152,17 +157,16 @@ function CardEditorContent() {
           }
         }
       }
-      
     } catch (err) {
-      setError('Failed to load initial data');
+      setError('Failed to load data');
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Generate PNG preview
-  const generatePngPreview = useCallback(async () => {
+// Generate SVG and PNG preview
+const generatePreview = useCallback(async () => {
     try {
       const [width, height] = cardSize.split(':').map(n => parseInt(n) || 300);
       
@@ -180,7 +184,12 @@ function CardEditorContent() {
           img.crossOrigin = 'anonymous';
           
           await new Promise((resolve, reject) => {
-            img.onload = () => resolve(img);
+img.onload = () => {
+  setImageWidth(img.naturalWidth);
+  setImageHeight(img.naturalHeight);
+  setCardSize(`${img.naturalWidth}:${img.naturalHeight}`);
+  resolve(img);
+};
             img.onerror = reject;
             img.src = imageUrl;
           });
@@ -296,8 +305,34 @@ function CardEditorContent() {
   }, [cardSize, imageUrl, cssBackground, textContent, selectedFont, fontSize, textColor, horizontalAlign, verticalAlign, padding]);
 
   useEffect(() => {
-    generatePngPreview();
-  }, [generatePngPreview]);
+    generatePreview();
+  }, [generatePreview]);
+
+  // Detect image dimensions when image URL changes
+  useEffect(() => {
+    if (!imageUrl || !imageUrl.trim()) {
+      setImageWidth(0);
+      setImageHeight(0);
+      return;
+    }
+
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      setImageWidth(img.naturalWidth);
+      setImageHeight(img.naturalHeight);
+      // Only update cardSize if we're not editing (to preserve saved aspect ratios)
+      if (!isEditing) {
+        setCardSize(`${img.naturalWidth}:${img.naturalHeight}`);
+      }
+    };
+    img.onerror = () => {
+      console.error('Failed to load image for dimension detection:', imageUrl);
+      setImageWidth(0);
+      setImageHeight(0);
+    };
+    img.src = imageUrl;
+  }, [imageUrl, isEditing]);
 
   // Get hashtag suggestions
   const getHashtagSuggestions = useCallback((query: string) => {
@@ -383,6 +418,7 @@ function CardEditorContent() {
             }
           },
           hashtags: cardHashtags,
+          cardSize: cardSize, // Include cardSize for persistence
           isActive: true
         }),
       });
@@ -412,6 +448,41 @@ function CardEditorContent() {
     }
   };
 
+  // Save card size changes
+  const handleSaveCardSize = async () => {
+    if (!isEditing || !cardUuid) {
+      setError('Cannot save card size - not in editing mode');
+      return;
+    }
+
+    try {
+      setError('');
+      
+      const response = await fetch(`/api/v1/cards/${cardUuid}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cardSize: cardSize // Save only card size
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save card size');
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        setSuccess('Card size saved successfully!');
+      } else {
+        throw new Error(result.error || 'Failed to save card size');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save card size');
+    }
+  };
+
   // Update action - modify only name and hashtags
   const handleUpdate = async () => {
     if (!isEditing || !cardUuid || !cardName.trim()) {
@@ -429,7 +500,8 @@ function CardEditorContent() {
         },
         body: JSON.stringify({
           name: cardName.startsWith('#') ? cardName : `#${cardName}`,
-          hashtags: cardHashtags
+          hashtags: cardHashtags,
+          cardSize: cardSize // Include cardSize for persistence
         }),
       });
 
@@ -473,6 +545,7 @@ function CardEditorContent() {
           }
         },
         hashtags: cardHashtags,
+        cardSize: cardSize, // Include cardSize for persistence
         isActive: true
       };
       
@@ -678,50 +751,16 @@ function CardEditorContent() {
                 />
               </div>
 
-              {/* Hashtags with predictive filtering */}
-              <div>
-                <label className="form-label">Hashtags (top 10 suggestions)</label>
-                <input
-                  type="text"
-                  value={hashtagInput}
-                  onChange={(e) => handleHashtagInputChange(e.target.value)}
-                  className="form-input"
-                  placeholder="Search for hashtags..."
-                />
-                
-                {/* Hashtag suggestions */}
-                {hashtagSuggestions.length > 0 && (
-                  <div className="mt-2 max-h-32 overflow-y-auto border rounded bg-white dark:bg-gray-800">
-                    {hashtagSuggestions.map((suggestion, index) => (
-                      <button
-                        key={index}
-                        onClick={() => addHashtag(suggestion)}
-                        className="block w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
-                      >
-                        {suggestion}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                
-                {/* Selected hashtags */}
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {cardHashtags.map((hashtag, index) => (
-                    <span
-                      key={index}
-                      className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-sm flex items-center gap-1"
-                    >
-                      {hashtag}
-                      <button
-                        onClick={() => removeHashtag(hashtag)}
-                        className="text-blue-600 hover:text-blue-800 ml-1"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </div>
+              {/* Hashtags with unified component */}
+              <HashtagSelector
+                availableHashtags={allCards.map(card => card.name)}
+                selectedHashtags={cardHashtags}
+                onHashtagsChange={setCardHashtags}
+                label="Hashtags (top 10 suggestions)"
+                placeholder="Search for hashtags..."
+                maxSuggestions={10}
+                excludeSelected={true}
+              />
             </div>
           </div>
 
@@ -770,16 +809,30 @@ function CardEditorContent() {
                 </select>
               </div>
 
-              {/* Card Size (width:height format) */}
+              {/* Card Size (width:height format) with save button */}
               <div>
                 <label className="form-label">Card Size (width:height)</label>
-                <input
-                  type="text"
-                  value={cardSize}
-                  onChange={(e) => setCardSize(e.target.value)}
-                  className="form-input"
-                  placeholder="300:400"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={cardSize}
+                    onChange={(e) => setCardSize(e.target.value)}
+                    className="form-input flex-1"
+                    placeholder="300:400"
+                  />
+                  {isEditing && (
+                    <button
+                      onClick={handleSaveCardSize}
+                      className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm whitespace-nowrap"
+                      title="Save card size to database"
+                    >
+                      Save Size
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-muted mt-1">
+                  Format: width:height (e.g., 300:400). {isEditing ? 'Click "Save Size" to persist changes.' : ''}
+                </p>
               </div>
             </div>
           </div>
@@ -1085,42 +1138,21 @@ function CardEditorContent() {
                 )}
               </div>
               
-              {/* Search cards */}
-              <div>
-                <label className="form-label">Search Cards</label>
-                <input
-                  type="text"
-                  value={cardSearchQuery}
-                  onChange={(e) => {
-                    setCardSearchQuery(e.target.value);
-                    const suggestions = allCards.filter(card => 
-                      card.name.toLowerCase().includes(e.target.value.toLowerCase())
-                    ).slice(0, 10);
-                    setCardSearchSuggestions(suggestions);
-                  }}
-                  className="form-input"
-                  placeholder="Search cards..."
-                />
-                
-                {/* Search results with Add buttons */}
-                {cardSearchSuggestions.length > 0 && (
-                  <div className="mt-2 max-h-32 overflow-y-auto border rounded bg-white dark:bg-gray-800">
-                    {cardSearchSuggestions.map((card) => (
-                      <div key={card.uuid} className="flex justify-between items-center px-3 py-2 text-sm">
-                        <span className="truncate mr-2">{card.name}</span>
-                        <button
-                          onClick={() => {
-                            // Logic to add current card's hashtag to this card
-                          }}
-                          className="btn btn-sm btn-success"
-                        >
-                          Add
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {/* Search cards - use unified HashtagSelector for management */}
+              <HashtagSelector
+                availableHashtags={allCards.map(card => card.name).filter(name => name !== cardName)}
+                selectedHashtags={childrenCards.map(card => card.name)}
+                onHashtagsChange={(selectedNames) => {
+                  // Update children cards based on selected hashtags
+                  const newChildren = allCards.filter(card => selectedNames.includes(card.name));
+                  setChildrenCards(newChildren);
+                }}
+                label="Add Card Relationships"
+                placeholder="Search cards to add relationships..."
+                maxSuggestions={10}
+                excludeSelected={true}
+                className="mt-2"
+              />
             </div>
           </div>
         </div>
@@ -1137,7 +1169,7 @@ export default function CardEditorPage() {
         <span className="ml-2 text-lg">Loading editor...</span>
       </div>
     }>
-      <CardEditorContent />
+      <CardEditor />
     </Suspense>
   );
 }

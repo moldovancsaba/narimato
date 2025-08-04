@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import dbConnect from '@/app/lib/utils/db';
+import { getOrganizationContext } from '@/app/lib/middleware/organization';
+import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { Card } from '@/app/lib/models/Card';
 import { GlobalRanking } from '@/app/lib/models/GlobalRanking';
 import { CreateCardSchema } from '@/app/lib/validation/schemas';
@@ -12,13 +13,22 @@ export async function POST(request: Request) {
     const body = await request.json();
     const validatedData = CreateCardSchema.parse(body);
 
-    await dbConnect();
+    // Get organization context
+    const orgContext = await getOrganizationContext(request);
+    const organizationId = orgContext?.organizationId || 'default';
+
+    const connectDb = createOrgDbConnect(organizationId);
+    const connection = await connectDb();
+    
+    // Register connection-specific models
+    const CardModel = connection.model('Card', Card.schema);
+    const GlobalRankingModel = connection.model('GlobalRanking', GlobalRanking.schema);
 
     // Use provided UUID or generate new one
     const uuid = validatedData.uuid && validateUUID(validatedData.uuid) ? validatedData.uuid : uuidv4();
     
     // Check for UUID uniqueness
-    const existingCard = await Card.findOne({ uuid });
+    const existingCard = await CardModel.findOne({ uuid });
     if (existingCard) {
       return NextResponse.json(
         { error: 'Card with this UUID already exists' },
@@ -27,7 +37,7 @@ export async function POST(request: Request) {
     }
     
     // Check for name uniqueness (hashtag must be unique)
-    const existingName = await Card.findOne({ name: validatedData.name });
+    const existingName = await CardModel.findOne({ name: validatedData.name });
     if (existingName) {
       return NextResponse.json(
         { error: 'Card with this name (hashtag) already exists' },
@@ -35,7 +45,7 @@ export async function POST(request: Request) {
       );
     }
     
-    const card = new Card({
+    const card = new CardModel({
       uuid,
       ...validatedData,
       isActive: true,
@@ -48,9 +58,9 @@ export async function POST(request: Request) {
     
     // ✅ CRITICAL FIX: Initialize ELO rating for new card to prevent ranking sync issues
     try {
-      const existingRanking = await GlobalRanking.findOne({ cardId: uuid });
+      const existingRanking = await GlobalRankingModel.findOne({ cardId: uuid });
       if (!existingRanking) {
-        const newRanking = new GlobalRanking({
+        const newRanking = new GlobalRankingModel({
           cardId: uuid,
           eloRating: 1000, // Default ELO rating
           totalScore: 0,

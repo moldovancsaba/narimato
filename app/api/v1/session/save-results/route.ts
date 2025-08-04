@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/app/lib/utils/db';
+import { getOrganizationContext } from '@/app/lib/middleware/organization';
+import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { SessionResults } from '@/app/lib/models/SessionResults';
 import { Session } from '@/app/lib/models/Session';
 import { Card } from '@/app/lib/models/Card';
@@ -7,7 +8,17 @@ import { SESSION_FIELDS } from '@/app/lib/constants/fieldNames';
 
 export async function POST(request: NextRequest) {
   try {
-    await dbConnect();
+    // Get organization context
+    const orgContext = await getOrganizationContext(request);
+    const organizationId = orgContext?.organizationId || 'default';
+
+    const connectDb = createOrgDbConnect(organizationId);
+    const connection = await connectDb();
+    
+    // Register connection-specific models
+    const SessionResultsModel = connection.model('SessionResults', SessionResults.schema);
+    const SessionModel = connection.model('Session', Session.schema);
+    const CardModel = connection.model('Card', Card.schema);
     
     const body = await request.json();
     const sessionId = body[SESSION_FIELDS.ID];
@@ -20,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the completed session from the database
-    const session = await Session.findOne({ sessionId }).populate('personalRanking');
+    const session = await SessionModel.findOne({ sessionId }).populate('personalRanking');
     
     if (!session || session.status !== 'completed') {
       return NextResponse.json(
@@ -31,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     // Get all cards from the personal ranking with their details
     const cardIds = session.personalRanking || [];
-    const cards = await Card.find({ uuid: { $in: cardIds } });
+    const cards = await CardModel.find({ uuid: { $in: cardIds } });
     
     // Create a map for quick card lookup
     const cardMap = new Map();
@@ -65,7 +76,7 @@ export async function POST(request: NextRequest) {
     };
 
     // Check if results already exist for this session
-    const existingResults = await SessionResults.findOne({ sessionId });
+    const existingResults = await SessionResultsModel.findOne({ sessionId });
     
     if (existingResults) {
       // Update existing results
@@ -82,7 +93,7 @@ export async function POST(request: NextRequest) {
       });
     } else {
       // Create new session results
-      const sessionResults = new SessionResults({
+      const sessionResults = new SessionResultsModel({
         sessionId,
         personalRanking: personalRankingWithDetails,
         sessionStatistics,

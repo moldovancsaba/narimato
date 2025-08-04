@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/app/lib/utils/db';
+import { getOrganizationContext } from '@/app/lib/middleware/organization';
+import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { BackgroundPreset } from '@/app/lib/models/BackgroundPreset';
 
 // GET - Fetch all background presets
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    await dbConnect();
+    const orgContext = await getOrganizationContext(request);
+    const organizationId = orgContext?.organizationId || 'default';
+
+    const connectDb = createOrgDbConnect(organizationId);
+    const connection = await connectDb();
+    const BackgroundPresetModel = connection.model('BackgroundPreset', BackgroundPreset.schema);
     
-    const presets = await BackgroundPreset.find({}).sort({ isSystem: -1, createdAt: 1 });
+    const presets = await BackgroundPresetModel.find({}).sort({ isSystem: -1, createdAt: 1 });
     
     return NextResponse.json({
       success: true,
@@ -28,7 +34,12 @@ export async function GET() {
 // POST - Create a new background preset
 export async function POST(request: NextRequest) {
   try {
-    await dbConnect();
+    const orgContext = await getOrganizationContext(request);
+    const organizationId = orgContext?.organizationId || 'default';
+
+    const connectDb = createOrgDbConnect(organizationId);
+    const connection = await connectDb();
+    const BackgroundPresetModel = connection.model('BackgroundPreset', BackgroundPreset.schema);
     
     const body = await request.json();
     const { name, value } = body;
@@ -43,7 +54,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const preset = new BackgroundPreset({
+    const preset = new BackgroundPresetModel({
       name: name.trim(),
       value: value.trim(),
       isSystem: false
@@ -81,7 +92,12 @@ export async function POST(request: NextRequest) {
 // DELETE - Delete a background preset by name
 export async function DELETE(request: NextRequest) {
   try {
-    await dbConnect();
+    const orgContext = await getOrganizationContext(request);
+    const organizationId = orgContext?.organizationId || 'default';
+
+    const connectDb = createOrgDbConnect(organizationId);
+    const connection = await connectDb();
+    const BackgroundPresetModel = connection.model('BackgroundPreset', BackgroundPreset.schema);
     
     const url = new URL(request.url);
     const name = url.searchParams.get('name');
@@ -96,7 +112,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
     
-    const preset = await BackgroundPreset.findOneAndDelete({ 
+    const preset = await BackgroundPresetModel.findOneAndDelete({ 
       name,
       isSystem: false // Only allow deletion of custom presets
     });

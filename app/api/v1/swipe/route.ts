@@ -1,132 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/app/lib/utils/db';
+import { createOrgAwareRoute } from '@/app/lib/middleware/organization';
+import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { Play } from '@/app/lib/models/Play';
 import { Card } from '@/app/lib/models/Card';
 import { SwipeRequestSchema } from '@/app/lib/validation/schemas';
 import { GlobalRanking } from '@/app/lib/models/GlobalRanking';
 import { SESSION_FIELDS, CARD_FIELDS, VOTE_FIELDS, API_FIELDS, PLAY_FIELDS } from '@/app/lib/constants/fieldNames';
 import { validateSessionId, validateUUID } from '@/app/lib/utils/fieldValidation';
+import { savePlayResults } from '@/app/lib/utils/sessionResultsUtils';
 
-/**
- * Automatically saves play results when a play is completed
- * @param play - The completed play
- * Updates to include robust error handling and retry mechanisms
- */
-const savePlayResults = async (play: any) => {
-  try {
-    const { SessionResults } = await import('@/app/lib/models/SessionResults');
-    
-    console.log('🔍 savePlayResults called with play data:', {
-      playUuid: play.playUuid,
-      personalRanking: play.personalRanking,
-      personalRankingLength: play.personalRanking?.length || 0,
-      totalCards: play.totalCards,
-      swipesCount: play.swipes?.length || 0,
-      votesCount: play.votes?.length || 0,
-      status: play.status,
-      state: play.state
-    });
-    
-    // Get all cards from the personal ranking with their details
-    const cardIds = play.personalRanking || [];
-    const cards = await Card.find({ uuid: { $in: cardIds } });
-    
-    console.log('🃏 Found cards for ranking:', {
-      requestedCardIds: cardIds,
-      foundCards: cards.length,
-      foundCardIds: cards.map(c => c.uuid)
-    });
-    
-    // Create a map for quick card lookup
-    const cardMap = new Map();
-    cards.forEach(card => {
-      // Derive type from card content - if it has imageUrl it's media, otherwise text
-      const cardType = card.body?.imageUrl ? 'media' : 'text';
-      
-      cardMap.set(card.uuid, {
-        uuid: card.uuid,
-        type: cardType, // Add derived type field
-        body: {
-          textContent: card.body?.textContent,
-          imageUrl: card.body?.imageUrl
-        },
-        content: {
-          text: card.body?.textContent,
-          mediaUrl: card.body?.imageUrl
-        },
-        title: card.name
-      });
-    });
-
-    // Build the personal ranking with card details
-    const personalRankingWithDetails = cardIds.map((cardId: string, index: number) => {
-      const card = cardMap.get(cardId);
-      if (!card) {
-        console.error(`⚠️  MISSING CARD in savePlayResults (swipe): Card ${cardId} from personalRanking not found in database query`, {
-          cardId,
-          allRequestedIds: cardIds,
-          foundCardIds: cards.map(c => c.uuid),
-          missingCards: cardIds.filter((id: string) => !cardMap.has(id))
-        });
-      }
-      return {
-        cardId,
-        card,
-        rank: index + 1
-      };
-    }).filter((item: any) => {
-      if (!item.card) {
-        console.error(`😱 FILTERING OUT CARD from results (swipe): ${item.cardId} - not found in database`);
-        return false;
-      }
-      return true;
-    });
-    
-    console.log(`📊 Final personalRankingWithDetails (swipe):`, {
-      originalRankingLength: cardIds.length,
-      finalRankingLength: personalRankingWithDetails.length,
-      filteredOutCount: cardIds.length - personalRankingWithDetails.length,
-      finalRanking: personalRankingWithDetails.map((item: any) => ({cardId: item.cardId, rank: item.rank}))
-    });
-
-    // Calculate play statistics
-    const sessionStatistics = {
-      totalCards: play.totalCards || 0,
-      cardsRanked: play.personalRanking?.length || 0,
-      cardsDiscarded: (play.totalCards || 0) - (play.personalRanking?.length || 0),
-      totalSwipes: play.swipes?.length || 0,
-      totalVotes: play.votes?.length || 0,
-      completionRate: play.totalCards ? Math.round(((play.personalRanking?.length || 0) / play.totalCards) * 100) : 0
-    };
-
-    // Check if results already exist for this play (use playUuid as sessionId for now)
-    const existingResults = await SessionResults.findOne({ sessionId: play.playUuid });
-    
-    if (existingResults) {
-      // Update existing results
-      existingResults.personalRanking = personalRankingWithDetails;
-      existingResults.sessionStatistics = sessionStatistics;
-      existingResults.updatedAt = new Date();
-      await existingResults.save();
-      console.log(`Updated existing play results for ${play.playUuid}`);
-    } else {
-      // Create new play results (use playUuid as sessionId for compatibility)
-      const playResults = new SessionResults({
-        sessionId: play.playUuid,
-        personalRanking: personalRankingWithDetails,
-        sessionStatistics,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-
-      await playResults.save();
-      console.log(`Created new play results for ${play.playUuid}`);
-    }
-  } catch (error) {
-    console.error(`Failed to save play results for ${play.playUuid}:`, error);
-    // Don't throw error - play completion should not fail due to results saving
-  }
-};
 
 interface SwipeResponse {
   [API_FIELDS.SUCCESS]: boolean;
@@ -139,8 +21,15 @@ interface SwipeResponse {
   };
 }
 
-export async function POST(request: NextRequest) {
+export const POST = createOrgAwareRoute(async (request, { organizationId }) => {
   try {
+    const connectDb = createOrgDbConnect(organizationId);
+    const connection = await connectDb();
+    
+    // Get models bound to this specific connection
+    const PlayModel = connection.model('Play', Play.schema);
+    const CardModel = connection.model('Card', Card.schema);
+    
     const body = await request.json();
     console.log('🔍 Swipe request received:', {
       body,
@@ -158,10 +47,8 @@ export async function POST(request: NextRequest) {
     
     console.log('✅ Swipe validation successful:', { playUuid, cardId, direction });
 
-    await dbConnect();
-
     // Find the play
-    const play = await Play.findOne({ 
+    const play = await PlayModel.findOne({ 
       [PLAY_FIELDS.UUID]: playUuid, 
       [PLAY_FIELDS.STATUS]: 'active' 
     });
@@ -199,7 +86,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get cards for the deck
-    const cards = await Card.find({ [CARD_FIELDS.UUID]: { $in: play.deck } });
+    const cards = await CardModel.find({ [CARD_FIELDS.UUID]: { $in: play.deck } });
     if (cards.length === 0) {
       return new NextResponse(
         JSON.stringify({ 
@@ -362,7 +249,7 @@ export async function POST(request: NextRequest) {
     // Save results and update global rankings if play is completed
     if (sessionCompleted) {
       try {
-        await savePlayResults(play);
+        await savePlayResults(play, connection);
         
         // ✅ CRITICAL FIX: Trigger automatic global ranking recalculation
         console.log(`🎯 Triggering global ranking recalculation after session completion...`);
@@ -424,4 +311,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

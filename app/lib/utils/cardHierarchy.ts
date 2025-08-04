@@ -1,4 +1,4 @@
-import dbConnect from './db';
+import { createOrgDbConnect } from './db';
 import { Card, ICard } from '../models/Card';
 import { DECK_RULES } from '../constants/fieldNames';
 
@@ -16,13 +16,17 @@ import { DECK_RULES } from '../constants/fieldNames';
  * @param cardName The #HASHTAG name of the parent card
  * @returns Array of child cards
  */
-export async function getChildren(cardName: string): Promise<ICard[]> {
-  await dbConnect();
+export async function getChildren(organizationId: string, cardName: string): Promise<ICard[]> {
+  const connectDb = createOrgDbConnect(organizationId);
+  const connection = await connectDb();
+  
+  // Get Card model bound to this specific connection
+  const CardModel = connection.model('Card', Card.schema);
   
   // Ensure cardName starts with #
   const hashtag = cardName.startsWith('#') ? cardName : `#${cardName}`;
   
-  return await Card.find({
+  return await CardModel.find({
     hashtags: hashtag,
     isActive: true
   }).sort({ createdAt: -1 });
@@ -33,14 +37,18 @@ export async function getChildren(cardName: string): Promise<ICard[]> {
  * @param card The card to find parents for
  * @returns Array of parent cards
  */
-export async function getParents(card: ICard): Promise<ICard[]> {
-  await dbConnect();
+export async function getParents(organizationId: string, card: ICard): Promise<ICard[]> {
+  const connectDb = createOrgDbConnect(organizationId);
+  const connection = await connectDb();
+  
+  // Get Card model bound to this specific connection
+  const CardModel = connection.model('Card', Card.schema);
   
   if (!card.hashtags || card.hashtags.length === 0) {
     return []; // No parents
   }
   
-  return await Card.find({
+  return await CardModel.find({
     name: { $in: card.hashtags },
     isActive: true
   });
@@ -51,12 +59,16 @@ export async function getParents(card: ICard): Promise<ICard[]> {
  * @param cardName The #HASHTAG name of the card
  * @returns True if the card has sufficient children for playable ranking, false otherwise
  */
-export async function isPlayable(cardName: string): Promise<boolean> {
-  await dbConnect();
+export async function isPlayable(organizationId: string, cardName: string): Promise<boolean> {
+  const connectDb = createOrgDbConnect(organizationId);
+  const connection = await connectDb();
+  
+  // Get Card model bound to this specific connection
+  const CardModel = connection.model('Card', Card.schema);
   
   const hashtag = cardName.startsWith('#') ? cardName : `#${cardName}`;
   
-  const childCount = await Card.countDocuments({
+  const childCount = await CardModel.countDocuments({
     hashtags: hashtag,
     isActive: true
   });
@@ -70,10 +82,14 @@ export async function isPlayable(cardName: string): Promise<boolean> {
  * Get all root deck cards (cards with no hashtags)
  * @returns Array of root deck cards
  */
-export async function getRootDecks(): Promise<ICard[]> {
-  await dbConnect();
+export async function getRootDecks(organizationId: string): Promise<ICard[]> {
+  const connectDb = createOrgDbConnect(organizationId);
+  const connection = await connectDb();
   
-  return await Card.find({
+  // Get Card model bound to this specific connection
+  const CardModel = connection.model('Card', Card.schema);
+  
+  return await CardModel.find({
     $or: [
       { hashtags: { $exists: false } },
       { hashtags: { $size: 0 } }
@@ -86,8 +102,12 @@ export async function getRootDecks(): Promise<ICard[]> {
  * Get all playable cards (cards that have children)
  * @returns Array of playable cards with their child count
  */
-export async function getPlayableCards(): Promise<Array<ICard & { childCount: number }>> {
-  await dbConnect();
+export async function getPlayableCards(organizationId: string): Promise<Array<ICard & { childCount: number }>> {
+  const connectDb = createOrgDbConnect(organizationId);
+  const connection = await connectDb();
+  
+  // Get Card model bound to this specific connection
+  const CardModel = connection.model('Card', Card.schema);
   
   // Aggregate to find cards that have children
   const pipeline = [
@@ -126,28 +146,31 @@ export async function getPlayableCards(): Promise<Array<ICard & { childCount: nu
     {
       $project: {
         children: 0 // Remove the children array, keep only the count
+        // Note: All other fields are automatically included in MongoDB aggregation
+        // unless explicitly excluded. cardSize will be included automatically.
       }
     },
     { $sort: { createdAt: -1 as const } }
   ];
   
-  return await Card.aggregate(pipeline);
+  return await CardModel.aggregate(pipeline);
 }
 
 /**
  * Get the complete hierarchy tree starting from root decks
  * @returns Nested tree structure of all cards
  */
-export async function getHierarchyTree(): Promise<any[]> {
-  await dbConnect();
+export async function getHierarchyTree(organizationId: string): Promise<any[]> {
+  const connectDb = createOrgDbConnect(organizationId);
+  await connectDb();
   
-  const rootDecks = await getRootDecks();
+  const rootDecks = await getRootDecks(organizationId);
   
   async function buildTree(cards: ICard[]): Promise<any[]> {
     const result = [];
     
     for (const card of cards) {
-      const children = await getChildren(card.name);
+      const children = await getChildren(organizationId, card.name);
       const cardWithChildren = {
         ...card.toObject(),
         children: children.length > 0 ? await buildTree(children) : [],
@@ -175,10 +198,14 @@ export function isValidHashtag(hashtag: string): boolean {
  * Get all available hashtags from existing cards (for hashtag selection)
  * @returns Array of available hashtag names
  */
-export async function getAvailableHashtags(): Promise<string[]> {
-  await dbConnect();
+export async function getAvailableHashtags(organizationId: string): Promise<string[]> {
+  const connectDb = createOrgDbConnect(organizationId);
+  const connection = await connectDb();
   
-  const cards = await Card.find({ isActive: true }, { name: 1 });
+  // Get Card model bound to this specific connection
+  const CardModel = connection.model('Card', Card.schema);
+  
+  const cards = await CardModel.find({ isActive: true }, { name: 1 });
   return cards.map(card => card.name).sort();
 }
 
@@ -187,11 +214,15 @@ export async function getAvailableHashtags(): Promise<string[]> {
  * @param name The hashtag name to check
  * @returns True if taken, false if available
  */
-export async function isHashtagTaken(name: string): Promise<boolean> {
-  await dbConnect();
+export async function isHashtagTaken(organizationId: string, name: string): Promise<boolean> {
+  const connectDb = createOrgDbConnect(organizationId);
+  const connection = await connectDb();
+  
+  // Get Card model bound to this specific connection
+  const CardModel = connection.model('Card', Card.schema);
   
   const hashtag = name.startsWith('#') ? name : `#${name}`;
-  const existingCard = await Card.findOne({ name: hashtag, isActive: true });
+  const existingCard = await CardModel.findOne({ name: hashtag, isActive: true });
   return !!existingCard;
 }
 
@@ -201,26 +232,30 @@ export async function isHashtagTaken(name: string): Promise<boolean> {
  * @param newName The new hashtag name
  * @returns Number of cards updated
  */
-export async function renameHashtag(oldName: string, newName: string): Promise<number> {
-  await dbConnect();
+export async function renameHashtag(organizationId: string, oldName: string, newName: string): Promise<number> {
+  const connectDb = createOrgDbConnect(organizationId);
+  const connection = await connectDb();
+  
+  // Get Card model bound to this specific connection
+  const CardModel = connection.model('Card', Card.schema);
   
   const oldHashtag = oldName.startsWith('#') ? oldName : `#${oldName}`;
   const newHashtag = newName.startsWith('#') ? newName : `#${newName}`;
   
   // Start a transaction
-  const session = await Card.startSession();
+  const session = await connection.startSession();
   session.startTransaction();
   
   try {
     // Update the card with this name
-    await Card.updateOne(
+    await CardModel.updateOne(
       { name: oldHashtag },
       { name: newHashtag, updatedAt: new Date() },
       { session }
     );
     
     // Update all cards that reference this hashtag
-    const result = await Card.updateMany(
+    const result = await CardModel.updateMany(
       { hashtags: oldHashtag },
       { 
         $set: { 

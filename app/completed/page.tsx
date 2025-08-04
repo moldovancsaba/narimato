@@ -78,7 +78,7 @@ const urlPlayId = searchParams.get('sessionId'); // Using sessionId parameter na
                     retryCount++;
                     continue;
                   } else {
-                    setError({ ...data });
+                    setError(data.error || 'Unknown error occurred');
                     break;
                   }
                 } else {
@@ -255,23 +255,36 @@ const urlPlayId = searchParams.get('sessionId'); // Using sessionId parameter na
 
       <div className="mb-8">
         <div className="results-grid">
-          {ranking.map((item) => (
-            <div key={item.cardId} className="relative">
-              <BaseCard
-                uuid={item.card.uuid}
-                type="media"
-                content={{
-                  mediaUrl: item.card.body.imageUrl
-                }}
-                size="medium"
-                className="transition-transform duration-200"
-              >
-                <div className="absolute -top-2 -left-2 z-20">
-                  <div className={`ranking-position ${item.rank === 1 ? 'ranking-position-first' : ''}`}>#{item.rank}</div>
-                </div>
-              </BaseCard>
-            </div>
-          ))}
+          {ranking.map((item) => {
+            // Handle different card data structures and missing data gracefully
+            const cardData = item.card || {};
+            const cardBody = cardData.body || {};
+            const cardContent = cardData.content || {};
+            
+            // Use body.imageUrl or content.mediaUrl as fallback
+            const mediaUrl = cardBody.imageUrl || cardContent.mediaUrl || cardContent.text;
+            const cardType = mediaUrl && !cardContent.text ? 'media' : 'text';
+            
+            return (
+              <div key={item.cardId} className="relative">
+                <BaseCard
+                  uuid={cardData.uuid || item.cardId}
+                  type={cardType}
+                  content={{
+                    mediaUrl: cardType === 'media' ? mediaUrl : undefined,
+                    text: cardType === 'text' ? (cardBody.textContent || cardContent.text || 'Card content') : undefined,
+                    cardSize: cardData.cardSize || 'medium'
+                  }}
+                  size="medium"
+                  className="transition-transform duration-200"
+                >
+                  <div className="absolute -top-2 -left-2 z-20">
+                    <div className={`ranking-position ${item.rank === 1 ? 'ranking-position-first' : ''}`}>#{item.rank}</div>
+                  </div>
+                </BaseCard>
+              </div>
+            );
+          })}
         </div>
       </div>
 

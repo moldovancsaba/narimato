@@ -10,6 +10,7 @@ import BaseCard from './BaseCard';
 interface CardContent {
   text?: string;    // Text content for text-type cards
   mediaUrl?: string; // URL for media content (images, videos)
+  cardSize: string; // Card size in "width:height" format (e.g., "300:400") - MANDATORY
 };
 
 /**
@@ -53,19 +54,16 @@ const VoteCard = React.memo(function VoteCard({
   // Removed all animations and opacity changes for clean appearance
 
   return (
-    <div 
-      className="card-container transition-all duration-300 ease-out hover:border-white vote-card-fade"
+    <BaseCard
       key={uuid} // Force re-render when card changes for fade effect
-    >
-      <BaseCard
-        uuid={uuid}
-        type={type}
-        content={content}
-        onClick={onSelect}
-        size="grid"  // Use grid size to avoid aspect ratio conflicts
-        className=""
-      />
-    </div>
+      uuid={uuid}
+      type={type}
+      content={content}
+      onClick={onSelect}
+      size="medium"  // Use medium size to enable proper aspect ratio
+      className={`transition-all duration-300 ease-out hover:border-white vote-card-fade aspect-adjust ${isSelected ? 'opacity-0' : 'opacity-100'}`}
+      // Adjust card size based on provided cardSize
+    />
   );
 });
 

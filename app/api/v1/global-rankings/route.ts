@@ -1,35 +1,43 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/app/lib/utils/db';
+import { getOrganizationContext } from '@/app/lib/middleware/organization';
+import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { GlobalRanking, IGlobalRanking } from '@/app/lib/models/GlobalRanking';
 import { Card } from '@/app/lib/models/Card';
-
+import { Play } from '@/app/lib/models/Play';
+import { VOTE_FIELDS, PLAY_FIELDS } from '@/app/lib/constants/fieldNames';
+import { calculateRankingsWithConnection } from '@/app/lib/utils/rankingCalculation';
 export async function GET(request: Request) {
   try {
-    await dbConnect();
+    // Extract organization context
+    const orgContext = await getOrganizationContext(request);
+    const organizationId = orgContext?.organizationId || 'default';
+
+    const connectDb = createOrgDbConnect(organizationId);
+    const connection = await connectDb();
+
+    // Use connection-specific models
+    const GlobalRankingModel = connection.model('GlobalRanking', GlobalRanking.schema);
+    const CardModel = connection.model('Card', Card.schema);
 
     // Get deck filter from URL search params
     const { searchParams } = new URL(request.url);
     const deckTag = searchParams.get('deck');
 
-    // First, recalculate global rankings
-    await GlobalRanking.calculateRankings();
+    // First, recalculate global rankings using connection-specific models
+    await calculateRankingsWithConnection(connection);
 
     // Get card IDs based on deck filter
     let cardFilter: any = { isActive: true };
     if (deckTag) {
-      // Cards can be filtered by:
-      // 1. Their own name (if they match the deck tag)
-      // 2. Having the deck tag in their hashtags array (if they are children)
+      // Only show child cards (cards that have the deckTag in their hashtags array)
+      // Exclude the parent card itself (whose name matches the deckTag)
       cardFilter = { 
         ...cardFilter, 
-        $or: [
-          { name: deckTag }, // Card's own name matches
-          { hashtags: deckTag } // Card has this tag in its hashtags array
-        ]
+        hashtags: deckTag // Only child cards with this tag in their hashtags array
       };
     }
-    
-    const filteredCards = await Card.find(cardFilter, { uuid: 1 });
+
+    const filteredCards = await CardModel.find(cardFilter, { uuid: 1 });
     const filteredCardIds = filteredCards.map(card => card.uuid);
 
     if (filteredCardIds.length === 0) {
@@ -50,7 +58,7 @@ export async function GET(request: Request) {
     }
 
     // Get the top global rankings for the filtered cards, sorted by ELO rating
-    const globalRankings = await GlobalRanking.find({ cardId: { $in: filteredCardIds } })
+    const globalRankings = await GlobalRankingModel.find({ cardId: { $in: filteredCardIds } })
       .sort({ eloRating: -1, winRate: -1, totalGames: -1, lastUpdated: -1 })
       .limit(50); // Limit to top 50
 
@@ -73,7 +81,7 @@ export async function GET(request: Request) {
 
     // Fetch card details for each ranking
     const cardIds = globalRankings.map(ranking => ranking.cardId);
-    const cards = await Card.find({ uuid: { $in: cardIds }, isActive: true });
+    const cards = await CardModel.find({ uuid: { $in: cardIds }, isActive: true });
     
     // Create a map for quick card lookup
     const cardMap = new Map();
@@ -86,7 +94,8 @@ export async function GET(request: Request) {
         type: cardType,
         content: {
           text: card.body?.textContent,
-          mediaUrl: card.body?.imageUrl
+          mediaUrl: card.body?.imageUrl,
+          cardSize: card.cardSize // Include cardSize for proper aspect ratio
         }
       });
     });
@@ -137,12 +146,20 @@ export async function GET(request: Request) {
 }
 
 // Optional: POST endpoint to manually trigger ranking recalculation
-export async function POST() {
+export async function POST(request: Request) {
   try {
-    await dbConnect();
+    // Extract organization context
+    const orgContext = await getOrganizationContext(request);
+    const organizationId = orgContext?.organizationId || 'default';
+
+    const connectDb = createOrgDbConnect(organizationId);
+    const connection = await connectDb();
+
+    // Use connection-specific model
+    const GlobalRankingModel = connection.model('GlobalRanking', GlobalRanking.schema);
     
-    // Recalculate global rankings
-    await GlobalRanking.calculateRankings();
+    // Recalculate global rankings using connection-specific models
+    await calculateRankingsWithConnection(connection);
     
     return NextResponse.json({
       success: true,

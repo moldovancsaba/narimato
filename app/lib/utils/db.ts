@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { Connection } from 'mongoose';
 
 /**
  * Database Connection Service with Enhanced Security and Monitoring
@@ -15,23 +15,52 @@ import mongoose from 'mongoose';
  * - Error messages don't leak connection details
  */
 
-const MONGODB_URI = process.env.MONGODB_URI;
+// Load organization-specific URIs from environment variables
+const ORGANIZATION_DB_URIS: Record<string, string> = {};
+try {
+  const orgUrisEnv = process.env.ORGANIZATION_DB_URIS;
+  if (orgUrisEnv) {
+    Object.assign(ORGANIZATION_DB_URIS, JSON.parse(orgUrisEnv));
+  }
+} catch (error) {
+  console.warn('Failed to parse ORGANIZATION_DB_URIS environment variable:', error);
+}
 
-if (!MONGODB_URI) {
+// Ensure default environment variable exists (important for initial development & tests)
+if (!process.env.MONGODB_URI) {
   throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
 }
 
-// TypeScript assertion: at this point MONGODB_URI is guaranteed to be a string
-const mongoUri: string = MONGODB_URI;
+/**
+ * Get MongoDB URI for specific organization
+ * Uses buildOrgMongoUri to create organization-specific database names
+ */
+function getMongoUri(organizationId: string): string {
+  let uri: string;
+  
+  // Check for organization-specific URI first
+  if (ORGANIZATION_DB_URIS[organizationId]) {
+    uri = ORGANIZATION_DB_URIS[organizationId];
+  } else if (organizationId === 'master') {
+    // For master database, use the default URI directly
+    uri = process.env.MONGODB_URI!;
+  } else {
+    // Generate organization-specific URI using the base URI
+    const baseUri = process.env.MONGODB_URI!;
+    uri = buildOrgMongoUri(baseUri, organizationId);
+  }
 
-// Enforce Atlas-only connection - no localhost allowed
-if (MONGODB_URI.includes('localhost') || MONGODB_URI.includes('127.0.0.1')) {
-  throw new Error('Localhost MongoDB connections are prohibited. Use only MongoDB Atlas from .env.local');
-}
+  // Enforce Atlas-only connection - no localhost allowed
+  if (uri.includes('localhost') || uri.includes('127.0.0.1')) {
+    throw new Error('Localhost MongoDB connections are prohibited. Use only MongoDB Atlas from .env.local');
+  }
 
-// Validate URI format to prevent injection attacks
-if (!MONGODB_URI.startsWith('mongodb://') && !MONGODB_URI.startsWith('mongodb+srv://')) {
-  throw new Error('Invalid MongoDB URI format. Must start with mongodb:// or mongodb+srv://');
+  // Validate URI format to prevent injection attacks
+  if (!uri.startsWith('mongodb://') && !uri.startsWith('mongodb+srv://')) {
+    throw new Error('Invalid MongoDB URI format. Must start with mongodb:// or mongodb+srv://');
+  }
+
+  return uri;
 }
 
 /**
@@ -54,35 +83,146 @@ interface MongooseGlobal {
 }
 
 const _global = global as MongooseGlobal;
-let cached = _global.mongoose;
+type CachedConnection = {
+  conn: Connection | null;
+  promise: Promise<Connection> | null;
+};
 
-if (!cached) {
-  cached = _global.mongoose = { conn: null, promise: null };
+const connectionCache: Record<string, CachedConnection> = {};
+
+// Global connection registry to track active connections
+const activeConnections: Record<string, Connection> = {};
+
+function getConnectionCache(organizationId: string): CachedConnection {
+  if (!connectionCache[organizationId]) {
+    connectionCache[organizationId] = { conn: null, promise: null };
+  }
+  return connectionCache[organizationId];
 }
 
-async function dbConnect() {
-  if (cached.conn) {
-    return cached.conn;
+function clearConnectionCache(organizationId: string): void {
+  delete connectionCache[organizationId];
+}
+
+async function dbConnect(organizationId: string): Promise<Connection> {
+  const cache = getConnectionCache(organizationId);
+
+  if (cache.conn) {
+    return cache.conn;
   }
 
-  if (!cached.promise) {
+  if (!cache.promise) {
     const opts = {
       bufferCommands: false,
+      // Connection timeout configurations
+      serverSelectionTimeoutMS: 5000,  // 5 seconds instead of default 30 seconds
+      connectTimeoutMS: 10000,          // 10 seconds for initial connection
+      socketTimeoutMS: 10000,           // 10 seconds for socket operations
+      // Connection pool settings
+      maxPoolSize: 10,                  // Limit connection pool size
+      minPoolSize: 1,                   // Maintain minimum connections
+      maxIdleTimeMS: 30000,             // Close connections after 30s idle
+      // Retry and heartbeat settings
+      retryWrites: true,
+      retryReads: true,
+      heartbeatFrequencyMS: 10000,      // Check server every 10 seconds
     };
 
-    cached.promise = mongoose.connect(mongoUri, opts).then((mongoose) => {
-      return mongoose;
+    const uri = getMongoUri(organizationId);
+    
+    // Use createConnection instead of connect to avoid global connection conflicts
+    cache.promise = mongoose.createConnection(uri, opts).asPromise().then((connection) => {
+      // Store in global registry for cleanup
+      activeConnections[organizationId] = connection;
+      return connection;
     });
   }
 
   try {
-    cached.conn = await cached.promise;
+    cache.conn = await cache.promise;
   } catch (e) {
-    cached.promise = null;
+    cache.promise = null;
     throw e;
   }
 
-  return cached.conn;
+  return cache.conn;
+}
+
+/**
+ * Create organization-specific database connection
+ * Each organization gets a separate database with its own collections
+ */
+export function createOrgDbConnect(organizationId: string) {
+  return () => dbConnect(organizationId);
+}
+
+/**
+ * Connect to master database for organization management
+ * This is where the Organization model lives - metadata only
+ */
+export async function connectMasterDb(): Promise<Connection> {
+  return dbConnect('master');
+}
+
+/**
+ * Utility to build organization-specific database name
+ * Format: narimato_org_{organizationId}
+ */
+export function buildOrgDatabaseName(organizationId: string): string {
+  if (!organizationId || organizationId.trim() === '') {
+    throw new Error('Organization ID cannot be empty');
+  }
+  
+  // Sanitize organization ID for database naming
+  const sanitizedId = organizationId.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+  return `narimato_org_${sanitizedId}`;
+}
+
+/**
+ * Build organization-specific MongoDB URI with proper database naming
+ */
+export function buildOrgMongoUri(baseUri: string, organizationId: string): string {
+  const dbName = buildOrgDatabaseName(organizationId);
+  
+  // Parse the URI to replace database name
+  const url = new URL(baseUri);
+  
+  // For MongoDB Atlas URIs, the database name is typically at the end
+  // Format: mongodb+srv://user:pass@cluster.mongodb.net/database?options
+  const pathParts = url.pathname.split('/');
+  if (pathParts.length > 1) {
+    pathParts[1] = dbName; // Replace database name
+  } else {
+    pathParts.push(dbName); // Add database name
+  }
+  
+  url.pathname = pathParts.join('/');
+  return url.toString();
+}
+
+/**
+ * Health check for organization database connection
+ */
+export async function checkOrgDbHealth(organizationId: string): Promise<boolean> {
+  try {
+    const connection = await dbConnect(organizationId);
+    return connection.readyState === 1; // 1 = connected
+  } catch (error) {
+    console.error(`Health check failed for organization ${organizationId}:`, error);
+    return false;
+  }
+}
+
+/**
+ * Close organization-specific database connection
+ */
+export async function closeOrgDbConnection(organizationId: string): Promise<void> {
+  const cache = getConnectionCache(organizationId);
+  if (cache.conn) {
+    await cache.conn.close();
+    clearConnectionCache(organizationId);
+    delete activeConnections[organizationId];
+  }
 }
 
 export default dbConnect;

@@ -10,6 +10,7 @@ import { useTextFit } from '../hooks/useTextFit';
 interface CardContent {
   text?: string;    // Text content for text-type cards
   mediaUrl?: string; // URL for media content (images, videos)
+  cardSize: string; // Card size in "width:height" format (e.g., "300:400") - MANDATORY
 }
 
 /**
@@ -32,7 +33,7 @@ interface BaseCardProps {
  * 
  * This component serves as the foundation for all card displays throughout the application.
  * It maintains consistent:
- * - Aspect ratio (3:4 - portrait orientation)
+ * - Dynamic aspect ratio (configurable per card via cardSize property)
  * - Visual design (rounded corners, shadows, typography)
  * - Content layout rules (text centering, media fitting)
  * - Responsive behavior (scales while maintaining proportions)
@@ -63,11 +64,11 @@ const BaseCard = React.memo(function BaseCard({
     size === 'small' ? 8 : 16 // Min font size based on card size
   );
   
-  // Size variants with consistent aspect ratio (3:4) - memoized to prevent recreation
+  // Size variants with dynamic aspect ratio - memoized to prevent recreation
   const sizeClasses = useMemo(() => ({
     small: 'w-24 h-32 md:w-40 md:h-56',  // Adjusted for better mobile-first scaling
-    medium: 'w-full max-w-sm sm:max-w-md aspect-[3/4]', // Default size with mobile-first adjustments
-    large: 'w-full max-w-md md:max-w-lg aspect-[3/4]',   // Large display with consistent scaling
+    medium: '', // Let container context determine appropriate constraints
+    large: '',  // Let container context determine appropriate constraints
     grid: 'w-full h-full'  // Grid size fills container without aspect ratio constraints
   }), []);
 
@@ -79,11 +80,32 @@ const BaseCard = React.memo(function BaseCard({
     ${className}
   `, [sizeClasses, size, onClick, className]);
 
+const [width, height] = useMemo(() => {
+    if (!content.cardSize) {
+      console.error('🚨 CRITICAL: Card missing cardSize property!', {
+        type: type,
+        hasMediaUrl: !!content.mediaUrl,
+        hasText: !!content.text
+      });
+      return [null, null]; // No aspect ratio constraint
+    }
+    return content.cardSize.split(':');
+  }, [content.cardSize, type, content.mediaUrl, content.text]);
+
+  const cardStyle = useMemo(() => {
+    const baseStyle = {...style};
+    if (width && height) {
+      baseStyle.aspectRatio = `${width} / ${height}`;
+    }
+    // NO DEFAULT ASPECT RATIO - Every card MUST have cardSize property!
+    return baseStyle;
+  }, [style, width, height]);
+
   return (
     <div
       className={containerClassName}
       onClick={onClick}
-      style={style}
+      style={cardStyle}
     >
       {/* Main card content area */}
       {type === 'media' && content.mediaUrl ? (
@@ -93,6 +115,14 @@ const BaseCard = React.memo(function BaseCard({
           className="card-media card-no-select"
           draggable={false}
           onDragStart={(e) => e.preventDefault()}
+          onLoad={(e) => {
+            const img = e.target as HTMLImageElement;
+            const container = img.closest('.card-container') as HTMLElement;
+            if (container && img.naturalWidth && img.naturalHeight) {
+              const aspectRatio = img.naturalWidth / img.naturalHeight;
+              container.style.aspectRatio = aspectRatio.toString();
+            }
+          }}
         />
       ) : (
         <div className="card-content">

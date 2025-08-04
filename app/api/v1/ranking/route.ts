@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/app/lib/utils/db';
+import { getOrganizationContext } from '@/app/lib/middleware/organization';
+import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { Session } from '@/app/lib/models/Session';
 
 export async function GET(request: NextRequest) {
@@ -13,10 +14,18 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    await dbConnect();
+    // Get organization context
+    const orgContext = await getOrganizationContext(request);
+    const organizationId = orgContext?.organizationId || 'default';
+
+    const connectDb = createOrgDbConnect(organizationId);
+    const connection = await connectDb();
+    
+    // Register connection-specific models
+    const SessionModel = connection.model('Session', Session.schema);
 
     // Find session and check if it's still valid
-    const session = await Session.findOne({ 
+    const session = await SessionModel.findOne({
       sessionId,
       status: 'active',
       expiresAt: { $gt: new Date() }

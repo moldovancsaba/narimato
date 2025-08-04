@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/app/lib/utils/db';
+import { getOrganizationContext } from '@/app/lib/middleware/organization';
+import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { Session } from '@/app/lib/models/Session';
 import { Card } from '@/app/lib/models/Card';
 
@@ -24,10 +25,19 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    await dbConnect();
+    // Get organization context
+    const orgContext = await getOrganizationContext(request);
+    const organizationId = orgContext?.organizationId || 'default';
+
+    const connectDb = createOrgDbConnect(organizationId);
+    const connection = await connectDb();
+    
+    // Register connection-specific models
+    const SessionModel = connection.model('Session', Session.schema);
+    const CardModel = connection.model('Card', Card.schema);
 
     // Find the session
-    const session = await Session.findOne({ sessionId });
+    const session = await SessionModel.findOne({ sessionId });
     if (!session) {
       return new NextResponse(
         JSON.stringify({ 
@@ -63,7 +73,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch card details for all ranked cards
-    const cards = await Card.find({ uuid: { $in: rankedCardIds } });
+    const cards = await CardModel.find({ uuid: { $in: rankedCardIds } });
     const cardMap = new Map(cards.map(card => [card.uuid, card]));
 
     // Build the ranking with card details

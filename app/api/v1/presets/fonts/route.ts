@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/app/lib/utils/db';
+import { getOrganizationContext } from '@/app/lib/middleware/organization';
+import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { FontPreset } from '@/app/lib/models/FontPreset';
 
 // GET - Fetch all font presets
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    await dbConnect();
+    const orgContext = await getOrganizationContext(request);
+    const organizationId = orgContext?.organizationId || 'default';
+
+    const connectDb = createOrgDbConnect(organizationId);
+    const connection = await connectDb();
+    const FontPresetModel = connection.model('FontPreset', FontPreset.schema);
     
-    const presets = await FontPreset.find({}).sort({ isSystem: -1, createdAt: 1 });
+    const presets = await FontPresetModel.find({}).sort({ isSystem: -1, createdAt: 1 });
     
     return NextResponse.json({
       success: true,
@@ -28,7 +34,12 @@ export async function GET() {
 // POST - Create a new font preset
 export async function POST(request: NextRequest) {
   try {
-    await dbConnect();
+    const orgContext = await getOrganizationContext(request);
+    const organizationId = orgContext?.organizationId || 'default';
+
+    const connectDb = createOrgDbConnect(organizationId);
+    const connection = await connectDb();
+    const FontPresetModel = connection.model('FontPreset', FontPreset.schema);
     
     const body = await request.json();
     const { name, value, url = '' } = body;
@@ -43,7 +54,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const preset = new FontPreset({
+    const preset = new FontPresetModel({
       name: name.trim(),
       value: value.trim(),
       url: url.trim(),
@@ -82,7 +93,12 @@ export async function POST(request: NextRequest) {
 // DELETE - Delete a font preset by name
 export async function DELETE(request: NextRequest) {
   try {
-    await dbConnect();
+    const orgContext = await getOrganizationContext(request);
+    const organizationId = orgContext?.organizationId || 'default';
+
+    const connectDb = createOrgDbConnect(organizationId);
+    const connection = await connectDb();
+    const FontPresetModel = connection.model('FontPreset', FontPreset.schema);
     
     const url = new URL(request.url);
     const name = url.searchParams.get('name');
@@ -97,7 +113,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
     
-    const preset = await FontPreset.findOneAndDelete({ 
+    const preset = await FontPresetModel.findOneAndDelete({ 
       name,
       isSystem: false // Only allow deletion of custom presets
     });

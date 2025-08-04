@@ -12,6 +12,7 @@ interface Card {
   content: {
     text?: string;
     mediaUrl?: string;
+    cardSize: string; // MANDATORY - Required for proper aspect ratio
   };
   title?: string;
 }
@@ -87,14 +88,25 @@ function VoteContent() {
         }
         
         // Map the card data to match the expected VoteCard structure
-        const mapCardData = (card: any): Card => ({
-          uuid: card.uuid,
-          type: 'media',
-          content: {
-            mediaUrl: card.body?.imageUrl
-          },
-          title: card.name
-        });
+        const mapCardData = (card: any): Card => {
+          // Determine card type based on content - check for imageUrl presence
+          const hasImage = card.body?.imageUrl && card.body.imageUrl.trim() !== '';
+          const hasText = card.body?.textContent && card.body.textContent.trim() !== '';
+          
+          // Priority: if has image, use media type, otherwise text
+          const cardType: 'text' | 'media' = hasImage ? 'media' : 'text';
+          
+          return {
+            uuid: card.uuid,
+            type: cardType,
+            content: {
+              text: hasText ? card.body.textContent : undefined,
+              mediaUrl: hasImage ? card.body.imageUrl : undefined,
+              cardSize: card.cardSize || '300:400' // Fallback if cardSize is missing
+            },
+            title: card.name
+          };
+        };
         
         setCardA(mapCardData(data[VOTE_FIELDS.CARD_A]));
         setCardB(mapCardData(data[VOTE_FIELDS.CARD_B]));
@@ -197,14 +209,25 @@ function VoteContent() {
           }
           
           // Map the next comparison card data to match the expected structure
-          const mapCardData = (card: any): Card => ({
-            uuid: card.uuid,
-            type: 'media',
-            content: {
-              mediaUrl: card.body?.imageUrl
-            },
-            title: card.name
-          });
+          const mapCardData = (card: any): Card => {
+            // Determine card type based on content - check for imageUrl presence
+            const hasImage = card.body?.imageUrl && card.body.imageUrl.trim() !== '';
+            const hasText = card.body?.textContent && card.body.textContent.trim() !== '';
+            
+            // Priority: if has image, use media type, otherwise text
+            const cardType: 'text' | 'media' = hasImage ? 'media' : 'text';
+            
+            return {
+              uuid: card.uuid,
+              type: cardType,
+              content: {
+                text: hasText ? card.body.textContent : undefined,
+                mediaUrl: hasImage ? card.body.imageUrl : undefined,
+                cardSize: card.cardSize || '300:400' // Fallback if cardSize is missing
+              },
+              title: card.name
+            };
+          };
           
           setCardA(mapCardData(nextComparisonData[VOTE_FIELDS.CARD_A]));
           setCardB(mapCardData(nextComparisonData[VOTE_FIELDS.CARD_B]));
