@@ -5,17 +5,17 @@ import { SessionResults } from '@/app/lib/models/SessionResults';
 import { Play } from '@/app/lib/models/Play';
 import { validateSessionId } from '@/app/lib/utils/fieldValidation';
 import { saveSessionResults, savePlayResults } from '@/app/lib/utils/sessionResultsUtils';
-import { PLAY_FIELDS } from '@/app/lib/constants/fieldNames';
+import { SESSION_FIELDS } from '@/app/lib/constants/fieldNames';
 
 interface RouteParams {
-  params: Promise<{ sessionId: string }>;
+  params: Promise<{ sessionUUID: string }>;
 }
 
 export async function GET(
   request: NextRequest,
   context: RouteParams
 ) {
-  const { sessionId } = await context.params;
+  const { sessionUUID } = await context.params;
   try {
     // Get organization context
     const orgContext = await getOrganizationContext(request);
@@ -28,20 +28,20 @@ export async function GET(
     const PlayModel = connection.model('Play', Play.schema);
     const SessionResultsModel = connection.model('SessionResults', SessionResults.schema);
     
-    if (!sessionId || !validateSessionId(sessionId)) {
+    if (!sessionUUID || !validateSessionId(sessionUUID)) {
       return NextResponse.json(
         { error: 'Valid session ID is required' },
         { status: 400 }
       );
     }
 
-    console.log(`Fetching session results for sessionId: ${sessionId}`);
+    console.log(`Fetching session results for sessionUUID: ${sessionUUID}`);
 
     // Try to find saved session results first
-    const savedResults = await SessionResultsModel.findOne({ sessionId });
+    const savedResults = await SessionResultsModel.findOne({ [SESSION_FIELDS.UUID]: sessionUUID });
     
     if (savedResults) {
-      console.log(`Found saved results for session ${sessionId}`);
+      console.log(`Found saved results for session ${sessionUUID}`);
       return NextResponse.json({
         personalRanking: savedResults.personalRanking,
         statistics: savedResults.sessionStatistics,
@@ -51,22 +51,22 @@ export async function GET(
       });
     }
 
-    console.log(`No saved results found for session ${sessionId}, checking live play...`);
+    console.log(`No saved results found for session ${sessionUUID}, checking live play...`);
     
     // If no saved results found, try to get from live play and save
-    const livePlay = await PlayModel.findOne({ [PLAY_FIELDS.UUID]: sessionId });
+    const livePlay = await PlayModel.findOne({ uuid: sessionUUID });
     
     if (livePlay && livePlay.status === 'completed') {
-      console.log(`Found completed live play for ${sessionId}, attempting to save results...`);
+      console.log(`Found completed live play for ${sessionUUID}, attempting to save results...`);
       
       // Try to save the play results now
       try {
         await savePlayResults(livePlay, connection);
         
         // Retry fetching the saved results
-        const newlySavedResults = await SessionResultsModel.findOne({ sessionId });
+        const newlySavedResults = await SessionResultsModel.findOne({ [SESSION_FIELDS.UUID]: sessionUUID });
         if (newlySavedResults) {
-          console.log(`Successfully saved and retrieved results for play ${sessionId}`);
+          console.log(`Successfully saved and retrieved results for play ${sessionUUID}`);
           return NextResponse.json({
             personalRanking: newlySavedResults.personalRanking,
             statistics: newlySavedResults.sessionStatistics,
@@ -76,13 +76,13 @@ export async function GET(
           });
         }
       } catch (saveError) {
-        console.error(`Failed to save play results for ${sessionId}:`, saveError);
+        console.error(`Failed to save play results for ${sessionUUID}:`, saveError);
         // Don't return error here, continue to check other options
       }
     }
 
     // If no saved results found, return detailed error information
-    console.log(`Session ${sessionId} not found in either saved results or live sessions`);
+    console.log(`Session ${sessionUUID} not found in either saved results or live sessions`);
     return NextResponse.json(
       { 
         error: 'Session results not found or not shareable',

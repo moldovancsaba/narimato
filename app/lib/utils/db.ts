@@ -114,18 +114,18 @@ async function dbConnect(organizationId: string): Promise<Connection> {
   if (!cache.promise) {
     const opts = {
       bufferCommands: false,
-      // Connection timeout configurations
-      serverSelectionTimeoutMS: 5000,  // 5 seconds instead of default 30 seconds
-      connectTimeoutMS: 10000,          // 10 seconds for initial connection
-      socketTimeoutMS: 10000,           // 10 seconds for socket operations
+      // Connection timeout configurations - increased for better reliability
+      serverSelectionTimeoutMS: 30000,  // 30 seconds for server selection
+      connectTimeoutMS: 30000,          // 30 seconds for initial connection
+      socketTimeoutMS: 45000,           // 45 seconds for socket operations
       // Connection pool settings
       maxPoolSize: 10,                  // Limit connection pool size
       minPoolSize: 1,                   // Maintain minimum connections
-      maxIdleTimeMS: 30000,             // Close connections after 30s idle
+      maxIdleTimeMS: 60000,             // Close connections after 60s idle
       // Retry and heartbeat settings
       retryWrites: true,
       retryReads: true,
-      heartbeatFrequencyMS: 10000,      // Check server every 10 seconds
+      heartbeatFrequencyMS: 30000,      // Check server every 30 seconds
     };
 
     const uri = getMongoUri(organizationId);
@@ -166,16 +166,25 @@ export async function connectMasterDb(): Promise<Connection> {
 
 /**
  * Utility to build organization-specific database name
- * Format: narimato_org_{organizationId}
+ * Uses UUID directly as database name - clean and within MongoDB's 38-byte limit
  */
 export function buildOrgDatabaseName(organizationId: string): string {
   if (!organizationId || organizationId.trim() === '') {
     throw new Error('Organization ID cannot be empty');
   }
   
-  // Sanitize organization ID for database naming
-  const sanitizedId = organizationId.toLowerCase().replace(/[^a-z0-9_]/g, '_');
-  return `narimato_org_${sanitizedId}`;
+  // For 'default' or other special cases, use a descriptive name
+  if (organizationId === 'default') {
+    return 'narimato';
+  }
+  
+  // For UUIDs, use them directly - they're unique and within the 38-byte limit
+  if (organizationId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i)) {
+    return organizationId;
+  }
+  
+  // For other organization IDs, sanitize them and use directly
+  return organizationId.toLowerCase().replace(/[^a-z0-9_-]/g, '_');
 }
 
 /**

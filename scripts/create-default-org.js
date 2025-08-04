@@ -1,19 +1,51 @@
+#!/usr/bin/env node
+
+/**
+ * Create Default Organization Script - UUID-First Architecture
+ * 
+ * This script creates the default organization using clean UUID-First Architecture
+ * without backward compatibility mess.
+ * 
+ * Usage: node scripts/create-default-org.js
+ */
+
+const { v4: uuidv4 } = require('uuid');
 const mongoose = require('mongoose');
 require('dotenv').config({ path: '.env.local' });
 
-// Organization schema
-const organizationSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  slug: { type: String, required: true, unique: true },
-  subdomain: { type: String },
-  databaseName: { type: String, required: true },
-  settings: { type: mongoose.Schema.Types.Mixed, default: {} },
+// 🔑 UUID-First Architecture: Clean Organization schema
+const OrganizationSchema = new mongoose.Schema({
+  OrganizationUUID: { 
+    type: String, 
+    required: true, 
+    unique: true,
+    validate: {
+      validator: (uuid) => /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(uuid),
+      message: 'OrganizationUUID must be a valid UUID v4 format'
+    }
+  },
+  OrganizationName: { type: String, required: true, maxlength: 255 },
+  OrganizationSlug: { 
+    type: String, 
+    required: true, 
+    unique: true,
+    validate: {
+      validator: (slug) => /^[a-z0-9-]+$/.test(slug),
+      message: 'OrganizationSlug must contain only lowercase letters, numbers, and hyphens'
+    }
+  },
+  OrganizationDescription: { type: String, maxlength: 1000, default: '' },
+  databaseName: { type: String, required: true, unique: true },
   isActive: { type: Boolean, default: true },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now }
+}, { 
+  collection: 'organizations',
+  strict: false
 });
 
 async function createDefaultOrganization() {
+  console.log('🚀 Creating default organization with clean UUID-First Architecture...');
+  
   try {
     // Connect to master database
     const masterUri = process.env.MONGODB_URI;
@@ -21,96 +53,68 @@ async function createDefaultOrganization() {
       throw new Error('MONGODB_URI environment variable is not set');
     }
     
-    console.log('Connecting to master database...');
+    console.log('✅ Connecting to master database...');
     await mongoose.connect(masterUri);
     
-    // Create the Organization model
-    const Organization = mongoose.model('Organization', organizationSchema);
+    const Organization = mongoose.model('Organization', OrganizationSchema);
     
-    // Check if default organization already exists
-    const existing = await Organization.findOne({ slug: 'default' });
-    if (existing) {
-      console.log('✅ Default organization already exists');
-      process.exit(0);
+    // Check if default organization already exists (UUID-first lookup)
+    const existingOrg = await Organization.findOne({
+      OrganizationSlug: 'default-org'
+    });
+    
+    if (existingOrg) {
+      console.log('✅ Default organization already exists:');
+      console.log(`   🔑 OrganizationUUID: ${existingOrg.OrganizationUUID}`);
+      console.log(`   📛 OrganizationName: ${existingOrg.OrganizationName}`);
+      console.log(`   🔗 OrganizationSlug: ${existingOrg.OrganizationSlug}`);
+      return existingOrg;
     }
     
-    // Create default organization
+    // 🆕 Create new default organization with UUID-First Architecture
+    const orgUUID = uuidv4();
+    
     const defaultOrg = new Organization({
-      name: 'Default Organization',
-      slug: 'default',
-      databaseName: 'narimato_org_default',
-      settings: {},
-      isActive: true
+      OrganizationUUID: orgUUID,
+      OrganizationName: 'Default Organization 🏢',
+      OrganizationSlug: 'default-org',
+      OrganizationDescription: 'Default organization for Narimato ranking system with clean UUID architecture 🚀',
+      databaseName: 'narimato',
+      isActive: true,
+      createdAt: new Date()
     });
     
     await defaultOrg.save();
-    console.log('✅ Default organization created successfully:', defaultOrg.toObject());
     
-    // Now initialize the organization's database
-    const orgUri = masterUri.replace('/narimato', '/narimato_org_default');
-    console.log('Connecting to organization database...');
+    console.log('🎉 Default organization created successfully!');
+    console.log(`   🔑 OrganizationUUID: ${orgUUID}`);
+    console.log(`   📛 OrganizationName: Default Organization 🏢`);
+    console.log(`   🔗 OrganizationSlug: default-org`);
+    console.log(`   📝 Description: Default organization for Narimato ranking system with clean UUID architecture 🚀`);
+    console.log(`   🗄️ Database: narimato`);
     
-    const orgConnection = await mongoose.createConnection(orgUri);
-    
-    // Create collections and indexes
-    const collections = [
-      {
-        name: 'cards',
-        indexes: [
-          { name: 1, unique: true },
-          { uuid: 1, unique: true },
-          { hashtags: 1 },
-          { isActive: 1 },
-          { createdAt: -1 }
-        ]
-      },
-      {
-        name: 'plays',
-        indexes: [
-          { playUuid: 1, unique: true },
-          { sessionId: 1 },
-          { status: 1 },
-          { createdAt: -1 },
-          { expiresAt: 1 }
-        ]
-      },
-      {
-        name: 'globalrankings',
-        indexes: [
-          { cardId: 1, unique: true },
-          { eloRating: -1 },
-          { lastUpdated: -1 }
-        ]
-      }
-    ];
-    
-    for (const collection of collections) {
-      console.log(`📊 Creating collection: ${collection.name}`);
-      
-      // Create collection if it doesn't exist
-      const collectionExists = await orgConnection.db.listCollections({ name: collection.name }).hasNext();
-      if (!collectionExists) {
-        await orgConnection.db.createCollection(collection.name);
-      }
-      
-      // Create indexes
-      const coll = orgConnection.db.collection(collection.name);
-      for (const index of collection.indexes) {
-        await coll.createIndex(index);
-      }
-    }
-    
-    console.log('✅ Organization database initialized successfully');
-    
-    await orgConnection.close();
-    await mongoose.connection.close();
-    
-    console.log('🎉 Default organization setup complete!');
+    return defaultOrg;
     
   } catch (error) {
-    console.error('❌ Error creating default organization:', error);
-    process.exit(1);
+    console.error('\n❌ Failed to create default organization:', error);
+    throw error;
+  } finally {
+    await mongoose.disconnect();
+    console.log('\n🔌 Disconnected from database');
   }
 }
 
-createDefaultOrganization();
+// Execute if run directly
+if (require.main === module) {
+  createDefaultOrganization()
+    .then(() => {
+      console.log('\n✨ Default organization creation completed successfully!');
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error('\n💥 Default organization creation failed:', error.message);
+      process.exit(1);
+    });
+}
+
+module.exports = { createDefaultOrganization };

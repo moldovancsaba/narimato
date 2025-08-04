@@ -2,14 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getOrganizationContext } from '@/app/lib/middleware/organization';
 import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { Session } from '@/app/lib/models/Session';
+import { SESSION_FIELDS } from '@/app/lib/constants/fieldNames';
 
 export async function GET(request: NextRequest) {
   try {
-    const sessionId = request.nextUrl.searchParams.get('sessionId');
+    const sessionUUID = request.nextUrl.searchParams.get('sessionUUID');
     
-    if (!sessionId) {
+    if (!sessionUUID) {
       return new NextResponse(
-        JSON.stringify({ error: 'Session ID is required' }),
+        JSON.stringify({ error: 'Session UUID is required' }),
         { status: 400 }
       );
     }
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     // Find session and check if it's still valid
     const session = await SessionModel.findOne({
-      sessionId,
+      [SESSION_FIELDS.UUID]: sessionUUID,
       status: 'active',
       expiresAt: { $gt: new Date() }
     });

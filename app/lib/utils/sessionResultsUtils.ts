@@ -89,14 +89,44 @@ export const saveSessionResults = async (session: any, connection: Connection) =
  * @param connection - The organization-specific mongoose connection to use
  */
 export const savePlayResults = async (play: any, connection: Connection) => {
+  console.log(`🎯 Starting savePlayResults for play UUID: ${play.uuid}`);
+  console.log(`📊 Play data summary:`, {
+    uuid: play.uuid,
+    status: play.status,
+    state: play.state,
+    personalRankingLength: play.personalRanking?.length || 0,
+    totalCards: play.totalCards,
+    swipesCount: play.swipes?.length || 0,
+    votesCount: play.votes?.length || 0
+  });
+  
   try {
     // Get connection-specific models
     const CardModel = connection.model('Card', Card.schema);
     const SessionResultsModel = connection.model('SessionResults', SessionResults.schema);
+    
+    console.log(`🔍 Models initialized for connection`);
+    console.log(`📋 Checking for existing results with sessionUUID: ${play.uuid}`);
+    
+    // Check if results already exist to avoid duplicates
+    const existingResults = await SessionResultsModel.findOne({ sessionUUID: play.uuid });
+    if (existingResults) {
+      console.log(`⚠️ Results already exist for play ${play.uuid}, updating existing record`);
+    } else {
+      console.log(`✨ No existing results found for play ${play.uuid}, will create new record`);
+    }
 
     // Get all cards from the personal ranking with their details
     const cardIds = play.personalRanking || [];
+    console.log(`🃏 Fetching ${cardIds.length} cards from personal ranking:`, cardIds);
     const cards = await CardModel.find({ uuid: { $in: cardIds } });
+    console.log(`✅ Found ${cards.length} cards in database`);
+    
+    if (cards.length !== cardIds.length) {
+      const foundCardIds = cards.map(c => c.uuid);
+      const missingCardIds = cardIds.filter(id => !foundCardIds.includes(id));
+      console.warn(`⚠️ Missing ${missingCardIds.length} cards from database:`, missingCardIds);
+    }
     
     // Create a map for quick card lookup
     const cardMap = new Map();
@@ -133,10 +163,14 @@ export const savePlayResults = async (play: any, connection: Connection) => {
       totalVotes: play.votes?.length || 0,
       completionRate: play.totalCards ? Math.round(((play.personalRanking?.length || 0) / play.totalCards) * 100) : 0
     };
+    
+    console.log(`📊 Calculated play statistics:`, playStatistics);
+    console.log(`📋 Personal ranking with ${personalRankingWithDetails.length} detailed items prepared`);
+    console.log(`💾 About to perform atomic upsert with sessionUUID: ${play.uuid}`);
 
     // Use atomic upsert to handle race conditions
     const result = await SessionResultsModel.findOneAndUpdate(
-      { sessionId: play.playUuid },
+      { sessionUUID: play.uuid },
       {
         $set: {
           personalRanking: personalRankingWithDetails,
@@ -154,12 +188,12 @@ export const savePlayResults = async (play: any, connection: Connection) => {
     );
     
     if (result) {
-      console.log(`✓ Play results saved/updated atomically for ${play.playUuid}`);
+      console.log(`✓ Play results saved/updated atomically for ${play.uuid}`);
     } else {
-      console.warn(`⚠️ Failed to save play results for ${play.playUuid}`);
+      console.warn(`⚠️ Failed to save play results for ${play.uuid}`);
     }
   } catch (error) {
-    console.error(`Failed to save play results for ${play.playUuid}:`, error);
+    console.error(`Failed to save play results for ${play.uuid}:`, error);
     throw error; // Re-throw so callers can handle appropriately
   }
 };

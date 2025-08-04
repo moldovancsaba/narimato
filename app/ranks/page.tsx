@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import PageLayout from '@/app/components/PageLayout';
 import DeckCard from '@/app/components/DeckCard';
+import { useOrganization } from '@/app/components/OrganizationProvider';
 
 interface Deck {
   tag: string;
@@ -15,14 +16,31 @@ interface Deck {
 
 export default function RanksPage() {
   const router = useRouter();
+  const { currentOrganization, isLoading: orgLoading } = useOrganization();
   const [decks, setDecks] = useState<Deck[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchCards = async () => {
-      try {
-        const response = await fetch('/api/v1/cards?type=playable');
+    // Only fetch cards when organization is loaded and available
+    if (!orgLoading && currentOrganization) {
+      fetchCards();
+    }
+  }, [currentOrganization, orgLoading]);
+
+  const fetchCards = async () => {
+    if (!currentOrganization) {
+      setError('No organization selected');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/v1/cards?type=playable', {
+        headers: {
+          'X-Organization-UUID': currentOrganization.OrganizationUUID
+        }
+      });
         if (!response.ok) {
           throw new Error('Failed to fetch cards');
         }
@@ -41,13 +59,10 @@ export default function RanksPage() {
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCards();
-  }, []);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleDeckSelect = (deckTag: string) => {
     // Remove the # symbol from the tag for URL routing
@@ -55,12 +70,26 @@ export default function RanksPage() {
     router.push(`/ranks/${cleanTag}`);
   };
 
-  if (loading) {
+  // Show loading while organization context or cards are loading
+  if (orgLoading || loading) {
     return (
       <PageLayout title="Global Rankings">
         <div className="flex justify-center items-center">
           <div className="loading-spinner"></div>
-          <span className="ml-2 text-lg">Loading Categories...</span>
+          <span className="ml-2 text-lg">
+            {orgLoading ? 'Loading organization...' : 'Loading Categories...'}
+          </span>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  // Show error if no organization is available
+  if (!currentOrganization && !orgLoading) {
+    return (
+      <PageLayout title="Global Rankings">
+        <div className="status-error p-4 mb-4 rounded-lg">
+          No organization selected. Please select an organization to view rankings.
         </div>
       </PageLayout>
     );
@@ -85,8 +114,30 @@ export default function RanksPage() {
       </div>
       
       {decks.length === 0 ? (
-        <div className="text-center p-8">
-          <p className="text-muted">No categories available yet. Add some cards to create categories!</p>
+        <div className="text-center py-12">
+          <div className="mb-6">
+            <div className="text-6xl mb-4">🏆</div>
+            <h3 className="text-xl font-semibold mb-2">No Rankings Yet</h3>
+            <p className="text-gray-500 mb-6 max-w-md mx-auto">
+              Rankings are generated when people play and vote on cards. Start playing to create the first rankings!
+            </p>
+          </div>
+          <div className="space-y-3">
+            <button
+              onClick={() => router.push('/')}
+              className="btn-primary px-6 py-3 text-lg font-medium"
+            >
+              🎮 Start Playing to Generate Rankings
+            </button>
+            <div className="text-sm text-gray-400">
+              <button
+                onClick={() => router.push('/card-editor')}
+                className="text-blue-400 hover:text-blue-300 underline"
+              >
+                Or create more cards first
+              </button>
+            </div>
+          </div>
         </div>
       ) : (
         <div className="results-grid">

@@ -8,6 +8,31 @@
 @import './styles/buttons.css';
 @import './styles/forms.css';
 
+/* Organization Themes */
+:root {
+  --primary-color: #667eea;
+  --secondary-color: #764ba2;
+  --accent-color: #f093fb;
+  --background-color: #0a0a0a;
+  --text-color: #ffffff;
+  --font-family: 'Inter, sans-serif';
+  --font-size: 16px;
+  --border-radius: 8px;
+  --spacing: 1rem;
+}
+
+[data-theme='organization'] {
+  --primary-color: var(--org-primary-color);
+  --secondary-color: var(--org-secondary-color);
+  --accent-color: var(--org-accent-color);
+  --background-color: var(--org-background-color);
+  --text-color: var(--org-text-color);
+  --font-family: var(--org-font-family);
+  --font-size: var(--org-font-size);
+  --border-radius: var(--org-border-radius);
+  --spacing: var(--org-spacing);
+}
+
 /* Remaining styles that don't fit in other modules */
 .statistic-card {
   @apply p-4;

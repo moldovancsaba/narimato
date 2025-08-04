@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import { useOrganization } from '@/app/components/OrganizationProvider';
 import { useEventAgent } from '@/app/lib/hooks/useEventAgent';
 import { useCardSize } from '@/app/hooks/useCardSize';
 import { useOrientation } from '@/app/hooks/useOrientation';
@@ -41,7 +42,7 @@ import sessionManager from '@/app/lib/utils/sessionManager';
 
 import { Card } from '@/app/lib/types/card';
 import { handleApiError, withRetry, backupSessionState } from '@/app/lib/utils/errorHandling';
-import { SESSION_FIELDS, CARD_FIELDS, VOTE_FIELDS } from '@/app/lib/constants/fieldNames';
+import { CARD_FIELDS, VOTE_FIELDS, SESSION_FIELDS } from '@/app/lib/constants/fieldNames';
 import { createUniqueKey, validateSessionId, validateUUID } from '@/app/lib/utils/fieldValidation';
 
 export default function SwipePage() {
@@ -78,6 +79,7 @@ function SwipeContent({ onPlayIdChange }: SwipeContentProps) {
   const [isInitialized, setIsInitialized] = useState(false);
   const [shouldRenderContent, setShouldRenderContent] = useState(false);
   const router = useRouter();
+  const { currentOrganization } = useOrganization();
   const { state, cardSwipedLeft, cardSwipedRight, deckExhausted, errorOccurred, startSession, deckReady } = useEventAgent();
   const { cardWidth } = useCardSize();
 
@@ -104,21 +106,21 @@ function SwipeContent({ onPlayIdChange }: SwipeContentProps) {
         console.log('🔄 Initializing play session...');
 
         try {
-          const storedPlayId = localStorage.getItem(SESSION_FIELDS.ID);
+          const storedPlayId = localStorage.getItem(SESSION_FIELDS.UUID);
 
           if (storedPlayId && isMounted) {
             console.log('📝 Found stored play ID, validating session:', storedPlayId);
             
             // CRITICAL: Disable all caching for session validation to prevent stale state
-            const validateResponse = await fetch(`/api/v1/session/validate?sessionId=${storedPlayId}&_t=${Date.now()}`, {
+            const validateResponse = await fetch(`/api/v1/session/validate?${SESSION_FIELDS.UUID}=${storedPlayId}&_t=${Date.now()}`, {
               method: 'GET',
               headers: {
                 'Cache-Control': 'no-cache, no-store, must-revalidate',
                 'Pragma': 'no-cache',
-                'Expires': '0'
+                'Expires': '0',
+                'X-Organization-UUID': currentOrganization?.OrganizationUUID || ''
               }
             });
-            
             if (!isMounted) return; // Check if component still mounted
             
             if (!validateResponse.ok) {
@@ -153,7 +155,7 @@ function SwipeContent({ onPlayIdChange }: SwipeContentProps) {
             // If session is completed, redirect to results page
             if (validateData.status === 'completed') {
               console.log('🏁 Session completed, redirecting to results page');
-              router.push(`/completed?sessionId=${storedPlayId}`);
+              router.push(`/completed?${SESSION_FIELDS.UUID}=${storedPlayId}`);
               return;
             }
 
@@ -169,7 +171,7 @@ function SwipeContent({ onPlayIdChange }: SwipeContentProps) {
             // Use server data as single source of truth
             const serverDeck = validateData.session.deck;
             const serverSwipes = validateData.session.swipes || [];
-            const swipedCardIds = serverSwipes.map((s: any) => s.cardId);
+            const swipedCardIds = serverSwipes.map((s: any) => s.uuid);
             const currentCardFromServer = serverDeck.find((card: Card) => !swipedCardIds.includes(card.uuid));
 
             // If no current card available, check if session is completed
@@ -177,12 +179,12 @@ function SwipeContent({ onPlayIdChange }: SwipeContentProps) {
               // If session is already marked as completed, redirect to results
               if (validateData.status === 'completed') {
                 console.log('🏁 No more cards to swipe and session is completed, redirecting to results');
-                router.push(`/completed?sessionId=${storedPlayId}`);
+                router.push(`/completed?${SESSION_FIELDS.UUID}=${storedPlayId}`);
                 return;
               } else {
                 // Session is active but no cards available - mark as completed and redirect to results
                 console.log('🏁 No more cards to swipe, session should be completed - redirecting to results');
-                router.push(`/completed?sessionId=${storedPlayId}`);
+                router.push(`/completed?${SESSION_FIELDS.UUID}=${storedPlayId}`);
                 return;
               }
             }
@@ -247,11 +249,12 @@ function SwipeContent({ onPlayIdChange }: SwipeContentProps) {
           'Content-Type': 'application/json',
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
-          'Expires': '0'
+          'Expires': '0',
+          'X-Organization-UUID': currentOrganization?.OrganizationUUID || ''
         },
         body: JSON.stringify({
-          [SESSION_FIELDS.ID]: playId,
-          [CARD_FIELDS.ID]: currentCard[CARD_FIELDS.UUID],
+          [SESSION_FIELDS.UUID]: playId,
+          cardUUID: currentCard[CARD_FIELDS.UUID],
           [VOTE_FIELDS.DIRECTION]: direction
         })
       });
@@ -278,35 +281,36 @@ function SwipeContent({ onPlayIdChange }: SwipeContentProps) {
       if (data.sessionCompleted) {
         console.log('🏁 Play completed via swipe - redirecting to results');
         localStorage.removeItem('lastState');
-        router.push(`/completed?sessionId=${playId}`);
+        router.push(`/completed?${SESSION_FIELDS.UUID}=${playId}`);
         return;
       }
 
       // If voting required, navigate immediately before showing next card
       if (direction === 'right' && data.requiresVoting) {
         localStorage.setItem('lastState', JSON.stringify({
-          [CARD_FIELDS.ID]: currentCard[CARD_FIELDS.UUID],
+          cardUUID: currentCard[CARD_FIELDS.UUID],
           [VOTE_FIELDS.TIMESTAMP]: new Date().toISOString()
         }));
         
-        router.push(`/vote?sessionId=${playId}&${CARD_FIELDS.ID}=${currentCard[CARD_FIELDS.UUID]}`);
+        router.push(`/vote?${SESSION_FIELDS.UUID}=${playId}&cardUUID=${currentCard[CARD_FIELDS.UUID]}`);
         return;
       }
 
       // Update current card - refresh play state with no caching
-      const validateResponse = await fetch(`/api/v1/session/validate?sessionId=${playId}&_t=${Date.now()}`, {
+      const validateResponse = await fetch(`/api/v1/session/validate?${SESSION_FIELDS.UUID}=${playId}&_t=${Date.now()}`, {
         method: 'GET',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
-          'Expires': '0'
+          'Expires': '0',
+          'X-Organization-UUID': currentOrganization?.OrganizationUUID || ''
         }
       });
       
       if (validateResponse.ok) {
         const validateData = await validateResponse.json();
         if (validateData.isValid && validateData.session) {
-          const swipedCardIds = validateData.session.swipes?.map((s: any) => s.cardId) || [];
+          const swipedCardIds = validateData.session.swipes?.map((s: any) => s.uuid) || [];
           const nextCard = validateData.session.deck?.find((card: Card) => !swipedCardIds.includes(card.uuid));
           setCurrentCard(nextCard || null);
         } else {
@@ -364,7 +368,7 @@ function SwipeContent({ onPlayIdChange }: SwipeContentProps) {
   useEffect(() => {
     if (cards.length > 0 && !currentCard && playId) {
       console.log('All cards swiped, redirecting to completed page');
-      router.push(`/completed?sessionId=${playId}`); // Using sessionId param for backward compatibility
+      router.push(`/completed?${SESSION_FIELDS.UUID}=${playId}`);
     }
   }, [cards, currentCard, playId, router]);
 

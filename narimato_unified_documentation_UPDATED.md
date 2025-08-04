@@ -1278,7 +1278,63 @@ const validateRequest = (schema, version = 'v1') => {
 };
 ```
 
-### 15.3 Future Roadmap Considerations
+### 15.3 Database Refactoring Summary (August 2025)
+
+**Objectives:**
+Standardize UUID field naming conventions and database naming across the entire Narimato application to improve code consistency, maintainability, and developer experience.
+
+**Key Changes Implemented:**
+
+1. **UUID Field Naming Standardization:**
+   - `OrganizationUUID`: Consistent identifier for organization entities
+   - `SessionUUID`: Unified session identifier across all contexts
+   - `PlayUUID`: Standardized play/game instance identifier
+   - `CardUUID`: Consistent card entity identifier
+   - `DeckUUID`: Unified deck identifier
+   - All UUID fields now follow PascalCase convention
+
+2. **Database Naming Convention:**
+   - Default organization database: `narimato` (previously `narimato_default` / `narimato_org_default`)
+   - Organization-specific databases: Named using organization UUID
+   - Clear separation between default and organization-specific database contexts
+
+3. **API Route Parameter Updates:**
+   - All API endpoints now consistently use UUID-based parameters
+   - Route handlers updated to reference correct UUID field names
+   - Query parameters standardized across all endpoints
+
+4. **Database Query Field Updates:**
+   - MongoDB queries updated to use standardized UUID field names
+   - Aggregation pipelines aligned with new field conventions
+   - Index definitions updated for optimized UUID-based queries
+
+5. **Model Schema Consistency:**
+   - All Zod schemas updated with consistent UUID field naming
+   - Type definitions aligned across frontend and backend
+   - Validation rules standardized for UUID fields
+
+**Migration Strategy:**
+- Temporary backward compatibility maintained for legacy field names
+- Gradual deprecation of old field references
+- Clear migration path for existing data structures
+
+**Developer Impact:**
+- Improved code readability and consistency
+- Reduced confusion around field naming conventions
+- Enhanced maintainability of database operations
+- Simplified onboarding for new developers
+
+**Database Connection Management:**
+- Updated connection logic to reference correct database names
+- Improved error handling for database connection failures
+- Enhanced logging for database operations with proper naming
+
+**Validation and Error Handling:**
+- UUID validation standardized across all entry points
+- Error messages updated to reflect new field naming
+- Consistent error response format for UUID-related failures
+
+### 15.4 Future Roadmap Considerations
 - **Multi-language Support**: i18n infrastructure preparation
 - **Advanced Analytics**: User behavior heatmaps, A/B testing framework
 - **Social Features**: Shared rankings, community challenges

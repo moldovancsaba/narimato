@@ -63,15 +63,14 @@ const BackgroundStyleSchema = new mongoose.Schema({
 }, { _id: false });
 
 const CardSchema = new mongoose.Schema({
-  // Core identification - UUID for global uniqueness
-  uuid: { 
-    type: String, 
+  // 🔑 Primary identifier (required)
+  uuid: {
+    type: String,
     required: [true, 'UUID is required for card identification'],
-    unique: true, 
+    unique: true,
     index: true,
     validate: {
       validator: function(uuid: string) {
-        // Validate UUID v4 format
         return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(uuid);
       },
       message: 'UUID must be a valid v4 format'
@@ -79,7 +78,7 @@ const CardSchema = new mongoose.Schema({
   },
   
   // Card name (hashtag) - defines card identity and hierarchy position
-  name: { 
+  name: {
     type: String, 
     required: [true, 'Card name is required'],
     unique: true,
@@ -230,6 +229,10 @@ const CardSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now, index: true },
   updatedAt: { type: Date, default: Date.now }
 });
+
+// 🔍 Compound indexes for efficient lookups
+// Primary UUID-based index for card resolution
+CardSchema.index({ uuid: 1, isActive: 1 });
 
 // Performance Indexes for common query patterns
 // 1. Primary listing: active cards sorted by creation date

@@ -7,7 +7,7 @@ import { SessionResults } from '@/app/lib/models/SessionResults';
 import { GlobalRanking } from '@/app/lib/models/GlobalRanking';
 import { VoteRequestSchema } from '@/app/lib/validation/schemas';
 import mongoose from 'mongoose';
-import { SESSION_FIELDS, VOTE_FIELDS, API_FIELDS, CARD_FIELDS, PLAY_FIELDS } from '@/app/lib/constants/fieldNames';
+import { VOTE_FIELDS, API_FIELDS, CARD_FIELDS } from '@/app/lib/constants/fieldNames';
 import { validateUUID, validateSessionId } from '@/app/lib/utils/fieldValidation';
 import { savePlayResults } from '@/app/lib/utils/sessionResultsUtils';
 
@@ -442,13 +442,13 @@ async function performAtomicRankingUpdate(
     // If ranking is complete (no more comparisons), record the swipe
     if (newState === 'swiping') {
       const newCardSwipe = {
-        cardId: newCard,
+        uuid: newCard,
         direction: 'right',
         timestamp: new Date().toISOString()
       };
       
       // Check if swipe already exists to avoid duplicates
-      const swipeExists = play.swipes.some((swipe: any) => swipe.cardId === newCard);
+      const swipeExists = play.swipes.some((swipe: any) => swipe.uuid === newCard);
       if (!swipeExists) {
         play.swipes.push(newCardSwipe);
         console.log(`Added swipe record for ranked card: ${newCard}`);
@@ -465,11 +465,11 @@ async function performAtomicRankingUpdate(
         const allSwipesIncludingCurrent = [...play.swipes];
         
         // Ensure the newly ranked card has a swipe record for exhaustion calculation
-        const newCardHasSwipe = allSwipesIncludingCurrent.some(s => s.cardId === newCard);
+        const newCardHasSwipe = allSwipesIncludingCurrent.some(s => s.uuid === newCard);
         if (!newCardHasSwipe) {
           console.log(`🔄 Adding missing swipe record for exhaustion check: ${newCard}`);
           allSwipesIncludingCurrent.push({
-            cardId: newCard,
+            uuid: newCard,
             direction: 'right',
             timestamp: new Date().toISOString()
           });
@@ -479,13 +479,13 @@ async function performAtomicRankingUpdate(
           totalCardsInDeck: orderedCards.length,
           totalSwipesForCheck: allSwipesIncludingCurrent.length,
           newlyRankedCard: newCard.substring(0, 8) + '...',
-          allSwipeCardIds: allSwipesIncludingCurrent.map(s => s.cardId.substring(0, 8) + '...')
+          allSwipeCardIds: allSwipesIncludingCurrent.map(s => s.uuid.substring(0, 8) + '...')
         });
         
         // Check if all cards have been swiped
         const totalSwipesAfterThis = allSwipesIncludingCurrent.length;
         if (totalSwipesAfterThis >= orderedCards.length) {
-          console.log(`🎊 DECK EXHAUSTION DETECTED in vote endpoint - Completing play ${play.playUuid}:`, {
+          console.log(`🎊 DECK EXHAUSTION DETECTED in vote endpoint - Completing play ${play.uuid}:`, {
             totalCardsInDeck: cards.length,
             totalSwipes: play.swipes.length,
             totalVotes: play.votes.length,
@@ -506,7 +506,7 @@ async function performAtomicRankingUpdate(
           
           console.log(`📅 Removed expiry for completed play - will persist indefinitely for sharing`);
           
-          console.log(`✅ Play ${play.playUuid} marked as completed via vote endpoint - deck exhausted`);
+          console.log(`✅ Play ${play.uuid} marked as completed via vote endpoint - deck exhausted`);
           console.log(`📊 Final play state before saving to database:`, {
             personalRanking: play.personalRanking.map((id: string) => id.substring(0, 8) + '...'),
             totalCards: play.totalCards,
@@ -535,7 +535,7 @@ async function performAtomicRankingUpdate(
           
           // Check if all cards have been processed (either swiped left or ranked)
           if (totalProcessedCards >= totalCardsInDeck) {
-            console.log(`🎊 All cards processed - Completing play ${play.playUuid} via vote endpoint fallback:`, {
+            console.log(`🎊 All cards processed - Completing play ${play.uuid} via vote endpoint fallback:`, {
               totalCards: totalCardsInDeck,
               swipes: totalProcessedCards,
               ranked: personalRankingLength,
@@ -550,7 +550,7 @@ async function performAtomicRankingUpdate(
             const noExpiry = new Date('2099-12-31T23:59:59.999Z');
             play.expiresAt = noExpiry;
             
-            console.log(`✅ Play ${play.playUuid} marked as completed via vote endpoint fallback`);
+            console.log(`✅ Play ${play.uuid} marked as completed via vote endpoint fallback`);
           }
         }
       }
@@ -562,7 +562,7 @@ async function performAtomicRankingUpdate(
     // Commit transaction if all operations succeed
     await mongoSession.commitTransaction();
     
-    console.log(`Atomic update completed for play ${play.playUuid}:`, {
+    console.log(`Atomic update completed for play ${play.uuid}:`, {
       previousRanking: originalRanking,
       newRanking: updatedRanking,
       stateTransition: `${originalState} → ${newState}`,
@@ -574,7 +574,7 @@ async function performAtomicRankingUpdate(
         try {
           console.log(`💾 Play completed - attempting to save results after transaction commit...`);
           await savePlayResults(play, connection);
-          console.log(`✅ Play results saved successfully after completion for ${play.playUuid}`);
+          console.log(`✅ Play results saved successfully after completion for ${play.uuid}`);
           
           // ✅ CRITICAL FIX: Trigger automatic global ranking recalculation
           console.log(`🎯 Triggering global ranking recalculation after session completion...`);
@@ -587,7 +587,7 @@ async function performAtomicRankingUpdate(
           // Don't throw error - play completion should not fail due to results/ranking saving
           // But log it for monitoring
           if (resultsError instanceof Error && resultsError.message.includes('ranking')) {
-            console.error(`🚨 RANKING UPDATE FAILED for session ${play.playUuid}:`, resultsError.message);
+            console.error(`🚨 RANKING UPDATE FAILED for session ${play.uuid}:`, resultsError.message);
           }
         }
       }
@@ -644,7 +644,7 @@ function validateStateTransition(
   };
 }
 
-export const POST = createOrgAwareRoute(async (request, { organizationId }) => {
+export const POST = createOrgAwareRoute(async (request, { organizationUUID }) => {
   // Initialize audit trail for this operation
   const auditTrail: ComparisonAudit[] = [];
 let play: any = null;
@@ -654,13 +654,13 @@ let play: any = null;
     
     // Validate request body schema
     const validatedData = VoteRequestSchema.parse(body);
-    const playUuid = validatedData[SESSION_FIELDS.ID]; // Frontend sends sessionId but it's actually playUuid
-    const cardA = validatedData[VOTE_FIELDS.CARD_A];
-    const cardB = validatedData[VOTE_FIELDS.CARD_B];
+const sessionUUID = validatedData.sessionUUID || validatedData.sessionId; // Accept both sessionId and sessionUUID for compatibility
+    const cardAUUID = validatedData[VOTE_FIELDS.CARD_A];
+    const cardBUUID = validatedData[VOTE_FIELDS.CARD_B];
     const winner = validatedData[VOTE_FIELDS.WINNER];
     const timestamp = validatedData[VOTE_FIELDS.TIMESTAMP];
 
-    const connectDb = createOrgDbConnect(organizationId);
+    const connectDb = createOrgDbConnect(organizationUUID);
     const connection = await connectDb();
     
     // Get models bound to this specific connection
@@ -674,13 +674,13 @@ let play: any = null;
     
     if (elapsedMs > VOTE_TIMEOUT_MS) {
       const timeoutPlay = await PlayModel.findOneAndUpdate(
-        { [PLAY_FIELDS.UUID]: playUuid, status: { $in: ['active', 'completed'] }, version: body[SESSION_FIELDS.VERSION] },
+        { uuid: sessionUUID, status: { $in: ['active', 'completed'] }, version: body.version },
         { $inc: { version: 1 } },
         { new: true }
       );
       
       if (timeoutPlay) {
-        await timeoutPlay.handleVoteTimeout(cardA, cardB);
+await timeoutPlay.handleVoteTimeout(cardAUUID, cardBUUID);
         await timeoutPlay.save();
         
         return new NextResponse(
@@ -697,14 +697,14 @@ let play: any = null;
 
     // Find and lock session with optimistic concurrency control
 play = await PlayModel.findOneAndUpdate(
-      { [PLAY_FIELDS.UUID]: playUuid, status: { $in: ['active', 'completed'] }, version: body[SESSION_FIELDS.VERSION] },
+      { uuid: sessionUUID, status: { $in: ['active', 'completed'] }, version: body.version },
       { $inc: { version: 1 } },
       { new: true }
     );
     
 if (!play) {
       // Try to find the play without version check to provide better error info
-      const existingPlay = await PlayModel.findOne({ [PLAY_FIELDS.UUID]: playUuid, status: { $in: ['active', 'completed'] } });
+      const existingPlay = await PlayModel.findOne({ uuid: sessionUUID, status: { $in: ['active', 'completed'] } });
       
       if (!existingPlay) {
         return new NextResponse(
@@ -721,7 +721,7 @@ if (!play) {
             [API_FIELDS.ERROR]: 'Play version conflict',
             details: 'Play has been modified by another request',
             currentVersion: existingPlay.version,
-            expectedVersion: body[SESSION_FIELDS.VERSION],
+            expectedVersion: body.version,
             playStatus: existingPlay.status,
             playState: existingPlay.state
           }),
@@ -749,7 +749,7 @@ if (play.status === 'completed') {
         JSON.stringify({
           error: 'Invalid play session',
           details: `Play session status is '${play.status}', expected 'active'`,
-          playUuid: play.playUuid,
+          playUuid: play.uuid,
           currentStatus: play.status
         }),
         { status: 400 }
@@ -758,26 +758,26 @@ if (play.status === 'completed') {
 
     // Comprehensive validation layer 1: Basic integrity checks and adjust state transitions
     // Determine which card is the new card being ranked (not already in ranking)
-const newCard = play.personalRanking.includes(cardA) ? cardB : cardA;
+const newCardUUID = play.personalRanking.includes(cardAUUID) ? cardBUUID : cardAUUID;
     
     // Debug logging
     console.log('Vote validation debug:', {
-playUuid: play.playUuid,
-      cardA,
-      cardB,
+sessionUUID: play.uuid,
+      cardAUUID,
+      cardBUUID,
       winner,
-      newCard,
+      newCardUUID,
 currentRanking: play.personalRanking,
 playVotes: play.votes.length,
       lastVote: play.votes.length > 0 ? play.votes[play.votes.length - 1] : null
     });
     
     const integralityValidation = validateRankingIntegrity(
-      newCard,
+newCardUUID,
       play.personalRanking,
       winner,
-      cardA,
-      cardB,
+      cardAUUID,
+      cardBUUID,
       play.votes
     );
 
@@ -790,7 +790,7 @@ if (play.state === 'voting' && integralityValidation.isValid) {
       console.log('Validation failed:', {
         errors: integralityValidation.errors,
         warnings: integralityValidation.warnings,
-        playUuid: play.playUuid
+        sessionUUID: play.uuid
       });
       
       return new NextResponse(
@@ -839,11 +839,11 @@ if (play.state === 'voting' && integralityValidation.isValid) {
     let updatedRanking: RankingResult;
     try {
       updatedRanking = insertCardInRanking(
-newCard,
+newCardUUID,
         play.personalRanking,
         winner,
-        cardA,
-        cardB,
+        cardAUUID,
+        cardBUUID,
         auditTrail,
         play.votes
       );
@@ -886,8 +886,8 @@ play.state,
 
     // Prepare new vote record with enhanced metadata
     const newVote = {
-      [VOTE_FIELDS.CARD_A]: cardA,
-      [VOTE_FIELDS.CARD_B]: cardB,
+      [VOTE_FIELDS.CARD_A]: cardAUUID,
+      [VOTE_FIELDS.CARD_B]: cardBUUID,
       [VOTE_FIELDS.WINNER]: winner,
 [VOTE_FIELDS.TIMESTAMP]: new Date(),
       // Additional metadata for audit purposes
@@ -903,7 +903,7 @@ await performAtomicRankingUpdate(
         updatedRanking.ranking,
         targetState,
         auditTrail,
-        newCard,
+        newCardUUID,
         CardModel,
         connection
       );
@@ -959,7 +959,7 @@ currentRanking: play.personalRanking,
     console.error('Vote processing error:', {
       error: error.message,
       stack: error.stack,
-playUuid: play?.playUuid,
+sessionUUID: play?.uuid,
       auditTrailLength: auditTrail.length
     });
     

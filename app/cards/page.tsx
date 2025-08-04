@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { createUniqueKey, validateUUID } from '@/app/lib/utils/fieldValidation';
+import { useOrganization } from '@/app/components/OrganizationProvider';
 import PageLayout from '../components/PageLayout'; // Import the new layout
 
 interface Card {
@@ -26,17 +27,33 @@ interface Card {
 
 export default function CardsPage() {
   const router = useRouter();
+  const { currentOrganization, isLoading: orgLoading } = useOrganization();
   const [cards, setCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchCards();
-  }, []);
+    // Only fetch cards when organization is loaded and available
+    if (!orgLoading && currentOrganization) {
+      fetchCards();
+    }
+  }, [currentOrganization, orgLoading]);
 
   const fetchCards = async () => {
+    if (!currentOrganization) {
+      setError('No organization selected');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await fetch('/api/v1/cards');
+      // Use organization-aware API endpoint by adding organization context to headers
+      const response = await fetch('/api/v1/cards', {
+        headers: {
+          'X-Organization-UUID': currentOrganization.OrganizationUUID
+        }
+      });
+      
       if (!response.ok) throw new Error('Failed to fetch cards');
       const data = await response.json();
       setCards(data.cards);
@@ -59,11 +76,19 @@ export default function CardsPage() {
       return;
     }
     
+    if (!currentOrganization) {
+      setError('No organization selected');
+      return;
+    }
+    
     if (!confirm('Are you sure you want to delete this card?')) return;
     
     try {
       const response = await fetch(`/api/v1/cards/${uuid}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'X-Organization-UUID': currentOrganization.OrganizationUUID
+        }
       });
 
       if (!response.ok) throw new Error('Failed to delete card');
@@ -82,15 +107,19 @@ export default function CardsPage() {
         return;
       }
       
-      const response = await fetch(`/api/v1/cards/${uuid}`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ isActive: !isActive }),
-        }
-      );
+      if (!currentOrganization) {
+        setError('No organization selected');
+        return;
+      }
+      
+      const response = await fetch(`/api/v1/cards/${uuid}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Organization-UUID': currentOrganization.OrganizationUUID
+        },
+        body: JSON.stringify({ isActive: !isActive }),
+      });
 
       if (!response.ok) throw new Error('Failed to update card status');
       fetchCards();
@@ -100,19 +129,38 @@ export default function CardsPage() {
     }
   };
 
-  if (loading) {
+  // Show loading while organization context or cards are loading
+  if (orgLoading || loading) {
     return (
       <div className="flex items-center justify-center page-height">
         <div className="loading-spinner"></div>
-        <span className="ml-2 text-lg">Loading cards...</span>
+        <span className="ml-2 text-lg">
+          {orgLoading ? 'Loading organization...' : 'Loading cards...'}
+        </span>
       </div>
+    );
+  }
+
+  // Show error if no organization is available
+  if (!currentOrganization) {
+    return (
+      <PageLayout title="Card Management" className="gradient-bg-2layer">
+        <div className="status-error p-4 mb-4 rounded-lg">
+          No organization selected. Please select an organization to view cards.
+        </div>
+      </PageLayout>
     );
   }
 
   return (
     <PageLayout title="Card Management" className="gradient-bg-2layer">
       <div className="mb-8 flex justify-between items-center">
-        <h2 className="text-xl font-semibold mb-4">All Cards</h2>
+        <div>
+          <h2 className="text-xl font-semibold mb-1">All Cards</h2>
+          <p className="text-sm text-gray-500">
+            Organization: {currentOrganization.OrganizationName}
+          </p>
+        </div>
         <button
           onClick={() => router.push('/card-editor')}
           className="btn btn-primary"
@@ -127,15 +175,32 @@ export default function CardsPage() {
         </div>
       )}
 
-      <div className="results-grid">
-        {cards.map((card) => (
-          <motion.div
-            key={createUniqueKey('card', card.uuid)}
-            layout
-            className={`relative group ${
-              !card.isActive ? 'opacity-50' : ''
-            }`}
+      {cards.length === 0 && !error ? (
+        <div className="text-center py-12">
+          <div className="mb-6">
+            <div className="text-6xl mb-4">📇</div>
+            <h3 className="text-xl font-semibold mb-2">No Cards Yet</h3>
+            <p className="text-gray-500 mb-6 max-w-md mx-auto">
+              Start building your card collection by creating your first card!
+            </p>
+          </div>
+          <button
+            onClick={() => router.push('/card-editor')}
+            className="btn-primary px-6 py-3 text-lg font-medium"
           >
+            🎨 Create Your First Card
+          </button>
+        </div>
+      ) : (
+        <div className="results-grid">
+          {cards.map((card) => (
+            <motion.div
+              key={createUniqueKey('card', card.uuid)}
+              layout
+              className={`relative group ${
+                !card.isActive ? 'opacity-50' : ''
+              }`}
+            >
             {/* Card Preview - Display name and basic info */}
             <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg min-h-[200px] flex flex-col justify-between">
               <div>
@@ -218,7 +283,8 @@ export default function CardsPage() {
             </div>
           </motion.div>
         ))}
-      </div>
+        </div>
+      )}
     </PageLayout>
   );
 }

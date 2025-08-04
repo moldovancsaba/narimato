@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useOrganization } from '@/app/components/OrganizationProvider';
 
 interface Card {
   uuid: string;
@@ -18,6 +19,7 @@ interface CardManagementProps {
 }
 
 export default function CardManagement({ deckHashtag }: CardManagementProps) {
+  const { currentOrganization, isLoading: orgLoading } = useOrganization();
   const [cards, setCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -30,6 +32,13 @@ export default function CardManagement({ deckHashtag }: CardManagementProps) {
   const hashtagWithoutSymbol = deckHashtag.replace('#', '');
 
   const loadCards = useCallback(async (pageNum: number = 1, searchTerm: string = '', append: boolean = false) => {
+    if (!currentOrganization) {
+      console.warn('No organization available for loading cards');
+      setLoading(false);
+      setLoadingMore(false);
+      return;
+    }
+
     try {
       if (append) {
         setLoadingMore(true);
@@ -45,7 +54,11 @@ export default function CardManagement({ deckHashtag }: CardManagementProps) {
         sortOrder: 'desc'
       });
 
-      const response = await fetch(`/api/v1/cards?${params}`);
+      const response = await fetch(`/api/v1/cards?${params}`, {
+        headers: {
+          'X-Organization-UUID': currentOrganization.OrganizationUUID
+        }
+      });
       const data = await response.json();
 
       if (data.success) {
@@ -63,11 +76,14 @@ export default function CardManagement({ deckHashtag }: CardManagementProps) {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, []);
+  }, [currentOrganization]);
 
   useEffect(() => {
-    loadCards(1, search);
-  }, [search, loadCards]);
+    // Only load cards when organization is available and not loading
+    if (!orgLoading && currentOrganization) {
+      loadCards(1, search);
+    }
+  }, [search, loadCards, currentOrganization, orgLoading]);
 
   const handleLoadMore = () => {
     if (hasMore && !loadingMore) {
@@ -102,11 +118,16 @@ export default function CardManagement({ deckHashtag }: CardManagementProps) {
       }
 
       const response = await fetch(`/api/v1/cards/${cardId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'PATCH',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Organization-UUID': currentOrganization?.OrganizationUUID || 'default'
+        },
         body: JSON.stringify({
-          tags: updatedTags,
-          text: updatedText
+          hashtags: updatedTags,
+          body: {
+            textContent: updatedText
+          }
         })
       });
 
@@ -153,11 +174,29 @@ export default function CardManagement({ deckHashtag }: CardManagementProps) {
     );
   };
 
-  if (loading) {
+  // Show loading while organization context or cards are loading
+  if (orgLoading || loading) {
     return (
       <div className="text-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent mx-auto mb-4"></div>
-        <p className="text-sm text-muted-foreground">Loading cards...</p>
+        <p className="text-sm text-muted-foreground">
+          {orgLoading ? 'Loading organization...' : 'Loading cards...'}
+        </p>
+      </div>
+    );
+  }
+
+  // Show error if no organization is available
+  if (!currentOrganization) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-4xl mb-2">⚠️</div>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          No Organization Selected
+        </h3>
+        <p className="text-gray-600 dark:text-gray-400 text-sm">
+          Please select an organization to manage cards.
+        </p>
       </div>
     );
   }

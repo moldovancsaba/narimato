@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { SESSION_FIELDS } from '@/app/lib/constants/fieldNames';
+import { useOrganization } from '@/app/components/OrganizationProvider';
 import PageLayout from './components/PageLayout';
 import DeckCard from './components/DeckCard';
 
 interface PlayableCard {
-  _id: string;
+  uuid: string;
   hashtag: string;
   slug: string;
   title: string;
@@ -28,6 +28,7 @@ interface PlayableCard {
 
 export default function HomePage() {
   const router = useRouter();
+  const { currentOrganization, isLoading: orgLoading } = useOrganization();
   const [isStarting, setIsStarting] = useState(false);
   const [playableCards, setPlayableCards] = useState<PlayableCard[]>([]);
   const [selectedCard, setSelectedCard] = useState('');
@@ -35,18 +36,34 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchPlayableCards = async () => {
-      try {
-        setLoading(true);
-        console.log('🔄 Starting to fetch playable cards...');
-        
-        const response = await fetch('/api/v1/cards?type=playable');
-        console.log('📡 API response received:', {
-          ok: response.ok,
-          status: response.status,
-          statusText: response.statusText,
-          headers: Object.fromEntries(response.headers.entries())
-        });
+    // Only fetch cards when organization is loaded and available
+    if (!orgLoading && currentOrganization) {
+      fetchPlayableCards();
+    }
+  }, [currentOrganization, orgLoading]);
+
+  const fetchPlayableCards = async () => {
+    if (!currentOrganization) {
+      setError('No organization selected');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      console.log('🔄 Starting to fetch playable cards for organization:', currentOrganization.OrganizationName);
+      
+      const response = await fetch('/api/v1/cards?type=playable', {
+        headers: {
+          'X-Organization-UUID': currentOrganization.OrganizationUUID
+        }
+      });
+      console.log('📡 API response received:', {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries())
+      });
         
         if (!response.ok) {
           const errorText = await response.text();
@@ -76,7 +93,7 @@ export default function HomePage() {
         
         // Map cards to playable card structure
         const mappedCards = (data.cards || []).map((card: any) => ({
-          _id: card.uuid,
+          uuid: card.uuid,
           hashtag: card.name, // Full hashtag like #SPORT
           slug: card.name.substring(1).toLowerCase(), // Remove # and lowercase
           title: card.body?.textContent || card.name.substring(1), // Use text content or name without #
@@ -104,9 +121,6 @@ export default function HomePage() {
       }
     };
 
-    fetchPlayableCards();
-  }, []);
-
   const handleStart = async (selectedTag: string) => {
     if (isStarting) return; // Prevent double-clicks
     
@@ -118,7 +132,7 @@ export default function HomePage() {
       // This prevents card state mismatches and ensures clean session initialization
       if (typeof window !== 'undefined') {
         const beforeCleanup = {
-          sessionId: localStorage.getItem(SESSION_FIELDS.ID),
+          sessionId: localStorage.getItem('sessionUUID'),
           browserSessionId: localStorage.getItem('browserSessionId'),
           lastState: localStorage.getItem('lastState'),
           sessionVersion: localStorage.getItem('sessionVersion'),
@@ -128,7 +142,7 @@ export default function HomePage() {
         
         // Clear ALL session-related localStorage items to ensure fresh start
         // This prevents frontend from using stale card state that doesn't match backend
-        localStorage.removeItem(SESSION_FIELDS.ID);
+        localStorage.removeItem('sessionUUID');
         localStorage.removeItem('lastState');
         localStorage.removeItem('sessionVersion');
         localStorage.removeItem('deckState');
@@ -155,11 +169,12 @@ export default function HomePage() {
         }
       }
       
-      // Pass selected card to play start API
+      // Pass selected card to play start API with organization context
       const response = await fetch('/api/v1/play/start', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Organization-UUID': currentOrganization?.OrganizationUUID || 'default'
         },
         body: JSON.stringify({ 
           cardName: selectedTag,
@@ -184,7 +199,7 @@ export default function HomePage() {
       console.log('Play start API response:', playData);
       
       if (typeof window !== 'undefined' && playData.playUuid) {
-        localStorage.setItem(SESSION_FIELDS.ID, playData.playUuid);
+        localStorage.setItem('sessionUUID', playData.playUuid);
       }
       
       // Navigate to swipe page
@@ -197,12 +212,26 @@ export default function HomePage() {
     }
   };
 
-  if (loading) {
+  // Show loading while organization context or cards are loading
+  if (orgLoading || loading) {
     return (
       <div className="flex items-center justify-center page-height">
         <div className="loading-spinner"></div>
-        <span className="ml-2 text-lg">Loading cards...</span>
+        <span className="ml-2 text-lg">
+          {orgLoading ? 'Loading organization...' : 'Loading cards...'}
+        </span>
       </div>
+    );
+  }
+
+  // Show error if no organization is available
+  if (!currentOrganization) {
+    return (
+      <PageLayout title="几卂尺丨爪卂ㄒㄖ">
+        <div className="status-error p-4 mb-4 rounded-lg">
+          No organization selected. Please select an organization to continue.
+        </div>
+      </PageLayout>
     );
   }
 
@@ -218,6 +247,9 @@ export default function HomePage() {
         
         <div className="text-center mb-6">
           <h2 className="text-xl font-semibold">Choose a Category</h2>
+          <p className="text-sm text-gray-500 mt-1">
+            Organization: {currentOrganization.OrganizationName}
+          </p>
         </div>
       </div>
 
@@ -227,20 +259,48 @@ export default function HomePage() {
         </div>
       )}
 
-      <div className="results-grid">
-        {playableCards.map((card) => (
-          <DeckCard
-            key={card._id}
-            tag={card.hashtag}
-            displayName={card.title}
-            cardCount={card.cardCount}
-            onClick={() => handleStart(card.hashtag)}
-            isLoading={isStarting && card.hashtag === selectedCard}
-            imageUrl={card.imageUrl}
-            cardSize={card.cardSize}
-          />
-        ))}
-      </div>
+      {playableCards.length === 0 && !error ? (
+        <div className="text-center py-12">
+          <div className="mb-6">
+            <div className="text-6xl mb-4">🎴</div>
+            <h3 className="text-xl font-semibold mb-2">No Playable Cards Yet</h3>
+            <p className="text-gray-500 mb-6 max-w-md mx-auto">
+              You need at least 2 cards in a category to start ranking. Create some cards to get started!
+            </p>
+          </div>
+          <div className="space-y-3">
+            <button
+              onClick={() => router.push('/card-editor')}
+              className="btn-primary px-6 py-3 text-lg font-medium"
+            >
+              🎨 Create Your First Cards
+            </button>
+            <div className="text-sm text-gray-400">
+              <button
+                onClick={() => router.push('/cards')}
+                className="text-blue-400 hover:text-blue-300 underline"
+              >
+                Or view existing cards
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="results-grid">
+          {playableCards.map((card) => (
+            <DeckCard
+              key={card.uuid}
+              tag={card.hashtag}
+              displayName={card.title}
+              cardCount={card.cardCount}
+              onClick={() => handleStart(card.hashtag)}
+              isLoading={isStarting && card.hashtag === selectedCard}
+              imageUrl={card.imageUrl}
+              cardSize={card.cardSize}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Privacy Notice */}
       <div className="text-center mt-8">

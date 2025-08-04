@@ -3,9 +3,9 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { SESSION_FIELDS } from '@/app/lib/constants/fieldNames';
 import BaseCard from '@/app/components/BaseCard';
 import PageLayout from '../components/PageLayout';
+import { SESSION_FIELDS } from '@/app/lib/constants/fieldNames';
 
 export default function CompletedPage() {
   return (
@@ -35,8 +35,8 @@ function CompletedContent() {
   useEffect(() => {
     const loadResults = async () => {
       if (typeof window !== 'undefined') {
-        // Check if there's a sessionId in URL parameters (shared link)
-const urlPlayId = searchParams.get('sessionId'); // Using sessionId parameter name for backward compatibility
+        // Check if there's a sessionUUID in URL parameters (shared link)
+const urlPlayId = searchParams.get(SESSION_FIELDS.UUID);
         
         if (urlPlayId) {
           // This is a shared link - fetch from saved results
@@ -50,14 +50,14 @@ const urlPlayId = searchParams.get('sessionId'); // Using sessionId parameter na
               setRanking(data.personalRanking || []);
               setStatistics(data.statistics || {});
               setIsShared(true);
-              setShareableUrl(`${window.location.origin}/completed?sessionId=${urlPlayId}`);
+              setShareableUrl(`${window.location.origin}/completed?${SESSION_FIELDS.UUID}=${urlPlayId}`);
             }
           } catch (err) {
             setError('Failed to load shared session results.');
           }
         } else {
           // This is a fresh completion - fetch from current session
-          const playId = localStorage.getItem(SESSION_FIELDS.ID);
+          const playId = localStorage.getItem(SESSION_FIELDS.UUID);
           if (playId) {
             // Add retry logic to handle race condition between session completion and results saving
             const maxRetries = 3;
@@ -68,7 +68,7 @@ const urlPlayId = searchParams.get('sessionId'); // Using sessionId parameter na
             
             while (retryCount < maxRetries && !success) {
               try {
-                const response = await fetch(`/api/v1/play/results?sessionId=${playId}`); // Using sessionId parameter name for backward compatibility
+                const response = await fetch(`/api/v1/play/results?${SESSION_FIELDS.UUID}=${playId}`);
                 const data = await response.json();
                 
                 if (data.error) {
@@ -91,7 +91,7 @@ const urlPlayId = searchParams.get('sessionId'); // Using sessionId parameter na
                     const saveResponse = await fetch('/api/v1/session/save-results', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ [SESSION_FIELDS.ID]: playId })
+                    body: JSON.stringify({ [SESSION_FIELDS.UUID]: playId })
                     });
                     
                     const saveData = await saveResponse.json();
@@ -117,7 +117,7 @@ const urlPlayId = searchParams.get('sessionId'); // Using sessionId parameter na
             
             // Clean up play data but keep browser session ID for analytics
             sessionStorage.clear();
-            localStorage.removeItem(SESSION_FIELDS.ID); // Remove play UUID
+            localStorage.removeItem(SESSION_FIELDS.UUID); // Remove play UUID
             localStorage.removeItem('lastState');
             localStorage.removeItem('sessionVersion');
             localStorage.removeItem('deckState');
@@ -181,7 +181,7 @@ const urlPlayId = searchParams.get('sessionId'); // Using sessionId parameter na
               onClick={() => {
                 // Clear all session data before starting new session
                 if (typeof window !== 'undefined') {
-                  localStorage.removeItem(SESSION_FIELDS.ID);
+                  localStorage.removeItem(SESSION_FIELDS.UUID);
                   localStorage.removeItem('lastState');
                   localStorage.removeItem('sessionVersion');
                   localStorage.removeItem('deckState');
@@ -266,9 +266,9 @@ const urlPlayId = searchParams.get('sessionId'); // Using sessionId parameter na
             const cardType = mediaUrl && !cardContent.text ? 'media' : 'text';
             
             return (
-              <div key={item.cardId} className="relative">
+              <div key={item.uuid} className="relative">
                 <BaseCard
-                  uuid={cardData.uuid || item.cardId}
+                  uuid={cardData.uuid || item.uuid}
                   type={cardType}
                   content={{
                     mediaUrl: cardType === 'media' ? mediaUrl : undefined,

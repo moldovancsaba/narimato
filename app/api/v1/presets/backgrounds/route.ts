@@ -7,9 +7,15 @@ import { BackgroundPreset } from '@/app/lib/models/BackgroundPreset';
 export async function GET(request: Request) {
   try {
     const orgContext = await getOrganizationContext(request);
-    const organizationId = orgContext?.organizationId || 'default';
+    if (!orgContext) {
+      return NextResponse.json(
+        { success: false, error: 'Organization not found' },
+        { status: 404 }
+      );
+    }
+    const organizationUUID = orgContext.organizationUUID;
 
-    const connectDb = createOrgDbConnect(organizationId);
+    const connectDb = createOrgDbConnect(organizationUUID);
     const connection = await connectDb();
     const BackgroundPresetModel = connection.model('BackgroundPreset', BackgroundPreset.schema);
     
@@ -35,9 +41,15 @@ export async function GET(request: Request) {
 export async function POST(request: NextRequest) {
   try {
     const orgContext = await getOrganizationContext(request);
-    const organizationId = orgContext?.organizationId || 'default';
+    if (!orgContext) {
+      return NextResponse.json(
+        { success: false, error: 'Organization not found' },
+        { status: 404 }
+      );
+    }
+    const organizationUUID = orgContext.organizationUUID;
 
-    const connectDb = createOrgDbConnect(organizationId);
+    const connectDb = createOrgDbConnect(organizationUUID);
     const connection = await connectDb();
     const BackgroundPresetModel = connection.model('BackgroundPreset', BackgroundPreset.schema);
     
@@ -93,9 +105,15 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const orgContext = await getOrganizationContext(request);
-    const organizationId = orgContext?.organizationId || 'default';
+    if (!orgContext) {
+      return NextResponse.json(
+        { success: false, error: 'Organization not found' },
+        { status: 404 }
+      );
+    }
+    const organizationUUID = orgContext.organizationUUID;
 
-    const connectDb = createOrgDbConnect(organizationId);
+    const connectDb = createOrgDbConnect(organizationUUID);
     const connection = await connectDb();
     const BackgroundPresetModel = connection.model('BackgroundPreset', BackgroundPreset.schema);
     

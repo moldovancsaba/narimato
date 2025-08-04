@@ -3,23 +3,22 @@ import { createOrgAwareRoute } from '@/app/lib/middleware/organization';
 import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { Play } from '@/app/lib/models/Play';
 import { Card } from '@/app/lib/models/Card';
-import { PLAY_FIELDS } from '@/app/lib/constants/fieldNames';
 
-export const GET = createOrgAwareRoute(async (request, { organizationId }) => {
+export const GET = createOrgAwareRoute(async (request, { organizationUUID }) => {
   try {
     const searchParams = request.nextUrl.searchParams;
-    // Note: sessionId parameter is actually playUuid in the new architecture
-    const playUuid = searchParams.get('sessionId');
-    const cardId = searchParams.get('cardId');
+    // Accept both sessionId and sessionUUID for compatibility
+    const playUuid = searchParams.get('sessionUUID') || searchParams.get('sessionId');
+    const cardUUID = searchParams.get('cardUUID') || searchParams.get('cardId');
 
-    if (!playUuid || !cardId) {
+    if (!playUuid || !cardUUID) {
       return new NextResponse(
         JSON.stringify({ error: 'Missing required parameters' }),
         { status: 400 }
       );
     }
 
-    const connectDb = createOrgDbConnect(organizationId);
+    const connectDb = createOrgDbConnect(organizationUUID);
     const connection = await connectDb();
     
     // Get models bound to this specific connection
@@ -28,8 +27,8 @@ export const GET = createOrgAwareRoute(async (request, { organizationId }) => {
 
     // Find play and validate (accept both active and completed)
     const play = await PlayModel.findOne({
-      [PLAY_FIELDS.UUID]: playUuid, 
-      [PLAY_FIELDS.STATUS]: { $in: ['active', 'completed'] } 
+      uuid: playUuid, 
+      status: { $in: ['active', 'completed'] }
     });
     if (!play) {
       return new NextResponse(
@@ -41,7 +40,7 @@ export const GET = createOrgAwareRoute(async (request, { organizationId }) => {
     // If no ranked cards yet, this is the first card to be ranked
     if (play.personalRanking.length === 0) {
       // For the first card, return it as both A and B to show in UI
-      const card = await CardModel.findOne({ uuid: cardId });
+      const card = await CardModel.findOne({ uuid: cardUUID });
       if (!card) {
         return new NextResponse(
           JSON.stringify({ error: 'Card not found' }),
@@ -71,7 +70,7 @@ export const GET = createOrgAwareRoute(async (request, { organizationId }) => {
     let compareCardId: string;
     
     console.log('Vote comparison API - determining next comparison:', {
-      cardId,
+      cardUUID,
       personalRanking: play.personalRanking,
       votesCount: play.votes.length
     });
@@ -149,15 +148,15 @@ export const GET = createOrgAwareRoute(async (request, { organizationId }) => {
       console.log('First comparison - using middle card:', { middleIndex, compareCardId });
     } else {
       // Calculate accumulated search bounds for this card
-      const bounds = calculateSearchBounds(cardId, play.personalRanking, play.votes);
+      const bounds = calculateSearchBounds(cardUUID, play.personalRanking, play.votes);
       
       console.log('Accumulated search bounds:', {
-        cardId,
+        cardUUID,
         searchStart: bounds.start,
         searchEnd: bounds.end,
         searchSpace: play.personalRanking.slice(bounds.start, bounds.end),
         allVotesForCard: play.votes.filter((v: any) => {
-          return v.cardA === cardId || v.cardB === cardId;
+          return v.cardA === cardUUID || v.cardB === cardUUID;
         })
       });
       
@@ -169,13 +168,13 @@ export const GET = createOrgAwareRoute(async (request, { organizationId }) => {
         const insertPosition = bounds.start;
         const newRanking = [
           ...play.personalRanking.slice(0, insertPosition),
-          cardId,
+          cardUUID,
           ...play.personalRanking.slice(insertPosition)
         ];
         
         // Update play state to swiping since ranking is complete
         const updatedPlay = await PlayModel.findOneAndUpdate(
-          { [PLAY_FIELDS.UUID]: playUuid, [PLAY_FIELDS.STATUS]: { $in: ['active', 'completed'] } },
+          { uuid: playUuid, status: { $in: ['active', 'completed'] } },
           {
             $set: {
               personalRanking: newRanking,
@@ -194,7 +193,7 @@ export const GET = createOrgAwareRoute(async (request, { organizationId }) => {
         }
         
         console.log('Card position determined and inserted:', {
-          cardId: cardId.substring(0, 8) + '...',
+          cardUUID: cardUUID.substring(0, 8) + '...',
           insertPosition,
           previousRanking: play.personalRanking.map((id: string) => id.substring(0, 8) + '...'),
           newRanking: newRanking.map((id: string) => id.substring(0, 8) + '...'),
@@ -225,7 +224,7 @@ export const GET = createOrgAwareRoute(async (request, { organizationId }) => {
 
     // Get both cards and verify they exist
     const [newCard, compareCard] = await Promise.all([
-      CardModel.findOne({ uuid: cardId }),
+      CardModel.findOne({ uuid: cardUUID }),
       CardModel.findOne({ uuid: compareCardId })
     ]);
 
@@ -233,7 +232,7 @@ export const GET = createOrgAwareRoute(async (request, { organizationId }) => {
       return new NextResponse(
         JSON.stringify({ 
           error: 'Card not found',
-          details: { cardId, message: 'The card to be ranked could not be found' }
+          details: { cardUUID, message: 'The card to be ranked could not be found' }
         }),
         { status: 404 }
       );
@@ -252,7 +251,7 @@ export const GET = createOrgAwareRoute(async (request, { organizationId }) => {
       );
     }
 
-    console.log(`Comparing cards for ${playUuid.substring(0, 8)}...: ${cardId.substring(0, 8)}... vs ${compareCardId.substring(0, 8)}...`);
+    console.log(`Comparing cards for ${playUuid.substring(0, 8)}...: ${cardUUID.substring(0, 8)}... vs ${compareCardId.substring(0, 8)}...`);
 
     return new NextResponse(
       JSON.stringify({

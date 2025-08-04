@@ -1,24 +1,24 @@
-import { SESSION_FIELDS, CARD_FIELDS } from '@/app/lib/constants/fieldNames';
+import { CARD_FIELDS, SESSION_FIELDS } from '@/app/lib/constants/fieldNames';
 
 class SessionManager {
-  private playId: string | null = null;
+  private sessionUUID: string | null = null;
   private currentCard: string | null = null;
 
-  initialize(playId: string) {
-    this.playId = playId;
+  initialize(sessionUUID: string) {
+    this.sessionUUID = sessionUUID;
     this.currentCard = null;
     localStorage.clear();
     sessionStorage.clear();
-    localStorage.setItem(SESSION_FIELDS.ID, playId);
+    localStorage.setItem(SESSION_FIELDS.UUID, sessionUUID);
   }
 
-  updateCurrentCard(cardId: string) {
-    this.currentCard = cardId;
-    localStorage.setItem(CARD_FIELDS.ID, cardId);
+  updateCurrentCard(cardUUID: string) {
+    this.currentCard = cardUUID;
+    localStorage.setItem(CARD_FIELDS.UUID, cardUUID);
   }
 
   clear() {
-    this.playId = null;
+    this.sessionUUID = null;
     this.currentCard = null;
     localStorage.clear();
     sessionStorage.clear();
@@ -30,7 +30,7 @@ class SessionManager {
 
   isSessionComplete() {
     // Mock logic for simplicity - implement according to session completion business rules
-    return this.playId != null && this.currentCard === null;
+    return this.sessionUUID != null && this.currentCard === null;
   }
 }
 

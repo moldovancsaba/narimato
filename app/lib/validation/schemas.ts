@@ -1,19 +1,18 @@
 import { z } from 'zod';
-import { SESSION_FIELDS, CARD_FIELDS, VOTE_FIELDS } from '../constants/fieldNames';
 
 export const SwipeRequestSchema = z.object({
-  [SESSION_FIELDS.ID]: z.string().uuid(),
-  [CARD_FIELDS.ID]: z.string().uuid(),
-  [VOTE_FIELDS.DIRECTION]: z.enum(['left', 'right'])
+  sessionUUID: z.string().uuid(),
+  cardUUID: z.string().uuid(),
+  direction: z.enum(['left', 'right'])
 });
 
 export const VoteRequestSchema = z.object({
-  [SESSION_FIELDS.ID]: z.string().uuid(),
-  [VOTE_FIELDS.CARD_A]: z.string().uuid(),
-  [VOTE_FIELDS.CARD_B]: z.string().uuid(),
-  [VOTE_FIELDS.WINNER]: z.string().uuid(),
-  [VOTE_FIELDS.TIMESTAMP]: z.string().datetime({ offset: true }).default(() => new Date().toISOString())
-}).refine(data => data[VOTE_FIELDS.WINNER] === data[VOTE_FIELDS.CARD_A] || data[VOTE_FIELDS.WINNER] === data[VOTE_FIELDS.CARD_B], {
+  sessionUUID: z.string().uuid(),
+  cardA: z.string().uuid(),
+  cardB: z.string().uuid(),
+  winner: z.string().uuid(),
+  timestamp: z.string().datetime({ offset: true }).default(() => new Date().toISOString())
+}).refine(data => data.winner === data.cardA || data.winner === data.cardB, {
   message: "Winner must be either cardA or cardB"
 });
 

@@ -11,13 +11,13 @@ import { eventAgent, AppState, AppEvent, AppContext } from '../services/EventAge
 export function useEventAgent() {
   const [state, setState] = useState<AppState>('INITIALIZING'); // Start with default state
   const [context, setContext] = useState<AppContext>({
-    sessionId: null,
-    currentCardId: null,
+    sessionUUID: null,
+    currentCardUUID: null,
     swipedCards: [],
     rankedCards: [],
     totalCards: 0,
     remainingCards: 0,
-    currentVotingCard: null,
+    currentVotingCardUUID: null,
     error: null
   });
 
@@ -45,28 +45,28 @@ export function useEventAgent() {
   }, []);
 
   // Convenience functions for common events
-  const startSession = useCallback((sessionId: string, deckSize: number) => {
-    dispatch({ type: 'START_SESSION', sessionId, deckSize });
+  const startSession = useCallback((sessionUUID: string, deckSize: number) => {
+    dispatch({ type: 'START_SESSION', sessionUUID, deckSize });
   }, [dispatch]);
 
   const deckReady = useCallback((totalCards: number) => {
     dispatch({ type: 'DECK_READY', totalCards });
   }, [dispatch]);
 
-  const cardSwipedLeft = useCallback((cardId: string) => {
-    dispatch({ type: 'CARD_SWIPED_LEFT', cardId });
+  const cardSwipedLeft = useCallback((cardUUID: string) => {
+    dispatch({ type: 'CARD_SWIPED_LEFT', cardUUID });
   }, [dispatch]);
 
-  const cardSwipedRight = useCallback((cardId: string, requiresVoting: boolean) => {
-    dispatch({ type: 'CARD_SWIPED_RIGHT', cardId, requiresVoting });
+  const cardSwipedRight = useCallback((cardUUID: string, requiresVoting: boolean) => {
+    dispatch({ type: 'CARD_SWIPED_RIGHT', cardUUID, requiresVoting });
   }, [dispatch]);
 
-  const voteCompleted = useCallback((cardId: string, nextComparison?: { newCard: string; compareAgainst: string }) => {
-    dispatch({ type: 'VOTE_COMPLETED', cardId, nextComparison });
+  const voteCompleted = useCallback((cardUUID: string, nextComparison?: { newCard: string; compareAgainst: string }) => {
+    dispatch({ type: 'VOTE_COMPLETED', cardUUID, nextComparison });
   }, [dispatch]);
 
-  const rankingComplete = useCallback((cardId: string) => {
-    dispatch({ type: 'RANKING_COMPLETE', cardId });
+  const rankingComplete = useCallback((cardUUID: string) => {
+    dispatch({ type: 'RANKING_COMPLETE', cardUUID });
   }, [dispatch]);
 
   const deckExhausted = useCallback(() => {

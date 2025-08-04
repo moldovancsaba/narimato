@@ -1,30 +1,48 @@
 import { 
-  SESSION_FIELDS, 
+  COMMON_FIELDS,
   CARD_FIELDS, 
-  DECK_FIELDS, 
   VOTE_FIELDS, 
-  VALIDATION_PATTERNS 
+  VALIDATION_PATTERNS,
 } from '../constants/fieldNames';
 
 /**
- * Utility functions to validate and ensure consistent field usage
+ * STANDARDIZED UUID VALIDATION UTILITIES - NO ALIASES ALLOWED
+ * All validation functions use the uniform UUID field naming convention.
  */
 
 export function validateUUID(value: string): boolean {
   return VALIDATION_PATTERNS.UUID.test(value);
 }
 
+// Legacy function - use validateUUID instead for SessionUUID
 export function validateSessionId(sessionId: string): boolean {
-  return VALIDATION_PATTERNS.SESSION_ID.test(sessionId);
+  return VALIDATION_PATTERNS.UUID.test(sessionId);
+}
+
+// STANDARDIZED UUID VALIDATION
+export function validateSessionUUID(SessionUUID: string): boolean {
+  return VALIDATION_PATTERNS.UUID.test(SessionUUID);
+}
+
+export function validatePlayUUID(PlayUUID: string): boolean {
+  return VALIDATION_PATTERNS.UUID.test(PlayUUID);
+}
+
+export function validateCardUUID(CardUUID: string): boolean {
+  return VALIDATION_PATTERNS.UUID.test(CardUUID);
+}
+
+export function validateDeckUUID(DeckUUID: string): boolean {
+  return VALIDATION_PATTERNS.UUID.test(DeckUUID);
 }
 
 /**
  * Type guard to ensure objects have required session fields
  */
-export function hasSessionFields(obj: any): obj is Record<keyof typeof SESSION_FIELDS, any> {
+export function hasSessionFields(obj: any): boolean {
   return obj && 
-    typeof obj[SESSION_FIELDS.ID] === 'string' &&
-    validateSessionId(obj[SESSION_FIELDS.ID]);
+    typeof obj.sessionUUID === 'string' &&
+    validateSessionId(obj.sessionUUID);
 }
 
 /**
@@ -44,16 +62,16 @@ export function normalizeSessionObject(obj: any): Record<string, any> {
   const normalized: Record<string, any> = {};
   
   // Handle common variations of session ID
-  if (obj.sessionId) normalized[SESSION_FIELDS.ID] = obj.sessionId;
-  if (obj.session_id) normalized[SESSION_FIELDS.ID] = obj.session_id;
-  if (obj.id && validateSessionId(obj.id)) normalized[SESSION_FIELDS.ID] = obj.id;
+  if (obj.sessionId) normalized.sessionUUID = obj.sessionId;
+  if (obj.session_id) normalized.sessionUUID = obj.session_id;
+  if (obj.id && validateSessionId(obj.id)) normalized.sessionUUID = obj.id;
   
   // Handle other session fields
-  if (obj.sessionState) normalized[SESSION_FIELDS.STATE] = obj.sessionState;
-  if (obj.version) normalized[SESSION_FIELDS.VERSION] = obj.version;
-  if (obj.lastSyncTimestamp) normalized[SESSION_FIELDS.LAST_SYNC] = obj.lastSyncTimestamp;
-  if (obj.createdAt) normalized[SESSION_FIELDS.CREATED_AT] = obj.createdAt;
-  if (obj.updatedAt) normalized[SESSION_FIELDS.UPDATED_AT] = obj.updatedAt;
+  if (obj.sessionState) normalized.state = obj.sessionState;
+  if (obj.version) normalized.version = obj.version;
+  if (obj.lastSyncTimestamp) normalized.lastSync = obj.lastSyncTimestamp;
+  if (obj.createdAt) normalized.createdAt = obj.createdAt;
+  if (obj.updatedAt) normalized.updatedAt = obj.updatedAt;
   
   return normalized;
 }
@@ -66,8 +84,8 @@ export function normalizeCardObject(obj: any): Record<string, any> {
   
   // Handle common variations of card ID
   if (obj.uuid) normalized[CARD_FIELDS.UUID] = obj.uuid;
-  if (obj.cardId) normalized[CARD_FIELDS.ID] = obj.cardId;
-  if (obj.card_id) normalized[CARD_FIELDS.ID] = obj.card_id;
+  if (obj.cardId) normalized[CARD_FIELDS.UUID] = obj.cardId;
+  if (obj.card_id) normalized[CARD_FIELDS.UUID] = obj.card_id;
   if (obj.id && validateUUID(obj.id)) normalized[CARD_FIELDS.UUID] = obj.id;
   
   // Handle other card fields

@@ -9,9 +9,15 @@ export async function POST(request: Request) {
   try {
     // Extract organization context
     const orgContext = await getOrganizationContext(request);
-    const organizationId = orgContext?.organizationId || 'default';
+    if (!orgContext) {
+      return NextResponse.json(
+        { success: false, error: 'Organization not found' },
+        { status: 404 }
+      );
+    }
+    const organizationUUID = orgContext.organizationUUID;
 
-    const connectDb = createOrgDbConnect(organizationId);
+    const connectDb = createOrgDbConnect(organizationUUID);
     const connection = await connectDb();
 
     // Use connection-specific models

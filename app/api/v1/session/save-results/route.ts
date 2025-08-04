@@ -21,17 +21,17 @@ export async function POST(request: NextRequest) {
     const CardModel = connection.model('Card', Card.schema);
     
     const body = await request.json();
-    const sessionId = body[SESSION_FIELDS.ID];
+    const sessionUUID = body.sessionUUID || body.sessionId;
     
-    if (!sessionId) {
+    if (!sessionUUID) {
       return NextResponse.json(
-        { error: 'Session ID is required' },
+        { error: 'Session UUID is required' },
         { status: 400 }
       );
     }
 
     // Get the completed session from the database
-    const session = await SessionModel.findOne({ sessionId }).populate('personalRanking');
+    const session = await SessionModel.findOne({ [SESSION_FIELDS.UUID]: sessionUUID }).populate('personalRanking');
     
     if (!session || session.status !== 'completed') {
       return NextResponse.json(
@@ -56,10 +56,10 @@ export async function POST(request: NextRequest) {
     });
 
     // Build the personal ranking with card details
-    const personalRankingWithDetails = cardIds.map((cardId: string, index: number) => {
-      const card = cardMap.get(cardId);
+    const personalRankingWithDetails = cardIds.map((cardUUID: string, index: number) => {
+      const card = cardMap.get(cardUUID);
       return {
-        cardId,
+        uuid: cardUUID,
         card,
         rank: index + 1
       };
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     };
 
     // Check if results already exist for this session
-    const existingResults = await SessionResultsModel.findOne({ sessionId });
+    const existingResults = await SessionResultsModel.findOne({ [SESSION_FIELDS.UUID]: sessionUUID });
     
     if (existingResults) {
       // Update existing results
@@ -87,14 +87,14 @@ export async function POST(request: NextRequest) {
       
       return NextResponse.json({
         success: true,
-        sessionId,
+        [SESSION_FIELDS.UUID]: sessionUUID,
         message: 'Session results updated successfully',
-        shareableUrl: `/completed?sessionId=${sessionId}`
+        shareableUrl: `/completed?${SESSION_FIELDS.UUID}=${sessionUUID}`
       });
     } else {
       // Create new session results
       const sessionResults = new SessionResultsModel({
-        sessionId,
+        [SESSION_FIELDS.UUID]: sessionUUID,
         personalRanking: personalRankingWithDetails,
         sessionStatistics,
         createdAt: new Date(),
@@ -105,9 +105,9 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        sessionId,
+        [SESSION_FIELDS.UUID]: sessionUUID,
         message: 'Session results saved successfully',
-        shareableUrl: `/completed?sessionId=${sessionId}`
+        shareableUrl: `/completed?${SESSION_FIELDS.UUID}=${sessionUUID}`
       });
     }
 

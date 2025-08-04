@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { handleApiError, validateSessionIntegrity, recoverSessionState, clearErrorLogs } from '../lib/utils/errorHandling';
-import { SESSION_FIELDS } from '../lib/constants/fieldNames';
 
 interface Props {
   children: React.ReactNode;
@@ -101,12 +100,12 @@ export default class ErrorBoundary extends React.Component<Props, State> {
     try {
       // Get current session state from various sources
       const currentState = {
-        [SESSION_FIELDS.ID]: sessionId,
+        sessionUUID: sessionId,
         timestamp: new Date().toISOString(),
         url: window.location.href,
         userAgent: navigator.userAgent,
         localStorage: {
-          [SESSION_FIELDS.ID]: localStorage.getItem(SESSION_FIELDS.ID),
+          sessionUUID: localStorage.getItem('sessionUUID'),
           lastState: localStorage.getItem('lastState'),
           sessionData: localStorage.getItem(`session_${sessionId}`)
         }
@@ -184,7 +183,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
     }
 
     try {
-      const response = await fetch(`/api/v1/session/validate?${SESSION_FIELDS.ID}=${this.props.sessionId}`);
+      const response = await fetch(`/api/v1/session/validate?sessionUUID=${this.props.sessionId}`);
       const data = await response.json();
       
       return response.ok && data.isValid;

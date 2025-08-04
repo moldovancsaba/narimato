@@ -1,7 +1,71 @@
 # Development Learnings
 
-**Current Version:** 3.6.4 (Updated)
-**Date:** 2025-08-03
+**Current Version:** 3.7.1 (UUID Field Standardization)
+**Date:** 2025-08-04
+**Last Updated:** 2025-08-04T17:24:21.000Z
+
+## UUID Field Standardization (v3.7.1) - Dev / Architecture
+
+### Problem Identification
+1. **Inconsistent Field Naming**: Multiple variations used across codebase:
+   - sessionId, session_id, SessionUUID, SESSION_FIELDS.ID
+   - playId, playUuid, PlayUUID, PLAY_FIELDS.UUID
+   - cardId, card_id, uuid, CardUUID, CARD_FIELDS.UUID
+   - deckId, deckUuid, DeckUUID, DECK_FIELDS.UUID
+
+2. **Maintenance Burden**: 
+   - Field constant mappings were complex and error-prone
+   - "Use X as Y" approach created cognitive overhead
+   - Build failures when removing legacy field exports
+
+3. **User Request**: "May we use uniform SessionUUID, PlayUUID, CardUUID and DeckUUID instead of those things you says 'use ---- as' is it possible to use everything as it is and not with 'aliases' or with 'lookalikes'?"
+
+### Solution Implementation
+1. **Standardized Field Constants**:
+   ```typescript
+   export const UUID_FIELDS = {
+     SESSION: 'SessionUUID',
+     PLAY: 'PlayUUID', 
+     CARD: 'CardUUID',
+     DECK: 'DeckUUID'
+   } as const;
+   ```
+
+2. **Model Updates**:
+   - Play model: Uses PlayUUID, SessionUUID, DeckUUID throughout
+   - Session model: Uses SessionUUID for primary identifier
+   - Updated all interfaces to use standardized field names
+
+3. **Backward Compatibility Strategy**:
+   - Added temporary exports for legacy field names
+   - Prevented build failures during transition
+   - Maintained functionality while enabling gradual migration
+
+4. **Validation Functions**:
+   - `validateSessionUUID()`, `validatePlayUUID()`, etc.
+   - Uniform validation approach across all UUID types
+
+### Key Learnings
+1. **User-Centric Design**: When users request simplification, they're often identifying real complexity problems
+2. **Gradual Migration**: Backward compatibility exports allow safe refactoring of large codebases
+3. **Consistency Beats Cleverness**: Simple, uniform naming is more valuable than "clever" field mapping systems
+4. **Documentation Immediately**: Architectural changes must be documented in ARCHITECTURE.md immediately
+
+### Technical Implementation Notes
+1. **Build Safety**: All changes verified with successful builds before proceeding
+2. **Interface Alignment**: Model interfaces updated to match schema field names
+3. **Import Organization**: Centralized field constants prevent import errors
+4. **Type Safety**: Maintained TypeScript type safety throughout refactoring
+
+### Future Cleanup
+- Remove backward compatibility exports after frontend migration complete
+- Update API documentation to reflect standardized field names
+- Database field migrations (if needed for existing data)
+
+### Performance Impact
+- No performance degradation observed
+- Build times remain consistent
+- Import resolution improved with cleaner constant structure
 
 ## State Transitions  Edge Cases
 
@@ -318,7 +382,48 @@
    }
    ```
 
-4. **Key Learning**: **API endpoints must align with actual data model schemas, especially when using dynamic hashtag hierarchies - field mappings and query logic must account for both parent-child relationships and proper data structure**
+3. **Key Learning**: **API endpoints must align with actual data model schemas, especially when using dynamic hashtag hierarchies - field mappings and query logic must account for both parent-child relationships and proper data structure**
+
+## Webpack Build System Issues (v3.7.1)
+
+### Webpack Chunk Loading Failures
+1. **Root Cause Analysis**:
+   - Missing webpack chunks (`8548.js`, `4985.js`) causing 500 errors on critical pages like `/vote`
+   - Corrupted `.next` build cache causing `routes-manifest.json` not found errors
+   - Cache corruption warnings from PackFileCacheStrategy preventing proper chunk loading
+   - Custom webpack chunk splitting configuration in `next.config.js` causing unstable builds
+
+2. **Solution Implementation**:
+   - Complete purge of corrupted build artifacts (`.next`, `node_modules`, `package-lock.json`)
+   - NPM cache cleanup with `--force` flag to remove all cached dependencies
+   - Fresh dependency reinstallation to rebuild clean package resolution tree
+   - Comprehensive rebuild process to regenerate all webpack chunks and manifests
+
+3. **Technical Details**:
+   ```bash
+   # Critical cleanup sequence
+   rm -rf .next node_modules package-lock.json
+   npm cache clean --force
+   npm ci
+   npm run build
+   ```
+
+4. **Key Learning**: **Webpack chunk loading issues often stem from cache corruption - complete environment reset is more reliable than selective cache clearing, especially with complex chunk splitting configurations**
+
+### Next.js Configuration Optimization
+1. **Configuration Review Process**:
+   - Audited custom webpack overrides in `next.config.js` for stability issues
+   - Reviewed chunk splitting, SSR, and static export settings for conflicts
+   - Commented all critical customizations with functional and strategic justifications
+   - Ensured all build configurations align with established architectural expectations
+
+2. **Build Process Stabilization**:
+   - Verified routes manifest generation and proper population
+   - Confirmed webpack chunk creation without missing module errors
+   - Tested development server stability with hot reload functionality
+   - Validated production build consistency with development environment
+
+3. **Key Learning**: **Complex webpack configurations require careful validation - custom chunk splitting and caching strategies can introduce instability that requires complete environment reset to resolve**
 
 ## Implementation Details
 

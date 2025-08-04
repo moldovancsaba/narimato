@@ -3,18 +3,18 @@ import { getOrganizationContext } from '@/app/lib/middleware/organization';
 import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { SessionResults } from '@/app/lib/models/SessionResults';
 import { Play } from '@/app/lib/models/Play';
-import { PLAY_FIELDS } from '@/app/lib/constants/fieldNames';
 import { savePlayResults } from '@/app/lib/utils/sessionResultsUtils';
+import { SESSION_FIELDS } from '@/app/lib/constants/fieldNames';
 
 interface RouteParams {
-  params: Promise<{ playId: string }>;
+  params: Promise<{ playUUID: string }>;
 }
 
 export async function GET(
   request: NextRequest,
   context: RouteParams
 ) {
-  const { playId } = await context.params;
+  const { playUUID } = await context.params;
   try {
     // Get organization context
     const orgContext = await getOrganizationContext(request);
@@ -27,20 +27,32 @@ export async function GET(
     const PlayModel = connection.model('Play', Play.schema);
     const SessionResultsModel = connection.model('SessionResults', SessionResults.schema);
 
-    if (!playId) {
+    if (!playUUID) {
       return NextResponse.json(
         { error: 'Valid play ID is required' },
         { status: 400 }
       );
     }
 
-    console.log(`Fetching play results for playId: ${playId}`);
+    console.log(`🔍 Fetching play results for playUUID: ${playUUID}`);
+    console.log(`🔎 Looking for saved results using field: ${SESSION_FIELDS.UUID}`);
+    console.log(`🔎 SESSION_FIELDS.UUID value: '${SESSION_FIELDS.UUID}'`);
 
     // Try to find saved play results first
-    const savedResults = await SessionResultsModel.findOne({ sessionId: playId });
+    const savedResults = await SessionResultsModel.findOne({ [SESSION_FIELDS.UUID]: playUUID });
+    console.log(`📊 Database query result for saved results:`, savedResults ? 'FOUND' : 'NOT_FOUND');
+    
+    if (savedResults) {
+      console.log(`✅ Found saved results details:`, {
+        sessionUUID: savedResults.sessionUUID,
+        personalRankingLength: savedResults.personalRanking?.length || 0,
+        createdAt: savedResults.createdAt,
+        updatedAt: savedResults.updatedAt
+      });
+    }
 
     if (savedResults) {
-      console.log(`Found saved results for play ${playId}`);
+      console.log(`Found saved results for play ${playUUID}`);
       return NextResponse.json({
         personalRanking: savedResults.personalRanking,
         statistics: savedResults.sessionStatistics,
@@ -50,13 +62,13 @@ export async function GET(
       });
     }
 
-    console.log(`No saved results found for play ${playId}, checking live play...`);
+    console.log(`No saved results found for play ${playUUID}, checking live play...`);
 
     // If no saved results found, try to get from live play and save
-    const livePlay = await PlayModel.findOne({ [PLAY_FIELDS.UUID]: playId });
+    const livePlay = await PlayModel.findOne({ uuid: playUUID });
 
     if (livePlay) {
-      console.log(`Found live play for ${playId}:`, {
+      console.log(`Found live play for ${playUUID}:`, {
         status: livePlay.status,
         state: livePlay.state,
         personalRanking: livePlay.personalRanking?.length || 0,
@@ -82,7 +94,7 @@ export async function GET(
         );
       }
     } else {
-      console.log(`No live play found with UUID: ${playId}`);
+      console.log(`No live play found with UUID: ${playUUID}`);
     }
 
     if (livePlay && livePlay.status === 'completed') {
@@ -90,20 +102,30 @@ export async function GET(
       // Try to save the play results now with race condition handling
       try {
         await savePlayResults(livePlay, connection);
-        console.log(`✓ Results saved for play ${playId}`);
+        console.log(`✓ Results saved for play ${playUUID}`);
       } catch (saveError: any) {
         // Handle duplicate key error gracefully - it means results were already saved by another request
         if (saveError.code === 11000) {
-          console.log(`⚠️ Results already exist for play ${playId} (race condition handled)`);
+          console.log(`⚠️ Results already exist for play ${playUUID} (race condition handled)`);
         } else {
-          console.error(`Failed to save play results for ${playId}:`, saveError);
+          console.error(`Failed to save play results for ${playUUID}:`, saveError);
         }
       }
       
       // Always try to fetch the saved results (they should exist now)
-      const newlySavedResults = await SessionResultsModel.findOne({ sessionId: playId });
+      console.log(`🔄 Re-querying for saved results after save attempt...`);
+      const newlySavedResults = await SessionResultsModel.findOne({ [SESSION_FIELDS.UUID]: playUUID });
+      console.log(`📊 Re-query result:`, newlySavedResults ? 'FOUND' : 'STILL_NOT_FOUND');
+      
       if (newlySavedResults) {
-        console.log(`Successfully retrieved results for play ${playId}`);
+        console.log(`✅ Successfully retrieved results for play ${playUUID}`);
+        console.log(`📋 Final result summary:`, {
+          sessionUUID: newlySavedResults.sessionUUID,
+          personalRankingLength: newlySavedResults.personalRanking?.length || 0,
+          statisticsIncluded: !!newlySavedResults.sessionStatistics,
+          createdAt: newlySavedResults.createdAt,
+          updatedAt: newlySavedResults.updatedAt
+        });
         return NextResponse.json({
           personalRanking: newlySavedResults.personalRanking,
           statistics: newlySavedResults.sessionStatistics,
@@ -112,12 +134,21 @@ export async function GET(
           updatedAt: newlySavedResults.updatedAt
         });
       } else {
-        console.error(`Results not found after save attempt for play ${playId}`);
+        console.error(`❌ Results not found after save attempt for play ${playUUID}`);
+        console.error(`🔴 This indicates a serious issue with the save or retrieval process`);
+        
+        // Debug: Let's check what's actually in the SessionResults collection
+        const allResults = await SessionResultsModel.find({}).limit(5);
+        console.log(`🔍 Debug: Found ${allResults.length} total results in collection`);
+        if (allResults.length > 0) {
+          console.log(`🔍 Sample result keys:`, Object.keys(allResults[0].toObject()));
+          console.log(`🔍 Sample sessionUUID values:`, allResults.map(r => r.sessionUUID));
+        }
       }
     }
 
     // If no saved results found, return detailed error information
-    console.log(`Play ${playId} not found in either saved results or live plays`);
+    console.log(`Play ${playUUID} not found in either saved results or live plays`);
     return NextResponse.json(
       {
         error: 'Play results not found or not shareable',

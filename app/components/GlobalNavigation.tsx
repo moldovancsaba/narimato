@@ -9,7 +9,8 @@ const navigationItems = [
   { href: '/', icon: '🏠', label: 'Home' },
   { href: '/ranks', icon: '🏆', label: 'Global Rankings (ELO)' },
   { href: '/card-editor', icon: '📋', label: 'Card Editor' },
-  { href: '/cards', icon: '🗂', label: 'Cards' }
+  { href: '/cards', icon: '🗂', label: 'Cards' },
+  { href: '/organization-editor', icon: '🏢', label: 'Organizations' }
 ];
 
 const GlobalNavigation = React.memo(function GlobalNavigation() {
@@ -22,7 +23,8 @@ const GlobalNavigation = React.memo(function GlobalNavigation() {
           const isActive = pathname === item.href || 
             (item.href === '/ranks' && pathname.startsWith('/ranks')) ||
             (item.href === '/card-editor' && pathname.startsWith('/card-editor')) ||
-            (item.href === '/cards' && pathname.startsWith('/cards'));
+            (item.href === '/cards' && pathname.startsWith('/cards')) ||
+            (item.href === '/organization-editor' && pathname.startsWith('/organization-editor'));
           
           return (
             <Link

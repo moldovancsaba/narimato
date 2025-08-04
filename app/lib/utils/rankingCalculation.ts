@@ -1,7 +1,7 @@
 import { Connection } from 'mongoose';
 import { IGlobalRanking, GlobalRanking } from '../models/GlobalRanking';
 import { Play } from '../models/Play';
-import { VOTE_FIELDS, PLAY_FIELDS } from '../constants/fieldNames';
+import { VOTE_FIELDS } from '../constants/fieldNames';
 
 // Helper function to calculate expected score in ELO system
 const calculateExpectedScore = (ratingA: number, ratingB: number): number => {
@@ -26,11 +26,11 @@ export const calculateRankingsWithConnection = async (connection: Connection) =>
   const GlobalRankingModel = connection.model<IGlobalRanking>('GlobalRanking', GlobalRanking.schema);
   
   const completedPlays = await PlayModel.find({
-    [PLAY_FIELDS.STATUS]: 'completed',
+    status: 'completed',
     votes: { $exists: true, $ne: [] },
-    [PLAY_FIELDS.COMPLETED_AT]: { $exists: true }
+    completedAt: { $exists: true }
   })
-    .sort({ [PLAY_FIELDS.COMPLETED_AT]: -1 })
+    .sort({ completedAt: -1 })
     .limit(500)
     .select('votes completedAt');
 

@@ -5,170 +5,72 @@ import { Play } from '@/app/lib/models/Play';
 import { Card } from '@/app/lib/models/Card';
 import { SwipeRequestSchema } from '@/app/lib/validation/schemas';
 import { GlobalRanking } from '@/app/lib/models/GlobalRanking';
-import { SESSION_FIELDS, CARD_FIELDS, VOTE_FIELDS, API_FIELDS, PLAY_FIELDS } from '@/app/lib/constants/fieldNames';
-import { validateSessionId, validateUUID } from '@/app/lib/utils/fieldValidation';
 import { savePlayResults } from '@/app/lib/utils/sessionResultsUtils';
 
-
 interface SwipeResponse {
-  [API_FIELDS.SUCCESS]: boolean;
+  success: boolean;
   requiresVoting: boolean;
   nextState: string;
   sessionCompleted?: boolean;
   votingContext?: {
-    [CARD_FIELDS.ID]: string;
+    cardUUID: string;
     compareWith: string;
   };
 }
 
-export const POST = createOrgAwareRoute(async (request, { organizationId }) => {
+export const POST = createOrgAwareRoute(async (request, { organizationUUID }) => {
   try {
-    const connectDb = createOrgDbConnect(organizationId);
+    const connectDb = createOrgDbConnect(organizationUUID);
     const connection = await connectDb();
     
-    // Get models bound to this specific connection
     const PlayModel = connection.model('Play', Play.schema);
     const CardModel = connection.model('Card', Card.schema);
-    
     const body = await request.json();
-    console.log('🔍 Swipe request received:', {
-      body,
-      bodyType: typeof body,
-      sessionId: body[SESSION_FIELDS.ID],
-      cardId: body[CARD_FIELDS.ID],
-      direction: body[VOTE_FIELDS.DIRECTION]
-    });
-    
-    // Validate request
+
     const validatedData = SwipeRequestSchema.parse(body);
-    const playUuid = validatedData[SESSION_FIELDS.ID]; // Frontend sends this as sessionId but it's playUuid
-    const cardId = validatedData[CARD_FIELDS.ID];
-    const direction = validatedData[VOTE_FIELDS.DIRECTION];
-    
-    console.log('✅ Swipe validation successful:', { playUuid, cardId, direction });
+    const playUUID = validatedData.sessionUUID;
+    const cardUUID = validatedData.cardUUID;
+    const direction = validatedData.direction;
 
-    // Find the play
-    const play = await PlayModel.findOne({ 
-      [PLAY_FIELDS.UUID]: playUuid, 
-      [PLAY_FIELDS.STATUS]: 'active' 
-    });
-    
+    const play = await PlayModel.findOne({ uuid: playUUID, status: 'active' });
     if (!play) {
-      return new NextResponse(
-        JSON.stringify({ 
-          [API_FIELDS.SUCCESS]: false,
-          [API_FIELDS.ERROR]: 'Play not found or inactive'
-        }),
-        { status: 404 }
-      );
+      return new NextResponse(JSON.stringify({ success: false, error: 'Play not found or inactive' }), { status: 404 });
     }
 
-    // Check play expiry
     if (play.expiresAt < new Date()) {
-      return new NextResponse(
-        JSON.stringify({ 
-          [API_FIELDS.SUCCESS]: false,
-          [API_FIELDS.ERROR]: 'Play expired'
-        }),
-        { status: 408 }
-      );
+      return new NextResponse(JSON.stringify({ success: false, error: 'Play expired' }), { status: 408 });
     }
 
-    // Validate play state allows swiping
     if (play.state !== 'swiping' && play.state !== 'voting') {
       return new NextResponse(
-        JSON.stringify({ 
-          [API_FIELDS.SUCCESS]: false,
-          [API_FIELDS.ERROR]: `Invalid play state: ${play.state}. Expected 'swiping' or 'voting'`
-        }),
+        JSON.stringify({ success: false, error: `Invalid play state: ${play.state}. Expected 'swiping' or 'voting'` }),
         { status: 400 }
       );
     }
 
-    // Get cards for the deck
-    const cards = await CardModel.find({ [CARD_FIELDS.UUID]: { $in: play.deck } });
+    const cards = await CardModel.find({ uuid: { $in: play.deck } });
     if (cards.length === 0) {
-      return new NextResponse(
-        JSON.stringify({ 
-          [API_FIELDS.SUCCESS]: false,
-          [API_FIELDS.ERROR]: 'No cards found in play deck'
-        }),
-        { status: 400 }
-      );
+      return new NextResponse(JSON.stringify({ success: false, error: 'No cards found in play deck' }), { status: 400 });
     }
 
-    // Create a map for fast card lookup
     const cardMap = new Map();
     cards.forEach(card => {
-      cardMap.set(card[CARD_FIELDS.UUID], card);
+      cardMap.set(card.uuid, card);
     });
 
-    // Create ordered cards array maintaining exact deck order
     const orderedCards = play.deck.map((uuid: string) => cardMap.get(uuid)).filter(Boolean);
-    
-    // Find current card from play state
-    const swipedCardIds = play.swipes.map((swipe: any) => swipe.cardId);
+    const swipedCardIds = play.swipes.map((swipe: any) => swipe.uuid);
     const currentCard = orderedCards.find((card: any) => !swipedCardIds.includes(card.uuid));
-    
-    console.log('🎯 Card state verification:', {
-      requestedCardId: cardId,
-      currentCardId: currentCard?.uuid || 'none',
-      swipedCardIds,
-      totalCards: orderedCards.length,
-      orderedCardIds: orderedCards.map((c: any) => c?.uuid || 'undefined'),
-      playState: play.state,
-      totalSwipes: play.swipes.length
-    });
 
-    // Verify current card matches the requested card
-    if (!currentCard || currentCard.uuid !== cardId) {
-      console.error('❌ Card state mismatch:', {
-        expectedCurrentCard: currentCard?.uuid || 'none',
-        requestedCard: cardId,
-        allCards: orderedCards.map((c: any) => c?.uuid),
-        swipedCards: swipedCardIds,
-        remainingCards: orderedCards.filter((c: any) => !swipedCardIds.includes(c?.uuid)).map((c: any) => c?.uuid)
-      });
-      
-      return new NextResponse(
-        JSON.stringify({ 
-          success: false,
-          error: 'Invalid card state - card is not current',
-          debug: {
-            expectedCurrentCard: currentCard?.uuid || 'none',
-            requestedCard: cardId,
-            swipedCards: swipedCardIds,
-            totalCards: orderedCards.length
-          }
-        }),
-        { status: 400 }
-      );
+    if (!currentCard || currentCard.uuid !== cardUUID) {
+      return new NextResponse(JSON.stringify({ success: false, error: 'Invalid card state - card is not current' }), { status: 400 });
     }
 
-    // Check for duplicate swipes
-    const existingSwipe = play.swipes.some((swipe: { cardId: string }) => swipe.cardId === cardId);
+    const existingSwipe = play.swipes.some((swipe: { uuid: string }) => swipe.uuid === cardUUID);
     if (existingSwipe) {
-      return new NextResponse(
-        JSON.stringify({ 
-          success: false,
-          error: 'Card has already been swiped'
-        }),
-        { status: 409 }
-      );
+      return new NextResponse(JSON.stringify({ success: false, error: 'Card has already been swiped' }), { status: 409 });
     }
 
-    // Validate card is swipeable (not already swiped)
-    if (swipedCardIds.includes(cardId)) {
-      return new NextResponse(
-        JSON.stringify({ 
-          success: false,
-          error: 'Card has already been swiped'
-        }),
-        { status: 409 }
-      );
-    }
-
-    // Prepare state update
     let requiresVoting = false;
     let votingContext = undefined;
     let nextState = play.state;
@@ -176,68 +78,43 @@ export const POST = createOrgAwareRoute(async (request, { organizationId }) => {
 
     if (direction === 'right') {
       if (play.personalRanking.length === 0) {
-        // First right swipe - add to ranking automatically
-        newPersonalRanking = [cardId];
-        requiresVoting = false;
+        newPersonalRanking = [cardUUID];
         nextState = 'swiping';
       } else {
-        // Subsequent right swipes require voting
-        nextState = 'voting';
-        requiresVoting = true;
-        
-        // Get comparison card for voting
-        const compareWith = play.getNextComparisonCard(cardId);
+        const compareWith = play.getNextComparisonCard(cardUUID);
         if (compareWith) {
+          nextState = 'voting';
+          requiresVoting = true;
           votingContext = {
-            cardId,
+            cardUUID,
             compareWith
           };
+        } else {
+          // No comparison needed, add to ranking and continue swiping
+          newPersonalRanking = [cardUUID, ...play.personalRanking];
+          nextState = 'swiping';
         }
       }
     } else if (direction === 'left') {
-      // Left swipes always return to swiping state (reject card)
       nextState = 'swiping';
-      requiresVoting = false;
     }
 
-    // Check if all cards will be swiped after this swipe
     let sessionCompleted = false;
     const totalSwipesAfterThis = play.swipes.length + 1;
     if (totalSwipesAfterThis >= orderedCards.length) {
-      console.log(`🎊 DECK EXHAUSTION DETECTED in swipe endpoint - Play ${play.playUuid}:`, {
-        cardId,
-        direction,
-        totalCardsInDeck: orderedCards.length,
-        totalSwipes: play.swipes.length + 1, // +1 for the current swipe
-        personalRankingLength: newPersonalRanking.length,
-        currentState: play.state,
-        wasRequiringVoting: requiresVoting,
-        nextState: requiresVoting ? 'voting' : 'completed'
-      });
-      
-      // Only complete the play immediately for LEFT swipes or first RIGHT swipe
-      // For RIGHT swipes that require voting, let the voting process handle completion
       if (direction === 'left' || !requiresVoting) {
-        console.log(`🏁 Completing play immediately - no voting required`);
         nextState = 'completed';
         play.status = 'completed';
         play.completedAt = new Date();
-        
-        // Remove expiry for completed plays to preserve results indefinitely for sharing
         const noExpiry = new Date('2099-12-31T23:59:59.999Z');
         play.expiresAt = noExpiry;
-        
         sessionCompleted = true;
-        console.log(`✅ Play ${play.playUuid} marked as completed via swipe endpoint`);
-      } else {
-        console.log(`🗳️ Last card requires voting - play will complete after voting process`);
       }
     }
 
-    // Update play state
     play.state = nextState;
     play.swipes.push({
-      cardId,
+      uuid: cardUUID,
       direction,
       timestamp: new Date()
     });
@@ -246,22 +123,12 @@ export const POST = createOrgAwareRoute(async (request, { organizationId }) => {
 
     await play.save();
 
-    // Save results and update global rankings if play is completed
     if (sessionCompleted) {
       try {
         await savePlayResults(play, connection);
-        
-        // ✅ CRITICAL FIX: Trigger automatic global ranking recalculation
-        console.log(`🎯 Triggering global ranking recalculation after session completion...`);
         await GlobalRanking.calculateRankings();
-        console.log(`✅ Global rankings updated successfully after session completion`);
-        
       } catch (error) {
-        console.error(`❌ Failed to save results or update rankings after session completion:`, error);
-        // Don't throw error - session completion should not fail due to results/ranking saving
-        if (error instanceof Error && error.message.includes('ranking')) {
-          console.error(`🚨 RANKING UPDATE FAILED for session ${play.playUuid}:`, error.message);
-        }
+        console.error(`Failed to save results after session completion:`, error);
       }
     }
 
@@ -273,42 +140,10 @@ export const POST = createOrgAwareRoute(async (request, { organizationId }) => {
       votingContext
     };
 
-    console.log(`👆 Swipe processed for ${playUuid.substring(0, 8)}...: ${direction} on ${cardId.substring(0, 8)}..., next state: ${nextState}`);
-
-    return new NextResponse(
-      JSON.stringify(response),
-      { 
-        status: 200, 
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
-      }
-    );
-
+    return new NextResponse(JSON.stringify(response), { status: 200 });
   } catch (error: any) {
-    console.error('Swipe recording error:', error);
-
-    // Handle validation errors
-    if (error.name === 'ZodError') {
-      return new NextResponse(
-        JSON.stringify({ 
-          success: false,
-          error: 'Validation error', 
-          details: error.errors 
-        }),
-        { status: 400 }
-      );
-    }
-
-    // Generic error handler
-    return new NextResponse(
-      JSON.stringify({ 
-        success: false,
-        error: 'Internal server error'
-      }),
-      { status: 500 }
-    );
+    console.error('Swipe API error:', error);
+    return new NextResponse(JSON.stringify({ success: false, error: 'Internal server error', details: error.message }), { status: 500 });
   }
 });
+

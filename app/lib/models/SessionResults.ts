@@ -1,14 +1,15 @@
 import mongoose from 'mongoose';
+import { SESSION_FIELDS } from '../constants/fieldNames';
 
 const SessionResultsSchema = new mongoose.Schema({
-  sessionId: { 
+  [SESSION_FIELDS.UUID]: { 
     type: String, 
     required: true, 
     unique: true, 
     index: true 
   },
   personalRanking: [{
-    cardId: { type: String, required: true },
+    uuid: { type: String, required: true },
     card: {
       uuid: { type: String, required: true },
       body: {
@@ -40,9 +41,9 @@ const SessionResultsSchema = new mongoose.Schema({
 
 // Define the interface for the SessionResults document
 export interface ISessionResults extends mongoose.Document {
-  sessionId: string;
+  sessionUUID: string;
   personalRanking: Array<{
-    cardId: string;
+    uuid: string;
     card: {
       uuid: string;
       body: {
@@ -66,7 +67,7 @@ export interface ISessionResults extends mongoose.Document {
 }
 
 // Index for better query performance
-SessionResultsSchema.index({ sessionId: 1, createdAt: -1 });
+SessionResultsSchema.index({ [SESSION_FIELDS.UUID]: 1, createdAt: -1 });
 
 // Update the updatedAt field before saving
 SessionResultsSchema.pre('save', function(next) {

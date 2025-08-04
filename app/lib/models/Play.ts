@@ -1,44 +1,44 @@
 import mongoose from 'mongoose';
-import { PLAY_FIELDS, CARD_FIELDS, VOTE_FIELDS } from '../constants/fieldNames';
 
 /**
  * Play Model: Represents an individual game session where a user plays through a specific deck.
  * 
- * Architecture:
- * - sessionId: Browser session (persistent while user is in the app)
- * - deckUuid: Identifies which set of cards (can be reused across plays)  
- * - playUuid: Each individual game/play session (new UUID every time user starts playing a deck)
+ * STANDARDIZED UUID ARCHITECTURE:
+ * - SessionUUID: Browser session (persistent while user is in the app)
+ * - DeckUUID: Identifies which set of cards (can be reused across plays)  
+ * - PlayUUID: Each individual game/play session (new UUID every time user starts playing a deck)
  * 
  * This ensures proper separation of concerns and prevents mixing of results between different plays.
+ * All UUID fields use the standard naming convention - NO aliases allowed.
  */
 
 const SwipeSchema = new mongoose.Schema({
-  [CARD_FIELDS.ID]: { type: String, required: true },
-  [VOTE_FIELDS.DIRECTION]: { type: String, enum: ['left', 'right'], required: true },
-  [VOTE_FIELDS.TIMESTAMP]: { type: Date, default: Date.now }
+  uuid: { type: String, required: true },
+  direction: { type: String, enum: ['left', 'right'], required: true },
+  timestamp: { type: Date, default: Date.now }
 });
 
 const VoteSchema = new mongoose.Schema({
-  [VOTE_FIELDS.CARD_A]: { type: String, required: true },
-  [VOTE_FIELDS.CARD_B]: { type: String, required: true },
-  [VOTE_FIELDS.WINNER]: { type: String, required: true },
-  [VOTE_FIELDS.TIMESTAMP]: { type: Date, default: Date.now }
+  cardA: { type: String, required: true },
+  cardB: { type: String, required: true },
+  winner: { type: String, required: true },
+  timestamp: { type: Date, default: Date.now }
 });
 
 const PlaySchema = new mongoose.Schema({
-  // Core identifiers
-  [PLAY_FIELDS.UUID]: { type: String, required: true, unique: true, index: true },
-  [PLAY_FIELDS.SESSION_ID]: { type: String, required: true, index: true },
-  [PLAY_FIELDS.DECK_UUID]: { type: String, required: true, index: true },
+  // Primary UUID identifiers
+  uuid: { type: String, required: true, unique: true, index: true },
+  sessionUUID: { type: String, required: true, index: true },
+  deckUUID: { type: String, required: true, index: true },
   
   // Play state management
-  [PLAY_FIELDS.STATUS]: { 
+  status: { 
     type: String, 
     enum: ['active', 'idle', 'completed', 'expired'], 
     default: 'active',
     index: true 
   },
-  [PLAY_FIELDS.STATE]: {
+  state: {
     type: String,
     enum: ['swiping', 'voting', 'comparing', 'completed'],
     default: 'swiping',
@@ -53,32 +53,32 @@ const PlaySchema = new mongoose.Schema({
   },
   
   // Deck and card data
-  deck: [{ type: String, ref: 'Card' }], // Array of card UUIDs in this deck
+  deck: [{ type: String, ref: 'Card' }], // Array of CardUUIDs in this deck
   deckTag: { type: String, required: true }, // Which deck was selected (e.g., 'all', 'react', etc.)
   totalCards: { type: Number, default: 0 },
   
   // Game data
   swipes: [SwipeSchema],
   votes: [VoteSchema],
-  personalRanking: [{ type: String }], // Ordered array of card UUIDs
+  personalRanking: [{ type: String }], // Ordered array of CardUUIDs
   
   // Timestamps
-  [PLAY_FIELDS.CREATED_AT]: { type: Date, default: Date.now, index: true },
+  createdAt: { type: Date, default: Date.now, index: true },
   lastActivity: { type: Date, default: Date.now, index: true },
-  [PLAY_FIELDS.COMPLETED_AT]: { type: Date, default: null },
-  [PLAY_FIELDS.EXPIRES_AT]: { type: Date, required: true }
+  completedAt: { type: Date, default: null },
+  expiresAt: { type: Date, required: true }
 });
 
 // TTL Index for automatic cleanup
-PlaySchema.index({ [PLAY_FIELDS.EXPIRES_AT]: 1 }, { expireAfterSeconds: 0 });
+PlaySchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 // Compound indexes for efficient queries
-PlaySchema.index({ [PLAY_FIELDS.SESSION_ID]: 1, [PLAY_FIELDS.STATUS]: 1 });
-PlaySchema.index({ [PLAY_FIELDS.DECK_UUID]: 1, [PLAY_FIELDS.STATUS]: 1 });
+PlaySchema.index({ sessionUUID: 1, status: 1 });
+PlaySchema.index({ deckUUID: 1, status: 1 });
 
 // Instance methods
 PlaySchema.methods.getRightSwipesCount = function() {
-  return this.swipes.filter((s: { [key: string]: string }) => s[VOTE_FIELDS.DIRECTION] === 'right').length;
+  return this.swipes.filter((s: { direction: string }) => s.direction === 'right').length;
 };
 
 PlaySchema.methods.handleVoteTimeout = function(cardA: string, cardB: string) {
@@ -175,15 +175,15 @@ PlaySchema.post('findOneAndUpdate', function(error: any, doc: any, next: any) {
   }
 });
 
-// Interface definition
+// Clean interface matching actual schema fields
 export interface IPlay extends mongoose.Document {
-  playUuid: string;
-  sessionId: string;
-  deckUuid: string;
+  uuid: string;            // Primary identifier for this play session
+  sessionUUID: string;     // Browser session identifier
+  deckUUID: string;        // Deck identifier
   status: 'active' | 'idle' | 'completed' | 'expired';
   state: 'swiping' | 'voting' | 'comparing' | 'completed';
   version: number;
-  deck: string[];
+  deck: string[];          // Array of card UUIDs in this deck
   deckTag: string;
   totalCards: number;
   createdAt: Date;
@@ -191,7 +191,7 @@ export interface IPlay extends mongoose.Document {
   completedAt: Date | null;
   expiresAt: Date;
   swipes: Array<{
-    cardId: string;
+    uuid: string;          // Card UUID
     direction: 'left' | 'right';
     timestamp: Date;
   }>;
@@ -201,7 +201,7 @@ export interface IPlay extends mongoose.Document {
     winner: string;
     timestamp: Date;
   }>;
-  personalRanking: string[];
+  personalRanking: string[];   // Array of card UUIDs
   
   // Methods
   getRightSwipesCount(): number;

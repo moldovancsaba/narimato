@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import { SESSION_FIELDS, CARD_FIELDS, VOTE_FIELDS } from '../constants/fieldNames';
 
 // Define SessionState enum for enhanced state management
 enum SessionState {
@@ -10,20 +9,20 @@ enum SessionState {
 }
 
 const SwipeSchema = new mongoose.Schema({
-  [CARD_FIELDS.ID]: { type: String, required: true },
-  [VOTE_FIELDS.DIRECTION]: { type: String, enum: ['left', 'right'], required: true },
-  [VOTE_FIELDS.TIMESTAMP]: { type: Date, default: Date.now }
+  uuid: { type: String, required: true },
+  direction: { type: String, enum: ['left', 'right'], required: true },
+  timestamp: { type: Date, default: Date.now }
 });
 
 const VoteSchema = new mongoose.Schema({
-  [VOTE_FIELDS.CARD_A]: { type: String, required: true },
-  [VOTE_FIELDS.CARD_B]: { type: String, required: true },
-  [VOTE_FIELDS.WINNER]: { type: String, required: true },
-  [VOTE_FIELDS.TIMESTAMP]: { type: Date, default: Date.now }
+  cardA: { type: String, required: true },
+  cardB: { type: String, required: true },
+  winner: { type: String, required: true },
+  timestamp: { type: Date, default: Date.now }
 });
 
 const SessionSchema = new mongoose.Schema({
-  [SESSION_FIELDS.ID]: { type: String, required: true, unique: true, index: true },
+  uuid: { type: String, required: true, unique: true, index: true },
   status: { 
     type: String, 
     enum: ['active', 'idle', 'completed', 'expired'], 
@@ -36,7 +35,7 @@ const SessionSchema = new mongoose.Schema({
     default: 'swiping',
     index: true
   },
-  [SESSION_FIELDS.VERSION]: {
+  version: {
     type: Number,
     default: 0,
     index: true
@@ -46,7 +45,7 @@ const SessionSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now, index: true },
   lastActivity: { type: Date, default: Date.now, index: true },
   completedAt: { type: Date, default: null },
-expiresAt: { type: Date, required: true },
+  expiresAt: { type: Date, required: true },
   
   swipes: [SwipeSchema],
   votes: [VoteSchema],
@@ -58,7 +57,7 @@ SessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 // Instance method to get right-swiped cards count
 SessionSchema.methods.getRightSwipesCount = function() {
-  return this.swipes.filter((s: { [key: string]: string }) => s[VOTE_FIELDS.DIRECTION] === 'right').length;
+  return this.swipes.filter((s: { direction: string }) => s.direction === 'right').length;
 };
 
 // Method to handle vote timeouts
@@ -116,7 +115,7 @@ SessionSchema.pre('save', function(next) {
 
 // Transform timestamps to ISO8601 in JSON output
 SessionSchema.set('toJSON', {
-  transform: function(doc, ret: { createdAt?: Date | string; lastActivity?: Date | string; completedAt?: Date | string; expiresAt?: Date | string; swipes?: any[]; votes?: any[] }) {
+  transform: function(doc, ret: any) {
     if (ret.createdAt instanceof Date) ret.createdAt = ret.createdAt.toISOString();
     if (ret.lastActivity instanceof Date) ret.lastActivity = ret.lastActivity.toISOString();
     if (ret.completedAt instanceof Date) ret.completedAt = ret.completedAt.toISOString();
@@ -124,12 +123,12 @@ SessionSchema.set('toJSON', {
     
     // Convert timestamps in swipes and votes
     if (ret.swipes) {
-      ret.swipes.forEach(swipe => {
+      ret.swipes.forEach((swipe: any) => {
         if (swipe.timestamp instanceof Date) swipe.timestamp = swipe.timestamp.toISOString();
       });
     }
     if (ret.votes) {
-      ret.votes.forEach(vote => {
+      ret.votes.forEach((vote: any) => {
         if (vote.timestamp instanceof Date) vote.timestamp = vote.timestamp.toISOString();
       });
     }
@@ -143,9 +142,9 @@ SessionSchema.pre('findOneAndUpdate', function(next) {
   if (update) {
     // Increment version for optimistic locking
     if (!update.$inc) {
-      update.$inc = { [SESSION_FIELDS.VERSION]: 1 };
-    } else if (typeof update.$inc[SESSION_FIELDS.VERSION] === 'undefined') {
-      update.$inc[SESSION_FIELDS.VERSION] = 1;
+      update.$inc = { version: 1 };
+    } else if (typeof update.$inc.version === 'undefined') {
+      update.$inc.version = 1;
     }
     
     // Update lastActivity timestamp for concurrent update detection
@@ -182,27 +181,28 @@ SessionSchema.post('findOneAndUpdate', function(error: any, doc: any, next: any)
   }
 });
 
-// Define interfaces
+// Clean interfaces
 interface ISwipe {
-  [CARD_FIELDS.ID]: string;
-  [VOTE_FIELDS.DIRECTION]: 'left' | 'right';
-  [VOTE_FIELDS.TIMESTAMP]: Date;
+  uuid: string;
+  direction: 'left' | 'right';
+  timestamp: Date;
 }
 
 interface IVote {
-  [VOTE_FIELDS.CARD_A]: string;
-  [VOTE_FIELDS.CARD_B]: string;
-  [VOTE_FIELDS.WINNER]: string;
-  [VOTE_FIELDS.TIMESTAMP]: Date;
+  cardA: string;
+  cardB: string;
+  winner: string;
+  timestamp: Date;
 }
 
 // Enhanced interface with state management methods
 export interface ISession extends mongoose.Document {
-  [SESSION_FIELDS.ID]: string;
+  uuid: string;
   status: 'active' | 'idle' | 'completed' | 'expired';
   state: 'swiping' | 'voting' | 'comparing' | 'completed';
   version: number;
   deck: string[];
+  totalCards: number;
   createdAt: Date;
   lastActivity: Date;
   completedAt: Date | null;
@@ -211,14 +211,12 @@ export interface ISession extends mongoose.Document {
   votes: IVote[];
   personalRanking: string[];
   
-  // Enhanced state management methods
-  validateStateTransition(from: SessionState, to: SessionState): boolean;
-  getNextComparisonCard(currentCard: string): string | null;
+  // Methods
   getRightSwipesCount(): number;
   handleVoteTimeout(cardA: string, cardB: string): void;
+  validateStateTransition(from: SessionState, to: SessionState): boolean;
+  getNextComparisonCard(currentCard: string): string | null;
 }
 
 export const Session = mongoose.models.Session || mongoose.model<ISession>('Session', SessionSchema);
-
-// Export SessionState enum for use in other modules
 export { SessionState };

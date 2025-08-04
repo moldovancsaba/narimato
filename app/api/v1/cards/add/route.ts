@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import { getOrganizationContext } from '@/app/lib/middleware/organization';
+import { createOrgAwareRoute } from '@/app/lib/middleware/organization';
 import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { Card } from '@/app/lib/models/Card';
 import { GlobalRanking } from '@/app/lib/models/GlobalRanking';
@@ -8,16 +8,12 @@ import { CreateCardSchema } from '@/app/lib/validation/schemas';
 import { handleApiError } from '@/app/lib/utils/errorHandling';
 import { validateUUID } from '@/app/lib/utils/fieldValidation';
 
-export async function POST(request: Request) {
+export const POST = createOrgAwareRoute(async (request, { organizationUUID }) => {
   try {
     const body = await request.json();
     const validatedData = CreateCardSchema.parse(body);
 
-    // Get organization context
-    const orgContext = await getOrganizationContext(request);
-    const organizationId = orgContext?.organizationId || 'default';
-
-    const connectDb = createOrgDbConnect(organizationId);
+    const connectDb = createOrgDbConnect(organizationUUID);
     const connection = await connectDb();
     
     // Register connection-specific models
@@ -39,8 +35,9 @@ export async function POST(request: Request) {
     // Check for name uniqueness (hashtag must be unique)
     const existingName = await CardModel.findOne({ name: validatedData.name });
     if (existingName) {
+      console.error(`❌ Card creation failed - duplicate name: ${validatedData.name} (Organization: ${organizationUUID})`);
       return NextResponse.json(
-        { error: 'Card with this name (hashtag) already exists' },
+        { error: `Card with this name (hashtag) already exists: ${validatedData.name}` },
         { status: 409 }
       );
     }
@@ -114,4 +111,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-}
+});

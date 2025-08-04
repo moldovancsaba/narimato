@@ -20,7 +20,7 @@
  * - Session data is never exposed directly - only through controlled getters
  */
 
-import { SESSION_FIELDS, CARD_FIELDS, VOTE_FIELDS } from '../constants/fieldNames';
+import { CARD_FIELDS, VOTE_FIELDS, SESSION_FIELDS } from '../constants/fieldNames';
 
 export type AppState = 
   | 'INITIALIZING'     // Setting up session and deck
@@ -30,38 +30,38 @@ export type AppState =
   | 'ERROR';           // Something went wrong
 
 export type AppEvent = 
-  | { type: 'START_SESSION'; sessionId: string; deckSize: number }
+  | { type: 'START_SESSION'; sessionUUID: string; deckSize: number }
   | { type: 'DECK_READY'; totalCards: number }
-  | { type: 'CARD_SWIPED_LEFT'; cardId: string }
-  | { type: 'CARD_SWIPED_RIGHT'; cardId: string; requiresVoting: boolean }
-  | { type: 'VOTING_REQUIRED'; cardId: string; compareAgainst: string }
-  | { type: 'VOTE_COMPLETED'; cardId: string; nextComparison?: { newCard: string; compareAgainst: string } }
-  | { type: 'RANKING_COMPLETE'; cardId: string }
+  | { type: 'CARD_SWIPED_LEFT'; cardUUID: string }
+  | { type: 'CARD_SWIPED_RIGHT'; cardUUID: string; requiresVoting: boolean }
+  | { type: 'VOTING_REQUIRED'; cardUUID: string; compareAgainst: string }
+  | { type: 'VOTE_COMPLETED'; cardUUID: string; nextComparison?: { newCard: string; compareAgainst: string } }
+  | { type: 'RANKING_COMPLETE'; cardUUID: string }
   | { type: 'DECK_EXHAUSTED' }
   | { type: 'ERROR_OCCURRED'; error: string }
   | { type: 'RESET_SESSION' };
 
 export interface AppContext {
-  sessionId: string | null;
-  currentCardId: string | null;
+  sessionUUID: string | null;
+  currentCardUUID: string | null;
   swipedCards: string[];
   rankedCards: string[];
   totalCards: number;
   remainingCards: number;
-  currentVotingCard: string | null;
+  currentVotingCardUUID: string | null;
   error: string | null;
 }
 
 export class EventAgent {
   private state: AppState = 'INITIALIZING';
   private context: AppContext = {
-    sessionId: null,
-    currentCardId: null,
+    sessionUUID: null,
+    currentCardUUID: null,
     swipedCards: [],
     rankedCards: [],
     totalCards: 0,
     remainingCards: 0,
-    currentVotingCard: null,
+    currentVotingCardUUID: null,
     error: null
   };
 
@@ -90,8 +90,8 @@ export class EventAgent {
 
   private logStateChange(event: string) {
     console.log(`[EventAgent] ${event} -> State: ${this.state}`, {
-      sessionId: this.context.sessionId,
-      currentCard: this.context.currentCardId,
+      sessionUUID: this.context.sessionUUID,
+      currentCardUUID: this.context.currentCardUUID,
       swipedCount: this.context.swipedCards.length,
       rankedCount: this.context.rankedCards.length,
       remaining: this.context.remainingCards
@@ -132,7 +132,7 @@ export class EventAgent {
   private handleInitializingState(event: AppEvent): void {
     switch (event.type) {
       case 'START_SESSION':
-        this.context.sessionId = event.sessionId;
+        this.context.sessionUUID = event.sessionUUID;
         this.context.totalCards = event.deckSize;
         this.context.remainingCards = event.deckSize;
         break;
@@ -153,7 +153,7 @@ export class EventAgent {
     switch (event.type) {
       case 'CARD_SWIPED_LEFT':
         // Left swipe = discard, continue swiping
-        this.context.swipedCards.push(event.cardId);
+        this.context.swipedCards.push(event.cardUUID);
         this.context.remainingCards--;
         
         if (this.context.remainingCards === 0) {
@@ -163,16 +163,16 @@ export class EventAgent {
 
       case 'CARD_SWIPED_RIGHT':
         // Right swipe = like the card
-        this.context.swipedCards.push(event.cardId);
+        this.context.swipedCards.push(event.cardUUID);
         this.context.remainingCards--;
         
         if (event.requiresVoting) {
           // Need to rank this card against existing ones
-          this.context.currentVotingCard = event.cardId;
+          this.context.currentVotingCardUUID = event.cardUUID;
           this.state = 'VOTING';
         } else {
           // Card added to ranking automatically (first card or clear preference)
-          this.context.rankedCards.push(event.cardId);
+          this.context.rankedCards.push(event.cardUUID);
           
           if (this.context.remainingCards === 0) {
             this.state = 'COMPLETED';
@@ -197,11 +197,11 @@ export class EventAgent {
         if (event.nextComparison) {
           // More voting needed for this card
           // Stay in voting state but update context
-          this.context.currentVotingCard = event.cardId;
+          this.context.currentVotingCardUUID = event.cardUUID;
         } else {
           // Voting complete for this card
-          this.context.rankedCards.push(event.cardId);
-          this.context.currentVotingCard = null;
+          this.context.rankedCards.push(event.cardUUID);
+          this.context.currentVotingCardUUID = null;
           
           // Return to swiping or complete
           if (this.context.remainingCards === 0) {
@@ -214,8 +214,8 @@ export class EventAgent {
 
       case 'RANKING_COMPLETE':
         // Card successfully ranked
-        this.context.rankedCards.push(event.cardId);
-        this.context.currentVotingCard = null;
+        this.context.rankedCards.push(event.cardUUID);
+        this.context.currentVotingCardUUID = null;
         
         if (this.context.remainingCards === 0) {
           this.state = 'COMPLETED';
@@ -250,13 +250,13 @@ export class EventAgent {
   private resetToInitial(): void {
     this.state = 'INITIALIZING';
     this.context = {
-      sessionId: null,
-      currentCardId: null,
+      sessionUUID: null,
+      currentCardUUID: null,
       swipedCards: [],
       rankedCards: [],
       totalCards: 0,
       remainingCards: 0,
-      currentVotingCard: null,
+      currentVotingCardUUID: null,
       error: null
     };
   }
@@ -300,8 +300,8 @@ export class EventAgent {
         return { 
           page: '/vote', 
           params: { 
-            [SESSION_FIELDS.ID]: this.context.sessionId!,
-            [CARD_FIELDS.ID]: this.context.currentVotingCard!
+            [SESSION_FIELDS.UUID]: this.context.sessionUUID!,
+            cardUUID: this.context.currentVotingCardUUID!
           }
         };
       case 'COMPLETED':

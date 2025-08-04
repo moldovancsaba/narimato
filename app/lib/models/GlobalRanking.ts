@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { Play } from './Play';
-import { VOTE_FIELDS, PLAY_FIELDS } from '../constants/fieldNames';
+import { VOTE_FIELDS } from '../constants/fieldNames';
 
 // Constants
 const RECENT_SESSIONS_LIMIT = 500; // Increased for better ELO accuracy
@@ -8,7 +8,7 @@ const DEFAULT_ELO_RATING = 1000; // Starting ELO rating for new cards
 const K_FACTOR = 32; // ELO K-factor (higher = more volatile ratings)
 
 const GlobalRankingSchema = new mongoose.Schema({
-  cardId: { type: String, required: true, unique: true, index: true },
+cardUUID: { type: String, required: true, unique: true, index: true },
   eloRating: { type: Number, default: DEFAULT_ELO_RATING, index: -1 }, // Primary ranking metric
   totalScore: { type: Number, default: 0 }, // Legacy metric (kept for compatibility)
   appearanceCount: { type: Number, default: 0 },
@@ -22,7 +22,7 @@ const GlobalRankingSchema = new mongoose.Schema({
 
 // Define the interface for the GlobalRanking document
 export interface IGlobalRanking extends mongoose.Document {
-  cardId: string;
+cardUUID: string;
   eloRating: number;
   totalScore: number;
   appearanceCount: number;
@@ -59,11 +59,11 @@ GlobalRankingSchema.statics.calculateRankings = async function() {
   
   // ✅ CRITICAL FIX: Query Play model instead of Session model
   const completedPlays = await Play.find({
-    [PLAY_FIELDS.STATUS]: 'completed',
+    status: 'completed',
     votes: { $exists: true, $ne: [] },
-    [PLAY_FIELDS.COMPLETED_AT]: { $exists: true }
+    completedAt: { $exists: true }
   })
-    .sort({ [PLAY_FIELDS.COMPLETED_AT]: -1 })
+    .sort({ completedAt: -1 })
     .limit(RECENT_SESSIONS_LIMIT)
     .select('votes completedAt');
 
@@ -81,8 +81,8 @@ GlobalRankingSchema.statics.calculateRankings = async function() {
 
   // Initialize with existing ratings or default
   existingRankings.forEach((ranking: IGlobalRanking) => {
-    eloRatings.set(ranking.cardId, ranking.eloRating || DEFAULT_ELO_RATING);
-    gameStats.set(ranking.cardId, {
+eloRatings.set(ranking.cardUUID, ranking.eloRating || DEFAULT_ELO_RATING);
+gameStats.set(ranking.cardUUID, {
       wins: ranking.wins || 0,
       losses: ranking.losses || 0,
       totalGames: ranking.totalGames || 0
@@ -196,13 +196,13 @@ GlobalRankingSchema.statics.calculateRankings = async function() {
   });
 
   // Prepare bulk operations to update all rankings
-  const bulkOps = Array.from(eloRatings.entries()).map(([cardId, eloRating]) => {
-    const stats = gameStats.get(cardId) || { wins: 0, losses: 0, totalGames: 0 };
+const bulkOps = Array.from(eloRatings.entries()).map(([cardUUID, eloRating]) => {
+const stats = gameStats.get(cardUUID) || { wins: 0, losses: 0, totalGames: 0 };
     const winRate = stats.totalGames > 0 ? stats.wins / stats.totalGames : 0;
     
     return {
       updateOne: {
-        filter: { cardId },
+filter: { cardUUID },
         update: {
           $set: {
             eloRating,
@@ -274,7 +274,7 @@ GlobalRankingSchema.methods.compareWith = function(other: IGlobalRanking): numbe
   }
   
   // Final fallback: UUID comparison for consistency
-  return this.cardId.localeCompare(other.cardId);
+return this.cardUUID.localeCompare(other.cardUUID);
 };
 
 // Export both the model and its interface

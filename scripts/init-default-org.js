@@ -1,8 +1,10 @@
 const mongoose = require('mongoose');
+const { v4: uuidv4 } = require('uuid');
 require('dotenv').config({ path: '.env.local' });
 
 // Organization schema
 const organizationSchema = new mongoose.Schema({
+  uuid: { type: String, required: true, unique: true },
   name: { type: String, required: true },
   slug: { type: String, required: true, unique: true },
   subdomain: { type: String },
@@ -38,27 +40,29 @@ async function initializeDefaultOrganization() {
     // Create the Organization model
     const Organization = masterConnection.model('Organization', organizationSchema);
     
-    // Check if default organization already exists
-    let existing = await Organization.findOne({ slug: 'default' });
+    // Check if your organization already exists
+    let existing = await Organization.findOne({ slug: 'moldovan' });
     if (existing) {
-      console.log('✅ Default organization already exists in master database');
+      console.log('✅ Moldován Csaba Kft organization already exists in master database');
     } else {
-      // Create default organization
+      // Create your actual organization
+      const orgUUID = 'mcszszcs-oooo-0707-1975-moldovan0707';
       const defaultOrg = new Organization({
-        name: 'Default Organization',
-        slug: 'default',
-        databaseName: 'narimato_org_default',
+        uuid: orgUUID,
+        name: 'Moldován Csaba Kft',
+        slug: 'moldovan',
+        databaseName: orgUUID, // Use UUID as database name
         settings: {},
         isActive: true
       });
       
       await defaultOrg.save();
-      console.log('✅ Default organization created in master database');
+      console.log('✅ Moldován Csaba Kft organization created in master database');
       existing = defaultOrg;
     }
     
     // Now initialize the organization's database
-    const orgUri = masterUri.replace(/\/[^\/]+$/, '/narimato_org_default');
+    const orgUri = masterUri.replace(/\/[^\/]+$/, `/${existing.databaseName}`);
     console.log('🔗 Connecting to organization database:', orgUri.replace(/\/\/[^@]+@/, '//<credentials>@'));
     
     const orgConnection = await mongoose.createConnection(orgUri);
@@ -76,11 +80,15 @@ async function initializeDefaultOrganization() {
         name: 'cards',
         model: Card,
         indexes: [
-          { name: 1, unique: true },
-          { uuid: 1, unique: true },
+          { name: 1 },
+          { uuid: 1 },
           { hashtags: 1 },
           { isActive: 1 },
           { createdAt: -1 }
+        ],
+        uniqueIndexes: [
+          { name: 1 },
+          { uuid: 1 }
         ]
       }
     ];

@@ -5,24 +5,24 @@ import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { Card, ICard } from '@/app/lib/models/Card';
 import { Play } from '@/app/lib/models/Play';
 import { getChildren, isPlayable } from '@/app/lib/utils/cardHierarchy';
-import { DECK_RULES } from '@/app/lib/constants/fieldNames';
+import { DECK_RULES, UUID_FIELDS, COMMON_FIELDS } from '@/app/lib/constants/fieldNames';
 import { savePlayResults } from '@/app/lib/utils/sessionResultsUtils';
 
 const PLAY_EXPIRY_HOURS = 24;
 
-export const POST = createOrgAwareRoute(async (request, { organizationId }) => {
+export const POST = createOrgAwareRoute(async (request, { organizationUUID }) => {
   try {
-    const connectDb = createOrgDbConnect(organizationId);
+    const connectDb = createOrgDbConnect(organizationUUID);
     const connection = await connectDb();
     
     // Get models bound to this specific connection
     const CardModel = connection.model('Card', Card.schema);
     const PlayModel = connection.model('Play', Play.schema);
 
-    // Parse request body to get deck selection and session info
+    // Parse request body to get deck selection and session info - STANDARDIZED FIELD NAMES
     const body = await request.json().catch(() => ({}));
     const selectedCardName = body.cardName; // The #HASHTAG name of the card to play
-    const sessionId = body.sessionId; // Browser session ID for analytics
+    const sessionUUID = body.sessionUUID || body.sessionId;
 
     if (!selectedCardName) {
       return new NextResponse(
@@ -43,7 +43,7 @@ export const POST = createOrgAwareRoute(async (request, { organizationId }) => {
       );
     }
 
-    const playableCheck = await isPlayable(organizationId, cardName);
+    const playableCheck = await isPlayable(organizationUUID, cardName);
     if (!playableCheck) {
       return new NextResponse(
         JSON.stringify({ error: 'Card has no children to play' }),
@@ -52,7 +52,7 @@ export const POST = createOrgAwareRoute(async (request, { organizationId }) => {
     }
 
     // Get all children cards for this parent
-    const childCards = await getChildren(organizationId, cardName);
+    const childCards = await getChildren(organizationUUID, cardName);
     
     // Shuffle the cards randomly
     const cards = childCards.sort(() => Math.random() - 0.5);
@@ -87,12 +87,12 @@ export const POST = createOrgAwareRoute(async (request, { organizationId }) => {
 
     // CRITICAL: Force close ALL existing active plays for this session before creating new
     // This ensures clean session state and prevents card state mismatches
-    if (sessionId) {
-      const activePlays = await PlayModel.find({ sessionId, status: 'active' });
-      console.log(`🧹 Found ${activePlays.length} active plays to close for session ${sessionId?.substring(0, 8)}...`);
+    if (sessionUUID) {
+      const activePlays = await PlayModel.find({ sessionUUID, status: 'active' });
+      console.log(`🧹 Found ${activePlays.length} active plays to close for session ${sessionUUID?.substring(0, 8)}...`);
       
       for (const activePlay of activePlays) {
-        console.log(`🔄 Force closing play ${activePlay.playUuid?.substring(0, 8)}... to prevent state conflicts`);
+        console.log(`🔄 Force closing play ${activePlay.uuid?.substring(0, 8)}... to prevent state conflicts`);
         activePlay.status = 'completed';
         activePlay.state = 'completed';
         activePlay.completedAt = new Date();
@@ -101,18 +101,18 @@ export const POST = createOrgAwareRoute(async (request, { organizationId }) => {
         await activePlay.save();
         try {
           await savePlayResults(activePlay, connection);
-          console.log(`✅ Hard closed existing active play: ${activePlay.playUuid?.substring(0, 8)}...`);
+          console.log(`✅ Hard closed existing active play: ${activePlay.uuid?.substring(0, 8)}...`);
         } catch (saveError) {
-          console.warn(`⚠️ Failed to save results for closed play ${activePlay.playUuid?.substring(0, 8)}...:`, saveError);
+          console.warn(`⚠️ Failed to save results for closed play ${activePlay.uuid?.substring(0, 8)}...:`, saveError);
         }
       }
     }
 
     // Create new play session
     const play = new PlayModel({
-      playUuid,
-      sessionId,
-      deckUuid,
+      uuid: playUuid,
+      sessionUUID,
+      deckUUID: deckUuid,
       status: 'active',
       state: 'swiping',
       deck: cardUuids,
@@ -128,7 +128,7 @@ export const POST = createOrgAwareRoute(async (request, { organizationId }) => {
 
     console.log(`🎮 New play created:`, {
       playUuid: playUuid.substring(0, 8) + '...',
-      sessionId: sessionId ? sessionId.substring(0, 8) + '...' : 'none',
+      sessionUUID: sessionUUID ? sessionUUID.substring(0, 8) + '...' : 'none',
       deckUuid: deckUuid.substring(0, 8) + '...',
       cardName,
       totalCards: cards.length,
@@ -138,7 +138,7 @@ export const POST = createOrgAwareRoute(async (request, { organizationId }) => {
     return new NextResponse(
       JSON.stringify({
         playUuid,
-        browserSessionId: sessionId,
+        sessionUUID,
         deckUuid,
         cardName,
         expiresAt,

@@ -3,24 +3,24 @@ import { createOrgAwareRoute } from '@/app/lib/middleware/organization';
 import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { Play } from '@/app/lib/models/Play';
 import { Card } from '@/app/lib/models/Card';
-import { SESSION_FIELDS, API_FIELDS, PLAY_FIELDS } from '@/app/lib/constants/fieldNames';
+import { API_FIELDS } from '@/app/lib/constants/fieldNames';
 import { validateSessionId } from '@/app/lib/utils/fieldValidation';
 import { forceCompletionCheckAndUpdate, validatePlayState } from '@/app/lib/utils/playCompletionUtils';
 
-export const GET = createOrgAwareRoute(async (request, { organizationId }) => {
+export const GET = createOrgAwareRoute(async (request, { organizationUUID }) => {
   try {
-    // Note: sessionId parameter is actually playUuid in the new architecture
-    const playUuid = request.nextUrl.searchParams.get(SESSION_FIELDS.ID);
+    // Note: Accept both sessionId and sessionUUID for compatibility
+    const uuid = request.nextUrl.searchParams.get('sessionId') || request.nextUrl.searchParams.get('sessionUUID');
     
-    if (!playUuid || !validateSessionId(playUuid)) {
+    if (!uuid || !validateSessionId(uuid)) {
       return new NextResponse(
         JSON.stringify({ [API_FIELDS.ERROR]: 'Valid play ID is required' }),
         { status: 400 }
       );
     }
     
-    // Create database connection
-    const connectDb = createOrgDbConnect(organizationId);
+    // Use organization UUID for database connection
+    const connectDb = createOrgDbConnect(organizationUUID);
     const connection = await connectDb();
 
     // Get models bound to this specific connection
@@ -36,30 +36,33 @@ export const GET = createOrgAwareRoute(async (request, { organizationId }) => {
 
     // Find play session and check if it's still valid (accept both active and completed)
     const play = await PlayModel.findOne({ 
-      [PLAY_FIELDS.UUID]: playUuid,
-      [PLAY_FIELDS.STATUS]: { $in: ['active', 'completed'] },
-      [PLAY_FIELDS.EXPIRES_AT]: { $gt: new Date() }
+      uuid: uuid,
+      status: { $in: ['active', 'completed'] },
+      expiresAt: { $gt: new Date() }
     });
 
     // Include version in the response for optimistic locking
     const version = play?.version || 0;
 
-    console.log(`🔍 Play validation for ${playUuid.substring(0, 8)}...: ${play ? 'VALID' : 'INVALID'}`);
+    console.log(`🔍 Play validation for ${uuid.substring(0, 8)}...: ${play ? 'VALID' : 'INVALID'}`);
 
-// Only force-complete plays that are in 'swiping' state and should be completed
-    // Do NOT force-complete plays in 'voting' state as they have active voting processes
-    if (play && play.status === 'active' && play.state === 'swiping') {
+// Force-complete plays that should be completed regardless of state
+    // This handles edge cases where plays get stuck in any state
+    if (play && play.status === 'active') {
       const completionUpdated = await forceCompletionCheckAndUpdate(play);
       if (completionUpdated) {
-        console.log(`🔄 Play ${play.playUuid} was stuck in swiping state and force-completed during validation`);
+        console.log(`🔄 Play ${play.uuid} was stuck in ${play.state} state and force-completed during validation`);
+      } else if (play.state === 'voting') {
+        console.log(`🗳️ Play ${play.uuid} is in voting state - allowing voting process to complete naturally`);
       }
-    } else if (play && play.status === 'active' && play.state === 'voting') {
-      console.log(`🗳️ Play ${play.playUuid} is in voting state - allowing voting process to complete naturally`);
     }
 
-    const stateValidation = validatePlayState(play);
-    if (!stateValidation.isValid) {
-      console.warn(`⚠️ Play ${play.playUuid} has state inconsistencies:`, stateValidation.issues);
+    // Only validate play state if play exists
+    if (play) {
+      const stateValidation = validatePlayState(play);
+      if (!stateValidation.isValid) {
+        console.warn(`⚠️ Play ${play.uuid} has state inconsistencies:`, stateValidation.issues);
+      }
     }
 
     // Fetch actual card data if play exists and has deck cards
@@ -81,7 +84,7 @@ export const GET = createOrgAwareRoute(async (request, { organizationId }) => {
         // Maintain exact deck order to match swipe API logic
         deckCards = play.deck.map((uuid: string) => cardMap.get(uuid)).filter(Boolean);
         
-        console.log(`📋 Fetched ${deckCards.length} cards for play ${playUuid.substring(0, 8)}`);
+        console.log(`📋 Fetched ${deckCards.length} cards for play ${uuid.substring(0, 8)}`);
       } catch (cardError) {
         console.error('Error fetching deck cards:', cardError);
         // Continue without cards rather than failing completely
@@ -93,11 +96,11 @@ export const GET = createOrgAwareRoute(async (request, { organizationId }) => {
         isValid: !!play,
         state: play?.state || null,
         status: play?.status || null,
-        [SESSION_FIELDS.VERSION]: version,
+        version: version,
         session: play ? {
           swipes: play.swipes || [],
           personalRanking: play.personalRanking || [],
-          deckUuid: play.deckUuid,
+          deckUUID: play.deckUUID,
           deckTag: play.deckTag,
           deck: deckCards // Include actual card data
         } : null

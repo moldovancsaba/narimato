@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
+import { useOrganization } from '@/app/components/OrganizationProvider';
 import PageLayout from '../components/PageLayout';
 import HashtagSelector from '../components/HashtagSelector';
 
@@ -44,9 +45,14 @@ interface Card {
 
 function CardEditor() {
   const router = useRouter();
+  const { currentOrganization, isLoading: orgLoading } = useOrganization();
   const searchParams = useSearchParams();
   const cardUuid = searchParams.get('uuid');
   const isEditing = Boolean(cardUuid);
+  
+  // Show organization info prominently
+  const orgDisplayName = currentOrganization?.OrganizationName || 'Loading...';
+  const orgUuid = currentOrganization?.OrganizationUUID || 'Unknown';
   
   // 1st Column - General Information
   const [cardName, setCardName] = useState(''); // #hashtag - required
@@ -101,19 +107,45 @@ function CardEditor() {
 
 // Load initial data and handle URL change
   useEffect(() => {
-    loadInitialData();
-  }, [cardUuid]);
+    // Only load initial data when organization is ready
+    if (!orgLoading && currentOrganization) {
+      loadInitialData();
+    }
+  }, [cardUuid, currentOrganization, orgLoading]);
 
   const loadInitialData = async () => {
     setLoading(true);
     try {
       // Load presets
-      await fetch('/api/v1/presets/init', { method: 'POST' });
+      if (!currentOrganization) {
+        setError('Please select an organization');
+        setLoading(false);
+        return;
+      }
+
+      await fetch('/api/v1/presets/init', {
+        method: 'POST',
+        headers: {
+          'X-Organization-UUID': currentOrganization.OrganizationUUID
+        }
+      });
       
       const [fontResponse, backgroundResponse, cardsResponse] = await Promise.all([
-        fetch('/api/v1/presets/fonts'),
-        fetch('/api/v1/presets/backgrounds'),
-        fetch('/api/v1/cards')
+        fetch('/api/v1/presets/fonts', {
+          headers: {
+            'X-Organization-UUID': currentOrganization.OrganizationUUID
+          }
+        }),
+        fetch('/api/v1/presets/backgrounds', {
+          headers: {
+            'X-Organization-UUID': currentOrganization.OrganizationUUID
+          }
+        }),
+        fetch('/api/v1/cards', {
+          headers: {
+            'X-Organization-UUID': currentOrganization.OrganizationUUID
+          }
+        })
       ]);
       
       if (fontResponse.ok) {
@@ -139,7 +171,11 @@ function CardEditor() {
       
       // If editing, load card data
       if (isEditing && cardUuid) {
-        const cardResponse = await fetch(`/api/v1/cards/${cardUuid}`);
+        const cardResponse = await fetch(`/api/v1/cards/${cardUuid}`, {
+          headers: {
+            'X-Organization-UUID': currentOrganization.OrganizationUUID
+          }
+        });
         if (cardResponse.ok) {
           const cardData = await cardResponse.json();
           if (cardData.success && cardData.card) {
@@ -404,6 +440,7 @@ img.onload = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Organization-UUID': currentOrganization?.OrganizationUUID || 'default'
         },
         body: JSON.stringify({
           name: cardName.startsWith('#') ? cardName : `#${cardName}`,
@@ -462,6 +499,7 @@ img.onload = () => {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          'X-Organization-UUID': currentOrganization?.OrganizationUUID || 'default'
         },
         body: JSON.stringify({
           cardSize: cardSize // Save only card size
@@ -497,6 +535,7 @@ img.onload = () => {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          'X-Organization-UUID': currentOrganization?.OrganizationUUID || 'default'
         },
         body: JSON.stringify({
           name: cardName.startsWith('#') ? cardName : `#${cardName}`,
@@ -557,6 +596,7 @@ img.onload = () => {
         method,
         headers: {
           'Content-Type': 'application/json',
+          'X-Organization-UUID': currentOrganization?.OrganizationUUID || 'default'
         },
         body: JSON.stringify(requestBody),
       });
@@ -693,12 +733,26 @@ img.onload = () => {
     router.push('/cards');
   };
   
-  if (loading) {
+  // Show loading while organization context or editor are loading
+  if (orgLoading || loading) {
     return (
       <div className="flex items-center justify-center page-height">
         <div className="loading-spinner"></div>
-        <span className="ml-2 text-lg">Loading card editor...</span>
+        <span className="ml-2 text-lg">
+          {orgLoading ? 'Loading organization...' : 'Loading card editor...'}
+        </span>
       </div>
+    );
+  }
+
+  // Show error if no organization is available
+  if (!currentOrganization) {
+    return (
+      <PageLayout title="Card Editor">
+        <div className="status-error p-4 mb-4 rounded-lg">
+          No organization selected. Please select an organization to use the card editor.
+        </div>
+      </PageLayout>
     );
   }
   
@@ -719,13 +773,18 @@ img.onload = () => {
         <div className="status-success p-4 mb-4 rounded-lg">{success}</div>
       )}
 
+      {/* Display current organization */}
+      <div className="bg-gray-100 dark:bg-gray-800 text-lg font-medium mb-6 p-4 rounded-lg shadow-sm">
+        Currently editing for organization: <span className="font-bold">{orgDisplayName}</span> ({orgUuid})
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* 1st Column: General Information & Typography */}
         <div className="space-y-6">
-          {/* General */}
-          <div className="content-card">
-            <h2 className="text-xl font-semibold mb-4">General</h2>
-            
+        {/* General */}
+        <div className="content-card">
+          <h2 className="text-xl font-semibold mb-4">General</h2>
+          
             <div className="space-y-4">
               {/* Card Name #hashtag (required) */}
               <div>

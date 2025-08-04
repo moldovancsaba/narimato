@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     const orgContext = await getOrganizationContext(request);
     const organizationId = orgContext?.organizationId || 'default';
 
-    const connectDb = createOrgDbConnect(organizationId);
+    const connectDb = createOrgDbConnect(organizationUUID);
     const connection = await connectDb();
     
     // Register connection-specific models

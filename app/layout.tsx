@@ -3,6 +3,7 @@ import { Inter, Fira_Code } from "next/font/google";
 import "./globals.css";
 import ChunkErrorProvider from './components/ChunkErrorProvider';
 import GlobalNavigation from './components/GlobalNavigation';
+import { OrganizationProvider } from './components/OrganizationProvider';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -47,10 +48,12 @@ export default function RootLayout({
           paddingBottom: '80px'
         }}
       >
-        <ChunkErrorProvider>
-          {children}
-        </ChunkErrorProvider>
-        <GlobalNavigation />
+        <OrganizationProvider>
+          <ChunkErrorProvider>
+            {children}
+          </ChunkErrorProvider>
+          <GlobalNavigation />
+        </OrganizationProvider>
       </body>
     </html>
   );

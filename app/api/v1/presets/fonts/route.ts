@@ -7,9 +7,15 @@ import { FontPreset } from '@/app/lib/models/FontPreset';
 export async function GET(request: Request) {
   try {
     const orgContext = await getOrganizationContext(request);
-    const organizationId = orgContext?.organizationId || 'default';
+    if (!orgContext) {
+      return NextResponse.json(
+        { success: false, error: 'Organization not found' },
+        { status: 404 }
+      );
+    }
+    const organizationUUID = orgContext.organizationUUID;
 
-    const connectDb = createOrgDbConnect(organizationId);
+    const connectDb = createOrgDbConnect(organizationUUID);
     const connection = await connectDb();
     const FontPresetModel = connection.model('FontPreset', FontPreset.schema);
     
@@ -35,9 +41,15 @@ export async function GET(request: Request) {
 export async function POST(request: NextRequest) {
   try {
     const orgContext = await getOrganizationContext(request);
-    const organizationId = orgContext?.organizationId || 'default';
+    if (!orgContext) {
+      return NextResponse.json(
+        { success: false, error: 'Organization not found' },
+        { status: 404 }
+      );
+    }
+    const organizationUUID = orgContext.organizationUUID;
 
-    const connectDb = createOrgDbConnect(organizationId);
+    const connectDb = createOrgDbConnect(organizationUUID);
     const connection = await connectDb();
     const FontPresetModel = connection.model('FontPreset', FontPreset.schema);
     
@@ -94,9 +106,15 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const orgContext = await getOrganizationContext(request);
-    const organizationId = orgContext?.organizationId || 'default';
+    if (!orgContext) {
+      return NextResponse.json(
+        { success: false, error: 'Organization not found' },
+        { status: 404 }
+      );
+    }
+    const organizationUUID = orgContext.organizationUUID;
 
-    const connectDb = createOrgDbConnect(organizationId);
+    const connectDb = createOrgDbConnect(organizationUUID);
     const connection = await connectDb();
     const FontPresetModel = connection.model('FontPreset', FontPreset.schema);
     

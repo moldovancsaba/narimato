@@ -11,9 +11,9 @@ import { handleApiError } from '@/app/lib/utils/errorHandling';
  * GET /api/v1/cards
  * Retrieve cards with filtering, searching, and hierarchy information
  */
-export const GET = createOrgAwareRoute(async (request, { organizationId }) => {
+export const GET = createOrgAwareRoute(async (request, { organizationUUID }) => {
   try {
-    const connectDb = createOrgDbConnect(organizationId);
+    const connectDb = createOrgDbConnect(organizationUUID);
     const connection = await connectDb();
     
     // Get Card model bound to this specific connection
@@ -31,11 +31,11 @@ export const GET = createOrgAwareRoute(async (request, { organizationId }) => {
 
     // Build query based on type
     if (type === 'root') {
-      cards = await getRootDecks(organizationId);
+      cards = await getRootDecks(organizationUUID);
     } else if (type === 'playable') {
-      cards = await getPlayableCards(organizationId);
+      cards = await getPlayableCards(organizationUUID);
     } else if (parent) {
-      cards = await getChildren(organizationId, parent);
+      cards = await getChildren(organizationUUID, parent);
     } else {
       // Default: get all cards
       if (search) {
@@ -56,7 +56,7 @@ export const GET = createOrgAwareRoute(async (request, { organizationId }) => {
     // Add hierarchy information to each card
     const cardsWithMeta = await Promise.all(
       cards.map(async (card) => {
-        const children = await getChildren(organizationId, card.name);
+        const children = await getChildren(organizationUUID, card.name);
         // Handle both Mongoose documents and plain objects
         const cardObj = typeof card.toObject === 'function' ? card.toObject() : card;
         return {
@@ -64,7 +64,7 @@ export const GET = createOrgAwareRoute(async (request, { organizationId }) => {
           childCount: children.length,
           // Use consistent playability logic that enforces minimum card threshold
           // This ensures UI display matches backend filtering requirements
-          isPlayable: await isPlayable(organizationId, card.name),
+          isPlayable: await isPlayable(organizationUUID, card.name),
           isRoot: !card.hashtags || card.hashtags.length === 0
         };
       })
@@ -103,9 +103,9 @@ export const GET = createOrgAwareRoute(async (request, { organizationId }) => {
  * Create a new card with comprehensive validation and meta field computation
  * Supports both text and media cards with flexible content structure
  */
-export const POST = createOrgAwareRoute(async (request, { organizationId }) => {
+export const POST = createOrgAwareRoute(async (request, { organizationUUID }) => {
   try {
-    const connectDb = createOrgDbConnect(organizationId);
+    const connectDb = createOrgDbConnect(organizationUUID);
     const connection = await connectDb();
     
     // Get Card model bound to this specific connection
@@ -134,7 +134,7 @@ export const POST = createOrgAwareRoute(async (request, { organizationId }) => {
     console.log('📋 Creating card with validated data:', { name: validatedData.name, uuid: validatedData.uuid });
 
     // Check if card name (hashtag) is already taken
-    const nameExists = await isHashtagTaken(organizationId, validatedData.name);
+    const nameExists = await isHashtagTaken(organizationUUID, validatedData.name);
     if (nameExists) {
       console.warn('📋 Card name already exists:', validatedData.name);
       return NextResponse.json(
@@ -211,11 +211,11 @@ export const POST = createOrgAwareRoute(async (request, { organizationId }) => {
     console.log('📋 Card saved successfully:', cardUuid);
 
     // Compute meta fields for response
-    const cardChildren = await getChildren(organizationId, card.name);
+    const cardChildren = await getChildren(organizationUUID, card.name);
     const cardResponse = {
       ...card.toObject(),
       childCount: cardChildren.length,
-      isPlayable: await isPlayable(organizationId, card.name),
+      isPlayable: await isPlayable(organizationUUID, card.name),
       isRoot: !card.hashtags || card.hashtags.length === 0
     };
 
@@ -239,9 +239,9 @@ export const POST = createOrgAwareRoute(async (request, { organizationId }) => {
  * Update an existing card with partial data
  * This endpoint should be used instead of POST for updates
  */
-export const PATCH = createOrgAwareRoute(async (request, { organizationId }) => {
+export const PATCH = createOrgAwareRoute(async (request, { organizationUUID }) => {
   try {
-    const connectDb = createOrgDbConnect(organizationId);
+    const connectDb = createOrgDbConnect(organizationUUID);
     const connection = await connectDb();
     
     const CardModel = connection.model('Card', Card.schema);
@@ -288,7 +288,7 @@ export const PATCH = createOrgAwareRoute(async (request, { organizationId }) => 
     
     // Check name uniqueness if name is being changed
     if (validatedData.name && validatedData.name !== existingCard.name) {
-      const nameExists = await isHashtagTaken(organizationId, validatedData.name);
+      const nameExists = await isHashtagTaken(organizationUUID, validatedData.name);
       if (nameExists) {
         return NextResponse.json(
           { success: false, error: 'Card name (hashtag) already exists' },
@@ -335,11 +335,11 @@ export const PATCH = createOrgAwareRoute(async (request, { organizationId }) => 
     console.log('📋 Card updated successfully:', uuid);
     
     // Compute meta fields for response
-    const cardChildren = await getChildren(organizationId, existingCard.name);
+    const cardChildren = await getChildren(organizationUUID, existingCard.name);
     const cardResponse = {
       ...existingCard.toObject(),
       childCount: cardChildren.length,
-      isPlayable: await isPlayable(organizationId, existingCard.name),
+      isPlayable: await isPlayable(organizationUUID, existingCard.name),
       isRoot: !existingCard.hashtags || existingCard.hashtags.length === 0
     };
     

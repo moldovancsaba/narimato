@@ -19,7 +19,7 @@ import Organization, { IOrganization } from '@/app/lib/models/Organization';
 
 export interface OrganizationContext {
   organization: IOrganization;
-  organizationId: string;
+  organizationUUID: string;
   databaseName: string;
 }
 
@@ -56,27 +56,51 @@ export async function getOrganizationContext(request: NextRequest): Promise<Orga
     
     const url = new URL(request.url);
     let orgSlug: string | null = null;
+    let orgUUID: string | null = null;
     
-    // Try to extract organization from path first
-    orgSlug = extractOrgSlugFromPath(url.pathname);
+    // Try to extract organization UUID from header
+    const headerUUID = request.headers.get('X-Organization-UUID');
+    if (headerUUID) {
+      orgUUID = headerUUID;
+      console.log('📋 Organization UUID from header:', orgUUID);
+    }
+    
+    // Try to extract organization from slug header
+    const headerSlug = request.headers.get('X-Organization-Slug');
+    if (!orgUUID && headerSlug) {
+      orgSlug = headerSlug;
+      console.log('📋 Organization slug from header:', orgSlug);
+    }
+    
+    // Try to extract organization from path if not in header
+    if (!orgSlug) {
+      orgSlug = extractOrgSlugFromPath(url.pathname);
+    }
     
     // If not found in path, try subdomain
     if (!orgSlug) {
       orgSlug = extractOrgSlugFromSubdomain(url.hostname);
     }
     
-    // FALLBACK: If no organization context found, use default organization
-    // This ensures backward compatibility with existing frontend code
-    if (!orgSlug) {
-      console.log('No organization context found, using default organization for backward compatibility');
-      orgSlug = 'default';
+    // No fallback - organization context must be provided
+    if (!orgUUID && !orgSlug) {
+      console.warn('❌ No organization context found in request');
+      return null;
     }
     
-    // Fetch organization from master database
-    const organization = await OrganizationModel.findOne({ 
-      slug: orgSlug.toLowerCase(),
-      isActive: true 
-    });
+    // Lookup organization by UUID first, then fallback to slug
+    let organization;
+    if (orgUUID) {
+      organization = await OrganizationModel.findOne({ 
+        uuid: orgUUID,
+        isActive: true 
+      });
+    } else if (orgSlug) {
+      organization = await OrganizationModel.findOne({ 
+        slug: orgSlug.toLowerCase(),
+        isActive: true 
+      });
+    }
     
     if (!organization) {
       console.warn(`Organization not found or inactive: ${orgSlug}`);
@@ -85,27 +109,16 @@ export async function getOrganizationContext(request: NextRequest): Promise<Orga
     
     return {
       organization: organization.toObject(),
-      organizationId: organization.slug, // Use slug for database connections
+      organizationUUID: organization.uuid,
       databaseName: organization.databaseName
     };
     
   } catch (error) {
     console.error('Error getting organization context:', error);
     
-    // DEVELOPMENT FALLBACK: If MongoDB is unreachable in development, provide a mock organization
-    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production') {
-      console.warn('🚧 MongoDB unreachable in development - using fallback organization context');
-      return {
-        organization: {
-          slug: 'default',
-          name: 'Default Organization (Development)',
-          databaseName: 'narimato-dev',
-          isActive: true
-        },
-        organizationId: 'default',
-        databaseName: 'narimato-dev'
-      };
-    }
+    // NO FALLBACK - Database connection issues should be resolved, not masked
+    console.error('❌ MongoDB connection failed - no fallback organization will be provided');
+    console.error('Please ensure MongoDB is accessible and the organization exists in the database');
     
     return null;
   }

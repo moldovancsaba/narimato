@@ -1,35 +1,63 @@
 /**
- * Centralized field name constants to ensure consistent variable naming across the codebase
- * This prevents typos and makes refactoring easier by having a single source of truth
+ * STANDARDIZED UUID FIELD NAMES - NO ALIASES ALLOWED
+ * 
+ * This file defines the uniform field names used throughout the entire codebase.
+ * All UUID fields use simple, consistent naming with NO aliases or mappings.
+ * 
+ * STANDARD NAMES (used everywhere):
+ * - SessionUUID: For all session identifiers
+ * - PlayUUID: For all play session identifiers  
+ * - CardUUID: For all card identifiers
+ * - DeckUUID: For all deck identifiers
+ * 
+ * IMPORTANT: No other variations are allowed. Do not use:
+ * - sessionId, session_id, ID, etc.
+ * - playId, play_id, playUuid, etc.
+ * - cardId, card_id, uuid, etc.
+ * - deckId, deck_id, etc.
  */
 
-// Session-related field names
+
+// Session-specific field names
 export const SESSION_FIELDS = {
-  ID: 'sessionId',
-  STATE: 'sessionState',
+  UUID: 'sessionUUID',
+  STATUS: 'status',
+  STATE: 'state',
   VERSION: 'version',
-  LAST_SYNC: 'lastSyncTimestamp',
+  DECK: 'deck',
+  SWIPES: 'swipes',
+  CREATED_AT: 'createdAt',
+  UPDATED_AT: 'updatedAt',
+  COMPLETED_AT: 'completedAt',
+  EXPIRES_AT: 'expiresAt',
+  LAST_ACTIVITY: 'lastActivity'
+} as const;
+
+// Play session field names
+export const PLAY_FIELDS = {
+  UUID: 'playUUID',
+  STATUS: 'status',
+  STATE: 'state',
   CREATED_AT: 'createdAt',
   UPDATED_AT: 'updatedAt'
 } as const;
 
-// Play-related field names (individual game sessions)
-export const PLAY_FIELDS = {
-  ID: 'playId',
-  UUID: 'playUuid',
-  SESSION_ID: 'sessionId',
-  DECK_UUID: 'deckUuid',
+// Other common field names
+export const COMMON_FIELDS = {
   STATUS: 'status',
   STATE: 'state',
+  VERSION: 'version',
   CREATED_AT: 'createdAt',
+  UPDATED_AT: 'updatedAt',
   COMPLETED_AT: 'completedAt',
-  EXPIRES_AT: 'expiresAt'
+  EXPIRES_AT: 'expiresAt',
+  LAST_ACTIVITY: 'lastActivity'
 } as const;
 
-// Card-related field names
+// Card-specific field names
 export const CARD_FIELDS = {
-  ID: 'cardId',
   UUID: 'uuid',
+  NAME: 'name', 
   TYPE: 'type',
   CONTENT: 'content',
   TITLE: 'title',
@@ -39,24 +67,10 @@ export const CARD_FIELDS = {
   UPDATED_AT: 'updatedAt'
 } as const;
 
-// Deck-related field names
-export const DECK_FIELDS = {
-  ID: 'deckId',
-  UUID: 'deckUuid',
-  NAME: 'name',
-  CARDS: 'cards',
-  TAG: 'tag',
-  CURRENT_INDEX: 'currentIndex',
-  SWIPE_COUNT: 'swipeCount',
-  VERSION: 'version',
-  STATE: 'state',
-  LAST_SYNC: 'lastSyncTimestamp'
-} as const;
-
-// Vote/Ranking-related field names
+// Vote/Ranking field names
 export const VOTE_FIELDS = {
   CARD_A: 'cardA',
-  CARD_B: 'cardB',
+  CARD_B: 'cardB', 
   WINNER: 'winner',
   TIMESTAMP: 'timestamp',
   DIRECTION: 'direction',
@@ -74,8 +88,7 @@ export const API_FIELDS = {
 
 // Common validation patterns
 export const VALIDATION_PATTERNS = {
-  UUID: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
-  SESSION_ID: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  UUID: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 } as const;
 
 // Deck playability rules and thresholds
@@ -86,10 +99,11 @@ export const DECK_RULES = {
   MIN_CARDS_FOR_PLAYABLE: 2
 } as const;
 
+
 // Type definitions for better type safety
+export type CommonFieldKeys = keyof typeof COMMON_FIELDS;
 export type SessionFieldKeys = keyof typeof SESSION_FIELDS;
 export type PlayFieldKeys = keyof typeof PLAY_FIELDS;
 export type CardFieldKeys = keyof typeof CARD_FIELDS;
-export type DeckFieldKeys = keyof typeof DECK_FIELDS;
 export type VoteFieldKeys = keyof typeof VOTE_FIELDS;
 export type ApiFieldKeys = keyof typeof API_FIELDS;

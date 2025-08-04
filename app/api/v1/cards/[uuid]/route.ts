@@ -3,7 +3,7 @@ import { createOrgAwareRoute } from '@/app/lib/middleware/organization';
 import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { Card } from '@/app/lib/models/Card';
 
-export const GET = createOrgAwareRoute(async (request, { organizationId }) => {
+export const GET = createOrgAwareRoute(async (request, { organizationUUID }) => {
   try {
     const uuid = request.nextUrl.pathname.split('/').pop();
     if (!uuid) {
@@ -14,7 +14,7 @@ export const GET = createOrgAwareRoute(async (request, { organizationId }) => {
     }
 
     // Create organization-specific database connection
-    const connectDb = createOrgDbConnect(organizationId);
+    const connectDb = createOrgDbConnect(organizationUUID);
     const connection = await connectDb();
     const CardModel = connection.model('Card', Card.schema);
 
@@ -37,7 +37,7 @@ export const GET = createOrgAwareRoute(async (request, { organizationId }) => {
   }
 });
 
-export const PATCH = createOrgAwareRoute(async (request, { organizationId }) => {
+export const PATCH = createOrgAwareRoute(async (request, { organizationUUID }) => {
   try {
     const uuid = request.nextUrl.pathname.split('/').pop();
     if (!uuid) {
@@ -49,7 +49,7 @@ export const PATCH = createOrgAwareRoute(async (request, { organizationId }) => 
     const body = await request.json();
 
     // Create organization-specific database connection
-    const connectDb = createOrgDbConnect(organizationId);
+    const connectDb = createOrgDbConnect(organizationUUID);
     const connection = await connectDb();
     const CardModel = connection.model('Card', Card.schema);
 
@@ -81,7 +81,7 @@ export const PATCH = createOrgAwareRoute(async (request, { organizationId }) => 
   }
 });
 
-export const DELETE = createOrgAwareRoute(async (request, { organizationId }) => {
+export const DELETE = createOrgAwareRoute(async (request, { organizationUUID }) => {
   try {
     const uuid = request.nextUrl.pathname.split('/').pop();
     if (!uuid) {
@@ -92,7 +92,7 @@ export const DELETE = createOrgAwareRoute(async (request, { organizationId }) =>
     }
 
     // Create organization-specific database connection
-    const connectDb = createOrgDbConnect(organizationId);
+    const connectDb = createOrgDbConnect(organizationUUID);
     const connection = await connectDb();
     const CardModel = connection.model('Card', Card.schema);
 

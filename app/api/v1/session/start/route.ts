@@ -4,7 +4,7 @@ import { getOrganizationContext } from '@/app/lib/middleware/organization';
 import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { Card } from '@/app/lib/models/Card';
 import { Play } from '@/app/lib/models/Play';
-import { SESSION_FIELDS, CARD_FIELDS, API_FIELDS, PLAY_FIELDS } from '@/app/lib/constants/fieldNames';
+import { CARD_FIELDS, API_FIELDS, SESSION_FIELDS } from '@/app/lib/constants/fieldNames';
 
 const SESSION_EXPIRY_HOURS = 24;
 
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     // Parse request body to get deck selection and session info
     const body = await request.json().catch(() => ({}));
     const selectedTag = body.deckTag || 'all';
-    const sessionId = body.sessionId || uuidv4(); // Use provided session or create new one
+    const sessionUUID = body.sessionUUID || body.sessionId || uuidv4(); // Use provided session or create new one
 
     // Build match criteria based on deck selection
     let matchCriteria: any = { isActive: true };
@@ -65,15 +65,15 @@ export async function POST(request: Request) {
 
     // Create new play session
     const play = new PlayModel({
-      [PLAY_FIELDS.UUID]: playUuid,
-      [PLAY_FIELDS.SESSION_ID]: sessionId,
-      [PLAY_FIELDS.DECK_UUID]: playUuid, // Use playUuid as deck identifier for now
-      [PLAY_FIELDS.STATUS]: 'active',
-      [PLAY_FIELDS.STATE]: 'swiping',
+      uuid: playUuid,
+      sessionUUID: sessionUUID,
+      deckUUID: playUuid, // Use playUuid as deck identifier for now
+      status: 'active',
+      state: 'swiping',
       deck: cardUuids,
       deckTag: selectedTag,
       totalCards: cards.length,
-      [PLAY_FIELDS.EXPIRES_AT]: expiresAt,
+      expiresAt: expiresAt,
       swipes: [],
       votes: [],
       personalRanking: []
@@ -83,17 +83,18 @@ export async function POST(request: Request) {
 
     console.log(`🎮 New play session created:`, {
       playUuid: playUuid.substring(0, 8) + '...',
-      sessionId: sessionId.substring(0, 8) + '...',
+      sessionUUID: sessionUUID.substring(0, 8) + '...',
       deckTag: selectedTag,
       totalCards: cards.length
     });
 
     return new NextResponse(
       JSON.stringify({
-        // Legacy compatibility - return sessionId but actually it's playUuid
-        [SESSION_FIELDS.ID]: playUuid, // Frontend expects this field name but gets playUuid
-        [PLAY_FIELDS.UUID]: playUuid,
-        browserSessionId: sessionId, // Browser session ID using different field name
+        // Legacy compatibility - return sessionUUID
+        [SESSION_FIELDS.UUID]: playUuid, // Use consistent field naming
+        sessionId: playUuid, // Keep for backward compatibility
+        playUuid: playUuid,
+        browserSessionUUID: sessionUUID, // Browser session UUID using consistent naming
         deckTag: selectedTag,
         expiresAt,
         deck: cards.map(card => ({

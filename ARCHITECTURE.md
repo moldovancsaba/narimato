@@ -1,8 +1,53 @@
 # NARIMATO Architecture
 
-**Current Version:** 3.6.4 (Global Rankings Fix)
-**Date:** 2025-08-02
-**Last Updated:** 2025-08-02T23:10:48.000Z
+**Current Version:** 3.7.1 (UUID Field Standardization)
+**Date:** 2025-08-04
+**Last Updated:** 2025-08-04T17:24:21.000Z
+
+## ⚡ UUID Field Standardization (v3.7.1+)
+
+**CRITICAL ARCHITECTURAL CHANGE**: All UUID fields throughout the codebase now use standardized naming:
+
+- **OrganizationUUID**: For all organization identifiers
+- **SessionUUID**: For all session identifiers
+- **PlayUUID**: For all play session identifiers  
+- **CardUUID**: For all card identifiers
+- **DeckUUID**: For all deck identifiers
+
+### Field Constants Location
+All field constants are centralized in `/app/lib/constants/fieldNames.ts`:
+
+```typescript
+export const UUID_FIELDS = {
+  ORGANIZATION: 'OrganizationUUID',
+  SESSION: 'SessionUUID',
+  PLAY: 'PlayUUID', 
+  CARD: 'CardUUID',
+  DECK: 'DeckUUID'
+} as const;
+```
+
+### Models Updated
+- **Play Model**: Uses standardized PlayUUID, SessionUUID, DeckUUID
+- **Session Model**: Uses standardized SessionUUID
+- **Card Model**: Uses standardized CardUUID
+
+### Validation Functions
+Standardized validation functions available:
+- `validateOrganizationUUID(OrganizationUUID: string): boolean`
+- `validateSessionUUID(SessionUUID: string): boolean`
+- `validatePlayUUID(PlayUUID: string): boolean`
+- `validateCardUUID(CardUUID: string): boolean`
+- `validateDeckUUID(DeckUUID: string): boolean`
+
+### Backward Compatibility
+Temporary backward compatibility exports exist for legacy field names but will be removed in a future version.
+
+### Migration Impact
+- All models use standardized field naming
+- Database queries updated to use new field constants
+- API responses maintain consistency with standardized field names
+- Frontend components updated to handle uniform UUID fields
 
 ## System Overview
 

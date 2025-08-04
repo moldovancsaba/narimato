@@ -3,8 +3,9 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import VoteCard from '../components/VoteCard';
-import { SESSION_FIELDS, CARD_FIELDS, VOTE_FIELDS } from '@/app/lib/constants/fieldNames';
+import { CARD_FIELDS, VOTE_FIELDS } from '@/app/lib/constants/fieldNames';
 import PageLayout from '../components/PageLayout';
+import { useOrganization } from '../components/OrganizationProvider';
 
 interface Card {
   uuid: string;
@@ -34,6 +35,7 @@ export default function VotePage() {
 function VoteContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { currentOrganization } = useOrganization();
   
   // Essential state only - simplified from complex session management
   const [cardA, setCardA] = useState<Card | null>(null);
@@ -44,8 +46,8 @@ function VoteContent() {
   const [sessionVersion, setSessionVersion] = useState<number>(0);
   const [isFirstRanking, setIsFirstRanking] = useState<boolean>(false);
 
-  const sessionId = searchParams.get(SESSION_FIELDS.ID);
-  const cardId = searchParams.get(CARD_FIELDS.ID);
+  const sessionId = searchParams.get('sessionUUID');
+  const cardId = searchParams.get('cardUUID');
 
   // Add no-scroll class to body to prevent scrolling
   useEffect(() => {
@@ -65,15 +67,26 @@ function VoteContent() {
 
       try {
         // Get session version first
-        const sessionResponse = await fetch(`/api/v1/session/validate?${SESSION_FIELDS.ID}=${sessionId}&_t=${Date.now()}`);
+        const sessionResponse = await fetch(`/api/v1/session/validate?sessionUUID=${sessionId}&_t=${Date.now()}`, {
+          headers: {
+            'X-Organization-UUID': currentOrganization?.OrganizationUUID || '',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
         if (sessionResponse.ok) {
           const sessionData = await sessionResponse.json();
           if (sessionData.isValid) {
-            setSessionVersion(sessionData[SESSION_FIELDS.VERSION]);
+            setSessionVersion(sessionData.version);
           }
         }
         
-        const response = await fetch(`/api/v1/vote/comparison?${SESSION_FIELDS.ID}=${sessionId}&${CARD_FIELDS.ID}=${cardId}&_t=${Date.now()}`);
+        const response = await fetch(`/api/v1/vote/comparison?sessionUUID=${sessionId}&cardUUID=${cardId}&_t=${Date.now()}`, {
+          headers: {
+            'X-Organization-UUID': currentOrganization?.OrganizationUUID || ''
+          }
+        });
         const data = await response.json();
         
         if (!response.ok) {
@@ -108,8 +121,8 @@ function VoteContent() {
           };
         };
         
-        setCardA(mapCardData(data[VOTE_FIELDS.CARD_A]));
-        setCardB(mapCardData(data[VOTE_FIELDS.CARD_B]));
+        setCardA(mapCardData(data.cardA));
+        setCardB(mapCardData(data.cardB));
         setIsFirstRanking(data.isFirstRanking || false);
       } catch (error) {
         setError('Failed to load voting interface');
@@ -134,14 +147,17 @@ function VoteContent() {
     try {
       const response = await fetch('/api/v1/vote', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Organization-UUID': currentOrganization?.OrganizationUUID || ''
+        },
         body: JSON.stringify({
-          [SESSION_FIELDS.ID]: sessionId,
-          [VOTE_FIELDS.CARD_A]: cardA[CARD_FIELDS.UUID],
-          [VOTE_FIELDS.CARD_B]: cardB[CARD_FIELDS.UUID],
-          [VOTE_FIELDS.WINNER]: winner === 'A' ? cardA[CARD_FIELDS.UUID] : cardB[CARD_FIELDS.UUID],
-          [VOTE_FIELDS.TIMESTAMP]: new Date().toISOString(),
-          [SESSION_FIELDS.VERSION]: sessionVersion,
+          sessionUUID: sessionId,
+          cardA: cardA[CARD_FIELDS.UUID],
+          cardB: cardB[CARD_FIELDS.UUID],
+          winner: winner === 'A' ? cardA[CARD_FIELDS.UUID] : cardB[CARD_FIELDS.UUID],
+          timestamp: new Date().toISOString(),
+          version: sessionVersion,
           isFirstRanking: isFirstRanking
         })
       });
@@ -156,14 +172,17 @@ function VoteContent() {
           // Retry the vote with updated version
           const retryResponse = await fetch('/api/v1/vote', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'X-Organization-UUID': currentOrganization?.OrganizationUUID || ''
+            },
             body: JSON.stringify({
-              [SESSION_FIELDS.ID]: sessionId,
-              [VOTE_FIELDS.CARD_A]: cardA[CARD_FIELDS.UUID],
-              [VOTE_FIELDS.CARD_B]: cardB[CARD_FIELDS.UUID],
-              [VOTE_FIELDS.WINNER]: winner === 'A' ? cardA[CARD_FIELDS.UUID] : cardB[CARD_FIELDS.UUID],
-              [VOTE_FIELDS.TIMESTAMP]: new Date().toISOString(),
-              [SESSION_FIELDS.VERSION]: data.currentVersion,
+              sessionUUID: sessionId,
+              cardA: cardA[CARD_FIELDS.UUID],
+              cardB: cardB[CARD_FIELDS.UUID],
+              winner: winner === 'A' ? cardA[CARD_FIELDS.UUID] : cardB[CARD_FIELDS.UUID],
+              timestamp: new Date().toISOString(),
+              version: data.currentVersion,
               isFirstRanking: isFirstRanking
             })
           });
@@ -186,7 +205,7 @@ function VoteContent() {
       // Check if session is completed
       if (data.sessionCompleted) {
         console.log('Session completed during voting, redirecting to completed page');
-        router.push(`/completed?${SESSION_FIELDS.ID}=${sessionId}`);
+        router.push(`/completed?sessionUUID=${sessionId}`);
         return;
       }
 
@@ -197,7 +216,11 @@ function VoteContent() {
         const newCardB = data.nextComparison.compareAgainst;
         
         // Find the card objects for the next comparison
-        const nextComparisonResponse = await fetch(`/api/v1/vote/comparison?${SESSION_FIELDS.ID}=${sessionId}&${CARD_FIELDS.ID}=${newCardA}&_t=${Date.now()}`);
+        const nextComparisonResponse = await fetch(`/api/v1/vote/comparison?sessionUUID=${sessionId}&cardUUID=${newCardA}&_t=${Date.now()}`, {
+          headers: {
+            'X-Organization-UUID': currentOrganization?.OrganizationUUID || ''
+          }
+        });
         const nextComparisonData = await nextComparisonResponse.json();
         
         if (nextComparisonResponse.ok) {
@@ -229,8 +252,8 @@ function VoteContent() {
             };
           };
           
-          setCardA(mapCardData(nextComparisonData[VOTE_FIELDS.CARD_A]));
-          setCardB(mapCardData(nextComparisonData[VOTE_FIELDS.CARD_B]));
+          setCardA(mapCardData(nextComparisonData.cardA));
+          setCardB(mapCardData(nextComparisonData.cardB));
           setSelected(null); // Reset selection for next comparison
         } else {
           throw new Error('Failed to load next comparison');

@@ -32,7 +32,7 @@ export async function checkPlayCompletion(play: any): Promise<PlayCompletionResu
     rightSwipes: play.swipes?.filter((s: any) => s.direction === 'right').length || 0
   };
 
-  console.log(`🔍 Checking play completion for ${play.playUuid?.substring(0, 8)}...`, {
+console.log(`🔍 Checking play completion for ${play.uuid?.substring(0, 8)}...`, {
     status: play.status,
     state: play.state,
     metrics,
@@ -42,7 +42,7 @@ export async function checkPlayCompletion(play: any): Promise<PlayCompletionResu
   // Strategy 1: Check if all deck cards have been swiped
   // Simple check: if we have swipes for all cards in the deck, it's exhausted
   try {
-    const swipedCardIds = new Set(play.swipes?.map((swipe: any) => swipe.cardId) || []);
+    const swipedCardIds = new Set(play.swipes?.map((swipe: any) => swipe.uuid) || []);
     const deckCardIds = new Set(play.deck || []);
     
     // Check if all deck cards have been swiped
@@ -101,11 +101,11 @@ export async function checkPlayCompletion(play: any): Promise<PlayCompletionResu
  */
 export async function markPlayAsCompleted(play: any, reason: string): Promise<void> {
   if (play.status === 'completed') {
-    console.log(`Play ${play.playUuid} is already completed, skipping`);
+console.log(`Play ${play.uuid} is already completed, skipping`);
     return;
   }
 
-  console.log(`🎊 Marking play ${play.playUuid} as completed: ${reason}`);
+console.log(`🎊 Marking play ${play.uuid} as completed: ${reason}`);
 
   // Update play status and state
   play.state = 'completed';
@@ -119,7 +119,7 @@ export async function markPlayAsCompleted(play: any, reason: string): Promise<vo
   // Update last activity
   play.lastActivity = new Date();
 
-  console.log(`✅ Play ${play.playUuid} marked as completed successfully`);
+console.log(`✅ Play ${play.uuid} marked as completed successfully`);
 }
 
 /**
@@ -127,7 +127,7 @@ export async function markPlayAsCompleted(play: any, reason: string): Promise<vo
  * This is used as a recovery mechanism for edge cases
  */
 export async function forceCompletionCheckAndUpdate(play: any): Promise<boolean> {
-  console.log(`🔧 Force completion check for play ${play.playUuid}`);
+console.log(`🔧 Force completion check for play ${play.uuid}`);
   
   const completionResult = await checkPlayCompletion(play);
   
@@ -135,7 +135,7 @@ export async function forceCompletionCheckAndUpdate(play: any): Promise<boolean>
     await markPlayAsCompleted(play, `Force completion: ${completionResult.reason}`);
     await play.save();
     
-    console.log(`🚨 FORCE COMPLETED play ${play.playUuid}:`, {
+console.log(`🚨 FORCE COMPLETED play ${play.uuid}:`, {
       reason: completionResult.reason,  
       type: completionResult.completionType,
       metrics: completionResult.metrics

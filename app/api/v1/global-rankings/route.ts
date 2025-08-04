@@ -1,18 +1,15 @@
 import { NextResponse } from 'next/server';
-import { getOrganizationContext } from '@/app/lib/middleware/organization';
+import { createOrgAwareRoute } from '@/app/lib/middleware/organization';
 import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { GlobalRanking, IGlobalRanking } from '@/app/lib/models/GlobalRanking';
 import { Card } from '@/app/lib/models/Card';
 import { Play } from '@/app/lib/models/Play';
-import { VOTE_FIELDS, PLAY_FIELDS } from '@/app/lib/constants/fieldNames';
+import { VOTE_FIELDS } from '@/app/lib/constants/fieldNames';
 import { calculateRankingsWithConnection } from '@/app/lib/utils/rankingCalculation';
-export async function GET(request: Request) {
-  try {
-    // Extract organization context
-    const orgContext = await getOrganizationContext(request);
-    const organizationId = orgContext?.organizationId || 'default';
 
-    const connectDb = createOrgDbConnect(organizationId);
+export const GET = createOrgAwareRoute(async (request, { organizationUUID }) => {
+  try {
+    const connectDb = createOrgDbConnect(organizationUUID);
     const connection = await connectDb();
 
     // Use connection-specific models
@@ -143,16 +140,12 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
-}
+});
 
 // Optional: POST endpoint to manually trigger ranking recalculation
-export async function POST(request: Request) {
+export const POST = createOrgAwareRoute(async (request, { organizationUUID }) => {
   try {
-    // Extract organization context
-    const orgContext = await getOrganizationContext(request);
-    const organizationId = orgContext?.organizationId || 'default';
-
-    const connectDb = createOrgDbConnect(organizationId);
+    const connectDb = createOrgDbConnect(organizationUUID);
     const connection = await connectDb();
 
     // Use connection-specific model
@@ -173,4 +166,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-}
+});

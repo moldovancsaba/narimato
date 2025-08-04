@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     const orgContext = await getOrganizationContext(request);
     const organizationId = orgContext?.organizationId || 'default';
 
-    const connectDb = createOrgDbConnect(organizationId);
+    const connectDb = createOrgDbConnect(organizationUUID);
     const connection = await connectDb();
     
     // Register connection-specific models
