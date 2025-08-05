@@ -87,9 +87,23 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
             const defaultData = await defaultResponse.json();
             
             if (defaultData.success) {
-              setOrganizations([defaultData.organization]);
-              setCurrentOrganization(defaultData.organization);
-              localStorage.setItem('selectedOrganization', defaultData.organization.OrganizationSlug);
+              // Map default organization response to expected format
+              const mappedDefaultOrg = {
+                OrganizationUUID: defaultData.organization.uuid,
+                OrganizationName: defaultData.organization.displayName,
+                OrganizationSlug: defaultData.organization.slug,
+                OrganizationDescription: defaultData.organization.description,
+                databaseName: `narimato_org_${defaultData.organization.uuid.replace(/-/g, '_')}`,
+                isActive: defaultData.organization.isActive,
+                createdAt: defaultData.organization.createdAt,
+                updatedAt: defaultData.organization.updatedAt,
+                theme: defaultData.organization.theme,
+                branding: defaultData.organization.branding,
+                permissions: defaultData.organization.permissions
+              };
+              setOrganizations([mappedDefaultOrg]);
+              setCurrentOrganization(mappedDefaultOrg);
+              localStorage.setItem('selectedOrganization', mappedDefaultOrg.OrganizationSlug);
               return; // Exit early since we've set up the default org
             }
           } catch (defaultError) {
@@ -117,20 +131,27 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
         
         // Try to restore previously selected organization using slug for human readability
         const savedOrgSlug = localStorage.getItem('selectedOrganization');
+        let selectedOrg = null;
+        
         if (savedOrgSlug) {
           const savedOrg = mappedOrganizations.find((org: Organization) => org.OrganizationSlug === savedOrgSlug);
           if (savedOrg && savedOrg.isActive) {
-            setCurrentOrganization(savedOrg);
+            selectedOrg = savedOrg;
           }
         }
         
         // If no saved organization or it's invalid, select the first active one
-        if (!currentOrganization) {
+        if (!selectedOrg) {
           const firstActiveOrg = mappedOrganizations.find((org: Organization) => org.isActive);
           if (firstActiveOrg) {
-            setCurrentOrganization(firstActiveOrg);
-            localStorage.setItem('selectedOrganization', firstActiveOrg.OrganizationSlug);
+            selectedOrg = firstActiveOrg;
           }
+        }
+        
+        // Set the selected organization
+        if (selectedOrg) {
+          setCurrentOrganization(selectedOrg);
+          localStorage.setItem('selectedOrganization', selectedOrg.OrganizationSlug);
         }
       }
     } catch (error) {
@@ -142,8 +163,22 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
         const defaultData = await defaultResponse.json();
         
         if (defaultData.success) {
-          setOrganizations([defaultData.organization]);
-          setCurrentOrganization(defaultData.organization);
+          // Map default organization response to expected format
+          const mappedDefaultOrg = {
+            OrganizationUUID: defaultData.organization.uuid,
+            OrganizationName: defaultData.organization.displayName,
+            OrganizationSlug: defaultData.organization.slug,
+            OrganizationDescription: defaultData.organization.description,
+            databaseName: `narimato_org_${defaultData.organization.uuid.replace(/-/g, '_')}`,
+            isActive: defaultData.organization.isActive,
+            createdAt: defaultData.organization.createdAt,
+            updatedAt: defaultData.organization.updatedAt,
+            theme: defaultData.organization.theme,
+            branding: defaultData.organization.branding,
+            permissions: defaultData.organization.permissions
+          };
+          setOrganizations([mappedDefaultOrg]);
+          setCurrentOrganization(mappedDefaultOrg);
         }
       } catch (defaultError) {
         console.error('Failed to get/create default organization:', defaultError);
