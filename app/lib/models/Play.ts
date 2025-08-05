@@ -31,6 +31,9 @@ const PlaySchema = new mongoose.Schema({
   sessionUUID: { type: String, required: true, index: true },
   deckUUID: { type: String, required: true, index: true },
   
+  // Organization context for robust multi-tenant support
+  organizationUUID: { type: String, required: true, index: true },
+  
   // Play state management
   status: { 
     type: String, 
@@ -180,6 +183,7 @@ export interface IPlay extends mongoose.Document {
   uuid: string;            // Primary identifier for this play session
   sessionUUID: string;     // Browser session identifier
   deckUUID: string;        // Deck identifier
+  organizationUUID: string; // Organization context for multi-tenant support
   status: 'active' | 'idle' | 'completed' | 'expired';
   state: 'swiping' | 'voting' | 'comparing' | 'completed';
   version: number;

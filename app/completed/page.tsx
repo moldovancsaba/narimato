@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import BaseCard from '@/app/components/BaseCard';
 import PageLayout from '../components/PageLayout';
 import { SESSION_FIELDS } from '@/app/lib/constants/fieldNames';
+import { useOrganization } from '@/app/components/OrganizationProvider';
 
 export default function CompletedPage() {
   return (
@@ -25,6 +26,7 @@ export default function CompletedPage() {
 function CompletedContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { currentOrganization } = useOrganization();
   const [ranking, setRanking] = useState<any[]>([]);
   const [statistics, setStatistics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -41,7 +43,11 @@ const urlPlayId = searchParams.get(SESSION_FIELDS.UUID);
         if (urlPlayId) {
           // This is a shared link - fetch from saved results
           try {
-            const response = await fetch(`/api/v1/play/results/${urlPlayId}`);
+            const response = await fetch(`/api/v1/play/results/${urlPlayId}`, {
+              headers: {
+                'X-Organization-UUID': currentOrganization?.OrganizationUUID || '',
+              },
+            });
             const data = await response.json();
             
             if (data.error) {
@@ -68,7 +74,11 @@ const urlPlayId = searchParams.get(SESSION_FIELDS.UUID);
             
             while (retryCount < maxRetries && !success) {
               try {
-                const response = await fetch(`/api/v1/play/results?${SESSION_FIELDS.UUID}=${playId}`);
+                const response = await fetch(`/api/v1/play/results?${SESSION_FIELDS.UUID}=${playId}`, {
+                  headers: {
+                    'X-Organization-UUID': currentOrganization?.OrganizationUUID || '',
+                  },
+                });
                 const data = await response.json();
                 
                 if (data.error) {
@@ -148,6 +158,7 @@ const urlPlayId = searchParams.get(SESSION_FIELDS.UUID);
     const errorMessage = isDetailedError ? error.error : error;
     const errorDetails = isDetailedError ? error.details : null;
     const errorSuggestions = isDetailedError ? error.suggestions : [];
+    const isLegacyPlay = isDetailedError && error.errorCode === 'LEGACY_PLAY_NO_ORGANIZATION';
     
     return (
       <PageLayout title="Unable to Load Results">
@@ -255,7 +266,7 @@ const urlPlayId = searchParams.get(SESSION_FIELDS.UUID);
 
       <div className="mb-8">
         <div className="results-grid">
-          {ranking.map((item) => {
+          {ranking.map((item, index) => {
             // Handle different card data structures and missing data gracefully
             const cardData = item.card || {};
             const cardBody = cardData.body || {};
@@ -265,8 +276,9 @@ const urlPlayId = searchParams.get(SESSION_FIELDS.UUID);
             const mediaUrl = cardBody.imageUrl || cardContent.mediaUrl || cardContent.text;
             const cardType = mediaUrl && !cardContent.text ? 'media' : 'text';
             
+            const uniqueKey = item.cardId || cardData.uuid || item.uuid || `rank-${index}`;
             return (
-              <div key={item.uuid} className="relative">
+              <div key={uniqueKey} className="relative">
                 <BaseCard
                   uuid={cardData.uuid || item.uuid}
                   type={cardType}

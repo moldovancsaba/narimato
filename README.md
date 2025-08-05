@@ -1,6 +1,6 @@
 # NARIMATO
 
-![Version](https://img.shields.io/badge/version-3.7.0-blue.svg)
+![Version](https://img.shields.io/badge/version-4.0.0-blue.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-15.4.4-black.svg)
 ![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)
 ![MongoDB](https://img.shields.io/badge/MongoDB-7.0+-green.svg)
@@ -8,7 +8,7 @@
 
 NARIMATO is an anonymous, session-based card ranking application built with Next.js, MongoDB, and sophisticated binary search ranking algorithms. Global rankings are powered by ELO rating system for accurate skill-based card comparisons.
 
-**Current Version:** 3.7.0 *(Comprehensive Card Management Refactor)*
+**Current Version:** 4.0.0 *(Multi-Tenant Database Schema Migration)*
 
 ## ✨ Key Features
 
@@ -27,26 +27,26 @@ NARIMATO is an anonymous, session-based card ranking application built with Next
 - **Dark Mode Support**: Full dark mode for enhanced visual comfort
 - **Comprehensive Error Handling**: Graceful degradation and automatic recovery
 
-## 🔥 Recent Improvements (v3.7.0)
+## 🔥 Recent Improvements (v4.0.0)
 
-### Comprehensive Card Management Refactor
-- **Unified Card Editor**: Complete refactor merging duplicate components into a single, streamlined interface supporting both creation and editing modes
-- **Enhanced MongoDB Schema**: Optimized Card model with improved validation, indexing, and comprehensive documentation for better performance and maintainability
-- **Refactored Backend APIs**: Standardized `/api/v1/cards` endpoints with proper RESTful design (POST for creation, PATCH for updates) and enhanced Zod validation
-- **Improved Error Handling**: Comprehensive error handling with structured responses and emoji-prefixed logging for better debugging
-- **Enhanced Type Safety**: Complete TypeScript coverage with standardized schemas for requests and responses
+### Major Database Schema Migration & Multi-Tenant Architecture
+- **Schema Field Migration**: Successfully migrated from `cardId` to `cardUUID` field naming across the entire codebase
+- **Robust Schema Migration**: Implemented automatic MongoDB index migration with old index cleanup and new index creation
+- **Multi-Tenant Context Support**: Fixed organization UUID context propagation across all API endpoints
+- **Global Rankings Restoration**: Resolved E11000 duplicate key errors that were blocking global ranking calculations
+- **Complete Session Flow**: Fixed end-to-end game session flow from swiping to voting to final rankings
 
-### Database and Performance Enhancements
-- **Optimized Indexes**: Added performance indexes for hashtag hierarchy queries, text search, and aspect ratio compatibility
-- **Enhanced Validation**: Comprehensive field validation with referential integrity checks for parent-child hashtag relationships
-- **Improved Logging**: Structured logging with visual emoji markers for easy operation tracking and debugging
-- **Standardized Responses**: Unified API response format with meta fields (isPlayable, isRoot, childCount) computed consistently
+### Database and Index Management
+- **Automatic Index Migration**: Drops old `cardId_1` indexes and creates new `cardUUID` indexes automatically
+- **Collection Rebuilding**: Clears and rebuilds GlobalRanking collection when schema conflicts are detected
+- **Error Prevention**: Eliminates duplicate key constraint errors during bulk write operations
+- **Data Integrity**: Ensures consistent field naming and indexing across all database operations
 
-### Card Editor Improvements
-- **Live Preview Integration**: Real-time canvas-based preview generation with proper image loading and text rendering
-- **Enhanced Form Validation**: Client-side and server-side validation with detailed error messages and field-specific feedback
-- **Improved User Experience**: Streamlined interface with consistent typography, layout, and responsive design
-- **Legacy Component Cleanup**: Removed redundant CardEditor component, consolidating all functionality into the unified editor
+### Multi-Tenant Architecture Fixes
+- **Organization Context**: Fixed missing organization UUID headers in global ranking API calls
+- **Tenant Isolation**: Proper data isolation between different organizations
+- **Context Propagation**: Organization context properly flows through React components to API calls
+- **Backend Validation**: Server-side validation of organization context for all requests
 
 ## 🔥 Previous Improvements (v3.6.3)
 

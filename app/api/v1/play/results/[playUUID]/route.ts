@@ -16,17 +16,6 @@ export async function GET(
 ) {
   const { playUUID } = await context.params;
   try {
-    // Get organization context
-    const orgContext = await getOrganizationContext(request);
-    const organizationId = orgContext?.organizationId || 'default';
-    
-    const connectDb = createOrgDbConnect(organizationId);
-    const connection = await connectDb();
-    
-    // Get models bound to this specific connection
-    const PlayModel = connection.model('Play', Play.schema);
-    const SessionResultsModel = connection.model('SessionResults', SessionResults.schema);
-
     if (!playUUID) {
       return NextResponse.json(
         { error: 'Valid play ID is required' },
@@ -35,6 +24,43 @@ export async function GET(
     }
 
     console.log(`🔍 Fetching play results for playUUID: ${playUUID}`);
+    
+    // Get organization context from request headers
+    const orgContext = await getOrganizationContext(request);
+    
+    if (!orgContext) {
+      return NextResponse.json(
+        {
+          error: 'Organization context required',
+          errorCode: 'NO_ORGANIZATION_CONTEXT',
+          details: 'Unable to determine which organization this play belongs to. Please ensure you are accessing this through the correct organization context.',
+          suggestions: ['Check if you are logged into the correct organization', 'Try refreshing the page', 'Contact support if this issue persists']
+        },
+        { status: 400 }
+      );
+    }
+    
+    const organizationUUID = orgContext.organizationUUID;
+    console.log(`🔍 Using organization: ${organizationUUID} for play results`);
+    
+    // Connect to the correct organization database
+    const connectDb = createOrgDbConnect(organizationUUID);
+    const connection = await connectDb();
+    
+    // Get models bound to this specific organization
+    const PlayModel = connection.model('Play', Play.schema);
+    const SessionResultsModel = connection.model('SessionResults', SessionResults.schema);
+    
+    // Find the play first to verify it exists in this organization
+    const playData = await PlayModel.findOne({ uuid: playUUID, status: { $in: ['active', 'completed'] } });
+    
+    if (!playData) {
+      return NextResponse.json(
+        { error: 'Play not found or inactive' },
+        { status: 404 }
+      );
+    }
+
     console.log(`🔎 Looking for saved results using field: ${SESSION_FIELDS.UUID}`);
     console.log(`🔎 SESSION_FIELDS.UUID value: '${SESSION_FIELDS.UUID}'`);
 

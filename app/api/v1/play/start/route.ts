@@ -113,6 +113,7 @@ export const POST = createOrgAwareRoute(async (request, { organizationUUID }) =>
       uuid: playUuid,
       sessionUUID,
       deckUUID: deckUuid,
+      organizationUUID, // Store organization context for robust retrieval
       status: 'active',
       state: 'swiping',
       deck: cardUuids,

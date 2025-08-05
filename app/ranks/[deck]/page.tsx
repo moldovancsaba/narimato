@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import PageLayout from '@/app/components/PageLayout';
 import BaseCard from '@/app/components/BaseCard';
 import { motion } from 'framer-motion';
+import { useOrganization } from '@/app/components/OrganizationProvider';
 
 interface RankedCard {
   card: {
@@ -30,6 +31,7 @@ interface RankedCard {
 export default function CardRankingsPage() {
   const params = useParams();
   const router = useRouter();
+  const { currentOrganization } = useOrganization();
   const cardName = params.deck as string; // Note: URL param is still 'deck' for compatibility
   
   const [ranking, setRanking] = useState<RankedCard[]>([]);
@@ -49,7 +51,8 @@ export default function CardRankingsPage() {
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
-            'Expires': '0'
+            'Expires': '0',
+            'X-Organization-UUID': currentOrganization?.OrganizationUUID || ''
           }
         });
         
@@ -81,10 +84,10 @@ export default function CardRankingsPage() {
       }
     };
 
-    if (cardName) {
+    if (cardName && currentOrganization) {
       fetchCardRankings();
     }
-  }, [cardName]);
+  }, [cardName, currentOrganization]);
 
   const handleBackToCategories = () => {
     router.push('/ranks');

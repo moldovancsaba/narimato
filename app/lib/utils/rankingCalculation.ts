@@ -25,6 +25,49 @@ export const calculateRankingsWithConnection = async (connection: Connection) =>
   const PlayModel = connection.model('Play', Play.schema);
   const GlobalRankingModel = connection.model<IGlobalRanking>('GlobalRanking', GlobalRanking.schema);
   
+  // Handle schema migration from cardId to cardUUID
+  try {
+    // First, check and drop the old cardId index if it exists
+    try {
+      const indexes = await GlobalRankingModel.collection.indexes();
+      const hasOldCardIdIndex = indexes.some(index => 
+        index.key && (index.key.cardId !== undefined || index.name === 'cardId_1')
+      );
+      
+      if (hasOldCardIdIndex) {
+        console.log('🔄 Schema migration: Dropping old cardId index...');
+        await GlobalRankingModel.collection.dropIndex('cardId_1');
+        console.log('✅ Old cardId index dropped successfully');
+      }
+    } catch (indexError) {
+      console.log('ℹ️ Note: Could not drop old index (may not exist):', indexError.message);
+    }
+    
+    // Clear any existing documents to start fresh with new schema
+    const existingCount = await GlobalRankingModel.countDocuments({});
+    if (existingCount > 0) {
+      console.log(`🔄 Schema migration: Clearing ${existingCount} existing ranking documents to rebuild with new schema...`);
+      await GlobalRankingModel.deleteMany({});
+      console.log('✅ Old ranking data cleared, will rebuild from vote data');
+    }
+    
+    // Ensure the new cardUUID index exists
+    try {
+      await GlobalRankingModel.collection.createIndex({ cardUUID: 1 }, { unique: true });
+      console.log('✅ New cardUUID index created successfully');
+    } catch (indexCreateError) {
+      console.log('ℹ️ Note: cardUUID index may already exist:', indexCreateError.message);
+    }
+  } catch (migrationError) {
+    console.log('🔄 Schema migration: Performing full collection reset due to migration issues...');
+    try {
+      await GlobalRankingModel.collection.drop();
+      console.log('✅ Collection dropped and will be recreated with new schema');
+    } catch (dropError) {
+      console.warn('⚠️ Could not drop collection, continuing with fresh calculation...');
+    }
+  }
+  
   const completedPlays = await PlayModel.find({
     status: 'completed',
     votes: { $exists: true, $ne: [] },
@@ -45,8 +88,8 @@ export const calculateRankingsWithConnection = async (connection: Connection) =>
 
   // Initialize with existing ratings or defaults
   existingRankings.forEach((ranking) => {
-    eloRatings.set(ranking.cardId, ranking.eloRating || 1000);
-    gameStats.set(ranking.cardId, {
+    eloRatings.set(ranking.cardUUID, ranking.eloRating || 1000);
+    gameStats.set(ranking.cardUUID, {
       wins: ranking.wins || 0,
       losses: ranking.losses || 0,
       totalGames: ranking.totalGames || 0
@@ -118,13 +161,13 @@ export const calculateRankingsWithConnection = async (connection: Connection) =>
     eloRatings.set(cardB, updateEloRating(ratingB, expectedB, actualB));
   });
 
-  const bulkOps = Array.from(eloRatings.entries()).map(([cardId, eloRating]) => {
-    const stats = gameStats.get(cardId) || { wins: 0, losses: 0, totalGames: 0 };
+  const bulkOps = Array.from(eloRatings.entries()).map(([cardUUID, eloRating]) => {
+    const stats = gameStats.get(cardUUID) || { wins: 0, losses: 0, totalGames: 0 };
     const winRate = stats.totalGames > 0 ? stats.wins / stats.totalGames : 0;
 
     return {
       updateOne: {
-        filter: { cardId },
+        filter: { cardUUID },
         update: {
           $set: {
             eloRating,

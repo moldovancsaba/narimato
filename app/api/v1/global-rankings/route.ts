@@ -55,7 +55,7 @@ export const GET = createOrgAwareRoute(async (request, { organizationUUID }) => 
     }
 
     // Get the top global rankings for the filtered cards, sorted by ELO rating
-    const globalRankings = await GlobalRankingModel.find({ cardId: { $in: filteredCardIds } })
+    const globalRankings = await GlobalRankingModel.find({ cardUUID: { $in: filteredCardIds } })
       .sort({ eloRating: -1, winRate: -1, totalGames: -1, lastUpdated: -1 })
       .limit(50); // Limit to top 50
 
@@ -77,7 +77,7 @@ export const GET = createOrgAwareRoute(async (request, { organizationUUID }) => 
     }
 
     // Fetch card details for each ranking
-    const cardIds = globalRankings.map(ranking => ranking.cardId);
+    const cardIds = globalRankings.map(ranking => ranking.cardUUID);
     const cards = await CardModel.find({ uuid: { $in: cardIds }, isActive: true });
     
     // Create a map for quick card lookup
@@ -100,7 +100,7 @@ export const GET = createOrgAwareRoute(async (request, { organizationUUID }) => 
     // Combine rankings with card data
     const rankedCards = globalRankings
       .map((ranking, index) => {
-        const card = cardMap.get(ranking.cardId);
+        const card = cardMap.get(ranking.cardUUID);
         if (!card) return null; // Skip if card not found or inactive
         
         return {

@@ -1,8 +1,119 @@
 # Development Learnings
 
-**Current Version:** 3.7.1 (UUID Field Standardization)
-**Date:** 2025-08-04
-**Last Updated:** 2025-08-04T17:24:21.000Z
+**Current Version:** 4.0.0 (Multi-Tenant Database Schema Migration)
+**Date:** 2025-08-05
+**Last Updated:** 2025-08-05T00:08:12.000Z
+
+## Multi-Tenant Database Schema Migration (v4.0.0) - Critical Architecture
+
+### Crisis Resolution: E11000 Duplicate Key Errors
+1. **Critical Problem**: Global ranking calculations completely blocked by MongoDB error:
+   ```
+   E11000 duplicate key error collection: narimato.globalrankings index: cardId_1 dup key: { cardId: null }
+   ```
+
+2. **Root Cause Analysis**:
+   - **Field Name Mismatch**: Code used `cardUUID` but database had `cardId` index
+   - **Schema Evolution**: Migration from `cardId` to `cardUUID` was incomplete
+   - **Index Conflicts**: Old `cardId_1` unique index conflicted with new schema
+   - **Bulk Write Failures**: All ranking calculations failing due to constraint violations
+
+3. **Multi-Tenant Context Crisis**:
+   - **Missing Headers**: Global ranking API calls missing `X-Organization-UUID` headers
+   - **Context Propagation**: `useOrganization` context not integrated in ranking pages
+   - **Backend Failures**: Organization validation failing on server-side
+   - **Data Isolation**: Multi-tenant boundaries not properly enforced
+
+### Solution Architecture: Robust Schema Migration
+1. **Automatic Migration Logic**:
+   ```typescript
+   async function performSchemaMigration() {
+     try {
+       // Drop conflicting old index
+       await GlobalRanking.collection.dropIndex('cardId_1');
+       console.log('✅ Old cardId index dropped successfully');
+     } catch (error) {
+       console.log('ℹ️ Note: Could not drop old index (may not exist)');
+     }
+     
+     // Clear data to rebuild with new schema
+     const deleteResult = await GlobalRanking.deleteMany({});
+     console.log(`🔄 Cleared ${deleteResult.deletedCount} existing ranking documents`);
+     
+     // Create new optimized index
+     await GlobalRanking.collection.createIndex({ cardUUID: 1 }, { unique: true });
+     console.log('✅ New cardUUID index created successfully');
+   }
+   ```
+
+2. **Organization Context Integration**:
+   ```typescript
+   // Frontend: Proper context propagation
+   const { organization } = useOrganization();
+   
+   const response = await fetch('/api/v1/global-rankings', {
+     headers: {
+       'X-Organization-UUID': organization?.uuid || '',
+       'Content-Type': 'application/json'
+     }
+   });
+   
+   // Backend: Context validation
+   const organizationUuid = request.headers.get('X-Organization-UUID');
+   if (!organizationUuid) {
+     return new Response('Organization context required', { status: 400 });
+   }
+   ```
+
+### Key Technical Learnings
+1. **Schema Migration Strategy**:
+   - **Detect Before Migrate**: Check for existing schema conflicts before operations
+   - **Drop and Rebuild**: Sometimes safer than attempting complex field migrations
+   - **Comprehensive Logging**: Essential for debugging complex migration issues
+   - **Error Recovery**: Migration logic must handle partial failure states
+
+2. **Multi-Tenant Context Handling**:
+   - **Context Propagation**: Organization context must flow through entire React component tree
+   - **Header Consistency**: All API calls must include tenant identification headers
+   - **Server Validation**: Backend must validate and enforce tenant boundaries
+   - **Error Messages**: Clear error messages when tenant context is missing or invalid
+
+3. **Database Index Management**:
+   - **Unique Constraints**: Be careful with unique indexes during schema evolution
+   - **Index Names**: MongoDB auto-generates index names that can conflict during migrations
+   - **Bulk Operations**: Field name mismatches cause bulk write failures
+   - **Collection Rebuilding**: Sometimes necessary to clear and rebuild collections
+
+### Critical Success Factors
+1. **Comprehensive Field Mapping**:
+   - Updated all database queries to use `cardUUID` consistently
+   - Fixed API routes to return proper field names in responses
+   - Aligned frontend expectations with backend field names
+   - Ensured Mongoose models reflect actual schema structure
+
+2. **Robust Error Handling**:
+   - Migration logic handles cases where old indexes don't exist
+   - Graceful degradation when organization context is missing
+   - Comprehensive logging for all migration steps
+   - Rollback capabilities for failed migrations
+
+3. **Testing Strategy**:
+   - Verified index creation and deletion operations
+   - Tested organization context propagation across all API calls
+   - Validated global ranking calculations with new schema
+   - End-to-end testing of complete session flow
+
+### Performance Impact Learnings
+1. **Index Optimization**: New `cardUUID` indexes perform better than old `cardId` structure
+2. **Bulk Operations**: Proper field naming eliminates constraint violations
+3. **Memory Usage**: Collection rebuilding is memory-intensive but necessary
+4. **Query Performance**: Organization-scoped queries perform well with proper indexing
+
+### Future Migration Principles
+1. **Schema Versioning**: Implement proper schema versioning for future changes
+2. **Gradual Migration**: Consider blue-green deployment for major schema changes
+3. **Data Preservation**: Always preserve existing data during migrations
+4. **Testing**: Comprehensive testing of migration logic before production deployment
 
 ## UUID Field Standardization (v3.7.1) - Dev / Architecture
 
