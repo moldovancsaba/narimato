@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import PageLayout from '../components/PageLayout';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { useOrganization } from '../components/OrganizationProvider';
 import { useOrganizationTheme } from '../hooks/useOrganizationTheme';
 import Editor from 'react-simple-code-editor';
@@ -236,18 +237,27 @@ export default function OrganizationEditorPage() {
 
   if (loading) {
     return (
-      <PageLayout title="Organization Editor">
-        <div className="flex items-center justify-center page-height">
-          <div className="loading-spinner"></div>
-          <span className="ml-2 text-lg">Loading organizations...</span>
+      <PageLayout 
+        title="Organization Editor" 
+        fullscreen={true}
+      >
+        <div className="flex items-center justify-center h-full">
+          <LoadingSpinner 
+            size="lg" 
+            message="Loading organizations..." 
+            className="text-lg"
+          />
         </div>
       </PageLayout>
     );
   }
 
   return (
-    <PageLayout title="Organization Editor">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <PageLayout 
+      title="Organization Editor" 
+      fullscreen={true}
+    >
+      <div className="responsive-padding space-y-8 max-w-none">
         {error && (
           <div className="status-error p-4 rounded-lg">{error}</div>
         )}

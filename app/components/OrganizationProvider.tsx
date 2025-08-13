@@ -71,12 +71,34 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
   // Get permission context
   const permissions = useOrganizationPermissions(currentOrganization?.permissions, userRole);
 
-  // Load organizations and current selection on mount
+  // Load organizations and current selection on mount with caching
   useEffect(() => {
+    const cached = sessionStorage.getItem('organizations-cache');
+    const cacheTime = sessionStorage.getItem('organizations-cache-time');
+    
+    // Use cache if it's less than 5 minutes old
+    if (cached && cacheTime && Date.now() - parseInt(cacheTime) < 5 * 60 * 1000) {
+      try {
+        const cachedData = JSON.parse(cached);
+        setOrganizations(cachedData.organizations);
+        if (cachedData.currentOrganization) {
+          setCurrentOrganization(cachedData.currentOrganization);
+        }
+        setIsOrgDataLoaded(true);
+        setIsLoading(false);
+        
+        // Still load fresh data in background
+        setTimeout(() => loadOrganizations(true), 100);
+        return;
+      } catch (e) {
+        console.warn('Failed to parse cached organizations:', e);
+      }
+    }
+    
     loadOrganizations();
   }, []);
 
-  const loadOrganizations = async () => {
+  const loadOrganizations = async (backgroundUpdate = false) => {
     try {
       setIsLoading(true);
       const response = await fetch('/api/v1/admin/organizations');
@@ -156,6 +178,16 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
           setCurrentOrganization(selectedOrg);
           localStorage.setItem('selectedOrganization', selectedOrg.OrganizationSlug);
         }
+        
+        // Cache the data for faster subsequent loads
+        const cacheData = {
+          organizations: mappedOrganizations,
+          currentOrganization: selectedOrg,
+          timestamp: Date.now()
+        };
+        sessionStorage.setItem('organizations-cache', JSON.stringify(cacheData));
+        sessionStorage.setItem('organizations-cache-time', Date.now().toString());
+        
         setIsOrgDataLoaded(true);
       }
     } catch (error) {

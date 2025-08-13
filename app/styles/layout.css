@@ -48,6 +48,34 @@
     color: var(--text-primary);
   }
 
+  /* Full-screen page layout for admin/editor pages */
+  .page-fullscreen {
+    width: 100vw;
+    height: 100vh;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--background);
+    color: var(--text-primary);
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+  
+  .page-fullscreen-header {
+    flex: 0 0 auto;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  
+  .page-fullscreen-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0;
+  }
+
   .page-title-area {
     grid-area: page-title;
     @apply flex items-center justify-center;
