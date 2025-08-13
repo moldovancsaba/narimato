@@ -115,9 +115,9 @@ async function dbConnect(organizationId: string): Promise<Connection> {
     const opts = {
       bufferCommands: false,
       // Connection timeout configurations - increased for better reliability
-      serverSelectionTimeoutMS: 30000,  // 30 seconds for server selection
-      connectTimeoutMS: 30000,          // 30 seconds for initial connection
-      socketTimeoutMS: 45000,           // 45 seconds for socket operations
+      serverSelectionTimeoutMS: 0,  // Disable server selection timeout
+      connectTimeoutMS: 0,          // Disable initial connection timeout
+      socketTimeoutMS: 0,           // Disable socket operations timeout
       // Connection pool settings
       maxPoolSize: 10,                  // Limit connection pool size
       minPoolSize: 1,                   // Maintain minimum connections

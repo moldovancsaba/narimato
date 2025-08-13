@@ -73,9 +73,10 @@ const BaseCard = React.memo(function BaseCard({
   }), []);
 
   // Memoize className calculation to prevent unnecessary re-renders
+  // Always apply card-container class for consistent styling (border radius, shadows, etc.)
   const containerClassName = useMemo(() => `
     ${sizeClasses[size]}
-    ${size !== 'grid' ? 'card-container' : ''}
+    card-container
     ${onClick ? 'cursor-pointer' : ''}
     ${className}
   `, [sizeClasses, size, onClick, className]);

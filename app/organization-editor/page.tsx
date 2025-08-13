@@ -5,6 +5,11 @@ import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import PageLayout from '../components/PageLayout';
 import { useOrganization } from '../components/OrganizationProvider';
+import { useOrganizationTheme } from '../hooks/useOrganizationTheme';
+import Editor from 'react-simple-code-editor';
+import Prism from 'prismjs';
+import 'prismjs/components/prism-css';
+import 'prismjs/themes/prism-tomorrow.css';
 
 interface Organization {
   OrganizationUUID: string;
@@ -19,6 +24,55 @@ interface Organization {
     connected: boolean;
     message: string;
   };
+  theme?: {
+    primaryColor?: string;
+    secondaryColor?: string;
+    accentColor?: string;
+    backgroundColor?: string;
+    textColor?: string;
+    fontFamily?: string;
+    fontSize?: string;
+    borderRadius?: string;
+    spacing?: string;
+    customCSS?: string;
+    backgroundCSS?: string;
+    googleFontURL?: string;
+    emojiList?: string[];
+    iconList?: string[];
+  };
+}
+
+// Live Theme Preview Component
+function LiveThemePreview({ theme }: { theme: Organization['theme'] }) {
+  // Apply the theme temporarily for preview
+  useOrganizationTheme(theme as any);
+  
+  return (
+    <div className="mt-4 p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
+      <h4 className="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">🔍 Live Preview</h4>
+      <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+        Changes will be applied immediately when you save. Background effects are visible on this page.
+      </div>
+      {theme?.emojiList && theme.emojiList.length > 0 && (
+        <div className="mb-2">
+          <span className="text-xs text-gray-500">Emojis: </span>
+          {theme.emojiList.map((emoji, index) => (
+            <span key={index} className="text-lg mr-1">{emoji}</span>
+          ))}
+        </div>
+      )}
+      {theme?.googleFontURL && (
+        <div className="text-xs text-gray-500 mb-2">
+          Font URL: {theme.googleFontURL.substring(0, 50)}...
+        </div>
+      )}
+      {theme?.backgroundCSS && (
+        <div className="text-xs text-gray-500">
+          Background CSS: {theme.backgroundCSS.length} characters
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function OrganizationEditorPage() {
@@ -107,7 +161,8 @@ export default function OrganizationEditorPage() {
             OrganizationName: editingOrg.OrganizationName,
             OrganizationSlug: editingOrg.OrganizationSlug,
             databaseName: editingOrg.databaseName,
-            subdomain: editingOrg.subdomain
+            subdomain: editingOrg.subdomain,
+            theme: editingOrg.theme // Include theme data in updates
           }
         }),
       });
@@ -302,6 +357,121 @@ export default function OrganizationEditorPage() {
                           />
                         </div>
                       </div>
+                      
+                      {/* Theme Management Section */}
+                      <div className="mt-8 p-6 border-t border-gray-200 dark:border-gray-700">
+                        <h3 className="text-lg font-bold mb-4">🎨 Theme Management</h3>
+                        
+                        {/* Background CSS Editor */}
+                        <div className="mb-6">
+                          <label className="form-label">Background CSS (Animated Backgrounds)</label>
+                          <p className="text-sm text-muted mb-2">Paste your CSS code for animated backgrounds. This will be applied to the .background-content layer.</p>
+                          <Editor
+                            value={editingOrg?.theme?.backgroundCSS || ''}
+                            onValueChange={css => {
+                              if (editingOrg) {
+                                setEditingOrg({ 
+                                  ...editingOrg, 
+                                  theme: { ...editingOrg.theme, backgroundCSS: css } 
+                                });
+                              }
+                            }}
+                            highlight={code => Prism.highlight(code, Prism.languages.css, 'css')}
+                            padding={10}
+                            className="min-h-[200px] bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-600 font-mono text-sm"
+                            style={{
+                              fontFamily: 'Consolas, Monaco, "Courier New", monospace',
+                              fontSize: 14,
+                              lineHeight: '1.5'
+                            }}
+                          />
+                        </div>
+                        
+                        {/* Google Fonts URL */}
+                        <div className="mb-6">
+                          <label className="form-label">Google Fonts URL</label>
+                          <p className="text-sm text-muted mb-2">Paste the Google Fonts CSS2 URL to apply organization-wide font.</p>
+                          <input
+                            type="text"
+                            value={editingOrg?.theme?.googleFontURL || ''}
+                            onChange={e => {
+                              if (editingOrg) {
+                                setEditingOrg({ 
+                                  ...editingOrg, 
+                                  theme: { ...editingOrg.theme, googleFontURL: e.target.value } 
+                                });
+                              }
+                            }}
+                            className="form-input"
+                            placeholder="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900"
+                          />
+                        </div>
+                        
+                        {/* Emoji List */}
+                        <div className="mb-6">
+                          <label className="form-label">Organization Emojis</label>
+                          <p className="text-sm text-muted mb-2">Paste emojis separated by spaces: 😎🥵🤖</p>
+                          <input
+                            type="text"
+                            value={editingOrg?.theme?.emojiList?.join(' ') || ''}
+                            onChange={e => {
+                              if (editingOrg) {
+                                const emojis = e.target.value.split(' ').filter(emoji => emoji.trim());
+                                setEditingOrg({ 
+                                  ...editingOrg, 
+                                  theme: { ...editingOrg.theme, emojiList: emojis } 
+                                });
+                              }
+                            }}
+                            className="form-input"
+                            placeholder="😎 🥵 🤖 🎨 🚀 💎 ⚡ 🔥"
+                          />
+                          {editingOrg?.theme?.emojiList && editingOrg.theme.emojiList.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {editingOrg.theme.emojiList.map((emoji, index) => (
+                                <span key={index} className="text-2xl">{emoji}</span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Icon List */}
+                        <div className="mb-6">
+                          <label className="form-label">Organization Icons (URLs)</label>
+                          <p className="text-sm text-muted mb-2">Paste icon URLs, one per line:</p>
+                          <textarea
+                            value={editingOrg?.theme?.iconList?.join('\n') || ''}
+                            onChange={e => {
+                              if (editingOrg) {
+                                const icons = e.target.value.split('\n').filter(icon => icon.trim());
+                                setEditingOrg({ 
+                                  ...editingOrg, 
+                                  theme: { ...editingOrg.theme, iconList: icons } 
+                                });
+                              }
+                            }}
+                            className="form-input min-h-[100px]"
+                            placeholder="https://i.ibb.co/4qcP9zc/home-96dp-FFFFFF-FILL0-wght400-GRAD0-opsz48.png\nhttps://example.com/icon2.png"
+                          />
+                          {editingOrg?.theme?.iconList && editingOrg.theme.iconList.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {editingOrg.theme.iconList.map((iconUrl, index) => (
+                                <img 
+                                  key={index} 
+                                  src={iconUrl} 
+                                  alt={`Icon ${index + 1}`} 
+                                  className="w-8 h-8 object-contain bg-gray-100 dark:bg-gray-800 rounded p-1"
+                                  onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Live Preview */}
+                        <LiveThemePreview theme={editingOrg?.theme} />
+                      </div>
+                      
                       <div className="flex gap-2">
                         <button onClick={handleUpdateOrganization} className="btn btn-success">
                           Save Changes
@@ -351,7 +521,25 @@ export default function OrganizationEditorPage() {
                           Switch & View Cards
                         </button>
                         <button 
-                          onClick={() => setEditingOrg(org)} 
+                          onClick={() => setEditingOrg({
+                            ...org,
+                            theme: org.theme || {
+                              primaryColor: '#667eea',
+                              secondaryColor: '#764ba2',
+                              accentColor: '#f093fb',
+                              backgroundColor: '#0a0a0a',
+                              textColor: '#ffffff',
+                              fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+                              fontSize: '16px',
+                              borderRadius: '8px',
+                              spacing: '1rem',
+                              customCSS: '',
+                              backgroundCSS: '',
+                              googleFontURL: '',
+                              emojiList: [],
+                              iconList: []
+                            }
+                          })} 
                           className="btn btn-secondary btn-sm"
                         >
                           Edit

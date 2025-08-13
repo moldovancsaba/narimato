@@ -1,0 +1,29 @@
+
+> narimato@4.0.0 dev
+> next dev
+
+ ⚠ Port 3000 is in use by process 34781, using available port 3001 instead.
+   ▲ Next.js 15.4.4
+   - Local:        http://localhost:3001
+   - Network:      http://192.168.100.139:3001
+   - Environments: .env.local, .env
+
+ ✓ Starting...
+ ✓ Ready in 107.1s
+ ○ Compiling /[slug] ...
+ ✓ Compiled /[slug] in 1619ms (1240 modules)
+ ✓ Compiled in 651ms (557 modules)
+ GET /moldovan 200 in 130417ms
+ ✓ Compiled in 251ms (557 modules)
+ ✓ Compiled in 93ms (557 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/Users/moldovan/Projects/narimato/.next/cache/webpack/client-development/10.pack.gz_' -> '/Users/moldovan/Projects/narimato/.next/cache/webpack/client-development/10.pack.gz'
+ ✓ Compiled in 136ms (557 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/Users/moldovan/Projects/narimato/.next/cache/webpack/client-development/0.pack.gz_' -> '/Users/moldovan/Projects/narimato/.next/cache/webpack/client-development/0.pack.gz'
+ ✓ Compiled in 162ms (557 modules)
+ ✓ Compiled in 106ms (557 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/Users/moldovan/Projects/narimato/.next/cache/webpack/client-development/0.pack.gz_' -> '/Users/moldovan/Projects/narimato/.next/cache/webpack/client-development/0.pack.gz'
+ ✓ Compiled in 119ms (557 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/Users/moldovan/Projects/narimato/.next/cache/webpack/client-development/0.pack.gz_' -> '/Users/moldovan/Projects/narimato/.next/cache/webpack/client-development/0.pack.gz'
+ ✓ Compiled in 98ms (557 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/Users/moldovan/Projects/narimato/.next/cache/webpack/client-development/0.pack.gz_' -> '/Users/moldovan/Projects/narimato/.next/cache/webpack/client-development/0.pack.gz'
+[?25h

@@ -178,6 +178,76 @@ const OrganizationSchema = new Schema({
         },
         message: 'Custom CSS contains potentially dangerous content'
       }
+    },
+    
+    // Organization-wide background CSS for animated backgrounds
+    backgroundCSS: {
+      type: String,
+      maxlength: 15000,
+      default: '',
+      validate: {
+        validator: function(v: string) {
+          if (!v) return true; // Optional field
+          // Basic CSS injection prevention for background CSS
+          const dangerousPatterns = [
+            /<script/i,
+            /javascript:/i,
+            /expression\(/i,
+            /import\s/i,
+            /@import/i
+          ];
+          return !dangerousPatterns.some(pattern => pattern.test(v));
+        },
+        message: 'Background CSS contains potentially dangerous content'
+      }
+    },
+    
+    // Google Fonts integration URL
+    googleFontURL: {
+      type: String,
+      maxlength: 1000,
+      default: '',
+      validate: {
+        validator: function(v: string) {
+          if (!v) return true; // Optional field
+          return /^https:\/\/fonts\.googleapis\.com\/css2\?family=/.test(v);
+        },
+        message: 'Google Font URL must be a valid Google Fonts CSS2 URL'
+      }
+    },
+    
+    // Organization emoji set
+    emojiList: {
+      type: [String],
+      default: [],
+      validate: {
+        validator: function(v: string[]) {
+          // Check if each item is a valid emoji (basic Unicode range check)
+          return v.every(emoji => {
+            // Allow common emoji ranges and ensure reasonable length
+            return emoji.length <= 10 && /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F018}-\u{1F270}]/u.test(emoji);
+          });
+        },
+        message: 'Invalid emoji in emoji list'
+      }
+    },
+    
+    // Organization icon set (URLs and library icons)
+    iconList: {
+      type: [String],
+      default: [],
+      validate: {
+        validator: function(v: string[]) {
+          return v.every(icon => {
+            // Allow URLs or simple icon names
+            return icon.length <= 500 && (
+              /^https?:\/\/.+\.(png|jpg|jpeg|gif|svg|webp)$/i.test(icon) || // URL
+              /^[a-zA-Z0-9-_]+$/.test(icon) // Simple icon name for icon libraries
+            );
+          });
+        },
+        message: 'Invalid icon URL or name in icon list'
+      }
     }
   },
   
@@ -345,7 +415,7 @@ const OrganizationSchema = new Schema({
 OrganizationSchema.index({ uuid: 1, isActive: 1 });
 OrganizationSchema.index({ slug: 1, isActive: 1 });
 
-// Theme configuration interface
+// Extended theme configuration interface
 export interface IOrganizationTheme {
   primaryColor: string;
   secondaryColor: string;
@@ -357,6 +427,10 @@ export interface IOrganizationTheme {
   borderRadius: string;
   spacing: string;
   customCSS?: string;
+  backgroundCSS?: string; // Organization-wide animated backgrounds
+  googleFontURL?: string; // Google Fonts integration
+  emojiList?: string[]; // Organization emoji set
+  iconList?: string[]; // Organization icon set (URLs and library icons)
 }
 
 // Branding configuration interface

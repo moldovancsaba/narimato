@@ -144,7 +144,7 @@ export default function CardsPage() {
   // Show error if no organization is available
   if (!currentOrganization) {
     return (
-      <PageLayout title="Card Management" className="gradient-bg-2layer">
+      <PageLayout title="Card Management">
         <div className="status-error p-4 mb-4 rounded-lg">
           No organization selected. Please select an organization to view cards.
         </div>
@@ -153,7 +153,7 @@ export default function CardsPage() {
   }
 
   return (
-    <PageLayout title="Card Management" className="gradient-bg-2layer">
+    <PageLayout title="Card Management">
       <div className="mb-8 flex justify-between items-center">
         <div>
           <h2 className="text-xl font-semibold mb-1">All Cards</h2>

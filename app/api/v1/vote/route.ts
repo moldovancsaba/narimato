@@ -569,27 +569,29 @@ async function performAtomicRankingUpdate(
       auditEntries: auditTrail.length
     });
     
-      // If play was completed, save results and update global rankings after transaction is committed
+      // If play was completed, trigger async results saving and ranking calculation after response
+      // This prevents blocking the user's redirect to the completed page
       if (play.status === 'completed') {
-        try {
-          console.log(`💾 Play completed - attempting to save results after transaction commit...`);
-          await savePlayResults(play, connection);
-          console.log(`✅ Play results saved successfully after completion for ${play.uuid}`);
-          
-          // ✅ CRITICAL FIX: Trigger automatic global ranking recalculation
-          console.log(`🎯 Triggering global ranking recalculation after session completion...`);
-          const GlobalRankingModel = connection.model('GlobalRanking', GlobalRanking.schema);
-          await GlobalRankingModel.calculateRankings();
-          console.log(`✅ Global rankings updated successfully after session completion`);
-          
-        } catch (resultsError) {
-          console.error(`❌ Failed to save play results or update rankings after completion:`, resultsError);
-          // Don't throw error - play completion should not fail due to results/ranking saving
-          // But log it for monitoring
-          if (resultsError instanceof Error && resultsError.message.includes('ranking')) {
-            console.error(`🚨 RANKING UPDATE FAILED for session ${play.uuid}:`, resultsError.message);
+        setImmediate(async () => {
+          try {
+            console.log(`💾 Play completed - saving results asynchronously...`);
+            await savePlayResults(play, connection);
+            console.log(`✅ Play results saved successfully after completion for ${play.uuid}`);
+            
+            // ✅ CRITICAL FIX: Trigger automatic global ranking recalculation
+            console.log(`🎯 Triggering global ranking recalculation after session completion...`);
+            const GlobalRankingModel = connection.model('GlobalRanking', GlobalRanking.schema);
+            await GlobalRankingModel.calculateRankings();
+            console.log(`✅ Global rankings updated successfully after session completion`);
+            
+          } catch (resultsError) {
+            console.error(`❌ Failed to save play results or update rankings after completion:`, resultsError);
+            // Log for monitoring but don't affect user experience
+            if (resultsError instanceof Error && resultsError.message.includes('ranking')) {
+              console.error(`🚨 RANKING UPDATE FAILED for session ${play.uuid}:`, resultsError.message);
+            }
           }
-        }
+        });
       }
     
   } catch (error) {

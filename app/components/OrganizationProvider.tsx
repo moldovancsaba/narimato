@@ -23,8 +23,9 @@ interface OrganizationContextType {
   organizations: Organization[];
   setCurrentOrganization: (org: Organization | null) => void;
   switchToOrganization: (organizationUUID: string) => Promise<boolean>;
+  switchToOrganizationBySlug: (slug: string) => Promise<boolean>;
   refreshOrganizations: () => Promise<void>;
-  isLoading: boolean;
+  isOrgDataLoaded: boolean;
   
   // Theme functionality
   theme: ThemeConfig | null;
@@ -65,6 +66,8 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
   // Apply theme using the custom hook
   useOrganizationTheme(theme);
   
+  const [isOrgDataLoaded, setIsOrgDataLoaded] = useState(false);
+
   // Get permission context
   const permissions = useOrganizationPermissions(currentOrganization?.permissions, userRole);
 
@@ -153,9 +156,11 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
           setCurrentOrganization(selectedOrg);
           localStorage.setItem('selectedOrganization', selectedOrg.OrganizationSlug);
         }
+        setIsOrgDataLoaded(true);
       }
     } catch (error) {
       console.error('Failed to load organizations:', error);
+      setIsOrgDataLoaded(true); // Set to true even on error so components don't wait forever
       
       // If no organizations are available, get or create the default one
       try {
@@ -185,6 +190,7 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
       }
     } finally {
       setIsLoading(false);
+      setIsOrgDataLoaded(true); // Ensure it's always set to true when loading completes
     }
   };
 
@@ -196,6 +202,33 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
       localStorage.setItem('selectedOrganization', org.OrganizationSlug);
       return true;
     }
+    return false;
+  };
+
+  const switchToOrganizationBySlug = async (slug: string): Promise<boolean> => {
+    console.log(`[switchToOrganizationBySlug] Called with slug: ${slug}`);
+    console.log(`[switchToOrganizationBySlug] isOrgDataLoaded: ${isOrgDataLoaded}`);
+    console.log(`[switchToOrganizationBySlug] organizations count: ${organizations.length}`);
+    
+    // Wait for organization data to be loaded if it isn't already
+    if (!isOrgDataLoaded) {
+      console.log(`[switchToOrganizationBySlug] Data not loaded yet, returning false`);
+      return false; // Return false, let the calling component wait
+    }
+
+    // Find the organization in the loaded list
+    const org = organizations.find(o => o.OrganizationSlug === slug && o.isActive);
+    console.log(`[switchToOrganizationBySlug] Found organization: ${org ? org.OrganizationName : 'null'}`);
+    
+    if (org) {
+      console.log(`[switchToOrganizationBySlug] Setting current organization to: ${org.OrganizationName}`);
+      setCurrentOrganization(org);
+      localStorage.setItem('selectedOrganization', org.OrganizationSlug);
+      return true;
+    }
+
+    // Organization not found
+    console.log(`[switchToOrganizationBySlug] Organization '${slug}' not found`);
     return false;
   };
 
@@ -313,8 +346,10 @@ export function OrganizationProvider({ children }: { children: React.ReactNode }
     organizations,
     setCurrentOrganization,
     switchToOrganization,
+    switchToOrganizationBySlug,
     refreshOrganizations,
     isLoading,
+    isOrgDataLoaded,
     
     // Theme functionality
     theme,

@@ -22,6 +22,9 @@ export function useOrganizationTheme(theme: ThemeConfig | null) {
       // Reset to default theme
       document.documentElement.removeAttribute('data-theme');
       clearCustomProperties();
+      removeCustomCSS();
+      removeBackgroundCSS();
+      removeGoogleFonts();
       return;
     }
 
@@ -34,10 +37,22 @@ export function useOrganizationTheme(theme: ThemeConfig | null) {
       applyCustomCSS(theme.customCSS);
     }
 
+    // Apply background CSS for animated backgrounds
+    if (theme.backgroundCSS) {
+      applyBackgroundCSS(theme.backgroundCSS);
+    }
+
+    // Apply Google Fonts if provided
+    if (theme.googleFontURL) {
+      applyGoogleFonts(theme.googleFontURL, theme.fontFamily);
+    }
+
     // Cleanup function
     return () => {
       clearCustomProperties();
       removeCustomCSS();
+      removeBackgroundCSS();
+      removeGoogleFonts();
     };
   }, [theme]);
 }
@@ -111,7 +126,101 @@ function removeCustomCSS() {
 }
 
 /**
- * Utility function to validate theme colors
+ * Apply background CSS for animated backgrounds
+ * This handles both global selectors and .background-content specific styles
+ */
+function applyBackgroundCSS(backgroundCSS: string) {
+  // Remove existing background CSS
+  removeBackgroundCSS();
+  
+  // Process the background CSS to handle different types of selectors
+  let processedCSS = backgroundCSS;
+  
+  // Replace global html, body selectors with body to maintain the global background
+  processedCSS = processedCSS.replace(/html,\s*body/g, 'body');
+  processedCSS = processedCSS.replace(/^html\s*{/gm, 'body {');
+  
+  // Ensure all .background-content styles have proper z-index and pointer-events
+  const finalCSS = `
+    ${processedCSS}
+    
+    /* Ensure background layer is behind everything */
+    .background-content {
+      z-index: -999 !important;
+      pointer-events: none !important;
+    }
+    
+    /* Ensure all animated elements in background stay behind content */
+    .background-content *,
+    .background-content::before,
+    .background-content::after {
+      z-index: -999 !important;
+      pointer-events: none !important;
+    }
+  `;
+  
+  // Create and inject background style element
+  const styleElement = document.createElement('style');
+  styleElement.id = 'organization-background-css';
+  styleElement.textContent = finalCSS;
+  document.head.appendChild(styleElement);
+}
+
+/**
+ * Remove background CSS from the document
+ */
+function removeBackgroundCSS() {
+  const existingStyle = document.getElementById('organization-background-css');
+  if (existingStyle) {
+    existingStyle.remove();
+  }
+}
+
+/**
+ * Apply Google Fonts by injecting a link element
+ * Also updates the font-family CSS variable if a font family is provided
+ */
+function applyGoogleFonts(googleFontURL: string, fontFamily?: string) {
+  // Remove existing Google Fonts link
+  removeGoogleFonts();
+  
+  // Create and inject Google Fonts link
+  const linkElement = document.createElement('link');
+  linkElement.id = 'organization-google-fonts';
+  linkElement.rel = 'stylesheet';
+  linkElement.href = googleFontURL;
+  linkElement.crossOrigin = 'anonymous';
+  document.head.appendChild(linkElement);
+  
+  // Extract font family name from URL if not provided
+  if (!fontFamily) {
+    try {
+      const url = new URL(googleFontURL);
+      const familyParam = url.searchParams.get('family');
+      if (familyParam) {
+        // Extract font family name (before any colon or plus signs)
+        const extractedFamily = familyParam.split(':')[0].replace(/\+/g, ' ');
+        // Update the CSS custom property for organization font family
+        document.documentElement.style.setProperty('--org-font-family', `'${extractedFamily}', sans-serif`);
+      }
+    } catch (error) {
+      console.warn('Failed to extract font family from Google Fonts URL:', error);
+    }
+  }
+}
+
+/**
+ * Remove Google Fonts link from the document
+ */
+function removeGoogleFonts() {
+  const existingLink = document.getElementById('organization-google-fonts');
+  if (existingLink) {
+    existingLink.remove();
+  }
+}
+
+/**
+ * Utility function to validate theme colors and new fields
  */
 export function validateTheme(theme: Partial<ThemeConfig>): string[] {
   const errors: string[] = [];
@@ -135,6 +244,25 @@ export function validateTheme(theme: Partial<ThemeConfig>): string[] {
       errors.push(`${field} must be a valid CSS size value`);
     }
   });
+  
+  // Validate Google Font URL
+  if (theme.googleFontURL && !/^https:\/\/fonts\.googleapis\.com\/css2\?family=/.test(theme.googleFontURL)) {
+    errors.push('Google Font URL must be a valid Google Fonts CSS2 URL');
+  }
+  
+  // Validate background CSS (basic check for dangerous patterns)
+  if (theme.backgroundCSS) {
+    const dangerousPatterns = [
+      /<script/i,
+      /javascript:/i,
+      /expression\(/i,
+      /import\s/i,
+      /@import/i
+    ];
+    if (dangerousPatterns.some(pattern => pattern.test(theme.backgroundCSS || ''))) {
+      errors.push('Background CSS contains potentially dangerous content');
+    }
+  }
   
   return errors;
 }

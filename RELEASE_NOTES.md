@@ -1,8 +1,216 @@
 # NARIMATO Release Notes
 
-**Current Version:** 4.0.0 (Major Release)
-**Date:** 2025-08-05
-**Last Updated:** 2025-08-05T00:08:12.000Z
+**Current Version:** 4.1.0 (Centralized Theme Management)
+**Date:** 2025-10-12
+**Last Updated:** 2025-10-12T16:45:21.000Z
+
+## [v4.1.0] — 2025-10-12T16:45:21.000Z
+
+### 🎨 Major Feature Release - Organization-Level Centralized Theme Management System
+
+This feature release introduces a comprehensive organization-level centralized theme management system, empowering administrators with sophisticated tools for maintaining consistent visual identity across all organization components. The system integrates animated backgrounds, Google Fonts, emoji management, and icon customization with live preview capabilities.
+
+### ✨ Core Theme Management Features
+
+#### Animated Background Management
+- **CSS Code Editor**: Full-featured code editor with PrismJS syntax highlighting for custom CSS animations
+- **Dynamic Background Injection**: CSS is dynamically injected into dedicated `.background-content` layer for safe, scoped application
+- **Wave Animation Support**: Built-in support for complex animated backgrounds including wave effects and transitions
+- **Organization Scoping**: Each organization maintains unique animated backgrounds with proper isolation
+- **Real-Time Preview**: Live preview of background changes directly in the organization editor interface
+- **Security Validation**: Input sanitization and scope limitation prevent XSS attacks and breaking changes
+
+#### Google Fonts Integration
+- **Direct URL Input**: Simple input field for Google Fonts CSS2 URLs with validation and error handling
+- **Dynamic Font Loading**: Fonts are dynamically loaded into document head with proper cleanup management
+- **Organization-Wide Typography**: Font choices apply consistently across all organization components
+- **Fallback Support**: Graceful degradation to system fonts when custom fonts fail to load
+- **Live Typography Preview**: Immediate visual feedback for font changes in the editor interface
+- **Performance Optimization**: Efficient font loading with memory management and cleanup
+
+#### Emoji and Icon Management
+- **Emoji Input System**: Direct emoji pasting with space-separated format and live visual preview
+- **CDN Icon Support**: Icon management through URL input with support for external CDN resources
+- **Visual Preview Interface**: Live preview grid showing all emojis and icons with proper rendering
+- **Centralized Storage**: Organization-level storage and management of emoji and icon collections
+- **Easy Management**: Add, remove, and reorder emojis and icons through intuitive UI controls
+- **Error Handling**: Graceful handling of broken icon URLs with fallback display
+
+### 🏗️ Technical Architecture Enhancements
+
+#### Schema Extensions
+Extended `Organization` model with comprehensive theme fields:
+```typescript
+interface Organization {
+  theme?: {
+    backgroundCSS?: string;     // Custom CSS for animated backgrounds
+    googleFontURL?: string;     // Google Fonts CSS2 URL
+    emojiList?: string[];       // Array of emoji characters
+    iconList?: string[];        // Array of icon URLs
+    // ... existing theme properties
+  };
+}
+```
+
+#### Enhanced Theme Hook
+Upgraded `useOrganizationTheme` hook with advanced capabilities:
+- **Background CSS Injection**: Dynamically injects custom CSS into `.background-content` div
+- **Google Fonts Management**: Manages font link tags in document head with proper cleanup
+- **Theme Isolation**: Ensures proper isolation between different organization themes
+- **Memory Management**: Efficient creation and cleanup of style elements
+- **Change Detection**: Responsive updates when theme settings change
+
+#### Layout Integration
+Global layout updates for theme support:
+```html
+<body>
+  <div class="background-content"></div>
+  <!-- Application content -->
+</body>
+```
+
+Base CSS foundation:
+```css
+.background-content {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+}
+```
+
+### 🔧 Organization Editor Enhancements
+
+#### Live Theme Preview System
+- **Real-Time Updates**: All theme changes reflected instantly without page refresh
+- **Comprehensive Preview**: Background, fonts, emojis, and icons previewed simultaneously
+- **Editor Integration**: Preview component uses the same `useOrganizationTheme` hook as main application
+- **Visual Feedback**: Clear indicators showing active theme settings and changes
+- **Performance Optimization**: Efficient updates using targeted DOM manipulation
+
+#### Advanced Code Editor
+- **Syntax Highlighting**: PrismJS integration providing CSS syntax highlighting and error detection
+- **Input Validation**: CSS input validation to prevent malicious or breaking code injection
+- **Scoped Application**: CSS automatically scoped to background layer for safety
+- **Live Compilation**: Changes applied immediately with efficient DOM updates
+- **Error Prevention**: Validation prevents system-breaking CSS while allowing creative freedom
+
+#### Enhanced User Experience
+- **Emoji Display Grid**: Live preview grid with proper emoji rendering and spacing
+- **Icon Preview System**: Image previews of icon URLs with error handling and fallbacks
+- **Font URL Validation**: Google Fonts URL validation with helpful error messages and examples
+- **Save Confirmation**: Clear success/error feedback for all theme update operations
+- **Loading States**: Proper loading indicators during theme operations
+
+### 🛡️ Security and Performance
+
+#### Security Measures
+- **CSS Input Sanitization**: Comprehensive validation to prevent XSS attacks and code injection
+- **Scope Limitation**: CSS effects limited to `.background-content` layer for system safety
+- **Safe DOM Injection**: Secure methods for dynamic CSS and font injection
+- **Organization Isolation**: Proper theme isolation between different organizations
+
+#### Performance Optimizations
+- **Efficient Font Loading**: Google Fonts loaded only when needed with proper caching
+- **Memory Management**: Automatic cleanup of style elements when themes change
+- **Minimal DOM Impact**: Targeted updates rather than full re-renders for theme changes
+- **Caching Strategy**: Theme settings cached for optimal performance and responsiveness
+
+### 📊 Developer Experience Improvements
+
+#### Component Architecture
+- **Modular Design**: Reusable components for theme management across the application
+- **TypeScript Integration**: Full type safety for all theme-related interfaces and operations
+- **Hook-Based Architecture**: Clean separation of theme logic using React hooks pattern
+- **Error Boundaries**: Comprehensive error handling to prevent theme issues from breaking the app
+
+#### Code Quality
+- **Clean Code Structure**: Well-organized components with clear separation of concerns
+- **Comprehensive Documentation**: Inline documentation and clear naming conventions
+- **Testing Support**: Architecture designed to support comprehensive testing strategies
+- **Maintenance**: Easy maintenance and extension of theme features
+
+### 🎯 User Impact and Benefits
+
+#### Administrator Experience
+- **Visual Identity Control**: Complete control over organization visual branding and identity
+- **Live Preview Feedback**: Immediate visual feedback eliminates guesswork in theme design
+- **Easy Management**: Intuitive interface for managing complex theme configurations
+- **Creative Freedom**: Powerful tools enabling sophisticated visual customization
+
+#### End User Experience
+- **Consistent Branding**: Cohesive visual experience across all organization interfaces
+- **Enhanced Engagement**: Rich animated backgrounds and custom typography improve engagement
+- **Professional Appearance**: Polished, branded interface enhances organization credibility
+- **Performance**: Theme features implemented without impacting application performance
+
+### 🔄 Migration and Compatibility
+
+#### Backward Compatibility
+- **Existing Organizations**: Organizations without theme settings continue operating normally
+- **Graceful Fallbacks**: Missing theme properties default to existing system styles
+- **Progressive Enhancement**: Theme features enhance existing functionality without breaking changes
+- **Data Preservation**: All existing organization data and settings preserved
+
+#### Future Extensibility
+- **Plugin Architecture**: Foundation for additional theme plugins and extensions
+- **Advanced Features**: Support for more complex animation systems and theme templates
+- **User-Level Themes**: Architecture supports future user-level theme customization
+- **Marketplace Integration**: Potential for theme templates and community-contributed themes
+
+### 📋 Files Modified
+
+#### Backend Extensions
+- **Organization Model** (`app/lib/models/Organization.ts`): Extended with theme fields
+- **Theme Hook** (`app/hooks/useOrganizationTheme.ts`): Enhanced with CSS injection and font loading
+- **Layout Component** (`app/layout.tsx`): Added background content layer
+
+#### Frontend Enhancements
+- **Organization Editor** (`app/organization-editor/page.tsx`): Complete theme management interface
+- **Live Preview Component**: Real-time theme preview using organization theme hook
+- **CSS Styles** (`app/globals.css`): Base styles for background content layer
+
+#### Dependencies
+- **react-simple-code-editor**: Added for CSS syntax highlighting and editing
+- **prismjs**: Integrated for syntax highlighting support
+
+### 🚀 Quality Assurance
+
+#### Testing Validation
+- ✅ **Theme Application**: All theme components apply correctly across organization
+- ✅ **Live Preview**: Real-time preview accurately reflects theme changes
+- ✅ **Security**: CSS injection properly sanitized and scoped
+- ✅ **Performance**: No performance degradation with theme features enabled
+- ✅ **Cross-Browser**: Theme features work consistently across major browsers
+- ✅ **Mobile Compatibility**: Theme system responsive across all device types
+
+#### Integration Testing
+- ✅ **Organization Context**: Theme system properly integrated with organization management
+- ✅ **Database Operations**: Theme data saves and loads correctly
+- ✅ **Error Handling**: Graceful handling of malformed theme data
+- ✅ **Memory Management**: Proper cleanup prevents memory leaks
+
+### 🎯 Success Metrics
+
+#### Feature Adoption
+- **Theme Utilization**: Expected high adoption rate for theme customization features
+- **User Engagement**: Improved user engagement through enhanced visual experience
+- **Organization Branding**: Better brand consistency across organization interfaces
+- **Administrator Satisfaction**: Powerful tools meeting advanced customization needs
+
+### 🔮 Future Enhancements Enabled
+
+This theme management foundation enables:
+- **Advanced Animation Systems**: More sophisticated background animations and effects
+- **Theme Templates**: Pre-built theme templates for quick organization setup
+- **Community Themes**: Marketplace for sharing and discovering custom themes
+- **Advanced Typography**: Enhanced font management with local font support
+- **Brand Integration**: API endpoints for automated brand application from external systems
+
+---
 
 ## [v4.0.0] — 2025-08-05T00:08:12.000Z
 

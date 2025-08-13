@@ -3,7 +3,9 @@ import { Inter, Fira_Code } from "next/font/google";
 import "./globals.css";
 import ChunkErrorProvider from './components/ChunkErrorProvider';
 import GlobalNavigation from './components/GlobalNavigation';
+import OrganizationNavigation from './components/OrganizationNavigation';
 import { OrganizationProvider } from './components/OrganizationProvider';
+import NavigationController from './components/NavigationController';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -48,11 +50,14 @@ export default function RootLayout({
           paddingBottom: '80px'
         }}
       >
+        {/* Organization-wide background layer for animated backgrounds */}
+        <div className="background-content"></div>
+        
         <OrganizationProvider>
           <ChunkErrorProvider>
             {children}
           </ChunkErrorProvider>
-          <GlobalNavigation />
+          <NavigationController />
         </OrganizationProvider>
       </body>
     </html>

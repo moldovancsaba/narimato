@@ -61,10 +61,82 @@ function createOrganizationModel(connection: mongoose.Connection) {
       unique: true
     },
     
+    // Optional subdomain
+    subdomain: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      maxlength: 63,
+      sparse: true // allows multiple null values
+    },
+    
     // Optional description
     description: {
       type: String,
       maxlength: 1000
+    },
+    
+    // Theme and branding configuration
+    theme: {
+      primaryColor: {
+        type: String,
+        default: '#667eea'
+      },
+      secondaryColor: {
+        type: String,
+        default: '#764ba2'
+      },
+      accentColor: {
+        type: String,
+        default: '#f093fb'
+      },
+      backgroundColor: {
+        type: String,
+        default: '#0a0a0a'
+      },
+      textColor: {
+        type: String,
+        default: '#ffffff'
+      },
+      fontFamily: {
+        type: String,
+        default: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif'
+      },
+      fontSize: {
+        type: String,
+        default: '16px'
+      },
+      borderRadius: {
+        type: String,
+        default: '8px'
+      },
+      spacing: {
+        type: String,
+        default: '1rem'
+      },
+      customCSS: {
+        type: String,
+        maxlength: 10000,
+        default: ''
+      },
+      backgroundCSS: {
+        type: String,
+        maxlength: 15000,
+        default: ''
+      },
+      googleFontURL: {
+        type: String,
+        maxlength: 1000,
+        default: ''
+      },
+      emojiList: {
+        type: [String],
+        default: []
+      },
+      iconList: {
+        type: [String],
+        default: []
+      }
     },
     
     // Status
@@ -195,6 +267,7 @@ export async function GET(request: NextRequest) {
         OrganizationDescription: org.description,
         databaseName: org.databaseName,  // Include for organization editor
         subdomain: org.subdomain,  // Optional subdomain
+        theme: org.theme,  // Include theme data
         isActive: org.isActive,
         createdAt: org.createdAt,
         updatedAt: org.updatedAt
@@ -269,6 +342,8 @@ export async function PUT(request: NextRequest) {
         OrganizationSlug: organization.slug,
         OrganizationDescription: organization.description,
         databaseName: organization.databaseName,
+        subdomain: organization.subdomain,
+        theme: organization.theme,
         isActive: organization.isActive,
         createdAt: organization.createdAt,
         updatedAt: organization.updatedAt

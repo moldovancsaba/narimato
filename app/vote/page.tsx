@@ -202,9 +202,9 @@ function VoteContent() {
       // Update session version from response
       setSessionVersion(data.version);
 
-      // Check if session is completed
-      if (data.sessionCompleted) {
-        console.log('Session completed during voting, redirecting to completed page');
+      // Check if play is completed
+      if (data.playCompleted || data.sessionCompleted) {
+        console.log('Play completed during voting, redirecting to completed page');
         router.push(`/completed?sessionUUID=${sessionId}`);
         return;
       }
@@ -325,7 +325,7 @@ function VoteContent() {
 
   return (
     <div className="w-screen fixed inset-0 overflow-hidden bg-background text-foreground mobile-safe-container">
-      <div className="page-grid-container vote-grid gradient-bg-2layer h-full">
+      <div className="page-grid-container vote-grid h-full">
         
         {/* Title - Row 1 */}
         <div className="vote-grid-title grid-cell">

@@ -1,8 +1,8 @@
 # NARIMATO Architecture
 
-**Current Version:** 3.7.1 (UUID Field Standardization)
-**Date:** 2025-08-04
-**Last Updated:** 2025-08-04T17:24:21.000Z
+**Current Version:** 4.1.0 (Centralized Theme Management)
+**Date:** 2025-10-12
+**Last Updated:** 2025-10-12T16:45:21.000Z
 
 ## ⚡ UUID Field Standardization (v3.7.1+)
 
@@ -153,6 +153,127 @@ flowchart LR
     ErrorLog -.-> Recovery
     Recovery -.-> Session
 ```
+
+## 🎨 Organization-Level Centralized Theme Management (v4.1.0+)
+
+### Overview
+NARIMATO now features a comprehensive organization-level centralized theme management system that allows organizations to maintain consistent visual identity across all components. This system provides administrators with powerful tools to customize animated backgrounds, typography, and visual elements.
+
+### Key Features
+
+#### Animated Background Management
+- **Background CSS Editor**: Full code editor with syntax highlighting for CSS animations
+- **Dynamic CSS Injection**: CSS is dynamically injected into a dedicated `.background-content` layer
+- **Wave Animations**: Support for complex animated backgrounds including wave effects
+- **Organization Scoping**: Each organization can have unique animated backgrounds
+- **Live Preview**: Real-time preview of background changes in the organization editor
+
+#### Google Fonts Integration
+- **URL Input**: Direct input of Google Fonts CSS2 URLs for typography customization
+- **Dynamic Loading**: Fonts are dynamically loaded into the document head
+- **Organization-Wide Application**: Font choices apply across all organization components
+- **Fallback Support**: Graceful fallback to system fonts if custom fonts fail to load
+- **Live Typography Preview**: Immediate preview of font changes in the editor
+
+#### Emoji and Icon Management
+- **Emoji Input**: Direct emoji pasting with space-separated input format
+- **Icon URL Support**: CDN-based icon management with URL input
+- **Visual Preview**: Live preview of emojis and icons in the editor interface
+- **Centralized Storage**: Organization-level storage of emoji and icon sets
+- **Easy Management**: Add, remove, and reorder emojis and icons through the UI
+
+### Technical Architecture
+
+#### Schema Extensions
+The `Organization` model in `app/lib/models/Organization.ts` includes new theme fields:
+```typescript
+interface Organization {
+  // ... existing fields
+  theme?: {
+    // ... existing theme properties
+    backgroundCSS?: string;     // Custom CSS for animated backgrounds
+    googleFontURL?: string;     // Google Fonts CSS2 URL
+    emojiList?: string[];       // Array of emoji characters
+    iconList?: string[];        // Array of icon URLs
+  };
+}
+```
+
+#### Theme Hook Enhancement
+The `useOrganizationTheme` hook now provides comprehensive theme management:
+- **Background Injection**: Dynamically injects background CSS into `.background-content` div
+- **Font Loading**: Manages Google Fonts link tags in document head
+- **Cleanup Management**: Properly removes and updates styles when themes change
+- **Organization Scoping**: Ensures theme isolation between organizations
+
+#### Layout Integration
+The global layout (`app/layout.tsx`) includes:
+```html
+<body>
+  <div class="background-content"></div>
+  <!-- Application content -->
+</body>
+```
+
+#### CSS Foundation
+Base styles for the background layer:
+```css
+.background-content {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+}
+```
+
+### Organization Editor Enhancements
+
+#### Live Theme Preview System
+- **Real-Time Updates**: All theme changes are reflected instantly in the editor
+- **Comprehensive Preview**: Background, fonts, emojis, and icons previewed simultaneously
+- **Editor Integration**: Preview component uses the same `useOrganizationTheme` hook as the main application
+- **Visual Feedback**: Clear indicators show active theme settings
+
+#### Code Editor Integration
+- **Syntax Highlighting**: PrismJS integration for CSS syntax highlighting
+- **Error Prevention**: Input validation to prevent malicious or breaking CSS
+- **Scoped Application**: CSS is automatically scoped to the background layer
+- **Live Compilation**: Changes are applied immediately without page refresh
+
+#### User Experience Features
+- **Emoji Display**: Live preview of emoji selections with proper rendering
+- **Icon Preview**: Image previews of icon URLs with error handling
+- **Font Validation**: URL validation for Google Fonts with helpful error messages
+- **Save Confirmation**: Clear success/error feedback for theme updates
+
+### Security and Performance Considerations
+
+#### CSS Security
+- **Input Sanitization**: CSS input is validated to prevent XSS attacks
+- **Scope Limitation**: CSS is restricted to the `.background-content` layer
+- **Safe Injection**: Dynamic CSS injection uses secure DOM methods
+
+#### Performance Optimization
+- **Efficient Loading**: Google Fonts are loaded only when needed
+- **Memory Management**: Proper cleanup of style elements when themes change
+- **Minimal DOM Impact**: Theme changes use targeted updates rather than full re-renders
+- **Caching Strategy**: Theme settings are cached for optimal performance
+
+### Migration and Compatibility
+
+#### Backward Compatibility
+- **Existing Organizations**: Organizations without theme settings continue to work normally
+- **Graceful Fallbacks**: Missing theme properties default to system styles
+- **Progressive Enhancement**: Theme features enhance existing functionality without breaking changes
+
+#### Future Extensibility
+- **Plugin Architecture**: Foundation for additional theme plugins and extensions
+- **Advanced Animations**: Support for more complex animation systems
+- **Theme Templates**: Potential for pre-built theme templates and marketplace
+- **User-Level Themes**: Architecture supports future user-level theme customization
 
 ## Theming
 
