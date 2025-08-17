@@ -25,12 +25,23 @@ export const GET = createOrgAwareRoute(async (request, { organizationUUID }) => 
     const search = searchParams.get('search') || '';
     const type = searchParams.get('type'); // 'root', 'playable', 'all'
     const parent = searchParams.get('parent'); // Get children of specific parent
+    const last = searchParams.get('last'); // Get last created card for defaults
 
     let query: any = { isActive: true };
     let cards: ICard[] = [];
 
     // Build query based on type
-    if (type === 'root') {
+    if (last === 'true') {
+      // Get the most recently created card for default values
+      const lastCard = await CardModel.findOne(query)
+        .sort({ createdAt: -1 })
+        .limit(1);
+      
+      return NextResponse.json({
+        success: true,
+        card: lastCard || null
+      });
+    } else if (type === 'root') {
       cards = await getRootDecks(organizationUUID);
     } else if (type === 'playable') {
       cards = await getPlayableCards(organizationUUID);

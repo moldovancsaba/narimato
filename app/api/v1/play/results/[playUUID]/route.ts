@@ -4,7 +4,7 @@ import { createOrgDbConnect } from '@/app/lib/utils/db';
 import { SessionResults } from '@/app/lib/models/SessionResults';
 import { Play } from '@/app/lib/models/Play';
 import { savePlayResults } from '@/app/lib/utils/sessionResultsUtils';
-import { SESSION_FIELDS } from '@/app/lib/constants/fieldNames';
+import { SESSION_FIELDS, PLAY_FIELDS } from '@/app/lib/constants/fieldNames';
 
 interface RouteParams {
   params: Promise<{ playUUID: string }>;
@@ -61,11 +61,11 @@ export async function GET(
       );
     }
 
-    console.log(`🔎 Looking for saved results using field: ${SESSION_FIELDS.UUID}`);
-    console.log(`🔎 SESSION_FIELDS.UUID value: '${SESSION_FIELDS.UUID}'`);
-
+    console.log(`🔎 Looking for saved results using sessionUUID field for playUUID: ${playUUID}`);
+    
     // Try to find saved play results first
-    const savedResults = await SessionResultsModel.findOne({ [SESSION_FIELDS.UUID]: playUUID });
+    // IMPORTANT: SessionResults model stores play UUIDs in the sessionUUID field
+    const savedResults = await SessionResultsModel.findOne({ sessionUUID: playUUID });
     console.log(`📊 Database query result for saved results:`, savedResults ? 'FOUND' : 'NOT_FOUND');
     
     if (savedResults) {
@@ -140,7 +140,7 @@ export async function GET(
       
       // Always try to fetch the saved results (they should exist now)
       console.log(`🔄 Re-querying for saved results after save attempt...`);
-      const newlySavedResults = await SessionResultsModel.findOne({ [SESSION_FIELDS.UUID]: playUUID });
+      const newlySavedResults = await SessionResultsModel.findOne({ sessionUUID: playUUID });
       console.log(`📊 Re-query result:`, newlySavedResults ? 'FOUND' : 'STILL_NOT_FOUND');
       
       if (newlySavedResults) {

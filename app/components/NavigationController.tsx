@@ -35,22 +35,38 @@ const NavigationController = React.memo(function NavigationController() {
   // Check if it's the home page
   const isHomePage = pathname === '/';
 
+  // Check if the path is an organization-specific route
+  // Organization routes: /organization/[slug]/* or /[slug] (when not a core route)
+  const isOrganizationRoute = (() => {
+    // Check for /organization/[slug] pattern
+    if (pathname.startsWith('/organization/')) {
+      return true;
+    }
+    
+    // Check for direct slug pattern: /[slug] or /[slug]/anything
+    // But exclude core routes
+    const pathSegments = pathname.split('/').filter(Boolean);
+    if (pathSegments.length >= 1 && !isCoreRoute && !isHomePage) {
+      const slug = pathSegments[0];
+      
+      // If it's just a slug or slug with known org sub-pages
+      if (pathSegments.length === 1 || 
+          (pathSegments.length === 2 && ['completed', 'rankings', 'play', 'swipe', 'cards', 'card-editor', 'ranks'].includes(pathSegments[1]))) {
+        return true;
+      }
+    }
+    
+    return false;
+  })();
+
   // If it's a core route or home page, show global navigation
   if (isCoreRoute || isHomePage) {
     return <GlobalNavigation />;
   }
-
-  // Check if the path looks like an organization page
-  // Organization pages: /[slug] or /[slug]/completed or /[slug]/rankings
-  const pathSegments = pathname.split('/').filter(Boolean);
-  if (pathSegments.length >= 1) {
-    const slug = pathSegments[0];
-    
-    // If it's just a slug or slug with known org sub-pages
-    if (pathSegments.length === 1 || 
-        (pathSegments.length === 2 && ['completed', 'rankings'].includes(pathSegments[1]))) {
-      return <OrganizationNavigation />;
-    }
+  
+  // If it's an organization route, show organization navigation
+  if (isOrganizationRoute) {
+    return <OrganizationNavigation />;
   }
 
   // Default to global navigation

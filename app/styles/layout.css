@@ -1,8 +1,23 @@
-  /* Mobile-First Responsive Layout */
+  /* Mobile-First Responsive Layout - BLACK/INDIGO/CYAN THEME */
   .mobile-container {
-    @apply w-full px-4 sm:px-6 md:px-8;
+    width: 100%;
     padding-left: max(var(--spacing-mobile), var(--safe-area-inset-left));
     padding-right: max(var(--spacing-mobile), var(--safe-area-inset-right));
+    color: #ffffff;
+  }
+  
+  @media (min-width: 640px) {
+    .mobile-container {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+  }
+  
+  @media (min-width: 768px) {
+    .mobile-container {
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
   }
   
   .mobile-safe-area {
@@ -33,9 +48,10 @@
     }
   }
 
-  /* Layout Components - Mobile First */
+  /* Layout Components - BLACK/INDIGO/CYAN THEME */
   .page-container {
-    @apply grid w-full;
+    display: grid;
+    width: 100%;
     /* Account for bottom navigation height (80px) */
     height: calc(100vh - 80px);
     grid-template-rows: auto 1fr;
@@ -44,8 +60,8 @@
       "page-main";
     padding: 5px;
     gap: 5px;
-    background-color: var(--background);
-    color: var(--text-primary);
+    background: #000000;
+    color: #ffffff;
   }
 
   /* Full-screen page layout for admin/editor pages */
@@ -55,18 +71,24 @@
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    background-color: var(--background);
-    color: var(--text-primary);
+    background: #000000 !important;
+    color: #ffffff !important;
     margin: 0;
     padding: 0;
     overflow: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 50;
   }
   
   .page-fullscreen-header {
     flex: 0 0 auto;
-    padding: 1rem;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
+    padding: 1rem 2rem;
+    border-bottom: 2px solid #4338ca;
+    background: linear-gradient(135deg, #1e1b4b 0%, #111827 50%, #0f0f0f 100%);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.1);
   }
   
   .page-fullscreen-content {
@@ -74,16 +96,20 @@
     overflow-y: auto;
     overflow-x: hidden;
     padding: 0;
+    width: 100%;
+    background: #000000 !important;
   }
 
   .page-title-area {
     grid-area: page-title;
-    @apply flex items-center justify-center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   
   .page-content {
     grid-area: page-main;
-    @apply overflow-y-auto;
+    overflow-y: auto;
   }
   
   @media (min-width: 640px) {
@@ -94,7 +120,8 @@
 
   /* Page Grid System */
   .page-grid-container {
-    @apply grid w-full;
+    display: grid;
+    width: 100%;
     /* Account for bottom navigation height (80px) consistent with VOTE/SWIPE landscape approach */
     height: calc(100vh - 80px);
     padding: 5px;
@@ -109,12 +136,16 @@
   /* Grid areas for all pages */
   .page-title-grid {
     grid-area: title;
-    @apply flex items-center justify-center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .page-main-grid {
     grid-area: main;
-    @apply w-full h-full overflow-y-auto;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
   }
 
   /* Portrait Mode */
@@ -141,14 +172,18 @@
 
   /* Grid cell is the single source of truth for card sizing */
   .grid-cell {
-    @apply flex items-center justify-center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
     height: 100%;
   }
 
   /* Card Grid for Results (Completed, Ranks, Cards) */
   .results-grid {
-    @apply grid w-full p-1;
+    display: grid;
+    width: 100%;
+    padding: 0.25rem;
     gap: 16px; /* Increased from 5px for better spacing */
   }
 
@@ -168,11 +203,20 @@
     }
   }
   
-  /* Vote Page VS Circle */
+  /* Vote Page VS Circle - BLACK/INDIGO/CYAN THEME */
   .vote-card-circle {
-    @apply w-12 h-12 rounded-full bg-white/10 dark:bg-white/20 flex items-center justify-center text-2xl;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(67, 56, 202, 0.1) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #06b6d4;
     backdrop-filter: blur(10px);
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    border: 2px solid rgba(6, 182, 212, 0.3);
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.1);
   }
   
   /* Landscape visibility helper */
@@ -188,7 +232,9 @@
   
   /* Card Editor Layout */
   .editor-grid {
-    @apply grid w-full gap-6;
+    display: grid;
+    width: 100%;
+    gap: 1.5rem;
     /* Default mobile: single column */
     grid-template-columns: 1fr;
   }
@@ -215,7 +261,14 @@
     }
   }
   
-  /* Preview container specific styling */
+  /* Preview container specific styling - BLACK/INDIGO/CYAN THEME */
   .preview-container {
-    @apply min-h-[300px] flex items-center justify-center bg-gray-50 dark:bg-gray-800 rounded-lg;
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1e1b4b 0%, #111827 50%, #0f0f0f 100%);
+    border-radius: 0.5rem;
+    border: 2px solid #4338ca;
+    box-shadow: 0 8px 25px rgba(6, 182, 212, 0.15), 0 4px 12px rgba(67, 56, 202, 0.1);
   }

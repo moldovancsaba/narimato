@@ -100,16 +100,20 @@ export const POST = createOrgAwareRoute(async (request, { organizationUUID }) =>
     }
 
     let sessionCompleted = false;
-    const totalSwipesAfterThis = play.swipes.length + 1;
-    if (totalSwipesAfterThis >= orderedCards.length) {
-      if (direction === 'left' || !requiresVoting) {
-        nextState = 'completed';
-        play.status = 'completed';
-        play.completedAt = new Date();
-        const noExpiry = new Date('2099-12-31T23:59:59.999Z');
-        play.expiresAt = noExpiry;
-        sessionCompleted = true;
-      }
+    
+    // Check if ALL cards have been swiped (not just compared to total swipes)
+    const allSwipedCardIds = new Set([...play.swipes.map(s => s.uuid), cardUUID]);
+    const allCardsSwiped = orderedCards.every((card: any) => allSwipedCardIds.has(card.uuid));
+    
+    // Only complete if all cards are swiped AND we're not transitioning to voting
+    if (allCardsSwiped && !requiresVoting) {
+      console.log(`🎊 All cards processed for play ${play.uuid}, completing session`);
+      nextState = 'completed';
+      play.status = 'completed';
+      play.completedAt = new Date();
+      const noExpiry = new Date('2099-12-31T23:59:59.999Z');
+      play.expiresAt = noExpiry;
+      sessionCompleted = true;
     }
 
     play.state = nextState;

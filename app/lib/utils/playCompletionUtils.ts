@@ -41,6 +41,7 @@ console.log(`🔍 Checking play completion for ${play.uuid?.substring(0, 8)}...`
 
   // Strategy 1: Check if all deck cards have been swiped AND no votes are pending
   // Don't complete if the play is in voting/comparing state as votes might be pending
+  // Don't complete if no swipes have been made (prevents premature completion)
   try {
     const swipedCardIds = new Set(play.swipes?.map((swipe: any) => swipe.uuid) || []);
     const deckCardIds = new Set(play.deck || []);
@@ -51,7 +52,8 @@ console.log(`🔍 Checking play completion for ${play.uuid?.substring(0, 8)}...`
     // Don't complete if we're still in voting/comparing phase - wait for votes to finish
     const hasPendingVotes = play.state === 'voting' || play.state === 'comparing';
     
-    if (allCardsSwiped && deckCardIds.size > 0 && !hasPendingVotes) {
+    // Only complete if we have actually swiped cards AND all cards have been processed
+    if (allCardsSwiped && deckCardIds.size > 0 && swipedCardIds.size > 0 && !hasPendingVotes) {
       console.log(`✅ Play completion detected: All deck cards have been swiped and no votes pending`);
       return {
         shouldComplete: true,
@@ -61,16 +63,18 @@ console.log(`🔍 Checking play completion for ${play.uuid?.substring(0, 8)}...`
       };
     } else if (allCardsSwiped && hasPendingVotes) {
       console.log(`⏳ All cards swiped but votes are pending (state: ${play.state}) - not completing yet`);
+    } else if (swipedCardIds.size === 0) {
+      console.log(`⏸️ No cards swiped yet - session just started`);
     }
   } catch (error) {
     console.warn('Failed to check deck exhaustion:', error);
   }
 
   // Strategy 2: Mathematical verification - all cards have been swiped (left or right)
-  // But don't complete if votes are still pending
+  // But don't complete if votes are still pending OR if no swipes have been made yet
   const hasPendingVotes = play.state === 'voting' || play.state === 'comparing';
   
-  if (metrics.totalCards > 0 && metrics.totalSwipes >= metrics.totalCards && !hasPendingVotes) {
+  if (metrics.totalCards > 0 && metrics.totalSwipes >= metrics.totalCards && metrics.totalSwipes > 0 && !hasPendingVotes) {
     console.log(`✅ Play completion detected: All cards have been swiped and no votes pending`);
     return {
       shouldComplete: true,
@@ -80,12 +84,15 @@ console.log(`🔍 Checking play completion for ${play.uuid?.substring(0, 8)}...`
     };
   } else if (metrics.totalCards > 0 && metrics.totalSwipes >= metrics.totalCards && hasPendingVotes) {
     console.log(`⏳ All cards swiped but votes are pending (state: ${play.state}) - not completing yet`);
+  } else if (metrics.totalSwipes === 0) {
+    console.log(`⏸️ No swipes yet - session just started`);
   }
   
   // Strategy 4: Cross-verification - sum of personal ranking and left swipes equals total cards
   // This is a fallback for edge cases where swipe counting might be inconsistent
+  // BUT only if we have actually made some swipes (prevent premature completion)
   const processedCards = metrics.personalRankingLength + metrics.leftSwipes;
-  if (metrics.totalCards > 0 && processedCards >= metrics.totalCards) {
+  if (metrics.totalCards > 0 && processedCards >= metrics.totalCards && metrics.totalSwipes > 0) {
     console.log(`✅ Play completion detected: All cards accounted for (ranked + discarded)`);
     return {
       shouldComplete: true,

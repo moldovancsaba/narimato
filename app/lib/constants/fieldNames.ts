@@ -18,7 +18,7 @@
  */
 
 
-// Session-specific field names
+// Session-specific field names (LEGACY - for compatibility)
 export const SESSION_FIELDS = {
   UUID: 'sessionUUID',
   STATUS: 'status',
@@ -33,13 +33,15 @@ export const SESSION_FIELDS = {
   LAST_ACTIVITY: 'lastActivity'
 } as const;
 
-// Play session field names
+// Play session field names (CURRENT STANDARD)
 export const PLAY_FIELDS = {
-  UUID: 'playUUID',
+  UUID: 'uuid', // Play model uses 'uuid' not 'playUUID'
+  SESSION_UUID: 'sessionUUID',
   STATUS: 'status',
   STATE: 'state',
   CREATED_AT: 'createdAt',
-  UPDATED_AT: 'updatedAt'
+  UPDATED_AT: 'updatedAt',
+  COMPLETED_AT: 'completedAt'
 } as const;
 
 // Other common field names

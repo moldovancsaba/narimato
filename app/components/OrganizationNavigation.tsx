@@ -18,13 +18,31 @@ import { motion } from 'framer-motion';
 const OrganizationNavigation = React.memo(function OrganizationNavigation() {
   const pathname = usePathname();
   const params = useParams();
-  const slug = params?.slug as string;
+  
+  // Try to get slug from params or extract from pathname
+  let slug = params?.slug as string;
+  
+  // If no slug in params, try to extract from pathname
+  if (!slug) {
+    const pathSegments = pathname.split('/').filter(Boolean);
+    if (pathname.startsWith('/organization/') && pathSegments.length >= 2) {
+      slug = pathSegments[1]; // /organization/[slug]
+    } else if (pathSegments.length >= 1) {
+      slug = pathSegments[0]; // /[slug]
+    }
+  }
 
   if (!slug) return null;
 
+  // Determine base path - use /organization/[slug] format for consistency
+  const basePath = pathname.startsWith('/organization/') ? `/organization/${slug}` : `/organization/${slug}`;
+  
   const navigationItems = [
-    { href: `/${slug}`, icon: '🏠', label: 'Choose Deck' },
-    { href: `/${slug}/rankings`, icon: '🏆', label: 'Global Rankings' }
+    { href: `${basePath}`, icon: '🏠', label: 'Home' },
+    { href: `${basePath}/play`, icon: '🎮', label: 'Play' },
+    { href: `${basePath}/ranks`, icon: '🏆', label: 'Rankings' },
+    { href: `${basePath}/cards`, icon: '🎴', label: 'Cards' },
+    { href: `${basePath}/card-editor`, icon: '🎨', label: 'Editor' }
   ];
 
   return (
@@ -32,8 +50,8 @@ const OrganizationNavigation = React.memo(function OrganizationNavigation() {
       <div className="flex justify-around items-center px-2 py-3 max-w-screen-xl mx-auto h-full">
         {navigationItems.map((item) => {
           const isActive = pathname === item.href || 
-            (item.href === `/${slug}/rankings` && pathname.startsWith(`/${slug}/rankings`)) ||
-            (item.href === `/${slug}/completed` && pathname.startsWith(`/${slug}/completed`));
+            pathname.startsWith(`${item.href}/`) || 
+            (item.href === basePath && pathname === basePath);
           
           return (
             <Link

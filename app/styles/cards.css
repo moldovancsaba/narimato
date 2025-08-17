@@ -1,14 +1,15 @@
-  /* Card Components - Mobile First with Dark Mode Enhancement */
+  /* Card Components - BLACK/INDIGO/CYAN THEME */
   .card-container {
-    @apply relative flex items-center justify-center rounded-lg sm:rounded-xl;
-    /* Dynamic aspect ratio set via inline styles by BaseCard - no fallback needed */
-    /* Simple background color instead of gradient to provide card visibility */
-    background-color: #4a5568; /* Gray-600 as neutral background */
-    box-shadow: var(--shadow-card-mobile);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border-radius: var(--border-radius-lg-mobile);
-    transition: var(--transition);
-    /* Enhanced mobile dark mode outline for better visibility */
-    @apply dark:ring-1 dark:ring-white/10 dark:bg-gray-700;
+    /* Black/indigo gradient background */
+    background: linear-gradient(135deg, #1e1b4b 0%, #111827 50%, #0f0f0f 100%);
+    border: 2px solid #4338ca;
+    box-shadow: 0 4px 20px rgba(6, 182, 212, 0.3), 0 0 30px rgba(67, 56, 202, 0.2);
+    transition: all 0.3s ease-in-out;
     
     /* GLOBAL FALLBACK: Ensure NO card can ever be 1x1px */
     min-width: 80px !important;
@@ -114,39 +115,40 @@
     max-width: 20rem; /* max-w-sm equivalent */
   }
   
-  /* Desktop enhancements with improved dark mode */
+  /* Desktop enhancements with black/indigo/cyan theme */
   @media (min-width: 640px) {
     .card-container {
-      box-shadow: var(--shadow-card);
+      box-shadow: 0 6px 25px rgba(6, 182, 212, 0.25), 0 2px 12px rgba(67, 56, 202, 0.15);
       border-radius: var(--border-radius-lg);
-      /* Enhanced desktop dark mode styling */
-      @apply dark:ring-1 dark:ring-white/15;
     }
   }
   
   @media (min-width: 768px) {
     .card-container {
-      /* Tablet-specific dark mode enhancements */
-      @apply dark:ring-2 dark:ring-white/10;
+      box-shadow: 0 8px 30px rgba(6, 182, 212, 0.3), 0 4px 15px rgba(67, 56, 202, 0.2);
     }
   }
   
   /* Large desktop optimizations */
   @media (min-width: 1024px) {
     .card-container {
-      @apply dark:ring-1 dark:ring-white/20;
+      box-shadow: 0 10px 35px rgba(6, 182, 212, 0.35), 0 6px 18px rgba(67, 56, 202, 0.25);
     }
   }
   
-  /* Hover effects only on desktop - removed scaling to prevent overflow */
+  /* Hover effects with cyan glow enhancement */
   @media (hover: hover) and (pointer: fine) {
     .card-container:hover {
-      box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+      transform: translateY(-2px);
+      border-color: #06b6d4;
+      box-shadow: 0 15px 40px rgba(6, 182, 212, 0.4), 0 8px 25px rgba(67, 56, 202, 0.3), 0 0 20px rgba(6, 182, 212, 0.2);
+      background: linear-gradient(135deg, #312e81 0%, #1f2937 50%, #111111 100%);
     }
     
-    /* Remove dark hover shadow for vote cards */
+    /* Enhanced hover effect for vote cards */
     .vote-grid .card-container:hover {
-      box-shadow: var(--shadow-card);
+      transform: translateY(-3px);
+      box-shadow: 0 18px 45px rgba(6, 182, 212, 0.45), 0 10px 30px rgba(67, 56, 202, 0.35);
     }
   }
   
@@ -201,40 +203,38 @@
   }
 
   .content-card {
-    @apply rounded-lg shadow-md w-full;
-    background-color: var(--card-background);
-    color: var(--text-primary);
+    border-radius: var(--border-radius-lg-mobile);
+    width: 100%;
+    /* Black/indigo gradient background with cyan accents */
+    background: linear-gradient(135deg, #1e1b4b 0%, #111827 50%, #0f0f0f 100%);
+    color: #ffffff;
     /* Mobile: smaller padding and border radius */
     padding: var(--spacing-mobile);
-    border-radius: var(--border-radius-lg-mobile);
-    box-shadow: var(--shadow-card-mobile);
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.2), 0 2px 8px rgba(67, 56, 202, 0.15);
+    border: 1px solid #4338ca;
     max-width: 100%;
-    /* Enhanced mobile dark mode contrast */
-    @apply dark:ring-1 dark:ring-white/10 dark:bg-gradient-to-br dark:from-gray-800 dark:to-gray-900;
   }
   
   @media (min-width: 640px) {
     .content-card {
       padding: var(--spacing);
       border-radius: var(--border-radius-lg);
-      box-shadow: var(--shadow-card);
+      box-shadow: 0 8px 30px rgba(6, 182, 212, 0.3), 0 4px 15px rgba(67, 56, 202, 0.2);
       max-width: 28rem; /* max-w-md */
-      /* Desktop dark mode improvements */
-      @apply dark:ring-1 dark:ring-white/15 dark:backdrop-blur-sm;
     }
   }
   
   .content-card-lg {
-    @apply rounded-lg shadow-lg w-full;
-    background-color: var(--card-background);
-    color: var(--text-primary);
+    border-radius: var(--border-radius-lg-mobile);
+    width: 100%;
+    /* Black/indigo gradient background with enhanced shadows */
+    background: linear-gradient(135deg, #1e1b4b 0%, #111827 50%, #0f0f0f 100%);
+    color: #ffffff;
     /* Mobile: smaller padding and border radius */
     padding: calc(var(--spacing-mobile) * 1.5);
-    border-radius: var(--border-radius-lg-mobile);
-    box-shadow: var(--shadow-card-mobile);
+    box-shadow: 0 6px 25px rgba(6, 182, 212, 0.25), 0 3px 12px rgba(67, 56, 202, 0.2);
+    border: 1px solid #4338ca;
     max-width: 100%;
-    /* Enhanced mobile dark mode styling */
-    @apply dark:ring-1 dark:ring-white/10 dark:bg-gradient-to-br dark:from-gray-800/90 dark:to-gray-900/90;
   }
   
   /* Ranking Position Badge */
@@ -272,17 +272,15 @@
     .content-card-lg {
       padding: var(--spacing-lg);
       border-radius: var(--border-radius-lg);
-      box-shadow: var(--shadow-card);
+      box-shadow: 0 12px 40px rgba(6, 182, 212, 0.35), 0 6px 20px rgba(67, 56, 202, 0.25);
       width: 100%;
-      /* Desktop dark mode enhancements */
-      @apply dark:ring-1 dark:ring-white/20 dark:backdrop-blur-md;
     }
   }
   
   /* Extra large screen optimizations */
   @media (min-width: 1280px) {
     .content-card-lg {
-      @apply dark:ring-2 dark:ring-white/15;
+      box-shadow: 0 16px 50px rgba(6, 182, 212, 0.4), 0 8px 25px rgba(67, 56, 202, 0.3);
     }
   }
   

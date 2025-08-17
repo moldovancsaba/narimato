@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getOrganizationContext } from '@/app/lib/middleware/organization';
 import { createOrgDbConnect } from '@/app/lib/utils/db';
-import { Session } from '@/app/lib/models/Session';
+import { Play } from '@/app/lib/models/Play';
 import { Card } from '@/app/lib/models/Card';
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const sessionId = searchParams.get('sessionId');
+    const sessionUUID = searchParams.get('session') || searchParams.get('sessionId') || searchParams.get('sessionUUID');
 
-    if (!sessionId) {
+    if (!sessionUUID) {
       return new NextResponse(
         JSON.stringify({ 
-          error: 'Session ID is required',
-          errorCode: 'MISSING_SESSION_ID',
-          details: 'A valid session ID must be provided to retrieve results.',
+          error: 'Session UUID is required',
+          errorCode: 'MISSING_SESSION_UUID',
+          details: 'A valid session UUID must be provided to retrieve results.',
           suggestions: [
             'Complete a voting session first',
             'Check that you\'re accessing this from a completed session',
@@ -27,18 +27,18 @@ export async function GET(request: NextRequest) {
 
     // Get organization context
     const orgContext = await getOrganizationContext(request);
-    const organizationId = orgContext?.organizationId || 'default';
+    const organizationUUID = orgContext?.organizationUUID || 'default';
 
     const connectDb = createOrgDbConnect(organizationUUID);
     const connection = await connectDb();
     
-    // Register connection-specific models
-    const SessionModel = connection.model('Session', Session.schema);
+    // Register connection-specific models - Use Play model instead of Session
+    const PlayModel = connection.model('Play', Play.schema);
     const CardModel = connection.model('Card', Card.schema);
 
-    // Find the session
-    const session = await SessionModel.findOne({ sessionId });
-    if (!session) {
+    // Find the play session by UUID
+    const play = await PlayModel.findOne({ uuid: sessionUUID });
+    if (!play) {
       return new NextResponse(
         JSON.stringify({ 
           error: 'Session not found',
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get the personal ranking with card details
-    const rankedCardIds = session.personalRanking;
+    const rankedCardIds = play.personalRanking;
     if (!rankedCardIds || rankedCardIds.length === 0) {
       return new NextResponse(
         JSON.stringify({
@@ -84,47 +84,47 @@ export async function GET(request: NextRequest) {
         cardId,
         card: card ? {
           uuid: card.uuid,
-          type: card.type,
-          content: card.content,
-          title: card.title || ''
+          name: card.name,
+          body: card.body,
+          title: card.name || ''
         } : null
       };
     }).filter((item: any) => item.card !== null);
 
     // Calculate session statistics
-    const totalSwipes = session.swipes?.length || 0;
-    const rightSwipes = session.swipes?.filter((swipe: any) => swipe.direction === 'right').length || 0;
-    const leftSwipes = session.swipes?.filter((swipe: any) => swipe.direction === 'left').length || 0;
-    const totalVotes = session.votes?.length || 0;
+    const totalSwipes = play.swipes?.length || 0;
+    const rightSwipes = play.swipes?.filter((swipe: any) => swipe.direction === 'right').length || 0;
+    const leftSwipes = play.swipes?.filter((swipe: any) => swipe.direction === 'left').length || 0;
+    const totalVotes = play.votes?.length || 0;
     
-    const sessionStart = new Date(session.createdAt);
-    const sessionEnd = session.completedAt ? new Date(session.completedAt) : new Date();
+    const sessionStart = new Date(play.createdAt);
+    const sessionEnd = play.completedAt ? new Date(play.completedAt) : new Date();
     const sessionDuration = Math.round((sessionEnd.getTime() - sessionStart.getTime()) / 1000); // in seconds
 
     const statistics = {
-      totalCards: session.deck?.length || 0,
+      totalCards: play.deck?.length || 0,
       cardsRanked: personalRanking.length,
       cardsDiscarded: leftSwipes,
       totalSwipes,
       rightSwipes,
       leftSwipes,
       totalVotes,
-      completionRate: session.deck?.length ? Math.round((totalSwipes / session.deck.length) * 100) : 0,
+      completionRate: play.deck?.length ? Math.round((totalSwipes / play.deck.length) * 100) : 0,
       sessionDuration,
       averageVotesPerCard: personalRanking.length > 1 ? Math.round(totalVotes / (personalRanking.length - 1)) : 0
     };
 
     return new NextResponse(
       JSON.stringify({
-        sessionId,
+        sessionUUID,
         personalRanking,
         statistics,
         sessionInfo: {
-          status: session.status,
-          state: session.state,
-          createdAt: session.createdAt,
-          completedAt: session.completedAt,
-          lastActivity: session.lastActivity
+          status: play.status,
+          state: play.state,
+          createdAt: play.createdAt,
+          completedAt: play.completedAt,
+          lastActivity: play.lastActivity
         }
       }),
       { 

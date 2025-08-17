@@ -12,9 +12,17 @@ export async function POST(request: Request) {
   try {
     // Get organization context
     const orgContext = await getOrganizationContext(request);
-    const organizationId = orgContext?.organizationId || 'default';
+    
+    if (!orgContext) {
+      return new NextResponse(
+        JSON.stringify({ [API_FIELDS.ERROR]: 'Organization context required' }),
+        { status: 400 }
+      );
+    }
+    
+    const organizationUUID = orgContext.organizationUUID;
 
-    const connectDb = createOrgDbConnect(organizationId);
+    const connectDb = createOrgDbConnect(organizationUUID);
     const connection = await connectDb();
     
     // Register connection-specific models
@@ -29,9 +37,12 @@ export async function POST(request: Request) {
     // Build match criteria based on deck selection
     let matchCriteria: any = { isActive: true };
     if (selectedTag !== 'all') {
-      matchCriteria.tags = selectedTag;
+      // Use hashtags field for card hierarchy filtering
+      matchCriteria.hashtags = selectedTag;
     }
 
+    console.log(`🔍 Searching for cards with criteria:`, matchCriteria);
+    
     // Get cards based on selected deck
     const cards = await CardModel.aggregate([
       { $match: matchCriteria },
@@ -47,9 +58,15 @@ export async function POST(request: Request) {
       { $sample: { size: 999999 } } // Large number to get all cards in random order
     ]);
 
+    console.log(`📋 Found ${cards.length} cards for deck: ${selectedTag}`);
+    
     if (cards.length === 0) {
+      // Also check how many total cards exist to help debugging
+      const totalCards = await CardModel.countDocuments({ isActive: true });
+      console.log(`❌ No cards found with criteria ${JSON.stringify(matchCriteria)}. Total active cards: ${totalCards}`);
+      
       return new NextResponse(
-        JSON.stringify({ [API_FIELDS.ERROR]: 'No cards available' }),
+        JSON.stringify({ [API_FIELDS.ERROR]: `No cards available for deck '${selectedTag}'. Found ${totalCards} total active cards in organization.` }),
         { status: 404 }
       );
     }
@@ -68,6 +85,7 @@ export async function POST(request: Request) {
       uuid: playUuid,
       sessionUUID: sessionUUID,
       deckUUID: playUuid, // Use playUuid as deck identifier for now
+      organizationUUID: organizationUUID, // FUNCTIONAL: Multi-tenant database separation requires organization context
       status: 'active',
       state: 'swiping',
       deck: cardUuids,

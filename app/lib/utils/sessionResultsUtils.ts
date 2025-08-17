@@ -109,6 +109,7 @@ export const savePlayResults = async (play: any, connection: Connection) => {
     console.log(`📋 Checking for existing results with sessionUUID: ${play.uuid}`);
     
     // Check if results already exist to avoid duplicates
+    // IMPORTANT: SessionResults uses sessionUUID field to store the play UUID
     const existingResults = await SessionResultsModel.findOne({ sessionUUID: play.uuid });
     if (existingResults) {
       console.log(`⚠️ Results already exist for play ${play.uuid}, updating existing record`);

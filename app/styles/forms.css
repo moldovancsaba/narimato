@@ -1,202 +1,389 @@
-/* Form Styles */
-.form-label {
-  @apply block text-sm font-medium mb-2;
-  color: var(--text-primary);
+/* Form Components - Black/Indigo/Cyan Design System */
+
+/* Form Container - BLACK/INDIGO/CYAN THEME */
+.form-container {
+  width: 100%;
+  max-width: 28rem;
+  margin: 0 auto;
+  padding: var(--spacing-mobile);
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1e1b4b 0%, #111827 50%, #0f0f0f 100%);
+  border: 2px solid #4338ca;
+  box-shadow: 0 8px 30px rgba(6, 182, 212, 0.15), 0 4px 15px rgba(67, 56, 202, 0.1);
+  color: #ffffff;
 }
 
+@media (min-width: 640px) {
+  .form-container {
+    padding: var(--spacing);
+    border-radius: 16px;
+    box-shadow: 0 12px 40px rgba(6, 182, 212, 0.2), 0 6px 20px rgba(67, 56, 202, 0.15);
+  }
+}
+
+/* Form Title */
+.form-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  text-align: center;
+  background: linear-gradient(135deg, #ffffff 0%, #06b6d4 50%, #00ffff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Form Labels */
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: #d1d5db;
+}
+
+.form-label.required::after {
+  content: ' *';
+  color: var(--danger);
+}
+
+/* Form Inputs */
 .form-input {
-  @apply w-full px-3 py-2 border rounded-lg transition-colors duration-200;
-  background-color: var(--input-background) !important;
-  color: var(--text-primary) !important;
-  border-color: var(--border-color);
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #374151;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+  color: #ffffff;
+  font-size: 14px;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(6, 182, 212, 0.05);
+}
+
+@media (min-width: 640px) {
+  .form-input {
+    border-radius: 10px;
+  }
 }
 
 .form-input:focus {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-  border-color: var(--primary);
+  outline: none;
+  border-color: #06b6d4;
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.3), 0 6px 20px rgba(6, 182, 212, 0.15);
+  background: linear-gradient(135deg, #1e1b4b 0%, #111827 100%);
 }
 
 .form-input::placeholder {
-  color: var(--text-muted);
+  color: #6b7280;
 }
 
-/* Specific styles for different form elements */
-input.form-input,
-textarea.form-input,
-select.form-input {
-  background-color: var(--input-background) !important;
-  color: var(--text-primary) !important;
-  border: 1px solid var(--border-color);
-}
-
-/* Ensure proper styling in dark mode */
-[data-theme="dark"] .form-input,
-[data-theme="dark"] input.form-input,
-[data-theme="dark"] textarea.form-input,
-[data-theme="dark"] select.form-input {
-  background-color: var(--input-background) !important;
-  color: var(--text-primary) !important;
-  border-color: var(--border-color);
-}
-
-/* Color input specific styling */
-input[type="color"].form-input {
-  padding: 4px;
-  border: 1px solid var(--border-color);
-  cursor: pointer;
-}
-
-/* Range input styling */
-input[type="range"] {
-  accent-color: var(--primary);
+/* Textarea specific styling */
+textarea.form-input {
+  min-height: 120px;
+  resize: vertical;
 }
 
 /* Select dropdown styling */
 select.form-input {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
-  background-position: right 8px center;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2306b6d4' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 12px center;
   background-repeat: no-repeat;
   background-size: 16px 16px;
   padding-right: 40px;
+  cursor: pointer;
 }
 
-/* Dark mode dropdown arrow */
-[data-theme="dark"] select.form-input {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%94a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+/* Checkbox and Radio Styling */
+input[type="checkbox"],
+input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+  accent-color: var(--accent);
+  cursor: pointer;
 }
 
-/* Disabled state */
+.form-checkbox-container,
+.form-radio-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.form-checkbox-label,
+.form-radio-label {
+  color: var(--text-primary);
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Input States */
 .form-input:disabled {
-  background-color: var(--background);
-  color: var(--text-muted);
+  background-color: var(--border-color);
+  color: var(--text-disabled);
   cursor: not-allowed;
   opacity: 0.6;
 }
 
-/* Read-only state */
 .form-input[readonly] {
-  background-color: var(--background);
+  background-color: var(--card-background);
   color: var(--text-secondary);
   cursor: default;
+  border-color: var(--border-light);
 }
 
-/* Emergency fallback styling to prevent white text on white background */
-.form-input {
-  /* Light mode fallbacks */
-  background: white !important;
-  color: #171717 !important;
+.form-input.error {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
 }
 
-[data-theme="dark"] .form-input,
-[data-theme="dark"] input.form-input,
-[data-theme="dark"] textarea.form-input,
-[data-theme="dark"] select.form-input {
-  /* Dark mode fallbacks */
-  background: #1f2937 !important;
-  color: #f5f5f5 !important;
+.form-input.success {
+  border-color: var(--success);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
 }
 
-/* Override with CSS variables when they work properly */
-.form-input {
-  background-color: var(--input-background, white) !important;
-  color: var(--text-primary, #171717) !important;
+/* Form Groups */
+.form-group {
+  margin-bottom: 1rem;
 }
 
-[data-theme="dark"] .form-input,
-[data-theme="dark"] input.form-input,
-[data-theme="dark"] textarea.form-input,
-[data-theme="dark"] select.form-input {
-  background-color: var(--input-background, #1f2937) !important;
-  color: var(--text-primary, #f5f5f5) !important;
+.form-group:last-child {
+  margin-bottom: 0;
 }
 
-/* Hashtag Selector Styles */
+/* Form Messages */
+.form-message {
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
+  font-weight: 500;
+}
+
+.form-message.error {
+  color: var(--danger);
+}
+
+.form-message.success {
+  color: var(--success);
+}
+
+.form-message.info {
+  color: var(--info);
+}
+
+.form-message.warning {
+  color: var(--warning);
+}
+
+/* Form Buttons */
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 2rem;
+  justify-content: flex-end;
+}
+
+@media (max-width: 640px) {
+  .form-actions {
+    flex-direction: column;
+  }
+}
+
+/* Hashtag Selector - Redesigned for new theme */
 .hashtag-selector {
-  @apply space-y-2;
+  position: relative;
+}
+
+.hashtag-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-mobile);
+  background-color: var(--input-background);
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: var(--transition);
+}
+
+.hashtag-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2);
 }
 
 .hashtag-suggestions {
-  @apply absolute top-full left-0 right-0 z-50 max-h-48 overflow-y-auto;
-  @apply border border-gray-300 dark:border-gray-600 rounded-lg;
-  @apply bg-white dark:bg-gray-800 shadow-lg;
-  margin-top: 2px;
-  /* Force background colors to override any inherited styles */
-  background-color: white !important;
-}
-
-/* Dark mode background for suggestions */
-[data-theme="dark"] .hashtag-suggestions,
-.dark .hashtag-suggestions {
-  background-color: #374151 !important; /* Dark gray background for better contrast */
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  max-height: 200px;
+  overflow-y: auto;
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-mobile);
+  box-shadow: var(--shadow-card);
+  margin-top: 4px;
 }
 
 .hashtag-suggestion {
-  @apply block w-full text-left px-3 py-2 text-sm transition-colors;
-  @apply hover:bg-gray-100 dark:hover:bg-gray-700;
-  @apply border-0 bg-transparent;
-/* Set stark text color for enhanced contrast in both light and dark modes */
-  color: #1f2937 !important; /* Near-black text for high contrast in light mode */
+  display: block;
+  width: 100%;
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 14px;
+  color: var(--text-primary);
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition);
 }
 
-/* Ultra-strong overrides for hashtag text visibility */
-.hashtag-suggestion,
-.hashtag-suggestion * {
-  color: #000000 !important; /* Pure black text for maximum contrast in light mode */
-  background-color: transparent !important;
-}
-
-/* Dark mode text color for hashtag suggestions */
-[data-theme="dark"] .hashtag-suggestion,
-[data-theme="dark"] .hashtag-suggestion *,
-.dark .hashtag-suggestion,
-.dark .hashtag-suggestion * {
-  color: #ffffff !important; /* Pure white text for maximum contrast in dark mode */
-  background-color: transparent !important;
-}
-
-/* Hover states with ultra-strong contrast */
 .hashtag-suggestion:hover,
-.hashtag-suggestion:hover * {
-  color: #000000 !important; /* Pure black on light hover */
-  background-color: #f3f4f6 !important; /* Light gray hover background */
-}
-
-[data-theme="dark"] .hashtag-suggestion:hover,
-[data-theme="dark"] .hashtag-suggestion:hover *,
-.dark .hashtag-suggestion:hover,
-.dark .hashtag-suggestion:hover * {
-  color: #ffffff !important; /* Pure white on dark hover */
-  background-color: #4b5563 !important; /* Dark gray hover background */
-}
-
-.hashtag-suggestion:first-child {
-  @apply rounded-t-lg;
-}
-
-.hashtag-suggestion:last-child {
-  @apply rounded-b-lg;
+.hashtag-suggestion:focus {
+  background-color: rgba(6, 182, 212, 0.1);
+  color: var(--accent);
 }
 
 .hashtag-selected-container {
-  @apply flex flex-wrap gap-2 mt-2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .hashtag-badge {
-  @apply inline-flex items-center gap-1 px-2 py-1 rounded text-sm font-medium;
-  @apply bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200;
-  @apply transition-colors;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--border-radius-mobile);
+  font-size: 12px;
+  font-weight: 500;
+  background-color: rgba(6, 182, 212, 0.1);
+  color: var(--accent);
+  border: 1px solid rgba(6, 182, 212, 0.3);
 }
 
 .hashtag-remove {
-  @apply ml-1 text-blue-600 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-100;
-  @apply border-0 bg-transparent p-0 leading-none;
-  @apply transition-colors cursor-pointer;
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0;
   font-size: 16px;
   line-height: 1;
+  transition: var(--transition);
 }
 
 .hashtag-remove:hover {
-  @apply scale-110;
+  color: var(--danger);
+  transform: scale(1.1);
+}
+
+/* File Input Styling */
+.form-file-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px dashed var(--border-color);
+  border-radius: var(--border-radius-mobile);
+  background-color: var(--input-background);
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: center;
+  transition: var(--transition);
+}
+
+.form-file-input:hover,
+.form-file-input:focus {
+  border-color: var(--accent);
+  background-color: rgba(6, 182, 212, 0.05);
+}
+
+/* Range Input Styling */
+input[type="range"].form-input {
+  padding: 8px;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="range"].form-input::-webkit-slider-track {
+  background: var(--border-color);
+  height: 4px;
+  border-radius: 2px;
+}
+
+input[type="range"].form-input::-webkit-slider-thumb {
+  appearance: none;
+  height: 18px;
+  width: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+input[type="range"].form-input::-moz-range-track {
+  background: var(--border-color);
+  height: 4px;
+  border-radius: 2px;
+}
+
+input[type="range"].form-input::-moz-range-thumb {
+  height: 18px;
+  width: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Color Input Styling */
+input[type="color"].form-input {
+  padding: 4px;
+  height: 44px;
+  cursor: pointer;
+}
+
+/* Search Input with Icon */
+.form-search-container {
+  position: relative;
+}
+
+.form-search-container .form-input {
+  padding-left: 44px;
+}
+
+.form-search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+  font-size: 16px;
+}
+
+/* Form validation status indicators */
+.form-input-container {
+  position: relative;
+}
+
+.form-validation-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  pointer-events: none;
+}
+
+.form-validation-icon.success {
+  color: var(--success);
+}
+
+.form-validation-icon.error {
+  color: var(--danger);
 }

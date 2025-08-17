@@ -123,10 +123,12 @@ export default function CardRankingsPage() {
   return (
     <PageLayout title={`${cardName.startsWith('#') ? cardName : '#' + cardName} Rankings`}>
       <div className="mb-8">
-        <p className="text-sm text-muted mb-4">
-          Rankings for cards in the {cardName.startsWith('#') ? cardName : '#' + cardName} category, calculated using the ELO rating system
-          based on head-to-head comparisons across all user sessions.
-        </p>
+        <div className="text-with-background">
+          <p className="text-sm text-muted mb-0">
+            Rankings for cards in the {cardName.startsWith('#') ? cardName : '#' + cardName} category, calculated using the ELO rating system
+            based on head-to-head comparisons across all user sessions.
+          </p>
+        </div>
       </div>
       
       {message && ranking.length === 0 ? (

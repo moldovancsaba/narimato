@@ -29,9 +29,10 @@ interface PlayableCard {
 interface OrganizationMainPageProps {
   organization: any;
   isOrgSpecific: boolean;
+  slug?: string; // Organization slug for URL construction
 }
 
-export default function OrganizationMainPage({ organization, isOrgSpecific }: OrganizationMainPageProps) {
+export default function OrganizationMainPage({ organization, isOrgSpecific, slug }: OrganizationMainPageProps) {
   const router = useRouter();
   const [isStarting, setIsStarting] = useState(false);
   const [playableCards, setPlayableCards] = useState<PlayableCard[]>([]);
@@ -116,15 +117,15 @@ export default function OrganizationMainPage({ organization, isOrgSpecific }: Or
         }
       }
       
-      const response = await fetch('/api/v1/play/start', {
+      const response = await fetch('/api/v1/session/start', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Organization-UUID': organization?.OrganizationUUID || 'default'
         },
         body: JSON.stringify({ 
-          cardName: selectedTag,
-          sessionId: browserSessionId
+          deckTag: selectedTag,
+          sessionUUID: browserSessionId
         }),
       });
 
@@ -138,8 +139,12 @@ export default function OrganizationMainPage({ organization, isOrgSpecific }: Or
         localStorage.setItem('sessionUUID', playData.playUuid);
       }
       
-      // Navigate to swipe page
-      router.push('/swipe');
+      // Navigate to organization-specific swipe page if slug is provided
+      if (isOrgSpecific && slug) {
+        router.push(`/organization/${slug}/swipe?session=${playData.playUuid}`);
+      } else {
+        router.push('/swipe');
+      }
     } catch (error) {
       console.error('Failed to start play:', error);
       setError('Failed to start play');

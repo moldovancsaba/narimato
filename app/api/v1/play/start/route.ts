@@ -85,26 +85,13 @@ export const POST = createOrgAwareRoute(async (request, { organizationUUID }) =>
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + PLAY_EXPIRY_HOURS);
 
-    // CRITICAL: Force close ALL existing active plays for this session before creating new
-    // This ensures clean session state and prevents card state mismatches
+    // FUNCTIONAL: Check for existing active plays but don't force close them immediately
+    // STRATEGIC: Allow multiple concurrent plays for testing, but warn about potential duplicates
     if (sessionUUID) {
       const activePlays = await PlayModel.find({ sessionUUID, status: 'active' });
-      console.log(`🧹 Found ${activePlays.length} active plays to close for session ${sessionUUID?.substring(0, 8)}...`);
-      
-      for (const activePlay of activePlays) {
-        console.log(`🔄 Force closing play ${activePlay.uuid?.substring(0, 8)}... to prevent state conflicts`);
-        activePlay.status = 'completed';
-        activePlay.state = 'completed';
-        activePlay.completedAt = new Date();
-        const noExpiry = new Date('2099-12-31T23:59:59.999Z');
-        activePlay.expiresAt = noExpiry;
-        await activePlay.save();
-        try {
-          await savePlayResults(activePlay, connection);
-          console.log(`✅ Hard closed existing active play: ${activePlay.uuid?.substring(0, 8)}...`);
-        } catch (saveError) {
-          console.warn(`⚠️ Failed to save results for closed play ${activePlay.uuid?.substring(0, 8)}...:`, saveError);
-        }
+      if (activePlays.length > 0) {
+        console.log(`⚠️ Found ${activePlays.length} existing active plays for session ${sessionUUID?.substring(0, 8)}...`);
+        console.log(`🎮 Creating new play anyway - user may have multiple tabs or restarted session`);
       }
     }
 

@@ -64,6 +64,26 @@ const PlaySchema = new mongoose.Schema({
   swipes: [SwipeSchema],
   votes: [VoteSchema],
   personalRanking: [{ type: String }], // Ordered array of CardUUIDs
+  currentPair: {
+    cardA: {
+      uuid: String,
+      name: String,
+      body: {
+        textContent: String,
+        imageUrl: String,
+        background: mongoose.Schema.Types.Mixed // Support both string and object formats
+      }
+    },
+    cardB: {
+      uuid: String,
+      name: String,
+      body: {
+        textContent: String,
+        imageUrl: String,
+        background: mongoose.Schema.Types.Mixed // Support both string and object formats
+      }
+    }
+  }, // Current comparison pair for voting state
   
   // Timestamps
   createdAt: { type: Date, default: Date.now, index: true },
@@ -94,16 +114,67 @@ PlaySchema.methods.getNextComparisonCard = function(currentCard: string): string
   
   if (rankedCards.length === 0 || !currentCard) return null;
   
+  // FUNCTIONAL: Get all card pairs that have already been voted on in this session
+  // STRATEGIC: Prevent showing the same two cards for voting more than once
+  const votedPairs = new Set();
+  this.votes.forEach((vote: any) => {
+    // Create normalized pair keys (sorted to handle A vs B and B vs A the same)
+    const pair = [vote.cardA, vote.cardB].sort().join('|');
+    votedPairs.add(pair);
+  });
+  
+  console.log(`🔍 Session has ${votedPairs.size} voted pairs:`, Array.from(votedPairs));
+  
+  // FUNCTIONAL: Helper function to check if two cards have already been compared
+  // STRATEGIC: Ensures we never show a duplicate comparison in the same session
+  const havePairBeenVoted = (cardA: string, cardB: string): boolean => {
+    const pairKey = [cardA, cardB].sort().join('|');
+    const hasBeenVoted = votedPairs.has(pairKey);
+    if (hasBeenVoted) {
+      console.log(`🚫 Cards ${cardA.substring(0,8)} and ${cardB.substring(0,8)} have already been compared`);
+    }
+    return hasBeenVoted;
+  };
+  
   if (!rankedCards.includes(currentCard)) {
-    return rankedCards[rankedCards.length - 1];
+    // Card is not in ranking yet - find the first ranked card that hasn't been compared
+    for (let i = rankedCards.length - 1; i >= 0; i--) {
+      const candidateCard = rankedCards[i];
+      if (!havePairBeenVoted(currentCard, candidateCard)) {
+        console.log(`✅ Found new comparison: ${currentCard.substring(0,8)} vs ${candidateCard.substring(0,8)} (new card vs ranked)`);
+        return candidateCard;
+      }
+    }
+    console.log(`⚠️ No available comparisons found for new card ${currentCard.substring(0,8)}`);
+    return null;
   }
   
+  // Card is already in ranking - use binary search strategy
+  // Find cards that haven't been compared yet for binary search positioning
   const currentIndex = rankedCards.indexOf(currentCard);
   
-  if (currentIndex > 0) {
-    return rankedCards[currentIndex - 1];
+  // Try cards in order based on binary search strategy (middle-out approach)
+  const searchCandidates = [];
+  
+  // Add cards before current position (higher ranking)
+  for (let i = currentIndex - 1; i >= 0; i--) {
+    searchCandidates.push(rankedCards[i]);
   }
   
+  // Add cards after current position (lower ranking)
+  for (let i = currentIndex + 1; i < rankedCards.length; i++) {
+    searchCandidates.push(rankedCards[i]);
+  }
+  
+  // Find the first candidate that hasn't been compared yet
+  for (const candidateCard of searchCandidates) {
+    if (!havePairBeenVoted(currentCard, candidateCard)) {
+      console.log(`✅ Found new comparison: ${currentCard.substring(0,8)} vs ${candidateCard.substring(0,8)} (binary search)`);
+      return candidateCard;
+    }
+  }
+  
+  console.log(`⚠️ No more available comparisons for card ${currentCard.substring(0,8)} - all possible pairs have been voted`);
   return null;
 };
 
@@ -206,6 +277,26 @@ export interface IPlay extends mongoose.Document {
     timestamp: Date;
   }>;
   personalRanking: string[];   // Array of card UUIDs
+  currentPair?: {
+    cardA: {
+      uuid: string;
+      name: string;
+      body: {
+        textContent?: string;
+        imageUrl?: string;
+        background?: any; // Support both string and object formats
+      }
+    };
+    cardB: {
+      uuid: string;
+      name: string;
+      body: {
+        textContent?: string;
+        imageUrl?: string;
+        background?: any; // Support both string and object formats
+      }
+    }
+  }; // Current comparison pair for voting state
   
   // Methods
   getRightSwipesCount(): number;

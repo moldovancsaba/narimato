@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import PageLayout from '../components/PageLayout';
@@ -49,26 +49,26 @@ function LiveThemePreview({ theme }: { theme: Organization['theme'] }) {
   useOrganizationTheme(theme as any);
   
   return (
-    <div className="mt-4 p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
-      <h4 className="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">🔍 Live Preview</h4>
-      <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+    <div className="mt-4 p-4 content-background">
+      <h4 className="text-sm font-semibold mb-2">🔍 Live Preview</h4>
+      <div className="text-sm text-muted mb-2">
         Changes will be applied immediately when you save. Background effects are visible on this page.
       </div>
       {theme?.emojiList && theme.emojiList.length > 0 && (
         <div className="mb-2">
-          <span className="text-xs text-gray-500">Emojis: </span>
+          <span className="text-xs text-muted">Emojis: </span>
           {theme.emojiList.map((emoji, index) => (
             <span key={index} className="text-lg mr-1">{emoji}</span>
           ))}
         </div>
       )}
       {theme?.googleFontURL && (
-        <div className="text-xs text-gray-500 mb-2">
+        <div className="text-xs text-muted mb-2">
           Font URL: {theme.googleFontURL.substring(0, 50)}...
         </div>
       )}
       {theme?.backgroundCSS && (
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-muted">
           Background CSS: {theme.backgroundCSS.length} characters
         </div>
       )}
@@ -129,14 +129,12 @@ export default function OrganizationEditorPage() {
         body: JSON.stringify({
           name: newOrg.name.trim(),
           slug: newOrg.slug.toLowerCase().trim()
-          // UUID and database name are generated on the backend
         }),
       });
       const data = await response.json();
       if (data.success) {
         setSuccess(`Organization "${data.organization.displayName}" created successfully!`);
         refreshOrganizations();
-        // Reset form and generate new UUID
         setNewOrg({ name: '', slug: '', organizationUuid: uuidv4() });
       } else {
         setError(data.error || 'Failed to create organization');
@@ -163,7 +161,7 @@ export default function OrganizationEditorPage() {
             OrganizationSlug: editingOrg.OrganizationSlug,
             databaseName: editingOrg.databaseName,
             subdomain: editingOrg.subdomain,
-            theme: editingOrg.theme // Include theme data in updates
+            theme: editingOrg.theme
           }
         }),
       });
@@ -204,9 +202,7 @@ export default function OrganizationEditorPage() {
     const confirmMessage = `Are you sure you want to PERMANENTLY DELETE "${org.OrganizationName}"?\n\nThis will:\n• Remove the organization from the database\n• Delete all associated data (cards, rankings, etc.)\n• Drop the database: ${org.databaseName}\n\nThis action CANNOT be undone!`;
     
     if (!confirm(confirmMessage)) return;
-    
-    // Double confirmation for destructive action
-    if (!confirm('This is your final warning. Type "DELETE" to confirm permanent deletion.\n\nAre you absolutely sure?')) return;
+    if (!confirm('This is your final warning. Are you absolutely sure?')) return;
     
     try {
       setError(null);
@@ -229,7 +225,7 @@ export default function OrganizationEditorPage() {
     const success = await switchToOrganization(org.OrganizationUUID);
     if (success) {
       setSuccess(`Switched to organization: ${org.OrganizationName}`);
-      router.push('/cards'); 
+      router.push(`/organization/${org.OrganizationSlug}/cards`); 
     } else {
       setError('Failed to switch to organization');
     }
@@ -237,349 +233,435 @@ export default function OrganizationEditorPage() {
 
   if (loading) {
     return (
-      <PageLayout 
-        title="Organization Editor" 
-        fullscreen={true}
-      >
+      <PageLayout title="Organization Editor" fullscreen={true}>
         <div className="flex items-center justify-center h-full">
-          <LoadingSpinner 
-            size="lg" 
-            message="Loading organizations..." 
-            className="text-lg"
-          />
+          <LoadingSpinner size="lg" message="Loading organizations..." />
         </div>
       </PageLayout>
     );
   }
 
   return (
-    <PageLayout 
-      title="Organization Editor" 
-      fullscreen={true}
-    >
-      <div className="responsive-padding space-y-8 max-w-none">
+    <PageLayout title="Organization Editor" fullscreen={true}>
+      <div className="w-full h-full flex flex-col gap-6 p-6">
+        
+        {/* Status Messages */}
         {error && (
           <div className="status-error p-4 rounded-lg">{error}</div>
         )}
-        
         {success && (
           <div className="status-success p-4 rounded-lg">{success}</div>
         )}
 
-        {/* Create New Organization */}
-        <div className="content-card">
-          <h2 className="text-2xl font-bold mb-6">Create New Organization</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div>
-              <label className="form-label">Organization Name</label>
-              <input
-                type="text"
-                placeholder="e.g., ACME Corporation"
-                value={newOrg.name}
-                onChange={e => setNewOrg({ ...newOrg, name: e.target.value })}
-                className="form-input"
-              />
-            </div>
-            <div>
-              <label className="form-label">Slug (URL identifier)</label>
-              <input
-                type="text"
-                placeholder="e.g., acme-corp"
-                value={newOrg.slug}
-                onChange={e => setNewOrg({ ...newOrg, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
-                className="form-input"
-              />
-            </div>
-            <div>
-              <label className="form-label">Organization UUID</label>
-              <div className="flex items-center gap-2">
-                <code className="form-input bg-gray-100 dark:bg-gray-800">{newOrg.organizationUuid}</code>
+        <div className="flex flex-col xl:flex-row gap-6 flex-1">
+          
+          {/* Left Column: Create New Organization */}
+          <div className="xl:w-1/3 space-y-6">
+            <div className="content-background p-6">
+              <h2 className="text-xl font-bold mb-4">Create New Organization</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="form-label">Organization Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., ACME Corporation"
+                    value={newOrg.name}
+                    onChange={e => setNewOrg({ ...newOrg, name: e.target.value })}
+                    className="form-input"
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Slug (URL identifier)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., acme-corp"
+                    value={newOrg.slug}
+                    onChange={e => setNewOrg({ ...newOrg, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
+                    className="form-input"
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Organization UUID</label>
+                  <div className="flex items-center gap-2">
+                    <code className="form-input bg-gray-100 dark:bg-gray-800 text-xs font-mono">{newOrg.organizationUuid}</code>
+                    <button 
+                      type="button" 
+                      onClick={generateNewUuid}
+                      disabled={isCreating}
+                      className="btn btn-secondary btn-sm"
+                    >
+                      ↻
+                    </button>
+                  </div>
+                </div>
                 <button 
-                  type="button" 
-                  onClick={generateNewUuid}
-                  disabled={isCreating}
-                  className="btn btn-secondary btn-sm"
+                  onClick={handleCreateOrganization}
+                  className="btn btn-primary w-full"
+                  disabled={isCreating || !newOrg.name.trim() || !newOrg.slug.trim()}
                 >
-                  ↻ Regenerate
+                  {isCreating ? 'Creating...' : 'Create Organization'}
                 </button>
               </div>
-              <small className="text-xs text-muted">Auto-generated unique identifier (used internally)</small>
             </div>
           </div>
-          <button 
-            onClick={handleCreateOrganization}
-            className="btn btn-primary"
-            disabled={isCreating || !newOrg.name.trim() || !newOrg.slug.trim()}
-          >
-            {isCreating ? 'Creating Organization...' : 'Create Organization'}
-          </button>
-        </div>
-
-        {/* Existing Organizations */}
-        <div className="content-card">
-          <h2 className="text-2xl font-bold mb-6">Existing Organizations ({organizations.length})</h2>
           
-          {organizations.length === 0 ? (
-            <p className="text-muted text-center py-8">No organizations found. Create your first organization above.</p>
-          ) : (
-            <div className="space-y-4">
-              {organizations.map(org => (
-                <div key={org.OrganizationUUID} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  {editingOrg?.OrganizationUUID === org.OrganizationUUID ? (
-                    // Edit Mode
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div>
-                          <label className="form-label">Name</label>
-                          <input
-                            type="text"
-                            value={editingOrg?.OrganizationName || ''}
-                            onChange={e => setEditingOrg(editingOrg ? { ...editingOrg, OrganizationName: e.target.value } : null)}
-                            className="form-input"
-                          />
-                        </div>
-                        <div>
-                          <label className="form-label">Slug</label>
-                          <input
-                            type="text"
-                            value={editingOrg?.OrganizationSlug || ''}
-                            onChange={e => setEditingOrg(editingOrg ? { ...editingOrg, OrganizationSlug: e.target.value } : null)}
-                            className="form-input"
-                          />
-                        </div>
-                        <div>
-                          <label className="form-label">Database Name</label>
-                          <input
-                            type="text"
-                            value={editingOrg?.databaseName || ''}
-                            onChange={e => setEditingOrg(editingOrg ? { ...editingOrg, databaseName: e.target.value } : null)}
-                            className="form-input"
-                          />
-                        </div>
-                        <div>
-                          <label className="form-label">Subdomain (optional)</label>
-                          <input
-                            type="text"
-                            value={editingOrg?.subdomain || ''}
-                            onChange={e => setEditingOrg(editingOrg ? { ...editingOrg, subdomain: e.target.value } : null)}
-                            className="form-input"
-                            placeholder="e.g., acme"
-                          />
-                        </div>
-                      </div>
-                      
-                      {/* Theme Management Section */}
-                      <div className="mt-8 p-6 border-t border-gray-200 dark:border-gray-700">
-                        <h3 className="text-lg font-bold mb-4">🎨 Theme Management</h3>
-                        
-                        {/* Background CSS Editor */}
-                        <div className="mb-6">
-                          <label className="form-label">Background CSS (Animated Backgrounds)</label>
-                          <p className="text-sm text-muted mb-2">Paste your CSS code for animated backgrounds. This will be applied to the .background-content layer.</p>
-                          <Editor
-                            value={editingOrg?.theme?.backgroundCSS || ''}
-                            onValueChange={css => {
-                              if (editingOrg) {
-                                setEditingOrg({ 
-                                  ...editingOrg, 
-                                  theme: { ...editingOrg.theme, backgroundCSS: css } 
-                                });
-                              }
-                            }}
-                            highlight={code => Prism.highlight(code, Prism.languages.css, 'css')}
-                            padding={10}
-                            className="min-h-[200px] bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-600 font-mono text-sm"
-                            style={{
-                              fontFamily: 'Consolas, Monaco, "Courier New", monospace',
-                              fontSize: 14,
-                              lineHeight: '1.5'
-                            }}
-                          />
-                        </div>
-                        
-                        {/* Google Fonts URL */}
-                        <div className="mb-6">
-                          <label className="form-label">Google Fonts URL</label>
-                          <p className="text-sm text-muted mb-2">Paste the Google Fonts CSS2 URL to apply organization-wide font.</p>
-                          <input
-                            type="text"
-                            value={editingOrg?.theme?.googleFontURL || ''}
-                            onChange={e => {
-                              if (editingOrg) {
-                                setEditingOrg({ 
-                                  ...editingOrg, 
-                                  theme: { ...editingOrg.theme, googleFontURL: e.target.value } 
-                                });
-                              }
-                            }}
-                            className="form-input"
-                            placeholder="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900"
-                          />
-                        </div>
-                        
-                        {/* Emoji List */}
-                        <div className="mb-6">
-                          <label className="form-label">Organization Emojis</label>
-                          <p className="text-sm text-muted mb-2">Paste emojis separated by spaces: 😎🥵🤖</p>
-                          <input
-                            type="text"
-                            value={editingOrg?.theme?.emojiList?.join(' ') || ''}
-                            onChange={e => {
-                              if (editingOrg) {
-                                const emojis = e.target.value.split(' ').filter(emoji => emoji.trim());
-                                setEditingOrg({ 
-                                  ...editingOrg, 
-                                  theme: { ...editingOrg.theme, emojiList: emojis } 
-                                });
-                              }
-                            }}
-                            className="form-input"
-                            placeholder="😎 🥵 🤖 🎨 🚀 💎 ⚡ 🔥"
-                          />
-                          {editingOrg?.theme?.emojiList && editingOrg.theme.emojiList.length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-2">
-                              {editingOrg.theme.emojiList.map((emoji, index) => (
-                                <span key={index} className="text-2xl">{emoji}</span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                        
-                        {/* Icon List */}
-                        <div className="mb-6">
-                          <label className="form-label">Organization Icons (URLs)</label>
-                          <p className="text-sm text-muted mb-2">Paste icon URLs, one per line:</p>
-                          <textarea
-                            value={editingOrg?.theme?.iconList?.join('\n') || ''}
-                            onChange={e => {
-                              if (editingOrg) {
-                                const icons = e.target.value.split('\n').filter(icon => icon.trim());
-                                setEditingOrg({ 
-                                  ...editingOrg, 
-                                  theme: { ...editingOrg.theme, iconList: icons } 
-                                });
-                              }
-                            }}
-                            className="form-input min-h-[100px]"
-                            placeholder="https://i.ibb.co/4qcP9zc/home-96dp-FFFFFF-FILL0-wght400-GRAD0-opsz48.png\nhttps://example.com/icon2.png"
-                          />
-                          {editingOrg?.theme?.iconList && editingOrg.theme.iconList.length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-2">
-                              {editingOrg.theme.iconList.map((iconUrl, index) => (
-                                <img 
-                                  key={index} 
-                                  src={iconUrl} 
-                                  alt={`Icon ${index + 1}`} 
-                                  className="w-8 h-8 object-contain bg-gray-100 dark:bg-gray-800 rounded p-1"
-                                  onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          {/* Right Column: Existing Organizations */}
+          <div className="xl:w-2/3 flex flex-col">
+            <div className="content-background p-6 flex-1 overflow-y-auto">
+              <h2 className="text-xl font-bold mb-4">Organizations ({organizations.length})</h2>
+              
+              {organizations.length === 0 ? (
+                <div className="text-with-background p-8 text-center">
+                  <p className="text-muted">No organizations found. Create your first organization above.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {organizations.map(org => (
+                    <div key={org.OrganizationUUID} className="content-background p-4">
+                      {editingOrg?.OrganizationUUID === org.OrganizationUUID ? (
+                        // Edit Mode - Full Featured
+                        <div className="space-y-6">
+                          
+                          {/* Basic Organization Info */}
+                          <div>
+                            <h3 className="text-lg font-bold mb-4">Organization Details</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <label className="form-label">Name</label>
+                                <input
+                                  type="text"
+                                  value={editingOrg?.OrganizationName || ''}
+                                  onChange={e => setEditingOrg(editingOrg ? { ...editingOrg, OrganizationName: e.target.value } : null)}
+                                  className="form-input"
                                 />
-                              ))}
+                              </div>
+                              <div>
+                                <label className="form-label">Slug</label>
+                                <input
+                                  type="text"
+                                  value={editingOrg?.OrganizationSlug || ''}
+                                  onChange={e => setEditingOrg(editingOrg ? { ...editingOrg, OrganizationSlug: e.target.value } : null)}
+                                  className="form-input"
+                                />
+                              </div>
+                              <div>
+                                <label className="form-label">Database Name</label>
+                                <input
+                                  type="text"
+                                  value={editingOrg?.databaseName || ''}
+                                  onChange={e => setEditingOrg(editingOrg ? { ...editingOrg, databaseName: e.target.value } : null)}
+                                  className="form-input"
+                                />
+                              </div>
+                              <div>
+                                <label className="form-label">Subdomain (optional)</label>
+                                <input
+                                  type="text"
+                                  value={editingOrg?.subdomain || ''}
+                                  onChange={e => setEditingOrg(editingOrg ? { ...editingOrg, subdomain: e.target.value } : null)}
+                                  className="form-input"
+                                  placeholder="e.g., acme"
+                                />
+                              </div>
                             </div>
-                          )}
-                        </div>
-                        
-                        {/* Live Preview */}
-                        <LiveThemePreview theme={editingOrg?.theme} />
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <button onClick={handleUpdateOrganization} className="btn btn-success">
-                          Save Changes
-                        </button>
-                        <button onClick={() => setEditingOrg(null)} className="btn btn-secondary">
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    // View Mode
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-xl font-semibold">{org.OrganizationName}</h3>
-                          <div className="flex items-center gap-4 text-sm text-muted">
-                            <span>Slug: {org.OrganizationSlug}</span>
-                            <span>DB: {org.databaseName}</span>
-                            {org.subdomain && <span>Subdomain: {org.subdomain}</span>}
+                          </div>
+                          
+                          {/* Theme Management Section */}
+                          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                            <h3 className="text-lg font-bold mb-4">🎨 Theme Management</h3>
+                            
+                            {/* Color Settings */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                              <div>
+                                <label className="form-label">Primary Color</label>
+                                <input
+                                  type="color"
+                                  value={editingOrg?.theme?.primaryColor || '#667eea'}
+                                  onChange={e => {
+                                    if (editingOrg) {
+                                      setEditingOrg({ 
+                                        ...editingOrg, 
+                                        theme: { ...editingOrg.theme, primaryColor: e.target.value } 
+                                      });
+                                    }
+                                  }}
+                                  className="form-input h-12"
+                                />
+                              </div>
+                              <div>
+                                <label className="form-label">Secondary Color</label>
+                                <input
+                                  type="color"
+                                  value={editingOrg?.theme?.secondaryColor || '#764ba2'}
+                                  onChange={e => {
+                                    if (editingOrg) {
+                                      setEditingOrg({ 
+                                        ...editingOrg, 
+                                        theme: { ...editingOrg.theme, secondaryColor: e.target.value } 
+                                      });
+                                    }
+                                  }}
+                                  className="form-input h-12"
+                                />
+                              </div>
+                              <div>
+                                <label className="form-label">Accent Color</label>
+                                <input
+                                  type="color"
+                                  value={editingOrg?.theme?.accentColor || '#f093fb'}
+                                  onChange={e => {
+                                    if (editingOrg) {
+                                      setEditingOrg({ 
+                                        ...editingOrg, 
+                                        theme: { ...editingOrg.theme, accentColor: e.target.value } 
+                                      });
+                                    }
+                                  }}
+                                  className="form-input h-12"
+                                />
+                              </div>
+                            </div>
+                            
+                            {/* Background CSS Editor */}
+                            <div className="mb-6">
+                              <label className="form-label">Background CSS (Animated Backgrounds)</label>
+                              <div className="text-with-background mb-2">
+                                <p className="text-sm text-muted">
+                                  Paste your CSS code for animated backgrounds. This will be applied to the .background-content layer.
+                                </p>
+                              </div>
+                              <Editor
+                                value={editingOrg?.theme?.backgroundCSS || ''}
+                                onValueChange={css => {
+                                  if (editingOrg) {
+                                    setEditingOrg({ 
+                                      ...editingOrg, 
+                                      theme: { ...editingOrg.theme, backgroundCSS: css } 
+                                    });
+                                  }
+                                }}
+                                highlight={code => Prism.highlight(code, Prism.languages.css, 'css')}
+                                padding={10}
+                                className="min-h-[200px] bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-600 font-mono text-sm"
+                                style={{
+                                  fontFamily: 'Consolas, Monaco, "Courier New", monospace',
+                                  fontSize: 14,
+                                  lineHeight: '1.5'
+                                }}
+                              />
+                            </div>
+                            
+                            {/* Google Fonts URL */}
+                            <div className="mb-6">
+                              <label className="form-label">Google Fonts URL</label>
+                              <div className="text-with-background mb-2">
+                                <p className="text-sm text-muted">
+                                  Paste the Google Fonts CSS2 URL to apply organization-wide font.
+                                </p>
+                              </div>
+                              <input
+                                type="text"
+                                value={editingOrg?.theme?.googleFontURL || ''}
+                                onChange={e => {
+                                  if (editingOrg) {
+                                    setEditingOrg({ 
+                                      ...editingOrg, 
+                                      theme: { ...editingOrg.theme, googleFontURL: e.target.value } 
+                                    });
+                                  }
+                                }}
+                                className="form-input"
+                                placeholder="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900"
+                              />
+                            </div>
+                            
+                            {/* Emoji List */}
+                            <div className="mb-6">
+                              <label className="form-label">Organization Emojis</label>
+                              <div className="text-with-background mb-2">
+                                <p className="text-sm text-muted">
+                                  Paste emojis separated by spaces: 😎🥵🤖
+                                </p>
+                              </div>
+                              <input
+                                type="text"
+                                value={editingOrg?.theme?.emojiList?.join(' ') || ''}
+                                onChange={e => {
+                                  if (editingOrg) {
+                                    const emojis = e.target.value.split(' ').filter(emoji => emoji.trim());
+                                    setEditingOrg({ 
+                                      ...editingOrg, 
+                                      theme: { ...editingOrg.theme, emojiList: emojis } 
+                                    });
+                                  }
+                                }}
+                                className="form-input"
+                                placeholder="😎 🥵 🤖 🎨 🚀 💎 ⚡ 🔥"
+                              />
+                              {editingOrg?.theme?.emojiList && editingOrg.theme.emojiList.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  {editingOrg.theme.emojiList.map((emoji, index) => (
+                                    <span key={index} className="text-2xl">{emoji}</span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* Icon List */}
+                            <div className="mb-6">
+                              <label className="form-label">Organization Icons (URLs)</label>
+                              <div className="text-with-background mb-2">
+                                <p className="text-sm text-muted">
+                                  Paste icon URLs, one per line:
+                                </p>
+                              </div>
+                              <textarea
+                                value={editingOrg?.theme?.iconList?.join('\n') || ''}
+                                onChange={e => {
+                                  if (editingOrg) {
+                                    const icons = e.target.value.split('\n').filter(icon => icon.trim());
+                                    setEditingOrg({ 
+                                      ...editingOrg, 
+                                      theme: { ...editingOrg.theme, iconList: icons } 
+                                    });
+                                  }
+                                }}
+                                className="form-input min-h-[100px]"
+                                placeholder="https://i.ibb.co/4qcP9zc/home-96dp-FFFFFF-FILL0-wght400-GRAD0-opsz48.png"
+                              />
+                              {editingOrg?.theme?.iconList && editingOrg.theme.iconList.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  {editingOrg.theme.iconList.map((iconUrl, index) => (
+                                    <img 
+                                      key={index} 
+                                      src={iconUrl} 
+                                      alt={`Icon ${index + 1}`} 
+                                      className="w-8 h-8 object-contain bg-gray-100 dark:bg-gray-800 rounded p-1"
+                                      onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                    />
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* Live Preview */}
+                            <LiveThemePreview theme={editingOrg?.theme} />
+                          </div>
+                          
+                          <div className="flex gap-2">
+                            <button onClick={handleUpdateOrganization} className="btn btn-success">
+                              Save Changes
+                            </button>
+                            <button onClick={() => setEditingOrg(null)} className="btn btn-secondary">
+                              Cancel
+                            </button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {org.databaseHealth && (
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              org.databaseHealth.connected 
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                            }`}>
-                              {org.databaseHealth.connected ? 'Connected' : 'Disconnected'}
-                            </span>
-                          )}
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            org.isActive 
-                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' 
-                              : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
-                          }`}>
-                            {org.isActive ? 'Active' : 'Inactive'}
-                          </span>
+                      ) : (
+                        // View Mode
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h3 className="text-lg font-semibold">{org.OrganizationName}</h3>
+                              <div className="flex flex-wrap gap-4 text-sm">
+                                <span className="text-with-background">Slug: {org.OrganizationSlug}</span>
+                                <span className="text-with-background">DB: {org.databaseName}</span>
+                                {org.subdomain && <span className="text-with-background">Subdomain: {org.subdomain}</span>}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {org.databaseHealth && (
+                                <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                  org.databaseHealth.connected 
+                                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                }`}>
+                                  {org.databaseHealth.connected ? 'Connected' : 'Disconnected'}
+                                </span>
+                              )}
+                              <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                org.isActive 
+                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' 
+                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                              }`}>
+                                {org.isActive ? 'Active' : 'Inactive'}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <button 
+                              onClick={() => window.open(`/organization/${org.OrganizationSlug}/cards`, '_blank')} 
+                              className="btn btn-primary btn-sm"
+                            >
+                              🔗 Open Organization Page
+                            </button>
+                            <button 
+                              onClick={() => window.open(`/organization/${org.OrganizationSlug}/ranks`, '_blank')} 
+                              className="btn btn-secondary btn-sm"
+                            >
+                              🏆 View Rankings
+                            </button>
+                            <button 
+                              onClick={() => handleSwitchToOrganization(org)} 
+                              className="btn btn-outline btn-sm"
+                            >
+                              Switch Context
+                            </button>
+                            <button 
+                              onClick={() => setEditingOrg({
+                                ...org,
+                                theme: org.theme || {
+                                  primaryColor: '#667eea',
+                                  secondaryColor: '#764ba2',
+                                  accentColor: '#f093fb',
+                                  backgroundColor: '#0a0a0a',
+                                  textColor: '#ffffff',
+                                  fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+                                  fontSize: '16px',
+                                  borderRadius: '8px',
+                                  spacing: '1rem',
+                                  customCSS: '',
+                                  backgroundCSS: '',
+                                  googleFontURL: '',
+                                  emojiList: [],
+                                  iconList: []
+                                }
+                              })} 
+                              className="btn btn-secondary btn-sm"
+                            >
+                              Edit Theme & Settings
+                            </button>
+                            {org.isActive && (
+                              <button 
+                                onClick={() => handleDeactivateOrganization(org.OrganizationUUID)}
+                                className="btn btn-danger btn-sm"
+                              >
+                                Deactivate
+                              </button>
+                            )}
+                            <button 
+                              onClick={() => handleDeleteOrganizationPermanently(org)}
+                              className="btn btn-sm bg-red-700 hover:bg-red-800 text-white"
+                              title="Permanently delete this organization and all its data"
+                            >
+                              🗑️ Delete Permanently
+                            </button>
+                          </div>
+                          
+                          <div className="text-with-background">
+                            <div className="text-xs text-muted">
+                              Created: {new Date(org.createdAt).toLocaleDateString()}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <button 
-                          onClick={() => handleSwitchToOrganization(org)} 
-                          className="btn btn-primary btn-sm"
-                        >
-                          Switch & View Cards
-                        </button>
-                        <button 
-                          onClick={() => setEditingOrg({
-                            ...org,
-                            theme: org.theme || {
-                              primaryColor: '#667eea',
-                              secondaryColor: '#764ba2',
-                              accentColor: '#f093fb',
-                              backgroundColor: '#0a0a0a',
-                              textColor: '#ffffff',
-                              fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
-                              fontSize: '16px',
-                              borderRadius: '8px',
-                              spacing: '1rem',
-                              customCSS: '',
-                              backgroundCSS: '',
-                              googleFontURL: '',
-                              emojiList: [],
-                              iconList: []
-                            }
-                          })} 
-                          className="btn btn-secondary btn-sm"
-                        >
-                          Edit
-                        </button>
-                        {org.isActive && (
-                          <button 
-                            onClick={() => handleDeactivateOrganization(org.OrganizationUUID)}
-                            className="btn btn-danger btn-sm"
-                          >
-                            Deactivate
-                          </button>
-                        )}
-                        <button 
-                          onClick={() => handleDeleteOrganizationPermanently(org)}
-                          className="btn btn-sm bg-red-700 hover:bg-red-800 text-white border-red-700 hover:border-red-800"
-                          title="Permanently delete this organization and all its data"
-                        >
-                          🗑️ Delete Permanently
-                        </button>
-                      </div>
-                      
-                      <div className="text-xs text-muted">
-                        Created: {new Date(org.createdAt).toLocaleDateString()}
-                      </div>
+                      )}
                     </div>
-                  )}
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
     </PageLayout>

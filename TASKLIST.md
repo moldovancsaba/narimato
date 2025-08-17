@@ -1,10 +1,17 @@
 # NARIMATO Task List
 
-**Current Version:** 4.1.0
-**Date:** 2025-10-12
-**Last Updated:** 2025-10-12T16:45:21.000Z
+**Current Version:** 4.2.0
+**Date:** 2025-08-14
+**Last Updated:** 2025-08-14T15:20:00.000Z
 
 ## High Priority Tasks
+
+### Update WARP.md Documentation to v4.4.0
+- **Owner:** AI Agent
+- **Expected Delivery Date:** 2025-08-17
+- **Status:** Completed ✅
+- **Completion Date:** 2025-08-17T11:00:26.000Z
+- **Details:** Successfully updated WARP.md file from v4.1.0 to v4.4.0 state, incorporating all critical architectural improvements and bug fixes. Key updates include: version number synchronization across all references, added new database scripts (init-default-org.js, add-cardsize-to-cards.js, recreate-organization.js, delete-default-org.js), documented v4.4.0 Vote Integrity & Caching System with double voting prevention and organization caching features, expanded API endpoints documentation with new endpoints (/api/v1/cards/[uuid], /api/v1/cards/add, /api/v1/presets/*, /api/v1/upload/imgbb), and added comprehensive troubleshooting sections for issues fixed in v4.4.0 (double voting, session results not found, organization loading issues). Documentation now accurately reflects current codebase state and provides complete guidance for future AI agents working in this repository.
 
 ### Enhance Hashtag Hierarchy System
 - **Owner:** AI Agent  
@@ -57,6 +64,13 @@
 - **Details:** Create an admin panel for card CRUD operations, bulk card import/export, and card categorization/tagging system. Requires authentication system.
 
 ## Completed Tasks
+
+### Fix Organization Routing and Session Management Issues
+- **Owner:** AI Agent
+- **Expected Delivery Date:** 2025-08-14
+- **Status:** Completed ✅
+- **Completion Date:** 2025-08-14T15:20:00.000Z
+- **Details:** Successfully resolved critical routing and session management bugs affecting user experience. Fixed organization slug mapping from API response to prevent navigation to `/organization/undefined`, standardized field naming consistency across play session creation APIs, removed problematic auto-completion logic that was immediately marking sessions as complete, harmonized results saving and retrieval to use consistent field names (sessionUUID), and updated field name constants to match actual model implementations. Manual testing confirmed: organization selection now navigates correctly, play sessions start in active/swiping state rather than completed state, and results retrieval works properly after session completion.
 
 ### Organization-Level Centralized Theme Management System
 - **Owner:** AI Agent

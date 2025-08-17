@@ -55,10 +55,10 @@ export const POST = createOrgAwareRoute(async (request, { organizationUUID }) =>
     
     // ✅ CRITICAL FIX: Initialize ELO rating for new card to prevent ranking sync issues
     try {
-      const existingRanking = await GlobalRankingModel.findOne({ cardId: uuid });
+      const existingRanking = await GlobalRankingModel.findOne({ cardUUID: uuid });
       if (!existingRanking) {
         const newRanking = new GlobalRankingModel({
-          cardId: uuid,
+          cardUUID: uuid,
           eloRating: 1000, // Default ELO rating
           totalScore: 0,
           appearanceCount: 0,
