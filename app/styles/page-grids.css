@@ -1,0 +1,125 @@
+/* Swipe and Vote Page Layouts */
+
+/* Portrait Mode */
+@media (orientation: portrait) {
+  .swipe-grid {
+    grid-template-rows: 60px 1fr 100px;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "title"
+      "card"
+      "buttons";
+  }
+  
+  .swipe-grid-title { 
+    grid-area: title;
+  }
+  .swipe-grid-card { 
+    grid-area: card;
+    /* Constrain overflow to prevent cards from expanding beyond grid cell */
+    overflow: hidden;
+    height: 100%;
+  }
+  .swipe-grid-buttons {
+    grid-area: buttons;
+    @apply flex justify-center items-center gap-8;
+    /* Hide buttons in portrait mode but keep the space */
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .swipe-grid-button-left, .swipe-grid-button-right {
+      display: none !important;
+  }
+
+  .vote-grid {
+    grid-template-rows: 60px 1fr 1fr;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "title"
+      "card1"
+      "card2";
+  }
+
+  .vote-grid-title { 
+    grid-area: title;
+  }
+  .vote-grid-card1 { 
+    grid-area: card1;
+    /* Constrain overflow to prevent cards from expanding beyond grid cell */
+    overflow: hidden;
+    height: 100%;
+  }
+  .vote-grid-vs { 
+    grid-area: vs;
+    /* Hide VS indicator in portrait mode */
+    display: none;
+  }
+  .vote-grid-card2 { 
+    grid-area: card2;
+    /* Constrain overflow to prevent cards from expanding beyond grid cell */
+    overflow: hidden;
+    height: 100%;
+  }
+}
+
+/* Landscape Mode */
+@media (orientation: landscape) {
+  .swipe-grid {
+    grid-template-columns: 80px 1fr 80px;
+    grid-template-rows: 60px 1fr;
+    grid-template-areas:
+      "title title title"
+      "button-left card button-right";
+  }
+  .swipe-grid-title { 
+    grid-area: title;
+  }
+  .swipe-grid-button-left { 
+    grid-area: button-left;
+    @apply flex items-center justify-center;
+  }
+  .swipe-grid-card { 
+    grid-area: card;
+  }
+  .swipe-grid-button-right { 
+    grid-area: button-right;
+    @apply flex items-center justify-center;
+  }
+
+  .swipe-grid-buttons {
+      display: none !important;
+  }
+
+  .vote-grid {
+    grid-template-columns: 1fr 40px 1fr;
+    grid-template-rows: 60px 1fr;
+    grid-template-areas:
+      "title title title"
+      "card1 vs card2";
+  }
+  .vote-grid-title { 
+    grid-area: title;
+  }
+  .vote-grid-card1 { 
+    grid-area: card1;
+    /* Constrain overflow to prevent cards from expanding beyond grid cell */
+    overflow: hidden;
+    height: 100%;
+  }
+  .vote-grid-vs { 
+    grid-area: vs;
+  }
+  .vote-grid-card2 { 
+    grid-area: card2;
+    /* Constrain overflow to prevent cards from expanding beyond grid cell */
+    overflow: hidden;
+    height: 100%;
+  }
+}
+
+/* Card area specifically constrains card size */
+.swipe-grid-card.grid-cell {
+    /* This grid cell defines the card's maximum space */
+    contain: layout size;
+}

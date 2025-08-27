@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* NARIMATO Dark Design System - Black/Indigo/Cyan Theme */
+  /* Base Colors - Pure Black Foundation */
+  --background: #000000;
+  --foreground: #ffffff;
+  
+  /* Primary Colors - Indigo Variants */
+  --primary: #4338ca; /* Indigo-700 for primary actions */
+  --primary-hover: #3730a3; /* Indigo-800 for hover states */
+  --primary-light: #6366f1; /* Indigo-500 for lighter variants */
+  --primary-dark: #312e81; /* Indigo-900 for darker variants */
+  
+  /* Secondary Colors - Dark Indigo */
+  --secondary: #1e1b4b; /* Indigo-900 for secondary elements */
+  --secondary-hover: #312e81; /* Indigo-800 for hover */
+  --secondary-light: #3730a3; /* Indigo-700 for lighter variants */
+  
+  /* Accent Colors - Cyan System */
+  --accent: #06b6d4; /* Cyan-500 for primary accent */
+  --accent-hover: #0891b2; /* Cyan-600 for hover */
+  --accent-light: #67e8f9; /* Cyan-300 for light accents */
+  --accent-dark: #0e7490; /* Cyan-700 for dark accents */
+  
+  /* Semantic Colors - High Contrast for Dark Mode */
+  --success: #10b981; /* Emerald-500 */
+  --success-hover: #059669; /* Emerald-600 */
+  --danger: #ef4444; /* Red-500 */
+  --danger-hover: #dc2626; /* Red-600 */
+  --warning: #f59e0b; /* Amber-500 */
+  --warning-hover: #d97706; /* Amber-600 */
+  --info: var(--accent); /* Use cyan accent for info */
+  
+  /* Background Variants */
+  --card-background: #111827; /* Gray-900 for cards */
+  --nav-background: #0f0f0f; /* Slightly lighter than pure black */
+  --input-background: #1f2937; /* Gray-800 for inputs */
+  --overlay-background: rgba(0, 0, 0, 0.8);
+  
+  /* Text Colors - White System */
+  --text-primary: #ffffff; /* Pure white for primary text */
+  --text-secondary: #d1d5db; /* Gray-300 for secondary text */
+  --text-muted: #9ca3af; /* Gray-400 for muted text */
+  --text-disabled: #6b7280; /* Gray-500 for disabled text */
+  
+  /* Border Colors */
+  --border-color: #374151; /* Gray-700 for borders */
+  --border-light: #4b5563; /* Gray-600 for lighter borders */
+  --border-accent: var(--accent); /* Cyan for accent borders */
+  
+  /* Dark theme shadows - enhanced for better visibility on black background */
+  --shadow-card-mobile: 0 4px 16px -4px rgba(6, 182, 212, 0.2), 0 2px 8px -2px rgba(67, 56, 202, 0.3);
+  --shadow-card: 0 10px 30px -6px rgba(6, 182, 212, 0.25), 0 4px 12px -4px rgba(67, 56, 202, 0.4);
+  --shadow-button-mobile: 0 2px 8px -2px rgba(6, 182, 212, 0.15), 0 1px 4px -1px rgba(67, 56, 202, 0.2);
+  --shadow-button: 0 4px 12px -2px rgba(6, 182, 212, 0.2), 0 2px 8px -2px rgba(67, 56, 202, 0.3);
+  
+  /* Mobile-first border radius */
+  --border-radius-mobile: 8px;
+  --border-radius: 12px;
+  --border-radius-lg-mobile: 12px;
+  --border-radius-lg: 16px;
+  
+  /* Mobile-first spacing */
+  --spacing-mobile: 16px;
+  --spacing: 24px;
+  --spacing-lg: 32px;
+  
+  --transition: all 0.2s ease-in-out;
+  
+  /* Global scale values for consistent interactive scaling */
+  --scale-initial: 1;
+  --scale-hover: 0.95;
+  --scale-selected: 0.95;
+  --scale-unselected: 0.9;
+  --scale-default: 1;
+  --scale-active: 0.9;
+  
+  /* Safe area insets for mobile devices */
+  --safe-area-inset-top: env(safe-area-inset-top);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom);
+  --safe-area-inset-left: env(safe-area-inset-left);
+  --safe-area-inset-right: env(safe-area-inset-right);
+}
+
+/* Enhanced dark mode variables for better visibility */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+/* Content backgrounds with subtle gradients */
+.content-background {
+  background: linear-gradient(135deg, var(--card-background) 0%, rgba(17, 24, 39, 0.95) 100%);
+  border: 1px solid var(--border-color);
+}
+
+.text-with-background {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(67, 56, 202, 0.1) 100%);
+  padding: var(--spacing-mobile);
+  border-radius: var(--border-radius-mobile);
+  border: 1px solid rgba(6, 182, 212, 0.2);
+}
+
+@media (min-width: 640px) {
+  .text-with-background {
+    padding: var(--spacing);
+    border-radius: var(--border-radius);
+  }
+}

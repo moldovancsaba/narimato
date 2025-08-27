@@ -1,0 +1,679 @@
+
+> narimato@4.2.0 dev
+> next dev
+
+   ▲ Next.js 15.4.4
+   - Local:        http://localhost:3000
+   - Network:      http://172.20.10.2:3000
+   - Environments: .env.local, .env
+
+ ✓ Starting...
+ ✓ Ready in 1560ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1370ms (1238 modules)
+ ✓ Compiled in 443ms (556 modules)
+ GET / 200 in 1855ms
+ GET / 200 in 75ms
+ ✓ Compiled /api/v1/admin/organizations in 321ms (1254 modules)
+📋 Listing organizations...
+✅ Fresh connection created
+📋 Listing organizations...
+✅ Fresh connection created
+🔌 Connection closed
+ GET /api/v1/admin/organizations 200 in 1710ms
+🔌 Connection closed
+ GET /api/v1/admin/organizations 200 in 1712ms
+ GET / 200 in 179ms
+📋 Listing organizations...
+✅ Fresh connection created
+📋 Listing organizations...
+✅ Fresh connection created
+🔌 Connection closed
+ GET /api/v1/admin/organizations 200 in 846ms
+🔌 Connection closed
+ GET /api/v1/admin/organizations 200 in 890ms
+ ✓ Compiled /organization/[slug] in 221ms (1265 modules)
+ GET /organization/moldovan 200 in 651ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled /api/v1/organization/[slug] in 437ms (1278 modules)
+ GET /organization/moldovan 200 in 436ms
+📋 Organization cache miss for slug: moldovan, fetching from DB
+📋 Organization cache miss for slug: moldovan, fetching from DB
+📋 Organization cache miss for slug: moldovan, fetching from DB
+📋 Listing organizations...
+✅ Fresh connection created
+📋 Organization fetched and cached: Moldován Csaba Kft (mcszszcs-oooo-0707-1975-moldovan0707)
+🔌 Connection closed
+ GET /api/v1/admin/organizations 200 in 820ms
+📋 Organization fetched and cached: Moldován Csaba Kft (mcszszcs-oooo-0707-1975-moldovan0707)
+ GET /api/v1/organization/moldovan 200 in 1223ms
+📋 Organization fetched and cached: Moldován Csaba Kft (mcszszcs-oooo-0707-1975-moldovan0707)
+ ✓ Compiled /api/v1/cards in 195ms (1297 modules)
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache miss for: uuid:mcszszcs-oooo-0707-1975-moldovan0707, fetching from DB
+📋 Organization cached in middleware: Moldován Csaba Kft (mcszszcs-oooo-0707-1975-moldovan0707)
+ GET /api/v1/cards?type=playable 200 in 2732ms
+ ✓ Compiled /api/v1/session/start in 173ms (1300 modules)
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache miss for: uuid:mcszszcs-oooo-0707-1975-moldovan0707, fetching from DB
+📋 Organization cached in middleware: Moldován Csaba Kft (mcszszcs-oooo-0707-1975-moldovan0707)
+🔍 Searching for cards with criteria: { isActive: true, hashtags: '#numbers' }
+📋 Found 6 cards for deck: #numbers
+🎮 New play session created: {
+  playUuid: '89a85091...',
+  sessionUUID: '7c6b5bb7...',
+  deckTag: '#numbers',
+  totalCards: 6
+}
+ POST /api/v1/session/start 201 in 2535ms
+ ✓ Compiled /organization/[slug]/swipe in 204ms (1307 modules)
+ GET /organization/moldovan/swipe?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 564ms
+📋 Organization cache miss for slug: moldovan, fetching from DB
+📋 Organization cache miss for slug: moldovan, fetching from DB
+ GET /manifest.json 200 in 146ms
+📋 Organization fetched and cached: Moldován Csaba Kft (mcszszcs-oooo-0707-1975-moldovan0707)
+ GET /api/v1/organization/moldovan 200 in 958ms
+ ✓ Compiled /api/v1/session/[sessionUUID] in 183ms (1311 modules)
+📋 Organization fetched and cached: Moldován Csaba Kft (mcszszcs-oooo-0707-1975-moldovan0707)
+ GET /api/v1/organization/moldovan 200 in 1375ms
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache miss for: uuid:mcszszcs-oooo-0707-1975-moldovan0707, fetching from DB
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache miss for: uuid:mcszszcs-oooo-0707-1975-moldovan0707, fetching from DB
+📋 Organization cached in middleware: Moldován Csaba Kft (mcszszcs-oooo-0707-1975-moldovan0707)
+📋 Organization cached in middleware: Moldován Csaba Kft (mcszszcs-oooo-0707-1975-moldovan0707)
+📋 Session data request for 89a85091...: swiping state
+🔧 Force completion check for play 89a85091-a6e2-4df9-a8fd-ab29e13646b6
+🔍 Checking play completion for 89a85091... {
+  status: 'active',
+  state: 'swiping',
+  metrics: {
+    totalCards: 6,
+    totalSwipes: 0,
+    personalRankingLength: 0,
+    leftSwipes: 0,
+    rightSwipes: 0
+  },
+  lastActivity: 2025-08-15T07:51:28.353Z
+}
+⏸️ No cards swiped yet - session just started
+⏸️ No swipes yet - session just started
+❌ Play completion not detected - session still active
+📋 Session data request for 89a85091...: swiping state
+🔧 Force completion check for play 89a85091-a6e2-4df9-a8fd-ab29e13646b6
+🔍 Checking play completion for 89a85091... {
+  status: 'active',
+  state: 'swiping',
+  metrics: {
+    totalCards: 6,
+    totalSwipes: 0,
+    personalRankingLength: 0,
+    leftSwipes: 0,
+    rightSwipes: 0
+  },
+  lastActivity: 2025-08-15T07:51:28.353Z
+}
+⏸️ No cards swiped yet - session just started
+⏸️ No swipes yet - session just started
+❌ Play completion not detected - session still active
+📋 Fetched 6 cards for session 89a85091
+ GET /api/v1/session/89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 2444ms
+📋 Fetched 6 cards for session 89a85091
+ GET /api/v1/session/89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 2841ms
+ ✓ Compiled /api/v1/swipe in 219ms (1316 modules)
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache miss for: uuid:mcszszcs-oooo-0707-1975-moldovan0707, fetching from DB
+📋 Organization cached in middleware: Moldován Csaba Kft (mcszszcs-oooo-0707-1975-moldovan0707)
+ POST /api/v1/swipe 200 in 2643ms
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache hit for: uuid:mcszszcs-oooo-0707-1975-moldovan0707
+📋 Session data request for 89a85091...: swiping state
+🔧 Force completion check for play 89a85091-a6e2-4df9-a8fd-ab29e13646b6
+🔍 Checking play completion for 89a85091... {
+  status: 'active',
+  state: 'swiping',
+  metrics: {
+    totalCards: 6,
+    totalSwipes: 1,
+    personalRankingLength: 1,
+    leftSwipes: 0,
+    rightSwipes: 1
+  },
+  lastActivity: 2025-08-15T07:51:37.657Z
+}
+❌ Play completion not detected - session still active
+📋 Fetched 6 cards for session 89a85091
+ GET /api/v1/session/89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 162ms
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache hit for: uuid:mcszszcs-oooo-0707-1975-moldovan0707
+ POST /api/v1/swipe 200 in 256ms
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache hit for: uuid:mcszszcs-oooo-0707-1975-moldovan0707
+📋 Session data request for 89a85091...: voting state
+🔧 Force completion check for play 89a85091-a6e2-4df9-a8fd-ab29e13646b6
+🔍 Checking play completion for 89a85091... {
+  status: 'active',
+  state: 'voting',
+  metrics: {
+    totalCards: 6,
+    totalSwipes: 2,
+    personalRankingLength: 1,
+    leftSwipes: 0,
+    rightSwipes: 2
+  },
+  lastActivity: 2025-08-15T07:51:42.442Z
+}
+❌ Play completion not detected - session still active
+🗳️ Play 89a85091-a6e2-4df9-a8fd-ab29e13646b6 is in voting state - preparing current card pair
+📋 Fetched 6 cards for session 89a85091
+🗳️ Providing voting pair: #3 vs #5
+ GET /api/v1/session/89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 243ms
+ ✓ Compiled /api/v1/session/[sessionUUID]/vote in 273ms (1318 modules)
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache miss for: uuid:mcszszcs-oooo-0707-1975-moldovan0707, fetching from DB
+📋 Organization cached in middleware: Moldován Csaba Kft (mcszszcs-oooo-0707-1975-moldovan0707)
+🗳️ Vote received for session 89a85091...: winner eec7773c...
+🔍 Binary search vote: newCard=eec7773c, comparison=25a50c9c, winner=eec7773c
+🧮 Calculating bounds for eec7773c with ranking: [25a50c9c]
+🗳️ Processing vote: eec7773c vs 25a50c9c, winner: eec7773c, compared card: 25a50c9c, index: 0
+🏆 eec7773c won against 25a50c9c at index 0 - searchEnd: 1 → 0
+🎯 Final bounds for eec7773c: [0, 0)
+🎯 Search bounds for eec7773c: [0, 0) = 0 positions
+🎯 Search space collapsed for eec7773c: bounds=[0, 0), inserting at position 0
+📍 Card eec7773c inserted at position 0. New ranking: [eec7773c, 25a50c9c]
+🔄 Returning to swiping state - 4 cards remaining in deck, 0 cards remaining to rank
+ POST /api/v1/session/89a85091-a6e2-4df9-a8fd-ab29e13646b6/vote 200 in 2797ms
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache hit for: uuid:mcszszcs-oooo-0707-1975-moldovan0707
+📋 Session data request for 89a85091...: swiping state
+🔧 Force completion check for play 89a85091-a6e2-4df9-a8fd-ab29e13646b6
+🔍 Checking play completion for 89a85091... {
+  status: 'active',
+  state: 'swiping',
+  metrics: {
+    totalCards: 6,
+    totalSwipes: 2,
+    personalRankingLength: 2,
+    leftSwipes: 0,
+    rightSwipes: 2
+  },
+  lastActivity: 2025-08-15T07:51:46.997Z
+}
+❌ Play completion not detected - session still active
+📋 Fetched 6 cards for session 89a85091
+ GET /api/v1/session/89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 146ms
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache hit for: uuid:mcszszcs-oooo-0707-1975-moldovan0707
+ POST /api/v1/swipe 200 in 340ms
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache hit for: uuid:mcszszcs-oooo-0707-1975-moldovan0707
+📋 Session data request for 89a85091...: voting state
+🔧 Force completion check for play 89a85091-a6e2-4df9-a8fd-ab29e13646b6
+🔍 Checking play completion for 89a85091... {
+  status: 'active',
+  state: 'voting',
+  metrics: {
+    totalCards: 6,
+    totalSwipes: 3,
+    personalRankingLength: 2,
+    leftSwipes: 0,
+    rightSwipes: 3
+  },
+  lastActivity: 2025-08-15T07:51:49.001Z
+}
+❌ Play completion not detected - session still active
+🗳️ Play 89a85091-a6e2-4df9-a8fd-ab29e13646b6 is in voting state - preparing current card pair
+📋 Fetched 6 cards for session 89a85091
+🗳️ Providing voting pair: #4 vs #5
+ GET /api/v1/session/89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 240ms
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache hit for: uuid:mcszszcs-oooo-0707-1975-moldovan0707
+🗳️ Vote received for session 89a85091...: winner c1f44ea7...
+🔍 Binary search vote: newCard=c1f44ea7, comparison=25a50c9c, winner=c1f44ea7
+🧮 Calculating bounds for c1f44ea7 with ranking: [eec7773c, 25a50c9c]
+🗳️ Processing vote: c1f44ea7 vs 25a50c9c, winner: c1f44ea7, compared card: 25a50c9c, index: 1
+🏆 c1f44ea7 won against 25a50c9c at index 1 - searchEnd: 2 → 1
+🎯 Final bounds for c1f44ea7: [0, 1)
+🎯 Search bounds for c1f44ea7: [0, 1) = 1 positions
+🎯 Search space collapsed for c1f44ea7: bounds=[0, 1), inserting at position 0
+📍 Card c1f44ea7 inserted at position 0. New ranking: [c1f44ea7, eec7773c, 25a50c9c]
+🔄 Returning to swiping state - 3 cards remaining in deck, 0 cards remaining to rank
+ POST /api/v1/session/89a85091-a6e2-4df9-a8fd-ab29e13646b6/vote 200 in 212ms
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache hit for: uuid:mcszszcs-oooo-0707-1975-moldovan0707
+📋 Session data request for 89a85091...: swiping state
+🔧 Force completion check for play 89a85091-a6e2-4df9-a8fd-ab29e13646b6
+🔍 Checking play completion for 89a85091... {
+  status: 'active',
+  state: 'swiping',
+  metrics: {
+    totalCards: 6,
+    totalSwipes: 3,
+    personalRankingLength: 3,
+    leftSwipes: 0,
+    rightSwipes: 3
+  },
+  lastActivity: 2025-08-15T07:51:50.660Z
+}
+❌ Play completion not detected - session still active
+📋 Fetched 6 cards for session 89a85091
+ GET /api/v1/session/89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 149ms
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache hit for: uuid:mcszszcs-oooo-0707-1975-moldovan0707
+ POST /api/v1/swipe 200 in 278ms
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache hit for: uuid:mcszszcs-oooo-0707-1975-moldovan0707
+📋 Session data request for 89a85091...: voting state
+🔧 Force completion check for play 89a85091-a6e2-4df9-a8fd-ab29e13646b6
+🔍 Checking play completion for 89a85091... {
+  status: 'active',
+  state: 'voting',
+  metrics: {
+    totalCards: 6,
+    totalSwipes: 4,
+    personalRankingLength: 3,
+    leftSwipes: 0,
+    rightSwipes: 4
+  },
+  lastActivity: 2025-08-15T07:51:51.959Z
+}
+❌ Play completion not detected - session still active
+🗳️ Play 89a85091-a6e2-4df9-a8fd-ab29e13646b6 is in voting state - preparing current card pair
+📋 Fetched 6 cards for session 89a85091
+🗳️ Providing voting pair: #1 vs #5
+ GET /api/v1/session/89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 256ms
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache hit for: uuid:mcszszcs-oooo-0707-1975-moldovan0707
+🗳️ Vote received for session 89a85091...: winner 0885a3ab...
+🔍 Binary search vote: newCard=0885a3ab, comparison=25a50c9c, winner=0885a3ab
+🧮 Calculating bounds for 0885a3ab with ranking: [c1f44ea7, eec7773c, 25a50c9c]
+🗳️ Processing vote: 0885a3ab vs 25a50c9c, winner: 0885a3ab, compared card: 25a50c9c, index: 2
+🏆 0885a3ab won against 25a50c9c at index 2 - searchEnd: 3 → 2
+🎯 Final bounds for 0885a3ab: [0, 2)
+🎯 Search bounds for 0885a3ab: [0, 2) = 2 positions
+🔄 Binary search for 0885a3ab: search space [0, 2), comparing against middle card eec7773c at index 1
+🔍 Loop detection: recentSameComparisons=0, repeatedVotes=1
+ POST /api/v1/session/89a85091-a6e2-4df9-a8fd-ab29e13646b6/vote 200 in 274ms
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache hit for: uuid:mcszszcs-oooo-0707-1975-moldovan0707
+📋 Session data request for 89a85091...: voting state
+🔧 Force completion check for play 89a85091-a6e2-4df9-a8fd-ab29e13646b6
+🔍 Checking play completion for 89a85091... {
+  status: 'active',
+  state: 'voting',
+  metrics: {
+    totalCards: 6,
+    totalSwipes: 4,
+    personalRankingLength: 3,
+    leftSwipes: 0,
+    rightSwipes: 4
+  },
+  lastActivity: 2025-08-15T07:51:53.264Z
+}
+❌ Play completion not detected - session still active
+🗳️ Play 89a85091-a6e2-4df9-a8fd-ab29e13646b6 is in voting state - preparing current card pair
+📋 Fetched 6 cards for session 89a85091
+🗳️ Providing voting pair: #1 vs #5
+ GET /api/v1/session/89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 241ms
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache hit for: uuid:mcszszcs-oooo-0707-1975-moldovan0707
+🗳️ Vote received for session 89a85091...: winner 0885a3ab...
+🔍 Binary search vote: newCard=0885a3ab, comparison=25a50c9c, winner=0885a3ab
+🧮 Calculating bounds for 0885a3ab with ranking: [c1f44ea7, eec7773c, 25a50c9c]
+🗳️ Processing vote: 0885a3ab vs 25a50c9c, winner: 0885a3ab, compared card: 25a50c9c, index: 2
+🏆 0885a3ab won against 25a50c9c at index 2 - searchEnd: 3 → 2
+🗳️ Processing vote: 0885a3ab vs 25a50c9c, winner: 0885a3ab, compared card: 25a50c9c, index: 2
+🏆 0885a3ab won against 25a50c9c at index 2 - searchEnd: 2 → 2
+🎯 Final bounds for 0885a3ab: [0, 2)
+🎯 Search bounds for 0885a3ab: [0, 2) = 2 positions
+🔄 Binary search for 0885a3ab: search space [0, 2), comparing against middle card eec7773c at index 1
+🔍 Loop detection: recentSameComparisons=0, repeatedVotes=2
+🔄 Repeated votes detected: 2 times for 0885a3ab vs 25a50c9c winner=0885a3ab
+⚠️ Cards 0885a3ab and eec7773c have already been compared or repeated votes detected - inserting at bounds.start: 0
+ POST /api/v1/session/89a85091-a6e2-4df9-a8fd-ab29e13646b6/vote 200 in 235ms
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache hit for: uuid:mcszszcs-oooo-0707-1975-moldovan0707
+📋 Session data request for 89a85091...: swiping state
+🔧 Force completion check for play 89a85091-a6e2-4df9-a8fd-ab29e13646b6
+🔍 Checking play completion for 89a85091... {
+  status: 'active',
+  state: 'swiping',
+  metrics: {
+    totalCards: 6,
+    totalSwipes: 4,
+    personalRankingLength: 4,
+    leftSwipes: 0,
+    rightSwipes: 4
+  },
+  lastActivity: 2025-08-15T07:51:54.583Z
+}
+❌ Play completion not detected - session still active
+📋 Fetched 6 cards for session 89a85091
+ GET /api/v1/session/89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 160ms
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache hit for: uuid:mcszszcs-oooo-0707-1975-moldovan0707
+ POST /api/v1/swipe 200 in 292ms
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache hit for: uuid:mcszszcs-oooo-0707-1975-moldovan0707
+📋 Session data request for 89a85091...: voting state
+🔧 Force completion check for play 89a85091-a6e2-4df9-a8fd-ab29e13646b6
+🔍 Checking play completion for 89a85091... {
+  status: 'active',
+  state: 'voting',
+  metrics: {
+    totalCards: 6,
+    totalSwipes: 5,
+    personalRankingLength: 4,
+    leftSwipes: 0,
+    rightSwipes: 5
+  },
+  lastActivity: 2025-08-15T07:51:55.878Z
+}
+❌ Play completion not detected - session still active
+🗳️ Play 89a85091-a6e2-4df9-a8fd-ab29e13646b6 is in voting state - preparing current card pair
+📋 Fetched 6 cards for session 89a85091
+🗳️ Providing voting pair: #6 vs #5
+ GET /api/v1/session/89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 206ms
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache hit for: uuid:mcszszcs-oooo-0707-1975-moldovan0707
+🗳️ Vote received for session 89a85091...: winner 25a50c9c...
+🔍 Binary search vote: newCard=feebb5a9, comparison=25a50c9c, winner=25a50c9c
+🧮 Calculating bounds for feebb5a9 with ranking: [0885a3ab, c1f44ea7, eec7773c, 25a50c9c]
+🗳️ Processing vote: feebb5a9 vs 25a50c9c, winner: 25a50c9c, compared card: 25a50c9c, index: 3
+😞 feebb5a9 lost to 25a50c9c at index 3 - searchStart: 0 → 4
+🎯 Final bounds for feebb5a9: [4, 4)
+🎯 Search bounds for feebb5a9: [4, 4) = 0 positions
+🎯 Search space collapsed for feebb5a9: bounds=[4, 4), inserting at position 4
+📍 Card feebb5a9 inserted at position 4. New ranking: [0885a3ab, c1f44ea7, eec7773c, 25a50c9c, feebb5a9]
+🔄 Returning to swiping state - 1 cards remaining in deck, 0 cards remaining to rank
+ POST /api/v1/session/89a85091-a6e2-4df9-a8fd-ab29e13646b6/vote 200 in 137ms
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache hit for: uuid:mcszszcs-oooo-0707-1975-moldovan0707
+📋 Session data request for 89a85091...: swiping state
+🔧 Force completion check for play 89a85091-a6e2-4df9-a8fd-ab29e13646b6
+🔍 Checking play completion for 89a85091... {
+  status: 'active',
+  state: 'swiping',
+  metrics: {
+    totalCards: 6,
+    totalSwipes: 5,
+    personalRankingLength: 5,
+    leftSwipes: 0,
+    rightSwipes: 5
+  },
+  lastActivity: 2025-08-15T07:51:57.414Z
+}
+❌ Play completion not detected - session still active
+📋 Fetched 6 cards for session 89a85091
+ GET /api/v1/session/89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 120ms
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache hit for: uuid:mcszszcs-oooo-0707-1975-moldovan0707
+ POST /api/v1/swipe 200 in 306ms
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache hit for: uuid:mcszszcs-oooo-0707-1975-moldovan0707
+📋 Session data request for 89a85091...: voting state
+🔧 Force completion check for play 89a85091-a6e2-4df9-a8fd-ab29e13646b6
+🔍 Checking play completion for 89a85091... {
+  status: 'active',
+  state: 'voting',
+  metrics: {
+    totalCards: 6,
+    totalSwipes: 6,
+    personalRankingLength: 5,
+    leftSwipes: 0,
+    rightSwipes: 6
+  },
+  lastActivity: 2025-08-15T07:51:58.701Z
+}
+⏳ All cards swiped but votes are pending (state: voting) - not completing yet
+⏳ All cards swiped but votes are pending (state: voting) - not completing yet
+❌ Play completion not detected - session still active
+🗳️ Play 89a85091-a6e2-4df9-a8fd-ab29e13646b6 is in voting state - preparing current card pair
+⚠️ Play 89a85091-a6e2-4df9-a8fd-ab29e13646b6 has state inconsistencies: [ 'All cards processed (6/6) but play not marked as completed' ]
+📋 Fetched 6 cards for session 89a85091
+🗳️ Providing voting pair: #2 vs #6
+ GET /api/v1/session/89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 264ms
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache hit for: uuid:mcszszcs-oooo-0707-1975-moldovan0707
+🗳️ Vote received for session 89a85091...: winner 52c9fae4...
+🔍 Binary search vote: newCard=52c9fae4, comparison=feebb5a9, winner=52c9fae4
+🧮 Calculating bounds for 52c9fae4 with ranking: [0885a3ab, c1f44ea7, eec7773c, 25a50c9c, feebb5a9]
+🗳️ Processing vote: 52c9fae4 vs feebb5a9, winner: 52c9fae4, compared card: feebb5a9, index: 4
+🏆 52c9fae4 won against feebb5a9 at index 4 - searchEnd: 5 → 4
+🎯 Final bounds for 52c9fae4: [0, 4)
+🎯 Search bounds for 52c9fae4: [0, 4) = 4 positions
+🔄 Binary search for 52c9fae4: search space [0, 4), comparing against middle card eec7773c at index 2
+🔍 Loop detection: recentSameComparisons=0, repeatedVotes=1
+ POST /api/v1/session/89a85091-a6e2-4df9-a8fd-ab29e13646b6/vote 200 in 236ms
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache hit for: uuid:mcszszcs-oooo-0707-1975-moldovan0707
+📋 Session data request for 89a85091...: voting state
+🔧 Force completion check for play 89a85091-a6e2-4df9-a8fd-ab29e13646b6
+🔍 Checking play completion for 89a85091... {
+  status: 'active',
+  state: 'voting',
+  metrics: {
+    totalCards: 6,
+    totalSwipes: 6,
+    personalRankingLength: 5,
+    leftSwipes: 0,
+    rightSwipes: 6
+  },
+  lastActivity: 2025-08-15T07:52:00.025Z
+}
+⏳ All cards swiped but votes are pending (state: voting) - not completing yet
+⏳ All cards swiped but votes are pending (state: voting) - not completing yet
+❌ Play completion not detected - session still active
+🗳️ Play 89a85091-a6e2-4df9-a8fd-ab29e13646b6 is in voting state - preparing current card pair
+⚠️ Play 89a85091-a6e2-4df9-a8fd-ab29e13646b6 has state inconsistencies: [ 'All cards processed (6/6) but play not marked as completed' ]
+📋 Fetched 6 cards for session 89a85091
+🗳️ Providing voting pair: #2 vs #6
+ GET /api/v1/session/89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 205ms
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache hit for: uuid:mcszszcs-oooo-0707-1975-moldovan0707
+🗳️ Vote received for session 89a85091...: winner 52c9fae4...
+🔍 Binary search vote: newCard=52c9fae4, comparison=feebb5a9, winner=52c9fae4
+🧮 Calculating bounds for 52c9fae4 with ranking: [0885a3ab, c1f44ea7, eec7773c, 25a50c9c, feebb5a9]
+🗳️ Processing vote: 52c9fae4 vs feebb5a9, winner: 52c9fae4, compared card: feebb5a9, index: 4
+🏆 52c9fae4 won against feebb5a9 at index 4 - searchEnd: 5 → 4
+🗳️ Processing vote: 52c9fae4 vs feebb5a9, winner: 52c9fae4, compared card: feebb5a9, index: 4
+🏆 52c9fae4 won against feebb5a9 at index 4 - searchEnd: 4 → 4
+🎯 Final bounds for 52c9fae4: [0, 4)
+🎯 Search bounds for 52c9fae4: [0, 4) = 4 positions
+🔄 Binary search for 52c9fae4: search space [0, 4), comparing against middle card eec7773c at index 2
+🔍 Loop detection: recentSameComparisons=0, repeatedVotes=2
+🔄 Repeated votes detected: 2 times for 52c9fae4 vs feebb5a9 winner=52c9fae4
+⚠️ Cards 52c9fae4 and eec7773c have already been compared or repeated votes detected - inserting at bounds.start: 0
+ POST /api/v1/session/89a85091-a6e2-4df9-a8fd-ab29e13646b6/vote 200 in 211ms
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache hit for: uuid:mcszszcs-oooo-0707-1975-moldovan0707
+📋 Session data request for 89a85091...: swiping state
+🔧 Force completion check for play 89a85091-a6e2-4df9-a8fd-ab29e13646b6
+🔍 Checking play completion for 89a85091... {
+  status: 'active',
+  state: 'swiping',
+  metrics: {
+    totalCards: 6,
+    totalSwipes: 6,
+    personalRankingLength: 6,
+    leftSwipes: 0,
+    rightSwipes: 6
+  },
+  lastActivity: 2025-08-15T07:52:01.160Z
+}
+✅ Play completion detected: All deck cards have been swiped and no votes pending
+🎊 Marking play 89a85091-a6e2-4df9-a8fd-ab29e13646b6 as completed: Force completion: All 6 deck cards have been swiped
+✅ Play 89a85091-a6e2-4df9-a8fd-ab29e13646b6 marked as completed successfully
+🚨 FORCE COMPLETED play 89a85091-a6e2-4df9-a8fd-ab29e13646b6: {
+  reason: 'All 6 deck cards have been swiped',
+  type: 'deck_exhausted',
+  metrics: {
+    totalCards: 6,
+    totalSwipes: 6,
+    personalRankingLength: 6,
+    leftSwipes: 0,
+    rightSwipes: 6
+  }
+}
+🔄 Play 89a85091-a6e2-4df9-a8fd-ab29e13646b6 was stuck in completed state and force-completed during fetch
+📋 Fetched 6 cards for session 89a85091
+ GET /api/v1/session/89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 236ms
+ ✓ Compiled /organization/[slug]/completed in 240ms (1325 modules)
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 640ms
+📋 Organization cache miss for slug: moldovan, fetching from DB
+📋 Organization cache miss for slug: moldovan, fetching from DB
+📋 Organization fetched and cached: Moldován Csaba Kft (mcszszcs-oooo-0707-1975-moldovan0707)
+ GET /api/v1/organization/moldovan 200 in 867ms
+ ✓ Compiled /api/v1/session/[sessionUUID]/results in 226ms (1327 modules)
+📋 Organization fetched and cached: Moldován Csaba Kft (mcszszcs-oooo-0707-1975-moldovan0707)
+ GET /api/v1/organization/moldovan 200 in 1332ms
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache miss for: uuid:mcszszcs-oooo-0707-1975-moldovan0707, fetching from DB
+📋 Organization UUID from header: mcszszcs-oooo-0707-1975-moldovan0707
+📋 Middleware cache miss for: uuid:mcszszcs-oooo-0707-1975-moldovan0707, fetching from DB
+📋 Organization cached in middleware: Moldován Csaba Kft (mcszszcs-oooo-0707-1975-moldovan0707)
+📋 Organization cached in middleware: Moldován Csaba Kft (mcszszcs-oooo-0707-1975-moldovan0707)
+📋 Results requested for session 89a85091... (completed)
+📋 Results requested for session 89a85091... (completed)
+ GET /api/v1/session/89a85091-a6e2-4df9-a8fd-ab29e13646b6/results 200 in 2432ms
+ GET /api/v1/session/89a85091-a6e2-4df9-a8fd-ab29e13646b6/results 200 in 2897ms
+ ✓ Compiled in 201ms (568 modules)
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 72ms
+ ✓ Compiled in 239ms (1267 modules)
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 115ms
+ ✓ Compiled in 331ms (1267 modules)
+ ✓ Compiled in 310ms (1267 modules)
+ ✓ Compiled in 172ms (1267 modules)
+ ✓ Compiled in 160ms (1267 modules)
+ ✓ Compiled in 140ms (568 modules)
+ ✓ Compiled in 360ms (1267 modules)
+ ✓ Compiled in 92ms (568 modules)
+ ✓ Compiled in 200ms (1267 modules)
+ ✓ Compiled in 262ms (1267 modules)
+ ✓ Compiled in 174ms (1267 modules)
+ ✓ Compiled in 270ms (1267 modules)
+ ✓ Compiled in 83ms (568 modules)
+ ✓ Compiled in 146ms (568 modules)
+ ✓ Compiled in 89ms (568 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/moldovan/Library/Mobile Documents/com~apple~CloudDocs/Projects/narimato/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 111ms (568 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/moldovan/Library/Mobile Documents/com~apple~CloudDocs/Projects/narimato/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 111ms (568 modules)
+ ✓ Compiled in 86ms (568 modules)
+ ✓ Compiled in 76ms (568 modules)
+ ✓ Compiled in 72ms (568 modules)
+ ✓ Compiled in 126ms (568 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/moldovan/Library/Mobile Documents/com~apple~CloudDocs/Projects/narimato/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 97ms (568 modules)
+ ✓ Compiled in 79ms (568 modules)
+ ✓ Compiled in 69ms (568 modules)
+ ✓ Compiled in 134ms (568 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/moldovan/Library/Mobile Documents/com~apple~CloudDocs/Projects/narimato/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 131ms (568 modules)
+ ✓ Compiled in 85ms (568 modules)
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 770ms (1272 modules)
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 687ms
+ GET /_next/static/webpack/bfd722f6bf7f1984.webpack.hot-update.json 404 in 1171ms
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 14ms
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 12ms
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 13ms
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 12ms
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 12ms
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 14ms
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 13ms
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 13ms
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 12ms
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 11ms
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 12ms
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 17ms
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 12ms
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 11ms
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 12ms
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 12ms
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 38ms
+ GET /_next/static/webpack/bfd722f6bf7f1984.webpack.hot-update.json 404 in 26ms
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 12ms
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 11ms
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 12ms
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 11ms
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 12ms
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 10ms
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 12ms
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 14ms
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 12ms
+ GET /_next/static/webpack/bfd722f6bf7f1984.webpack.hot-update.json 404 in 30ms
+ GET /_next/static/webpack/bfd722f6bf7f1984.webpack.hot-update.json 404 in 52ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET /organization/moldovan/completed?session=89a85091-a6e2-4df9-a8fd-ab29e13646b6 200 in 53ms
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/moldovan/Library/Mobile Documents/com~apple~CloudDocs/Projects/narimato/.next/cache/webpack/server-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled /api/v1/organization/[slug] in 290ms (737 modules)
+ ✓ Compiled (741 modules)
+📋 Listing organizations...
+✅ Fresh connection created
+📋 Organization cache miss for slug: moldovan, fetching from DB
+📋 Organization fetched and cached: Moldován Csaba Kft (mcszszcs-oooo-0707-1975-moldovan0707)
+🔌 Connection closed
+ ✓ Compiled in 247ms (568 modules)
+ GET / 200 in 303ms
+📋 Listing organizations...
+✅ Fresh connection created
+📋 Listing organizations...
+✅ Fresh connection created
+🔌 Connection closed
+ GET /api/v1/admin/organizations 200 in 964ms
+🔌 Connection closed
+ GET /api/v1/admin/organizations 200 in 890ms
+ ✓ Compiled /_not-found in 290ms (1272 modules)
+ ⨯ [Error: ENOENT: no such file or directory, open '/Users/moldovan/Library/Mobile Documents/com~apple~CloudDocs/Projects/narimato/.next/server/app/_not-found/page.js'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/Users/moldovan/Library/Mobile Documents/com~apple~CloudDocs/Projects/narimato/.next/server/app/_not-found/page.js'
+}
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 864ms (1577 modules)
+ GET / 500 in 1732ms
+ GET / 200 in 271ms
+ ✓ Compiled /api/v1/admin/organizations in 120ms (917 modules)
+ ⨯ TypeError: __webpack_modules__[moduleId] is not a function
+    at __webpack_exec__ (.next/server/app/api/v1/admin/organizations/route.js:162:39)
+    at <unknown> (.next/server/app/api/v1/admin/organizations/route.js:163:104)
+    at <unknown> (.next/server/app/api/v1/admin/organizations/route.js:163:47)
+    at Object.<anonymous> (.next/server/app/api/v1/admin/organizations/route.js:166:3) {
+  page: '/api/v1/admin/organizations'
+}
+ ⨯ TypeError: __webpack_modules__[moduleId] is not a function
+    at __webpack_exec__ (.next/server/app/api/v1/admin/organizations/route.js:162:39)
+    at <unknown> (.next/server/app/api/v1/admin/organizations/route.js:163:104)
+    at <unknown> (.next/server/app/api/v1/admin/organizations/route.js:163:47)
+    at Object.<anonymous> (.next/server/app/api/v1/admin/organizations/route.js:166:3) {
+  page: '/api/v1/admin/organizations'
+}
+ GET /api/v1/admin/organizations 500 in 538ms
+ GET /api/v1/admin/organizations 500 in 425ms
+ ✓ Compiled /api/v1/organizations/default in 225ms (1616 modules)
+🏠 Getting or creating default organization...
+✅ Fresh connection created for default org
+🆕 No default organization found, creating one...
+🎉 Default organization created with UUID: e28b6f87-0d7c-4069-bc6c-58778f73c6d3
+🔌 Connection closed
+ GET /api/v1/organizations/default 200 in 1372ms
+ GET / 200 in 203ms
+📋 Listing organizations...
+✅ Fresh connection created
+📋 Listing organizations...
+✅ Fresh connection created
+🔌 Connection closed
+ GET /api/v1/admin/organizations 200 in 947ms
+🔌 Connection closed
+ GET /api/v1/admin/organizations 200 in 932ms
+ GET / 200 in 39ms
+📋 Listing organizations...
+✅ Fresh connection created
+📋 Listing organizations...
+✅ Fresh connection created
+🔌 Connection closed
+ GET /api/v1/admin/organizations 200 in 920ms
+🔌 Connection closed
+ GET /api/v1/admin/organizations 200 in 943ms

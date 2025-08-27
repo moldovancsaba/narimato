@@ -1,0 +1,48 @@
+/* Import all CSS modules */
+@import './styles/variables.css';
+@import './styles/base.css';
+@import './styles/layout.css';
+@import './styles/page-grids.css';
+@import './styles/gradients.css';
+@import './styles/cards.css';
+@import './styles/buttons.css';
+@import './styles/forms.css';
+
+/* BLACK/INDIGO/CYAN THEME - APPLIED GLOBALLY */
+html {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+body {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+/* Force black background everywhere */
+#__next,
+#root,
+main,
+.page-container {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+/* Override any light theme remnants */
+* {
+  color: inherit;
+}
+
+/* Remaining styles that don't fit in other modules */
+.statistic-card {
+  @apply p-4;
+}
+
+.statistic-card .text-2xl {
+  color: var(--accent);
+}
+
+.dark .statistic-card .text-2xl {
+  color: var(--accent-hover);
+}

@@ -1,0 +1,274 @@
+  /* Mobile-First Responsive Layout - BLACK/INDIGO/CYAN THEME */
+  .mobile-container {
+    width: 100%;
+    padding-left: max(var(--spacing-mobile), var(--safe-area-inset-left));
+    padding-right: max(var(--spacing-mobile), var(--safe-area-inset-right));
+    color: #ffffff;
+  }
+  
+  @media (min-width: 640px) {
+    .mobile-container {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+  }
+  
+  @media (min-width: 768px) {
+    .mobile-container {
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
+  }
+  
+  .mobile-safe-area {
+    padding-top: var(--safe-area-inset-top);
+    padding-bottom: var(--safe-area-inset-bottom);
+    padding-left: var(--safe-area-inset-left);
+    padding-right: var(--safe-area-inset-right);
+  }
+  
+  .mobile-safe-container {
+    /* Use dynamic viewport units for better mobile browser support */
+    height: 100dvh;
+    /* Fallback for browsers that don't support dvh */
+    height: calc(100vh - 80px);
+    /* Account for safe areas on mobile devices */
+    padding-top: max(var(--safe-area-inset-top), 0px);
+    padding-bottom: max(var(--safe-area-inset-bottom), 80px);
+    padding-left: var(--safe-area-inset-left);
+    padding-right: var(--safe-area-inset-right);
+  }
+  
+  /* Support for newer browsers with dynamic viewport units */
+  @supports (height: 100dvh) {
+    .mobile-safe-container {
+      height: calc(100dvh - 80px);
+      /* Account for bottom navigation */
+      padding-bottom: max(var(--safe-area-inset-bottom), 0px);
+    }
+  }
+
+  /* Layout Components - BLACK/INDIGO/CYAN THEME */
+  .page-container {
+    display: grid;
+    width: 100%;
+    /* Account for bottom navigation height (80px) */
+    height: calc(100vh - 80px);
+    grid-template-rows: auto 1fr;
+    grid-template-areas: 
+      "page-title"
+      "page-main";
+    padding: 5px;
+    gap: 5px;
+    background: #000000;
+    color: #ffffff;
+  }
+
+  /* Full-screen page layout for admin/editor pages */
+  .page-fullscreen {
+    width: 100vw;
+    height: 100vh;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #000000 !important;
+    color: #ffffff !important;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 50;
+  }
+  
+  .page-fullscreen-header {
+    flex: 0 0 auto;
+    padding: 1rem 2rem;
+    border-bottom: 2px solid #4338ca;
+    background: linear-gradient(135deg, #1e1b4b 0%, #111827 50%, #0f0f0f 100%);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.1);
+  }
+  
+  .page-fullscreen-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0;
+    width: 100%;
+    background: #000000 !important;
+  }
+
+  .page-title-area {
+    grid-area: page-title;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .page-content {
+    grid-area: page-main;
+    overflow-y: auto;
+  }
+  
+  @media (min-width: 640px) {
+    .page-content {
+      padding: var(--spacing);
+    }
+  }
+
+  /* Page Grid System */
+  .page-grid-container {
+    display: grid;
+    width: 100%;
+    /* Account for bottom navigation height (80px) consistent with VOTE/SWIPE landscape approach */
+    height: calc(100vh - 80px);
+    padding: 5px;
+    gap: 5px;
+    grid-template-rows: 60px 1fr;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "title"
+      "main";
+  }
+
+  /* Grid areas for all pages */
+  .page-title-grid {
+    grid-area: title;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .page-main-grid {
+    grid-area: main;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+  }
+
+  /* Portrait Mode */
+  @media (orientation: portrait) {
+    .page-grid-container {
+      grid-template-rows: 60px 1fr;
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "title"
+        "main";
+    }
+  }
+
+  /* Landscape Mode */
+  @media (orientation: landscape) {
+    .page-grid-container {
+      grid-template-rows: 60px 1fr;
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "title"
+        "main";
+    }
+  }
+
+  /* Grid cell is the single source of truth for card sizing */
+  .grid-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Card Grid for Results (Completed, Ranks, Cards) */
+  .results-grid {
+    display: grid;
+    width: 100%;
+    padding: 0.25rem;
+    gap: 16px; /* Increased from 5px for better spacing */
+  }
+
+  /* Portrait: 2 columns */
+  @media (orientation: portrait) {
+    .results-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px; /* Even larger gap for portrait mode */
+    }
+  }
+
+  /* Landscape: 4 columns */
+  @media (orientation: landscape) {
+    .results-grid {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px; /* Slightly smaller gap for landscape to fit more cards */
+    }
+  }
+  
+  /* Vote Page VS Circle - BLACK/INDIGO/CYAN THEME */
+  .vote-card-circle {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(67, 56, 202, 0.1) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #06b6d4;
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(6, 182, 212, 0.3);
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.1);
+  }
+  
+  /* Landscape visibility helper */
+  .landscape-show {
+    display: none;
+  }
+  
+  @media (orientation: landscape) {
+    .landscape-show {
+      display: flex;
+    }
+  }
+  
+  /* Card Editor Layout */
+  .editor-grid {
+    display: grid;
+    width: 100%;
+    gap: 1.5rem;
+    /* Default mobile: single column */
+    grid-template-columns: 1fr;
+  }
+  
+  /* Portrait mode: 2 columns */
+  @media (orientation: portrait) and (min-width: 768px) {
+    .editor-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+  }
+  
+  /* Landscape mode: 3 equal columns */
+  @media (orientation: landscape) and (min-width: 1024px) {
+    .editor-grid {
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+    }
+    
+    /* Adjust spacing for landscape layout */
+    .editor-grid > div {
+      max-height: calc(100vh - 200px);
+      overflow-y: auto;
+    }
+  }
+  
+  /* Preview container specific styling - BLACK/INDIGO/CYAN THEME */
+  .preview-container {
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1e1b4b 0%, #111827 50%, #0f0f0f 100%);
+    border-radius: 0.5rem;
+    border: 2px solid #4338ca;
+    box-shadow: 0 8px 25px rgba(6, 182, 212, 0.15), 0 4px 12px rgba(67, 56, 202, 0.1);
+  }
