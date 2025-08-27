@@ -1,0 +1,99 @@
+/* Gradient Background Utilities */
+.gradient-bg-2layer {
+  background-image:
+    linear-gradient(
+      to right,
+      #a46 0%,        /* reddish-pink */
+      #210 10%,       /* dark purplish gray */
+      #102 90%,
+      #098 100%       /* greenish-blue */
+    ),
+    repeating-linear-gradient(
+      320deg,
+      #000a 0px,     /* dark purple @ 40% opacity */
+      #000a 3px,
+      #0005 2px,     /* transparent */
+      #0005 12px
+    );
+  background-blend-mode: overlay;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-attachment: fixed;
+}
+
+/* Portrait Mode Gradient Applications */
+@media (orientation: portrait) {
+  /* Apply gradient background to SWIPE page in portrait mode */
+  .swipe-grid.gradient-bg-2layer {
+    background-image:
+      linear-gradient(
+        to right,
+        #a46 0%,        /* reddish-pink */
+        #210 10%,       /* dark purplish gray */
+        #102 90%,
+        #098 100%       /* greenish-blue */
+      ),
+      repeating-linear-gradient(
+        320deg,
+        #000a 0px,     /* dark purple @ 40% opacity */
+        #000a 3px,
+        #0005 2px,     /* transparent */
+        #0005 12px
+      );
+    background-blend-mode: overlay;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-attachment: fixed;
+  }
+  
+  /* Apply gradient background to VOTE page in portrait mode */
+  .vote-grid.gradient-bg-2layer {
+    background-image:
+      linear-gradient(
+        to right,
+        #a46 0%,        /* reddish-pink */
+        #210 10%,       /* dark purplish gray */
+        #102 90%,
+        #098 100%       /* greenish-blue */
+      ),
+      repeating-linear-gradient(
+        320deg,
+        #000a 0px,     /* dark purple @ 40% opacity */
+        #000a 3px,
+        #0005 2px,     /* transparent */
+        #0005 12px
+      );
+    background-blend-mode: overlay;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-attachment: fixed;
+  }
+}
+
+/* CARDS page gradient background - Portrait and Landscape */
+.cards-page-grid.gradient-bg-2layer {
+  background-image:
+    linear-gradient(
+      to right,
+      #a46 0%,        /* reddish-pink */
+      #210 10%,       /* dark purplish gray */
+      #102 90%,
+      #098 100%       /* greenish-blue */
+    ),
+    repeating-linear-gradient(
+      320deg,
+      #000a 0px,     /* dark purple @ 40% opacity */
+      #000a 3px,
+      #0005 2px,     /* transparent */
+      #0005 12px
+    );
+  background-blend-mode: overlay;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-attachment: fixed;
+}
+
+/* Deck card gradient */
+.deck-card-gradient {
+  background: linear-gradient(135deg, #8b5cf6, #a855f7, #c084fc);
+}

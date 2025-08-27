@@ -1,0 +1,325 @@
+  /* Button Components - BLACK/INDIGO/CYAN THEME */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.2s ease-in-out;
+    outline: none;
+    /* Mobile: larger touch targets */
+    min-height: 44px;
+    padding: 12px 16px;
+    font-size: 14px;
+    font-family: var(--font-fira-code);
+    color: #ffffff;
+    /* Black/indigo gradient with cyan accents */
+    background: linear-gradient(135deg, #1e1b4b 0%, #111827 50%, #0f0f0f 100%);
+    border: 2px solid #4338ca;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.2), 0 2px 8px rgba(67, 56, 202, 0.15);
+  }
+  
+  .btn:disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+  
+  /* Desktop button styling */
+  @media (min-width: 640px) {
+    .btn {
+      min-height: auto;
+      padding: 8px 16px;
+      border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(6, 182, 212, 0.25), 0 3px 10px rgba(67, 56, 202, 0.2);
+    }
+  }
+  
+  .btn-primary {
+    background: linear-gradient(135deg, #06b6d4 0%, #4338ca 100%);
+    color: #ffffff;
+    border: 2px solid #06b6d4;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3), 0 2px 8px rgba(67, 56, 202, 0.2);
+  }
+  
+  /* Hover effects only on desktop */
+  @media (hover: hover) and (pointer: fine) {
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #0891b2 0%, #3730a3 100%);
+      border-color: #00ffff;
+      box-shadow: 0 8px 25px rgba(6, 182, 212, 0.4), 0 4px 15px rgba(67, 56, 202, 0.3), 0 0 20px rgba(6, 182, 212, 0.2);
+      transform: translateY(-2px);
+    }
+  }
+  
+  .btn-secondary {
+    background: linear-gradient(135deg, #374151 0%, #111827 100%);
+    color: #ffffff;
+    border: 2px solid #4b5563;
+    box-shadow: 0 4px 12px rgba(75, 85, 99, 0.25), 0 2px 6px rgba(17, 24, 39, 0.15);
+  }
+  
+  @media (hover: hover) and (pointer: fine) {
+    .btn-secondary:hover {
+      background: linear-gradient(135deg, #4b5563 0%, #1f2937 100%);
+      border-color: #6b7280;
+      color: #ffffff;
+      box-shadow: 0 6px 18px rgba(75, 85, 99, 0.3), 0 3px 9px rgba(17, 24, 39, 0.2);
+      transform: translateY(-2px);
+    }
+  }
+  
+  .btn-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff;
+    border: 2px solid #10b981;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25), 0 2px 8px rgba(5, 150, 105, 0.15);
+  }
+  
+  @media (hover: hover) and (pointer: fine) {
+    .btn-success:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35), 0 3px 10px rgba(5, 150, 105, 0.25);
+      transform: translateY(-2px);
+    }
+  }
+  
+  .btn-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: #ffffff;
+    border: 2px solid #ef4444;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.25), 0 2px 8px rgba(220, 38, 38, 0.15);
+  }
+  
+  @media (hover: hover) and (pointer: fine) {
+    .btn-danger:hover {
+      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+      box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35), 0 3px 10px rgba(220, 38, 38, 0.25);
+      transform: translateY(-2px);
+    }
+  }
+  
+  .btn-accent {
+    background: linear-gradient(135deg, #00ffff 0%, #06b6d4 100%);
+    color: #000000;
+    border: 2px solid #00ffff;
+    box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3), 0 2px 8px rgba(6, 182, 212, 0.2), 0 0 15px rgba(0, 255, 255, 0.15);
+    font-weight: 600;
+  }
+  
+  @media (hover: hover) and (pointer: fine) {
+    .btn-accent:hover {
+      background: linear-gradient(135deg, #0891b2 0%, #0284c7 100%);
+      border-color: #06b6d4;
+      box-shadow: 0 8px 25px rgba(0, 255, 255, 0.4), 0 4px 15px rgba(6, 182, 212, 0.3), 0 0 25px rgba(0, 255, 255, 0.25);
+      transform: translateY(-2px);
+    }
+  }
+  
+  .btn-outline {
+    background-color: transparent;
+    color: #06b6d4;
+    border: 2px solid #06b6d4;
+    box-shadow: 0 0 10px rgba(6, 182, 212, 0.15);
+  }
+  
+  @media (hover: hover) and (pointer: fine) {
+    .btn-outline:hover {
+      background: linear-gradient(135deg, #06b6d4 0%, #4338ca 100%);
+      color: #ffffff;
+      border-color: #00ffff;
+      box-shadow: 0 6px 20px rgba(6, 182, 212, 0.3), 0 3px 10px rgba(67, 56, 202, 0.2), 0 0 15px rgba(6, 182, 212, 0.2);
+      transform: translateY(-2px);
+    }
+  }
+  
+  .btn-disabled {
+    background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+    color: #6b7280;
+    border: 2px solid #374151;
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.6;
+  }
+  
+  /* Button size variants */
+  .btn-lg {
+    min-height: 52px;
+    padding: 16px 24px;
+    font-size: 16px;
+  }
+  
+  @media (min-width: 640px) {
+    .btn-lg {
+      min-height: auto;
+      padding: 12px 24px;
+    }
+  }
+  
+  .btn-sm {
+    min-height: 36px;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  @media (min-width: 640px) {
+    .btn-sm {
+      min-height: auto;
+      padding: 6px 12px;
+    }
+  }
+  
+  /* Swipe Button Components - BLACK/INDIGO/CYAN THEME */
+  .swipe-button {
+    border-radius: 50%;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3), 0 4px 15px rgba(6, 182, 212, 0.2);
+    transition: all 0.2s ease-in-out;
+    transform: scale(1);
+    font-size: 2.5rem;
+    outline: none;
+    /* Mobile: larger touch targets */
+    width: 80px;
+    height: 80px;
+    color: #ffffff;
+    border: 2px solid #4338ca;
+  }
+
+  @media (min-width: 640px) {
+    .swipe-button {
+      width: 72px;
+      height: 72px;
+    }
+  }
+  
+  /* Touch-friendly active states */
+  .swipe-button:active {
+    transform: scale(0.9);
+  }
+  
+  /* Hover effects only on desktop */
+  @media (hover: hover) and (pointer: fine) {
+    .swipe-button:hover {
+      transform: scale(0.95);
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4), 0 6px 20px rgba(6, 182, 212, 0.3);
+    }
+    
+    .swipe-button:focus {
+      box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.5), 0 0 0 2px rgba(255, 255, 255, 0.8);
+    }
+  }
+
+  .swipe-button-left {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: #ffffff;
+  }
+  
+  @media (hover: hover) and (pointer: fine) {
+    .swipe-button-left:hover {
+      background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+      box-shadow: 0 12px 35px rgba(220, 38, 38, 0.4), 0 6px 20px rgba(185, 28, 28, 0.3);
+    }
+    
+    .swipe-button-left:focus {
+      box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.5), 0 0 0 2px rgba(255, 255, 255, 0.8);
+    }
+  }
+
+  .swipe-button-right {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff;
+  }
+  
+  @media (hover: hover) and (pointer: fine) {
+    .swipe-button-right:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      box-shadow: 0 12px 35px rgba(16, 185, 129, 0.4), 0 6px 20px rgba(5, 150, 105, 0.3);
+    }
+    
+    .swipe-button-right:focus {
+      box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.5), 0 0 0 2px rgba(255, 255, 255, 0.8);
+    }
+  }
+
+  /* Support text and circles - BLACK/INDIGO/CYAN THEME */
+  .support-text {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  .swipe-button-circle {
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    box-shadow: 0 8px 25px rgba(6, 182, 212, 0.3), 0 4px 15px rgba(67, 56, 202, 0.2);
+    transition: all 0.2s ease-in-out;
+    transform: scale(1);
+    width: 80px;
+    height: 80px;
+    min-width: 80px;
+    min-height: 80px;
+    aspect-ratio: 1;
+    background: linear-gradient(135deg, #1e1b4b 0%, #111827 50%, #0f0f0f 100%);
+    border: 2px solid #4338ca;
+    color: #ffffff;
+  }
+  
+  @media (hover: hover) and (pointer: fine) {
+    .swipe-button-circle:hover {
+      transform: scale(0.95);
+      box-shadow: 0 12px 35px rgba(6, 182, 212, 0.4), 0 6px 20px rgba(67, 56, 202, 0.3);
+    }
+  }
+  
+  .swipe-button-circle:active {
+    transform: scale(0.9);
+  }
+
+  .vote-card-circle {
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    aspect-ratio: 1;
+    background: linear-gradient(135deg, #06b6d4 0%, #4338ca 100%);
+    color: #ffffff;
+    border: 2px solid #06b6d4;
+    box-shadow: 0 4px 12px rgba(6, 182, 212, 0.25), 0 2px 6px rgba(67, 56, 202, 0.15);
+  }
+
+  /* Navigation Components - BLACK/INDIGO/CYAN THEME */
+  .nav-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 8px;
+    color: #9ca3af;
+    background-color: transparent;
+    border: 1px solid transparent;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  @media (hover: hover) and (pointer: fine) {
+    .nav-button:hover {
+      color: #ffffff;
+      background: linear-gradient(135deg, #1e1b4b 0%, #111827 100%);
+      border-color: #4338ca;
+      box-shadow: 0 4px 12px rgba(6, 182, 212, 0.15), 0 2px 6px rgba(67, 56, 202, 0.1);
+    }
+  }
+  
+  .nav-button.active {
+    color: #06b6d4;
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(67, 56, 202, 0.05) 100%);
+    border-color: #06b6d4;
+    box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
+  }
