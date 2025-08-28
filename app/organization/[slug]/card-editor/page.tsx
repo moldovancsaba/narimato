@@ -1,37 +1,29 @@
-'use client';
-
-// FUNCTIONAL: Full CRUD operations for card management within organization context
-// STRATEGIC: Organization-scoped card management with user-driven control
-
-import { useState, useEffect } from 'react';
-import { MinimalCSS } from '../../../lib/styles/minimal-design';
+'use client'
+import { useState, useEffect } from 'react'
+import '../../../styles/minimal.css'
 
 interface Props {
   params: { slug: string }
 }
 
 interface Card {
-  uuid: string;
-  name: string;
-  type: string;
-  content: string;
-  isActive: boolean;
+  uuid: string
+  name: string
+  content: string
 }
 
 export default function CardEditor({ params }: Props) {
-  const [cards, setCards] = useState<Card[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState<string | null>(null);
+  const [cards, setCards] = useState<Card[]>([])
+  const [loading, setLoading] = useState(true)
+  const [editing, setEditing] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     name: '',
-    type: 'text',
-    content: '',
-    isActive: true
-  });
+    content: ''
+  })
 
   useEffect(() => {
-    fetchCards();
-  }, []);
+    fetchCards()
+  }, [])
 
   const fetchCards = async () => {
     try {
@@ -39,26 +31,26 @@ export default function CardEditor({ params }: Props) {
         headers: {
           'X-Organization-Slug': params.slug
         }
-      });
+      })
       if (response.ok) {
-        const data = await response.json();
-        setCards(data.cards || []);
+        const data = await response.json()
+        setCards(data.cards || [])
       }
     } catch (error) {
-      console.error('Failed to fetch cards:', error);
+      console.error('Failed to fetch cards:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     
     const url = editing 
       ? `/api/v1/cards/${editing}`
-      : '/api/v1/cards';
+      : '/api/v1/cards'
     
-    const method = editing ? 'PUT' : 'POST';
+    const method = editing ? 'PUT' : 'POST'
     
     try {
       const response = await fetch(url, {
@@ -68,163 +60,106 @@ export default function CardEditor({ params }: Props) {
           'X-Organization-Slug': params.slug
         },
         body: JSON.stringify(formData)
-      });
+      })
       
       if (response.ok) {
-        await fetchCards();
-        resetForm();
+        await fetchCards()
+        resetForm()
       }
     } catch (error) {
-      console.error('Failed to save card:', error);
+      console.error('Failed to save card:', error)
     }
-  };
+  }
 
   const handleEdit = (card: Card) => {
-    setEditing(card.uuid);
+    setEditing(card.uuid)
     setFormData({
       name: card.name,
-      type: card.type,
-      content: card.content,
-      isActive: card.isActive
-    });
-  };
+      content: card.content
+    })
+  }
 
   const handleDelete = async (uuid: string) => {
-    if (confirm('Delete this card?')) {
-      try {
-        const response = await fetch(`/api/v1/cards/${uuid}`, {
-          method: 'DELETE',
-          headers: {
-            'X-Organization-Slug': params.slug
-          }
-        });
-        
-        if (response.ok) {
-          await fetchCards();
+    try {
+      const response = await fetch(`/api/v1/cards/${uuid}`, {
+        method: 'DELETE',
+        headers: {
+          'X-Organization-Slug': params.slug
         }
-      } catch (error) {
-        console.error('Failed to delete card:', error);
+      })
+      
+      if (response.ok) {
+        await fetchCards()
       }
+    } catch (error) {
+      console.error('Failed to delete card:', error)
     }
-  };
+  }
 
   const resetForm = () => {
-    setEditing(null);
+    setEditing(null)
     setFormData({
       name: '',
-      type: 'text',
-      content: '',
-      isActive: true
-    });
-  };
+      content: ''
+    })
+  }
 
   if (loading) {
-    return (
-      <div className={MinimalCSS.centerContent}>
-        <div>Loading...</div>
-      </div>
-    );
+    return <div className="container text-center">Loading...</div>
   }
 
   return (
-    <div className={MinimalCSS.container}>
-      <h1 className={MinimalCSS.heading}>Card Management</h1>
+    <div className="container">
+      <h1 className="mb-20">Cards</h1>
       
-      <form onSubmit={handleSubmit} className={MinimalCSS.form}>
-        <div className={MinimalCSS.formField}>
-          <label className={MinimalCSS.label}>Name</label>
-          <input
-            type="text"
-            value={formData.name}
-            onChange={(e) => setFormData({...formData, name: e.target.value})}
-            className={MinimalCSS.input}
-            required
-          />
-        </div>
-        
-        <div className={MinimalCSS.formField}>
-          <label className={MinimalCSS.label}>Type</label>
-          <select
-            value={formData.type}
-            onChange={(e) => setFormData({...formData, type: e.target.value})}
-            className={MinimalCSS.input}
-          >
-            <option value="text">Text</option>
-            <option value="image">Image</option>
-          </select>
-        </div>
-        
-        <div className={MinimalCSS.formField}>
-          <label className={MinimalCSS.label}>Content</label>
-          <textarea
-            value={formData.content}
-            onChange={(e) => setFormData({...formData, content: e.target.value})}
-            className={MinimalCSS.textarea}
-            required
-          />
-        </div>
-        
-        <div className={MinimalCSS.formField}>
-          <label className={MinimalCSS.label}>
-            <input
-              type="checkbox"
-              checked={formData.isActive}
-              onChange={(e) => setFormData({...formData, isActive: e.target.checked})}
-            />
-            Active
-          </label>
-        </div>
-        
-        <div>
-          <button type="submit" className={MinimalCSS.buttonPrimary}>
+      <form onSubmit={handleSubmit} className="form mb-20">
+        <input
+          type="text"
+          placeholder="Name"
+          value={formData.name}
+          onChange={(e) => setFormData({...formData, name: e.target.value})}
+          required
+        />
+        <textarea
+          placeholder="Content"
+          value={formData.content}
+          onChange={(e) => setFormData({...formData, content: e.target.value})}
+          required
+        />
+        <div className="form-row">
+          <button type="submit">
             {editing ? 'Update' : 'Create'}
           </button>
           {editing && (
-            <button 
-              type="button" 
-              onClick={resetForm}
-              className={MinimalCSS.buttonSecondary + ' ml-2'}
-            >
+            <button type="button" onClick={resetForm}>
               Cancel
             </button>
           )}
         </div>
       </form>
 
-      <h2 className={MinimalCSS.subheading}>Cards</h2>
-      
-      <div className={MinimalCSS.list}>
+      <ul className="list">
         {cards.map((card) => (
-          <div key={card.uuid} className={MinimalCSS.listItem}>
+          <li key={card.uuid} className="list-item">
             <div>
-              <h3 className={MinimalCSS.subheading}>{card.name}</h3>
-              <p>Type: {card.type}</p>
-              <p>{card.content.substring(0, 100)}...</p>
-              <p>Status: {card.isActive ? 'Active' : 'Inactive'}</p>
+              <strong>{card.name}</strong>
+              <div>{card.content.substring(0, 100)}...</div>
             </div>
-            <div>
-              <button 
-                onClick={() => handleEdit(card)}
-                className={MinimalCSS.buttonSecondary + ' mr-2'}
-              >
+            <div className="actions">
+              <button onClick={() => handleEdit(card)}>
                 Edit
               </button>
-              <button 
-                onClick={() => handleDelete(card.uuid)}
-                className={MinimalCSS.buttonDanger}
-              >
+              <button onClick={() => handleDelete(card.uuid)}>
                 Delete
               </button>
             </div>
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
       
-      <div className="mt-8">
-        <a href={`/organization/${params.slug}`} className={MinimalCSS.buttonSecondary}>
-          Back to Organization
-        </a>
-      </div>
+      <button onClick={() => window.location.href = `/organization/${params.slug}`}>
+        Back
+      </button>
     </div>
-  );
+  )
 }
