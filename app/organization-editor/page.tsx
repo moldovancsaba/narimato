@@ -1,6 +1,5 @@
 'use client'
 import { useState, useEffect } from 'react'
-import '../styles/minimal.css'
 
 interface Organization {
   uuid: string
