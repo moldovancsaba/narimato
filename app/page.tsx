@@ -1,6 +1,5 @@
 'use client'
 import { useEffect } from 'react'
-import './styles/minimal.css'
 
 export default function Home() {
   useEffect(() => {

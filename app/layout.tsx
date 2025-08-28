@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import "./styles/minimal.css"
+import "./globals.css"
 
 export const metadata: Metadata = {
   title: 'Narimato',
@@ -10,7 +10,7 @@ export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
-}>) {
+}}) {
   return (
     <html lang="en">
       <body>{children}</body>
