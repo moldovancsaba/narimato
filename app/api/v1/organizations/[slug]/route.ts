@@ -13,12 +13,16 @@ export async function GET(
     await connectMasterDb();
     const { slug } = await params;
 
-    const organization = await Organization.findOne({ slug }).select('uuid name slug');
+    const organization = await Organization.findOne({ slug, isActive: true })
+      .select('uuid displayName slug description createdAt')
+      .lean()
+      .maxTimeMS(30000); // 30 second timeout for operations
+      
     if (!organization) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ organization: organization.toObject() });
+    return NextResponse.json({ organization });
   } catch (error) {
     console.error('Error fetching organization:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -43,23 +47,27 @@ export async function PUT(
 
     // Check if new slug conflicts with existing org (except current one)
     if (body.slug !== slug) {
-      const existing = await Organization.findOne({ slug: body.slug });
+      const existing = await Organization.findOne({ slug: body.slug, isActive: true });
       if (existing) {
         return NextResponse.json({ error: 'Slug already in use' }, { status: 409 });
       }
     }
 
     const organization = await Organization.findOneAndUpdate(
-      { slug },
-      { name: body.name, slug: body.slug },
+      { slug, isActive: true },
+      { 
+        displayName: body.name, 
+        slug: body.slug,
+        description: body.description || ''
+      },
       { new: true }
-    ).select('uuid name slug');
+    ).select('uuid displayName slug description createdAt');
 
     if (!organization) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ organization: organization.toObject() });
+    return NextResponse.json({ organization });
   } catch (error) {
     console.error('Error updating organization:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -77,7 +85,12 @@ export async function DELETE(
     await connectMasterDb();
     const { slug } = await params;
 
-    const organization = await Organization.findOneAndDelete({ slug });
+    const organization = await Organization.findOneAndUpdate(
+      { slug, isActive: true },
+      { isActive: false },
+      { new: true }
+    );
+    
     if (!organization) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
     }

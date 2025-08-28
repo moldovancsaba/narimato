@@ -212,10 +212,10 @@ async function dbConnect(organizationId: string): Promise<Connection> {
       // STRATEGIC: Optimized for MongoDB Atlas with proper retry and recovery mechanisms
       bufferCommands: false,             // Disable buffering to fail fast on connection issues
       
-      // Connection timeout configurations - optimized for Atlas
-      serverSelectionTimeoutMS: 15000,  // 15 seconds for server selection (reduced from 30s)
-      connectTimeoutMS: 20000,          // 20 seconds for initial connection (reduced from 30s)
-      socketTimeoutMS: 45000,           // 45 seconds for socket operations (was 0 - unlimited)
+      // Connection timeout configurations - optimized for Atlas with longer timeouts for cold starts
+      serverSelectionTimeoutMS: 30000,  // 30 seconds for server selection (increased for cold start)
+      connectTimeoutMS: 30000,          // 30 seconds for initial connection (increased for cold start)
+      socketTimeoutMS: 60000,           // 60 seconds for socket operations (increased for slow ops)
       
       // Connection pool settings - enhanced for stability
       maxPoolSize: 5,                   // Reduced pool size for better management

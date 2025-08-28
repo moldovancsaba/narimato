@@ -44,6 +44,46 @@ button:disabled {
   padding: 20px;
 }
 
+/* Results grid for charts and stats - uses full available width */
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Responsive breakpoints for results-grid */
+@media (max-width: 768px) {
+  .results-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .results-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}
+
+@media (min-width: 1025px) {
+  .results-grid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+  }
+}
+
+/* Wide container for stats and chart pages */
+.container-wide {
+  max-width: 100%;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px;
+}
+
 .form {
   display: flex;
   flex-direction: column;
