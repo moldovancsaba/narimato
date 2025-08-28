@@ -3,17 +3,32 @@ import { connectMasterDb } from '@/app/lib/utils/db';
 import Organization from '@/app/lib/models/Organization';
 
 /**
- * POST /api/v1/admin/organizations
- * Create a new organization with validation
+ * GET /api/v1/organizations
+ * Fetch all organizations
+ */
+export async function GET() {
+  try {
+    await connectMasterDb();
+    const organizations = await Organization.find({}).select('uuid name slug');
+    return NextResponse.json({ organizations });
+  } catch (error) {
+    console.error('Error fetching organizations:', error);
+    return NextResponse.json({ error: 'Failed to fetch organizations' }, { status: 500 });
+  }
+}
+
+/**
+ * POST /api/v1/organizations
+ * Create a new organization (minimal: name + slug only)
  */
 export async function POST(request: NextRequest) {
   try {
     await connectMasterDb();
 
     const body = await request.json();
-    if (!body.name || !body.slug || !body.databaseName) {
+    if (!body.name || !body.slug) {
       return NextResponse.json(
-        { success: false, error: 'Name, slug, and databaseName are required' },
+        { error: 'Name and slug are required' },
         { status: 400 }
       );
     }
@@ -21,28 +36,26 @@ export async function POST(request: NextRequest) {
     const existingOrg = await Organization.findOne({ slug: body.slug });
     if (existingOrg) {
       return NextResponse.json(
-        { success: false, error: 'Slug already in use' },
+        { error: 'Slug already in use' },
         { status: 409 }
       );
     }
 
+    // Auto-generate databaseName from slug
+    const databaseName = `narimato_${body.slug.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+
     const newOrg = await Organization.create({
       name: body.name,
       slug: body.slug,
-      databaseName: body.databaseName
+      databaseName
     });
 
-    return NextResponse.json({
-      success: true,
-      message: 'Organization created successfully',
-      organization: newOrg.toObject()
-    });
+    return NextResponse.json({ organization: newOrg.toObject() });
   } catch (error) {
     console.error('Error creating organization:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to create organization',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to create organization' },
+      { status: 500 }
+    );
   }
 }
