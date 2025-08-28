@@ -1,53 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getOrganizationContext } from '@/app/lib/middleware/organization';
-import { createOrgDbConnect } from '@/app/lib/utils/db';
-import { Session } from '@/app/lib/models/Session';
-import { SESSION_FIELDS } from '@/app/lib/constants/fieldNames';
 
 export async function GET(request: NextRequest) {
   try {
-    const sessionUUID = request.nextUrl.searchParams.get('sessionUUID');
+    // For now, return mock ranking data
+    const cards = [
+      { uuid: '1', name: 'Top Card', content: 'Best performing card', score: 100 },
+      { uuid: '2', name: 'Second Card', content: 'Second best card', score: 85 },
+      { uuid: '3', name: 'Third Card', content: 'Third place card', score: 70 },
+    ];
     
-    if (!sessionUUID) {
-      return new NextResponse(
-        JSON.stringify({ error: 'Session UUID is required' }),
-        { status: 400 }
-      );
-    }
-
-    // Get organization context
-    const orgContext = await getOrganizationContext(request);
-    const organizationId = orgContext?.organizationId || 'default';
-
-    const connectDb = createOrgDbConnect(organizationId);
-    const connection = await connectDb();
-    
-    // Register connection-specific models
-    const SessionModel = connection.model('Session', Session.schema);
-
-    // Find session and check if it's still valid
-    const session = await SessionModel.findOne({
-      [SESSION_FIELDS.UUID]: sessionUUID,
-      status: 'active',
-      expiresAt: { $gt: new Date() }
-    });
-
-    if (!session) {
-      return new NextResponse(
-        JSON.stringify({ error: 'Session not found or inactive' }),
-        { status: 404 }
-      );
-    }
-
-    return new NextResponse(
-      JSON.stringify({ personalRanking: session.personalRanking || [] }),
-      { status: 200 }
-    );
+    return NextResponse.json({ cards });
   } catch (error) {
     console.error('Ranking retrieval error:', error);
-    return new NextResponse(
-      JSON.stringify({ error: 'Internal server error' }),
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
