@@ -1,61 +1,73 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectMasterDb } from '@/app/lib/utils/db';
-import Organization from '@/app/lib/models/Organization';
+import { connectMasterDb } from '../../../lib/utils/db';
+import Organization from '../../../lib/models/Organization';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * GET /api/v1/organizations
- * Fetch all organizations
  */
 export async function GET() {
   try {
     await connectMasterDb();
-    const organizations = await Organization.find({}).select('uuid name slug');
+    
+    const organizations = await Organization.find({ isActive: true })
+      .select('uuid displayName slug description createdAt')
+      .sort({ createdAt: -1 })
+      .lean()
+      .maxTimeMS(30000); // 30 second timeout for operations
+
     return NextResponse.json({ organizations });
   } catch (error) {
     console.error('Error fetching organizations:', error);
-    return NextResponse.json({ error: 'Failed to fetch organizations' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
 /**
  * POST /api/v1/organizations
- * Create a new organization (minimal: name + slug only)
  */
 export async function POST(request: NextRequest) {
   try {
     await connectMasterDb();
-
+    
     const body = await request.json();
-    if (!body.name || !body.slug) {
-      return NextResponse.json(
-        { error: 'Name and slug are required' },
-        { status: 400 }
-      );
+    const { name, slug } = body;
+
+    if (!name || !slug) {
+      return NextResponse.json({ error: 'Name and slug are required' }, { status: 400 });
     }
 
-    const existingOrg = await Organization.findOne({ slug: body.slug });
+    // Check if slug already exists
+    const existingOrg = await Organization.findOne({ slug, isActive: true })
+      .maxTimeMS(30000); // 30 second timeout for operations
     if (existingOrg) {
-      return NextResponse.json(
-        { error: 'Slug already in use' },
-        { status: 409 }
-      );
+      return NextResponse.json({ error: 'Slug already in use' }, { status: 409 });
     }
 
-    // Auto-generate databaseName from slug
-    const databaseName = `narimato_${body.slug.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
-
-    const newOrg = await Organization.create({
-      name: body.name,
-      slug: body.slug,
-      databaseName
+    // Create new organization
+    const organizationUuid = uuidv4();
+    const organization = new Organization({
+      uuid: organizationUuid,
+      displayName: name,
+      slug: slug,
+      databaseName: organizationUuid, // Use UUID as database name
+      description: body.description || '',
+      isActive: true
     });
 
-    return NextResponse.json({ organization: newOrg.toObject() });
+    await organization.save();
+
+    return NextResponse.json({
+      organization: {
+        uuid: organization.uuid,
+        displayName: organization.displayName,
+        slug: organization.slug,
+        description: organization.description,
+        createdAt: organization.createdAt
+      }
+    }, { status: 201 });
   } catch (error) {
     console.error('Error creating organization:', error);
-    return NextResponse.json(
-      { error: 'Failed to create organization' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

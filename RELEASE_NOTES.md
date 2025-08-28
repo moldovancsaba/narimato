@@ -1,8 +1,117 @@
 # NARIMATO Release Notes
 
-**Current Version:** 4.4.0 (Critical Bug Fixes & Performance)
-**Date:** 2025-01-15
-**Last Updated:** 2025-01-15T12:30:00.000Z
+**Current Version:** 5.1.0 (Layout & CSS Improvements)
+**Date:** 2025-08-28
+**Last Updated:** 2025-08-28T09:02:20.000Z
+
+## [v5.1.0] — 2025-08-28T09:02:20.000Z
+
+### 🎨 Layout & CSS Improvements - Chart Width Fix
+
+This minor release addresses a critical layout issue where stats and chart-like components were displaying much narrower than intended, failing to utilize the full available width for optimal data visualization.
+
+### ✨ Issues Resolved
+
+#### Missing results-grid CSS Class
+- **Problem**: Components using `results-grid` class were not displaying properly due to missing CSS definition
+- **Root Cause**: The `results-grid` class was referenced in UnifiedCardDisplay.tsx and OrganizationMainPage.tsx but never defined in the CSS
+- **Solution**: Added responsive grid layout CSS class that utilizes full available width
+- **Impact**: Charts and stats now display at full width as intended
+
+#### Container Width Constraints
+- **Problem**: Stats pages were constrained by narrow container max-width (800px) unsuitable for chart displays
+- **Root Cause**: Single container class with restrictive max-width applied to all pages including data visualization
+- **Solution**: Added dedicated `container-wide` class for full-width layouts and enhanced `results-grid` with responsive design
+- **Impact**: Data visualization components now use full screen width for better readability
+
+### 🔧 Technical Implementation
+
+#### Enhanced CSS Layout Classes
+```css
+/* Results grid for charts and stats - uses full available width */
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Wide container for stats and chart pages */
+.container-wide {
+  max-width: 100%;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px;
+}
+```
+
+#### Responsive Design Enhancements
+- **Mobile**: Single column layout (1fr) with 16px gaps
+- **Tablet**: Auto-fill columns with minimum 300px width
+- **Desktop**: Auto-fill columns with minimum 320px width and 24px gaps
+- **Full Utilization**: Grid components now use 100% available width across all screen sizes
+
+### 📱 Responsive Breakpoints
+- **Mobile (≤768px)**: Single column grid for optimal mobile viewing
+- **Tablet (769px-1024px)**: Multi-column grid with 300px minimum column width
+- **Desktop (≥1025px)**: Multi-column grid with 320px minimum column width and larger gaps
+
+### 🛠️ Files Modified
+- **globals.css**: Added missing `results-grid` CSS class and `container-wide` utility class
+- **package.json**: Version incremented from 5.0.0 to 5.1.0 following versioning protocol
+
+### 📊 Layout Impact
+
+#### Before Fix
+- Stats/chart components displayed in narrow, constrained layout
+- Wasted horizontal space on wider screens
+- Poor utilization of available viewport width
+- Inconsistent grid behavior due to missing CSS definition
+
+#### After Fix
+- Full-width utilization across all screen sizes
+- Responsive grid layout adapts to screen size
+- Proper spacing and column distribution
+- Consistent grid behavior with defined CSS rules
+
+### 🎯 Quality Assurance
+
+#### Development Testing
+- ✅ **Development Server**: Successfully started on localhost:3002
+- ✅ **CSS Compilation**: All new CSS rules compile correctly
+- ✅ **Responsive Design**: Grid layout adapts properly across breakpoints
+- ✅ **Component Display**: UnifiedCardDisplay and OrganizationMainPage components now use full width
+
+#### Visual Validation
+- ✅ **Grid Layout**: results-grid now displays as intended responsive grid
+- ✅ **Full Width**: Components utilize complete available screen width
+- ✅ **Mobile Compatibility**: Single column layout works correctly on mobile devices
+- ✅ **Desktop Experience**: Multi-column layout maximizes wide screen real estate
+
+### 🚀 Deployment Status
+- **Build Compatibility**: ✅ Changes compile successfully with existing codebase
+- **CSS Integration**: ✅ New styles integrate seamlessly with Tailwind CSS framework
+- **Component Compatibility**: ✅ Existing components work correctly with new CSS classes
+- **Responsive Behavior**: ✅ Layout adapts properly across all supported screen sizes
+
+### 📋 Version Management
+- **Previous Version**: 5.0.0
+- **Current Version**: 5.1.0 (minor increment for layout improvements)
+- **Versioning Protocol**: ✅ Followed semantic versioning rules for minor improvement
+- **Documentation Updates**: ✅ RELEASE_NOTES.md updated with comprehensive details
+
+### 🔮 Future Enhancements Enabled
+
+This layout foundation enables future improvements:
+- **Advanced Data Visualization**: Support for complex charts and graphs with full width utilization
+- **Dashboard Layouts**: Multi-panel dashboards that make efficient use of screen space
+- **Responsive Charts**: Chart components that adapt intelligently to container width
+- **Grid-Based Analytics**: Analytics layouts that scale across different device types
+
+---
 
 ## [v4.4.0] — 2025-01-15T12:30:00.000Z
 
