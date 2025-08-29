@@ -1,8 +1,8 @@
 # NARIMATO Task List
 
-**Current Version:** 4.6.0
-**Date:** 2025-08-14
-**Last Updated:** 2025-08-14T15:20:00.000Z
+**Current Version:** 5.2.0
+**Date:** 2025-08-29
+**Last Updated:** 2025-08-29T09:53:11.000Z
 
 ## High Priority Tasks
 
