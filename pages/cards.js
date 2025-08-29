@@ -161,12 +161,12 @@ export default function Cards() {
             onChange={(e) => setFormData(prev => ({ ...prev, parentTag: e.target.value }))}
             style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
           />
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button type="submit" style={{ padding: '0.5rem 1rem', background: '#28a745', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+          <div className="btn-group btn-group-tight">
+            <button type="submit" className="btn btn-primary">
               {editingCard ? 'Update Card' : 'Create Card'}
             </button>
             {editingCard && (
-              <button type="button" onClick={cancelEdit} style={{ padding: '0.5rem 1rem', background: '#6c757d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+              <button type="button" onClick={cancelEdit} className="btn btn-muted">
                 Cancel
               </button>
             )}
@@ -195,7 +195,7 @@ export default function Cards() {
                     </div>
                   )}
                 </div>
-                <Link href={`/play?org=${org}&deck=${encodeURIComponent(tag)}`} style={{ padding: '0.5rem 1rem', background: '#ffc107', color: 'black', textDecoration: 'none', borderRadius: '4px' }}>
+                <Link href={`/play?org=${org}&deck=${encodeURIComponent(tag)}`} className="btn btn-warning">
                   Play This Deck
                 </Link>
               </div>
@@ -206,34 +206,40 @@ export default function Cards() {
 
       <div>
         <h2>All Cards ({cards.length})</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+        <div className="card-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
           {cards.map(card => (
-            <div key={card.uuid} style={{ padding: '1rem', border: '1px solid #ddd', borderRadius: '4px' }}>
-              <h4 style={{ margin: '0 0 0.5rem 0' }}>{card.title}</h4>
-              <p style={{ color: '#666', margin: '0 0 0.5rem 0', fontSize: '0.875rem' }}>{card.name}</p>
-              {card.parentTag && (
-                <p style={{ color: '#28a745', margin: '0 0 0.5rem 0', fontSize: '0.875rem' }}>
-                  Deck: {card.parentTag}
-                </p>
-              )}
-              {card.description && <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.875rem' }}>{card.description}</p>}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', color: '#666', marginBottom: '0.5rem' }}>
-                <span>Score: {card.globalScore}</span>
-                <span>Votes: {card.voteCount}</span>
+            <div key={card.uuid} className="card-with-info">
+              <div className="card card-md card-interactive">
+                <div className="card-title">{card.title}</div>
+                {card.description && <div className="card-description">{card.description}</div>}
+                {card.imageUrl && <img src={card.imageUrl} alt={card.title} className="card-image" />}
               </div>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button 
-                  onClick={() => handleEdit(card)}
-                  style={{ padding: '0.25rem 0.5rem', background: '#0070f3', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
-                >
-                  Edit
-                </button>
-                <button 
-                  onClick={() => handleDelete(card.uuid)}
-                  style={{ padding: '0.25rem 0.5rem', background: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
-                >
-                  Delete
-                </button>
+              <div className="card-info">
+                <div className="card-info-title">{card.name}</div>
+                <div className="card-info-meta">
+                  {card.parentTag && (
+                    <div style={{ color: '#28a745', marginBottom: '0.25rem' }}>
+                      Deck: {card.parentTag}
+                    </div>
+                  )}
+                  <div style={{ marginBottom: '0.5rem' }}>
+                    Score: {card.globalScore} • Votes: {card.voteCount}
+                  </div>
+                  <div className="btn-group btn-group-tight">
+                    <button 
+                      onClick={() => handleEdit(card)}
+                      className="btn btn-info btn-sm"
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(card.uuid)}
+                      className="btn btn-secondary btn-sm"
+                    >
+                      🗑️ Delete
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           ))}
@@ -242,29 +248,11 @@ export default function Cards() {
 
       {/* Navigation Links */}
       <div style={{ textAlign: 'center', paddingTop: '2rem', marginTop: '2rem', borderTop: '1px solid #eee' }}>
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link 
-            href={`/play?org=${org}`}
-            style={{ 
-              padding: '0.5rem 1rem', 
-              background: '#0070f3', 
-              color: 'white', 
-              textDecoration: 'none', 
-              borderRadius: '4px'
-            }}
-          >
+        <div className="btn-group">
+          <Link href={`/play?org=${org}`} className="btn btn-info">
             🎮 Play Decks
           </Link>
-          <Link 
-            href={`/rankings?org=${org}`}
-            style={{ 
-              padding: '0.5rem 1rem', 
-              background: '#6f42c1', 
-              color: 'white', 
-              textDecoration: 'none', 
-              borderRadius: '4px'
-            }}
-          >
+          <Link href={`/rankings?org=${org}`} className="btn btn-dark">
             🏆 View Rankings
           </Link>
         </div>

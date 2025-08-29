@@ -194,7 +194,7 @@ export default function Play() {
             {organizations.map(organization => (
               <div key={organization.uuid} style={{ padding: '1rem', border: '1px solid #ddd', borderRadius: '4px' }}>
                 <h3>{organization.name}</h3>
-                <Link href={`/play?org=${organization.uuid}`} style={{ padding: '0.5rem 1rem', background: '#ffc107', color: 'black', textDecoration: 'none', borderRadius: '4px' }}>
+                <Link href={`/play?org=${organization.uuid}`} className="btn btn-warning">
                   Select This Organization
                 </Link>
               </div>
@@ -209,10 +209,6 @@ export default function Play() {
   if (!deck) {
     return (
       <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
-        <div style={{ marginBottom: '2rem' }}>
-          <Link href="/play" style={{ color: '#0070f3' }}>← Back to Organizations</Link>
-        </div>
-        
         <h1>Play - Select Deck</h1>
         
         {decks.length === 0 ? (
@@ -237,7 +233,7 @@ export default function Play() {
                     </span>
                   )}
                 </div>
-                <Link href={`/play?org=${org}&deck=${encodeURIComponent(deckInfo.tag)}`} style={{ padding: '0.5rem 1rem', background: '#ffc107', color: 'black', textDecoration: 'none', borderRadius: '4px' }}>
+                <Link href={`/play?org=${org}&deck=${encodeURIComponent(deckInfo.tag)}`} className="btn btn-warning">
                   Play This Deck
                 </Link>
               </div>
@@ -255,12 +251,14 @@ export default function Play() {
         <h1>🎉 Play Complete!</h1>
         <p>You've finished ranking all the cards in the {deck} deck.</p>
         <div style={{ marginTop: '2rem' }}>
-          <Link href={`/play?org=${org}`} style={{ padding: '0.5rem 1rem', background: '#0070f3', color: 'white', textDecoration: 'none', borderRadius: '4px', marginRight: '1rem' }}>
-            Play Another Deck
-          </Link>
-          <Link href="/" style={{ padding: '0.5rem 1rem', background: '#6c757d', color: 'white', textDecoration: 'none', borderRadius: '4px' }}>
-            Back to Home
-          </Link>
+          <div className="btn-group">
+            <Link href={`/play?org=${org}`} className="btn btn-info">
+              Play Another Deck
+            </Link>
+            <Link href="/" className="btn btn-muted">
+              Back to Home
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -278,41 +276,37 @@ export default function Play() {
           <p>Choose your preferred option to build your ranking</p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', maxWidth: '800px', margin: '0 auto' }}>
-          <div 
-            onClick={() => handleVote(cardA.id)}
-            style={{ 
-              padding: '2rem', 
-              border: '2px solid #0070f3', 
-              borderRadius: '8px', 
-              textAlign: 'center', 
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-          >
-            <h3>{cardA.title}</h3>
-            {cardA.description && <p style={{ color: '#666' }}>{cardA.description}</p>}
-            <button style={{ padding: '0.5rem 1rem', background: '#0070f3', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-              Choose This
-            </button>
+        <div className="card-row" style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <div className="card-with-info">
+            <div className="card card-lg card-interactive">
+              <div className="card-title">{cardA.title}</div>
+              {cardA.description && <div className="card-description">{cardA.description}</div>}
+              {cardA.imageUrl && <img src={cardA.imageUrl} alt={cardA.title} className="card-image" />}
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <button 
+                onClick={() => handleVote(cardA.id)}
+                className="btn btn-primary"
+              >
+                ✅ Choose This
+              </button>
+            </div>
           </div>
 
-          <div 
-            onClick={() => handleVote(cardB.id)}
-            style={{ 
-              padding: '2rem', 
-              border: '2px solid #dc3545', 
-              borderRadius: '8px', 
-              textAlign: 'center', 
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-          >
-            <h3>{cardB.title}</h3>
-            {cardB.description && <p style={{ color: '#666' }}>{cardB.description}</p>}
-            <button style={{ padding: '0.5rem 1rem', background: '#dc3545', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-              Choose This
-            </button>
+          <div className="card-with-info">
+            <div className="card card-lg card-interactive">
+              <div className="card-title">{cardB.title}</div>
+              {cardB.description && <div className="card-description">{cardB.description}</div>}
+              {cardB.imageUrl && <img src={cardB.imageUrl} alt={cardB.title} className="card-image" />}
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <button 
+                onClick={() => handleVote(cardB.id)}
+                className="btn btn-secondary"
+              >
+                ✅ Choose This
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -329,53 +323,22 @@ export default function Play() {
         </div>
 
         <div style={{ maxWidth: '400px', margin: '0 auto', textAlign: 'center' }}>
-          <div style={{ 
-            padding: '2rem', 
-            border: '2px solid #ddd', 
-            borderRadius: '12px', 
-            marginBottom: '2rem',
-            background: 'white',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-          }}>
-            <h2>{currentCard.title}</h2>
-            {currentCard.description && (
-              <p style={{ color: '#666', marginBottom: '1rem' }}>{currentCard.description}</p>
-            )}
-            {currentCard.imageUrl && (
-              <img 
-                src={currentCard.imageUrl} 
-                alt={currentCard.title}
-                style={{ maxWidth: '100%', height: 'auto', borderRadius: '4px' }}
-              />
-            )}
+          <div className="card card-xl card-interactive" style={{ marginBottom: '2rem' }}>
+            <div className="card-title">{currentCard.title}</div>
+            {currentCard.description && <div className="card-description">{currentCard.description}</div>}
+            {currentCard.imageUrl && <img src={currentCard.imageUrl} alt={currentCard.title} className="card-image" />}
           </div>
 
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+          <div className="btn-group">
             <button 
               onClick={() => handleSwipe('left')}
-              style={{ 
-                padding: '1rem 2rem', 
-                background: '#dc3545', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: '50px', 
-                cursor: 'pointer',
-                fontSize: '1.2rem'
-              }}
+              className="btn btn-secondary"
             >
               👎 Dislike
             </button>
             <button 
               onClick={() => handleSwipe('right')}
-              style={{ 
-                padding: '1rem 2rem', 
-                background: '#28a745', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: '50px', 
-                cursor: 'pointer',
-                fontSize: '1.2rem'
-              }}
+              className="btn btn-primary"
             >
               👍 Like
             </button>

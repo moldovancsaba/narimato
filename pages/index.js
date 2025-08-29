@@ -18,17 +18,17 @@ export default function Home() {
 
       <div style={{ marginTop: '2rem' }}>
         <h2>Quick Links:</h2>
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-          <Link href="/organizations" style={{ padding: '0.5rem 1rem', background: '#0070f3', color: 'white', textDecoration: 'none', borderRadius: '4px' }}>
+        <div className="btn-group">
+          <Link href="/organizations" className="btn btn-info">
             Organizations
           </Link>
-          <Link href="/cards" style={{ padding: '0.5rem 1rem', background: '#28a745', color: 'white', textDecoration: 'none', borderRadius: '4px' }}>
+          <Link href="/cards" className="btn btn-primary">
             Cards
           </Link>
-          <Link href="/play" style={{ padding: '0.5rem 1rem', background: '#ffc107', color: 'black', textDecoration: 'none', borderRadius: '4px' }}>
+          <Link href="/play" className="btn btn-warning">
             Play
           </Link>
-          <Link href="/rankings" style={{ padding: '0.5rem 1rem', background: '#6f42c1', color: 'white', textDecoration: 'none', borderRadius: '4px' }}>
+          <Link href="/rankings" className="btn btn-dark">
             Rankings
           </Link>
         </div>
