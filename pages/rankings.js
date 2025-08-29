@@ -104,7 +104,26 @@ export default function Rankings() {
   if (loading) return <div style={{ padding: '2rem' }}>Loading rankings...</div>;
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif', maxWidth: '1000px', margin: '0 auto' }}>
+    <>
+      <style jsx>{`
+        @media (max-width: 768px) {
+          .rankings-desktop {
+            display: none !important;
+          }
+          .rankings-mobile {
+            display: block !important;
+          }
+        }
+        @media (min-width: 769px) {
+          .rankings-desktop {
+            display: block !important;
+          }
+          .rankings-mobile {
+            display: none !important;
+          }
+        }
+      `}</style>
+      <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif', maxWidth: '1000px', margin: '0 auto' }}>
       <div style={{ marginBottom: '2rem' }}>
         <Link href="/" style={{ color: '#0070f3' }}>← Back to Home</Link>
       </div>
@@ -186,11 +205,13 @@ export default function Rankings() {
                 </Link>
               </div>
             ) : (
-              <div style={{ background: 'white', borderRadius: '8px', overflow: 'hidden', border: '1px solid #ddd' }}>
+              <>
+              {/* Desktop Table View */}
+              <div className="rankings-desktop" style={{ background: 'white', borderRadius: '8px', overflow: 'hidden', border: '1px solid #ddd' }}>
                 {/* Header */}
                 <div style={{ 
                   display: 'grid', 
-                  gridTemplateColumns: '60px 1fr 120px 100px 100px 80px', 
+                  gridTemplateColumns: '60px 80px 1fr 120px 100px 100px 80px', 
                   gap: '1rem', 
                   padding: '1rem', 
                   background: '#f8f9fa', 
@@ -199,6 +220,7 @@ export default function Rankings() {
                   borderBottom: '1px solid #ddd'
                 }}>
                   <div>Rank</div>
+                  <div>Preview</div>
                   <div>Card</div>
                   <div>ELO Score</div>
                   <div>Votes</div>
@@ -216,7 +238,7 @@ export default function Rankings() {
                       key={ranking.cardId}
                       style={{ 
                         display: 'grid', 
-                        gridTemplateColumns: '60px 1fr 120px 100px 100px 80px', 
+                        gridTemplateColumns: '60px 80px 1fr 120px 100px 100px 80px', 
                         gap: '1rem', 
                         padding: '1rem', 
                         borderBottom: index < rankings.length - 1 ? '1px solid #eee' : 'none',
@@ -233,7 +255,16 @@ export default function Rankings() {
                         {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
                       </div>
 
-                      {/* Card */}
+                      {/* Card Preview */}
+                      <div style={{ display: 'flex', justifyContent: 'center' }}>
+                        <div className={`card card-sm ${card.imageUrl ? 'has-image' : ''}`} style={{ width: '60px', height: '60px', padding: '0.25rem' }}>
+                          <div className="card-title" style={{ fontSize: '0.6rem', margin: 0, lineHeight: '1.1' }}>{card.title}</div>
+                          {card.description && <div className="card-description" style={{ fontSize: '0.5rem', margin: 0, lineHeight: '1.1' }}>{card.description}</div>}
+                          {card.imageUrl && <img src={card.imageUrl} alt={card.title} className="card-image" />}
+                        </div>
+                      </div>
+
+                      {/* Card Details */}
                       <div>
                         <div style={{ fontWeight: '500', marginBottom: '0.25rem' }}>
                           {card.title}
@@ -281,6 +312,52 @@ export default function Rankings() {
                   );
                 })}
               </div>
+
+              {/* Mobile Card View */}
+              <div className="rankings-mobile" style={{ display: 'none' }}>
+                <div className="card-grid" style={{ gridTemplateColumns: '1fr', gap: '1rem' }}>
+                  {rankings.map((ranking, index) => {
+                    const card = getCardDetails(ranking.cardId);
+                    const isTopThree = index < 3;
+                    
+                    return (
+                      <div key={ranking.cardId} className="card-with-info">
+                        <div className={`card card-md card-interactive ${card.imageUrl ? 'has-image' : ''} ${
+                          isTopThree ? (index === 0 ? 'card-winner' : index === 1 ? 'card-selected' : index === 2 ? 'card-error') : ''
+                        }`}>
+                          <div className="card-title">{card.title}</div>
+                          {card.description && <div className="card-description">{card.description}</div>}
+                          {card.imageUrl && <img src={card.imageUrl} alt={card.title} className="card-image" />}
+                        </div>
+                        <div className="card-info">
+                          <div className="card-info-title" style={{ 
+                            color: isTopThree ? (index === 0 ? '#856404' : index === 1 ? '#495057' : index === 2 ? '#721c24') : '#333',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                          }}>
+                            <span>{index === 0 ? '🥇 #1' : index === 1 ? '🥈 #2' : index === 2 ? '🥉 #3' : `#${index + 1}`}</span>
+                            <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{ranking.globalScore}</span>
+                          </div>
+                          <div className="card-info-meta">
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                              <span>Votes: {ranking.voteCount}</span>
+                              <span>Wins: {ranking.winCount}</span>
+                            </div>
+                            <div style={{ textAlign: 'center', fontWeight: 'bold' }}>Win Rate: {ranking.winRate}%</div>
+                            {card.parentTag && (
+                              <div style={{ color: '#28a745', marginTop: '0.25rem', textAlign: 'center' }}>
+                                {card.parentTag}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              </>
             )}
           </div>
 
@@ -303,6 +380,7 @@ export default function Rankings() {
           </div>
         </>
       )}
-    </div>
+      </div>
+    </>
   );
 }
