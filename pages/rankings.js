@@ -320,18 +320,24 @@ export default function Rankings() {
                     const card = getCardDetails(ranking.cardId);
                     const isTopThree = index < 3;
                     
+                    const cardClasses = [
+                      'card',
+                      'card-md', 
+                      'card-interactive',
+                      card.imageUrl ? 'has-image' : '',
+                      isTopThree ? (index === 0 ? 'card-winner' : index === 1 ? 'card-selected' : 'card-error') : ''
+                    ].filter(Boolean).join(' ');
+                    
                     return (
                       <div key={ranking.cardId} className="card-with-info">
-                        <div className={`card card-md card-interactive ${card.imageUrl ? 'has-image' : ''} ${
-                          isTopThree ? (index === 0 ? 'card-winner' : index === 1 ? 'card-selected' : index === 2 ? 'card-error') : ''
-                        }`}>
+                        <div className={cardClasses}>
                           <div className="card-title">{card.title}</div>
                           {card.description && <div className="card-description">{card.description}</div>}
                           {card.imageUrl && <img src={card.imageUrl} alt={card.title} className="card-image" />}
                         </div>
                         <div className="card-info">
                           <div className="card-info-title" style={{ 
-                            color: isTopThree ? (index === 0 ? '#856404' : index === 1 ? '#495057' : index === 2 ? '#721c24') : '#333',
+                            color: isTopThree ? (index === 0 ? '#856404' : index === 1 ? '#495057' : '#721c24') : '#333',
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center'
