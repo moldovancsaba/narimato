@@ -118,10 +118,6 @@ export default function Results() {
 
   return (
     <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif', maxWidth: '800px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '2rem' }}>
-        <Link href="/play" style={{ color: '#0070f3' }}>← Back to Play</Link>
-      </div>
-
       <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
         <h1>🎉 Your {deck} Ranking Results!</h1>
         <p style={{ color: '#666' }}>Here's how you ranked the cards in this deck</p>
@@ -139,32 +135,16 @@ export default function Results() {
         <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#666' }}>
           Share this link so others can see your ranking!
         </p>
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+        <div className="btn-group">
           <button 
             onClick={copyToClipboard}
-            style={{ 
-              padding: '0.5rem 1rem', 
-              background: '#0070f3', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '4px', 
-              cursor: 'pointer',
-              fontSize: '0.9rem'
-            }}
+            className="btn btn-info"
           >
             📋 Copy Link
           </button>
           <button 
             onClick={shareResults}
-            style={{ 
-              padding: '0.5rem 1rem', 
-              background: '#28a745', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '4px', 
-              cursor: 'pointer',
-              fontSize: '0.9rem'
-            }}
+            className="btn btn-primary"
           >
             📱 Share
           </button>
@@ -179,40 +159,27 @@ export default function Results() {
       {/* Personal Ranking */}
       <div style={{ marginBottom: '3rem' }}>
         <h2>🏆 Your Personal Ranking</h2>
-        <div style={{ display: 'grid', gap: '1rem' }}>
+        <div className="card-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
           {results.personalRanking?.map((cardId, index) => {
             const card = getCardDetails(cardId);
             const globalRank = getGlobalRank(cardId);
             return (
-              <div 
-                key={cardId} 
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  padding: '1rem', 
-                  border: '1px solid #ddd', 
-                  borderRadius: '8px',
-                  background: index === 0 ? '#fff3cd' : index === 1 ? '#e2e3e5' : index === 2 ? '#f8d7da' : 'white'
-                }}
-              >
-                <div style={{ 
-                  fontSize: '1.5rem', 
-                  fontWeight: 'bold', 
-                  minWidth: '3rem', 
-                  textAlign: 'center',
-                  color: index === 0 ? '#856404' : index === 1 ? '#495057' : index === 2 ? '#721c24' : '#333'
-                }}>
-                  {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+              <div key={cardId} className="card-with-info">
+                <div className={`card card-md card-interactive ${
+                  index === 0 ? 'card-winner' : index === 1 ? 'card-selected' : index === 2 ? 'card-error' : ''
+                }`}>
+                  <div className="card-title">{card.title}</div>
+                  {card.description && <div className="card-description">{card.description}</div>}
+                  {card.imageUrl && <img src={card.imageUrl} alt={card.title} className="card-image" />}
                 </div>
-                <div style={{ flex: 1, marginLeft: '1rem' }}>
-                  <h4 style={{ margin: '0 0 0.25rem 0' }}>{card.title}</h4>
-                  {card.description && (
-                    <p style={{ margin: '0', fontSize: '0.9rem', color: '#666' }}>{card.description}</p>
-                  )}
-                </div>
-                <div style={{ textAlign: 'right', fontSize: '0.8rem', color: '#999' }}>
+                <div className="card-info">
+                  <div className="card-info-title" style={{ 
+                    color: index === 0 ? '#856404' : index === 1 ? '#495057' : index === 2 ? '#721c24' : '#333'
+                  }}>
+                    {index === 0 ? '🥇 #1' : index === 1 ? '🥈 #2' : index === 2 ? '🥉 #3' : `#${index + 1}`}
+                  </div>
                   {globalRank && (
-                    <div>Global: #{globalRank}</div>
+                    <div className="card-info-meta">Global Rank: #{globalRank}</div>
                   )}
                 </div>
               </div>
@@ -242,36 +209,28 @@ export default function Results() {
             </p>
           </div>
         ) : (
-          <div style={{ display: 'grid', gap: '0.75rem' }}>
-            {globalRankings.slice(0, 10).map((ranking, index) => {
+          <div className="card-grid card-grid-sm">
+            {globalRankings.slice(0, 12).map((ranking, index) => {
               const card = getCardDetails(ranking.cardId);
               const isInMyRanking = results.personalRanking?.includes(ranking.cardId);
               return (
-                <div 
-                  key={ranking.cardId} 
-                  style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    padding: '0.75rem', 
-                    border: `1px solid ${isInMyRanking ? '#28a745' : '#ddd'}`, 
-                    borderRadius: '4px',
-                    background: isInMyRanking ? '#f8fff8' : 'white'
-                  }}
-                >
-                  <div style={{ 
-                    fontSize: '1rem', 
-                    fontWeight: 'bold', 
-                    minWidth: '2.5rem', 
-                    textAlign: 'center',
-                    color: index < 3 ? '#856404' : '#333'
-                  }}>
-                    #{index + 1}
+                <div key={ranking.cardId} className="card-with-info">
+                  <div className={`card card-sm card-interactive ${
+                    isInMyRanking ? 'card-success' : index < 3 ? 'card-selected' : ''
+                  }`}>
+                    <div className="card-title">{card.title}</div>
+                    {card.description && <div className="card-description">{card.description}</div>}
+                    {card.imageUrl && <img src={card.imageUrl} alt={card.title} className="card-image" />}
                   </div>
-                  <div style={{ flex: 1, marginLeft: '1rem' }}>
-                    <div style={{ fontWeight: '500' }}>{card.title}</div>
-                    <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                  <div className="card-info">
+                    <div className="card-info-title" style={{ 
+                      color: index < 3 ? '#856404' : '#333'
+                    }}>
+                      #{index + 1} Global
+                    </div>
+                    <div className="card-info-meta">
                       Score: {ranking.globalScore} • Votes: {ranking.voteCount}
-                      {isInMyRanking && <span style={{ color: '#28a745', marginLeft: '0.5rem' }}>✓ In your ranking</span>}
+                      {isInMyRanking && <div style={{ color: '#28a745' }}>✓ In your ranking</div>}
                     </div>
                   </div>
                 </div>
@@ -283,34 +242,12 @@ export default function Results() {
 
       {/* Action Buttons */}
       <div style={{ textAlign: 'center', paddingTop: '2rem', borderTop: '1px solid #eee' }}>
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link 
-            href={`/play?org=${org}`}
-            style={{ 
-              padding: '0.75rem 1.5rem', 
-              background: '#0070f3', 
-              color: 'white', 
-              textDecoration: 'none', 
-              borderRadius: '4px',
-              fontSize: '1rem'
-            }}
-          >
-            🎮 Play Another Deck
-          </Link>
-          <Link 
-            href={`/cards?org=${org}`}
-            style={{ 
-              padding: '0.75rem 1.5rem', 
-              background: '#6c757d', 
-              color: 'white', 
-              textDecoration: 'none', 
-              borderRadius: '4px',
-              fontSize: '1rem'
-            }}
-          >
-            📝 Manage Cards
-          </Link>
-        </div>
+        <Link 
+          href={`/play?org=${org}`}
+          className="btn btn-warning"
+        >
+          🎮 Play Another Deck
+        </Link>
       </div>
     </div>
   );

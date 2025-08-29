@@ -1,0 +1,276 @@
+/* 
+ * NARIMATO - Universal Button Design System
+ * 
+ * FUNCTIONAL: Provides consistent button styling across all components
+ * STRATEGIC: Creates unified user experience with curved, spacious button design
+ * 
+ * Based on the beautiful swipe buttons design: curved background + airy spacing
+ */
+
+/* Base Button Style - Universal Design */
+.btn {
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  font-weight: 500;
+  font-family: inherit;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  min-width: 120px;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Color Variants */
+
+/* Primary - Like/Success Actions */
+.btn-primary {
+  background: #28a745;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #218838;
+}
+
+/* Secondary - Dislike/Danger Actions */
+.btn-secondary {
+  background: #dc3545;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #c82333;
+}
+
+/* Info - Neutral/Information Actions */
+.btn-info {
+  background: #0070f3;
+  color: white;
+}
+
+.btn-info:hover {
+  background: #0056b3;
+}
+
+/* Warning - Warning/Caution Actions */
+.btn-warning {
+  background: #ffc107;
+  color: black;
+}
+
+.btn-warning:hover {
+  background: #e0a800;
+}
+
+/* Muted - Cancel/Secondary Actions */
+.btn-muted {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-muted:hover {
+  background: #5a6268;
+}
+
+/* Light - Background Actions */
+.btn-light {
+  background: #f8f9fa;
+  color: #495057;
+  border: 1px solid #dee2e6;
+}
+
+.btn-light:hover {
+  background: #e2e6ea;
+}
+
+/* Dark - High Contrast Actions */
+.btn-dark {
+  background: #343a40;
+  color: white;
+}
+
+.btn-dark:hover {
+  background: #23272b;
+}
+
+/* Size Variants */
+
+/* Small Buttons - For compact interfaces */
+.btn-sm {
+  padding: 0.5rem 1.5rem;
+  font-size: 0.875rem;
+  min-width: 80px;
+}
+
+/* Large Buttons - For prominent actions */
+.btn-lg {
+  padding: 1.25rem 2.5rem;
+  font-size: 1.375rem;
+  min-width: 160px;
+}
+
+/* Extra Large - For hero actions */
+.btn-xl {
+  padding: 1.5rem 3rem;
+  font-size: 1.5rem;
+  min-width: 200px;
+}
+
+/* Special Variants */
+
+/* Icon Only - For icon buttons */
+.btn-icon {
+  padding: 1rem;
+  min-width: auto;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+}
+
+.btn-icon.btn-sm {
+  width: 40px;
+  height: 40px;
+  padding: 0.5rem;
+}
+
+.btn-icon.btn-lg {
+  width: 72px;
+  height: 72px;
+  padding: 1.25rem;
+}
+
+/* Block - Full width buttons */
+.btn-block {
+  width: 100%;
+  display: flex;
+}
+
+/* Outline variants */
+.btn-outline {
+  background: transparent;
+  border: 2px solid currentColor;
+  box-shadow: none;
+}
+
+.btn-outline:hover {
+  background: currentColor;
+  color: white;
+}
+
+.btn-outline.btn-primary {
+  color: #28a745;
+  border-color: #28a745;
+}
+
+.btn-outline.btn-secondary {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+.btn-outline.btn-info {
+  color: #0070f3;
+  border-color: #0070f3;
+}
+
+.btn-outline.btn-warning {
+  color: #ffc107;
+  border-color: #ffc107;
+}
+
+.btn-outline.btn-warning:hover {
+  color: #000;
+}
+
+.btn-outline.btn-muted {
+  color: #6c757d;
+  border-color: #6c757d;
+}
+
+/* Group buttons */
+.btn-group {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-group-tight {
+  gap: 0.5rem;
+}
+
+.btn-group-loose {
+  gap: 2rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .btn {
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
+    min-width: 100px;
+  }
+  
+  .btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+    min-width: 60px;
+  }
+  
+  .btn-lg {
+    padding: 1rem 2rem;
+    font-size: 1.125rem;
+    min-width: 120px;
+  }
+  
+  .btn-xl {
+    padding: 1.125rem 2.25rem;
+    font-size: 1.25rem;
+    min-width: 150px;
+  }
+}
+
+/* Loading state */
+.btn-loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.btn-loading::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

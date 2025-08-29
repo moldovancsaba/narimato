@@ -1,0 +1,325 @@
+/* 
+ * NARIMATO - Universal Card Design System
+ * 
+ * FUNCTIONAL: Provides consistent card styling across all components
+ * STRATEGIC: Creates unified visual experience with standardized card design
+ * 
+ * Specifications:
+ * - Square cards with curved corners
+ * - Consistent background and stroke colors
+ * - Responsive and always fit into available area
+ * - Clean content-only display (no metadata overlay)
+ */
+
+/* Base Card Style - Universal Design */
+.card {
+  /* Shape and Layout */
+  aspect-ratio: 1;
+  width: 100%;
+  max-width: 100%;
+  border-radius: 12px;
+  
+  /* Visual Design */
+  background-color: #EEEEEEFF;
+  border: 2px solid #444444FF;
+  
+  /* Content Layout */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  
+  /* Typography */
+  font-family: inherit;
+  text-align: center;
+  
+  /* Responsive Behavior */
+  overflow: hidden;
+  box-sizing: border-box;
+  
+  /* Smooth Transitions */
+  transition: all 0.2s ease;
+}
+
+/* Card Content Styling */
+.card-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  color: #333;
+  line-height: 1.2;
+}
+
+.card-description {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.card-image {
+  max-width: 100%;
+  max-height: 60%;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+/* Size Variants */
+
+/* Small Cards - For thumbnails and previews */
+.card-sm {
+  max-width: 120px;
+  padding: 0.5rem;
+  border-radius: 8px;
+}
+
+.card-sm .card-title {
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+
+.card-sm .card-description {
+  font-size: 0.75rem;
+}
+
+/* Medium Cards - Default size */
+.card-md {
+  max-width: 200px;
+}
+
+/* Large Cards - For detailed views */
+.card-lg {
+  max-width: 300px;
+  padding: 1.5rem;
+}
+
+.card-lg .card-title {
+  font-size: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.card-lg .card-description {
+  font-size: 1rem;
+}
+
+/* Extra Large Cards - For play/vote interfaces */
+.card-xl {
+  max-width: 400px;
+  padding: 2rem;
+}
+
+.card-xl .card-title {
+  font-size: 1.75rem;
+  margin-bottom: 1rem;
+}
+
+.card-xl .card-description {
+  font-size: 1.1rem;
+}
+
+/* Responsive Cards - Fill available space */
+.card-responsive {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+}
+
+/* Interactive States */
+.card-interactive {
+  cursor: pointer;
+}
+
+.card-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(68, 68, 68, 0.2);
+  border-color: #333;
+}
+
+.card-interactive:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(68, 68, 68, 0.15);
+}
+
+/* Special States */
+
+/* Loading State */
+.card-loading {
+  background: linear-gradient(90deg, #EEEEEEFF 25%, #F5F5F5FF 50%, #EEEEEEFF 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Selected/Active State */
+.card-selected {
+  border-color: #0070f3;
+  background-color: #f0f8ff;
+}
+
+/* Error State */
+.card-error {
+  border-color: #dc3545;
+  background-color: #fff5f5;
+}
+
+/* Winner State (for voting) */
+.card-winner {
+  border-color: #28a745;
+  background-color: #f8fff8;
+}
+
+/* Color Variants */
+
+/* Primary Theme */
+.card-primary {
+  border-color: #0070f3;
+}
+
+.card-primary:hover {
+  border-color: #0056b3;
+  background-color: #f0f8ff;
+}
+
+/* Secondary Theme */
+.card-secondary {
+  border-color: #dc3545;
+}
+
+.card-secondary:hover {
+  border-color: #c82333;
+  background-color: #fff5f5;
+}
+
+/* Success Theme */
+.card-success {
+  border-color: #28a745;
+}
+
+.card-success:hover {
+  border-color: #218838;
+  background-color: #f8fff8;
+}
+
+/* Container Utilities */
+
+/* Card Grid - For listing multiple cards */
+.card-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.card-grid-sm {
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.75rem;
+}
+
+.card-grid-lg {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Card Row - For horizontal card layouts */
+.card-row {
+  display: flex;
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.card-row .card {
+  flex: 1;
+}
+
+/* Card with Metadata - Layout for card + info below */
+.card-with-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.card-info {
+  padding: 0.5rem;
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+.card-info-title {
+  font-weight: 600;
+  margin: 0 0 0.25rem 0;
+  color: #333;
+}
+
+.card-info-meta {
+  color: #666;
+  margin: 0;
+  font-size: 0.75rem;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 768px) {
+  .card {
+    border-radius: 8px;
+    padding: 0.75rem;
+  }
+  
+  .card-title {
+    font-size: 1rem;
+  }
+  
+  .card-description {
+    font-size: 0.8rem;
+  }
+  
+  .card-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+  }
+  
+  .card-xl {
+    max-width: 100%;
+    padding: 1.5rem;
+  }
+  
+  .card-xl .card-title {
+    font-size: 1.4rem;
+  }
+  
+  .card-xl .card-description {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 0.5rem;
+    border-radius: 6px;
+  }
+  
+  .card-grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.5rem;
+  }
+  
+  .card-row {
+    flex-direction: column;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .card {
+    break-inside: avoid;
+    border: 1px solid #444444FF !important;
+    box-shadow: none !important;
+    transform: none !important;
+  }
+}
