@@ -248,7 +248,7 @@ export default function Cards() {
         <div className="card-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
           {cards.map(card => (
             <div key={card.uuid} className="card-with-info">
-              <div className="card card-md card-interactive">
+              <div className={`card card-md card-interactive ${card.imageUrl ? 'has-image' : ''}`}>
                 <div className="card-title">{card.title}</div>
                 {card.description && <div className="card-description">{card.description}</div>}
                 {card.imageUrl && <img src={card.imageUrl} alt={card.title} className="card-image" />}

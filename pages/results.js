@@ -165,7 +165,7 @@ export default function Results() {
             const globalRank = getGlobalRank(cardId);
             return (
               <div key={cardId} className="card-with-info">
-                <div className={`card card-md card-interactive ${
+                <div className={`card card-md card-interactive ${card.imageUrl ? 'has-image' : ''} ${
                   index === 0 ? 'card-winner' : index === 1 ? 'card-selected' : index === 2 ? 'card-error' : ''
                 }`}>
                   <div className="card-title">{card.title}</div>
@@ -215,7 +215,7 @@ export default function Results() {
               const isInMyRanking = results.personalRanking?.includes(ranking.cardId);
               return (
                 <div key={ranking.cardId} className="card-with-info">
-                  <div className={`card card-sm card-interactive ${
+                  <div className={`card card-sm card-interactive ${card.imageUrl ? 'has-image' : ''} ${
                     isInMyRanking ? 'card-success' : index < 3 ? 'card-selected' : ''
                   }`}>
                     <div className="card-title">{card.title}</div>

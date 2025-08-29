@@ -117,7 +117,7 @@
   margin-top: 12px;
 }
 
-/* Full-cover image styling */
+/* Full-cover image styling - uses centralized cards.css system */
 .game-card.has-image {
   padding: 0;
   overflow: hidden;
