@@ -122,14 +122,7 @@ export default function Rankings() {
             <Link
               key={organization.uuid}
               href={`/rankings?org=${organization.uuid}`}
-              style={{
-                padding: '0.5rem 1rem',
-                background: org === organization.uuid ? '#0070f3' : '#f8f9fa',
-                color: org === organization.uuid ? 'white' : '#333',
-                textDecoration: 'none',
-                borderRadius: '4px',
-                border: '1px solid #ddd'
-              }}
+              className={`btn ${org === organization.uuid ? 'btn-primary' : 'btn-muted'} btn-sm`}
             >
               {organization.name}
             </Link>
@@ -145,14 +138,7 @@ export default function Rankings() {
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <button
                 onClick={() => handleDeckChange('all')}
-                style={{
-                  padding: '0.5rem 1rem',
-                  background: selectedDeck === 'all' ? '#28a745' : '#f8f9fa',
-                  color: selectedDeck === 'all' ? 'white' : '#333',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
+                className={`btn ${selectedDeck === 'all' ? 'btn-success' : 'btn-muted'} btn-sm`}
               >
                 All Decks ({rankings.length})
               </button>
@@ -160,14 +146,7 @@ export default function Rankings() {
                 <button
                   key={deckInfo.tag}
                   onClick={() => handleDeckChange(deckInfo.tag)}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    background: selectedDeck === deckInfo.tag ? '#28a745' : '#f8f9fa',
-                    color: selectedDeck === deckInfo.tag ? 'white' : '#333',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    cursor: 'pointer'
-                  }}
+                  className={`btn ${selectedDeck === deckInfo.tag ? 'btn-success' : 'btn-muted'} btn-sm`}
                 >
                   {deckInfo.tag} ({deckInfo.count})
                 </button>
@@ -201,13 +180,7 @@ export default function Rankings() {
                 </p>
                 <Link 
                   href={`/play?org=${org}`}
-                  style={{ 
-                    padding: '0.75rem 1.5rem', 
-                    background: '#0070f3', 
-                    color: 'white', 
-                    textDecoration: 'none', 
-                    borderRadius: '4px'
-                  }}
+                  className="btn btn-primary"
                 >
                   🎮 Start Playing
                 </Link>
@@ -316,27 +289,13 @@ export default function Rankings() {
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
               <Link 
                 href={`/play?org=${org}`}
-                style={{ 
-                  padding: '0.75rem 1.5rem', 
-                  background: '#0070f3', 
-                  color: 'white', 
-                  textDecoration: 'none', 
-                  borderRadius: '4px',
-                  fontSize: '1rem'
-                }}
+                className="btn btn-warning"
               >
-                🎮 Play & Vote
+                🎮 Play
               </Link>
               <Link 
                 href={`/cards?org=${org}`}
-                style={{ 
-                  padding: '0.75rem 1.5rem', 
-                  background: '#6c757d', 
-                  color: 'white', 
-                  textDecoration: 'none', 
-                  borderRadius: '4px',
-                  fontSize: '1rem'
-                }}
+                className="btn btn-info"
               >
                 📝 Manage Cards
               </Link>

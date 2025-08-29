@@ -16,6 +16,10 @@ export default function Play() {
   const [playComplete, setPlayComplete] = useState(false);
   const [cardConfig, setCardConfig] = useState(null);
   const [keyboardActive, setKeyboardActive] = useState(null);
+  const [previousVotingContext, setPreviousVotingContext] = useState(null);
+  const [cardTransitions, setCardTransitions] = useState({ left: null, right: null });
+  const [previousCard, setPreviousCard] = useState(null);
+  const [swipeTransition, setSwipeTransition] = useState(null);
 
   useEffect(() => {
     fetchOrganizations();
@@ -193,6 +197,19 @@ export default function Play() {
           setVotingContext(data.votingContext);
         } else if (data.nextCardId) {
           const nextCard = currentPlay.cards.find(c => c.id === data.nextCardId);
+          
+          // FUNCTIONAL: Track swipe transitions for visual feedback
+          // STRATEGIC: Shows user when a new card appears after swipe
+          if (currentCard && currentCard.id !== data.nextCardId) {
+            setSwipeTransition('new-card');
+            
+            // Clear transition after animation completes
+            setTimeout(() => {
+              setSwipeTransition(null);
+            }, 600);
+          }
+          
+          setPreviousCard(currentCard);
           setCurrentCard(nextCard);
         }
       } else {
@@ -228,7 +245,24 @@ export default function Play() {
           router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}`);
           return;
         } else if (data.requiresMoreVoting) {
-          setVotingContext(data.votingContext);
+          // FUNCTIONAL: Track card transitions for visual feedback
+          // STRATEGIC: Provides user with clear indication of which card changed
+          const newContext = data.votingContext;
+          if (previousVotingContext) {
+            const transitions = {
+              left: previousVotingContext.newCard !== newContext.newCard ? 'changed' : 'same',
+              right: previousVotingContext.compareWith !== newContext.compareWith ? 'changed' : 'same'
+            };
+            setCardTransitions(transitions);
+            
+            // Clear transitions after animation completes
+            setTimeout(() => {
+              setCardTransitions({ left: null, right: null });
+            }, 600);
+          }
+          
+          setPreviousVotingContext(votingContext);
+          setVotingContext(newContext);
         } else if (data.returnToSwipe && data.nextCardId) {
           const nextCard = currentPlay.cards.find(c => c.id === data.nextCardId);
           setCurrentCard(nextCard);
@@ -361,7 +395,10 @@ export default function Play() {
           <div className={`game-layout game-mode-vote ${cardConfig.orientation}`}>
             {/* CARD A */}
             <div 
-              className={`game-card ${keyboardActive === 'left' ? 'keyboard-active' : ''} entering`}
+              className={`game-card ${cardA.imageUrl ? 'has-image' : ''} ${keyboardActive === 'left' ? 'keyboard-active' : ''} ${
+                cardTransitions.left === 'changed' ? 'card-changed' : 
+                cardTransitions.left === 'same' ? 'card-same' : 'entering'
+              }`}
               onClick={() => handleVote(cardA.id)}
               tabIndex="0"
               onKeyDown={(e) => e.key === 'Enter' && handleVote(cardA.id)}
@@ -378,7 +415,10 @@ export default function Play() {
             
             {/* CARD B */}
             <div 
-              className={`game-card ${keyboardActive === 'right' ? 'keyboard-active' : ''} entering`}
+              className={`game-card ${cardB.imageUrl ? 'has-image' : ''} ${keyboardActive === 'right' ? 'keyboard-active' : ''} ${
+                cardTransitions.right === 'changed' ? 'card-changed' : 
+                cardTransitions.right === 'same' ? 'card-same' : 'entering'
+              }`}
               onClick={() => handleVote(cardB.id)}
               tabIndex="0"
               onKeyDown={(e) => e.key === 'Enter' && handleVote(cardB.id)}
@@ -408,32 +448,79 @@ export default function Play() {
         <link rel="stylesheet" href="/styles/game.css" />
         <div className="game-container" style={gameStyle}>
           <div className={`game-layout game-mode-swipe ${cardConfig.orientation}`}>
-            {/* DISLIKE BUTTON (👎) - Left position */}
-            <button 
-              className={`game-action-button dislike ${keyboardActive === 'dislike' ? 'pulse' : ''}`}
-              onClick={() => handleSwipe('left')}
-              tabIndex="0"
-              aria-label="Dislike card"
-            >
-              👎
-            </button>
-            
-            {/* GAME CARD */}
-            <div className="game-card entering">
-              <div className="game-card-title">{currentCard.title}</div>
-              {currentCard.description && <div className="game-card-description">{currentCard.description}</div>}
-              {currentCard.imageUrl && <img src={currentCard.imageUrl} alt={currentCard.title} className="game-card-image" />}
-            </div>
-            
-            {/* LIKE BUTTON (👍) - Right position */}
-            <button 
-              className={`game-action-button like ${keyboardActive === 'like' ? 'pulse' : ''}`}
-              onClick={() => handleSwipe('right')}
-              tabIndex="0"
-              aria-label="Like card"
-            >
-              👍
-            </button>
+            {cardConfig.orientation === 'portrait' ? (
+              // PORTRAIT LAYOUT: Card on top, buttons below in row
+              <>
+                {/* GAME CARD */}
+                <div className={`game-card ${currentCard.imageUrl ? 'has-image' : ''} ${
+                  swipeTransition === 'new-card' ? 'card-changed' : 'entering'
+                }`}>
+                  <div className="game-card-title">{currentCard.title}</div>
+                  {currentCard.description && <div className="game-card-description">{currentCard.description}</div>}
+                  {currentCard.imageUrl && <img src={currentCard.imageUrl} alt={currentCard.title} className="game-card-image" />}
+                </div>
+                
+                {/* BUTTON ROW */}
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  width: `${cardConfig.cardSize}px`,
+                  gap: '20px'
+                }}>
+                  {/* DISLIKE BUTTON (👎) - Left half */}
+                  <button 
+                    className={`game-action-button dislike ${keyboardActive === 'dislike' ? 'pulse' : ''}`}
+                    onClick={() => handleSwipe('left')}
+                    tabIndex="0"
+                    aria-label="Dislike card"
+                  >
+                    👎
+                  </button>
+                  
+                  {/* LIKE BUTTON (👍) - Right half */}
+                  <button 
+                    className={`game-action-button like ${keyboardActive === 'like' ? 'pulse' : ''}`}
+                    onClick={() => handleSwipe('right')}
+                    tabIndex="0"
+                    aria-label="Like card"
+                  >
+                    👍
+                  </button>
+                </div>
+              </>
+            ) : (
+              // LANDSCAPE LAYOUT: Button, Card, Button horizontally
+              <>
+                {/* DISLIKE BUTTON (👎) - Left position */}
+                <button 
+                  className={`game-action-button dislike ${keyboardActive === 'dislike' ? 'pulse' : ''}`}
+                  onClick={() => handleSwipe('left')}
+                  tabIndex="0"
+                  aria-label="Dislike card"
+                >
+                  👎
+                </button>
+                
+                {/* GAME CARD */}
+                <div className={`game-card ${currentCard.imageUrl ? 'has-image' : ''} ${
+                  swipeTransition === 'new-card' ? 'card-changed' : 'entering'
+                }`}>
+                  <div className="game-card-title">{currentCard.title}</div>
+                  {currentCard.description && <div className="game-card-description">{currentCard.description}</div>}
+                  {currentCard.imageUrl && <img src={currentCard.imageUrl} alt={currentCard.title} className="game-card-image" />}
+                </div>
+                
+                {/* LIKE BUTTON (👍) - Right position */}
+                <button 
+                  className={`game-action-button like ${keyboardActive === 'like' ? 'pulse' : ''}`}
+                  onClick={() => handleSwipe('right')}
+                  tabIndex="0"
+                  aria-label="Like card"
+                >
+                  👍
+                </button>
+              </>
+            )}
           </div>
         </div>
       </>

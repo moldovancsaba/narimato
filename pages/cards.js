@@ -6,6 +6,7 @@ export default function Cards() {
   const router = useRouter();
   const { org } = router.query;
 
+  const [organizations, setOrganizations] = useState([]);
   const [cards, setCards] = useState([]);
   const [decks, setDecks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,10 +19,26 @@ export default function Cards() {
   const [editingCard, setEditingCard] = useState(null);
 
   useEffect(() => {
+    fetchOrganizations();
+  }, []);
+
+  useEffect(() => {
     if (org) {
       fetchCards();
     }
   }, [org]);
+
+  const fetchOrganizations = async () => {
+    try {
+      const res = await fetch('/api/organizations');
+      const data = await res.json();
+      setOrganizations(data.organizations || []);
+    } catch (error) {
+      console.error('Failed to fetch organizations:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchCards = async () => {
     try {
@@ -110,11 +127,33 @@ export default function Cards() {
     setFormData({ title: '', description: '', imageUrl: '', parentTag: '' });
   };
 
+  // Organization selection
   if (!org) {
     return (
-      <div style={{ padding: '2rem' }}>
-        <p>Please select an organization first.</p>
-        <Link href="/organizations">Go to Organizations</Link>
+      <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
+        <div style={{ marginBottom: '2rem' }}>
+          <Link href="/" style={{ color: '#0070f3' }}>← Back to Home</Link>
+        </div>
+        
+        <h1>Cards - Select Organization</h1>
+        
+        {organizations.length === 0 ? (
+          <div>
+            <p>No organizations found.</p>
+            <Link href="/organizations">Create an organization first</Link>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gap: '1rem' }}>
+            {organizations.map(organization => (
+              <div key={organization.uuid} style={{ padding: '1rem', border: '1px solid #ddd', borderRadius: '4px' }}>
+                <h3>{organization.name}</h3>
+                <Link href={`/cards?org=${organization.uuid}`} className="btn btn-primary">
+                  Manage Cards for This Organization
+                </Link>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
