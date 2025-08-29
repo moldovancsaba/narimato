@@ -1,0 +1,345 @@
+/**
+ * NARIMATO - Game Interface Styling
+ * 
+ * FUNCTIONAL: Provides specialized styling for Swipe & Vote game modes
+ * STRATEGIC: Ensures consistent, responsive game experience across all devices
+ * 
+ * Layout Rules:
+ * - Swipe Mode: Single card with action buttons (👎/👍)
+ * - Vote Mode: Two cards with VS separator (😈)
+ * - Supports both portrait and landscape orientations
+ * - Dynamic card sizing with 10px minimum gaps
+ */
+
+/* Game Container Base */
+.game-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Layout Containers */
+.game-layout {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px; /* Minimum gap between elements */
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* Portrait Layout - Stacked Elements */
+.game-layout.portrait {
+  flex-direction: column;
+}
+
+/* Landscape Layout - Horizontal Elements */
+.game-layout.landscape {
+  flex-direction: row;
+}
+
+/* Game Card Styling */
+.game-card {
+  /* Inherits from base card styling */
+  background: #FFFFFF;
+  border: 3px solid #333333;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  
+  /* Content styling */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  text-align: center;
+  
+  /* Interactions */
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  
+  /* Dynamic sizing - set via JavaScript */
+  width: var(--card-size, 200px);
+  height: var(--card-size, 200px);
+  min-width: var(--card-size, 200px);
+  min-height: var(--card-size, 200px);
+  flex-shrink: 0;
+}
+
+.game-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
+  border-color: #0070f3;
+}
+
+.game-card:active {
+  transform: translateY(-2px) scale(0.98);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+}
+
+/* Card Content */
+.game-card-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 12px 0;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.game-card-description {
+  font-size: 1rem;
+  color: #666666;
+  margin: 0;
+  line-height: 1.5;
+  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.game-card-image {
+  max-width: 70%;
+  max-height: 50%;
+  border-radius: 8px;
+  object-fit: cover;
+  margin-top: 12px;
+}
+
+/* Action Buttons (👎/👍) */
+.game-action-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: none;
+  background: #FFFFFF;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif;
+  
+  /* Dynamic sizing - set via JavaScript */
+  width: var(--button-size, 60px);
+  height: var(--button-size, 60px);
+  border-radius: 50%;
+  font-size: var(--emoji-size, 24px);
+}
+
+.game-action-button:hover {
+  transform: translateY(-2px) scale(1.1);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+}
+
+.game-action-button:active {
+  transform: translateY(0) scale(0.95);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Dislike Button (👎) */
+.game-action-button.dislike {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+  color: white;
+}
+
+.game-action-button.dislike:hover {
+  background: linear-gradient(135deg, #ee5a5a, #dc3545);
+}
+
+/* Like Button (👍) */  
+.game-action-button.like {
+  background: linear-gradient(135deg, #51cf66, #40c057);
+  color: white;
+}
+
+.game-action-button.like:hover {
+  background: linear-gradient(135deg, #40c057, #37b24d);
+}
+
+/* VS Separator (😈) */
+.game-vs-separator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #ffa726, #ff7043);
+  color: white;
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  
+  /* Dynamic sizing - set via JavaScript */
+  width: var(--emoji-size, 40px);
+  height: var(--emoji-size, 40px);
+  border-radius: 50%;
+  font-size: var(--emoji-font-size, 20px);
+  flex-shrink: 0;
+}
+
+.game-vs-separator:hover {
+  transform: rotate(180deg) scale(1.2);
+  background: linear-gradient(135deg, #ff7043, #f4511e);
+}
+
+/* Keyboard Focus Indicators */
+.game-card:focus,
+.game-action-button:focus {
+  outline: 3px solid #0070f3;
+  outline-offset: 2px;
+}
+
+/* Keyboard Active States */
+.game-card.keyboard-active {
+  transform: translateY(-2px) scale(1.05);
+  border-color: #0070f3;
+  box-shadow: 0 8px 32px rgba(0, 112, 243, 0.3);
+}
+
+/* Game Mode Specific Layouts */
+
+/* Swipe Mode Layout */
+.game-mode-swipe.portrait {
+  /* Portrait: Card on top, buttons below */
+}
+
+.game-mode-swipe.landscape {
+  /* Landscape: Button, Card, Button horizontally */
+}
+
+/* Vote Mode Layout */
+.game-mode-vote.portrait {
+  /* Portrait: Card 1, VS, Card 2 vertically */
+}
+
+.game-mode-vote.landscape {
+  /* Landscape: Card 1, VS, Card 2 horizontally */
+}
+
+/* Responsive Adjustments */
+@media (max-height: 600px) {
+  .game-container {
+    padding: 5px;
+  }
+  
+  .game-layout {
+    gap: 5px;
+  }
+  
+  .game-card {
+    padding: 15px;
+  }
+  
+  .game-card-title {
+    font-size: 1.25rem;
+  }
+  
+  .game-card-description {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .game-card-title {
+    font-size: 1.1rem;
+  }
+  
+  .game-card-description {
+    font-size: 0.85rem;
+  }
+}
+
+/* Animation Keyframes */
+@keyframes cardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes cardExit {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.9);
+  }
+}
+
+@keyframes buttonPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* Entry animations */
+.game-card.entering {
+  animation: cardEnter 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.game-card.exiting {
+  animation: cardExit 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.game-action-button.pulse {
+  animation: buttonPulse 0.6s ease-in-out;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .game-card {
+    border-width: 4px;
+    border-color: #000000;
+  }
+  
+  .game-card-title {
+    color: #000000;
+    font-weight: 800;
+  }
+  
+  .game-action-button {
+    border: 2px solid #000000;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .game-card,
+  .game-action-button,
+  .game-vs-separator {
+    transition: none;
+  }
+  
+  .game-card:hover {
+    transform: none;
+  }
+  
+  .game-action-button:hover {
+    transform: none;
+  }
+  
+  .game-vs-separator:hover {
+    transform: none;
+  }
+  
+  .game-card.entering,
+  .game-card.exiting {
+    animation: none;
+  }
+}
