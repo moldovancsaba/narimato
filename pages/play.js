@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import { calculateCardSize } from '../lib/utils/cardSizing';
 
 export default function Play() {
   const router = useRouter();
@@ -13,6 +14,8 @@ export default function Play() {
   const [votingContext, setVotingContext] = useState(null);
   const [loading, setLoading] = useState(true);
   const [playComplete, setPlayComplete] = useState(false);
+  const [cardConfig, setCardConfig] = useState(null);
+  const [keyboardActive, setKeyboardActive] = useState(null);
 
   useEffect(() => {
     fetchOrganizations();
@@ -29,6 +32,79 @@ export default function Play() {
       startPlay();
     }
   }, [org, deck]);
+
+  // FUNCTIONAL: Initialize card sizing and setup resize handlers
+  // STRATEGIC: Ensures responsive game interface across all devices
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const updateCardSize = () => {
+        const gameMode = votingContext ? 'vote' : 'swipe';
+        const config = calculateCardSize(gameMode);
+        setCardConfig(config);
+      };
+
+      updateCardSize();
+      
+      const handleResize = () => {
+        setTimeout(updateCardSize, 100); // Debounce resize
+      };
+
+      window.addEventListener('resize', handleResize);
+      window.addEventListener('orientationchange', handleResize);
+      
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        window.removeEventListener('orientationchange', handleResize);
+      };
+    }
+  }, [votingContext]);
+
+  // FUNCTIONAL: Handle keyboard controls for game interactions
+  // STRATEGIC: Provides accessible game controls and improved UX
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      // Ignore if user is typing in an input
+      if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      if (votingContext) {
+        // VOTE MODE: LEFT = Card 1, RIGHT = Card 2
+        if (event.code === 'ArrowLeft') {
+          event.preventDefault();
+          setKeyboardActive('left');
+          handleVote(votingContext.newCard);
+        } else if (event.code === 'ArrowRight') {
+          event.preventDefault();
+          setKeyboardActive('right');
+          handleVote(votingContext.compareWith);
+        }
+      } else if (currentCard) {
+        // SWIPE MODE: LEFT = Dislike, RIGHT = Like
+        if (event.code === 'ArrowLeft') {
+          event.preventDefault();
+          setKeyboardActive('dislike');
+          handleSwipe('left');
+        } else if (event.code === 'ArrowRight') {
+          event.preventDefault();
+          setKeyboardActive('like');
+          handleSwipe('right');
+        }
+      }
+    };
+
+    const handleKeyUp = () => {
+      setKeyboardActive(null);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [currentCard, votingContext]);
 
   const fetchOrganizations = async () => {
     try {
@@ -264,87 +340,103 @@ export default function Play() {
     );
   }
 
-  // Voting interface
-  if (votingContext) {
+  // VOTE MODE: Dynamic layout with VS separator
+  if (votingContext && cardConfig) {
     const cardA = currentPlay.cards.find(c => c.id === votingContext.newCard);
     const cardB = currentPlay.cards.find(c => c.id === votingContext.compareWith);
 
+    // FUNCTIONAL: Apply dynamic sizing via CSS custom properties
+    // STRATEGIC: Ensures consistent sizing across orientations and screen sizes
+    const gameStyle = {
+      '--card-size': `${cardConfig.cardSize}px`,
+      '--button-size': `${cardConfig.buttonSize}px`,
+      '--emoji-size': `${cardConfig.emojiSize}px`,
+      '--emoji-font-size': `${cardConfig.emojiSize * 0.6}px`
+    };
+
     return (
-      <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h1>🗳️ Vote: Which do you prefer?</h1>
-          <p>Choose your preferred option to build your ranking</p>
-        </div>
-
-        <div className="card-row" style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <div className="card-with-info">
-            <div className="card card-lg card-interactive">
-              <div className="card-title">{cardA.title}</div>
-              {cardA.description && <div className="card-description">{cardA.description}</div>}
-              {cardA.imageUrl && <img src={cardA.imageUrl} alt={cardA.title} className="card-image" />}
+      <>
+        <link rel="stylesheet" href="/styles/game.css" />
+        <div className="game-container" style={gameStyle}>
+          <div className={`game-layout game-mode-vote ${cardConfig.orientation}`}>
+            {/* CARD A */}
+            <div 
+              className={`game-card ${keyboardActive === 'left' ? 'keyboard-active' : ''} entering`}
+              onClick={() => handleVote(cardA.id)}
+              tabIndex="0"
+              onKeyDown={(e) => e.key === 'Enter' && handleVote(cardA.id)}
+            >
+              <div className="game-card-title">{cardA.title}</div>
+              {cardA.description && <div className="game-card-description">{cardA.description}</div>}
+              {cardA.imageUrl && <img src={cardA.imageUrl} alt={cardA.title} className="game-card-image" />}
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <button 
-                onClick={() => handleVote(cardA.id)}
-                className="btn btn-primary"
-              >
-                ✅ Choose This
-              </button>
+            
+            {/* VS SEPARATOR */}
+            <div className="game-vs-separator">
+              😈
             </div>
-          </div>
-
-          <div className="card-with-info">
-            <div className="card card-lg card-interactive">
-              <div className="card-title">{cardB.title}</div>
-              {cardB.description && <div className="card-description">{cardB.description}</div>}
-              {cardB.imageUrl && <img src={cardB.imageUrl} alt={cardB.title} className="card-image" />}
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <button 
-                onClick={() => handleVote(cardB.id)}
-                className="btn btn-secondary"
-              >
-                ✅ Choose This
-              </button>
+            
+            {/* CARD B */}
+            <div 
+              className={`game-card ${keyboardActive === 'right' ? 'keyboard-active' : ''} entering`}
+              onClick={() => handleVote(cardB.id)}
+              tabIndex="0"
+              onKeyDown={(e) => e.key === 'Enter' && handleVote(cardB.id)}
+            >
+              <div className="game-card-title">{cardB.title}</div>
+              {cardB.description && <div className="game-card-description">{cardB.description}</div>}
+              {cardB.imageUrl && <img src={cardB.imageUrl} alt={cardB.title} className="game-card-image" />}
             </div>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
-  // Swiping interface
-  if (currentCard) {
+  // SWIPE MODE: Dynamic layout with action buttons
+  if (currentCard && cardConfig) {
+    // FUNCTIONAL: Apply dynamic sizing via CSS custom properties
+    // STRATEGIC: Ensures consistent sizing across orientations and screen sizes
+    const gameStyle = {
+      '--card-size': `${cardConfig.cardSize}px`,
+      '--button-size': `${cardConfig.buttonSize}px`,
+      '--emoji-size': `${cardConfig.emojiSize}px`
+    };
+
     return (
-      <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h1>🃏 Playing: {deck}</h1>
-          <p>Swipe right to like, left to dislike</p>
-        </div>
-
-        <div style={{ maxWidth: '400px', margin: '0 auto', textAlign: 'center' }}>
-          <div className="card card-xl card-interactive" style={{ marginBottom: '2rem' }}>
-            <div className="card-title">{currentCard.title}</div>
-            {currentCard.description && <div className="card-description">{currentCard.description}</div>}
-            {currentCard.imageUrl && <img src={currentCard.imageUrl} alt={currentCard.title} className="card-image" />}
-          </div>
-
-          <div className="btn-group">
+      <>
+        <link rel="stylesheet" href="/styles/game.css" />
+        <div className="game-container" style={gameStyle}>
+          <div className={`game-layout game-mode-swipe ${cardConfig.orientation}`}>
+            {/* DISLIKE BUTTON (👎) - Left position */}
             <button 
+              className={`game-action-button dislike ${keyboardActive === 'dislike' ? 'pulse' : ''}`}
               onClick={() => handleSwipe('left')}
-              className="btn btn-secondary"
+              tabIndex="0"
+              aria-label="Dislike card"
             >
-              👎 Dislike
+              👎
             </button>
+            
+            {/* GAME CARD */}
+            <div className="game-card entering">
+              <div className="game-card-title">{currentCard.title}</div>
+              {currentCard.description && <div className="game-card-description">{currentCard.description}</div>}
+              {currentCard.imageUrl && <img src={currentCard.imageUrl} alt={currentCard.title} className="game-card-image" />}
+            </div>
+            
+            {/* LIKE BUTTON (👍) - Right position */}
             <button 
+              className={`game-action-button like ${keyboardActive === 'like' ? 'pulse' : ''}`}
               onClick={() => handleSwipe('right')}
-              className="btn btn-primary"
+              tabIndex="0"
+              aria-label="Like card"
             >
-              👍 Like
+              👍
             </button>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
