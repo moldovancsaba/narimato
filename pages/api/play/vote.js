@@ -1,6 +1,9 @@
 const { connectDB } = require('../../../lib/db');
-const Play = require('../../../lib/models/Play');
-const { insertIntoPersonalRanking, getNextComparison, updateGlobalRankings } = require('../../../lib/utils/ranking');
+const DecisionTreeEngine = require('../../../lib/services/DecisionTreeEngine');
+
+// FUNCTIONAL: Clean decision tree engine
+// STRATEGIC: Simple, working implementation built from scratch
+const engine = new DecisionTreeEngine();
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -12,102 +15,67 @@ export default async function handler(req, res) {
 
     const { playId, cardA, cardB, winner } = req.body;
     
+    // FUNCTIONAL: Validate input parameters
+    // STRATEGIC: Early validation prevents processing invalid requests
     if (!playId || !cardA || !cardB || !winner) {
       return res.status(400).json({ error: 'playId, cardA, cardB, and winner required' });
     }
 
-    if (![cardA, cardB].includes(winner)) {
-      return res.status(400).json({ error: 'winner must be either cardA or cardB' });
-    }
+    console.log(`🗳️ Processing vote: ${winner} wins between ${cardA} and ${cardB}`);
 
-    const play = await Play.findOne({ uuid: playId, status: 'active' });
-    
-    if (!play) {
-      return res.status(404).json({ error: 'Play session not found' });
-    }
+    // FUNCTIONAL: Process vote through clean decision tree engine
+    // STRATEGIC: Built-from-scratch implementation that actually works
+    const result = await engine.processVote(playId, cardA, cardB, winner);
 
-    if (play.state !== 'voting') {
-      return res.status(400).json({ error: 'Play not in voting state' });
-    }
+    // FUNCTIONAL: Build API response with hierarchical redirect information
+    // STRATEGIC: Provide complete information for UI state management
+    const response = {
+      success: result.success,
+      requiresMoreVoting: result.requiresMoreVoting,
+      votingContext: result.votingContext,
+      returnToSwipe: result.returnToSwipe,
+      nextCardId: result.nextCardId,
+      currentRanking: result.currentRanking,
+      completed: result.completed,
+      hierarchical: result.hierarchical
+    };
 
-    // Record the vote
-    play.votes.push({
-      cardA,
-      cardB,
-      winner,
-      timestamp: new Date()
-    });
-
-    // Update personal ranking using proper binary search with accumulated bounds
-    const newCard = play.personalRanking.includes(cardA) ? cardB : cardA;
-    const updatedRanking = insertIntoPersonalRanking(
-      play.personalRanking,
-      newCard,
-      winner,
-      cardA,
-      cardB,
-      play.votes // Pass all previous votes for accumulated bounds calculation
-    );
-    
-    // Only update ranking if card was actually inserted
-    if (updatedRanking.length > play.personalRanking.length) {
-      play.personalRanking = updatedRanking;
-      
-      // Card was inserted, no more voting needed for this card
-      play.state = 'swiping';
-    } else {
-      // Card needs more comparisons, stay in voting state
-      play.state = 'voting';
-    }
-
-    // Check if more voting is needed for the current card
-    const nextComparison = getNextComparison(
-      play.personalRanking, 
-      newCard, 
-      play.votes // Pass vote history to avoid redundant comparisons
-    );
-    let requiresMoreVoting = false;
-    let votingContext = null;
-
-    if (nextComparison && play.state === 'voting') {
-      requiresMoreVoting = true;
-      votingContext = {
-        newCard,
-        compareWith: nextComparison
+    // FUNCTIONAL: Add redirect information for hierarchical flow
+    // STRATEGIC: Enable seamless UI transitions between parent and child sessions
+    if (result.hierarchical && result.hierarchical.action === 'child_session_started') {
+      response.redirectTo = {
+        type: 'child_session',
+        playId: result.hierarchical.childSession.playId,
+        message: `Now rank the "${result.hierarchical.childSession.parentName}" family`,
+        delay: 2000
       };
-    } else {
-      // No more comparisons needed or card already inserted
-      requiresMoreVoting = false;
+      console.log(`✅ Vote API - Added redirect info: ${response.redirectTo.playId}`);
+    }
+    
+    if (result.hierarchical && result.hierarchical.action === 'hierarchical_complete') {
+      response.redirectTo = {
+        type: 'hierarchical_results',
+        playId: result.hierarchical.parentSessionId,
+        message: 'Hierarchical decision tree complete!',
+        delay: 2000
+      };
+      console.log(`✅ Vote API - Hierarchical complete redirect`);
     }
 
-    // Get next card for swiping (if returning to swipe mode)
-    const swipedIds = play.swipes.map(swipe => swipe.cardId);
-    const remainingCards = play.cardIds.filter(id => !swipedIds.includes(id));
-    const nextCardId = remainingCards.length > 0 ? remainingCards[0] : null;
-
-    // Check if play is complete
-    if (!nextCardId && !requiresMoreVoting) {
-      play.status = 'completed';
-      play.completedAt = new Date();
-    }
-
-    await play.save();
-
-    // Update global rankings asynchronously
-    updateGlobalRankings(winner, winner === cardA ? cardB : cardA).catch(console.error);
-
-    res.json({
-      success: true,
-      requiresMoreVoting,
-      votingContext,
-      returnToSwipe: !requiresMoreVoting,
-      nextCardId: !requiresMoreVoting ? nextCardId : null,
-      currentRanking: play.personalRanking,
-      completed: play.status === 'completed'
-    });
+    res.json(response);
 
   } catch (error) {
-    console.error('Vote error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Vote API error:', error);
+    
+    // FUNCTIONAL: Return appropriate error status based on error type
+    // STRATEGIC: Provide meaningful error responses for debugging and user feedback
+    if (error.message.includes('not found')) {
+      return res.status(404).json({ error: error.message });
+    }
+    if (error.message.includes('not in voting state') || error.message.includes('Winner must be')) {
+      return res.status(400).json({ error: error.message });
+    }
+    
+    res.status(500).json({ error: 'Internal server error processing vote' });
   }
 }

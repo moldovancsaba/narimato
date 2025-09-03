@@ -23,7 +23,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PUT') {
-      const { title, description, imageUrl, parentTag } = req.body;
+      let { title, description, imageUrl, parentTag, name } = req.body;
       
       if (!title?.trim()) {
         return res.status(400).json({ error: 'Title is required' });
@@ -33,15 +33,71 @@ export default async function handler(req, res) {
       if (!card) {
         return res.status(404).json({ error: 'Card not found' });
       }
+      
+      // FUNCTIONAL: Prevent circular references in card hierarchy
+      // STRATEGIC: Ensures SwipeMore engine never encounters infinite loops
+      if (parentTag?.trim()) {
+        const cleanParentTag = parentTag.trim();
+        
+        // Prevent card from being its own parent
+        if (cleanParentTag === card.name) {
+          return res.status(400).json({ 
+            error: `Card cannot be its own parent. "${card.name}" cannot have parentTag "${cleanParentTag}"` 
+          });
+        }
+        
+        // Prevent circular reference chains
+        const allCards = await Card.find({ 
+          organizationId: card.organizationId, 
+          isActive: true 
+        });
+        
+        // Check for circular reference by walking up the hierarchy
+        const visited = new Set();
+        let currentParentTag = cleanParentTag;
+        
+        while (currentParentTag && !visited.has(currentParentTag)) {
+          visited.add(currentParentTag);
+          
+          // If we find our own card name in the parent chain, it's circular
+          if (currentParentTag === card.name) {
+            return res.status(400).json({
+              error: `Circular reference detected. Setting parentTag to "${cleanParentTag}" would create a loop: ${Array.from(visited).join(' → ')} → ${card.name}`
+            });
+          }
+          
+          // Find the parent card and continue up the chain
+          const parentCard = allCards.find(c => c.name === currentParentTag);
+          currentParentTag = parentCard?.parentTag;
+        }
+      }
 
-      // Update card fields
+      // HASHTAG MANAGEMENT: Ensure name always starts with # if provided
+      if (name) {
+        // Remove # if user added it, we'll add it properly
+        if (name.startsWith('#')) {
+          name = name.substring(1);
+        }
+        // Now add # prefix properly
+        name = `#${name}`;
+        card.name = name;
+      }
+      
+      // HASHTAG MANAGEMENT: Ensure parentTag starts with # if provided
+      if (parentTag?.trim()) {
+        parentTag = parentTag.trim();
+        if (!parentTag.startsWith('#')) {
+          parentTag = `#${parentTag}`;
+        }
+        card.parentTag = parentTag;
+      } else {
+        card.parentTag = null;
+      }
+      
+      // Update other card fields
       card.title = title.trim();
       card.description = description?.trim() || '';
       card.imageUrl = imageUrl?.trim() || '';
-      card.parentTag = parentTag?.trim() || null;
-      
-      // Update the name field (hashtag)
-      card.name = parentTag?.trim() ? `${parentTag.trim()}/${title.trim()}` : title.trim();
       
       await card.save();
       return res.status(200).json(card);

@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 export default function Results() {
   const router = useRouter();
-  const { playId, org, deck } = router.query;
+  const { playId, org, deck, mode } = router.query;
 
   const [results, setResults] = useState(null);
   const [globalRankings, setGlobalRankings] = useState([]);
@@ -22,7 +22,17 @@ export default function Results() {
 
   const fetchResults = async () => {
     try {
-      const res = await fetch(`/api/play/results?playId=${playId}`);
+      // Use mode-specific results API if mode is specified
+      let apiEndpoint = `/api/play/results?playId=${playId}`;
+      if (mode === 'swipe-only') {
+        apiEndpoint = `/api/swipe-only/results?playId=${playId}`;
+      } else if (mode === 'vote-only') {
+        apiEndpoint = `/api/vote-only/results?playId=${playId}`;
+      } else if (mode === 'swipe-more') {
+        apiEndpoint = `/api/swipe-more/results?playId=${playId}`;
+      }
+      
+      const res = await fetch(apiEndpoint);
       if (res.ok) {
         const data = await res.json();
         setResults(data);
@@ -120,7 +130,27 @@ export default function Results() {
     <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif', maxWidth: '800px', margin: '0 auto' }}>
       <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
         <h1>🎉 Your {deck} Ranking Results!</h1>
-        <p style={{ color: '#666' }}>Here's how you ranked the cards in this deck</p>
+        <p style={{ color: '#666' }}>
+          {mode === 'swipe-only' ? 'Your swipe-based preference ranking' : 
+           mode === 'vote-only' ? 'Your tournament-style voting results' :
+           mode === 'swipe-more' ? 'Your hybrid swipe + vote ranking' :
+           'Here\'s how you ranked the cards in this deck'}
+        </p>
+        {mode && (
+          <div style={{ 
+            display: 'inline-block', 
+            padding: '0.25rem 0.75rem', 
+            background: mode === 'swipe-only' ? '#ff6b6b' : mode === 'vote-only' ? '#4ecdc4' : '#845ec2', 
+            color: 'white', 
+            borderRadius: '12px', 
+            fontSize: '0.8rem', 
+            fontWeight: '500' 
+          }}>
+            {mode === 'swipe-only' ? '👆 Swipe Only' : 
+             mode === 'vote-only' ? '🗳️ Vote Only' : 
+             mode === 'swipe-more' ? '🔄 Swipe + Vote' : mode}
+          </div>
+        )}
       </div>
 
       {/* Share Section */}
@@ -160,32 +190,115 @@ export default function Results() {
       <div style={{ marginBottom: '3rem' }}>
         <h2>🏆 Your Personal Ranking</h2>
         <div className="card-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
-          {results.personalRanking?.map((cardId, index) => {
-            const card = getCardDetails(cardId);
-            const globalRank = getGlobalRank(cardId);
-            return (
-              <div key={cardId} className="card-with-info">
-                <div className={`card card-md card-interactive ${card.imageUrl ? 'has-image' : ''} ${
-                  index === 0 ? 'card-winner' : index === 1 ? 'card-selected' : index === 2 ? 'card-error' : ''
-                }`}>
-                  <div className="card-title">{card.title}</div>
-                  {card.description && <div className="card-description">{card.description}</div>}
-                  {card.imageUrl && <img src={card.imageUrl} alt={card.title} className="card-image" />}
-                </div>
-                <div className="card-info">
-                  <div className="card-info-title" style={{ 
-                    color: index === 0 ? '#856404' : index === 1 ? '#495057' : index === 2 ? '#721c24' : '#333'
-                  }}>
-                    {index === 0 ? '🥇 #1' : index === 1 ? '🥈 #2' : index === 2 ? '🥉 #3' : `#${index + 1}`}
+          {/* Handle different data structures from mode-specific APIs */}
+          {results.ranking ? (
+            // Mode-specific APIs return 'ranking' array with card objects
+            results.ranking.map((rankingItem, index) => {
+              const card = rankingItem.card || getCardDetails(rankingItem.cardId);
+              const globalRank = getGlobalRank(card.id || card.uuid);
+              return (
+                <div key={card.id || card.uuid} className="card-with-info">
+                  <div className={`card card-md card-interactive ${card.imageUrl ? 'has-image' : ''} ${
+                    index === 0 ? 'card-winner' : index === 1 ? 'card-selected' : index === 2 ? 'card-error' : ''
+                  }`}>
+                    <div className="card-title">{card.title}</div>
+                    {card.description && <div className="card-description">{card.description}</div>}
+                    {card.imageUrl && <img src={card.imageUrl} alt={card.title} className="card-image" />}
                   </div>
-                  {globalRank && (
-                    <div className="card-info-meta">Global Rank: #{globalRank}</div>
-                  )}
+                  <div className="card-info">
+                    <div className="card-info-title" style={{ 
+                      color: index === 0 ? '#856404' : index === 1 ? '#495057' : index === 2 ? '#721c24' : '#333'
+                    }}>
+                      {index === 0 ? '🥇 #1' : index === 1 ? '🥈 #2' : index === 2 ? '🥉 #3' : `#${index + 1}`}
+                    </div>
+                    {globalRank && (
+                      <div className="card-info-meta">Global Rank: #{globalRank}</div>
+                    )}
+                    {mode === 'vote-only' && rankingItem.statistics && (
+                      <div className="card-info-meta">
+                        Wins: {rankingItem.statistics.wins}/{rankingItem.statistics.comparisons} ({rankingItem.statistics.winRate}%)
+                      </div>
+                    )}
+                    {mode === 'swipe-only' && rankingItem.swipedAt && (
+                      <div className="card-info-meta">
+                        Liked: {new Date(rankingItem.swipedAt).toLocaleTimeString()}
+                      </div>
+                    )}
+                    {mode === 'swipe-more' && (
+                      <div className="card-info-meta">
+                        {rankingItem.swipedAt && (
+                          <div>Liked: {new Date(rankingItem.swipedAt).toLocaleTimeString()}</div>
+                        )}
+                        {rankingItem.wins !== undefined && rankingItem.totalComparisons && (
+                          <div>Votes: {rankingItem.wins}/{rankingItem.totalComparisons}</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          }) || <p>No personal ranking available.</p>}
+              );
+            })
+          ) : results.personalRanking ? (
+            // Classic API returns 'personalRanking' array with card IDs
+            results.personalRanking.map((cardId, index) => {
+              const card = getCardDetails(cardId);
+              const globalRank = getGlobalRank(cardId);
+              return (
+                <div key={cardId} className="card-with-info">
+                  <div className={`card card-md card-interactive ${card.imageUrl ? 'has-image' : ''} ${
+                    index === 0 ? 'card-winner' : index === 1 ? 'card-selected' : index === 2 ? 'card-error' : ''
+                  }`}>
+                    <div className="card-title">{card.title}</div>
+                    {card.description && <div className="card-description">{card.description}</div>}
+                    {card.imageUrl && <img src={card.imageUrl} alt={card.title} className="card-image" />}
+                  </div>
+                  <div className="card-info">
+                    <div className="card-info-title" style={{ 
+                      color: index === 0 ? '#856404' : index === 1 ? '#495057' : index === 2 ? '#721c24' : '#333'
+                    }}>
+                      {index === 0 ? '🥇 #1' : index === 1 ? '🥈 #2' : index === 2 ? '🥉 #3' : `#${index + 1}`}
+                    </div>
+                    {globalRank && (
+                      <div className="card-info-meta">Global Rank: #{globalRank}</div>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <p>No personal ranking available.</p>
+          )}
         </div>
+        
+        {/* Statistics Section for Mode-specific Data */}
+        {results.statistics && (
+          <div style={{ 
+            marginTop: '2rem', 
+            padding: '1rem', 
+            background: '#f8f9fa', 
+            borderRadius: '8px' 
+          }}>
+            <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem' }}>📊 Session Statistics</h3>
+            <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', fontSize: '0.9rem' }}>
+              <div><strong>Total Cards:</strong> {results.statistics.totalCards}</div>
+              {results.statistics.totalSwipes && (
+                <div><strong>Total Swipes:</strong> {results.statistics.totalSwipes}</div>
+              )}
+              {results.statistics.likedCards && (
+                <div><strong>Liked:</strong> {results.statistics.likedCards}</div>
+              )}
+              {results.statistics.rejectedCards && (
+                <div><strong>Rejected:</strong> {results.statistics.rejectedCards}</div>
+              )}
+              {results.statistics.totalComparisons && (
+                <div><strong>Total Votes:</strong> {results.statistics.totalComparisons}</div>
+              )}
+              {results.statistics.efficiency && (
+                <div><strong>Efficiency:</strong> {results.statistics.efficiency}%</div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Global Rankings */}
