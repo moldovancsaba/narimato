@@ -1,7 +1,10 @@
 const { connectDB } = require('../../../lib/db');
+const DecisionTreeEngine = require('../../../lib/services/DecisionTreeEngine');
 const Play = require('../../../lib/models/Play');
-const { getDeckCards, isDeck } = require('../../../lib/utils/cardUtils');
-const { v4: uuidv4 } = require('uuid');
+
+// FUNCTIONAL: Clean decision tree engine
+// STRATEGIC: Simple, working implementation built from scratch
+const engine = new DecisionTreeEngine();
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -16,47 +19,27 @@ export default async function handler(req, res) {
     if (!organizationId || !deckTag) {
       return res.status(400).json({ error: 'organizationId and deckTag required' });
     }
-
-    // Check if it's a valid deck
-    if (!await isDeck(organizationId, deckTag)) {
-      return res.status(400).json({ error: 'Not a playable deck' });
-    }
-
-    // Get deck cards
-    const cards = await getDeckCards(organizationId, deckTag);
     
-    if (cards.length < 2) {
-      return res.status(400).json({ error: 'Deck needs at least 2 cards' });
+    // Check for existing session
+    const existingSession = await Play.findOne({ 
+      organizationId, 
+      deckTag, 
+      status: { $in: ['active', 'waiting_for_children'] }
+    }).sort({ createdAt: -1 });
+    
+    if (existingSession) {
+      console.log('🔁 Resuming session:', existingSession.uuid);
+      const sessionData = await engine.getSessionData(existingSession.uuid);
+      return res.json({
+        ...sessionData,
+        resumed: true
+      });
     }
 
-    // Shuffle cards
-    const shuffledCards = cards.sort(() => Math.random() - 0.5);
-    const cardIds = shuffledCards.map(card => card.uuid);
-
-    // Create play session
-    const play = new Play({
-      uuid: uuidv4(),
-      organizationId,
-      deckTag,
-      cardIds,
-      swipes: [],
-      votes: [],
-      personalRanking: []
-    });
-
-    await play.save();
-
-    res.json({
-      playId: play.uuid,
-      deckTag,
-      cards: shuffledCards.map(card => ({
-        id: card.uuid,
-        title: card.title,
-        description: card.description,
-        imageUrl: card.imageUrl
-      })),
-      currentCardId: cardIds[0]
-    });
+    // Create new session
+    console.log('🎆 Creating new session for:', deckTag);
+    const sessionData = await engine.createSession(organizationId, deckTag);
+    res.json(sessionData);
 
   } catch (error) {
     console.error('Play start error:', error);

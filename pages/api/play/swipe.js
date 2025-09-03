@@ -1,6 +1,9 @@
 const { connectDB } = require('../../../lib/db');
-const Play = require('../../../lib/models/Play');
-const { getNextComparison } = require('../../../lib/utils/ranking');
+const DecisionTreeEngine = require('../../../lib/services/DecisionTreeEngine');
+
+// FUNCTIONAL: Clean decision tree engine
+// STRATEGIC: Simple, working implementation built from scratch
+const engine = new DecisionTreeEngine();
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -12,6 +15,8 @@ export default async function handler(req, res) {
 
     const { playId, cardId, direction } = req.body;
     
+    // FUNCTIONAL: Validate input parameters
+    // STRATEGIC: Early validation prevents processing invalid requests
     if (!playId || !cardId || !direction) {
       return res.status(400).json({ error: 'playId, cardId, and direction required' });
     }
@@ -20,74 +25,60 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'direction must be left or right' });
     }
 
-    const play = await Play.findOne({ uuid: playId, status: 'active' });
+    console.log(`👆 Processing swipe: ${cardId} swiped ${direction}`);
+
+    // FUNCTIONAL: Process swipe through clean decision tree engine
+    // STRATEGIC: Built-from-scratch implementation that actually works
+    const result = await engine.processSwipe(playId, cardId, direction);
+
+    // FUNCTIONAL: Build API response with hierarchical redirect information
+    // STRATEGIC: Provide complete information for UI state management
+    const response = {
+      success: result.success,
+      requiresVoting: result.requiresVoting,
+      votingContext: result.votingContext,
+      nextCardId: result.nextCardId,
+      currentRanking: result.currentRanking,
+      completed: result.completed,
+      hierarchical: result.hierarchical
+    };
+
+    // FUNCTIONAL: Add redirect information for hierarchical flow
+    // STRATEGIC: Enable seamless UI transitions between parent and child sessions
+    if (result.hierarchical && result.hierarchical.action === 'child_session_started') {
+      response.redirectTo = {
+        type: 'child_session',
+        playId: result.hierarchical.childSession.playId,
+        message: `Now rank the "${result.hierarchical.childSession.parentName}" family`,
+        delay: 2000 // 2 second delay to show completion message first
+      };
+      console.log(`✅ Swipe API - Added redirect info: ${response.redirectTo.playId}`);
+    }
     
-    if (!play) {
-      return res.status(404).json({ error: 'Play session not found' });
+    if (result.hierarchical && result.hierarchical.action === 'hierarchical_complete') {
+      response.redirectTo = {
+        type: 'hierarchical_results',
+        playId: result.hierarchical.parentSessionId,
+        message: 'Hierarchical decision tree complete!',
+        delay: 2000
+      };
+      console.log(`✅ Swipe API - Hierarchical complete redirect`);
     }
 
-    // Check if card was already swiped
-    if (play.swipes.some(swipe => swipe.cardId === cardId)) {
-      return res.status(400).json({ error: 'Card already swiped' });
-    }
-
-    // Add swipe
-    play.swipes.push({
-      cardId,
-      direction,
-      timestamp: new Date()
-    });
-
-    let requiresVoting = false;
-    let votingContext = null;
-
-    // If swiped right (liked), determine if voting is needed
-    if (direction === 'right') {
-      if (play.personalRanking.length === 0) {
-        // First liked card goes directly to ranking
-        play.personalRanking = [cardId];
-      } else {
-        // Need to compare with existing cards using proper binary search
-        const compareWith = getNextComparison(play.personalRanking, cardId, play.votes);
-        if (compareWith) {
-          play.state = 'voting';
-          requiresVoting = true;
-          votingContext = {
-            newCard: cardId,
-            compareWith
-          };
-        } else {
-          // No comparison needed, card position already determined by binary search bounds
-          // This means the binary search bounds collapsed to a specific position
-          play.personalRanking.unshift(cardId);
-        }
-      }
-    }
-
-    // Get next card for swiping
-    const swipedIds = play.swipes.map(swipe => swipe.cardId);
-    const remainingCards = play.cardIds.filter(id => !swipedIds.includes(id));
-    const nextCardId = remainingCards.length > 0 ? remainingCards[0] : null;
-
-    // Check if play is complete
-    if (!nextCardId && !requiresVoting) {
-      play.status = 'completed';
-      play.completedAt = new Date();
-    }
-
-    await play.save();
-
-    res.json({
-      success: true,
-      requiresVoting,
-      votingContext,
-      nextCardId,
-      currentRanking: play.personalRanking,
-      completed: play.status === 'completed'
-    });
+    res.json(response);
 
   } catch (error) {
-    console.error('Swipe error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Swipe API error:', error);
+    
+    // FUNCTIONAL: Return appropriate error status based on error type
+    // STRATEGIC: Provide meaningful error responses for debugging and user feedback
+    if (error.message.includes('not found')) {
+      return res.status(404).json({ error: error.message });
+    }
+    if (error.message.includes('already swiped') || error.message.includes('Cannot swipe')) {
+      return res.status(400).json({ error: error.message });
+    }
+    
+    res.status(500).json({ error: 'Internal server error processing swipe' });
   }
 }

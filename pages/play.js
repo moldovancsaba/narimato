@@ -150,7 +150,102 @@ export default function Play() {
 
   const startPlay = async () => {
     try {
-      const res = await fetch('/api/play/start', {
+      // Check if this is a child session (playId in URL)
+      const { playId, mode } = router.query;
+      
+      if (playId && deck === 'child') {
+        // FUNCTIONAL: Load child session using hierarchical status API
+        // STRATEGIC: Get complete child session data including all cards from hierarchical flow
+        console.log('🌳 Loading child session via hierarchical status:', playId);
+        
+        try {
+          const statusRes = await fetch(`/api/play/hierarchical-status?playId=${playId}&organizationId=${org}`);
+          
+          if (statusRes.ok) {
+            const statusData = await statusRes.json();
+            console.log('📊 Child session hierarchical data:', statusData);
+            
+            if (statusData.isHierarchical && statusData.action === 'continue_child_session' && statusData.data) {
+              // Use data from hierarchical status API
+              const childData = statusData.data;
+              
+              setCurrentPlay({
+                playId: childData.childSessionId || playId,
+                deckTag: childData.parentName || 'child-session',
+                totalCards: childData.totalCards || childData.cards?.length || 1,
+                cards: childData.cards || [],
+                currentCardId: childData.currentCardId
+              });
+              
+              // Set current card
+              if (childData.cards && childData.currentCardId) {
+                const currentCard = childData.cards.find(c => c.id === childData.currentCardId);
+                setCurrentCard(currentCard);
+              }
+              
+              setVotingContext(null);
+              setPlayComplete(false);
+              return;
+            }
+            
+            // If child session is completed or not found, check status
+            console.log('🔄 Child session status unclear, checking hierarchical flow');
+            await checkHierarchicalStatus();
+            return;
+          } else {
+            console.error('Failed to get hierarchical status for child session');
+          }
+        } catch (error) {
+          console.error('Error loading child session:', error);
+        }
+        
+        // Fallback: Try loading with current API
+        console.log('🔄 Trying fallback child session load...');
+        const res = await fetch(`/api/play/current?playId=${playId}`);
+        
+        if (res.ok) {
+          const data = await res.json();
+          
+          if (data.completed) {
+            await checkHierarchicalStatus();
+            return;
+          }
+          
+          setCurrentPlay({
+            playId: data.playId || playId,
+            deckTag: data.deckTag || 'child-session',
+            totalCards: data.totalCards || 1,
+            cards: data.currentCard ? [data.currentCard] : [],
+            currentCardId: data.currentCard?.id
+          });
+          
+          if (data.currentCard) {
+            setCurrentCard(data.currentCard);
+          }
+          
+          setVotingContext(null);
+          setPlayComplete(false);
+          return;
+        }
+        
+        // If all fails, show error
+        console.error('Failed to load child session, redirecting to home');
+        alert('Failed to load child session');
+        router.push('/');
+        return;
+      }
+      
+      // Normal deck start - check for specific modes
+      let apiEndpoint = '/api/play/start';
+      if (mode === 'swipe-only') {
+        apiEndpoint = '/api/swipe-only/start';
+      } else if (mode === 'vote-only') {
+        apiEndpoint = '/api/vote-only/start';
+      } else if (mode === 'swipe-more') {
+        apiEndpoint = '/api/swipe-more/start';
+      }
+      
+      const res = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ organizationId: org, deckTag: deck })
@@ -158,9 +253,46 @@ export default function Play() {
       
       if (res.ok) {
         const data = await res.json();
+        console.log('🎮 Play session data:', {
+          playId: data.playId,
+          state: data.state,
+          hasVotingContext: !!data.votingContext,
+          currentCardId: data.currentCardId,
+          resumed: data.resumed
+        });
+        
         setCurrentPlay(data);
-        setCurrentCard(data.cards.find(c => c.id === data.currentCardId));
-        setVotingContext(null);
+        
+        // FUNCTIONAL: Handle both swiping and voting states properly
+        // STRATEGIC: Resume exactly where the user left off
+        const { mode } = router.query;
+        
+        if (mode === 'vote-only' && data.currentComparison) {
+          // Vote-only mode - set up voting context from current comparison
+          console.log('🗳️ Starting vote-only mode:', data.currentComparison);
+          setVotingContext({
+            newCard: data.currentComparison.cardA,
+            compareWith: data.currentComparison.cardB
+          });
+          setCurrentCard(null);
+        } else if (data.votingContext) {
+          // Session is in voting mode - set up voting context
+          console.log('🗳️ Resuming in voting mode:', data.votingContext);
+          setVotingContext(data.votingContext);
+          setCurrentCard(null); // No current card in voting mode
+        } else if (data.currentCardId) {
+          // Session is in swiping mode - set up current card
+          console.log('👆 Resuming in swiping mode, card:', data.currentCardId);
+          const currentCard = data.cards.find(c => c.id === data.currentCardId);
+          setCurrentCard(currentCard);
+          setVotingContext(null);
+        } else {
+          // No current card and no voting - might be completed
+          console.log('⚠️ No current card or voting context');
+          setCurrentCard(null);
+          setVotingContext(null);
+        }
+        
         setPlayComplete(false);
       } else {
         const error = await res.json();
@@ -172,11 +304,118 @@ export default function Play() {
     }
   };
 
+  const checkHierarchicalStatus = async () => {
+    if (!currentPlay) return;
+    
+    // Check if we're in a specific mode that needs direct results redirect
+    const { mode } = router.query;
+    if (mode === 'swipe-only' || mode === 'vote-only' || mode === 'swipe-more') {
+      console.log(`🔚 ${mode} session completion - redirecting to results`);
+      router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}&mode=${mode}`);
+      return;
+    }
+
+    try {
+      console.log('🔍 Checking hierarchical status for playId:', currentPlay.playId);
+      const res = await fetch(`/api/play/hierarchical-status?playId=${currentPlay.playId}&organizationId=${org}`);
+      
+      if (res.ok) {
+        const statusData = await res.json();
+        console.log('📊 Hierarchical status response:', statusData);
+        
+        if (statusData.isHierarchical) {
+          switch (statusData.action) {
+            case 'start_child_session':
+              // FUNCTIONAL: Smooth transition to child session without blocking popup
+              // STRATEGIC: Better UX by avoiding alert interruption
+              console.log(`🌳 Parent ranking complete - starting child session: ${statusData.data.childSessionId}`);
+              
+              // Direct redirect without alert popup
+              router.push(`/play?org=${org}&deck=child&playId=${statusData.data.childSessionId}`);
+              return;
+              
+            case 'show_hierarchical_results':
+              // Show hierarchical completion message and redirect to results
+              alert(`Hierarchical ranking complete!\n\nRanked ${statusData.data.totalItems} items in families.`);
+              
+              setTimeout(() => {
+                router.push(`/results?playId=${statusData.playId}&org=${org}&deck=${encodeURIComponent(deck)}&hierarchical=true`);
+              }, 1500);
+              return;
+              
+            case 'initialize_hierarchical':
+              // FUNCTIONAL: Handle hierarchical initialization without popup
+              // STRATEGIC: Prevent infinite reload loop by handling initialization server-side
+              console.log('⚠️ Session needs hierarchical initialization - delegating to server');
+              
+              try {
+                // Call server-side initialization instead of reloading page
+                const initRes = await fetch('/api/play/hierarchical-status', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ 
+                    playId: currentPlay.playId, 
+                    organizationId: org,
+                    action: 'initialize'
+                  })
+                });
+                
+                if (initRes.ok) {
+                  const initData = await initRes.json();
+                  console.log('✅ Hierarchical initialization triggered:', initData);
+                  
+                  // Check status again after initialization
+                  setTimeout(() => {
+                    checkHierarchicalStatus();
+                  }, 1000);
+                } else {
+                  console.error('Failed to initialize hierarchical session');
+                  // Fallback to normal results if initialization fails
+                  router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}`);
+                }
+              } catch (error) {
+                console.error('Error initializing hierarchical session:', error);
+                // Fallback to normal results on error
+                router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}`);
+              }
+              return;
+              
+            case 'show_standard_results':
+              // Standard completion - no hierarchical processing needed
+              console.log('✅ Standard session completion - showing results');
+              router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}`);
+              return;
+              
+            default:
+              console.log('ℹ️ Unknown hierarchical action:', statusData.action);
+          }
+        }
+      } else {
+        console.error('Failed to fetch hierarchical status:', res.statusText);
+      }
+    } catch (error) {
+      console.error('Error checking hierarchical status:', error);
+    }
+    
+    // If no hierarchical action needed, proceed with normal completion
+    console.log('🔚 Standard session completion');
+    router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}`);
+  };
+
   const handleSwipe = async (direction) => {
     if (!currentPlay || !currentCard) return;
 
     try {
-      const res = await fetch('/api/play/swipe', {
+      // Check mode for appropriate API endpoint
+      const { mode } = router.query;
+      let apiEndpoint = '/api/play/swipe';
+      if (mode === 'swipe-only') {
+        apiEndpoint = '/api/swipe-only/swipe';
+      } else if (mode === 'swipe-more') {
+        apiEndpoint = '/api/swipe-more/swipe';
+      }
+      
+      const res = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -190,18 +429,39 @@ export default function Play() {
         const data = await res.json();
         
         if (data.completed) {
-          // Redirect to results page
-          router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}`);
+          // Check hierarchical status to determine next action
+          await checkHierarchicalStatus();
           return;
         } else if (data.requiresVoting) {
           setVotingContext(data.votingContext);
         } else if (data.nextCardId) {
-          const nextCard = currentPlay.cards.find(c => c.id === data.nextCardId);
+          // HIERARCHICAL SWIPEMORE: Handle level transitions
+          let nextCard;
+          let updatedCards = currentPlay.cards;
+          
+          if (data.newLevelCards) {
+            // SwipeMore transitioned to a new hierarchical level
+            console.log('🌳 Transitioning to new hierarchical level:', data.hierarchicalLevel);
+            console.log('📋 New level cards:', data.newLevelCards.map(c => c.title));
+            
+            // Update the cards array with the new level
+            updatedCards = data.newLevelCards;
+            nextCard = data.newLevelCards.find(c => c.id === data.nextCardId);
+            
+            // Update currentPlay state with new cards
+            setCurrentPlay(prev => ({
+              ...prev,
+              cards: updatedCards
+            }));
+          } else {
+            // Regular card transition within the same level
+            nextCard = currentPlay.cards.find(c => c.id === data.nextCardId);
+          }
           
           // FUNCTIONAL: Track swipe transitions for visual feedback
           // STRATEGIC: Shows user when a new card appears after swipe
           if (currentCard && currentCard.id !== data.nextCardId) {
-            setSwipeTransition('new-card');
+            setSwipeTransition(data.newLevelCards ? 'new-level' : 'new-card');
             
             // Clear transition after animation completes
             setTimeout(() => {
@@ -211,6 +471,11 @@ export default function Play() {
           
           setPreviousCard(currentCard);
           setCurrentCard(nextCard);
+          
+          if (!nextCard) {
+            console.error('❌ Next card not found:', data.nextCardId);
+            console.error('Available cards:', updatedCards.map(c => ({ id: c.id, title: c.title })));
+          }
         }
       } else {
         const error = await res.json();
@@ -226,7 +491,16 @@ export default function Play() {
     if (!votingContext) return;
 
     try {
-      const res = await fetch('/api/play/vote', {
+      // Check mode for appropriate API endpoint
+      const { mode } = router.query;
+      let apiEndpoint = '/api/play/vote';
+      if (mode === 'vote-only') {
+        apiEndpoint = '/api/vote-only/vote';
+      } else if (mode === 'swipe-more') {
+        apiEndpoint = '/api/swipe-more/vote';
+      }
+      
+      const res = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -241,12 +515,30 @@ export default function Play() {
         const data = await res.json();
         
         if (data.completed) {
-          // Redirect to results page
-          router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}`);
+          // Check hierarchical status to determine next action
+          await checkHierarchicalStatus();
           return;
+        } else if (data.nextComparison) {
+          // VoteOnly mode - set up next comparison
+          if (previousVotingContext) {
+            const transitions = {
+              left: previousVotingContext.newCard !== data.nextComparison.cardA ? 'changed' : 'same',
+              right: previousVotingContext.compareWith !== data.nextComparison.cardB ? 'changed' : 'same'
+            };
+            setCardTransitions(transitions);
+            
+            setTimeout(() => {
+              setCardTransitions({ left: null, right: null });
+            }, 600);
+          }
+          
+          setPreviousVotingContext(votingContext);
+          setVotingContext({
+            newCard: data.nextComparison.cardA,
+            compareWith: data.nextComparison.cardB
+          });
         } else if (data.requiresMoreVoting) {
-          // FUNCTIONAL: Track card transitions for visual feedback
-          // STRATEGIC: Provides user with clear indication of which card changed
+          // Classic mode - use existing logic
           const newContext = data.votingContext;
           if (previousVotingContext) {
             const transitions = {
@@ -255,7 +547,6 @@ export default function Play() {
             };
             setCardTransitions(transitions);
             
-            // Clear transitions after animation completes
             setTimeout(() => {
               setCardTransitions({ left: null, right: null });
             }, 600);
@@ -269,7 +560,9 @@ export default function Play() {
           setVotingContext(null);
         } else {
           // Session completed
-          router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}`);
+          const { mode } = router.query;
+          const modeParam = mode ? `&mode=${mode}` : '';
+          router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}${modeParam}`);
           return;
         }
       } else {
@@ -343,9 +636,64 @@ export default function Play() {
                     </span>
                   )}
                 </div>
-                <Link href={`/play?org=${org}&deck=${encodeURIComponent(deckInfo.tag)}`} className="btn btn-warning">
-                  Play This Deck
-                </Link>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <Link 
+                    href={`/play?org=${org}&deck=${encodeURIComponent(deckInfo.tag)}&mode=swipe-only`} 
+                    className="btn" 
+                    style={{ 
+                      background: '#ff6b6b', 
+                      color: 'white', 
+                      textDecoration: 'none',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '4px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      fontWeight: '500'
+                    }}
+                  >
+                    👆 Swipe Only
+                  </Link>
+                  <Link 
+                    href={`/play?org=${org}&deck=${encodeURIComponent(deckInfo.tag)}&mode=vote-only`} 
+                    className="btn" 
+                    style={{ 
+                      background: '#4ecdc4', 
+                      color: 'white', 
+                      textDecoration: 'none',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '4px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      fontWeight: '500'
+                    }}
+                  >
+                    🗳️ Vote Only
+                  </Link>
+                  <Link 
+                    href={`/play?org=${org}&deck=${encodeURIComponent(deckInfo.tag)}&mode=swipe-more`} 
+                    className="btn" 
+                    style={{ 
+                      background: '#845ec2', 
+                      color: 'white', 
+                      textDecoration: 'none',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '4px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      fontWeight: '500'
+                    }}
+                  >
+                    🔄 Swipe More
+                  </Link>
+                </div>
+                <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#666' }}>
+                  <div><strong>Swipe Only:</strong> Like/dislike each card → ranking by preference</div>
+                  <div><strong>Vote Only:</strong> Head-to-head comparisons → tournament ranking</div>
+                  <div><strong>Swipe More:</strong> Enhanced swiping with smart decision tree → optimized ranking</div>
+                </div>
               </div>
             ))}
           </div>
@@ -451,9 +799,28 @@ export default function Play() {
             {cardConfig.orientation === 'portrait' ? (
               // PORTRAIT LAYOUT: Card on top, buttons below in row
               <>
+                {/* HIERARCHICAL LEVEL INDICATOR */}
+                {router.query.mode === 'swipe-more' && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '10px',
+                    left: '10px',
+                    background: 'rgba(132, 94, 194, 0.9)',
+                    color: 'white',
+                    padding: '4px 8px',
+                    borderRadius: '12px',
+                    fontSize: '0.7rem',
+                    fontWeight: 'bold',
+                    zIndex: 10
+                  }}>
+                    🌳 Level {swipeTransition === 'new-level' ? '↗️' : (currentPlay?.hierarchicalLevel || 1)}
+                  </div>
+                )}
+                
                 {/* GAME CARD */}
                 <div className={`game-card ${currentCard.imageUrl ? 'has-image' : ''} ${
-                  swipeTransition === 'new-card' ? 'card-changed' : 'entering'
+                  swipeTransition === 'new-card' ? 'card-changed' : 
+                  swipeTransition === 'new-level' ? 'card-changed' : 'entering'
                 }`}>
                   <div className="game-card-title">{currentCard.title}</div>
                   {currentCard.description && <div className="game-card-description">{currentCard.description}</div>}

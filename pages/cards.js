@@ -93,6 +93,7 @@ export default function Cards() {
   };
   
   const handleEdit = (card) => {
+    console.log('🔧 Editing card:', card.title); // Debug log
     setEditingCard(card);
     setFormData({
       title: card.title,
@@ -100,6 +101,14 @@ export default function Cards() {
       imageUrl: card.imageUrl,
       parentTag: card.parentTag || ''
     });
+    
+    // Scroll to the edit form smoothly
+    setTimeout(() => {
+      const editForm = document.querySelector('h2');
+      if (editForm) {
+        editForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100);
   };
   
   const handleDelete = async (cardUuid) => {
@@ -169,8 +178,30 @@ export default function Cards() {
       <h1>Cards Management</h1>
       <p style={{ color: '#666' }}>Organization: {org}</p>
 
-      <div style={{ marginBottom: '3rem', padding: '1rem', border: '1px solid #ddd', borderRadius: '4px' }}>
-        <h2>{editingCard ? 'Edit Card' : 'Create New Card'}</h2>
+      <div style={{ 
+        marginBottom: '3rem', 
+        padding: '1rem', 
+        border: editingCard ? '2px solid #007bff' : '1px solid #ddd', 
+        borderRadius: '4px',
+        backgroundColor: editingCard ? '#f8f9ff' : 'white',
+        boxShadow: editingCard ? '0 4px 12px rgba(0, 123, 255, 0.15)' : 'none'
+      }}>
+        <h2 style={{ 
+          color: editingCard ? '#007bff' : '#333',
+          fontSize: editingCard ? '1.5rem' : '1.25rem'
+        }}>
+          {editingCard ? '📝 Edit Card: "' + editingCard.title + '"' : 'Create New Card'}
+        </h2>
+        {editingCard && (
+          <p style={{ 
+            color: '#007bff', 
+            fontSize: '0.9rem', 
+            marginBottom: '1rem',
+            fontStyle: 'italic'
+          }}>
+            💡 Editing card with UUID: {editingCard.uuid}
+          </p>
+        )}
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1rem' }}>
           <input
             type="text"
@@ -193,13 +224,28 @@ export default function Cards() {
             onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
             style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
           />
-          <input
-            type="text"
-            placeholder="Parent Hashtag (e.g., #food) - leave empty for root cards"
+          <select
             value={formData.parentTag}
             onChange={(e) => setFormData(prev => ({ ...prev, parentTag: e.target.value }))}
             style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-          />
+          >
+            <option value="">🏠 Root Card (no parent)</option>
+            {cards
+              .filter(card => card.isParent && card.hasChildren)
+              .map(parentCard => (
+                <option key={parentCard.uuid} value={parentCard.name}>
+                  📁 {parentCard.name.startsWith('#') ? parentCard.name.substring(1) : parentCard.name} ({parentCard.title})
+                </option>
+              ))
+            }
+            <optgroup label="All Available Cards">
+              {cards.map(card => (
+                <option key={`all-${card.uuid}`} value={card.name}>
+                  📄 {card.name.startsWith('#') ? card.name.substring(1) : card.name} ({card.title})
+                </option>
+              ))}
+            </optgroup>
+          </select>
           <div className="btn-group btn-group-tight">
             <button type="submit" className="btn btn-primary">
               {editingCard ? 'Update Card' : 'Create Card'}
@@ -221,7 +267,7 @@ export default function Cards() {
           <div style={{ display: 'grid', gap: '1rem' }}>
             {decks.map(([tag, deckCards]) => (
               <div key={tag} style={{ padding: '1rem', border: '2px solid #28a745', borderRadius: '4px' }}>
-                <h3 style={{ margin: '0 0 0.5rem 0', color: '#28a745' }}>{tag} ({deckCards.length} cards)</h3>
+                <h3 style={{ margin: '0 0 0.5rem 0', color: '#28a745' }}>{tag.startsWith('#') ? tag.substring(1) : tag} ({deckCards.length} cards)</h3>
                 <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
                   {deckCards.slice(0, 3).map(card => (
                     <div key={card.uuid} style={{ padding: '0.25rem 0.5rem', background: '#f8f9fa', borderRadius: '4px', fontSize: '0.75rem' }}>
@@ -254,11 +300,11 @@ export default function Cards() {
                 {card.imageUrl && <img src={card.imageUrl} alt={card.title} className="card-image" />}
               </div>
               <div className="card-info">
-                <div className="card-info-title">{card.name}</div>
+              <div className="card-info-title">{card.name.startsWith('#') ? card.name.substring(1) : card.name}</div>
                 <div className="card-info-meta">
                   {card.parentTag && (
                     <div style={{ color: '#28a745', marginBottom: '0.25rem' }}>
-                      Deck: {card.parentTag}
+                      Deck: {card.parentTag.startsWith('#') ? card.parentTag.substring(1) : card.parentTag}
                     </div>
                   )}
                   <div style={{ marginBottom: '0.5rem' }}>
