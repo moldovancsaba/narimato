@@ -921,6 +921,15 @@ export default function Play() {
     const cardA = currentPlay.cards.find(c => c.id === votingContext.newCard);
     const cardB = currentPlay.cards.find(c => c.id === votingContext.compareWith);
 
+    // Defensive guard: if cards are not yet loaded (e.g., after switching families), wait
+    if (!cardA || !cardB) {
+      return (
+        <div style={{ padding: '2rem', textAlign: 'center' }}>
+          Preparing next comparison...
+        </div>
+      );
+    }
+
     // FUNCTIONAL: Apply dynamic sizing via CSS custom properties
     // STRATEGIC: Ensures consistent sizing across orientations and screen sizes
     const gameStyle = {
