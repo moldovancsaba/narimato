@@ -118,6 +118,7 @@ node scripts/delete-default-org.js
 - `/app/lib/utils/db.ts` - Multi-tenant database connection management
 - `/app/lib/models/Organization.ts` - Organization schema with theme/branding
 - `/app/lib/services/EventAgent.ts` - State machine for session workflow
+- `/lib/services/play/PlayDispatcher.js` - Central dispatcher for all play modes (vote_only, swipe_only, swipe_more)
 - `/app/middleware.ts` - Rate limiting and security headers
 - `next.config.js` - Webpack optimization and security headers
 

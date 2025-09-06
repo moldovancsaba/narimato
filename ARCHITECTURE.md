@@ -298,6 +298,33 @@ NARIMATO supports both light and dark themes to enhance user experience and acce
 
 Note: Legacy endpoints under `/api/swipe-only/*`, `/api/swipe-more/*`, and `/api/vote-only/*` have been removed. All modes are routed via the unified Play dispatcher.
 
+### Play Modes (v5.5.0)
+
+Last Updated: 2025-09-06T13:02:39.000Z
+
+- Swipe-Only (building block)
+  - Flow: present all cards one-by-one for left/right decisions; right = like (ranked by first-like order), left = reject.
+  - Start returns: playId, cards[], currentCardId.
+  - Input: action='swipe', payload={ cardId, direction }.
+  - Next: current card context or completed.
+  - Results: ranking of liked cards in swipe order, plus stats.
+
+- Vote-Only (building block)
+  - Flow: UNRANKED → choose 2 → user seeds ranking; then for each CHALLENGER from UNRANKED append to end of PERSONAL and compare against a random opponent from RANKED; prune RANKED based on winner/loser rule; continue until TEMP pool empties; repeat until UNRANKED empty.
+  - Ensures correct pruning rules (delete opponent and worse/better from temporary RANKED) and moves CHALLENGER accordingly.
+  - Start returns: playId, cards[], initial comparison; Input uses action='vote'.
+  - Next: next challenger/opponent or completed.
+  - Results: ranking (rich objects) and personalRanking (IDs), plus stats.
+
+- Swipe-More (composed from Swipe-Only)
+  - Orchestrates multiple Swipe-Only "family" segments: root family → children of liked parents → grandchildren, etc.
+  - Engine maintains familiesToProcess queue, currentFamilyIndex, and activeSwipeOnlySession.
+  - Each completed family appends its liked results (with context) into combinedRanking; enqueues child families for liked parents with children.
+  - Optional tie-break comparisons supported via action='vote' during the flow.
+  - Results: combinedRanking with family context and a family breakdown.
+
+See docs/API_REFERENCE.md for detailed request/response examples for all modes using the unified endpoints.
+
 ### Database Models
 - **Session**: Core session state with optimistic locking
 - **Card**: Individual card data with content validation, hashtags, and slug support

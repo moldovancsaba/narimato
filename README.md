@@ -58,6 +58,25 @@ NARIMATO is an anonymous, session-based card ranking application built with Next
 - **Mode Selection UI**: Deck selection with clear mode choices
 - **Unified Interface**: Existing responsive game UI adapts to each mode
 
+### Play Modes (Overview)
+- Swipe-Only: Pure like/dislike; ranking = order of likes (first liked = rank 1)
+- Vote-Only: UNRANKED/RANKED/PERSONAL algorithm with random opponent selection and strict pruning
+- Swipe-More: Controller that runs multiple Swipe-Only segments (root family, then children of liked) and aggregates results
+
+### Unified API Quickstart
+- Start
+  - POST /api/v1/play/start — { organizationId, deckTag, mode: 'swipe_only' | 'vote_only' | 'swipe_more' }
+- Input
+  - Swipe: POST /api/v1/play/{playId}/input — { action: 'swipe', payload: { cardId, direction } }
+  - Vote: POST /api/v1/play/{playId}/input — { action: 'vote', payload: { winner, loser } } (vote-only)
+  - Swipe-More tie-break: { action: 'vote', payload: { cardA, cardB, winner } }
+- Next
+  - GET /api/v1/play/{playId}/next
+- Results
+  - GET /api/v1/play/{playId}/results
+
+For full request/response examples, see docs/API_REFERENCE.md.
+
 ## 🔥 Recent Improvements (v4.0.0)
 
 ### Major Database Schema Migration & Multi-Tenant Architecture
@@ -122,6 +141,8 @@ NARIMATO is an anonymous, session-based card ranking application built with Next
 - **Responsive Design**: Improved experience across all device orientations
 
 ## 📚 Documentation
+
+- [API Reference](./docs/API_REFERENCE.md) — Unified Play API (start/input/next/results) with per-mode examples
 
 - **[📋 Roadmap](./ROADMAP.md)** - Development roadmap with Q1-Q4 2024 plans
 - **[✅ Task List](./TASKLIST.md)** - Prioritized implementation tasks and status
