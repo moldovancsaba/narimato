@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { calculateCardSize } from '../lib/utils/cardSizing';
-
+import { event } from '../lib/analytics/ga';
 export default function Play() {
   const router = useRouter();
   const { org, deck } = router.query;
@@ -254,6 +254,19 @@ export default function Play() {
       
       if (res.ok) {
         const data = await res.json();
+        // FUNCTIONAL: Track play session start event
+        // STRATEGIC: Captures entry point and mode for funnel analysis (production-only)
+        try {
+          const { mode } = router.query;
+          event('play_start', {
+            playId: data.playId,
+            org,
+            deck,
+            mode,
+            resumed: data.resumed || false,
+            initial_state: data.votingContext ? 'voting' : (data.currentCardId ? 'swipe' : 'unknown')
+          });
+        } catch (e) { /* noop */ }
         console.log('🎮 Play session data:', {
           playId: data.playId,
           state: data.state,
@@ -305,6 +318,11 @@ export default function Play() {
     const { mode } = router.query;
     if (mode === 'swipe-only' || mode === 'swipe-more') {
       console.log(`🔚 ${mode} session completion - redirecting to results`);
+      // FUNCTIONAL: Track play session completion for swipe-only/swipe-more
+      // STRATEGIC: Measures completion rates for pure swipe modes (production-only)
+      try {
+        event('play_complete', { playId: currentPlay.playId, mode, hierarchical: false });
+      } catch (e) { /* noop */ }
       router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}&mode=${mode}`);
       return;
     }
@@ -323,6 +341,15 @@ export default function Play() {
               // FUNCTIONAL: Smooth transition to child session without blocking popup
               // STRATEGIC: Better UX by avoiding alert interruption
               console.log(`🌳 Parent ranking complete - starting child session: ${statusData.data.childSessionId}`);
+              // FUNCTIONAL: Track hierarchical flow progression
+              // STRATEGIC: Monitors multi-level gameplay patterns (production-only)
+              try {
+                event('segment_end', {
+                  playId: currentPlay.playId,
+                  segment: 'parent',
+                  outcome: 'child_session_start'
+                });
+              } catch (e) { /* noop */ }
               
               // Direct redirect without alert popup
               router.push(`/play?org=${org}&deck=child&playId=${statusData.data.childSessionId}`);
@@ -330,6 +357,12 @@ export default function Play() {
               
             case 'show_hierarchical_results':
               // Show hierarchical completion message and redirect to results
+              // FUNCTIONAL: Track play session completion (hierarchical)
+              // STRATEGIC: Measures hierarchical completion usage (production-only)
+              try {
+                const { mode } = router.query;
+                event('play_complete', { playId: currentPlay.playId, mode, hierarchical: true });
+              } catch (e) { /* noop */ }
               alert(`Hierarchical ranking complete!\n\nRanked ${statusData.data.totalItems} items in families.`);
               
               setTimeout(() => {
@@ -377,6 +410,12 @@ export default function Play() {
             case 'show_standard_results':
               // Standard completion - no hierarchical processing needed
               console.log('✅ Standard session completion - showing results');
+              // FUNCTIONAL: Track play session completion (standard)
+              // STRATEGIC: Measures standard flow completion (production-only)
+              try {
+                const { mode } = router.query;
+                event('play_complete', { playId: currentPlay.playId, mode, hierarchical: false });
+              } catch (e) { /* noop */ }
               router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}`);
               return;
               
@@ -422,6 +461,18 @@ export default function Play() {
 
       if (res.ok) {
         const data = await res.json();
+        // FUNCTIONAL: Track swipe gesture for engagement metrics
+        // STRATEGIC: Monitors user interaction patterns with cards (production-only)
+        try {
+          const { mode } = router.query;
+          event('swipe_action', {
+            playId: currentPlay.playId,
+            mode,
+            cardId: currentCard?.id,
+            direction,
+            hierarchicalLevel: currentPlay?.hierarchicalLevel || null
+          });
+        } catch (e) { /* noop */ }
         
         if (data.completed) {
           // Check hierarchical status to determine next action
@@ -499,6 +550,17 @@ export default function Play() {
           alert(error.error || 'Vote failed');
           return;
         }
+        // FUNCTIONAL: Track voting behavior for preference analysis
+        // STRATEGIC: Captures decision-making patterns in vote-only mode (production-only)
+        try {
+          const loserId = loser;
+          event('vote_cast', {
+            playId: currentPlay.playId,
+            mode: 'vote-only',
+            winner,
+            loser: loserId
+          });
+        } catch (e) { /* noop */ }
         const nextRes = await fetch(`/api/v1/play/${currentPlay.playId}/next`);
         if (!nextRes.ok) {
           alert('Failed to get next comparison');
@@ -531,6 +593,17 @@ export default function Play() {
 
         if (res.ok) {
           const data = await res.json();
+          // FUNCTIONAL: Track voting behavior in swipe-more tie-breaks
+          // STRATEGIC: Captures hybrid mode decision-making (production-only)
+          try {
+            event('vote_cast', {
+              playId: currentPlay.playId,
+              mode: 'swipe-more',
+              cardA: votingContext.newCard,
+              cardB: votingContext.compareWith,
+              winner
+            });
+          } catch (e) { /* noop */ }
           
           if (data.completed) {
             await checkHierarchicalStatus();
@@ -581,6 +654,18 @@ export default function Play() {
 
       if (res.ok) {
         const data = await res.json();
+        // FUNCTIONAL: Track voting behavior in classic flow
+        // STRATEGIC: Ensures legacy flow analytics coverage (production-only)
+        try {
+          const { mode } = router.query;
+          event('vote_cast', {
+            playId: currentPlay.playId,
+            mode: mode || 'classic',
+            cardA: votingContext.newCard,
+            cardB: votingContext.compareWith,
+            winner
+          });
+        } catch (e) { /* noop */ }
         
         if (data.completed) {
           // Check hierarchical status to determine next action
@@ -707,6 +792,11 @@ export default function Play() {
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                   <Link 
                     href={`/play?org=${org}&deck=${encodeURIComponent(deckInfo.tag)}&mode=swipe-only`} 
+                    onClick={() => {
+                      try {
+                        event('mode_selected', { org, deckTag: deckInfo.tag, mode: 'swipe-only' });
+                      } catch (e) { /* noop */ }
+                    }}
                     className="btn" 
                     style={{ 
                       background: '#ff6b6b', 
@@ -724,6 +814,11 @@ export default function Play() {
                   </Link>
                   <Link 
                     href={`/play?org=${org}&deck=${encodeURIComponent(deckInfo.tag)}&mode=vote-only`} 
+                    onClick={() => {
+                      try {
+                        event('mode_selected', { org, deckTag: deckInfo.tag, mode: 'vote-only' });
+                      } catch (e) { /* noop */ }
+                    }}
                     className="btn" 
                     style={{ 
                       background: '#17a2b8', 
@@ -741,6 +836,11 @@ export default function Play() {
                   </Link>
                   <Link 
                     href={`/play?org=${org}&deck=${encodeURIComponent(deckInfo.tag)}&mode=swipe-more`} 
+                    onClick={() => {
+                      try {
+                        event('mode_selected', { org, deckTag: deckInfo.tag, mode: 'swipe-more' });
+                      } catch (e) { /* noop */ }
+                    }}
                     className="btn" 
                     style={{ 
                       background: '#845ec2', 

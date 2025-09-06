@@ -1,8 +1,8 @@
 # NARIMATO Development Roadmap
 
-**Current Version:** 5.5.0
+**Current Version:** 5.6.0
 **Date:** 2025-08-02
-**Last Updated:** 2025-09-06T12:40:12.000Z
+**Last Updated:** 2025-09-06T14:09:05.000Z
 
 ## Q1 2024 - Foundation & Core Features
 
@@ -92,6 +92,9 @@
   - Custom report generation
   - A/B testing framework
   - Conversion funnel analysis
+  - GA4 Consent UI implementation (cookie banner + toggle)
+  - BigQuery export configuration for raw events
+  - Custom dimensions for organization/deck segmentation
   - Dependencies: Reporting engine, data warehouse
 
 - **Enterprise Authentication**  

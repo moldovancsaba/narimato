@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import { event } from '../lib/analytics/ga';
 
 export default function Results() {
   const router = useRouter();
@@ -19,6 +20,19 @@ export default function Results() {
       fetchCards();
     }
   }, [playId]);
+
+  // FUNCTIONAL: Track results page engagement
+  // STRATEGIC: Measures post-play behavior and results consumption (production-only)
+  useEffect(() => {
+    if (results && playId) {
+      event('results_view', {
+        playId,
+        org,
+        deck,
+        mode
+      });
+    }
+  }, [results, playId, org, deck, mode]);
 
   const fetchResults = async () => {
     try {
