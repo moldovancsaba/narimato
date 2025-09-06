@@ -25,11 +25,13 @@ export default function Play() {
     fetchOrganizations();
   }, []);
 
+  const [showHidden, setShowHidden] = useState(() => router.query.includeHidden === 'true');
+
   useEffect(() => {
     if (org) {
       fetchDecks();
     }
-  }, [org]);
+  }, [org, showHidden]);
 
   useEffect(() => {
     if (org && deck) {
@@ -138,7 +140,7 @@ export default function Play() {
         }
       });
       
-      const includeHidden = router.query.includeHidden === 'true';
+      const includeHidden = showHidden === true;
       const playableDecks = Object.entries(deckGroups)
         .filter(([tag, grpCards]) => grpCards.length >= 2)
         .filter(([tag]) => {
@@ -778,6 +780,23 @@ export default function Play() {
     return (
       <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
         <h1>Play - Select Deck</h1>
+        {/* Admin Toggle: Show hidden decks */}
+        <div style={{ margin: '0.5rem 0 1rem 0' }}>
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: '#666' }}>
+            <input
+              type="checkbox"
+              checked={showHidden}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setShowHidden(checked);
+                const params = new URLSearchParams(router.query);
+                if (checked) params.set('includeHidden', 'true'); else params.delete('includeHidden');
+                router.replace({ pathname: router.pathname, query: Object.fromEntries(params.entries()) }, undefined, { shallow: true });
+              }}
+            />
+            (admin) Show hidden decks
+          </label>
+        </div>
         
         {decks.length === 0 ? (
           <div>

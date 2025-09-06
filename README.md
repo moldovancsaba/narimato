@@ -152,6 +152,10 @@ For full request/response examples, see docs/API_REFERENCE.md.
 
 ## 🚀 Quick Start
 
+Backfill legacy data (optional, one-time):
+- To set isPlayable=true on existing cards missing the flag:
+  - Run: node scripts/backfill-isPlayable.js
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
 
 ## Getting Started
