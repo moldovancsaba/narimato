@@ -1,8 +1,8 @@
 # NARIMATO Release Notes
 
-**Current Version:** 5.5.0 (Unified Play API & Dispatcher)
+**Current Version:** 5.6.0 (Unified Play API & Dispatcher + GA4 Analytics)
 **Date:** 2025-09-06
-**Last Updated:** 2025-09-06T12:40:12.000Z
+**Last Updated:** 2025-09-06T14:09:05.000Z
 
 ### Unified Play API & Engines
 - Added central Play dispatcher with pluggable engines: vote_only, swipe_only, swipe_more
@@ -164,6 +164,20 @@ This release delivers comprehensive user interface improvements across all major
 - **Documentation**: ✅ Comprehensive release notes with detailed impact analysis
 
 ---
+
+## [v5.6.0] — 2025-09-06T14:09:05.000Z
+
+### Added
+- Google Analytics 4 integration with production-only loading
+- IP anonymization on all pageviews and events
+- Consent Mode v2 with default denied state and window-level helper
+- SPA pageview tracking for client-side navigation
+- Custom gameplay events: play_start, swipe_action, vote_cast, segment_end, play_complete, results_view
+- CSP documentation guidance for future enforcement
+
+### Notes
+- No tests added (per MVP Factory rule)
+- Ensure `NEXT_PUBLIC_GA_MEASUREMENT_ID` is configured in production environment
 
 ## [v5.2.0] — 2025-08-29T09:53:11.000Z
 

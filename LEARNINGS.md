@@ -1,10 +1,19 @@
 # Development Learnings
 
-**Current Version:** 5.5.0 (Unified Play API & Dispatcher)
+**Current Version:** 5.6.0 (Unified Play API & Dispatcher + GA4 Analytics)
 **Date:** 2025-09-06
-**Last Updated:** 2025-09-06T12:40:12.000Z
+**Last Updated:** 2025-09-06T14:09:05.000Z
 
 ### Unified Dispatcher & Engine Adapters (v5.5.0) - Backend / Architecture
+
+### Analytics Integration (v5.6.0) - Frontend / Product
+- Functional: GA4 integrated via `pages/_app.js` with SPA route tracking and custom gameplay events
+- Strategic: Production-only analytics with Consent Mode defaults (denied) to support GDPR and future cookie UI
+- Learnings:
+  - SPA pageviews require router `routeChangeComplete` and `hashChangeComplete` hooks
+  - IP anonymization must be set on every `gtag('config', ...)` call
+  - Guard analytics calls in code (`isProd`, presence of `GA_ID`) to avoid dev/staging noise
+  - Expose a safe global helper for future consent UI (`window.NARIMATO_setAnalyticsConsent`)
 
 - Functional: Introduced a central Play dispatcher with engine registry to route actions for vote_only, swipe_only, swipe_more.
 - Strategic: Provides a single, stable API surface for all play modes; adding new modes requires only registering a new engine.

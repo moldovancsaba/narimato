@@ -1,6 +1,6 @@
 # NARIMATO
 
-![Version](https://img.shields.io/badge/version-5.5.0-blue.svg)
+![Version](https://img.shields.io/badge/version-5.6.0-blue.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-15.4.4-black.svg)
 ![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)
 ![MongoDB](https://img.shields.io/badge/MongoDB-7.0+-green.svg)
@@ -8,7 +8,7 @@
 
 NARIMATO is an anonymous, session-based card ranking application built with Next.js, MongoDB, and sophisticated binary search ranking algorithms. Global rankings are powered by ELO rating system for accurate skill-based card comparisons.
 
-**Current Version:** 5.5.0 *(Unified Play API & Dispatcher: Vote-Only, Swipe-Only, Swipe-More integrated)*
+**Current Version:** 5.6.0 *(Unified Play API & Dispatcher + GA4 Analytics Integration)*
 
 ## ✨ Key Features
 
@@ -182,6 +182,24 @@ To learn more about Next.js, take a look at the following resources:
 - [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## 📈 Analytics (GA4)
+
+- FUNCTIONAL: GA4 is integrated via Next.js `pages/_app.js` using `next/script` and SPA route tracking
+- STRATEGIC: Production-only analytics with GDPR-friendly defaults and centralized helpers
+
+Key details:
+- Loads only in production (NODE_ENV=production) when `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set
+- Consent Mode v2 defaults to denied; toggle via `window.NARIMATO_setAnalyticsConsent(true|false)`
+- IP anonymization is enabled on all hits
+- SPA pageviews tracked on route change; initial pageview is sent after hydration
+- Custom events implemented:
+  - `play_start`, `swipe_action`, `vote_cast`, `segment_end`, `play_complete`, `results_view`
+
+Environment variable:
+- `NEXT_PUBLIC_GA_MEASUREMENT_ID=G-8RCT54Y6E7`
+
+CSP note (if enabled later): allow scripts from `https://www.googletagmanager.com` and `https://www.google-analytics.com`, and connections/images to `https://www.google-analytics.com`.
 
 ## Deploy on Vercel
 

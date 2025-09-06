@@ -1,8 +1,8 @@
 # NARIMATO Architecture
 
-**Current Version:** 5.5.0 (Unified Play API & Dispatcher)
+**Current Version:** 5.6.0 (Unified Play API & Dispatcher + GA4 Analytics)
 **Date:** 2025-10-12
-**Last Updated:** 2025-09-06T12:40:12.000Z
+**Last Updated:** 2025-09-06T14:09:05.000Z
 
 ## ⚡ UUID Field Standardization (v3.7.1+)
 
@@ -298,7 +298,27 @@ NARIMATO supports both light and dark themes to enhance user experience and acce
 
 Note: Legacy endpoints under `/api/swipe-only/*`, `/api/swipe-more/*`, and `/api/vote-only/*` have been removed. All modes are routed via the unified Play dispatcher.
 
-### Play Modes (v5.5.0)
+## Analytics Integration (v5.6.0)
+
+- FUNCTIONAL: GA4 integrated for SPA pageviews and gameplay events
+- STRATEGIC: Privacy-first, production-only analytics with Consent Mode v2
+
+Components:
+- `/lib/analytics/ga.js` — helper functions: `pageview`, `event`, consent helpers; guards for `isProd` and `GA_ID`
+- `pages/_app.js` — loads GA script with `next/script`, initializes Consent Mode (default denied), and tracks pageviews on router changes
+
+Events:
+- `play_start`, `swipe_action`, `vote_cast`, `segment_end`, `play_complete`, `results_view`
+
+Consent:
+- Defaults to denied; toggle via `window.NARIMATO_setAnalyticsConsent(true|false)`
+- IP anonymization enabled on all hits
+
+CSP considerations (if/when enforced):
+- script-src: https://www.googletagmanager.com https://www.google-analytics.com
+- connect-src/img-src: https://www.google-analytics.com (and region endpoints)
+
+### Play Modes (v5.6.0)
 
 Last Updated: 2025-09-06T13:02:39.000Z
 
