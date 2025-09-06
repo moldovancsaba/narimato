@@ -1,8 +1,8 @@
 # NARIMATO Architecture
 
-**Current Version:** 5.7.0 (Unified Play API & Dispatcher + GA4 Analytics + Vote-More)
+**Current Version:** 6.0.0 (Documentation Synchronization & Version Consistency)
 **Date:** 2025-10-12
-**Last Updated:** 2025-09-06T14:20:04.000Z
+**Last Updated:** 2025-09-06T18:39:04.000Z
 
 ## ⚡ UUID Field Standardization (v3.7.1+)
 
@@ -207,13 +207,9 @@ The `useOrganizationTheme` hook now provides comprehensive theme management:
 - **Organization Scoping**: Ensures theme isolation between organizations
 
 #### Layout Integration
-The global layout (`app/layout.tsx`) includes:
-```html
-<body>
-  <div class="background-content"></div>
-  <!-- Application content -->
-</body>
-```
+Layout Integration (Pages Router):
+- The application uses the Pages Router and central styles are loaded via `pages/_document.js`.
+- A dedicated background layer is not currently injected by layout; background/theming strategies can be implemented via components and global CSS.
 
 #### CSS Foundation
 Base styles for the background layer:

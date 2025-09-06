@@ -4,9 +4,9 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 ## Overview
 
-NARIMATO is an anonymous, session-based card ranking application built with Next.js 15.4.4, MongoDB, TypeScript, and sophisticated binary search ranking algorithms. It's architected as a multi-tenant system with organization-level customization, advanced theming, and ELO-based global rankings.
+NARIMATO is an anonymous, session-based card ranking application built with Next.js 15.4.4, MongoDB, JavaScript, and sophisticated binary search ranking algorithms. It's architected as a multi-tenant system with organization-level customization and ELO-based global rankings.
 
-**Current Version:** 5.5.0 (Unified Play API & Dispatcher)
+**Current Version:** 6.0.0 (Documentation Synchronization & Version Consistency)
 
 ## Essential Development Commands
 
@@ -58,27 +58,35 @@ node scripts/delete-default-org.js
 ### Directory Structure
 
 ```
-/app                           # Next.js 13+ App Router structure
-├── components/               # React components (page-level)
-├── lib/                     # Core application logic
-│   ├── constants/           # Centralized constants (CRITICAL)
-│   │   └── fieldNames.ts    # UUID field standardization
-│   ├── models/             # MongoDB schemas
-│   ├── services/           # Business logic services
-│   ├── utils/              # Utility functions
-│   └── validation/         # Input validation schemas
-├── api/                    # API route handlers
-│   └── v1/                 # Versioned API endpoints
-└── [slug]/                 # Organization-specific routes
+/pages                        # Next.js Pages Router
+├── api/                     # API route handlers
+│   └── v1/                  # Versioned API endpoints (play)
+├── _app.js                  # App wrapper (Pages Router)
+├── _document.js             # Document with global CSS links
+├── index.js                 # Home page
+├── play.js                  # Play UI
+├── results.js               # Results UI
+├── rankings.js              # Rankings UI
+├── organizations.js         # Organization management UI
 
-/scripts/                   # Database management and setup scripts
-/docs/                      # Technical documentation
+/lib                         # Core application logic
+├── constants/               # Centralized constants (CRITICAL)
+│   └── fieldNames.js        # Field name standardization (actual mappings)
+├── models/                  # Mongoose schemas
+├── services/                # Business logic services
+├── middleware/              # Middleware utilities (e.g., rate limiting)
+├── utils/                   # Utility functions
+└── validation/              # Input validation schemas
+
+/scripts                     # Database management and setup scripts
+/docs                        # Technical documentation
+/public/styles               # CSS files (buttons.css, cards.css, game.css)
 ```
 
 ### Critical Architectural Patterns
 
 #### 1. UUID-First Field Standardization
-**MANDATORY**: All UUID fields use standardized naming defined in `/app/lib/constants/fieldNames.ts`:
+**MANDATORY**: All UUID fields are accessed via centralized constants in `/lib/constants/fieldNames.js` (do not hardcode field names):
 - `OrganizationUUID`: Organization identifiers
 - `SessionUUID`: Session identifiers  
 - `PlayUUID`: Play session identifiers
@@ -114,13 +122,12 @@ node scripts/delete-default-org.js
 
 ### Key Files and Their Purpose
 
-- `/app/lib/constants/fieldNames.ts` - **CRITICAL**: Field name standardization
-- `/app/lib/utils/db.ts` - Multi-tenant database connection management
-- `/app/lib/models/Organization.ts` - Organization schema with theme/branding
-- `/app/lib/services/EventAgent.ts` - State machine for session workflow
-- `/lib/services/play/PlayDispatcher.js` - Central dispatcher for all play modes (vote_only, swipe_only, swipe_more)
-- `/app/middleware.ts` - Rate limiting and security headers
-- `next.config.js` - Webpack optimization and security headers
+- `/lib/constants/fieldNames.js` - CRITICAL: Field name centralization (OrganizationUUID → organizationId; most UUIDs → uuid; DeckUUID → deckTag)
+- `/lib/db.js` - Database connection utilities (if present)
+- `/lib/models/Organization.js` - Organization schema
+- `/lib/services/play/PlayDispatcher.js` - Central dispatcher for all play modes (vote_only, swipe_only, swipe_more, vote_more)
+- `/lib/middleware/rateLimit.js` - Rate limiting middleware
+- `next.config.js` - Next.js configuration and security headers
 
 ## Development Workflow & Protocols
 
@@ -147,7 +154,7 @@ When making changes, you **MUST** update these files:
 - `TASKLIST.md` - Task status and new items
 - `LEARNINGS.md` - Insights and lessons learned  
 - `RELEASE_NOTES.md` - Version changelog
-- `ROADMAP.md` - Impact on future plans
+- `ROADMAP.md` - Impact on future plans (forward-looking only)
 
 ### Code Comment Requirements
 All code must include comments explaining:
@@ -187,7 +194,7 @@ ORGANIZATION_DB_URIS={}           # JSON map of org-specific URIs (optional)
 ### ❌ PROHIBITED
 - **Tests**: Testing is explicitly prohibited ("MVP Factory, no Tests")
 - **Breadcrumbs**: Navigation breadcrumbs are banned across all interfaces
-- **Hardcoded Field Names**: Always use constants from `fieldNames.ts`
+- **Hardcoded Field Names**: Always use constants from `fieldNames.js`
 - **Outdated Documentation**: Never leave deprecated info in any .md file
 - **Localhost MongoDB**: Only Atlas connections allowed
 - **Non-Semantic Versioning**: Must follow MAJOR.MINOR.PATCH format
@@ -195,7 +202,7 @@ ORGANIZATION_DB_URIS={}           # JSON map of org-specific URIs (optional)
 ### ✅ MANDATORY
 - **ISO 8601 Timestamps**: Format `YYYY-MM-DDTHH:MM:SS.sssZ` for all timestamps
 - **Comprehensive Comments**: Both functional and strategic explanations required
-- **Field Name Constants**: Import and use `fieldNames.ts` constants everywhere
+- **Field Name Constants**: Import and use `fieldNames.js` constants everywhere
 - **Documentation Sync**: Update all relevant .md files when making changes
 - **Version Consistency**: Version must match across package.json, UI, and all docs
 
@@ -210,12 +217,12 @@ ORGANIZATION_DB_URIS={}           # JSON map of org-specific URIs (optional)
 
 ### Core Technologies (DO NOT CHANGE without approval)
 - **Runtime**: Node.js 20+
-- **Framework**: Next.js 15.4.4 (App Router)
+- **Framework**: Next.js 15.4.4 (Pages Router)
 - **Database**: MongoDB 7.0+ (Atlas only)
-- **Language**: TypeScript 5.0+
-- **Styling**: Tailwind CSS 3.4.1
-- **Animations**: Framer Motion, React Spring
-- **Validation**: Zod schemas
+- **Language**: JavaScript
+- **Styling**: Custom CSS (public/styles)
+- **Animations**: @react-spring/web, @use-gesture/react
+- **Validation**: zod
 
 ### Before Adding Dependencies
 1. Check if existing libraries can accomplish the goal
@@ -226,7 +233,8 @@ ORGANIZATION_DB_URIS={}           # JSON map of org-specific URIs (optional)
 ## API Architecture
 
 ### Endpoint Structure
-- `/api/v1/` - Current API version
+- `/api/v1/` - Current API version (Play APIs)
+- `/api/` - Cards APIs (non-versioned)
 - `/api/system/` - System utilities
 - `/api/debug/` - Development debugging
 
@@ -235,10 +243,10 @@ ORGANIZATION_DB_URIS={}           # JSON map of org-specific URIs (optional)
 - `/api/v1/play/start` - Play session initialization
 - `/api/v1/play/results` - Session results and rankings
 - `/api/v1/play/results/[playUUID]` - Individual play session results
+- `/api/v1/play/vote-only/*` - Specialized vote-only endpoints (backward compatibility)
 - `/api/v1/global-rankings` - ELO-based global rankings
-- `/api/v1/cards` - Card CRUD operations
-- `/api/v1/cards/[uuid]` - Individual card management
-- `/api/v1/cards/add` - New card creation
+- `/api/cards` - Card list/CRUD operations (Pages Router)
+- `/api/cards/[uuid]` - Individual card management
 - `/api/v1/session/[sessionUUID]/vote` - Vote submission with deduplication (legacy)
 - `/api/v1/admin/organizations` - Organization administration
 - `/api/v1/presets/backgrounds` - Theme background presets
@@ -246,8 +254,8 @@ ORGANIZATION_DB_URIS={}           # JSON map of org-specific URIs (optional)
 - `/api/v1/upload/imgbb` - Image upload service
 
 ### Security Middleware
-- Rate limiting: 100 requests/minute per IP
-- CORS headers configured
+- Rate limiting: 100 requests/minute per IP (see `/lib/middleware/rateLimit.js`)
+- CORS headers configured (if applicable via Next.js config)
 - Security headers (XSS, CSRF, Frame Options)
 - Content-Security-Policy in production
 
@@ -267,7 +275,7 @@ npm run dev
 
 ### Field Name Consistency Errors
 - Use ESLint rule `field-naming-consistency` (configured in `.eslintrc.field-names.js`)
-- Always import constants from `fieldNames.ts`
+- Always import constants from `fieldNames.js`
 - Run linting before commits
 
 ### Build Failures

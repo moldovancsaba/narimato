@@ -1,14 +1,13 @@
 # NARIMATO
 
-![Version](https://img.shields.io/badge/version-5.6.0-blue.svg)
+![Version](https://img.shields.io/badge/version-6.0.0-blue.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-15.4.4-black.svg)
 ![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)
 ![MongoDB](https://img.shields.io/badge/MongoDB-7.0+-green.svg)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)
 
 NARIMATO is an anonymous, session-based card ranking application built with Next.js, MongoDB, and sophisticated binary search ranking algorithms. Global rankings are powered by ELO rating system for accurate skill-based card comparisons.
 
-**Current Version:** 5.7.0 *(Unified Play API & Dispatcher + GA4 Analytics + Vote-More)*
+**Current Version:** 6.0.0 *(Unified Play API & Dispatcher + GA4 Analytics + Vote-More)*
 
 ## ✨ Key Features
 
@@ -51,7 +50,7 @@ NARIMATO is an anonymous, session-based card ranking application built with Next
 ### Technical Implementation
 - **Pluggable Engines**: `VoteOnlyService`, `SwipeOnlyEngine`, `SwipeMoreEngine` registered under a central dispatcher
 - **Unified API**: Single, versioned surface for all plays:
-  - `POST /api/v1/play/start` — { organizationId, deckTag, mode }
+  - `POST /api/v1/play/start` — { organizationId, deckTag, mode: 'swipe_only' | 'vote_only' | 'swipe_more' | 'vote_more' }
   - `POST /api/v1/play/{playId}/input` — { action: 'swipe' | 'vote', payload }
   - `GET /api/v1/play/{playId}/next`
   - `GET /api/v1/play/{playId}/results`
@@ -66,7 +65,7 @@ NARIMATO is an anonymous, session-based card ranking application built with Next
 
 ### Unified API Quickstart
 - Start
-  - POST /api/v1/play/start — { organizationId, deckTag, mode: 'swipe_only' | 'vote_only' | 'swipe_more' }
+  - POST /api/v1/play/start — { organizationId, deckTag, mode: 'swipe_only' | 'vote_only' | 'swipe_more' | 'vote_more' }
 - Input
   - Swipe: POST /api/v1/play/{playId}/input — { action: 'swipe', payload: { cardId, direction } }
   - Vote: POST /api/v1/play/{playId}/input — { action: 'vote', payload: { winner, loser } } (vote-only)
@@ -145,7 +144,7 @@ For full request/response examples, see docs/API_REFERENCE.md.
 
 - [API Reference](./docs/API_REFERENCE.md) — Unified Play API (start/input/next/results) with per-mode examples
 
-- **[📋 Roadmap](./ROADMAP.md)** - Development roadmap with Q1-Q4 2024 plans
+- **[📋 Roadmap](./ROADMAP.md)** - Development roadmap (forward-looking only)
 - **[✅ Task List](./TASKLIST.md)** - Prioritized implementation tasks and status
 - **[📦 Release Notes](./RELEASE_NOTES.md)** - Version history and change log
 - **[🏗️ Architecture](./ARCHITECTURE.md)** - System architecture and technical overview
@@ -153,7 +152,7 @@ For full request/response examples, see docs/API_REFERENCE.md.
 
 ## 🚀 Quick Start
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
 
 ## Getting Started
 
@@ -171,9 +170,9 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+You can start editing the page by modifying `pages/index.js`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load fonts. The card components use **Fira Code SemiBold (600)** for enhanced readability and modern aesthetic.
+This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load fonts. The card components use **Fira Code SemiBold (600)** for enhanced readability and modern aesthetic.
 
 ## Learn More
 

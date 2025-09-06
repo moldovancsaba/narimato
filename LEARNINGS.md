@@ -1,8 +1,16 @@
 # Development Learnings
 
-**Current Version:** 5.7.0 (Unified Play API & Dispatcher + GA4 Analytics + Vote-More)
+**Current Version:** 6.0.0 (Documentation Synchronization & Version Consistency)
 **Date:** 2025-09-06
-**Last Updated:** 2025-09-06T14:20:04.000Z
+**Last Updated:** 2025-09-06T18:39:04.000Z
+
+### Documentation Synchronization (v6.0.0) — Process / Other
+- Functional: Synchronized all documentation with the actual Pages Router structure and current endpoints; standardized version markers.
+- Strategic: Keeps WARP.md authoritative and reduces onboarding friction; prevents architectural drift between docs and code.
+- Learnings:
+  - Avoid App Router path claims when using Pages Router; use `pages/_document.js` for global CSS
+  - Keep field name constants aligned to `lib/constants/fieldNames.js` (no hardcoded names)
+  - Enforce ISO 8601 timestamps with millisecond precision across all docs
 
 ### Unified Dispatcher & Engine Adapters (v5.5.0) - Backend / Architecture
 

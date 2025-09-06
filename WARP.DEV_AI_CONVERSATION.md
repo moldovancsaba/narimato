@@ -37,3 +37,17 @@ Next steps:
 - Docs/version: bumped to v5.7.0; updated README, ARCHITECTURE, TASKLIST, LEARNINGS, RELEASE_NOTES, ROADMAP
 - Strategy: Reused VoteOnlyService to avoid duplication; aggregation mirrors Swipe-More for UI compatibility
 
+# Update — 2025-09-06T18:39:04.000Z
+- Author: Agent Mode (AI)
+- Major Release: v6.0.0 — Documentation Synchronization & Version Consistency
+- Actions:
+  - Updated version to 6.0.0 in package.json and across all docs
+  - WARP.md corrected to Pages Router structure, file paths, and stack (JavaScript, custom CSS)
+  - README updated: version badge, current version, Quickstart path, vote_more added to mode lists
+  - docs/API_REFERENCE.md updated: version header, last updated timestamp, vote_more support, legacy vote-only note
+  - ARCHITECTURE.md header/timestamps updated; layout section aligned to Pages Router (`pages/_document.js`)
+  - ROADMAP/TASKLIST/LEARNINGS timestamps and version updated; roadmap annotated as forward-looking only
+- Timestamps: ISO 8601 with millisecond precision (UTC)
+- Verification: build-only verification recommended; no dev run to avoid PATCH bump during major release
+- Next: Commit and push to origin/main with a versioned message
+

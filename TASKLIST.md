@@ -1,10 +1,16 @@
 # NARIMATO Task List
 
-**Current Version:** 5.7.0
-**Date:** 2025-09-06T14:20:04.000Z
-**Last Updated:** 2025-09-06T14:20:04.000Z
+**Current Version:** 6.0.0
+**Date:** 2025-09-06T18:39:04.000Z
+**Last Updated:** 2025-09-06T18:39:04.000Z
 
 ## High Priority Tasks
+
+### Documentation Synchronization and Version Bump to v6.0.0
+- Owner: AI Agent
+- Expected Delivery Date: 2025-09-06T18:39:04.000Z
+- Status: In Progress
+- Details: Synchronize all documentation to reflect Pages Router structure, correct API endpoints, update version numbers and ISO timestamps, and align WARP.md with actual codebase. Prepare for release commit and push.
 
 ### Implement Vote-Only Play Mode (Backend, API, UI)
 - Owner: AI Agent
