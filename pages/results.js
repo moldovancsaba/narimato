@@ -22,15 +22,8 @@ export default function Results() {
 
   const fetchResults = async () => {
     try {
-      // Use mode-specific results API if mode is specified
-      let apiEndpoint = `/api/play/results?playId=${playId}`;
-      if (mode === 'swipe-only') {
-        apiEndpoint = `/api/swipe-only/results?playId=${playId}`;
-      } else if (mode === 'vote-only') {
-        apiEndpoint = `/api/vote-only/results?playId=${playId}`;
-      } else if (mode === 'swipe-more') {
-        apiEndpoint = `/api/swipe-more/results?playId=${playId}`;
-      }
+      // Use unified results API for all modes
+      let apiEndpoint = `/api/v1/play/${playId}/results`;
       
       const res = await fetch(apiEndpoint);
       if (res.ok) {
@@ -132,7 +125,6 @@ export default function Results() {
         <h1>🎉 Your {deck} Ranking Results!</h1>
         <p style={{ color: '#666' }}>
           {mode === 'swipe-only' ? 'Your swipe-based preference ranking' : 
-           mode === 'vote-only' ? 'Your tournament-style voting results' :
            mode === 'swipe-more' ? 'Your hybrid swipe + vote ranking' :
            'Here\'s how you ranked the cards in this deck'}
         </p>
@@ -140,15 +132,17 @@ export default function Results() {
           <div style={{ 
             display: 'inline-block', 
             padding: '0.25rem 0.75rem', 
-            background: mode === 'swipe-only' ? '#ff6b6b' : mode === 'vote-only' ? '#4ecdc4' : '#845ec2', 
+            background: mode === 'swipe-only' ? '#ff6b6b' : 
+                       mode === 'swipe-more' ? '#845ec2' : 
+                       mode === 'vote-only' ? '#17a2b8' : '#845ec2',
             color: 'white', 
             borderRadius: '12px', 
             fontSize: '0.8rem', 
             fontWeight: '500' 
           }}>
             {mode === 'swipe-only' ? '👆 Swipe Only' : 
-             mode === 'vote-only' ? '🗳️ Vote Only' : 
-             mode === 'swipe-more' ? '🔄 Swipe + Vote' : mode}
+             mode === 'swipe-more' ? '🔄 Swipe + Vote' : 
+             mode === 'vote-only' ? '🗳️ Vote Only' : mode}
           </div>
         )}
       </div>
@@ -191,7 +185,7 @@ export default function Results() {
         <h2>🏆 Your Personal Ranking</h2>
         <div className="card-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
           {/* Handle different data structures from mode-specific APIs */}
-          {results.ranking ? (
+          {Array.isArray(results.ranking) && results.ranking.length > 0 ? (
             // Mode-specific APIs return 'ranking' array with card objects
             results.ranking.map((rankingItem, index) => {
               const card = rankingItem.card || getCardDetails(rankingItem.cardId);
@@ -214,11 +208,6 @@ export default function Results() {
                     {globalRank && (
                       <div className="card-info-meta">Global Rank: #{globalRank}</div>
                     )}
-                    {mode === 'vote-only' && rankingItem.statistics && (
-                      <div className="card-info-meta">
-                        Wins: {rankingItem.statistics.wins}/{rankingItem.statistics.comparisons} ({rankingItem.statistics.winRate}%)
-                      </div>
-                    )}
                     {mode === 'swipe-only' && rankingItem.swipedAt && (
                       <div className="card-info-meta">
                         Liked: {new Date(rankingItem.swipedAt).toLocaleTimeString()}
@@ -238,7 +227,7 @@ export default function Results() {
                 </div>
               );
             })
-          ) : results.personalRanking ? (
+          ) : Array.isArray(results.personalRanking) && results.personalRanking.length > 0 ? (
             // Classic API returns 'personalRanking' array with card IDs
             results.personalRanking.map((cardId, index) => {
               const card = getCardDetails(cardId);

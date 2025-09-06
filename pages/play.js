@@ -237,18 +237,19 @@ export default function Play() {
       
       // Normal deck start - check for specific modes
       let apiEndpoint = '/api/play/start';
-      if (mode === 'swipe-only') {
-        apiEndpoint = '/api/swipe-only/start';
-      } else if (mode === 'vote-only') {
-        apiEndpoint = '/api/vote-only/start';
-      } else if (mode === 'swipe-more') {
-        apiEndpoint = '/api/swipe-more/start';
+      // Unified dispatcher endpoint
+      if (mode === 'vote-only' || mode === 'swipe-only' || mode === 'swipe-more') {
+        apiEndpoint = '/api/v1/play/start';
       }
       
       const res = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ organizationId: org, deckTag: deck })
+        body: JSON.stringify({ 
+          organizationId: org, 
+          deckTag: deck, 
+          mode: mode === 'vote-only' ? 'vote_only' : (mode === 'swipe-only' ? 'swipe_only' : (mode === 'swipe-more' ? 'swipe_more' : undefined))
+        })
       });
       
       if (res.ok) {
@@ -265,15 +266,8 @@ export default function Play() {
         
         // FUNCTIONAL: Handle both swiping and voting states properly
         // STRATEGIC: Resume exactly where the user left off
-        const { mode } = router.query;
-        
-        if (mode === 'vote-only' && data.currentComparison) {
-          // Vote-only mode - set up voting context from current comparison
-          console.log('🗳️ Starting vote-only mode:', data.currentComparison);
-          setVotingContext({
-            newCard: data.currentComparison.cardA,
-            compareWith: data.currentComparison.cardB
-          });
+        if (mode === 'vote-only' && data.comparison) {
+          setVotingContext({ newCard: data.comparison.card1.id, compareWith: data.comparison.card2.id });
           setCurrentCard(null);
         } else if (data.votingContext) {
           // Session is in voting mode - set up voting context
@@ -309,7 +303,7 @@ export default function Play() {
     
     // Check if we're in a specific mode that needs direct results redirect
     const { mode } = router.query;
-    if (mode === 'swipe-only' || mode === 'vote-only' || mode === 'swipe-more') {
+    if (mode === 'swipe-only' || mode === 'swipe-more') {
       console.log(`🔚 ${mode} session completion - redirecting to results`);
       router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}&mode=${mode}`);
       return;
@@ -409,20 +403,21 @@ export default function Play() {
       // Check mode for appropriate API endpoint
       const { mode } = router.query;
       let apiEndpoint = '/api/play/swipe';
-      if (mode === 'swipe-only') {
-        apiEndpoint = '/api/swipe-only/swipe';
-      } else if (mode === 'swipe-more') {
-        apiEndpoint = '/api/swipe-more/swipe';
+      if (mode === 'swipe-only' || mode === 'swipe-more') {
+        apiEndpoint = `/api/v1/play/${currentPlay.playId}/input`;
+      } else if (mode === 'vote-only') {
+        // vote-only does not use swipe
+        apiEndpoint = null;
       }
       
       const res = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          playId: currentPlay.playId,
-          cardId: currentCard.id,
-          direction
-        })
+        body: JSON.stringify(
+          mode === 'swipe-only' || mode === 'swipe-more'
+            ? { action: 'swipe', payload: { cardId: currentCard.id, direction } }
+            : { playId: currentPlay.playId, cardId: currentCard.id, direction }
+        )
       });
 
       if (res.ok) {
@@ -491,24 +486,97 @@ export default function Play() {
     if (!votingContext) return;
 
     try {
-      // Check mode for appropriate API endpoint
       const { mode } = router.query;
-      let apiEndpoint = '/api/play/vote';
       if (mode === 'vote-only') {
-        apiEndpoint = '/api/vote-only/vote';
-      } else if (mode === 'swipe-more') {
-        apiEndpoint = '/api/swipe-more/vote';
+        const loser = winner === votingContext.newCard ? votingContext.compareWith : votingContext.newCard;
+        const res = await fetch(`/api/v1/play/${currentPlay.playId}/input`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'vote', payload: { winner, loser } })
+        });
+        if (!res.ok) {
+          const error = await res.json();
+          alert(error.error || 'Vote failed');
+          return;
+        }
+        const nextRes = await fetch(`/api/v1/play/${currentPlay.playId}/next`);
+        if (!nextRes.ok) {
+          alert('Failed to get next comparison');
+          return;
+        }
+        const nextData = await nextRes.json();
+        if (nextData.completed) {
+          router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}&mode=vote-only`);
+          return;
+        }
+        setPreviousVotingContext(votingContext);
+        setVotingContext({ newCard: nextData.challenger, compareWith: nextData.opponent });
+        return;
       }
+
+      // Classic / swipe-more flow
+      if (mode === 'swipe-more') {
+        const res = await fetch(`/api/v1/play/${currentPlay.playId}/input`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'vote',
+            payload: {
+              cardA: votingContext.newCard,
+              cardB: votingContext.compareWith,
+              winner
+            }
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          
+          if (data.completed) {
+            await checkHierarchicalStatus();
+            return;
+          } else if (data.requiresMoreVoting) {
+            const newContext = data.votingContext;
+            if (previousVotingContext) {
+              const transitions = {
+                left: previousVotingContext.newCard !== newContext.newCard ? 'changed' : 'same',
+                right: previousVotingContext.compareWith !== newContext.compareWith ? 'changed' : 'same'
+              };
+              setCardTransitions(transitions);
+              setTimeout(() => setCardTransitions({ left: null, right: null }), 600);
+            }
+            setPreviousVotingContext(votingContext);
+            setVotingContext(newContext);
+          } else if (data.returnToSwipe && data.nextCardId) {
+            const nextCard = currentPlay.cards.find(c => c.id === data.nextCardId);
+            setCurrentCard(nextCard);
+            setVotingContext(null);
+          } else {
+            const { mode } = router.query;
+            const modeParam = mode ? `&mode=${mode}` : '';
+            router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}${modeParam}`);
+            return;
+          }
+        } else {
+          const error = await res.json();
+          alert(error.error);
+        }
+        return;
+      }
+
+      // Fallback legacy classic flow (kept for compatibility if mode is not set)
+      const apiEndpoint = '/api/play/vote';
+      const requestBody = {
+        playId: currentPlay.playId,
+        cardA: votingContext.newCard,
+        cardB: votingContext.compareWith,
+        winner
+      };
       
       const res = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          playId: currentPlay.playId,
-          cardA: votingContext.newCard,
-          cardB: votingContext.compareWith,
-          winner
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (res.ok) {
@@ -518,12 +586,12 @@ export default function Play() {
           // Check hierarchical status to determine next action
           await checkHierarchicalStatus();
           return;
-        } else if (data.nextComparison) {
-          // VoteOnly mode - set up next comparison
+        } else if (mode === 'vote-only' && data.comparison) {
+          // Vote-Only mode - set up next comparison from binary search algorithm
           if (previousVotingContext) {
             const transitions = {
-              left: previousVotingContext.newCard !== data.nextComparison.cardA ? 'changed' : 'same',
-              right: previousVotingContext.compareWith !== data.nextComparison.cardB ? 'changed' : 'same'
+              left: previousVotingContext.newCard !== data.comparison.card1.id ? 'changed' : 'same',
+              right: previousVotingContext.compareWith !== data.comparison.card2.id ? 'changed' : 'same'
             };
             setCardTransitions(transitions);
             
@@ -534,8 +602,8 @@ export default function Play() {
           
           setPreviousVotingContext(votingContext);
           setVotingContext({
-            newCard: data.nextComparison.cardA,
-            compareWith: data.nextComparison.cardB
+            newCard: data.comparison.card1.id,
+            compareWith: data.comparison.card2.id
           });
         } else if (data.requiresMoreVoting) {
           // Classic mode - use existing logic
@@ -658,7 +726,7 @@ export default function Play() {
                     href={`/play?org=${org}&deck=${encodeURIComponent(deckInfo.tag)}&mode=vote-only`} 
                     className="btn" 
                     style={{ 
-                      background: '#4ecdc4', 
+                      background: '#17a2b8', 
                       color: 'white', 
                       textDecoration: 'none',
                       padding: '0.5rem 1rem',
@@ -691,8 +759,8 @@ export default function Play() {
                 </div>
                 <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#666' }}>
                   <div><strong>Swipe Only:</strong> Like/dislike each card → ranking by preference</div>
-                  <div><strong>Vote Only:</strong> Head-to-head comparisons → tournament ranking</div>
                   <div><strong>Swipe More:</strong> Enhanced swiping with smart decision tree → optimized ranking</div>
+                  <div><strong>Vote Only:</strong> Pure comparison voting → tournament-style ranking</div>
                 </div>
               </div>
             ))}

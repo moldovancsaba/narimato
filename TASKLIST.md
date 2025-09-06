@@ -1,10 +1,17 @@
 # NARIMATO Task List
 
-**Current Version:** 5.2.0
-**Date:** 2025-08-29
-**Last Updated:** 2025-08-29T09:53:11.000Z
+**Current Version:** 5.5.0
+**Date:** 2025-09-06T12:40:12.000Z
+**Last Updated:** 2025-09-06T12:40:12.000Z
 
 ## High Priority Tasks
+
+### Implement Vote-Only Play Mode (Backend, API, UI)
+- Owner: AI Agent
+- Expected Delivery Date: 2025-09-05
+- Status: Completed ✅
+- Completion Date: 2025-09-05T17:30:12.000Z
+- Details: Implemented UNRANKED/RANKED/PERSONAL algorithm, new versioned API under /api/v1/play/vote-only/*, integrated UI in play page with 🗳️ mode, results page updated for mode=vote-only. Validation via Zod, multi-tenant scoping enforced, anti-dup votes applied.
 
 ### Update WARP.md Documentation to v4.4.0
 - **Owner:** AI Agent

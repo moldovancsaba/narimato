@@ -1,14 +1,56 @@
 # NARIMATO Release Notes
 
-**Current Version:** 5.2.0 (New Play Modes: Swipe-Only & Vote-Only)
-**Date:** $(date +'%Y-%m-%d')
-**Last Updated:** $(date -u +'%Y-%m-%dT%H:%M:%S.%3NZ')
+**Current Version:** 5.5.0 (Unified Play API & Dispatcher)
+**Date:** 2025-09-06
+**Last Updated:** 2025-09-06T12:40:12.000Z
 
-## [v5.2.0] — $(date -u +'%Y-%m-%dT%H:%M:%S.%3NZ')
+### Unified Play API & Engines
+- Added central Play dispatcher with pluggable engines: vote_only, swipe_only, swipe_more
+- New endpoints:
+  - POST /api/v1/play/start
+  - POST /api/v1/play/{playId}/input
+  - GET /api/v1/play/{playId}/next
+  - GET /api/v1/play/{playId}/results
+- Updated /play and /results pages to use unified API across modes
 
-### 🎯 New Play Modes Architecture
+### Swipe-Only & Swipe-More Integration
+- Swipe-Only wired to unified API (action='swipe') with proper currentCard bootstrapping
+- Swipe-More wired via adapter; continues to orchestrate multiple Swipe-Only family segments; supports vote tie-breaks via action='vote'
 
-This major feature release introduces three distinct play modes to optimize different ranking approaches. Users can now choose between Swipe-Only, Vote-Only, or the Classic combined approach, each with dedicated engines and optimized workflows.
+### Vote-Only Stabilization
+- Ensured correct temporary ranked-deck pruning per spec
+- Seed vote initializes ranking; challengers appended and compared randomly
+
+### Legacy Removal / Cleanup
+- Removed legacy routes and pages:
+  - /pages/api/vote-only/*, /pages/api/swipe-only/*, /pages/api/swipe-more/*
+  - /pages/vote-only*.js, /pages/swipe-only*.js
+- Results and Play pages refactored for unified endpoints
+
+### Developer Experience
+- Added lib/services/play/PlayDispatcher.js
+- Centralized rate limiting and validation in unified endpoints
+
+---
+
+## [v5.4.1] — 2025-09-05T17:30:12.000Z
+
+### ✨ New Feature: Vote-Only Play Mode
+
+- Implements UNRANKED/RANKED/PERSONAL algorithm as specified
+- New API under /api/v1/play/vote-only/*
+- UI integration in play page with 🗳️ mode
+- Results page supports mode=vote-only
+- Validation via Zod; org header required
+- Anti-dup votes and tenant scoping enforced
+
+As part of a security and compliance review, the Vote-Only play mode has been removed from the codebase. All related UI, API routes, and engines are neutralized. Historical release entries may reference Vote-Only, but the feature is not available as of v5.4.0.
+
+- Removed UI button and routing from play page
+- Neutralized `/pages/api/vote-only/*` with HTTP 410 Gone
+- Deprecated VoteOnlyEngine to throw on import
+- Reverted Play model: removed `isVoteOnly`, `unrankedDeck`, `rankedDeck`, `voteHistory`, and `vote_only` state
+- Updated documentation (README, ARCHITECTURE, RELEASE_NOTES)
 
 This release delivers comprehensive user interface improvements across all major pages, implementing consistent emoji-enhanced buttons and fixing critical UX issues. The update improves visual appeal, removes admin-only functionality from user interfaces, and enhances the voting experience.
 

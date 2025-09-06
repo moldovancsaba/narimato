@@ -280,8 +280,8 @@ export default function Cards() {
                     </div>
                   )}
                 </div>
-                <Link href={`/play?org=${org}&deck=${encodeURIComponent(tag)}`} className="btn btn-warning">
-                  Play This Deck
+                <Link href={`/play?org=${org}`} className="btn btn-warning">
+                  Play (choose deck & mode)
                 </Link>
               </div>
             ))}
