@@ -551,12 +551,12 @@ export default function Play() {
           return;
         }
         // FUNCTIONAL: Track voting behavior for preference analysis
-        // STRATEGIC: Captures decision-making patterns in vote-only mode (production-only)
+        // STRATEGIC: Captures decision-making patterns in vote-based modes (production-only)
         try {
           const loserId = loser;
           event('vote_cast', {
             playId: currentPlay.playId,
-            mode: 'vote-only',
+            mode, // vote-only or vote-more
             winner,
             loser: loserId
           });
