@@ -279,7 +279,7 @@ export default function Play() {
         
         // FUNCTIONAL: Handle both swiping and voting states properly
         // STRATEGIC: Resume exactly where the user left off
-        if (mode === 'vote-only' && data.comparison) {
+        if ((mode === 'vote-only' || mode === 'vote-more') && data.comparison) {
           setVotingContext({ newCard: data.comparison.card1.id, compareWith: data.comparison.card2.id });
           setCurrentCard(null);
         } else if (data.votingContext) {
@@ -568,7 +568,7 @@ export default function Play() {
         }
         const nextData = await nextRes.json();
         if (nextData.completed) {
-          router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}&mode=vote-only`);
+          router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}&mode=${mode}`);
           return;
         }
         setPreviousVotingContext(votingContext);
