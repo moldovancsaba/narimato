@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     const schema = z.object({
       organizationId: z.string().uuid(),
       deckTag: z.string().min(1),
-      mode: z.enum(['vote_only', 'swipe_only', 'swipe_more', 'vote_more']) // extendable
+      mode: z.enum(['vote_only', 'swipe_only', 'swipe_more', 'vote_more', 'rank_only']) // extendable
     });
     const { organizationId, deckTag, mode } = validate(schema, req.body || {});
 

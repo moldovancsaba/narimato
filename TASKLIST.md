@@ -1,10 +1,17 @@
 # NARIMATO Task List
 
-**Current Version:** 6.2.0
+**Current Version:** 6.3.0
 **Date:** 2025-09-06T19:06:57.000Z
 **Last Updated:** 2025-09-06T19:06:57.000Z
 
 ## High Priority Tasks
+
+### New Play Mode: Rank-Only (v6.3.0)
+- Owner: AI Agent
+- Expected Delivery Date: 2025-09-06T20:57:14.000Z
+- Status: Completed ✅
+- Completion Date: 2025-09-06T20:57:14.000Z
+- Details: Added RankOnlyEngine (swipe-only → vote-only), RankOnlyPlay model, dispatcher integration, start API enum updated, UI deck select button, result label, and swipe→vote transition via requiresVoting.
 
 ### Deck Exposure Control — Playable (public) Flag (v6.2.0)
 - Owner: AI Agent

@@ -1,8 +1,8 @@
 # Development Learnings
 
-**Current Version:** 6.2.0 (Deck Exposure Control)
+**Current Version:** 6.3.0 (Rank-Only Play Mode)
 **Date:** 2025-09-06
-**Last Updated:** 2025-09-06T19:17:15.000Z
+**Last Updated:** 2025-09-06T20:57:14.000Z
 
 ### Deck Exposure Control (v6.2.0) — Product / Architecture
 - Functional: Added isPlayable flag to parent cards; filtered deck lists in Play/Rankings; preserved ability to start hidden segments by direct link.

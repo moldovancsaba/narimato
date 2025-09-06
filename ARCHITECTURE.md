@@ -1,8 +1,8 @@
 # NARIMATO Architecture
 
-**Current Version:** 6.2.0 (Deck Exposure Control)
+**Current Version:** 6.3.0 (Rank-Only Play Mode)
 **Date:** 2025-10-12
-**Last Updated:** 2025-09-06T19:17:15.000Z
+**Last Updated:** 2025-09-06T20:57:14.000Z
 
 ## ⚡ UUID Field Standardization (v3.7.1+)
 

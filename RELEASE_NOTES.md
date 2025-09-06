@@ -4,7 +4,14 @@
 **Date:** 2025-09-06
 **Last Updated:** 2025-09-06T19:17:15.000Z
 
-## [v6.2.0] — 2025-09-06T19:17:15.000Z
+## [v6.3.0] — 2025-09-06T20:57:14.000Z
+
+### New Play Mode: Rank-Only (👆+🗳️)
+- Two-phase play: start with swipe-only to collect liked cards, then vote-only to rank them
+- Backend: RankOnlyEngine reuses SwipeOnlyEngine and VoteOnlyService
+- Model: RankOnlyPlay to orchestrate phase and sessions
+- API: /api/v1/play/start supports mode: 'rank_only'; input/next/results work via unified dispatcher
+- Frontend: new mode button on deck selection; results label updated; smooth transition from swipe to vote via requiresVoting
 
 ### Deck Exposure Control — Playable (public) Flag
 - Added Card.isPlayable (default true) to control whether a parent card’s deck is publicly listed as playable
