@@ -1,8 +1,20 @@
 # NARIMATO Release Notes
 
-**Current Version:** 6.1.0 (UI Button Size Standardization)
+**Current Version:** 6.2.0 (Deck Exposure Control)
 **Date:** 2025-09-06
-**Last Updated:** 2025-09-06T19:06:57.000Z
+**Last Updated:** 2025-09-06T19:17:15.000Z
+
+## [v6.2.0] — 2025-09-06T19:17:15.000Z
+
+### Deck Exposure Control — Playable (public) Flag
+- Added Card.isPlayable (default true) to control whether a parent card’s deck is publicly listed as playable
+- API updates:
+  - POST /api/cards accepts isPlayable
+  - PUT /api/cards/[uuid] updates isPlayable
+- UI updates:
+  - Cards editor: "Playable (public)" checkbox with help text
+  - Play and Rankings deck lists filter out hidden decks by default; includeHidden=true shows all
+- Hidden segments can still be started via direct links (no change to start behavior)
 
 ## [v6.1.0] — 2025-09-06T19:06:57.000Z
 

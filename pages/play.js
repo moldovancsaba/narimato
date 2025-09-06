@@ -138,9 +138,15 @@ export default function Play() {
         }
       });
       
+      const includeHidden = router.query.includeHidden === 'true';
       const playableDecks = Object.entries(deckGroups)
-        .filter(([tag, cards]) => cards.length >= 2)
-        .map(([tag, cards]) => ({ tag, cards }));
+        .filter(([tag, grpCards]) => grpCards.length >= 2)
+        .filter(([tag]) => {
+          const parent = data.cards.find(c => c.name === tag);
+          if (!parent) return true;
+          return includeHidden ? true : (parent.isPlayable !== false);
+        })
+        .map(([tag, grpCards]) => ({ tag, cards: grpCards }));
       
       setDecks(playableDecks);
     } catch (error) {

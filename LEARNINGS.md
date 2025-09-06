@@ -1,8 +1,12 @@
 # Development Learnings
 
-**Current Version:** 6.1.0 (UI Button Size Standardization)
+**Current Version:** 6.2.0 (Deck Exposure Control)
 **Date:** 2025-09-06
-**Last Updated:** 2025-09-06T19:06:57.000Z
+**Last Updated:** 2025-09-06T19:17:15.000Z
+
+### Deck Exposure Control (v6.2.0) — Product / Architecture
+- Functional: Added isPlayable flag to parent cards; filtered deck lists in Play/Rankings; preserved ability to start hidden segments by direct link.
+- Strategic: Enables building decision-tree systems without exposing all segments as public decks, while allowing targeted segment play for demos or internal flows.
 
 ### UI Button Size Standardization (v6.1.0) — Frontend / Design
 - Functional: Introduced consistent button sizing tiers (large/mid/small) via design system classes; added a .btn-success variant; updated pages to apply sizes consistently; fixed missing emojis for Cards/Play buttons.

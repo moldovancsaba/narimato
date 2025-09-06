@@ -14,7 +14,8 @@ export default function Cards() {
     title: '',
     description: '',
     imageUrl: '',
-    parentTag: ''
+    parentTag: '',
+    isPlayable: true
   });
   const [editingCard, setEditingCard] = useState(null);
 
@@ -57,7 +58,15 @@ export default function Cards() {
         }
       });
       
-      setDecks(Object.entries(deckGroups).filter(([tag, cards]) => cards.length >= 2));
+      const includeHidden = router.query.includeHidden === 'true';
+      const filtered = Object.entries(deckGroups)
+        .filter(([tag, grpCards]) => grpCards.length >= 2)
+        .filter(([tag]) => {
+          const parent = data.cards.find(c => c.name === tag);
+          if (!parent) return true; // fallback
+          return includeHidden ? true : (parent.isPlayable !== false);
+        });
+      setDecks(filtered);
     } catch (error) {
       console.error('Failed to fetch cards:', error);
     } finally {
@@ -99,7 +108,8 @@ export default function Cards() {
       title: card.title,
       description: card.description,
       imageUrl: card.imageUrl,
-      parentTag: card.parentTag || ''
+      parentTag: card.parentTag || '',
+      isPlayable: typeof card.isPlayable === 'boolean' ? card.isPlayable : true
     });
     
     // Scroll to the edit form smoothly
@@ -250,6 +260,19 @@ export default function Cards() {
               ))}
             </optgroup>
           </select>
+          {/* FUNCTIONAL: Control whether a parent/root card's deck appears in selection lists */}
+          {/* STRATEGIC: Hide internal decision-tree segments but still allow direct play via link */}
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <input
+              type="checkbox"
+              checked={!!formData.isPlayable}
+              onChange={(e) => setFormData(prev => ({ ...prev, isPlayable: e.target.checked }))}
+            />
+            Playable (public)
+          </label>
+          <div style={{ color: '#666', fontSize: '0.85rem', marginTop: '-0.5rem' }}>
+            If this is a parent card (root with children), this flag controls whether its deck appears in Play/Rankings lists. Hidden decks can still be played directly by link.
+          </div>
           <div className="btn-group btn-group-tight">
             {/* FUNCTIONAL: Elevate create action to large size; keep edit at mid */}
             {/* STRATEGIC: Primary creation CTAs should stand out; edits remain secondary */}
