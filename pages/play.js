@@ -571,6 +571,10 @@ export default function Play() {
           router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}&mode=${mode}`);
           return;
         }
+        // If we're moving to a new family, update available cards to resolve UI details
+        if (Array.isArray(nextData.cards) && nextData.cards.length > 0) {
+          setCurrentPlay(prev => ({ ...prev, cards: nextData.cards }));
+        }
         setPreviousVotingContext(votingContext);
         setVotingContext({ newCard: nextData.challenger, compareWith: nextData.opponent });
         return;
