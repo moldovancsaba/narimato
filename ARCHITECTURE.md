@@ -1,8 +1,8 @@
 # NARIMATO Architecture
 
-**Current Version:** 4.6.0 (Project Cleanup & Version Synchronization)
+**Current Version:** 5.5.0 (Unified Play API & Dispatcher)
 **Date:** 2025-10-12
-**Last Updated:** 2025-10-12T16:45:21.000Z
+**Last Updated:** 2025-09-06T12:40:12.000Z
 
 ## ⚡ UUID Field Standardization (v3.7.1+)
 
@@ -288,13 +288,15 @@ NARIMATO supports both light and dark themes to enhance user experience and acce
 ## System Components
 
 ### Core API Endpoints
-- **Session Management**: `/api/v1/session/start`, `/api/v1/session/validate`
-- **Card Operations**: `/api/v1/swipe`, `/api/v1/vote`, `/api/v1/vote/comparison`
-- **Card Management**: `/api/v1/cards`, `/api/v1/cards/[uuid]`, `/api/v1/cards/add`
-- **Play Sessions**: `/api/v1/play/start`, `/api/v1/play/results`
-- **Data Retrieval**: `/api/v1/deck`, `/api/v1/ranking`, `/api/v1/rankings`
-- **Content Management**: `/api/v1/presets/fonts`, `/api/v1/presets/backgrounds`
-- **System Utilities**: `/api/v1/reset`, `/api/system/version`, `/api/v1/upload/imgbb`
+- **Play (Unified)**:
+  - `POST /api/v1/play/start`
+  - `POST /api/v1/play/{playId}/input`
+  - `GET /api/v1/play/{playId}/next`
+  - `GET /api/v1/play/{playId}/results`
+- **Card Management**: `/api/cards`, `/api/cards/[uuid]`, `/api/cards/rankings`
+- **System Utilities**: as existing (rate limiting, middleware)
+
+Note: Legacy endpoints under `/api/swipe-only/*`, `/api/swipe-more/*`, and `/api/vote-only/*` have been removed. All modes are routed via the unified Play dispatcher.
 
 ### Database Models
 - **Session**: Core session state with optimistic locking
@@ -623,7 +625,7 @@ function calculateSearchBounds(targetCard: string, ranking: string[], votes: Vot
 
 ## State Management
 
-### Session States
+## Session States
 - **swiping**: User browsing and swiping cards
 - **voting**: User comparing cards for ranking
 - **comparing**: System performing binary search ranking

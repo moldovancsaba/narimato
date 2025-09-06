@@ -1,10 +1,27 @@
 # Development Learnings
 
-**Current Version:** 5.3.0 (Hierarchical Deck Management & Circular Reference Protection)
-**Date:** 2025-01-12
-**Last Updated:** 2025-01-12T20:30:00.000Z
+**Current Version:** 5.5.0 (Unified Play API & Dispatcher)
+**Date:** 2025-09-06
+**Last Updated:** 2025-09-06T12:40:12.000Z
 
-## Decision Tree Service Architecture Refactor (v5.1.0) - Architecture / Performance
+### Unified Dispatcher & Engine Adapters (v5.5.0) - Backend / Architecture
+
+- Functional: Introduced a central Play dispatcher with engine registry to route actions for vote_only, swipe_only, swipe_more.
+- Strategic: Provides a single, stable API surface for all play modes; adding new modes requires only registering a new engine.
+- Learnings:
+  - Dispatcher must resolve playId across all session collections (Play, SwipeOnlyPlay, SwipeMorePlay) to avoid 404s.
+  - Start responses must include initial currentCard/currentCardId for swipe-only to prevent UI stalls.
+  - Keeping swipe-more composed from swipe-only segments preserves behavior while enabling future segmentization.
+
+### Vote-Only Algorithm Implementation (v5.4.1) - Backend / Product
+
+- Functional: Implemented a pure comparison flow without swiping using UNRANKED, RANKED (temporary), and PERSONAL (permanent) lists.
+- Strategic: Simplifies UX for users who prefer head-to-head voting while preserving data integrity and multi-tenant isolation.
+- Learnings:
+  - Keeping PERSONAL permanent (no deletions) avoids subtle ranking corruption and matches product expectations.
+  - Server-side dedup within 2 seconds eliminates noisy votes without frustrating users when combined with client debounce.
+  - Returning a minimal comparison pair reduces payload and cognitive load; defers details to results.
+  - Using a dedicated mode='vote_only' kept state machine changes minimal and low-risk.
 
 ### Problem Analysis: Fragmented Decision Tree Logic
 1. **Architecture Issues Identified**:

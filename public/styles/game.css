@@ -240,7 +240,7 @@
   gap: 20px;
 }
 
-/* Vote Mode Layout */
+/* Vote Mode Layout - Standard voting */
 .game-mode-vote.portrait {
   flex-direction: column;
   gap: 20px;
@@ -249,6 +249,63 @@
 .game-mode-vote.landscape {
   flex-direction: row;
   gap: 20px;
+}
+
+/* Vote-Only Mode Layout - Specific measurements */
+.game-mode-vote-only {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+}
+
+/* Vote-Only Landscape Layout: 3% - 45% - 4% - 45% - 3% */
+.game-mode-vote-only.landscape {
+  flex-direction: row;
+  padding: 3vh 3vw;
+  gap: 0;
+  align-items: stretch;
+}
+
+.game-mode-vote-only.landscape .game-card {
+  width: 45vw;
+  height: 94vh;
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.game-mode-vote-only.landscape .game-vs-separator {
+  width: 4vw;
+  height: 4vw;
+  min-width: 4vw;
+  min-height: 4vw;
+  margin: auto 0;
+  align-self: center;
+  background: linear-gradient(135deg, #764ba2, #667eea);
+}
+
+/* Vote-Only Portrait Layout: 3% margin, then 45% - 4% - 45% vertically */
+.game-mode-vote-only.portrait {
+  flex-direction: column;
+  padding: 3vh 3vw;
+  gap: 0;
+  align-items: stretch;
+}
+
+.game-mode-vote-only.portrait .game-card {
+  width: 94vw;
+  height: 45vh;
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.game-mode-vote-only.portrait .game-vs-separator {
+  width: 4vh;
+  height: 4vh;
+  min-width: 4vh;
+  min-height: 4vh;
+  margin: 0 auto;
+  align-self: center;
+  background: linear-gradient(135deg, #764ba2, #667eea);
 }
 
 /* Responsive Adjustments */

@@ -1,6 +1,6 @@
 # NARIMATO
 
-![Version](https://img.shields.io/badge/version-5.2.0-blue.svg)
+![Version](https://img.shields.io/badge/version-5.5.0-blue.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-15.4.4-black.svg)
 ![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)
 ![MongoDB](https://img.shields.io/badge/MongoDB-7.0+-green.svg)
@@ -8,7 +8,7 @@
 
 NARIMATO is an anonymous, session-based card ranking application built with Next.js, MongoDB, and sophisticated binary search ranking algorithms. Global rankings are powered by ELO rating system for accurate skill-based card comparisons.
 
-**Current Version:** 5.2.0 *(New Play Modes: Swipe-Only & Vote-Only)*
+**Current Version:** 5.5.0 *(Unified Play API & Dispatcher: Vote-Only, Swipe-Only, Swipe-More integrated)*
 
 ## ✨ Key Features
 
@@ -19,9 +19,10 @@ NARIMATO is an anonymous, session-based card ranking application built with Next
 - **Advanced Card Editor**: Comprehensive card creation and editing with live preview
 - **Hashtag Management**: Smart hashtag editor with predictive suggestions
 - **Play-Based Sessions**: Individual ranking sessions with dynamic card selection
-- **Multiple Play Modes**: Choose from three distinct ranking approaches:
+- **Multiple Play Modes**: Choose from distinct ranking approaches:
+  - **Vote-Only**: Pure comparison-based ranking through repeated vote pairs (no swiping)
   - **Swipe-Only**: Pure like/dislike interface - rank cards by preference order
-  - **Vote-Only**: Head-to-head comparison tournament - rank cards by pairwise voting
+  - **Swipe-More**: Enhanced swiping with smart decision tree - optimized ranking
   - **Classic**: Combined swipe-then-vote flow for comprehensive ranking
 - **Hashtag Hierarchy System**: Multi-level card organization through parent-child hashtag relationships
 - **Dynamic Text Scaling**: Automatic font sizing for optimal readability
@@ -33,26 +34,29 @@ NARIMATO is an anonymous, session-based card ranking application built with Next
 
 ## 🔥 Latest Features (v5.2.0)
 
-### New Play Modes Architecture
-- **Three Distinct Play Modes**: Complete separation of ranking approaches to optimize user experience
+### Enhanced Play Modes Architecture
+- **Multiple Play Modes**: Optimized ranking approaches for different user preferences
 - **Swipe-Only Mode**: Pure preference-based ranking using like/dislike mechanics
   - Simple first-liked-first-ranked algorithm
   - Clean swipe interface without voting complexity
   - Optimized for quick preference-based sorting
-- **Vote-Only Mode**: Tournament-style head-to-head comparisons
-  - Efficient pairwise comparison algorithm
-  - Minimizes number of votes needed for complete ranking
-  - Pure comparison-based workflow without swiping
+- **Swipe-More Mode**: Enhanced swiping with intelligent decision tree
+  - Hierarchical card organization with smart level transitions
+  - Combines swiping efficiency with voting precision
+  - Optimized multi-level ranking system
 - **Classic Mode**: Enhanced version of the original swipe-then-vote flow
   - Maintains existing complex hierarchical ranking system
   - Backward compatible with all existing sessions
 
 ### Technical Implementation
-- **Separate Engines**: Independent `SwipeOnlyEngine` and `VoteOnlyEngine` services
-- **Dedicated Models**: New MongoDB collections for `SwipeOnlyPlay` and `VoteOnlyPlay`
-- **Independent APIs**: Complete API endpoints under `/api/swipe-only/` and `/api/vote-only/`
-- **Mode Selection UI**: Intuitive deck selection with clear mode explanations
-- **Unified Interface**: All modes use the existing responsive game UI with dynamic adaptation
+- **Pluggable Engines**: `VoteOnlyService`, `SwipeOnlyEngine`, `SwipeMoreEngine` registered under a central dispatcher
+- **Unified API**: Single, versioned surface for all plays:
+  - `POST /api/v1/play/start` — { organizationId, deckTag, mode }
+  - `POST /api/v1/play/{playId}/input` — { action: 'swipe' | 'vote', payload }
+  - `GET /api/v1/play/{playId}/next`
+  - `GET /api/v1/play/{playId}/results`
+- **Mode Selection UI**: Deck selection with clear mode choices
+- **Unified Interface**: Existing responsive game UI adapts to each mode
 
 ## 🔥 Recent Improvements (v4.0.0)
 
