@@ -125,7 +125,9 @@ export default function Rankings() {
       `}</style>
       <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif', maxWidth: '1000px', margin: '0 auto' }}>
       <div style={{ marginBottom: '2rem' }}>
-        <Link href="/" style={{ color: '#0070f3' }}>← Back to Home</Link>
+        {/* FUNCTIONAL: Standardize small back navigation button */}
+        {/* STRATEGIC: Consistent look-and-feel across pages */}
+        <Link href="/" className="btn btn-light btn-sm">← Back to Home</Link>
       </div>
 
       <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
@@ -141,7 +143,7 @@ export default function Rankings() {
             <Link
               key={organization.uuid}
               href={`/rankings?org=${organization.uuid}`}
-              className={`btn ${org === organization.uuid ? 'btn-primary' : 'btn-muted'} btn-sm`}
+              className={`btn ${org === organization.uuid ? 'btn-primary' : 'btn-muted'}`}
             >
               {organization.name}
             </Link>
@@ -157,7 +159,7 @@ export default function Rankings() {
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <button
                 onClick={() => handleDeckChange('all')}
-                className={`btn ${selectedDeck === 'all' ? 'btn-success' : 'btn-muted'} btn-sm`}
+                className={`btn ${selectedDeck === 'all' ? 'btn-success' : 'btn-muted'}`}
               >
                 All Decks ({rankings.length})
               </button>
@@ -165,7 +167,7 @@ export default function Rankings() {
                 <button
                   key={deckInfo.tag}
                   onClick={() => handleDeckChange(deckInfo.tag)}
-                  className={`btn ${selectedDeck === deckInfo.tag ? 'btn-success' : 'btn-muted'} btn-sm`}
+                  className={`btn ${selectedDeck === deckInfo.tag ? 'btn-success' : 'btn-muted'}`}
                 >
                   {deckInfo.tag} ({deckInfo.count})
                 </button>

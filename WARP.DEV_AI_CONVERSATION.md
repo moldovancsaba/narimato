@@ -40,6 +40,16 @@ Next steps:
 # Update — 2025-09-06T18:39:04.000Z
 - Author: Agent Mode (AI)
 - Major Release: v6.0.0 — Documentation Synchronization & Version Consistency
+
+# Update — 2025-09-06T19:06:57.000Z
+- Author: Agent Mode (AI)
+- Minor Release: v6.1.0 — UI Button Size Standardization & Emoji Consistency
+- Actions:
+  - Added .btn-success variant to design system
+  - Elevated primary CTAs to large buttons; standardized small back-nav buttons
+  - Set mid-size defaults for secondary actions; removed scattered btn-sm usages where not needed
+  - Added missing emojis on Cards/Play buttons across pages
+- Verification: Build successful (Next.js)
 - Actions:
   - Updated version to 6.0.0 in package.json and across all docs
   - WARP.md corrected to Pages Router structure, file paths, and stack (JavaScript, custom CSS)
