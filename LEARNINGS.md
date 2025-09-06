@@ -1,12 +1,20 @@
 # Development Learnings
 
-**Current Version:** 5.6.0 (Unified Play API & Dispatcher + GA4 Analytics)
+**Current Version:** 5.7.0 (Unified Play API & Dispatcher + GA4 Analytics + Vote-More)
 **Date:** 2025-09-06
-**Last Updated:** 2025-09-06T14:09:05.000Z
+**Last Updated:** 2025-09-06T14:20:04.000Z
 
 ### Unified Dispatcher & Engine Adapters (v5.5.0) - Backend / Architecture
 
 ### Analytics Integration (v5.6.0) - Frontend / Product
+
+### Vote-More Orchestration (v5.7.0) - Backend / Product
+- Functional: Introduced `vote_more` mode that chains Vote-Only segments over hierarchical families
+- Strategic: Provides a voting-centric alternative to Swipe-More while reusing existing Vote-Only service logic
+- Learnings:
+  - Reused VoteOnlyService to avoid duplicating comparison logic; orchestrator manages family queue only
+  - Unified API contract maintained: start returns `comparison`, next returns `{challenger, opponent}`
+  - Aggregation shape mirrors Swipe-More combined ranking for UI compatibility
 - Functional: GA4 integrated via `pages/_app.js` with SPA route tracking and custom gameplay events
 - Strategic: Production-only analytics with Consent Mode defaults (denied) to support GDPR and future cookie UI
 - Learnings:

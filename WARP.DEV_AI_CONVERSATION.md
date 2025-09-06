@@ -28,3 +28,12 @@ Next steps:
 - Configure Vercel Production env var: `NEXT_PUBLIC_GA_MEASUREMENT_ID=G-8RCT54Y6E7`
 - Optional: BigQuery export for raw event analysis
 
+---
+
+# Update — 2025-09-06T14:20:04.000Z
+- Implemented Vote-More mode (`vote_more`): orchestrates multiple Vote-Only segments across hierarchical families
+- Backend: `lib/services/VoteMoreEngine.js`, dispatcher registration, API `mode` support, model `VoteMorePlay` used
+- Frontend: mode selection button, start mapping, next handling, results label
+- Docs/version: bumped to v5.7.0; updated README, ARCHITECTURE, TASKLIST, LEARNINGS, RELEASE_NOTES, ROADMAP
+- Strategy: Reused VoteOnlyService to avoid duplication; aggregation mirrors Swipe-More for UI compatibility
+

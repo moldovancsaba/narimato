@@ -1,8 +1,8 @@
 # NARIMATO Task List
 
-**Current Version:** 5.6.0
-**Date:** 2025-09-06T14:09:05.000Z
-**Last Updated:** 2025-09-06T14:09:05.000Z
+**Current Version:** 5.7.0
+**Date:** 2025-09-06T14:20:04.000Z
+**Last Updated:** 2025-09-06T14:20:04.000Z
 
 ## High Priority Tasks
 
@@ -71,6 +71,13 @@
 - **Details:** Create an admin panel for card CRUD operations, bulk card import/export, and card categorization/tagging system. Requires authentication system.
 
 ## Completed Tasks
+
+### Implement Vote-More Mode
+- **Owner:** AI Agent
+- **Expected Delivery Date:** 2025-09-06
+- **Status:** Completed ✅
+- **Completion Date:** 2025-09-06T14:20:04.000Z
+- **Details:** Added vote_more mode orchestrating multiple vote-only family segments. New engine `VoteMoreEngine` with model `VoteMorePlay`, dispatcher integration, unified API support, and UI updates (mode selection + label). Aggregates results across families; compatible with existing results view.
 
 ### Implement GA4 Analytics Integration
 - **Owner:** AI Agent

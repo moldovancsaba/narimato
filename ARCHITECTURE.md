@@ -1,8 +1,8 @@
 # NARIMATO Architecture
 
-**Current Version:** 5.6.0 (Unified Play API & Dispatcher + GA4 Analytics)
+**Current Version:** 5.7.0 (Unified Play API & Dispatcher + GA4 Analytics + Vote-More)
 **Date:** 2025-10-12
-**Last Updated:** 2025-09-06T14:09:05.000Z
+**Last Updated:** 2025-09-06T14:20:04.000Z
 
 ## ⚡ UUID Field Standardization (v3.7.1+)
 
@@ -318,7 +318,7 @@ CSP considerations (if/when enforced):
 - script-src: https://www.googletagmanager.com https://www.google-analytics.com
 - connect-src/img-src: https://www.google-analytics.com (and region endpoints)
 
-### Play Modes (v5.6.0)
+### Play Modes (v5.7.0)
 
 Last Updated: 2025-09-06T13:02:39.000Z
 
