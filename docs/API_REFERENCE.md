@@ -1,9 +1,11 @@
-# API Reference — Unified Play API (v5.5.0)
+# API Reference — Unified Play API (v6.0.0)
 
-Last Updated: 2025-09-06T13:02:39.000Z
+Last Updated: 2025-09-06T18:39:04.000Z
 
 ## Overview
 All play modes use a single, versioned API surface with a central dispatcher. Modes are differentiated by `mode` at start time and by `action` on input.
+
+Note: Specialized vote-only endpoints under `/api/v1/play/vote-only/*` remain available for backward compatibility alongside the unified endpoints.
 
 Base path: /api/v1/play
 
@@ -14,7 +16,7 @@ Body
 {
   "organizationId": "<uuid>",
   "deckTag": "<string>",
-  "mode": "swipe_only" | "vote_only" | "swipe_more"
+"mode": "swipe_only" | "vote_only" | "swipe_more" | "vote_more"
 }
 
 Response (common fields; some are mode-specific)

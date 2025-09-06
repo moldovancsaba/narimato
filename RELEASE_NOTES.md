@@ -1,8 +1,21 @@
 # NARIMATO Release Notes
 
-**Current Version:** 5.7.0 (Unified Play API & Dispatcher + GA4 Analytics + Vote-More)
+**Current Version:** 6.0.0 (Documentation Synchronization & Version Consistency)
 **Date:** 2025-09-06
-**Last Updated:** 2025-09-06T14:20:04.000Z
+**Last Updated:** 2025-09-06T18:39:04.000Z
+
+## [v6.0.0] — 2025-09-06T18:39:04.000Z
+
+### Major Release: Documentation Synchronization & Version Consistency
+
+- Updated all core documentation to reflect actual Pages Router structure and current codebase:
+  - WARP.md: Corrected directory structure, key files, stack (JavaScript, custom CSS), and endpoints
+  - README.md: Version badge, current version, Quickstart path (pages/index.js), added vote_more mode in examples
+  - docs/API_REFERENCE.md: Header/version bump, last updated timestamp, vote_more in mode lists
+  - ARCHITECTURE.md: Updated header/timestamps and removed App Router-specific claims in layout section
+  - TASKLIST.md / ROADMAP.md / LEARNINGS.md: Version and ISO timestamp updates; forward-looking note in roadmap
+- Synchronized all visible version markers to v6.0.0; timestamps use ISO 8601 with milliseconds (UTC)
+- No functional code changes; this release prepares the project for continued development with accurate documentation
 
 ### Unified Play API & Engines
 - Added central Play dispatcher with pluggable engines: vote_only, swipe_only, swipe_more
