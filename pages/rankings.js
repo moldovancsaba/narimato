@@ -58,9 +58,15 @@ export default function Rankings() {
         }
       });
       
+      const includeHidden = router.query.includeHidden === 'true';
       const deckList = Object.entries(deckGroups)
-        .filter(([tag, cards]) => cards.length >= 2)
-        .map(([tag, cards]) => ({ tag, count: cards.length }));
+        .filter(([tag, grpCards]) => grpCards.length >= 2)
+        .filter(([tag]) => {
+          const parent = data.cards.find(c => c.name === tag);
+          if (!parent) return true;
+          return includeHidden ? true : (parent.isPlayable !== false);
+        })
+        .map(([tag, grpCards]) => ({ tag, count: grpCards.length }));
       
       setDecks(deckList);
     } catch (error) {

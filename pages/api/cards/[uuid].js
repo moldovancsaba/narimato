@@ -23,7 +23,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PUT') {
-      let { title, description, imageUrl, parentTag, name } = req.body;
+      let { title, description, imageUrl, parentTag, name, isPlayable } = req.body;
       
       if (!title?.trim()) {
         return res.status(400).json({ error: 'Title is required' });
@@ -98,6 +98,12 @@ export default async function handler(req, res) {
       card.title = title.trim();
       card.description = description?.trim() || '';
       card.imageUrl = imageUrl?.trim() || '';
+      
+      // FUNCTIONAL: Update deck exposure flag (publicly playable)
+      // STRATEGIC: Hide internal decision-tree segments from lists while allowing direct play
+      if (typeof isPlayable === 'boolean') {
+        card.isPlayable = isPlayable;
+      }
       
       await card.save();
       return res.status(200).json(card);

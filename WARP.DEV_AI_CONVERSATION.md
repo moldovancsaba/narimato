@@ -50,6 +50,16 @@ Next steps:
   - Set mid-size defaults for secondary actions; removed scattered btn-sm usages where not needed
   - Added missing emojis on Cards/Play buttons across pages
 - Verification: Build successful (Next.js)
+
+# Update — 2025-09-06T19:17:15.000Z
+- Author: Agent Mode (AI)
+- Minor Release: v6.2.0 — Deck Exposure Control (Playable flag)
+- Actions:
+  - Added Card.isPlayable (default true) to control deck exposure
+  - API: POST/PUT for cards accept and update isPlayable
+  - UI: Cards editor checkbox "Playable (public)"; Play/Rankings deck lists filter hidden decks; includeHidden=true shows all
+- Notes: Hidden decks can still be played directly by URL (no change to /api/v1/play/start behavior)
+- Verification: Build successful (Next.js)
 - Actions:
   - Updated version to 6.0.0 in package.json and across all docs
   - WARP.md corrected to Pages Router structure, file paths, and stack (JavaScript, custom CSS)

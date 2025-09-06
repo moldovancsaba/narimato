@@ -1,10 +1,17 @@
 # NARIMATO Task List
 
-**Current Version:** 6.1.0
+**Current Version:** 6.2.0
 **Date:** 2025-09-06T19:06:57.000Z
 **Last Updated:** 2025-09-06T19:06:57.000Z
 
 ## High Priority Tasks
+
+### Deck Exposure Control — Playable (public) Flag (v6.2.0)
+- Owner: AI Agent
+- Expected Delivery Date: 2025-09-06T19:17:15.000Z
+- Status: Completed ✅
+- Completion Date: 2025-09-06T19:17:15.000Z
+- Details: Added Card.isPlayable boolean; API accepts/updates isPlayable; Cards editor includes a "Playable (public)" checkbox. Play/Rankings deck lists filter out hidden decks by default; hidden decks remain playable via direct link or includeHidden=true.
 
 ### UI Button Size Standardization & Emoji Consistency (v6.1.0)
 - Owner: AI Agent

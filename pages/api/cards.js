@@ -39,7 +39,7 @@ async function handleGet(req, res) {
 
 async function handlePost(req, res) {
   try {
-    const { organizationId, title, description, imageUrl, hashtags } = req.body;
+    const { organizationId, title, description, imageUrl, hashtags, isPlayable } = req.body;
     let { name, parentTag } = req.body;
     
     if (!organizationId || !title) {
@@ -124,6 +124,7 @@ async function handlePost(req, res) {
       hashtags: hashtags || [name],
       parentTag: parentTag || null,
       isActive: true,
+      isPlayable: typeof isPlayable === 'boolean' ? isPlayable : true,
       globalScore: 1500 // Starting ELO rating
     });
 
