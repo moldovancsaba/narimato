@@ -7,7 +7,7 @@
 
 NARIMATO is an anonymous, session-based card ranking application built with Next.js, MongoDB, and sophisticated binary search ranking algorithms. Global rankings are powered by ELO rating system for accurate skill-based card comparisons.
 
-**Current Version:** 6.2.0 *(Deck exposure control — Playable (public) flag + hidden segments support)*
+**Current Version:** 6.3.0 *(New play mode: Rank-Only — swipe then vote)*
 
 ## ✨ Key Features
 
@@ -62,6 +62,7 @@ NARIMATO is an anonymous, session-based card ranking application built with Next
 - Vote-Only: UNRANKED/RANKED/PERSONAL algorithm with random opponent selection and strict pruning
 - Swipe-More: Controller that runs multiple Swipe-Only segments (root family, then children of liked) and aggregates results
 - Vote-More: Controller that runs multiple Vote-Only segments per family (root, then children of winners) and aggregates results
+- Rank-Only: Two-segment flow — swipe-only to collect liked, then vote-only to rank the liked set
 
 ### Unified API Quickstart
 - Start

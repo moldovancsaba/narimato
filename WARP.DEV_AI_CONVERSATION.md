@@ -54,6 +54,15 @@ Next steps:
 # Update — 2025-09-06T19:17:15.000Z
 - Author: Agent Mode (AI)
 - Minor Release: v6.2.0 — Deck Exposure Control (Playable flag)
+
+# Update — 2025-09-06T20:57:14.000Z
+- Author: Agent Mode (AI)
+- Minor Release: v6.3.0 — New Play Mode: Rank-Only
+- Actions:
+  - Added RankOnlyEngine (swipe-only → vote-only) reusing SwipeOnlyEngine and VoteOnlyService
+  - Added RankOnlyPlay model and dispatcher registration; start API supports mode 'rank_only'
+  - UI deck selection includes Rank-Only; results label updated; swipe completion triggers voting with requiresVoting
+- Verification: Build successful (Next.js)
 - Actions:
   - Added Card.isPlayable (default true) to control deck exposure
   - API: POST/PUT for cards accept and update isPlayable

@@ -246,7 +246,7 @@ export default function Play() {
       // Normal deck start - check for specific modes
       let apiEndpoint = '/api/play/start';
       // Unified dispatcher endpoint
-      if (mode === 'vote-only' || mode === 'swipe-only' || mode === 'swipe-more' || mode === 'vote-more') {
+      if (mode === 'vote-only' || mode === 'swipe-only' || mode === 'swipe-more' || mode === 'vote-more' || mode === 'rank-only') {
         apiEndpoint = '/api/v1/play/start';
       }
       
@@ -256,7 +256,7 @@ export default function Play() {
         body: JSON.stringify({ 
           organizationId: org, 
           deckTag: deck, 
-          mode: mode === 'vote-only' ? 'vote_only' : (mode === 'swipe-only' ? 'swipe_only' : (mode === 'swipe-more' ? 'swipe_more' : (mode === 'vote-more' ? 'vote_more' : undefined)))
+          mode: mode === 'vote-only' ? 'vote_only' : (mode === 'swipe-only' ? 'swipe_only' : (mode === 'swipe-more' ? 'swipe_more' : (mode === 'vote-more' ? 'vote_more' : (mode === 'rank-only' ? 'rank_only' : undefined))))
         })
       });
       
@@ -483,6 +483,11 @@ export default function Play() {
         } catch (e) { /* noop */ }
         
         if (data.completed) {
+          // For rank-only, redirect straight to results when swipe completed with <2 liked
+          if (mode === 'rank-only') {
+            router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}&mode=${mode}`);
+            return;
+          }
           // Check hierarchical status to determine next action
           await checkHierarchicalStatus();
           return;
@@ -546,7 +551,7 @@ export default function Play() {
 
     try {
       const { mode } = router.query;
-      if (mode === 'vote-only' || mode === 'vote-more') {
+      if (mode === 'vote-only' || mode === 'vote-more' || mode === 'rank-only') {
         const loser = winner === votingContext.newCard ? votingContext.compareWith : votingContext.newCard;
         const res = await fetch(`/api/v1/play/${currentPlay.playId}/input`, {
           method: 'POST',
@@ -908,6 +913,28 @@ export default function Play() {
                     }}
                   >
                     🗳️ Vote More
+                  </Link>
+                  <Link 
+                    href={`/play?org=${org}&deck=${encodeURIComponent(deckInfo.tag)}&mode=rank-only`} 
+                    onClick={() => {
+                      try {
+                        event('mode_selected', { org, deckTag: deckInfo.tag, mode: 'rank-only' });
+                      } catch (e) { /* noop */ }
+                    }}
+                    className="btn" 
+                    style={{ 
+                      background: '#20c997', 
+                      color: 'white', 
+                      textDecoration: 'none',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '4px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      fontWeight: '500'
+                    }}
+                  >
+                    👆+🗳️ Rank Only
                   </Link>
                 </div>
                 <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#666' }}>

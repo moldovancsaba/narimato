@@ -6,7 +6,7 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 NARIMATO is an anonymous, session-based card ranking application built with Next.js 15.4.4, MongoDB, JavaScript, and sophisticated binary search ranking algorithms. It's architected as a multi-tenant system with organization-level customization and ELO-based global rankings.
 
-**Current Version:** 6.2.0 (Deck Exposure Control)
+**Current Version:** 6.3.0 (Rank-Only Play Mode)
 
 ## Essential Development Commands
 

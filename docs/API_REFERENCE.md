@@ -7,6 +7,8 @@ All play modes use a single, versioned API surface with a central dispatcher. Mo
 
 Note: Specialized vote-only endpoints under `/api/v1/play/vote-only/*` remain available for backward compatibility alongside the unified endpoints.
 
+New: rank_only — two-segment play (swipe-only then vote-only on liked cards). Start with action="swipe"; when swipe completes, server returns `{ requiresVoting: true, votingContext: { newCard, compareWith } }`, then continue with vote inputs.
+
 Base path: /api/v1/play
 
 ## Start
@@ -16,7 +18,7 @@ Body
 {
   "organizationId": "<uuid>",
   "deckTag": "<string>",
-"mode": "swipe_only" | "vote_only" | "swipe_more" | "vote_more"
+"mode": "swipe_only" | "vote_only" | "swipe_more" | "vote_more" | "rank_only"
 }
 
 Response (common fields; some are mode-specific)
