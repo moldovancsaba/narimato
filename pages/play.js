@@ -238,7 +238,7 @@ export default function Play() {
       // Normal deck start - check for specific modes
       let apiEndpoint = '/api/play/start';
       // Unified dispatcher endpoint
-      if (mode === 'vote-only' || mode === 'swipe-only' || mode === 'swipe-more') {
+      if (mode === 'vote-only' || mode === 'swipe-only' || mode === 'swipe-more' || mode === 'vote-more') {
         apiEndpoint = '/api/v1/play/start';
       }
       
@@ -248,7 +248,7 @@ export default function Play() {
         body: JSON.stringify({ 
           organizationId: org, 
           deckTag: deck, 
-          mode: mode === 'vote-only' ? 'vote_only' : (mode === 'swipe-only' ? 'swipe_only' : (mode === 'swipe-more' ? 'swipe_more' : undefined))
+          mode: mode === 'vote-only' ? 'vote_only' : (mode === 'swipe-only' ? 'swipe_only' : (mode === 'swipe-more' ? 'swipe_more' : (mode === 'vote-more' ? 'vote_more' : undefined)))
         })
       });
       
@@ -538,7 +538,7 @@ export default function Play() {
 
     try {
       const { mode } = router.query;
-      if (mode === 'vote-only') {
+      if (mode === 'vote-only' || mode === 'vote-more') {
         const loser = winner === votingContext.newCard ? votingContext.compareWith : votingContext.newCard;
         const res = await fetch(`/api/v1/play/${currentPlay.playId}/input`, {
           method: 'POST',
@@ -855,6 +855,28 @@ export default function Play() {
                     }}
                   >
                     🔄 Swipe More
+                  </Link>
+                  <Link 
+                    href={`/play?org=${org}&deck=${encodeURIComponent(deckInfo.tag)}&mode=vote-more`} 
+                    onClick={() => {
+                      try {
+                        event('mode_selected', { org, deckTag: deckInfo.tag, mode: 'vote-more' });
+                      } catch (e) { /* noop */ }
+                    }}
+                    className="btn" 
+                    style={{ 
+                      background: '#0d6efd', 
+                      color: 'white', 
+                      textDecoration: 'none',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '4px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      fontWeight: '500'
+                    }}
+                  >
+                    🗳️ Vote More
                   </Link>
                 </div>
                 <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#666' }}>

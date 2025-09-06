@@ -1,8 +1,8 @@
 # NARIMATO Release Notes
 
-**Current Version:** 5.6.0 (Unified Play API & Dispatcher + GA4 Analytics)
+**Current Version:** 5.7.0 (Unified Play API & Dispatcher + GA4 Analytics + Vote-More)
 **Date:** 2025-09-06
-**Last Updated:** 2025-09-06T14:09:05.000Z
+**Last Updated:** 2025-09-06T14:20:04.000Z
 
 ### Unified Play API & Engines
 - Added central Play dispatcher with pluggable engines: vote_only, swipe_only, swipe_more
@@ -164,6 +164,19 @@ This release delivers comprehensive user interface improvements across all major
 - **Documentation**: ✅ Comprehensive release notes with detailed impact analysis
 
 ---
+
+## [v5.7.0] — 2025-09-06T14:20:04.000Z
+
+### Added
+- New play mode: Vote-More (`vote_more`) — orchestrates multiple Vote-Only segments per hierarchy level
+- Backend: `lib/services/VoteMoreEngine.js` and `lib/models/VoteMorePlay.js` with family queue and combined ranking aggregation
+- Dispatcher: PlayDispatcher registered `vote_more` engine and model lookup
+- API: `/api/v1/play/start` supports `mode: 'vote_more'`
+- Frontend: Mode selection UI, start mapping, next handling, and results labeling for vote-more
+
+### Notes
+- Reuses Vote-Only service for comparisons and results to avoid duplication
+- Aggregated results include family context for breakdowns; compatible with results UI
 
 ## [v5.6.0] — 2025-09-06T14:09:05.000Z
 

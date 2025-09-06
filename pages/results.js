@@ -156,7 +156,8 @@ export default function Results() {
           }}>
             {mode === 'swipe-only' ? '👆 Swipe Only' : 
              mode === 'swipe-more' ? '🔄 Swipe + Vote' : 
-             mode === 'vote-only' ? '🗳️ Vote Only' : mode}
+             mode === 'vote-only' ? '🗳️ Vote Only' : 
+             mode === 'vote-more' ? '🗳️ Vote More' : mode}
           </div>
         )}
       </div>
