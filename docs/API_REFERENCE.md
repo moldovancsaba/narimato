@@ -1,4 +1,157 @@
-# Multi-Level Card System API Reference
+# API Reference — Unified Play API (v5.5.0)
+
+Last Updated: 2025-09-06T13:02:39.000Z
+
+## Overview
+All play modes use a single, versioned API surface with a central dispatcher. Modes are differentiated by `mode` at start time and by `action` on input.
+
+Base path: /api/v1/play
+
+## Start
+POST /api/v1/play/start
+
+Body
+{
+  "organizationId": "<uuid>",
+  "deckTag": "<string>",
+  "mode": "swipe_only" | "vote_only" | "swipe_more"
+}
+
+Response (common fields; some are mode-specific)
+{
+  "playId": "<uuid>",
+  "mode": "...",
+  "cards": [ { "id": "<uuid>", "title": "...", "description": "...", "imageUrl": "..." }, ... ],
+  "comparison": {                // vote_only only
+    "card1": { ... },
+    "card2": { ... }
+  },
+  "currentCardId": "<uuid>",    // swipe_only / swipe_more (family)
+  "currentCard": { ... },        // swipe_more may also include currentCard
+  "familyLevel": 0,              // swipe_more only
+  "familyContext": "root"       // swipe_more only
+}
+
+## Input
+POST /api/v1/play/{playId}/input
+
+Body variants
+- Swipe (swipe_only, swipe_more)
+{
+  "action": "swipe",
+  "payload": { "cardId": "<uuid>", "direction": "left" | "right" }
+}
+
+- Vote (vote_only)
+{
+  "action": "vote",
+  "payload": { "winner": "<uuid>", "loser": "<uuid>" }
+}
+
+- Vote (swipe_more tie-break)
+{
+  "action": "vote",
+  "payload": { "cardA": "<uuid>", "cardB": "<uuid>", "winner": "<uuid>" }
+}
+
+Response (examples)
+- Swipe-only (continue)
+{
+  "success": true,
+  "completed": false,
+  "nextCardId": "<uuid>",
+  "progress": { "cardsRemaining": 3, "cardsCompleted": 2, "totalCards": 5 }
+}
+
+- Swipe-only (complete)
+{
+  "success": true,
+  "completed": true
+}
+
+- Vote-only (generic acknowledgement)
+{
+  "success": true
+}
+
+- Swipe-more (family transition)
+{
+  "completed": false,
+  "nextCardId": "<uuid>",
+  "currentCard": { ... },
+  "cards": [ ... ],
+  "hierarchicalLevel": 1,
+  "newLevelCards": [ ... ],
+  "familyContext": { "familyTag": "#company", "level": 1, "context": "children-of-#company" },
+  "progress": { ... }
+}
+
+- Swipe-more (requires more voting)
+{
+  "completed": false,
+  "requiresMoreVoting": true,
+  "votingContext": { "newCard": "<uuid>", "compareWith": "<uuid>" }
+}
+
+## Next
+GET /api/v1/play/{playId}/next
+
+Response variants
+- Vote-only
+{
+  "challenger": "<uuid>",
+  "opponent": "<uuid>",
+  "completed": false
+}
+
+- Swipe-only
+{
+  "playId": "<uuid>",
+  "currentCard": { ... },
+  "progress": { "cardsRemaining": 3, "cardsCompleted": 2, "totalCards": 5 }
+}
+
+- Swipe-more (same shape as swipe-only current card), or { "completed": true }
+
+## Results
+GET /api/v1/play/{playId}/results
+
+Response variants
+- Vote-only
+{
+  "playId": "<uuid>",
+  "mode": "vote_only",
+  "deckTag": "#company",
+  "ranking": [ { "rank": 1, "cardId": "<uuid>", "card": { ... } }, ... ],
+  "personalRanking": ["<uuid>", "<uuid>", ...],
+  "statistics": { "totalCards": 10, "totalComparisons": 23 }
+}
+
+- Swipe-only
+{
+  "playId": "<uuid>",
+  "mode": "swipe-only",
+  "completed": true,
+  "ranking": [ { "rank": 1, "card": { ... }, "swipedAt": "..." }, ... ],
+  "statistics": { "totalCards": 10, "likedCards": 6, "rejectedCards": 4, "totalSwipes": 10 },
+  "sessionInfo": { "deckTag": "#company", "createdAt": "...", "duration": 120000 }
+}
+
+- Swipe-more
+{
+  "playId": "<uuid>",
+  "mode": "swipe-more",
+  "completed": true,
+  "ranking": [ { "card": { ... }, "familyLevel": 0, "familyContext": "root", "familyTag": "#company", "overallRank": 1, "familyRank": 1 }, ... ],
+  "statistics": { "totalFamilies": 3, "totalLiked": 12, "totalSwipes": 45, "familyBreakdown": [ ... ] },
+  "decisionSequence": [ { "step": 1, "type": "swipe-family", "familyTag": "#company", "level": 0, "context": "root", "timestamp": "..." }, ... ]
+}
+
+## Notes
+- Rate limiting headers apply to all endpoints.
+- All timestamps are ISO 8601 with milliseconds in UTC (YYYY-MM-DDTHH:MM:SS.sssZ).
+- The dispatcher resolves playId across Play, SwipeOnlyPlay, and SwipeMorePlay.
+- Legacy endpoints under /api/swipe-only/*, /api/swipe-more/*, /api/vote-only/* have been removed.
 
 ## Base URL
 ```
