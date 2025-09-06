@@ -1,8 +1,12 @@
 # Development Learnings
 
-**Current Version:** 6.0.0 (Documentation Synchronization & Version Consistency)
+**Current Version:** 6.1.0 (UI Button Size Standardization)
 **Date:** 2025-09-06
-**Last Updated:** 2025-09-06T18:39:04.000Z
+**Last Updated:** 2025-09-06T19:06:57.000Z
+
+### UI Button Size Standardization (v6.1.0) — Frontend / Design
+- Functional: Introduced consistent button sizing tiers (large/mid/small) via design system classes; added a .btn-success variant; updated pages to apply sizes consistently; fixed missing emojis for Cards/Play buttons.
+- Strategic: Establishes a clear visual hierarchy and consistent interaction affordances across pages; reduces future styling drift by reusing a centralized system.
 
 ### Documentation Synchronization (v6.0.0) — Process / Other
 - Functional: Synchronized all documentation with the actual Pages Router structure and current endpoints; standardized version markers.

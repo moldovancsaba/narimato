@@ -1,10 +1,17 @@
 # NARIMATO Task List
 
-**Current Version:** 6.0.0
-**Date:** 2025-09-06T18:39:04.000Z
-**Last Updated:** 2025-09-06T18:39:04.000Z
+**Current Version:** 6.1.0
+**Date:** 2025-09-06T19:06:57.000Z
+**Last Updated:** 2025-09-06T19:06:57.000Z
 
 ## High Priority Tasks
+
+### UI Button Size Standardization & Emoji Consistency (v6.1.0)
+- Owner: AI Agent
+- Expected Delivery Date: 2025-09-06T19:06:57.000Z
+- Status: Completed ✅
+- Completion Date: 2025-09-06T19:06:57.000Z
+- Details: Centralized button sizing using design system classes (.btn, .btn-lg, .btn-sm); standardized small Back to Home buttons; elevated primary CTAs to large; set mid-size defaults for secondary actions; added missing emojis (🎴 on Cards buttons, 🎮 on Play buttons); added .btn-success variant.
 
 ### Documentation Synchronization and Version Bump to v6.0.0
 - Owner: AI Agent

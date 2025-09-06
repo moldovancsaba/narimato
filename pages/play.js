@@ -739,7 +739,9 @@ export default function Play() {
     return (
       <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
         <div style={{ marginBottom: '2rem' }}>
-          <Link href="/" style={{ color: '#0070f3' }}>← Back to Home</Link>
+          {/* FUNCTIONAL: Standardize small back navigation button */}
+          {/* STRATEGIC: Consistent design across pages */}
+          <Link href="/" className="btn btn-light btn-sm">← Back to Home</Link>
         </div>
         
         <h1>Play - Select Organization</h1>

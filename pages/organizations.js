@@ -125,7 +125,9 @@ export default function Organizations() {
   return (
     <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
       <div style={{ marginBottom: '2rem' }}>
-        <Link href="/" style={{ color: '#0070f3' }}>← Back to Home</Link>
+        {/* FUNCTIONAL: Standardize small back navigation button across pages */}
+        {/* STRATEGIC: Centralized size and style via design system for consistency */}
+        <Link href="/" className="btn btn-light btn-sm">← Back to Home</Link>
       </div>
 
       <h1>Organizations</h1>
@@ -156,7 +158,9 @@ export default function Organizations() {
             style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px', minHeight: '80px' }}
           />
           <div style={{ textAlign: 'center' }}>
-            <button type="submit" className="btn btn-primary">
+            {/* FUNCTIONAL: Promote primary creation action with large size */}
+            {/* STRATEGIC: Clear visual hierarchy for primary CTA on the page */}
+            <button type="submit" className="btn btn-primary btn-lg">
               ➕ Create Organization
             </button>
           </div>
@@ -213,16 +217,18 @@ export default function Organizations() {
                     <p style={{ color: '#888', margin: '0 0 0.5rem 0', fontSize: '0.875rem' }}>UUID: {org.uuid}</p>
                     {org.description && <p style={{ margin: '0 0 1rem 0' }}>{org.description}</p>}
                     <div className="btn-group btn-group-tight">
-                      <Link href={`/cards?org=${org.uuid}`} className="btn btn-primary btn-sm">
+                      {/* FUNCTIONAL: Use mid-size (default) for secondary actions on cards */}
+                      {/* STRATEGIC: Establish a consistent mid tier for common actions */}
+                      <Link href={`/cards?org=${org.uuid}`} className="btn btn-primary">
                         🎴 Manage Cards
                       </Link>
-                      <Link href={`/play?org=${org.uuid}`} className="btn btn-warning btn-sm">
+                      <Link href={`/play?org=${org.uuid}`} className="btn btn-warning">
                         🎮 Play
                       </Link>
-                      <button onClick={() => startEdit(org)} className="btn btn-info btn-sm">
+                      <button onClick={() => startEdit(org)} className="btn btn-info">
                         ✏️ Edit
                       </button>
-                      <button onClick={() => handleDelete(org)} className="btn btn-secondary btn-sm">
+                      <button onClick={() => handleDelete(org)} className="btn btn-secondary">
                         🗑️ Delete
                       </button>
                     </div>

@@ -1,8 +1,8 @@
 # NARIMATO Architecture
 
-**Current Version:** 6.0.0 (Documentation Synchronization & Version Consistency)
+**Current Version:** 6.1.0 (UI Button Size Standardization)
 **Date:** 2025-10-12
-**Last Updated:** 2025-09-06T18:39:04.000Z
+**Last Updated:** 2025-09-06T19:06:57.000Z
 
 ## ⚡ UUID Field Standardization (v3.7.1+)
 

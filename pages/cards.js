@@ -141,7 +141,9 @@ export default function Cards() {
     return (
       <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
         <div style={{ marginBottom: '2rem' }}>
-          <Link href="/" style={{ color: '#0070f3' }}>← Back to Home</Link>
+          {/* FUNCTIONAL: Standardize small back navigation button */}
+          {/* STRATEGIC: Consistent back button size across all pages */}
+          <Link href="/" className="btn btn-light btn-sm">← Back to Home</Link>
         </div>
         
         <h1>Cards - Select Organization</h1>
@@ -157,7 +159,7 @@ export default function Cards() {
               <div key={organization.uuid} style={{ padding: '1rem', border: '1px solid #ddd', borderRadius: '4px' }}>
                 <h3>{organization.name}</h3>
                 <Link href={`/cards?org=${organization.uuid}`} className="btn btn-primary">
-                  Manage Cards for This Organization
+                  🎴 Manage Cards for This Organization
                 </Link>
               </div>
             ))}
@@ -172,7 +174,9 @@ export default function Cards() {
   return (
     <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
       <div style={{ marginBottom: '2rem' }}>
-        <Link href="/" style={{ color: '#0070f3' }}>← Back to Home</Link>
+        {/* FUNCTIONAL: Standardize small back navigation button */}
+        {/* STRATEGIC: Consistent back button size across all pages */}
+        <Link href="/" className="btn btn-light btn-sm">← Back to Home</Link>
       </div>
 
       <h1>Cards Management</h1>
@@ -247,7 +251,9 @@ export default function Cards() {
             </optgroup>
           </select>
           <div className="btn-group btn-group-tight">
-            <button type="submit" className="btn btn-primary">
+            {/* FUNCTIONAL: Elevate create action to large size; keep edit at mid */}
+            {/* STRATEGIC: Primary creation CTAs should stand out; edits remain secondary */}
+            <button type="submit" className={`btn btn-primary ${editingCard ? '' : 'btn-lg'}`}>
               {editingCard ? 'Update Card' : 'Create Card'}
             </button>
             {editingCard && (
@@ -281,7 +287,7 @@ export default function Cards() {
                   )}
                 </div>
                 <Link href={`/play?org=${org}`} className="btn btn-warning">
-                  Play (choose deck & mode)
+                  🎮 Play (choose deck & mode)
                 </Link>
               </div>
             ))}

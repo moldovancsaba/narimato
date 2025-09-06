@@ -23,10 +23,10 @@ export default function Home() {
             Organizations
           </Link>
           <Link href="/cards" className="btn btn-primary">
-            Cards
+            🎴 Cards
           </Link>
           <Link href="/play" className="btn btn-warning">
-            Play
+            🎮 Play
           </Link>
           <Link href="/rankings" className="btn btn-dark">
             Rankings

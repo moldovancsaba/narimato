@@ -51,6 +51,16 @@
   color: white;
 }
 
+/* Success - Explicit green variant (alias to primary) */
+.btn-success {
+  background: #28a745;
+  color: white;
+}
+
+.btn-success:hover {
+  background: #218838;
+}
+
 .btn-primary:hover {
   background: #218838;
 }

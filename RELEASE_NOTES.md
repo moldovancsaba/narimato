@@ -1,8 +1,22 @@
 # NARIMATO Release Notes
 
-**Current Version:** 6.0.0 (Documentation Synchronization & Version Consistency)
+**Current Version:** 6.1.0 (UI Button Size Standardization)
 **Date:** 2025-09-06
-**Last Updated:** 2025-09-06T18:39:04.000Z
+**Last Updated:** 2025-09-06T19:06:57.000Z
+
+## [v6.1.0] — 2025-09-06T19:06:57.000Z
+
+### UI Button Size Standardization & Emoji Consistency
+- Centralized button sizing across the app using existing design system:
+  - Large (.btn-lg): ➕ Create Organization; Create Card (when not editing)
+  - Mid (default .btn): Manage Cards, 🎮 Play, ✏️ Edit, 🗑️ Delete and other secondary actions
+  - Small (.btn-sm): ← Back to Home across Cards, Organizations, Rankings
+- Added missing emojis where applicable:
+  - 🎴 Manage Cards for This Organization (Cards)
+  - 🎮 Play (choose deck & mode) (Cards)
+  - Home Quick Links: 🎴 Cards, 🎮 Play
+- Added .btn-success variant for green selection chips in Rankings
+- No functional logic changes; pure UI/UX standardization
 
 ## [v6.0.0] — 2025-09-06T18:39:04.000Z
 
