@@ -296,7 +296,17 @@ export default function Cards() {
           <div style={{ display: 'grid', gap: '1rem' }}>
             {decks.map(([tag, deckCards]) => (
               <div key={tag} style={{ padding: '1rem', border: '2px solid #28a745', borderRadius: '4px' }}>
-                <h3 style={{ margin: '0 0 0.5rem 0', color: '#28a745' }}>{tag.startsWith('#') ? tag.substring(1) : tag} ({deckCards.length} cards)</h3>
+                <h3 style={{ margin: '0 0 0.5rem 0', color: '#28a745' }}>
+                  {tag.startsWith('#') ? tag.substring(1) : tag} ({deckCards.length} cards)
+                  {(() => {
+                    const includeHidden = router.query.includeHidden === 'true';
+                    const parent = cards.find(c => c.name === tag);
+                    const isHidden = parent && parent.isPlayable === false;
+                    return includeHidden && isHidden ? (
+                      <span style={{ marginLeft: '0.5rem', color: '#dc3545', fontSize: '0.85rem' }} title="Hidden deck (not publicly listed)">🙈 Hidden</span>
+                    ) : null;
+                  })()}
+                </h3>
                 <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
                   {deckCards.slice(0, 3).map(card => (
                     <div key={card.uuid} style={{ padding: '0.25rem 0.5rem', background: '#f8f9fa', borderRadius: '4px', fontSize: '0.75rem' }}>
