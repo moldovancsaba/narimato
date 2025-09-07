@@ -1,223 +1,117 @@
 # NARIMATO Development Roadmap
 
-**Current Version:** 6.3.0
+**Current Version:** 6.6.0
 **Date:** 2025-08-02
-**Last Updated:** 2025-09-06T20:57:14.000Z
+**Last Updated:** 2025-09-07T13:18:31.000Z
 
 > Note: Roadmap contains only forward-looking items. Completed and historical work is tracked in RELEASE_NOTES.md.
 
-## Q1 2024 - Foundation & Core Features
+## Q3 2025 — Near-Term (Now → Sep 2025)
 
 ### Critical Priority
-- **Session Management Enhancements (Completed)**
-  - Migrated play sessions to Play-based management, resolving 'active' status bugs
-  - Improved completion detection logic and resolved all 404 errors
-  - Dependencies on updated Play model implementation
+- Error Response Standards (Structured Envelope + Taxonomy)
+  - Define and adopt standard envelope: { error: { code, message, details, timestamp, requestId } }
+  - Establish taxonomy: 1xxx client, 2xxx auth, 3xxx business-state, 4xxx resource, 5xxx system
+  - Deliver centralized error helper; migrate priority endpoints; update API docs
+
+- API Versioning — Phase 2 (v2 Pilot)
+  - Publish v2 schema/handlers for play/start with header negotiation (Accept / X-API-Version)
+  - Add telemetry and begin deprecation headers (read-only endpoints) while keeping v1 default
 
 ### High Priority
-- **Dynamic Card Selection and Play Management**
-  - Fully integrated Play model with dynamic card selection
-  - Enhanced hashtag-based card organization
-  - Dependencies: Updated APIs and hashtag hierarchy improvements
+- Gesture/Haptics UX Baseline
+  - Standardize swipe thresholds; add reduced-motion handling; optional iOS haptics behind feature flag
+  - Instrument gameplay analytics for gesture/haptic impact
 
-- **Performance Optimization**  
-  - Database query optimization for large card datasets
-  - Caching layer implementation (Redis integration)
-  - Client-side state optimization
-  - Dependencies: Infrastructure scaling
+### Dependencies
+- Logging/observability, analytics events, centralized validation
 
-- **Real-time Analytics Dashboard**  
-  - Live session monitoring
-  - Global ELO ranking trend analysis and statistics
-  - User engagement metrics
-  - Dependencies: Analytics data collection system
+---
 
-### Medium Priority
-- **Mobile Experience Enhancement**  
-  - Progressive Web App (PWA) implementation
-  - Offline capability for interrupted sessions
-  - Touch gesture improvements
-  - Dependencies: Service worker implementation
+## Q4 2025 — Platform Hardening & Governance
 
-- **Card Management System**  
-  - Admin panel for card CRUD operations
-  - Bulk card import/export functionality
-  - Card categorization and tagging
-  - Dependencies: Authentication system
+### Critical Priority
+- API Versioning Negotiation (Header-Based)
+  - Design header strategy (X-API-Version or Accept: application/vnd.narimato.vX+json)
+  - Middleware to route to versioned zod schemas and handlers
+  - Deprecation policy and migration playbook (maintain v1 for 6 months; telemetry for usage; staged warnings → removal)
+  - Dependencies: docs/API_REFERENCE.md updates, centralized validation
 
-## Q2 2024 - Advanced Features & Scalability
+- Error Response Standards (Structured Envelope + Taxonomy)
+  - Define standard envelope { error: { code, message, details, timestamp, requestId } }
+  - Adopt taxonomy: 1xxx client; 2xxx auth; 3xxx business-state; 4xxx resource; 5xxx system
+  - Central error helper for API routes; update endpoints incrementally
+  - Dependencies: Logging/observability and API docs
 
 ### High Priority
-- **Multi-Session Architecture**  
-  - Concurrent session support per user
-  - Session templates and presets
-  - Session sharing capabilities
-  - Dependencies: User authentication, enhanced database schema
+- Security & RBAC (MVP)
+  - Roles: admin, editor, viewer; token-based access for admin routes
+  - Abuse mitigation: rate limits, IP/UA heuristics, suspicious pattern flags
+  - Dependency: centralized auth utilities; CORS and headers audit
 
-- **Advanced Ranking Algorithms**  
-  - ✅ ELO rating system implementation (COMPLETED - now primary global ranking metric)
-  - ✅ Database migration to UUID-based multi-level card system (COMPLETED - 2025-08-02T22:55:20.162Z)
-  - ✅ Minimum card threshold for playable decks (COMPLETED - 2025-08-02T23:10:48.000Z - improved UX by ensuring meaningful ranking experiences)
-  - Weighted ranking based on user preferences
-  - Machine learning integration for recommendation
-  - Dependencies: ML pipeline, advanced analytics
+- DB Migration Framework
+  - Formal migrations folder, version registry, up/down, dry-run, audit logs, rollback
+  - Operational guide and safeguards; environment safety checks (Atlas only)
 
-- **API Enhancement**  
-  - RESTful API v2 with GraphQL support
-  - Rate limiting and security improvements
-  - API documentation and developer tools
-  - Dependencies: Security audit, documentation framework
+- API Versioning Expansion (v2 Coverage)
+  - Extend v2 to input, next, and results endpoints; formalize deprecation schedule for v1
 
 ### Medium Priority
-- **Social Features**  
-  - Public ranking sharing
-  - Community challenges and competitions
-  - User-generated card submissions
-  - Dependencies: Moderation system, user profiles
+- Gesture/Haptics UX Improvements
+  - Unify thresholds across devices; add optional iOS haptics; respect reduced-motion
+  - Feature flags and analytics instrumentation
 
-- **Data Export & Integration**  
+- Admin Panel & Analytics Dashboard (MVP)
+  - Overview: sessions today, completion rate, active plays, error rate
+  - Funnels/trends: play_start→complete, ELO trend snapshots, latency
+  - System health: API latency/error budget, DB status
+  - Dependencies: security/RBAC, analytics events, metrics sources
   - Export rankings to various formats (CSV, JSON, PDF)
   - Third-party service integrations
   - Webhook support for external systems
   - Dependencies: Data formatting libraries
 
-## Q3 2024 - Enterprise & Customization
+## Post-Q4 2025 — Backlog (Forward-Looking)
 
-### High Priority
-- **White-label Solution**  
-  - Customizable branding and themes
-  - Multi-tenant architecture
-  - Custom domain support
-  - Dependencies: Tenant management system
+### Enterprise & Customization
+- White-label solution (branding/themes, custom domains)
+- Internationalization (multi-language, regional customization)
+- Advanced card types (video, interactive) with media pipeline
 
-- **Advanced Analytics & Reporting**  
-  - Custom report generation
-  - A/B testing framework
-  - Conversion funnel analysis
-  - GA4 Consent UI implementation (cookie banner + toggle)
-  - BigQuery export configuration for raw events
-  - Custom dimensions for organization/deck segmentation
-  - Dependencies: Reporting engine, data warehouse
+### Analytics & Reporting
+- Custom report generation and exports (CSV/JSON/PDF)
+- A/B testing framework and conversion funnel analysis
+- BigQuery export and custom dimensions
 
-- **Enterprise Authentication**  
-  - SSO integration (SAML, OAuth2)
-  - Role-based access control
-  - Audit logging system
-  - Dependencies: Identity provider integrations
+### AI & Innovation
+- AI recommendations and automated card generation
+- Advanced visualizations and data storytelling
+- Integration ecosystem: plugins, marketplace, SDK
+- Platform expansion: native mobile, desktop, browser extension
 
-### Medium Priority
-- **Internationalization**  
-  - Multi-language support
-  - Regional card deck customization
-  - Localized ranking algorithms
-  - Dependencies: Translation management system
-
-- **Advanced Card Types**  
-  - Video card support
-  - Interactive card elements
-  - Card animation and transitions
-  - Dependencies: Media processing pipeline
-
-## Q4 2024 - AI & Innovation
-
-### High Priority
-- **AI-Powered Features**  
-  - Intelligent card recommendations
-  - Automated card generation
-  - Personalized ranking insights
-  - Dependencies: AI/ML infrastructure
-
-- **Advanced Visualization**  
-  - Interactive ranking visualizations
-  - Real-time comparison animations
-  - Data storytelling features
-  - Dependencies: Visualization libraries
-
-- **Platform Expansion**  
-  - Native mobile applications
-  - Desktop application support
-  - Browser extension development
-  - Dependencies: Cross-platform development framework
-
-### Medium Priority
-- **Integration Ecosystem**  
-  - Third-party plugin system
-  - Marketplace for custom extensions
-  - Developer SDK and tools
-  - Dependencies: Plugin architecture
-
-- **Advanced Security**  
-  - End-to-end encryption for sensitive rankings
-  - Advanced fraud detection
-  - GDPR compliance enhancements
-  - Dependencies: Security framework updates
-
-## Technical Debt & Maintenance
-
-### Ongoing Priorities
-- **Code Quality & Testing**  
-  - Comprehensive error handling
-  - Performance monitoring and alerting
-  - Documentation maintenance
-  - Dark Mode Implementation
-  - Dependencies: Monitoring infrastructure
-
-- **Infrastructure Scaling**  
-  - Auto-scaling database clusters
-  - CDN optimization
-  - Load balancing improvements
-  - Dependencies: Cloud infrastructure
-
-- **Security & Compliance**  
-  - Regular security audits
-  - Vulnerability management
-  - Compliance certifications
-  - Dependencies: Security tools and processes
-
-## Success Metrics
-
-### Q1 Targets
-- Session completion rate: >85%
-- Average session duration: 3-5 minutes
-- Database query response time: <100ms
-- Mobile user experience score: >4.5/5
-
-### Q2 Targets
-- Concurrent session support: 1000+ simultaneous sessions
-- API response time: <50ms
-- User retention rate: >70%
-- Social sharing adoption: >30%
-
-### Q3 Targets
-- Multi-tenant deployment: 10+ enterprise clients
-- Custom theme adoption: >60%
-- Advanced analytics usage: >40%
-- International market penetration: 3+ regions
-
-### Q4 Targets
-- AI recommendation accuracy: >90%
-- Cross-platform user adoption: >50%
-- Plugin ecosystem: 20+ third-party integrations
-- Platform performance: 99.9% uptime
+### Advanced Security
+- End-to-end encryption for sensitive data paths
+- Enhanced fraud detection and compliance improvements
 
 ---
 
-## Q1 2025 - Security & Compliance Audit
+## Ongoing — Technical Debt & Maintenance
+- Code quality, comprehensive error handling, documentation currency
+- Monitoring/alerting, infra scaling (DB/CDN/load balancing)
+- Security & compliance (audits, vulns, certifications)
 
-### High Priority
-- **Full Security Audit**
-  - Comprehensive review of all security protocols
-  - Penetration testing
-  - Dependencies: External security consultants
+## Success Metrics
 
-- **Accessibility Update Review**
-  - Verify WCAG 2.1 AA compliance across new components
-  - Dependencies: UX team input
+### Q4 2025 Targets
+- Header-based version usage: ≥60% of clients on v2 endpoints
+- Admin MVP: <500ms p95 for overview endpoint, 0 critical regressions
+- Error envelope adoption: 100% of updated endpoints, 0 schema drift issues
+- RBAC coverage: 100% on admin routes, 0 unauthorized access findings
 
-### Medium Priority
-- **Detailed Logging Improvements**
-  - Implement advanced audit trails
-  - Include millisecond precision timestamps
-  - Dependencies: Logging framework enhancements
+### H1 2026 Targets
+- Migration framework coverage: 100% for schema/data changes
+- API v2 coverage: 100% of unified play endpoints, v1 deprecation window active
+- Uptime: ≥99.9%, p95 API latency ≤150ms
+- Security posture: 0 high/critical unresolved findings
 
-**Note:** This roadmap is subject to change based on user feedback, market conditions, and technical discoveries. All dates and priorities may be adjusted based on development progress and stakeholder requirements.
+**Note:** Roadmap is forward-looking only; completed work is tracked in RELEASE_NOTES.md. Timelines/priorities may be adjusted based on progress and stakeholder input.

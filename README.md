@@ -1,13 +1,13 @@
 # NARIMATO
 
-![Version](https://img.shields.io/badge/version-6.2.0-blue.svg)
+![Version](https://img.shields.io/badge/version-6.7.0-blue.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-15.4.4-black.svg)
 ![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)
 ![MongoDB](https://img.shields.io/badge/MongoDB-7.0+-green.svg)
 
 NARIMATO is an anonymous, session-based card ranking application built with Next.js, MongoDB, and sophisticated binary search ranking algorithms. Global rankings are powered by ELO rating system for accurate skill-based card comparisons.
 
-**Current Version:** 6.3.0 *(New play mode: Rank-Only — swipe then vote)*
+**Current Version:** 6.7.0 *(Error envelope + v2 pilot + reduced-motion baseline; version negotiation framework enabled; Rank‑More play mode)*
 
 ## ✨ Key Features
 
@@ -22,7 +22,8 @@ NARIMATO is an anonymous, session-based card ranking application built with Next
   - **Vote-Only**: Pure comparison-based ranking through repeated vote pairs (no swiping)
   - **Swipe-Only**: Pure like/dislike interface - rank cards by preference order
   - **Swipe-More**: Enhanced swiping with smart decision tree - optimized ranking
-  - **Classic**: Combined swipe-then-vote flow for comprehensive ranking
+  - **Rank-Only**: Swipe to shortlist, then vote to order the liked set
+  - **Rank-More**: Multi-level “family by family” ranking — roots swipe→vote, then randomly ordered families per level, flattened output
 - **Hashtag Hierarchy System**: Multi-level card organization through parent-child hashtag relationships
 - **Dynamic Text Scaling**: Automatic font sizing for optimal readability
 - **Modern Typography**: Professional Fira Code SemiBold font for enhanced aesthetics
@@ -50,7 +51,7 @@ NARIMATO is an anonymous, session-based card ranking application built with Next
 ### Technical Implementation
 - **Pluggable Engines**: `VoteOnlyService`, `SwipeOnlyEngine`, `SwipeMoreEngine` registered under a central dispatcher
 - **Unified API**: Single, versioned surface for all plays:
-  - `POST /api/v1/play/start` — { organizationId, deckTag, mode: 'swipe_only' | 'vote_only' | 'swipe_more' | 'vote_more' }
+- `POST /api/v1/play/start` — { organizationId, deckTag, mode: 'swipe_only' | 'vote_only' | 'swipe_more' | 'vote_more' | 'rank_only' | 'rank_more' }
   - `POST /api/v1/play/{playId}/input` — { action: 'swipe' | 'vote', payload }
   - `GET /api/v1/play/{playId}/next`
   - `GET /api/v1/play/{playId}/results`

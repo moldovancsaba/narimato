@@ -1,8 +1,37 @@
 # NARIMATO Release Notes
 
-**Current Version:** 6.2.0 (Deck Exposure Control)
-**Date:** 2025-09-06
-**Last Updated:** 2025-09-06T19:17:15.000Z
+**Current Version:** 6.7.0 (Rank‑More Play Mode)
+**Date:** 2025-09-07
+**Last Updated:** 2025-09-07T17:29:32.000Z
+
+## [v6.5.0] — 2025-09-07T12:10:54.000Z
+
+### Documentation Unification — Canonical Engineering Spec
+- Rewrote narimato_unified_documentation_UPDATED.md to be the single source of truth, aligned with current Pages Router + JavaScript stack and Play-based unified API.
+- Flagged specialized vote-only endpoints under /api/v1/play/vote-only/* as DEPRECATED (back-compat only); new development should use unified endpoints.
+- Propagated version to 6.5.0 across package.json and documentation headers; normalized ISO 8601 timestamps with milliseconds.
+- No functional code changes.
+
+## [v6.4.0] — 2025-09-07T11:34:45.000Z
+
+### New Play Mode: Rank-More (👆+🗳️ multi-level)
+- Hierarchical, multi-level ranking that composes Rank-Only per family; families processed in random order within each level.
+- Branch exclusion: disliked children exclude their entire branch.
+- Final output: flattened list only (parent followed by ranked descendants); no nested payload required by UI.
+- Backend:
+  - Engine: `lib/services/RankMoreEngine.js` orchestrates roots swipe→vote then family-by-family Rank-Only sub-sessions
+  - Model: `lib/models/RankMorePlay.js` stores orchestration state and per-family results
+  - Dispatcher: registered `rank_more` engine and model lookup in PlayDispatcher
+- API:
+  - `POST /api/v1/play/start` supports `mode: 'rank_more'`
+  - Unified input/next/results; responses may include `{ returnToSwipe, nextCardId, cards }` when switching to a new family
+- Frontend:
+  - Added “👆+🗳️ Rank More” button on deck selection (pages/play.js)
+  - Fixed payload for rank-more swipes to use `{ action: 'swipe', payload: { cardId, direction } }`
+  - Implemented return-to-swipe handling for new family transitions and visual “new-level” hint
+- Fixes:
+  - Corrected hierarchical level progression in orchestrator to base next level on current family level
+  - Prevented stalls after completing a family with 0 liked cards by immediately starting the next family
 
 ## [v6.3.0] — 2025-09-06T20:57:14.000Z
 
@@ -23,7 +52,16 @@
   - Play and Rankings deck lists filter out hidden decks by default; includeHidden=true shows all
 - Hidden segments can still be started via direct links (no change to start behavior)
 
-## [v6.1.0] — 2025-09-06T19:06:57.000Z
+## [v6.7.0] — 2025-09-07T17:29:32.000Z
+
+### Error Response Standards + API v2 Pilot + Reduced Motion Baseline
+- Implemented centralized error envelope and taxonomy (1xxx–5xxx). All unified play endpoints now return a structured error payload.
+- v2 pilot (header-based) enabled on play/start; clients can opt-in with Accept: application/vnd.narimato.v2+json. No breaking changes; adds meta.apiVersion.
+- Read-only GET endpoints (next/results) now include deprecation header when v1 is selected.
+- Added reduced-motion baseline in public/styles/game.css to honor user preferences globally.
+- Documentation updated (API_REFERENCE.md error section; timestamps).
+
+## [v6.6.0] — 2025-09-07T12:57:30.000Z
 
 ### UI Button Size Standardization & Emoji Consistency
 - Centralized button sizing across the app using existing design system:

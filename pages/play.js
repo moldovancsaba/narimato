@@ -246,7 +246,7 @@ export default function Play() {
       // Normal deck start - check for specific modes
       let apiEndpoint = '/api/play/start';
       // Unified dispatcher endpoint
-      if (mode === 'vote-only' || mode === 'swipe-only' || mode === 'swipe-more' || mode === 'vote-more' || mode === 'rank-only') {
+if (mode === 'vote-only' || mode === 'swipe-only' || mode === 'swipe-more' || mode === 'vote-more' || mode === 'rank-only' || mode === 'rank-more') {
         apiEndpoint = '/api/v1/play/start';
       }
       
@@ -256,7 +256,7 @@ export default function Play() {
         body: JSON.stringify({ 
           organizationId: org, 
           deckTag: deck, 
-          mode: mode === 'vote-only' ? 'vote_only' : (mode === 'swipe-only' ? 'swipe_only' : (mode === 'swipe-more' ? 'swipe_more' : (mode === 'vote-more' ? 'vote_more' : (mode === 'rank-only' ? 'rank_only' : undefined))))
+mode: mode === 'vote-only' ? 'vote_only' : (mode === 'swipe-only' ? 'swipe_only' : (mode === 'swipe-more' ? 'swipe_more' : (mode === 'vote-more' ? 'vote_more' : (mode === 'rank-only' ? 'rank_only' : (mode === 'rank-more' ? 'rank_more' : undefined)))))
         })
       });
       
@@ -450,7 +450,7 @@ export default function Play() {
       // Check mode for appropriate API endpoint
       const { mode } = router.query;
       let apiEndpoint = '/api/play/swipe';
-      if (mode === 'swipe-only' || mode === 'swipe-more' || mode === 'rank-only') {
+if (mode === 'swipe-only' || mode === 'swipe-more' || mode === 'rank-only' || mode === 'rank-more') {
         apiEndpoint = `/api/v1/play/${currentPlay.playId}/input`;
       } else if (mode === 'vote-only') {
         // vote-only does not use swipe
@@ -461,85 +461,109 @@ export default function Play() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(
-          mode === 'swipe-only' || mode === 'swipe-more' || mode === 'rank-only'
+          mode === 'swipe-only' || mode === 'swipe-more' || mode === 'rank-only' || mode === 'rank-more'
             ? { action: 'swipe', payload: { cardId: currentCard.id, direction } }
             : { playId: currentPlay.playId, cardId: currentCard.id, direction }
         )
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        // FUNCTIONAL: Track swipe gesture for engagement metrics
-        // STRATEGIC: Monitors user interaction patterns with cards (production-only)
-        try {
-          const { mode } = router.query;
-          event('swipe_action', {
-            playId: currentPlay.playId,
-            mode,
-            cardId: currentCard?.id,
-            direction,
-            hierarchicalLevel: currentPlay?.hierarchicalLevel || null
-          });
-        } catch (e) { /* noop */ }
-        
-        if (data.completed) {
-          // For rank-only, redirect straight to results when swipe completed with <2 liked
-          if (mode === 'rank-only') {
-            router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}&mode=${mode}`);
+        if (res.ok) {
+          const data = await res.json();
+          // FUNCTIONAL: Track swipe gesture for engagement metrics
+          // STRATEGIC: Monitors user interaction patterns with cards (production-only)
+          try {
+            const { mode } = router.query;
+            event('swipe_action', {
+              playId: currentPlay.playId,
+              mode,
+              cardId: currentCard?.id,
+              direction,
+              hierarchicalLevel: currentPlay?.hierarchicalLevel || null
+            });
+          } catch (e) { /* noop */ }
+          
+          // Rank-More: engine may instruct to return to swiping a new family immediately
+          if (data.returnToSwipe && data.nextCardId) {
+            // If engine supplies a fresh card list for the new family, use it
+            const newCards = Array.isArray(data.cards) && data.cards.length > 0 ? data.cards : currentPlay.cards;
+            setCurrentPlay(prev => ({ ...prev, cards: newCards }));
+            const nextCard = newCards.find(c => c.id === data.nextCardId) || null;
+            setVotingContext(null);
+            setPreviousCard(currentCard);
+            setSwipeTransition('new-level');
+            setTimeout(() => setSwipeTransition(null), 600);
+            setCurrentCard(nextCard);
             return;
           }
-          // Check hierarchical status to determine next action
-          await checkHierarchicalStatus();
-          return;
-        } else if (data.requiresVoting) {
-          setVotingContext(data.votingContext);
-        } else if (data.nextCardId) {
-          // HIERARCHICAL SWIPEMORE: Handle level transitions
-          let nextCard;
-          let updatedCards = currentPlay.cards;
-          
-          if (data.newLevelCards) {
-            // SwipeMore transitioned to a new hierarchical level
-            console.log('🌳 Transitioning to new hierarchical level:', data.hierarchicalLevel);
-            console.log('📋 New level cards:', data.newLevelCards.map(c => c.title));
+
+          if (data.completed) {
+            // For rank-only and rank-more, redirect straight to results when session fully completes
+            if (mode === 'rank-only') {
+              router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}&mode=${mode}`);
+              return;
+            }
+            if (mode === 'rank-more') {
+              router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}&mode=${mode}`);
+              return;
+            }
+            // Check hierarchical status to determine next action
+            await checkHierarchicalStatus();
+            return;
+          } else if (data.requiresVoting) {
+            setVotingContext(data.votingContext);
+          } else if (data.nextCardId) {
+            // HIERARCHICAL SWIPEMORE or same-family transition
+            let nextCard;
+            let updatedCards = currentPlay.cards;
             
-            // Update the cards array with the new level
-            updatedCards = data.newLevelCards;
-            nextCard = data.newLevelCards.find(c => c.id === data.nextCardId);
+            if (data.newLevelCards) {
+              // SwipeMore transitioned to a new hierarchical level
+              console.log('🌳 Transitioning to new hierarchical level:', data.hierarchicalLevel);
+              console.log('📋 New level cards:', data.newLevelCards.map(c => c.title));
+              
+              // Update the cards array with the new level
+              updatedCards = data.newLevelCards;
+              nextCard = data.newLevelCards.find(c => c.id === data.nextCardId);
+              
+              // Update currentPlay state with new cards
+              setCurrentPlay(prev => ({
+                ...prev,
+                cards: updatedCards
+              }));
+            } else if (Array.isArray(data.cards) && data.cards.length > 0) {
+              // Rank-More family transition without newLevelCards key
+              updatedCards = data.cards;
+              setCurrentPlay(prev => ({ ...prev, cards: updatedCards }));
+              nextCard = updatedCards.find(c => c.id === data.nextCardId);
+            } else {
+              // Regular card transition within the same level
+              nextCard = currentPlay.cards.find(c => c.id === data.nextCardId);
+            }
             
-            // Update currentPlay state with new cards
-            setCurrentPlay(prev => ({
-              ...prev,
-              cards: updatedCards
-            }));
-          } else {
-            // Regular card transition within the same level
-            nextCard = currentPlay.cards.find(c => c.id === data.nextCardId);
-          }
-          
-          // FUNCTIONAL: Track swipe transitions for visual feedback
-          // STRATEGIC: Shows user when a new card appears after swipe
-          if (currentCard && currentCard.id !== data.nextCardId) {
-            setSwipeTransition(data.newLevelCards ? 'new-level' : 'new-card');
+            // FUNCTIONAL: Track swipe transitions for visual feedback
+            // STRATEGIC: Shows user when a new card appears after swipe
+            if (currentCard && currentCard.id !== data.nextCardId) {
+              const transitionType = data.newLevelCards || (Array.isArray(data.cards) && data.cards.length > 0) ? 'new-level' : 'new-card';
+              setSwipeTransition(transitionType);
+              
+              // Clear transition after animation completes
+              setTimeout(() => {
+                setSwipeTransition(null);
+              }, 600);
+            }
             
-            // Clear transition after animation completes
-            setTimeout(() => {
-              setSwipeTransition(null);
-            }, 600);
+            setPreviousCard(currentCard);
+            setCurrentCard(nextCard);
+            
+            if (!nextCard) {
+              console.error('❌ Next card not found:', data.nextCardId);
+              console.error('Available cards:', updatedCards.map(c => ({ id: c.id, title: c.title })));
+            }
           }
-          
-          setPreviousCard(currentCard);
-          setCurrentCard(nextCard);
-          
-          if (!nextCard) {
-            console.error('❌ Next card not found:', data.nextCardId);
-            console.error('Available cards:', updatedCards.map(c => ({ id: c.id, title: c.title })));
-          }
+        } else {
+          const error = await res.json();
+          alert(error.error);
         }
-      } else {
-        const error = await res.json();
-        alert(error.error);
-      }
     } catch (error) {
       console.error('Failed to swipe:', error);
       alert('Failed to swipe card');
@@ -551,7 +575,7 @@ export default function Play() {
 
     try {
       const { mode } = router.query;
-      if (mode === 'vote-only' || mode === 'vote-more' || mode === 'rank-only') {
+if (mode === 'vote-only' || mode === 'vote-more' || mode === 'rank-only' || mode === 'rank-more') {
         const loser = winner === votingContext.newCard ? votingContext.compareWith : votingContext.newCard;
         const res = await fetch(`/api/v1/play/${currentPlay.playId}/input`, {
           method: 'POST',
@@ -579,7 +603,18 @@ export default function Play() {
           alert('Failed to get next comparison');
           return;
         }
-        const nextData = await nextRes.json();
+const nextData = await nextRes.json();
+        // If engine instructs to return to swipe for a new family (Rank-More)
+        if (nextData.returnToSwipe && nextData.nextCardId) {
+          if (Array.isArray(nextData.cards) && nextData.cards.length > 0) {
+            setCurrentPlay(prev => ({ ...prev, cards: nextData.cards }));
+          }
+          const pool = (nextData.cards && nextData.cards.length > 0) ? nextData.cards : currentPlay.cards;
+          const nextCard = pool.find(c => c.id === nextData.nextCardId);
+          setVotingContext(null);
+          setCurrentCard(nextCard || null);
+          return;
+        }
         if (nextData.completed) {
           router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}&mode=${mode}`);
           return;
@@ -935,6 +970,28 @@ export default function Play() {
                     }}
                   >
                     👆+🗳️ Rank Only
+                  </Link>
+                  <Link 
+                    href={`/play?org=${org}&deck=${encodeURIComponent(deckInfo.tag)}&mode=rank-more`} 
+                    onClick={() => {
+                      try {
+                        event('mode_selected', { org, deckTag: deckInfo.tag, mode: 'rank-more' });
+                      } catch (e) { /* noop */ }
+                    }}
+                    className="btn" 
+                    style={{ 
+                      background: '#fd7e14', 
+                      color: 'white', 
+                      textDecoration: 'none',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '4px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      fontWeight: '500'
+                    }}
+                  >
+                    👆+🗳️ Rank More
                   </Link>
                 </div>
                 <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#666' }}>
