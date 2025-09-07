@@ -3,7 +3,8 @@ import { playIdParamSchema } from '../../../../../lib/validation/common';
 import { applyRateLimit } from '../../../../../lib/middleware/rateLimit';
 import { z } from 'zod';
 import { getPlayAndEngine } from '../../../../../lib/services/play/PlayDispatcher';
-
+import { withApiVersion } from '../../../../../lib/middleware/apiVersion';
+import { buildErrorEnvelope, ERROR_CODES } from '../../../../../lib/utils/errors';
 // POST /api/v1/play/[playId]/input
 // body: { action, payload }
 export default async function handler(req, res) {
@@ -23,8 +24,15 @@ export default async function handler(req, res) {
     const result = await engine.handleInput(playId, { action, payload });
     return res.status(200).json(result);
   } catch (err) {
-    const code = err.statusCode || 500;
-    return res.status(code).json({ error: err.message || 'Internal error' });
+    const status = err.statusCode || 500;
+    const code = err.appCode || (status === 400 ? ERROR_CODES.VALIDATION_ERROR : ERROR_CODES.SYSTEM_FAILURE);
+    const envelope = buildErrorEnvelope({
+      code,
+      message: err.message || 'Internal error',
+      details: err.details,
+      requestId: req.headers['x-request-id']?.toString(),
+    });
+    return res.status(status).json(envelope);
   }
 }
 

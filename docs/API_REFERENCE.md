@@ -1,13 +1,24 @@
-# API Reference — Unified Play API (v6.0.0)
+# API Reference — Unified Play API (v6.6.0)
 
-Last Updated: 2025-09-06T18:39:04.000Z
+Last Updated: 2025-09-07T13:21:53.000Z
 
 ## Overview
 All play modes use a single, versioned API surface with a central dispatcher. Modes are differentiated by `mode` at start time and by `action` on input.
 
+Version negotiation
+- Preferred: Accept: application/vnd.narimato.vN+json
+- Fallback: X-API-Version: N
+- Default: v1
+- Response header: X-API-Selected-Version: vN
+- Deprecation signaling (phased): X-API-Deprecated: true (only when a requested version is deprecated)
+
+Note: the negotiation framework is enabled without changing current behavior; clients may start sending explicit versions now.
+
 Note: Specialized vote-only endpoints under `/api/v1/play/vote-only/*` remain available for backward compatibility alongside the unified endpoints.
 
 New: rank_only — two-segment play (swipe-only then vote-only on liked cards). Start with action="swipe"; when swipe completes, server returns `{ requiresVoting: true, votingContext: { newCard, compareWith } }`, then continue with vote inputs.
+
+New: rank_more — hierarchical multi‑level ranking. Starts like rank_only at roots; for any liked parent with children, the server starts new family segments in random order per level. Responses may include `{ returnToSwipe: true, nextCardId, cards }` to switch back to swiping a new family; results are flattened (parent then ranked descendants).
 
 Base path: /api/v1/play
 
@@ -18,7 +29,7 @@ Body
 {
   "organizationId": "<uuid>",
   "deckTag": "<string>",
-"mode": "swipe_only" | "vote_only" | "swipe_more" | "vote_more" | "rank_only"
+"mode": "swipe_only" | "vote_only" | "swipe_more" | "vote_more" | "rank_only" | "rank_more"
 }
 
 Response (common fields; some are mode-specific)
@@ -76,6 +87,16 @@ Response (examples)
 - Vote-only (generic acknowledgement)
 {
   "success": true
+}
+
+- Rank-more (family transition)
+{
+  "completed": false,
+  "returnToSwipe": true,
+  "nextCardId": "<uuid>",
+  "cards": [ ... ],
+  "hierarchicalLevel": 1,
+  "familyContext": { "familyTag": "#company", "level": 1, "context": "children-of-#company" }
 }
 
 - Swipe-more (family transition)
@@ -141,6 +162,16 @@ Response variants
   "sessionInfo": { "deckTag": "#company", "createdAt": "...", "duration": 120000 }
 }
 
+- Rank-more
+{
+  "playId": "<uuid>",
+  "mode": "rank_more",
+  "deckTag": "#company",
+  "personalRanking": ["<uuid>", "<uuid>", ...],
+  "ranking": [ { "rank": 1, "cardId": "<uuid>" }, ... ],
+  "statistics": { "totalItems": 8 }
+}
+
 - Swipe-more
 {
   "playId": "<uuid>",
@@ -155,7 +186,7 @@ Response variants
 - Rate limiting headers apply to all endpoints.
 - All timestamps are ISO 8601 with milliseconds in UTC (YYYY-MM-DDTHH:MM:SS.sssZ).
 - The dispatcher resolves playId across Play, SwipeOnlyPlay, and SwipeMorePlay.
-- Legacy endpoints under /api/swipe-only/*, /api/swipe-more/*, /api/vote-only/* have been removed.
+- Specialized vote-only endpoints under `/api/v1/play/vote-only/*` remain available for backward compatibility but are DEPRECATED internally. New development should use the unified `/api/v1/play/*` endpoints.
 
 ## Base URL
 ```
@@ -167,14 +198,27 @@ Currently no authentication required. All endpoints are public.
 
 ## Error Responses
 
-All endpoints return errors in this format:
+All endpoints return errors in a standardized envelope:
 ```json
 {
-  "success": false,
-  "error": "Error message",
-  "details": "Optional detailed error information"
+  "error": {
+    "code": 1001,
+    "message": "Validation failed: deckTag is required",
+    "details": [
+      { "path": "deckTag", "message": "Required", "code": "invalid" }
+    ],
+    "timestamp": "2025-09-07T13:21:53.000Z",
+    "requestId": "7c3e8f3d-5a64-4e3a-8e62-5f6324fbcf53"
+  }
 }
 ```
+
+Taxonomy:
+- 1xxx: client errors (validation, malformed requests)
+- 2xxx: auth/authorization errors
+- 3xxx: business-state errors (invalid transitions)
+- 4xxx: resource errors (not found, deleted, inactive)
+- 5xxx: system errors (database, external services)
 
 Common HTTP status codes:
 - `400`: Bad Request - Invalid input data

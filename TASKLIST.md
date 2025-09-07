@@ -1,10 +1,67 @@
 # NARIMATO Task List
 
-**Current Version:** 6.3.0
-**Date:** 2025-09-06T19:06:57.000Z
-**Last Updated:** 2025-09-06T19:06:57.000Z
+**Current Version:** 6.7.0
+**Date:** 2025-09-07T17:29:32.000Z
+**Last Updated:** 2025-09-07T17:29:32.000Z
 
 ## High Priority Tasks
+
+### API Versioning Negotiation (Header-Based)
+- Owner: AI Agent
+- Expected Delivery Date: 2025-09-14T18:00:00.000Z
+- Status: In Progress
+- Details: Framework enabled (v6.6.0); v2 pilot shipped on play/start with header negotiation; read-only endpoints emit deprecation header on v1. Next: extend v2 coverage to input/next/results and formalize deprecation schedule.
+
+### Error Response Standards (Structured Envelope + Taxonomy)
+- Owner: AI Agent
+- Expected Delivery Date: 2025-09-21T18:00:00.000Z
+- Status: Completed ✅
+- Completion Date: 2025-09-07T13:21:53.000Z
+- Details: Delivered centralized error envelope and taxonomy (1xxx–5xxx), integrated on unified play endpoints, updated docs/API_REFERENCE.md, and added validation details from zod to envelopes.
+
+### Security & RBAC (MVP)
+- Owner: AI Agent
+- Expected Delivery Date: 2025-10-05T18:00:00.000Z
+- Status: Not Started
+- Details: Add roles (admin, editor, viewer), token-based admin access, and abuse mitigation; audit CORS and security headers.
+
+### DB Migration Framework
+- Owner: AI Agent
+- Expected Delivery Date: 2025-10-12T18:00:00.000Z
+- Status: Not Started
+- Details: Establish formal migrations with version registry, up/down, dry-run, audit logs, and rollback; create operational guide.
+
+### Gesture/Haptics UX Improvements
+- Owner: AI Agent
+- Expected Delivery Date: 2025-09-28T18:00:00.000Z
+- Status: In Progress
+- Details: Baseline delivered — centralized gesture constants and reduced-motion CSS in gameplay. Next: integrate thresholds in gesture handlers and add optional iOS haptics via feature flag.
+
+### Admin Panel & Analytics Dashboard (MVP)
+- Owner: AI Agent
+- Expected Delivery Date: 2025-10-19T18:00:00.000Z
+- Status: Not Started
+- Details: Build overview metrics, funnels/trends, and system health cards; secure behind RBAC; wire to existing analytics/metrics.
+
+### Documentation Unification — Canonical Spec (v6.5.0)
+- Owner: AI Agent
+- Expected Delivery Date: 2025-09-07T12:10:54.000Z
+- Status: Completed ✅
+- Completion Date: 2025-09-07T12:10:54.000Z
+- Details: Rewrote narimato_unified_documentation_UPDATED.md as the canonical engineering spec; synchronized versions to 6.5.0 across package.json and documentation; resolved API reference contradictions; flagged specialized vote-only endpoints under /api/v1/play/vote-only/* as DEPRECATED (backward compatibility only) with recommendation to migrate to unified endpoints.
+
+### Documentation Sync Automation & Deprecation Cleanup
+- Owner: AI Agent
+- Expected Delivery Date: 2025-09-15T18:00:00.000Z
+- Status: Not Started
+- Details: Automate version and timestamp propagation across docs; add lints for legacy/deprecated references (session-based endpoints, non-Atlas URIs, test mentions, breadcrumbs).
+
+### New Play Mode: Rank-More (v6.4.0)
+- Owner: AI Agent
+- Expected Delivery Date: 2025-09-08T18:00:00.000Z
+- Status: Completed ✅
+- Completion Date: 2025-09-07T11:34:45.000Z
+- Details: Implemented hierarchical multi-level ranking (family-by-family Rank-Only). Random family order per level; branch exclusion for disliked children; flattened output only. Delivered RankMorePlay model, RankMoreEngine orchestrator, dispatcher integration, start mode support, unified input/next/results, deck UI button, and documentation sync.
 
 ### New Play Mode: Rank-Only (v6.3.0)
 - Owner: AI Agent
@@ -98,6 +155,13 @@
 - **Details:** Create an admin panel for card CRUD operations, bulk card import/export, and card categorization/tagging system. Requires authentication system.
 
 ## Completed Tasks
+
+### Version Negotiation Framework (v6.6.0)
+- Owner: AI Agent
+- Expected Delivery Date: 2025-09-07T12:57:30.000Z
+- Status: Completed ✅
+- Completion Date: 2025-09-07T12:57:30.000Z
+- Details: Implemented non-breaking API version negotiation middleware (Accept and X-API-Version headers), added X-API-Selected-Version response header, and wrapped unified play endpoints without behavior changes. Updated documentation (API_REFERENCE, unified spec) and synchronized versions.
 
 ### Implement Vote-More Mode
 - **Owner:** AI Agent

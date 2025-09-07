@@ -6,7 +6,7 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 NARIMATO is an anonymous, session-based card ranking application built with Next.js 15.4.4, MongoDB, JavaScript, and sophisticated binary search ranking algorithms. It's architected as a multi-tenant system with organization-level customization and ELO-based global rankings.
 
-**Current Version:** 6.3.0 (Rank-Only Play Mode)
+**Current Version:** 6.4.0 (Rank‑More Play Mode)
 
 ## Essential Development Commands
 
@@ -125,7 +125,7 @@ node scripts/delete-default-org.js
 - `/lib/constants/fieldNames.js` - CRITICAL: Field name centralization (OrganizationUUID → organizationId; most UUIDs → uuid; DeckUUID → deckTag)
 - `/lib/db.js` - Database connection utilities (if present)
 - `/lib/models/Organization.js` - Organization schema
-- `/lib/services/play/PlayDispatcher.js` - Central dispatcher for all play modes (vote_only, swipe_only, swipe_more, vote_more)
+- `/lib/services/play/PlayDispatcher.js` - Central dispatcher for all play modes (vote_only, swipe_only, swipe_more, vote_more, rank_only, rank_more)
 - `/lib/middleware/rateLimit.js` - Rate limiting middleware
 - `next.config.js` - Next.js configuration and security headers
 
@@ -237,6 +237,8 @@ ORGANIZATION_DB_URIS={}           # JSON map of org-specific URIs (optional)
 - `/api/` - Cards APIs (non-versioned)
 - `/api/system/` - System utilities
 - `/api/debug/` - Development debugging
+
+Supported play modes: vote_only, swipe_only, swipe_more, vote_more, rank_only, rank_more
 
 ### Critical Endpoints
 - `/api/v1/organizations/[slug]` - Organization management

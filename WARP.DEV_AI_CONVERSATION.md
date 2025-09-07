@@ -80,3 +80,72 @@ Next steps:
 - Verification: build-only verification recommended; no dev run to avoid PATCH bump during major release
 - Next: Commit and push to origin/main with a versioned message
 
+# Update — 2025-09-07T08:45:15.000Z
+- Author: Agent Mode (AI)
+- Plan: Implement Rank-More mode (hierarchical decision-tree ranking)
+- Details:
+  - Multi-pass orchestration that runs Rank-Only per family; families processed in random order within each level
+  - Branch exclusion: disliked children remove their entire branch from consideration
+  - Output: flattened list only (parent followed by ranked descendants)
+  - Reuse: SwipeOnlyEngine, RankOnlyEngine, VoteOnlyService, PlayDispatcher, unified /api/v1/play endpoints
+- Next Steps:
+  - Create RankMorePlay model and RankMoreEngine orchestrator
+  - Register mode='rank_more' in PlayDispatcher; extend /api/v1/play/start to accept the mode
+  - Ensure unified input/results support; frontend prompts for family-by-family flows (no breadcrumbs)
+  - Update ROADMAP.md, TASKLIST.md and follow versioning rules
+- Timestamps: ISO 8601 with millisecond precision (UTC)
+
+# Update — 2025-09-07T11:34:45.000Z
+- Author: Agent Mode (AI)
+- Minor Release: v6.4.0 — New Play Mode: Rank-More
+- Backend: Added RankMoreEngine and RankMorePlay; integrated with PlayDispatcher; extended start mode list; unified input/next/results; fixed hierarchical level progression logic
+- Frontend: Added Rank More button; fixed swipe payload shape; added returnToSwipe handling to jump into new families; subtle “new-level” transition
+- Docs: Updated README, API_REFERENCE, ARCHITECTURE, WARP.md, TASKLIST, ROADMAP, LEARNINGS, RELEASE_NOTES; all timestamps ISO 8601 with milliseconds
+- Notes: Families are processed in random order within each level; branch exclusion for disliked children; results flattened only
+
+# Update — 2025-09-07T12:10:54.000Z
+- Author: Agent Mode (AI)
+- Minor Release: v6.5.0 — Unified Canonical Documentation
+- Actions:
+  - Rewrote narimato_unified_documentation_UPDATED.md as the canonical engineering spec (replacing legacy session‑based content)
+  - Propagated version bump to 6.5.0 across package.json, README.md (badge/current), ARCHITECTURE.md (Current Version, Last Updated), ROADMAP.md (Current Version, Last Updated), TASKLIST.md (Current Version, Date, Last Updated), RELEASE_NOTES.md (new entry v6.5.0), docs/API_REFERENCE.md (header + Last Updated + deprecation note)
+  - Resolved API reference contradiction: clarified that specialized vote‑only endpoints under /api/v1/play/vote-only/* REMAIN for backward compatibility but are DEPRECATED internally; new work must use unified /api/v1/play/*
+- Verification: Documentation‑only changes; build verification pending on request
+- Notes: No code logic changes; aligns with WARP.md rules (no tests, no breadcrumbs, Atlas‑only, field constants) and ISO 8601 ms timestamps
+
+# Plan — 2025-09-07T12:54:22.000Z
+- Author: Agent Mode (AI)
+- Scope: Platform Hardening & Governance — forward-looking plan
+- Items:
+  - API Versioning Negotiation (header-based): design header strategy, versioned zod schemas/handlers, deprecation timeline, telemetry
+  - Error Response Standards: structured envelope + 1xxx–5xxx taxonomy, central error helper, incremental endpoint adoption
+  - Security & RBAC (MVP): roles (admin, editor, viewer), token-based admin access, abuse mitigation
+  - DB Migration Framework: formal migrations (up/down, dry-run, audit, rollback) with operational guardrails
+  - Gesture/Haptics UX: unified thresholds, optional iOS haptics, reduced-motion support, analytics
+  - Admin Panel & Analytics Dashboard (MVP): overview metrics, funnels/trends, system health; RBAC-secured
+- Links:
+  - ROADMAP.md updated (Q4 2025 — Platform Hardening & Governance)
+  - TASKLIST.md updated with new high-priority tasks and deadlines
+- Notes: All timestamps ISO 8601 with milliseconds; no tests; no breadcrumbs; Atlas-only
+
+# Update — 2025-09-07T12:57:30.000Z
+- Author: Agent Mode (AI)
+- Minor Release: v6.6.0 — API Version Negotiation Framework
+- Actions:
+  - Added lib/middleware/apiVersion.js with Accept/X-API-Version parsing and response header X-API-Selected-Version
+  - Wrapped unified play API routes with withApiVersion (no behavior change; default v1)
+  - Updated docs: API_REFERENCE.md (version header negotiation section), unified technical doc (section 15.1), and propagated versions
+  - Logged release notes and updated timestamps
+- Verification: Non-breaking change; build verification pending on request
+
+# Plan Update — 2025-09-07T13:18:31.000Z
+- Author: Agent Mode (AI)
+- Scope: Reorganized roadmap from current date (forward-looking only)
+- Changes:
+  - Added Q3 2025 Near-Term section (Sep 2025) for Error Envelope, API v2 pilot, and Gesture/Haptics baseline
+  - Kept Q4 2025 Platform Hardening & Governance with expanded API v2 coverage
+  - Consolidated older 2024/early-2025 milestones into a Post-Q4 2025 Backlog section
+  - Updated Success Metrics to Q4 2025 and H1 2026 targets
+  - Synchronized ROADMAP.md Current Version to 6.6.0 and Last Updated timestamp
+- Links: ROADMAP.md updated accordingly
+

@@ -454,6 +454,15 @@
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
+  /* FUNCTIONAL: Respect reduced-motion user preference
+     STRATEGIC: Baseline accessibility — minimize motion globally in gameplay */
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
   .game-card,
   .game-action-button,
   .game-vs-separator {
