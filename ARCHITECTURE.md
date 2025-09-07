@@ -1,8 +1,8 @@
 # NARIMATO Architecture
 
-**Current Version:** 6.3.0 (Rank-Only Play Mode)
+**Current Version:** 6.6.0 (Rank‑More Play Mode)
 **Date:** 2025-10-12
-**Last Updated:** 2025-09-06T20:57:14.000Z
+**Last Updated:** 2025-09-07T12:57:30.000Z
 
 ## ⚡ UUID Field Standardization (v3.7.1+)
 
@@ -284,6 +284,10 @@ NARIMATO supports both light and dark themes to enhance user experience and acce
 ## System Components
 
 ### Core API Endpoints
+
+New components (v6.4.0):
+- `lib/services/RankMoreEngine.js` — orchestrates hierarchical multi-level ranking using Rank-Only segments per family
+- `lib/models/RankMorePlay.js` — persistence model for Rank-More orchestration
 - **Play (Unified)**:
   - `POST /api/v1/play/start`
   - `POST /api/v1/play/{playId}/input`
@@ -314,9 +318,9 @@ CSP considerations (if/when enforced):
 - script-src: https://www.googletagmanager.com https://www.google-analytics.com
 - connect-src/img-src: https://www.google-analytics.com (and region endpoints)
 
-### Play Modes (v5.7.0)
+### Play Modes (v6.4.0)
 
-Last Updated: 2025-09-06T13:02:39.000Z
+Last Updated: 2025-09-07T11:34:45.000Z
 
 - Swipe-Only (building block)
   - Flow: present all cards one-by-one for left/right decisions; right = like (ranked by first-like order), left = reject.
@@ -340,6 +344,17 @@ Last Updated: 2025-09-06T13:02:39.000Z
   - Results: combinedRanking with family context and a family breakdown.
 
 See docs/API_REFERENCE.md for detailed request/response examples for all modes using the unified endpoints.
+
+- Rank-Only (composed from Swipe-Only + Vote-Only)
+  - Flow: Swipe to shortlist, then vote-only to order liked cards; server signals requiresVoting to switch phases.
+  - Start returns: initial swipe deck; input uses action='swipe' until switch to action='vote'.
+  - Results: personalRanking of liked cards in voted order; statistics.
+
+- Rank-More (orchestrated Rank-Only per family)
+  - Flow: Rank-Only at roots, then for each liked parent with children run Rank-Only on its children; families processed in random order within each level.
+  - Branch Exclusion: Disliked children exclude their entire branch.
+  - Transitions: Engine may return `{ returnToSwipe, nextCardId, cards }` to switch back to swiping a new family.
+  - Results: flattened list only — parent followed by ranked descendants (depth-first).
 
 ### Database Models
 - **Session**: Core session state with optimistic locking
