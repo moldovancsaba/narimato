@@ -460,8 +460,8 @@ export default function Play() {
       const res = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(
-          mode === 'swipe-only' || mode === 'swipe-more'
+          body: JSON.stringify(
+          mode === 'swipe-only' || mode === 'swipe-more' || mode === 'rank-only'
             ? { action: 'swipe', payload: { cardId: currentCard.id, direction } }
             : { playId: currentPlay.playId, cardId: currentCard.id, direction }
         )
