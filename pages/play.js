@@ -450,7 +450,7 @@ export default function Play() {
       // Check mode for appropriate API endpoint
       const { mode } = router.query;
       let apiEndpoint = '/api/play/swipe';
-      if (mode === 'swipe-only' || mode === 'swipe-more') {
+      if (mode === 'swipe-only' || mode === 'swipe-more' || mode === 'rank-only') {
         apiEndpoint = `/api/v1/play/${currentPlay.playId}/input`;
       } else if (mode === 'vote-only') {
         // vote-only does not use swipe
