@@ -48,7 +48,9 @@ export default function Rankings() {
       const res = await fetch(`/api/cards?organizationId=${org}`);
       const data = await res.json();
       
-      // Extract unique decks
+      // Store full card list for ID → details lookup in table rendering
+      setCards(Array.isArray(data.cards) ? data.cards : []);
+      
       // Extract unique decks
       const deckGroups = {};
       data.cards?.forEach(card => {

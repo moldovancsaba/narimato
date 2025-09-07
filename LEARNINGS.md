@@ -1,8 +1,17 @@
 # Development Learnings
 
-**Current Version:** 6.3.0 (Rank-Only Play Mode)
-**Date:** 2025-09-06
-**Last Updated:** 2025-09-06T20:57:14.000Z
+**Current Version:** 6.4.0 (Rank‑More Play Mode)
+**Date:** 2025-09-07
+**Last Updated:** 2025-09-07T11:34:45.000Z
+
+### Rank-More Orchestration (v6.4.0) — Backend / Frontend / Process
+- Functional: Added hierarchical multi-level ranking that composes Rank-Only per family; families processed in random order per level; flattened output only.
+- Strategic: Enables efficient ranking of large trees without exhausting users — quick swipe shortlisting plus minimal voting.
+- Learnings:
+  - Orchestrator level math must derive next level from the current family’s level, not a global session base.
+  - Frontend must handle `{ returnToSwipe, nextCardId, cards }` transitions to swap back into swiping new families without stalls.
+  - Keep unified input shape for all new modes to avoid 400 schema errors (`{ action, payload }`).
+  - Preserve no-breadcrumbs policy; provide minimal family context in responses when needed.
 
 ### Deck Exposure Control (v6.2.0) — Product / Architecture
 - Functional: Added isPlayable flag to parent cards; filtered deck lists in Play/Rankings; preserved ability to start hidden segments by direct link.
