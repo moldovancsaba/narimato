@@ -1,10 +1,17 @@
 # NARIMATO Release Notes
 
-**Current Version:** 6.7.0 (Rank‑More Play Mode)
+**Current Version:** 6.8.0 (Rank‑More Play Mode)
 **Date:** 2025-09-07
-**Last Updated:** 2025-09-07T17:29:32.000Z
+**Last Updated:** 2025-09-08T08:58:21.000Z
 
-## [v6.5.0] — 2025-09-07T12:10:54.000Z
+## [v6.8.0] — 2025-09-08T08:58:21.000Z
+
+### Mobile Haptics + Touch-Swipe for Swipe-Only
+- Added touch-swipe gesture support to pages/swipe-only.js with threshold/velocity heuristics using centralized constants.
+- Introduced haptics utility (lib/utils/haptics.js) that uses the Web Vibration API where available; gracefully degrades on unsupported devices. Haptics triggered on swipe recognition and completion.
+- No new dependencies; pure touch events with safe guards and reduced-motion baseline retained.
+
+## [v6.7.0] — 2025-09-07T17:29:32.000Z
 
 ### Documentation Unification — Canonical Engineering Spec
 - Rewrote narimato_unified_documentation_UPDATED.md to be the single source of truth, aligned with current Pages Router + JavaScript stack and Play-based unified API.
