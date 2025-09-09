@@ -1,16 +1,31 @@
 # NARIMATO Task List
 
-**Current Version:** 6.7.0
-**Date:** 2025-09-07T17:29:32.000Z
-**Last Updated:** 2025-09-07T17:29:32.000Z
+**Current Version:** 6.10.0
+**Date:** 2025-09-08T09:21:11.000Z
+**Last Updated:** 2025-09-09T07:27:00.000Z
 
 ## High Priority Tasks
+
+### Perceptual Feedback Rollout (Audio Tick Fallback)
+- Owner: AI Agent
+- Expected Delivery Date: 2025-09-10T12:00:00.000Z
+- Status: Not Started
+- Details: Roll out the web-safe perceptual feedback system via feature flag with manual verification and rollback plan.
+- Subtasks:
+  - Staging Enablement — NEXT_PUBLIC_ENABLE_AUDIO_TICK=true (staging); verify devices — Due: 2025-09-08T17:00:00.000Z
+  - Production Enablement — set flag in production — Due: 2025-09-09T12:00:00.000Z
+  - Post-Deploy Verification — manual checks on iOS/Android/desktop — Due: 2025-09-10T12:00:00.000Z
 
 ### API Versioning Negotiation (Header-Based)
 - Owner: AI Agent
 - Expected Delivery Date: 2025-09-14T18:00:00.000Z
 - Status: In Progress
-- Details: Framework enabled (v6.6.0); v2 pilot shipped on play/start with header negotiation; read-only endpoints emit deprecation header on v1. Next: extend v2 coverage to input/next/results and formalize deprecation schedule.
+- Details: Framework enabled (v6.6.0); v2 pilot shipped on play/start with header negotiation; read-only endpoints emit deprecation header on v1.
+- Next Steps:
+  - Extend v2 coverage to: input, next, results
+  - Publish deprecation schedule for v1 (6-month window, staged warnings)
+  - Add per-version schema docs and request/response examples in API_REFERENCE.md
+  - Add version telemetry dashboard to monitor client adoption
 
 ### Error Response Standards (Structured Envelope + Taxonomy)
 - Owner: AI Agent
@@ -34,8 +49,13 @@
 ### Gesture/Haptics UX Improvements
 - Owner: AI Agent
 - Expected Delivery Date: 2025-09-28T18:00:00.000Z
-- Status: In Progress
-- Details: Baseline delivered — centralized gesture constants and reduced-motion CSS in gameplay. Next: integrate thresholds in gesture handlers and add optional iOS haptics via feature flag.
+- Status: Completed ✅
+- Completion Date: 2025-09-08T09:31:56.000Z
+- Details: Delivered universal perceptual feedback system:
+  - Web Vibration where supported
+  - Web Audio tick fallback (feature-flagged; user override via localStorage)
+  - Subtle micro-animations (.micro-bump) respecting reduced-motion
+  - Integrated in Swipe-Only UI (recognition + success)
 
 ### Admin Panel & Analytics Dashboard (MVP)
 - Owner: AI Agent

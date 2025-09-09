@@ -1,8 +1,8 @@
 # NARIMATO Architecture
 
-**Current Version:** 6.6.0 (Rank‑More Play Mode)
+**Current Version:** 6.10.0 (Universal perceptual feedback)
 **Date:** 2025-10-12
-**Last Updated:** 2025-09-07T12:57:30.000Z
+**Last Updated:** 2025-09-09T07:27:00.000Z
 
 ## ⚡ UUID Field Standardization (v3.7.1+)
 
@@ -50,6 +50,10 @@ Temporary backward compatibility exports exist for legacy field names but will b
 - Frontend components updated to handle uniform UUID fields
 
 ## System Overview
+
+### Perceptual Feedback (Web-Safe)
+- FUNCTIONAL: UI actions trigger either native vibration (when available) or a short Web Audio tick; subtle CSS micro-animations complement feedback.
+- STRATEGIC: Delivers consistent, accessible feedback on any device/browser; reduced-motion preference disables all animations and ticks.
 
 NARIMATO is a comprehensive card ranking application featuring advanced content management capabilities. Built with Next.js, MongoDB, and sophisticated UI components, it provides a complete ecosystem for card creation, editing, and ranking with features including smart hashtag management, deck organization, and real-time collaborative ranking.
 

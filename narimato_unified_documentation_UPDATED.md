@@ -1,7 +1,7 @@
 # NARIMATO — Unified Technical Documentation
 
-Current Version: 6.6.0 (Rank‑More Play Mode)
-Last Updated: 2025-09-07T12:57:30.000Z
+Current Version: 6.9.0 (Universal perceptual feedback)
+Last Updated: 2025-09-08T09:31:56.000Z
 Scope: This is the canonical engineering specification for NARIMATO. Other docs (README, ARCHITECTURE, API_REFERENCE, ROADMAP, TASKLIST, RELEASE_NOTES, LEARNINGS) are companion governance and navigation documents and must remain consistent with this file.
 
 Table of Contents
@@ -30,6 +30,7 @@ NARIMATO is an anonymous, Play‑based card ranking application. Users interact 
 - Framework: Next.js 15.4.4 (Pages Router)
 - Language: JavaScript
 - Styling: Custom CSS (public/styles)
+- Perceptual Feedback: Native vibration (where supported) + optional Web Audio tick fallback (feature-flagged) + CSS micro-animations (reduced-motion aware)
 - Animations: @react-spring/web, @use-gesture/react
 - Validation: zod
 - Database: MongoDB (Atlas only). Localhost MongoDB is prohibited.

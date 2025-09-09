@@ -1,8 +1,25 @@
 # NARIMATO Release Notes
 
-**Current Version:** 6.8.0 (Rank‑More Play Mode)
+**Current Version:** 6.10.0 (Universal perceptual feedback)
 **Date:** 2025-09-07
-**Last Updated:** 2025-09-08T08:58:21.000Z
+**Last Updated:** 2025-09-09T07:27:00.000Z
+
+## [v6.10.0] — 2025-09-09T07:27:00.000Z
+
+### Documentation & Version Synchronization
+- Bumped package.json to 6.10.0 and synchronized version markers across README.md, ARCHITECTURE.md, TASKLIST.md, LEARNINGS.md, ROADMAP.md.
+- Verified production build (Next.js) prior to commit.
+- Updated delivery logs (WARP.DEV_AI_CONVERSATION.md) and roadmap timestamps.
+
+## [v6.9.0] — 2025-09-08T09:31:56.000Z
+
+### Universal Perceptual Feedback (Web-Safe)
+- Added Web Audio tick fallback utility (lib/utils/audioTick.js), initialized only on user gestures.
+- Introduced cross-platform haptics helper (lib/utils/haptics.js) that prefers vibration and falls back to audio tick when enabled.
+- Implemented subtle micro-animations via CSS (.micro-bump in public/styles/game.css), reduced-motion aware.
+- Integrated feedback in Swipe-Only UI (pages/swipe-only.js): light feedback on recognition; success feedback on completion.
+- Governance: Feature flag NEXT_PUBLIC_ENABLE_AUDIO_TICK (default off) and per-user override localStorage key 'narimato_audio_tick'.
+- Accessibility: All feedback suppressed when prefers-reduced-motion is set.
 
 ## [v6.8.0] — 2025-09-08T08:58:21.000Z
 

@@ -1,8 +1,16 @@
 # Development Learnings
 
-**Current Version:** 6.4.0 (Rank‑More Play Mode)
+**Current Version:** 6.10.0 (Universal perceptual feedback)
 **Date:** 2025-09-07
-**Last Updated:** 2025-09-07T11:34:45.000Z
+**Last Updated:** 2025-09-09T07:27:00.000Z
+
+### Universal Perceptual Feedback (v6.9.0) — Frontend / UX / Accessibility
+- Functional: Implemented cross-platform feedback with native vibration (when available), Web Audio tick fallback, and subtle CSS micro-animations; integrated into Swipe-Only flow.
+- Strategic: Ensures consistent, lightweight feedback on iOS and other environments lacking vibration APIs, without introducing new dependencies and while respecting reduced-motion.
+- Learnings:
+  - Web Audio must initialize on a user gesture; lazily create AudioContext at first feedback call.
+  - Keep tick envelope extremely short and quiet to avoid user annoyance; respect reduced-motion (suppress feedback).
+  - Provide feature flag and user override to govern rollout without DB schema changes.
 
 ### Rank-More Orchestration (v6.4.0) — Backend / Frontend / Process
 - Functional: Added hierarchical multi-level ranking that composes Rank-Only per family; families processed in random order per level; flattened output only.

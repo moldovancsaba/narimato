@@ -149,3 +149,69 @@ Next steps:
   - Synchronized ROADMAP.md Current Version to 6.6.0 and Last Updated timestamp
 - Links: ROADMAP.md updated accordingly
 
+# Update — 2025-09-08T09:21:11.000Z
+- Author: Agent Mode (AI)
+- Scope: Tasklist updates — Gestures Completed; API Versioning In Progress
+- Changes:
+  - Gesture/Haptics UX Improvements marked Completed with timestamp and delivery details (touch-swipe + haptics in swipe-only; reduced-motion baseline; centralized thresholds)
+  - API Versioning Negotiation remains In Progress; added Next Steps (extend v2 to input/next/results, formal deprecation schedule, per-version docs, telemetry dashboard)
+- Files updated: TASKLIST.md (version, timestamps, status details); ROADMAP.md (Last Updated)
+
+# Update — 2025-09-08T09:31:56.000Z
+- Author: Agent Mode (AI)
+- Scope: Universal Perceptual Feedback (Web-Safe) — implementation + docs + version bump to v6.9.0
+- Changes:
+  - Added Web Audio tick fallback (lib/utils/audioTick.js) with user-gesture gating
+  - Added cross-platform haptics helper (lib/utils/haptics.js) that prefers vibration and falls back to audio tick when enabled
+  - Added subtle CSS micro-animations (.micro-bump) in public/styles/game.css (reduced-motion aware)
+  - Wired Swipe-Only UI to trigger light (recognition) and success (completion) feedback; added touchstart feedback hook
+  - Introduced feature flag NEXT_PUBLIC_ENABLE_AUDIO_TICK and per-user localStorage override 'narimato_audio_tick'
+  - Updated README (perceptual feedback section), ARCHITECTURE (note), LEARNINGS (entry), RELEASE_NOTES (v6.9.0), TASKLIST (completed), ROADMAP (timestamp)
+  - Bumped package.json to 6.9.0 and synchronized versions
+- Notes: All timestamps use ISO 8601 with milliseconds (UTC). No new dependencies.
+
+# Plan — 2025-09-08T09:41:42.000Z
+- Author: Agent Mode (AI)
+- Title: Universal Perceptual Feedback Rollout Plan (v6.9.0)
+- Objective: Make perceptual feedback available on any device/browser via native vibration (where supported), optional audio tick fallback, and micro-animations, governed by feature flags and accessibility preferences.
+- Scope: Web app only; no native wrappers; no new dependencies; respects `prefers-reduced-motion: reduce`.
+- Phases & Steps:
+  1) Development Verification (Today)
+     - Enable locally: localStorage.setItem('narimato_audio_tick','1')
+     - Manual checks: Chrome (desktop), iOS Safari, Android Chrome
+     - Verify: tick only after user gesture; reduced-motion suppresses feedback; no console errors
+  2) Staging Enablement (2025-09-08T17:00:00.000Z)
+     - Set env: NEXT_PUBLIC_ENABLE_AUDIO_TICK=true (staging)
+     - Manual smoke on target devices; confirm no regressions
+  3) Production Rollout (2025-09-09T12:00:00.000Z)
+     - Set env: NEXT_PUBLIC_ENABLE_AUDIO_TICK=true (production)
+     - Announce enablement and user override instructions
+  4) Post-Deploy Verification (2025-09-10T12:00:00.000Z)
+     - Manual checks on representative devices
+     - If issues: rollback by setting env to false; advise users to clear local override
+- Governance & Controls:
+  - Feature flag: NEXT_PUBLIC_ENABLE_AUDIO_TICK (default off)
+  - User override: localStorage 'narimato_audio_tick' = '1'|'0'
+  - Accessibility: suppressed when reduced-motion is enabled
+- Risk & Rollback:
+  - Risk: perceived noise on some devices → keep volume/duration minimal; quick rollback via env flag
+- Success Criteria:
+  - No errors; perceptual feedback present on iOS/Android/desktop under user gesture
+  - Reduced-motion users see no animation or tick
+- Documentation:
+  - README updated with enablement and override instructions
+  - RELEASE_NOTES documents v6.9.0 scope
+- Follow-ups (optional, future tasks):
+  - Consider adding GA events for feedback (light/success) if needed
+  - Consider org-level admin toggle in the future
+
+# Update — 2025-09-09T07:27:00.000Z
+- Author: Agent Mode (AI)
+- Scope: Release v6.10.0 — Version and documentation synchronization; commit and push to origin/main
+- Actions:
+  - Bumped package.json to 6.10.0; synchronized README.md, ARCHITECTURE.md, TASKLIST.md, LEARNINGS.md, ROADMAP.md
+  - Verified production build (Next.js) before commit
+  - Recorded plan/update entries with ISO 8601 ms timestamps
+- Next:
+  - Commit and push to origin main with versioned message
+

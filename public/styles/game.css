@@ -69,6 +69,10 @@
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   user-select: none;
+  /* FUNCTIONAL: Allow vertical page scrolling while enabling horizontal swipes on the card */
+  /* STRATEGIC: Improves touch behavior on mobile by hinting UA to keep pan-y but allow our horizontal drag */
+  touch-action: pan-y;
+  -ms-touch-action: pan-y;
   
   /* Dynamic sizing - set via JavaScript */
   width: var(--card-size, 200px);
@@ -351,6 +355,18 @@
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
+
+/* FUNCTIONAL: Subtle micro-bump animation for perceptual feedback when a swipe is recognized/completed
+   STRATEGIC: Web-safe alternative to native haptics; extremely short and reduced-motion-aware */
+@keyframes microBump {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.035); }
+  100% { transform: scale(1); }
+}
+
+.micro-bump {
+  animation: microBump 140ms ease-out;
 }
 
 @keyframes cardExit {

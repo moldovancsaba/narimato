@@ -1,13 +1,13 @@
 # NARIMATO
 
-![Version](https://img.shields.io/badge/version-6.8.0-blue.svg)
+![Version](https://img.shields.io/badge/version-6.10.0-blue.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-15.4.4-black.svg)
 ![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)
 ![MongoDB](https://img.shields.io/badge/MongoDB-7.0+-green.svg)
 
 NARIMATO is an anonymous, session-based card ranking application built with Next.js, MongoDB, and sophisticated binary search ranking algorithms. Global rankings are powered by ELO rating system for accurate skill-based card comparisons.
 
-**Current Version:** 6.8.0 *(Swipe-only mobile touch-swipe + haptics; error envelope + v2 pilot; reduced-motion baseline; Rank‑More play mode)*
+**Current Version:** 6.10.0 *(Universal perceptual feedback: vibration where supported, audio tick fallback (feature-flagged), micro-animations reduced-motion aware; Swipe-only mobile touch-swipe remains; error envelope + v2 pilot)*
 
 ## ✨ Key Features
 
@@ -188,6 +188,20 @@ To learn more about Next.js, take a look at the following resources:
 - [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## 🔊 Perceptual Feedback (Web-Safe)
+
+- FUNCTIONAL: Cross-platform feedback for actions (e.g., swipe) using:
+  - Native vibration via Web Vibration API (where supported)
+  - Optional Web Audio tick fallback (disabled by default; feature-flagged)
+  - Subtle micro-animations (CSS) that respect reduced-motion preferences
+- STRATEGIC: Ensures consistent UX on iOS and other environments lacking vibration APIs without new dependencies.
+
+Enable audio tick fallback (optional):
+- Environment variable: set `NEXT_PUBLIC_ENABLE_AUDIO_TICK=true`
+- Per-user override (local only): `localStorage.setItem('narimato_audio_tick', '1')`
+
+Note: All feedback respects `prefers-reduced-motion: reduce` and will be suppressed when enabled.
 
 ## 📈 Analytics (GA4)
 
