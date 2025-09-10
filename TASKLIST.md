@@ -1,10 +1,34 @@
 # NARIMATO Task List
 
-**Current Version:** 6.10.0
+**Current Version:** 6.12.0
 **Date:** 2025-09-08T09:21:11.000Z
-**Last Updated:** 2025-09-09T07:27:00.000Z
+**Last Updated:** 2025-09-10T13:13:51.000Z
 
 ## High Priority Tasks
+
+### Onboarding Play Mode (Right-Only)
+- Owner: AI Agent
+- Expected Delivery Date: 2025-09-09T16:30:00.000Z
+- Status: Completed ✅
+- Completion Date: 2025-09-10T08:57:47.000Z
+- Details: Right-only swipe onboarding mode integrated and orchestrated before any selected deck when Card.isOnboarding is enabled on parent cards. Reused SwipeOnlyEngine onboarding with client-side queue sequencing and shallow routing. See RELEASE_NOTES.md v6.11.0.
+- Subtasks:
+  - Register onboarding engine in dispatcher and route SwipeOnlyPlay when isOnboarding
+  - Extend start schema to include 'onboarding'
+  - Add SwipeOnlyEngine.startOnboardingSession + right-only enforcement
+  - Update Play page UI (button + right-only UX)
+  - Manual verification across devices
+
+### Play: Cross-Device Swipe Gestures (Unified)
+- Owner: AI Agent
+- Expected Delivery Date: 2025-09-09T14:30:00.000Z
+- Status: In Progress
+- Details: Enable touch, pointer/mouse, and two-finger trackpad swipes on Play page using a shared hook reused from Swipe-Only. Respect reduced motion and keep touch-action: pan-y. No new dependencies.
+- Subtasks:
+  - Extract reusable hook (lib/utils/useSwipeGestures.js)
+  - Integrate into pages/play.js (swipe mode only)
+  - Refactor pages/swipe-only.js to consume the hook
+  - Manual verification on iOS/Android/desktop
 
 ### Perceptual Feedback Rollout (Audio Tick Fallback)
 - Owner: AI Agent

@@ -1,8 +1,8 @@
 # NARIMATO Development Roadmap
 
-**Current Version:** 6.10.0
+**Current Version:** 6.12.0
 **Date:** 2025-08-02
-**Last Updated:** 2025-09-09T07:27:00.000Z
+**Last Updated:** 2025-09-10T13:13:51.000Z
 
 > Note: Roadmap contains only forward-looking items. Completed and historical work is tracked in RELEASE_NOTES.md.
 
@@ -22,6 +22,9 @@
 - Gesture/Haptics UX Baseline
   - Standardize swipe thresholds; add reduced-motion handling; optional iOS haptics behind feature flag
   - Instrument gameplay analytics for gesture/haptic impact
+- Play Page Cross-Device Swipe Gestures — In Progress
+  - Unify swipe gestures across Play and Swipe-Only via shared hook (touch, pointer/mouse, two-finger trackpad)
+  - Reuse GESTURE thresholds and haptics helper; respect touch-action: pan-y and reduced motion; no new dependencies
 - Perceptual Feedback Rollout (Audio Tick Fallback)
   - Enable flag on staging → production; manual verification; rollback via env flag
 

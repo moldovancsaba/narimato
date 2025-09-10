@@ -1,8 +1,58 @@
 # NARIMATO Release Notes
 
-**Current Version:** 6.10.0 (Universal perceptual feedback)
-**Date:** 2025-09-07
-**Last Updated:** 2025-09-09T07:27:00.000Z
+**Current Version:** 6.11.1 (Ordered onboarding via Card.sortIndex)
+**Date:** 2025-09-10
+**Last Updated:** 2025-09-10T11:18:49.000Z
+
+## [v6.12.0] — 2025-09-10T13:13:51.000Z
+
+### Documentation & Version Synchronization
+- Promoted deck-specific onboarding pairing, ordered onboarding, and loop fix to a minor release per commit protocol.
+- Synchronized package.json and all documentation to v6.12.0.
+
+## [v6.11.3] — 2025-09-10T12:30:03.000Z
+
+### Fix: Onboarding infinite loop after completion
+- Added in-memory guard to run onboarding only once per deck per page session.
+- Prevents re-trigger when returning to the originally requested deck.
+
+## [v6.11.2] — 2025-09-10T11:29:27.000Z
+
+### Deck-Specific Onboarding Pairing
+- Onboarding now runs only when there is a matching onboarding parent for the selected deck.
+- Naming convention: “{Deck} Onboarding” pairs to “{Deck}” (case-insensitive). Slug mapping examples:
+  - Deck “Company” (tag “#company”) pairs with onboarding parent “Company Onboarding” (tag “#company_onboarding”).
+  - Variants supported: suffix “_onboarding”, “-onboarding”, or “ onboarding”.
+- No schema changes required; client-side selection matches and runs at most one onboarding deck.
+
+### Ordered Onboarding Decks
+- New Card.sortIndex (optional) allows explicit ordering of child cards within a parent deck.
+- Onboarding sessions (right-only) now respect sortIndex ascending, falling back to `createdAt` ascending for ties.
+- Editor: Added "Order (optional)" numeric field on card form; stored per child card.
+- APIs: POST/PUT for cards accept `sortIndex` (number or null).
+
+## [v6.11.0] — 2025-09-10T08:57:47.000Z
+
+### New: Organization-Wide Onboarding Segments (👋 Right-Only)
+- Added Card.isOnboarding (default false) on parent/root cards to mark decks that run as an onboarding preface before any selected deck.
+- APIs:
+  - POST /api/cards accepts isOnboarding; PUT /api/cards/[uuid] updates isOnboarding.
+- Card Editor UI:
+  - New "Onboarding" checkbox next to "Playable (public)" with help text and a non-blocking warning for non-parent/no-children cases.
+- Play Orchestration:
+  - Before starting a deck, client detects all onboarding parents (root with ≥2 children) and runs each as a right-only onboarding segment.
+  - Selected deck’s parent (if flagged) is skipped to avoid duplicate intro; original mode/deck resumes after onboarding.
+- Analytics:
+  - Added onboarding_auto_start and onboarding_complete events (guarded, production-only).
+- Indices:
+  - Added { organizationId, parentTag, isOnboarding } index for efficient onboarding parent lookup.
+
+### Version & Documentation Sync
+- Updated package.json and documentation to v6.11.0 with ISO 8601 timestamps.
+- Updated: README.md (badge/current), ARCHITECTURE.md (header), TASKLIST.md (status), ROADMAP.md (Last Updated), LEARNINGS.md (new entry), WARP.md "Current Version".
+
+### Build Verification
+- Verified Next.js production build prior to commit.
 
 ## [v6.10.0] — 2025-09-09T07:27:00.000Z
 

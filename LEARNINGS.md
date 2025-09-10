@@ -1,8 +1,16 @@
 # Development Learnings
 
-**Current Version:** 6.10.0 (Universal perceptual feedback)
+**Current Version:** 6.12.0 (Deck-specific onboarding pairing + ordered onboarding)
 **Date:** 2025-09-07
-**Last Updated:** 2025-09-09T07:27:00.000Z
+**Last Updated:** 2025-09-10T13:13:51.000Z
+
+### Onboarding Segment Orchestration (v6.11.0) — Backend / Frontend / Process
+- Functional: Introduced Card.isOnboarding flag; client orchestrates right-only onboarding segments from flagged parent decks before starting the selected deck. Reuses existing onboarding engine with shallow routing and queue sequencing.
+- Strategic: Delivers reusable, low-friction introductions per organization without new endpoints/models; preserves multi-tenant isolation and minimizes risk by reusing engines.
+- Learnings:
+  - Keep onboarding right-only enforcement on the server (engine) and mirror UI behavior (hide left button, ignore ArrowLeft) to avoid drift.
+  - Use shallow routing to switch modes/decks during onboarding without full reloads; resume original intent seamlessly.
+  - Skip selected deck’s parent when flagged to avoid duplicate intro segments.
 
 ### Universal Perceptual Feedback (v6.9.0) — Frontend / UX / Accessibility
 - Functional: Implemented cross-platform feedback with native vibration (when available), Web Audio tick fallback, and subtle CSS micro-animations; integrated into Swipe-Only flow.

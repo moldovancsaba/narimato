@@ -39,7 +39,7 @@ async function handleGet(req, res) {
 
 async function handlePost(req, res) {
   try {
-    const { organizationId, title, description, imageUrl, hashtags, isPlayable } = req.body;
+    const { organizationId, title, description, imageUrl, hashtags, isPlayable, isOnboarding, sortIndex } = req.body;
     let { name, parentTag } = req.body;
     
     if (!organizationId || !title) {
@@ -114,6 +114,12 @@ async function handlePost(req, res) {
       }
     }
 
+    // FUNCTIONAL: Coerce sortIndex to number or null for ordered onboarding
+    // STRATEGIC: Keep schema flexible; ordering only applies when relevant (e.g., onboarding runs)
+    const sortIndexNum = (sortIndex === '' || sortIndex === undefined || sortIndex === null)
+      ? null
+      : (Number.isFinite(Number(sortIndex)) ? Number(sortIndex) : null);
+
     const card = new Card({
       uuid: uuidv4(),
       organizationId,
@@ -124,7 +130,15 @@ async function handlePost(req, res) {
       hashtags: hashtags || [name],
       parentTag: parentTag || null,
       isActive: true,
+      // FUNCTIONAL: Public exposure flag for deck listing
+      // STRATEGIC: Keeps internal segments hidden from selection lists
       isPlayable: typeof isPlayable === 'boolean' ? isPlayable : true,
+      // FUNCTIONAL: Organization-wide onboarding segment flag for parent/root cards
+      // STRATEGIC: Enables reusable onboarding without new endpoints or models
+      isOnboarding: typeof isOnboarding === 'boolean' ? isOnboarding : false,
+      // FUNCTIONAL: Optional explicit presentation order within parent deck
+      // STRATEGIC: Deterministic onboarding sequencing
+      sortIndex: sortIndexNum,
       globalScore: 1500 // Starting ELO rating
     });
 

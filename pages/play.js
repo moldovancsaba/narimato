@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { calculateCardSize } from '../lib/utils/cardSizing';
 import { event } from '../lib/analytics/ga';
+import { useSwipeGestures } from '../lib/utils/useSwipeGestures';
 export default function Play() {
   const router = useRouter();
   const { org, deck } = router.query;
@@ -20,6 +21,15 @@ export default function Play() {
   const [cardTransitions, setCardTransitions] = useState({ left: null, right: null });
   const [previousCard, setPreviousCard] = useState(null);
   const [swipeTransition, setSwipeTransition] = useState(null);
+  const cardRef = useRef(null); // FUNCTIONAL: DOM handle for attaching swipe gestures
+
+  // FUNCTIONAL: Onboarding orchestration state
+  // STRATEGIC: Enables organization-wide onboarding segments using existing onboarding engine
+  const onboardingQueueRef = useRef([]); // Array of deckTag strings (parent names)
+  const onboardingIndexRef = useRef(0);
+  const originalIntentRef = useRef(null); // { mode, deckTag }
+  const isRunningOnboardingRef = useRef(false);
+  const onboardingDoneRef = useRef(new Set()); // FUNCTIONAL: Tracks which deck has already run onboarding in this page session
 
   useEffect(() => {
     fetchOrganizations();
@@ -86,11 +96,14 @@ export default function Play() {
           handleVote(votingContext.compareWith);
         }
       } else if (currentCard) {
-        // SWIPE MODE: LEFT = Dislike, RIGHT = Like
+        // SWIPE MODE
+        const isOnboarding = router.query.mode === 'onboarding';
         if (event.code === 'ArrowLeft') {
-          event.preventDefault();
-          setKeyboardActive('dislike');
-          handleSwipe('left');
+          if (!isOnboarding) {
+            event.preventDefault();
+            setKeyboardActive('dislike');
+            handleSwipe('left');
+          }
         } else if (event.code === 'ArrowRight') {
           event.preventDefault();
           setKeyboardActive('like');
@@ -111,6 +124,7 @@ export default function Play() {
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, [currentCard, votingContext]);
+
 
   const fetchOrganizations = async () => {
     try {
@@ -156,12 +170,86 @@ export default function Play() {
     }
   };
 
-  const startPlay = async () => {
+  // FUNCTIONAL: Compute onboarding queue of parent decks marked as isOnboarding
+  // STRATEGIC: Client-side detection avoids new endpoints while respecting existing APIs
+  const computeOnboardingQueue = async (orgId, selectedDeckTag) => {
+    try {
+      const res = await fetch(`/api/cards?organizationId=${orgId}`);
+      const data = await res.json();
+      const all = Array.isArray(data.cards) ? data.cards : [];
+
+      // FUNCTIONAL: Normalize deckTag and onboarding parent names to pair specific onboarding to a deck
+      // STRATEGIC: Simple naming convention without new schema — "{Deck} Onboarding" pairs to "{Deck}"
+      const normalize = (str) => (str || '')
+        .toString()
+        .replace(/^#/, '')
+        .toLowerCase()
+        .trim();
+
+      const baseDeck = normalize(selectedDeckTag);
+
+      const stripOnboardingSuffix = (name) => {
+        const n = normalize(name);
+        // Handle variants: "_onboarding", "-onboarding", " onboarding"
+        if (n.endsWith('_onboarding')) return n.slice(0, -'_onboarding'.length);
+        if (n.endsWith('-onboarding')) return n.slice(0, -'-onboarding'.length);
+        if (n.endsWith(' onboarding')) return n.slice(0, -' onboarding'.length);
+        return n; // no suffix
+      };
+
+      // Candidate onboarding parents: root + isOnboarding
+      const parents = all.filter(c => !c.parentTag && c.isOnboarding === true);
+
+      // Pair only the onboarding parent whose base name matches the selected deck base
+      const matched = parents.filter(p => stripOnboardingSuffix(p.name) === baseDeck);
+
+      // Count immediate children and build the (single) queue if valid
+      const queue = matched
+        .map(p => ({ parent: p, count: all.filter(c => c.parentTag === p.name).length }))
+        .filter(x => x.count >= 2) // requires at least 2 children
+        .map(x => x.parent.name);
+
+      return queue; // will be [] or [ "#deck_onboarding" ]
+    } catch (e) {
+      console.error('Failed to compute onboarding queue:', e);
+      return [];
+    }
+  };
+
+  const startPlay = async (options = {}) => {
     try {
       // Check if this is a child session (playId in URL)
       const { playId, mode } = router.query;
+      const requestedMode = options.modeOverride || mode;
+      const requestedDeck = options.deckOverride || deck;
       
-      if (playId && deck === 'child') {
+      // Orchestrate org-level onboarding segments before starting non-onboarding sessions
+      if (!playId && requestedDeck !== 'child' && requestedMode !== 'onboarding' && !isRunningOnboardingRef.current && !onboardingDoneRef.current.has(requestedDeck)) {
+        const queue = await computeOnboardingQueue(org, requestedDeck);
+        if (queue.length > 0) {
+          originalIntentRef.current = { mode: requestedMode, deckTag: requestedDeck };
+          onboardingQueueRef.current = queue;
+          onboardingIndexRef.current = 0;
+          isRunningOnboardingRef.current = true;
+          try {
+            event('onboarding_auto_start', {
+              org: org,
+              queueLength: queue.length,
+              queuedDeckTags: queue,
+              skippedDeckTag: requestedDeck,
+              startedAt: new Date().toISOString()
+            });
+          } catch (e) { /* noop */ }
+          // Switch URL to onboarding mode and first onboarding deck; use shallow to avoid full reload
+          const params = new URLSearchParams(router.query);
+          params.set('mode', 'onboarding');
+          params.set('deck', queue[0]);
+          router.replace({ pathname: router.pathname, query: Object.fromEntries(params.entries()) }, undefined, { shallow: true });
+          return; // Defer actual session start to useEffect re-run with updated query
+        }
+      }
+
+      if (playId && requestedDeck === 'child') {
         // FUNCTIONAL: Load child session using hierarchical status API
         // STRATEGIC: Get complete child session data including all cards from hierarchical flow
         console.log('🌳 Loading child session via hierarchical status:', playId);
@@ -246,7 +334,7 @@ export default function Play() {
       // Normal deck start - check for specific modes
       let apiEndpoint = '/api/play/start';
       // Unified dispatcher endpoint
-if (mode === 'vote-only' || mode === 'swipe-only' || mode === 'swipe-more' || mode === 'vote-more' || mode === 'rank-only' || mode === 'rank-more') {
+if (mode === 'vote-only' || mode === 'swipe-only' || mode === 'onboarding' || mode === 'swipe-more' || mode === 'vote-more' || mode === 'rank-only' || mode === 'rank-more') {
         apiEndpoint = '/api/v1/play/start';
       }
       
@@ -256,7 +344,7 @@ if (mode === 'vote-only' || mode === 'swipe-only' || mode === 'swipe-more' || mo
         body: JSON.stringify({ 
           organizationId: org, 
           deckTag: deck, 
-mode: mode === 'vote-only' ? 'vote_only' : (mode === 'swipe-only' ? 'swipe_only' : (mode === 'swipe-more' ? 'swipe_more' : (mode === 'vote-more' ? 'vote_more' : (mode === 'rank-only' ? 'rank_only' : (mode === 'rank-more' ? 'rank_more' : undefined)))))
+mode: mode === 'vote-only' ? 'vote_only' : (mode === 'swipe-only' ? 'swipe_only' : (mode === 'onboarding' ? 'onboarding' : (mode === 'swipe-more' ? 'swipe_more' : (mode === 'vote-more' ? 'vote_more' : (mode === 'rank-only' ? 'rank_only' : (mode === 'rank-more' ? 'rank_more' : undefined))))))
         })
       });
       
@@ -443,6 +531,7 @@ mode: mode === 'vote-only' ? 'vote_only' : (mode === 'swipe-only' ? 'swipe_only'
     router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}`);
   };
 
+
   const handleSwipe = async (direction) => {
     if (!currentPlay || !currentCard) return;
 
@@ -450,7 +539,7 @@ mode: mode === 'vote-only' ? 'vote_only' : (mode === 'swipe-only' ? 'swipe_only'
       // Check mode for appropriate API endpoint
       const { mode } = router.query;
       let apiEndpoint = '/api/play/swipe';
-if (mode === 'swipe-only' || mode === 'swipe-more' || mode === 'rank-only' || mode === 'rank-more') {
+if (mode === 'swipe-only' || mode === 'onboarding' || mode === 'swipe-more' || mode === 'rank-only' || mode === 'rank-more') {
         apiEndpoint = `/api/v1/play/${currentPlay.playId}/input`;
       } else if (mode === 'vote-only') {
         // vote-only does not use swipe
@@ -461,7 +550,7 @@ if (mode === 'swipe-only' || mode === 'swipe-more' || mode === 'rank-only' || mo
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(
-          mode === 'swipe-only' || mode === 'swipe-more' || mode === 'rank-only' || mode === 'rank-more'
+          mode === 'swipe-only' || mode === 'onboarding' || mode === 'swipe-more' || mode === 'rank-only' || mode === 'rank-more'
             ? { action: 'swipe', payload: { cardId: currentCard.id, direction } }
             : { playId: currentPlay.playId, cardId: currentCard.id, direction }
         )
@@ -496,9 +585,45 @@ if (mode === 'swipe-only' || mode === 'swipe-more' || mode === 'rank-only' || mo
             return;
           }
 
-          if (data.completed) {
-            // For rank-only and rank-more, redirect straight to results when session fully completes
-            if (mode === 'rank-only') {
+        if (data.completed) {
+          // FUNCTIONAL: Handle onboarding completion and chain next segment or restore original session
+          // STRATEGIC: Avoids results redirect during onboarding; resumes intended mode/deck seamlessly
+          if (mode === 'onboarding' && isRunningOnboardingRef.current) {
+            const queue = onboardingQueueRef.current || [];
+            const idx = onboardingIndexRef.current || 0;
+            if (idx + 1 < queue.length) {
+              onboardingIndexRef.current = idx + 1;
+              const nextDeck = queue[onboardingIndexRef.current];
+              const params = new URLSearchParams(router.query);
+              params.set('deck', nextDeck);
+              router.replace({ pathname: router.pathname, query: Object.fromEntries(params.entries()) }, undefined, { shallow: true });
+              return; // Next onboarding segment will start via useEffect/startPlay
+            }
+            // All onboarding segments complete — restore original intent
+            try {
+              event('onboarding_complete', {
+                org,
+                queueLength: queue.length,
+                queuedDeckTags: queue,
+                completedAt: new Date().toISOString()
+              });
+            } catch (e) { /* noop */ }
+            const orig = originalIntentRef.current || {};
+            // FUNCTIONAL: Mark onboarding as done for the restored deck to prevent re-trigger
+            // STRATEGIC: Avoid infinite loop when returning to the originally requested deck
+            if (orig.deckTag) {
+              try { onboardingDoneRef.current.add(orig.deckTag); } catch (e) { /* noop */ }
+            }
+            isRunningOnboardingRef.current = false;
+            const params = new URLSearchParams(router.query);
+            if (orig.mode) params.set('mode', orig.mode); else params.delete('mode');
+            if (orig.deckTag) params.set('deck', orig.deckTag);
+            router.replace({ pathname: router.pathname, query: Object.fromEntries(params.entries()) }, undefined, { shallow: true });
+            return; // startPlay will run with restored intent
+          }
+
+          // For rank-only and rank-more, redirect straight to results when session fully completes
+          if (mode === 'rank-only') {
               router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}&mode=${mode}`);
               return;
             }
@@ -569,6 +694,12 @@ if (mode === 'swipe-only' || mode === 'swipe-more' || mode === 'rank-only' || mo
       alert('Failed to swipe card');
     }
   };
+
+  // NOTE: All hooks must remain at the top-level of the component (no conditionals)
+  // Place gesture hook after handler declaration to avoid TDZ for onSwipe reference
+  // Compute allowed directions based on mode (onboarding = right-only)
+  const allowedDirections = (router.query.mode === 'onboarding') ? ['right'] : ['left', 'right'];
+  useSwipeGestures({ ref: cardRef, enabled: !!currentCard && !votingContext, onSwipe: handleSwipe, allowedDirections });
 
   const handleVote = async (winner) => {
     if (!votingContext) return;
@@ -884,6 +1015,28 @@ const nextData = await nextRes.json();
                     👆 Swipe Only
                   </Link>
                   <Link 
+                    href={`/play?org=${org}&deck=${encodeURIComponent(deckInfo.tag)}&mode=onboarding`} 
+                    onClick={() => {
+                      try {
+                        event('mode_selected', { org, deckTag: deckInfo.tag, mode: 'onboarding' });
+                      } catch (e) { /* noop */ }
+                    }}
+                    className="btn" 
+                    style={{ 
+                      background: '#198754', 
+                      color: 'white', 
+                      textDecoration: 'none',
+                      padding: '0.5rem 1rem',
+                      borderRadius: '4px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      fontWeight: '500'
+                    }}
+                  >
+                    🎓 Onboarding
+                  </Link>
+                  <Link 
                     href={`/play?org=${org}&deck=${encodeURIComponent(deckInfo.tag)}&mode=vote-only`} 
                     onClick={() => {
                       try {
@@ -1067,7 +1220,7 @@ const nextData = await nextRes.json();
             >
               <div className="game-card-title">{cardA.title}</div>
               {cardA.description && <div className="game-card-description">{cardA.description}</div>}
-              {cardA.imageUrl && <img src={cardA.imageUrl} alt={cardA.title} className="game-card-image" />}
+              {cardA.imageUrl && <img src={cardA.imageUrl} alt={cardA.title} className="game-card-image" draggable={false} onDragStart={(e) => e.preventDefault()} />}
             </div>
             
             {/* VS SEPARATOR */}
@@ -1087,7 +1240,7 @@ const nextData = await nextRes.json();
             >
               <div className="game-card-title">{cardB.title}</div>
               {cardB.description && <div className="game-card-description">{cardB.description}</div>}
-              {cardB.imageUrl && <img src={cardB.imageUrl} alt={cardB.title} className="game-card-image" />}
+              {cardB.imageUrl && <img src={cardB.imageUrl} alt={cardB.title} className="game-card-image" draggable={false} onDragStart={(e) => e.preventDefault()} />}
             </div>
           </div>
         </div>
@@ -1132,13 +1285,13 @@ const nextData = await nextRes.json();
                 )}
                 
                 {/* GAME CARD */}
-                <div className={`game-card ${currentCard.imageUrl ? 'has-image' : ''} ${
+                <div ref={cardRef} className={`game-card ${currentCard.imageUrl ? 'has-image' : ''} ${
                   swipeTransition === 'new-card' ? 'card-changed' : 
                   swipeTransition === 'new-level' ? 'card-changed' : 'entering'
                 }`}>
                   <div className="game-card-title">{currentCard.title}</div>
                   {currentCard.description && <div className="game-card-description">{currentCard.description}</div>}
-                  {currentCard.imageUrl && <img src={currentCard.imageUrl} alt={currentCard.title} className="game-card-image" />}
+                  {currentCard.imageUrl && <img src={currentCard.imageUrl} alt={currentCard.title} className="game-card-image" draggable={false} onDragStart={(e) => e.preventDefault()} />}
                 </div>
                 
                 {/* BUTTON ROW */}
@@ -1148,22 +1301,22 @@ const nextData = await nextRes.json();
                   width: `${cardConfig.cardSize}px`,
                   gap: '20px'
                 }}>
-                  {/* DISLIKE BUTTON (👎) - Left half */}
-                  <button 
-                    className={`game-action-button dislike ${keyboardActive === 'dislike' ? 'pulse' : ''}`}
-                    onClick={() => handleSwipe('left')}
-                    tabIndex="0"
-                    aria-label="Dislike card"
-                  >
-                    👎
-                  </button>
+                  {router.query.mode !== 'onboarding' && (
+                    <button 
+                      className={`game-action-button dislike ${keyboardActive === 'dislike' ? 'pulse' : ''}`}
+                      onClick={() => handleSwipe('left')}
+                      tabIndex="0"
+                      aria-label="Dislike card"
+                    >
+                      👎
+                    </button>
+                  )}
                   
-                  {/* LIKE BUTTON (👍) - Right half */}
                   <button 
                     className={`game-action-button like ${keyboardActive === 'like' ? 'pulse' : ''}`}
                     onClick={() => handleSwipe('right')}
                     tabIndex="0"
-                    aria-label="Like card"
+                    aria-label={router.query.mode === 'onboarding' ? 'Continue' : 'Like card'}
                   >
                     👍
                   </button>
@@ -1173,22 +1326,24 @@ const nextData = await nextRes.json();
               // LANDSCAPE LAYOUT: Button, Card, Button horizontally
               <>
                 {/* DISLIKE BUTTON (👎) - Left position */}
-                <button 
-                  className={`game-action-button dislike ${keyboardActive === 'dislike' ? 'pulse' : ''}`}
-                  onClick={() => handleSwipe('left')}
-                  tabIndex="0"
-                  aria-label="Dislike card"
-                >
-                  👎
-                </button>
+                {router.query.mode !== 'onboarding' && (
+                  <button 
+                    className={`game-action-button dislike ${keyboardActive === 'dislike' ? 'pulse' : ''}`}
+                    onClick={() => handleSwipe('left')}
+                    tabIndex="0"
+                    aria-label="Dislike card"
+                  >
+                    👎
+                  </button>
+                )}
                 
                 {/* GAME CARD */}
-                <div className={`game-card ${currentCard.imageUrl ? 'has-image' : ''} ${
+                <div ref={cardRef} className={`game-card ${currentCard.imageUrl ? 'has-image' : ''} ${
                   swipeTransition === 'new-card' ? 'card-changed' : 'entering'
                 }`}>
                   <div className="game-card-title">{currentCard.title}</div>
                   {currentCard.description && <div className="game-card-description">{currentCard.description}</div>}
-                  {currentCard.imageUrl && <img src={currentCard.imageUrl} alt={currentCard.title} className="game-card-image" />}
+                  {currentCard.imageUrl && <img src={currentCard.imageUrl} alt={currentCard.title} className="game-card-image" draggable={false} onDragStart={(e) => e.preventDefault()} />}
                 </div>
                 
                 {/* LIKE BUTTON (👍) - Right position */}
@@ -1196,7 +1351,7 @@ const nextData = await nextRes.json();
                   className={`game-action-button like ${keyboardActive === 'like' ? 'pulse' : ''}`}
                   onClick={() => handleSwipe('right')}
                   tabIndex="0"
-                  aria-label="Like card"
+                  aria-label={router.query.mode === 'onboarding' ? 'Continue' : 'Like card'}
                 >
                   👍
                 </button>

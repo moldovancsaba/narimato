@@ -1,8 +1,8 @@
 # NARIMATO Architecture
 
-**Current Version:** 6.10.0 (Universal perceptual feedback)
+**Current Version:** 6.12.0 (Deck-specific onboarding pairing + ordered onboarding)
 **Date:** 2025-10-12
-**Last Updated:** 2025-09-09T07:27:00.000Z
+**Last Updated:** 2025-09-10T13:13:51.000Z
 
 ## ⚡ UUID Field Standardization (v3.7.1+)
 

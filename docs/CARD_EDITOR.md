@@ -9,6 +9,15 @@ The NARIMATO Card Editor is a comprehensive content management system for creati
 
 ## Features
 
+### New (v6.11.0): Onboarding Flag
+
+### New (v6.11.1): Ordered Onboarding
+- Functional: A numeric "Order (optional)" field allows you to control child card order within a parent deck. Lower numbers appear earlier.
+- Strategic: Deterministic onboarding sequences without creating new endpoints or complex UI. When left blank, cards fall back to creation time ordering.
+- Functional: A new "Onboarding" checkbox appears next to "Playable (public)" when editing a card.
+- Strategic: When enabled on a parent/root card (with children), this card’s children will auto-run as a right-only onboarding segment before any selected deck starts.
+- Notes: Enabling on non-parent/no-children cards is allowed but has no effect; UI shows a gentle warning.
+
 ### 🎯 Dual Mode Operation
 - **Create Mode**: Build new cards from scratch with full customization
 - **Edit Mode**: Modify existing cards with data pre-loaded and UUID display

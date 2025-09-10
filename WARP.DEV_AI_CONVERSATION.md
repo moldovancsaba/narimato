@@ -157,6 +157,53 @@ Next steps:
   - API Versioning Negotiation remains In Progress; added Next Steps (extend v2 to input/next/results, formal deprecation schedule, per-version docs, telemetry dashboard)
 - Files updated: TASKLIST.md (version, timestamps, status details); ROADMAP.md (Last Updated)
 
+# Update — 2025-09-10T13:13:51.000Z
+- Author: Agent Mode (AI)
+- Minor Release: v6.12.0 — Deck-specific onboarding pairing + ordered onboarding + loop fix
+- Changes:
+  - Paired onboarding by naming convention to selected deck.
+  - Enforced deterministic onboarding order via Card.sortIndex.
+  - Prevented onboarding from rerunning after completion for the same deck.
+  - Synced versions and documentation per protocol.
+- Build: Verified prior to commit
+
+# Update — 2025-09-10T12:30:03.000Z
+- Author: Agent Mode (AI)
+- Patch Release: v6.11.3 — Fix onboarding infinite loop
+- Changes:
+  - Play page: track onboarding completion per deck (in-memory) and skip re-trigger.
+  - Ensures onboarding runs once, then resumes the intended deck/mode without restarting.
+- Verification: Build executed next
+
+# Update — 2025-09-10T11:29:27.000Z
+- Author: Agent Mode (AI)
+- Patch Release: v6.11.2 — Deck-Specific Onboarding Pairing
+- Changes:
+  - Play page: computeOnboardingQueue now pairs only the onboarding parent whose base name matches the selected deck base (strip #, toLowerCase, remove suffix “_onboarding”/“-onboarding”/” onboarding”).
+  - Ensures “Company Onboarding” runs only before “Company”, not before other decks in the org.
+  - Docs/version synced.
+- Verification: Build to be run now
+- Author: Agent Mode (AI)
+- Patch Release: v6.11.1 — Ordered Onboarding via Card.sortIndex
+- Changes:
+  - Card model: added sortIndex (Number, default null) + index { organizationId, parentTag, sortIndex }
+  - Cards API: POST/PUT accept sortIndex, coerced to number or null
+  - Cards UI: numeric "Order (optional)" input near parent selection
+  - SwipeOnlyEngine: onboarding sessions now order by sortIndex asc, then createdAt asc (no shuffle)
+  - Docs/version sync across README, ARCHITECTURE, TASKLIST, ROADMAP, LEARNINGS, RELEASE_NOTES, WARP.md with ISO 8601 timestamps
+- Verification: Running build now
+
+# Update — 2025-09-10T08:57:47.000Z
+- Author: Agent Mode (AI)
+- Minor Release: v6.11.0 — Onboarding Segments via Card.isOnboarding
+- Changes:
+  - Added Card.isOnboarding (default false) in Card model with index; API POST/PUT accept and update flag
+  - Cards UI: new "Onboarding" checkbox with help text and warning for non-parent/no-children
+  - Play orchestration: auto-run onboarding segments before selected deck (client-side queue; shallow routing); skip selected deck’s parent when flagged
+  - Analytics: onboarding_auto_start and onboarding_complete events
+  - Docs & version sync across README, ARCHITECTURE, TASKLIST, LEARNINGS, ROADMAP, RELEASE_NOTES, WARP.md; ISO 8601 timestamps
+- Verification: Build to be run now; deployment pending confirmation
+
 # Update — 2025-09-08T09:31:56.000Z
 - Author: Agent Mode (AI)
 - Scope: Universal Perceptual Feedback (Web-Safe) — implementation + docs + version bump to v6.9.0
@@ -214,4 +261,35 @@ Next steps:
   - Recorded plan/update entries with ISO 8601 ms timestamps
 - Next:
   - Commit and push to origin main with versioned message
+
+# Plan — 2025-09-09T10:30:00.000Z
+- Author: Agent Mode (AI)
+- Title: Enable Cross-Device Swipe Gestures on Play Page (Reuse Shared Hook)
+- Objective: Reuse the proven gesture logic from Swipe-Only and enable drag/swipe (touch, pointer/mouse, and two-finger trackpad) on the unified Play page when in swipe mode.
+- Approach:
+  - Extract generic gesture handlers (touch/pointer/wheel) into a reusable hook: lib/utils/useSwipeGestures.js (no new dependencies)
+  - Use centralized thresholds from lib/constants/gestures.js and haptics from lib/utils/haptics.js; respect reduced motion; keep touch-action: pan-y
+  - Integrate hook into pages/play.js (enabled only when currentCard exists and not in voting mode)
+  - Refactor pages/swipe-only.js to consume the same hook to eliminate duplication
+- Notes:
+  - Preserve existing keyboard controls and analytics events
+  - Gate swipes via in-flight ref to avoid duplicates; add subtle micro-bump animation on recognition
+  - Documentation and version bump to follow once verified (target v6.11.0)
+- Compliance:
+  - Reuse Before Creation; ISO 8601 timestamps; No tests; No breadcrumbs; Atlas-only
+
+# Plan — 2025-09-09T15:34:00.000Z
+- Author: Agent Mode (AI)
+- Title: New Play Mode — Onboarding (Right-Only Swipe)
+- Objective: Provide an onboarding flow that presents informational cards and only allows swiping right (like/continue) to teach the swipe interaction.
+- Approach:
+  - Backend: Reuse SwipeOnlyEngine via a new onboarding adapter; flag sessions isOnboarding=true on SwipeOnlyPlay; coerce any left input to right server-side.
+  - Dispatcher: Register onboarding in PlayDispatcher and route SwipeOnlyPlay sessions with isOnboarding to onboarding engine.
+  - API: Extend /api/v1/play/start schema to accept mode='onboarding'.
+  - Frontend: Add mode button in deck list; in Play swipe mode, hide the left (👎) button, filter gestures to right-only, ignore left arrow.
+- Notes:
+  - No new dependencies; respects reduced-motion; analytics preserved.
+  - Results flow unchanged; onboarding sessions still complete and can show results if needed.
+- Compliance:
+  - Reuse Before Creation; ISO timestamps; No tests; No breadcrumbs; Atlas-only
 

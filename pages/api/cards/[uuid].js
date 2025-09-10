@@ -23,7 +23,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PUT') {
-      let { title, description, imageUrl, parentTag, name, isPlayable } = req.body;
+      let { title, description, imageUrl, parentTag, name, isPlayable, isOnboarding, sortIndex } = req.body;
       
       if (!title?.trim()) {
         return res.status(400).json({ error: 'Title is required' });
@@ -103,6 +103,19 @@ export default async function handler(req, res) {
       // STRATEGIC: Hide internal decision-tree segments from lists while allowing direct play
       if (typeof isPlayable === 'boolean') {
         card.isPlayable = isPlayable;
+      }
+      
+      // FUNCTIONAL: Update onboarding flag for parent/root cards
+      // STRATEGIC: Controls whether this parent's children are used as intro segment before any deck
+      if (typeof isOnboarding === 'boolean') {
+        card.isOnboarding = isOnboarding;
+      }
+      
+      // FUNCTIONAL: Update per-child order index
+      // STRATEGIC: Supports deterministic onboarding deck sequencing
+      if (typeof sortIndex !== 'undefined') {
+        const n = Number(sortIndex);
+        card.sortIndex = Number.isFinite(n) ? n : null;
       }
       
       await card.save();

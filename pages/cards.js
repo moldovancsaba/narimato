@@ -15,7 +15,13 @@ export default function Cards() {
     description: '',
     imageUrl: '',
     parentTag: '',
-    isPlayable: true
+    // FUNCTIONAL: Optional ordering index within a parent deck (lower shows earlier)
+    // STRATEGIC: Deterministic onboarding sequences without new endpoints/models
+    sortIndex: '',
+    isPlayable: true,
+    // FUNCTIONAL: Whether this parent card's children should run as onboarding before any deck
+    // STRATEGIC: Organization-wide intro using existing onboarding engine; default false to preserve legacy behavior
+    isOnboarding: false
   });
   const [editingCard, setEditingCard] = useState(null);
 
@@ -88,7 +94,7 @@ export default function Cards() {
       });
       
       if (res.ok) {
-        setFormData({ title: '', description: '', imageUrl: '', parentTag: '' });
+        setFormData({ title: '', description: '', imageUrl: '', parentTag: '', sortIndex: '', isPlayable: true, isOnboarding: false });
         setEditingCard(null);
         fetchCards();
       } else {
@@ -109,7 +115,13 @@ export default function Cards() {
       description: card.description,
       imageUrl: card.imageUrl,
       parentTag: card.parentTag || '',
-      isPlayable: typeof card.isPlayable === 'boolean' ? card.isPlayable : true
+      // FUNCTIONAL: Pre-fill ordering index as a string for input control
+      // STRATEGIC: Simpler UX and avoids NaN rendering issues
+      sortIndex: (typeof card.sortIndex === 'number') ? String(card.sortIndex) : '',
+      isPlayable: typeof card.isPlayable === 'boolean' ? card.isPlayable : true,
+      // FUNCTIONAL: Populate onboarding flag from existing card
+      // STRATEGIC: Keeps UI state consistent with persisted data
+      isOnboarding: typeof card.isOnboarding === 'boolean' ? card.isOnboarding : false
     });
     
     // Scroll to the edit form smoothly
@@ -260,6 +272,20 @@ export default function Cards() {
               ))}
             </optgroup>
           </select>
+
+          {/* FUNCTIONAL: Optional ordering index for presentation within a parent deck */}
+          {/* STRATEGIC: Enables deterministic onboarding sequences without heavy UI changes */}
+          <input
+            type="number"
+            placeholder="Order (optional) — lower appears earlier"
+            value={formData.sortIndex}
+            onChange={(e) => setFormData(prev => ({ ...prev, sortIndex: e.target.value }))}
+            style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
+          />
+          <div style={{ color: '#666', fontSize: '0.85rem', marginTop: '-0.5rem' }}>
+            Used when this card is part of an onboarding deck. Leave blank to fall back to creation time.
+          </div>
+
           {/* FUNCTIONAL: Control whether a parent/root card's deck appears in selection lists */}
           {/* STRATEGIC: Hide internal decision-tree segments but still allow direct play via link */}
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -273,6 +299,32 @@ export default function Cards() {
           <div style={{ color: '#666', fontSize: '0.85rem', marginTop: '-0.5rem' }}>
             If this is a parent card (root with children), this flag controls whether its deck appears in Play/Rankings lists. Hidden decks can still be played directly by link.
           </div>
+
+          {/* FUNCTIONAL: Flag to use this parent's children as an onboarding segment before any selected deck */}
+          {/* STRATEGIC: Reuses existing right-only onboarding engine; no new endpoints/models needed */}
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.75rem' }}>
+            <input
+              type="checkbox"
+              checked={!!formData.isOnboarding}
+              onChange={(e) => setFormData(prev => ({ ...prev, isOnboarding: e.target.checked }))}
+            />
+            Onboarding
+          </label>
+          <div style={{ color: '#666', fontSize: '0.85rem', marginTop: '-0.5rem' }}>
+            Only affects parent/root cards with children. When enabled, this card’s children will run first as a short onboarding before the selected deck.
+          </div>
+          {editingCard && (
+            (() => {
+              const isRoot = !editingCard.parentTag;
+              const childCount = cards.filter(c => c.parentTag === editingCard.name).length;
+              const ineffective = !isRoot || childCount < 2;
+              return (ineffective && formData.isOnboarding) ? (
+                <div style={{ color: '#dc3545', fontSize: '0.8rem', marginTop: '0.25rem' }}>
+                  Onboarding has effect only for parent/root cards with at least 2 children; this setting will be ignored at runtime.
+                </div>
+              ) : null;
+            })()
+          )}
           <div className="btn-group btn-group-tight">
             {/* FUNCTIONAL: Elevate create action to large size; keep edit at mid */}
             {/* STRATEGIC: Primary creation CTAs should stand out; edits remain secondary */}
