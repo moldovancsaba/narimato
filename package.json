@@ -1,6 +1,6 @@
 {
   "name": "narimato",
-  "version": "6.12.0",
+  "version": "6.13.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -8,16 +8,17 @@
     "start": "next start",
     "lint": "next lint"
   },
-  "dependencies": {"zod": "^3.23.8",
+  "dependencies": {
     "dotenv": "^17.2.1",
     "mongoose": "^8.1.0",
-    "next": "15.4.4",
+    "next": "15.5.2",
     "react": "^18",
     "react-dom": "^18",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "eslint": "^8",
-    "eslint-config-next": "15.4.4"
+    "eslint-config-next": "15.5.2"
   }
 }

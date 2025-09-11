@@ -1,8 +1,8 @@
 # NARIMATO Architecture
 
-**Current Version:** 6.12.0 (Deck-specific onboarding pairing + ordered onboarding)
+**Current Version:** 6.13.0 (Security hardening: Next.js upgrade + image optimizer/CSP)
 **Date:** 2025-10-12
-**Last Updated:** 2025-09-10T13:13:51.000Z
+**Last Updated:** 2025-09-11T03:56:38.000Z
 
 ## ⚡ UUID Field Standardization (v3.7.1+)
 
@@ -48,6 +48,12 @@ Temporary backward compatibility exports exist for legacy field names but will b
 - Database queries updated to use new field constants
 - API responses maintain consistency with standardized field names
 - Frontend components updated to handle uniform UUID fields
+
+## Security Headers & Image Optimizer Hardening (v6.13.0)
+- FUNCTIONAL: next.config.js now enforces:
+  - images.remotePatterns allowlist (https only), formats AVIF/WebP only, dangerouslyAllowSVG=false, contentDispositionType='attachment', minimumCacheTTL=60.
+  - Global headers() returns CSP, X-Content-Type-Options=nosniff, X-Frame-Options=DENY, Referrer-Policy=no-referrer, Permissions-Policy, COOP/CORP for all routes.
+- STRATEGIC: Reduces SSRF/open-redirect vectors and constrains Next Image Optimization attack surface (cache key confusion, content injection) across tenants.
 
 ## System Overview
 

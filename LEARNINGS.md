@@ -1,8 +1,13 @@
 # Development Learnings
 
-**Current Version:** 6.12.0 (Deck-specific onboarding pairing + ordered onboarding)
+**Current Version:** 6.13.0 (Security hardening: Next.js upgrade + image optimizer/CSP)
 **Date:** 2025-09-07
-**Last Updated:** 2025-09-10T13:13:51.000Z
+**Last Updated:** 2025-09-11T03:56:38.000Z
+
+### Next.js Security Hardening (v6.13.0) — Frontend / Security / Process
+- Functional: Upgraded Next.js to 15.5.2 and hardened next.config.js with strict images allowlist (remotePatterns), disabled SVG optimization, modern image formats, and global security headers (CSP, nosniff, DENY, Referrer-Policy, Permissions-Policy, COOP/CORP).
+- Strategic: Mitigates SSRF via middleware redirect surfaces and reduces Image Optimization attack surface (cache key confusion, content injection). Defense-in-depth regardless of current next/image usage.
+- Timestamp: 2025-09-11T03:56:38.000Z
 
 ### Onboarding Segment Orchestration (v6.11.0) — Backend / Frontend / Process
 - Functional: Introduced Card.isOnboarding flag; client orchestrates right-only onboarding segments from flagged parent decks before starting the selected deck. Reuses existing onboarding engine with shallow routing and queue sequencing.

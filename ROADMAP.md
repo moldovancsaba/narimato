@@ -1,14 +1,24 @@
 # NARIMATO Development Roadmap
 
-**Current Version:** 6.12.0
+**Current Version:** 6.13.0
 **Date:** 2025-08-02
-**Last Updated:** 2025-09-10T13:13:51.000Z
+**Last Updated:** 2025-09-11T03:56:38.000Z
 
 > Note: Roadmap contains only forward-looking items. Completed and historical work is tracked in RELEASE_NOTES.md.
 
 ## Q3 2025 — Near-Term (Now → Sep 2025)
 
 ### Critical Priority
+- Next.js Security Remediation (Vulnerabilities #30, #28, #26) — Target v6.13.0
+  - Timestamp: 2025-09-10T14:31:38.000Z
+  - Objective: Eliminate Moderate findings in Next.js (middleware redirect SSRF, image optimizer cache key confusion, image optimizer content injection)
+  - Actions:
+    - Upgrade Next.js to latest patched 15.x and align eslint-config-next
+    - Harden next.config.js (images.remotePatterns allowlist, disable SVG optimization, strict formats, minimumCacheTTL)
+    - Add global security headers (CSP, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy, COOP/CORP)
+    - Verify build locally; re-run scanner (npm audit and original source — Dependabot/Snyk)
+  - Dependencies: Versioning protocol compliance, documentation sync, manual verification (no tests)
+
 - Error Response Standards (Structured Envelope + Taxonomy)
   - Define and adopt standard envelope: { error: { code, message, details, timestamp, requestId } }
   - Establish taxonomy: 1xxx client, 2xxx auth, 3xxx business-state, 4xxx resource, 5xxx system
