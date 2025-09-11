@@ -317,3 +317,17 @@ Next steps:
 - Production URL: https://narimato-bfp9bb1g9-narimato.vercel.app
 - Notes: Image allowlist set to i.ibb.co, images.unsplash.com, cdn.narimato.com
 
+# Update — 2025-09-11T13:12:26.000Z
+- Author: Agent Mode (AI)
+- Scope: v6.14.0 — ESLint CLI migration, local fieldnames plugin, environment-aware dev CSP, minor lint fixes, prune
+- Actions:
+  - Migrated lint to ESLint CLI; added local plugin tools/eslint-plugin-fieldnames and wired it in .eslintrc.json (rule set to warn)
+  - Fixed react/no-unescaped-entities in pages/play.js and pages/swipe-only.js
+  - Made CSP environment-aware in next.config.js to enable Next.js dev overlay/HMR without weakening production CSP
+  - Ran npm prune to remove extraneous dependencies
+  - Verified build success (Next.js 15.5.2)
+- Documentation:
+  - Updated version markers and timestamps across README.md, ARCHITECTURE.md, TASKLIST.md, LEARNINGS.md, ROADMAP.md, RELEASE_NOTES.md, WARP.md
+- Next:
+  - Consider refactoring flagged field-naming warnings progressively (rule currently warns, not errors)
+

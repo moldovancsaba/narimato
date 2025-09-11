@@ -1,8 +1,8 @@
 # NARIMATO Architecture
 
-**Current Version:** 6.13.0 (Security hardening: Next.js upgrade + image optimizer/CSP)
+**Current Version:** 6.14.0 (ESLint CLI migration + environment-aware CSP for dev; security headers unchanged in prod)
 **Date:** 2025-10-12
-**Last Updated:** 2025-09-11T03:56:38.000Z
+**Last Updated:** 2025-09-11T13:12:26.000Z
 
 ## ⚡ UUID Field Standardization (v3.7.1+)
 
@@ -49,11 +49,12 @@ Temporary backward compatibility exports exist for legacy field names but will b
 - API responses maintain consistency with standardized field names
 - Frontend components updated to handle uniform UUID fields
 
-## Security Headers & Image Optimizer Hardening (v6.13.0)
-- FUNCTIONAL: next.config.js now enforces:
+## Security Headers & Image Optimizer Hardening (v6.13.0+)
+- FUNCTIONAL: next.config.js enforces:
   - images.remotePatterns allowlist (https only), formats AVIF/WebP only, dangerouslyAllowSVG=false, contentDispositionType='attachment', minimumCacheTTL=60.
   - Global headers() returns CSP, X-Content-Type-Options=nosniff, X-Frame-Options=DENY, Referrer-Policy=no-referrer, Permissions-Policy, COOP/CORP for all routes.
-- STRATEGIC: Reduces SSRF/open-redirect vectors and constrains Next Image Optimization attack surface (cache key confusion, content injection) across tenants.
+  - Development uses an environment-aware CSP to permit Next.js dev overlay and HMR (unsafe-inline/eval + ws) without weakening production.
+- STRATEGIC: Reduces SSRF/open-redirect vectors and constrains Next Image Optimization attack surface (cache key confusion, content injection) across tenants while preserving developer experience in dev.
 
 ## System Overview
 

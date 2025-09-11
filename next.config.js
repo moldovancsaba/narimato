@@ -12,21 +12,22 @@ const allowedImageDomains = [
   'cdn.narimato.com'     // Example first-party CDN (adjust/remove if not used)
 ];
 
-// Global security headers applied to all routes
-// FUNCTIONAL: Sets CSP, anti-MIME sniffing, clickjacking protection, referrer policy, and cross-origin policies.
-// STRATEGIC: Defense-in-depth across tenants; headers enforced at the edge/runtime regardless of route handler.
-const securityHeaders = [
-  {
-    key: 'Content-Security-Policy',
-    value: [
+// Determine environment for header tuning
+const isProd = process.env.NODE_ENV === 'production';
+
+// FUNCTIONAL: Build CSP per environment to avoid blocking Next.js dev overlay/HMR in development.
+// STRATEGIC: Strict CSP in production, permissive in dev to preserve developer velocity without compromising prod.
+function buildCsp(isProd) {
+  if (isProd) {
+    return [
       "default-src 'self'",
       "base-uri 'none'",
       "object-src 'none'",
       // Keep img-src tight; include only self, data, and approved HTTPS hosts
       "img-src 'self' data: https: https://i.ibb.co https://images.unsplash.com https://cdn.narimato.com",
-      // Avoid inline scripts; the app uses custom CSS, not inline JS
+      // Avoid inline/eval scripts in production
       "script-src 'self'",
-      // Allow inline styles only if required by theming; keep as strict as possible
+      // Allow inline styles for theming; keep as strict as possible
       "style-src 'self' 'unsafe-inline'",
       "font-src 'self' https: data:",
       // Limit outbound connections; include only HTTPS endpoints
@@ -35,14 +36,42 @@ const securityHeaders = [
       "frame-ancestors 'none'",
       // Enforce HTTPS-only subrequests
       "upgrade-insecure-requests"
-    ].join('; ')
-  },
+    ].join('; ');
+  }
+
+  // Development: allow HMR, dev overlay, and ws connections
+  return [
+    "default-src 'self'",
+    "base-uri 'none'",
+    "object-src 'none'",
+    // Images: allow blob/data for dev tooling previews
+    "img-src 'self' data: blob: https: https://i.ibb.co https://images.unsplash.com https://cdn.narimato.com",
+    // Next dev requires inline/eval for React refresh overlays
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob:",
+    // Inline styles OK in dev
+    "style-src 'self' 'unsafe-inline'",
+    "font-src 'self' https: data:",
+    // HMR and overlay use ws/wss and localhost ports
+    "connect-src 'self' ws: wss: http://localhost:* https://localhost:* https:",
+    "frame-ancestors 'none'"
+  ].join('; ');
+}
+
+// Global security headers applied to all routes
+// FUNCTIONAL: Sets CSP, anti-MIME sniffing, clickjacking protection, referrer policy, and cross-origin policies.
+// STRATEGIC: Defense-in-depth across tenants; headers enforced at the edge/runtime regardless of route handler.
+const baseHeaders = [
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'Referrer-Policy', value: 'no-referrer' },
   { key: 'Permissions-Policy', value: 'accelerometer=(), autoplay=(), camera=(), geolocation=(), microphone=(), payment=(), usb=()' },
   { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
   { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' }
+];
+
+const securityHeaders = [
+  { key: 'Content-Security-Policy', value: buildCsp(isProd) },
+  ...baseHeaders,
 ];
 
 /** @type {import('next').NextConfig} */
@@ -65,7 +94,7 @@ const nextConfig = {
   },
 
   async headers() {
-    // Apply to all routes
+    // Apply to all routes; environment-aware CSP
     return [
       {
         source: '/:path*',

@@ -1,13 +1,18 @@
 # Development Learnings
 
-**Current Version:** 6.13.0 (Security hardening: Next.js upgrade + image optimizer/CSP)
+**Current Version:** 6.14.0 (ESLint CLI migration + environment-aware CSP in dev)
 **Date:** 2025-09-07
-**Last Updated:** 2025-09-11T03:56:38.000Z
+**Last Updated:** 2025-09-11T13:12:26.000Z
 
 ### Next.js Security Hardening (v6.13.0) — Frontend / Security / Process
 - Functional: Upgraded Next.js to 15.5.2 and hardened next.config.js with strict images allowlist (remotePatterns), disabled SVG optimization, modern image formats, and global security headers (CSP, nosniff, DENY, Referrer-Policy, Permissions-Policy, COOP/CORP).
 - Strategic: Mitigates SSRF via middleware redirect surfaces and reduces Image Optimization attack surface (cache key confusion, content injection). Defense-in-depth regardless of current next/image usage.
 - Timestamp: 2025-09-11T03:56:38.000Z
+
+### Dev CSP Over-Restriction (v6.14.0) — Frontend / Security / Process
+- Functional: Strict production CSP was being applied in development, blocking Next.js dev overlay and HMR, resulting in a blank page. Updated next.config.js to make CSP environment-aware (dev permits 'unsafe-inline'/'unsafe-eval' and ws/wss localhost ports; production remains strict).
+- Strategic: Preserve developer velocity and debugging ergonomics without weakening production security posture. Environment-aware policies maintain defense-in-depth in production while avoiding local false positives.
+- Timestamp: 2025-09-11T13:12:26.000Z
 
 ### Onboarding Segment Orchestration (v6.11.0) — Backend / Frontend / Process
 - Functional: Introduced Card.isOnboarding flag; client orchestrates right-only onboarding segments from flagged parent decks before starting the selected deck. Reuses existing onboarding engine with shallow routing and queue sequencing.

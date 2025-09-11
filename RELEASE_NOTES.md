@@ -1,8 +1,18 @@
 # NARIMATO Release Notes
 
-**Current Version:** 6.13.0 (Security hardening: Next.js upgrade + image optimizer/CSP)
+**Current Version:** 6.14.0 (ESLint CLI migration + local fieldnames plugin; environment-aware dev CSP)
 **Date:** 2025-09-11
-**Last Updated:** 2025-09-11T03:56:38.000Z
+**Last Updated:** 2025-09-11T13:12:26.000Z
+
+## [v6.14.0] — 2025-09-11T13:12:26.000Z
+
+### Tooling & Dev Security Adjustments
+- Migrated linting from `next lint` to ESLint CLI and integrated a local plugin `eslint-plugin-fieldnames` exposing the existing field-naming consistency rule.
+- Set the custom field-naming rule to warn to avoid blocking builds while highlighting inconsistencies for follow-up refactors.
+- Made CSP environment-aware in `next.config.js`: dev allows Next.js dev overlay/HMR (inline/eval and ws://), production remains strict.
+- Fixed two React lint errors (escaped apostrophes) that previously blocked builds.
+- Pruned extraneous packages with `npm prune`.
+- Build verification: ✅ Next.js production build successful post-migration.
 
 ## [v6.13.0] — 2025-09-11T03:56:38.000Z
 

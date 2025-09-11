@@ -1165,7 +1165,7 @@ const nextData = await nextRes.json();
     return (
       <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif', textAlign: 'center' }}>
         <h1>🎉 Play Complete!</h1>
-        <p>You've finished ranking all the cards in the {deck} deck.</p>
+        <p>You&apos;ve finished ranking all the cards in the {deck} deck.</p>
         <div style={{ marginTop: '2rem' }}>
           <div className="btn-group">
             <Link href={`/play?org=${org}`} className="btn btn-info">

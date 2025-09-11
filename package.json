@@ -1,12 +1,12 @@
 {
   "name": "narimato",
-  "version": "6.13.0",
+  "version": "6.14.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "eslint --ext .js,.jsx,.ts,.tsx ."
   },
   "dependencies": {
     "dotenv": "^17.2.1",
@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "eslint": "^8",
-    "eslint-config-next": "15.5.2"
+    "eslint-config-next": "15.5.2",
+    "eslint-plugin-fieldnames": "file:tools/eslint-plugin-fieldnames"
   }
 }

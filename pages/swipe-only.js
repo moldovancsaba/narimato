@@ -173,7 +173,7 @@ export default function SwipeOnly() {
     return (
       <div style={{ padding: '2rem', textAlign: 'center' }}>
         <h1>🎉 Swipe Complete!</h1>
-        <p>You've finished swiping through all the cards.</p>
+        <p>You&apos;ve finished swiping through all the cards.</p>
         <p>Redirecting to results...</p>
         <div style={{ marginTop: '2rem' }}>
           <Link href={`/swipe-only-results?playId=${session.playId}&org=${org}&deck=${encodeURIComponent(deck)}`}>
