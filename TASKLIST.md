@@ -1,11 +1,24 @@
 # NARIMATO Task List
 
-**Current Version:** 6.12.0
+**Current Version:** 6.13.0
 **Date:** 2025-09-08T09:21:11.000Z
-**Last Updated:** 2025-09-10T13:13:51.000Z
+**Last Updated:** 2025-09-11T03:56:38.000Z
 
 ## High Priority Tasks
 
+### Security: Next.js Vulnerabilities Remediation (#30, #28, #26)
+- Owner: AI Agent
+- Expected Delivery Date: 2025-09-10T16:30:00.000Z
+- Status: In Progress
+- Details: Upgrade Next.js to patched 15.x, harden next.config.js (images + global headers), validate with npm audit and original scanner, sync documentation and versioning (target v6.13.0).
+- Subtasks:
+  - Create branch security/next-vulns-2025-09-10
+  - Bump PATCH before dev/build (6.12.0 → 6.12.1)
+  - Upgrade next and eslint-config-next to latest 15.x
+  - Harden next.config.js (images.remotePatterns, disable SVG, formats, TTL, CSP and security headers)
+  - Build and manual verification (no tests)
+  - Re-run scanner; confirm issues cleared
+  - Pre-commit MINOR bump (6.12.1 → 6.13.0) and documentation sync
 ### Onboarding Play Mode (Right-Only)
 - Owner: AI Agent
 - Expected Delivery Date: 2025-09-09T16:30:00.000Z

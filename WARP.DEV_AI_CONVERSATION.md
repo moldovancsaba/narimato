@@ -293,3 +293,17 @@ Next steps:
 - Compliance:
   - Reuse Before Creation; ISO timestamps; No tests; No breadcrumbs; Atlas-only
 
+# Plan — 2025-09-10T14:31:38.000Z
+- Author: Agent Mode (AI)
+- Title: Next.js Security Remediation (Vulnerabilities #30, #28, #26)
+- Objective: Remove Moderate findings related to middleware redirect SSRF and Image Optimization API routes by upgrading Next.js and hardening configuration.
+- Actions:
+  - Create branch security/next-vulns-2025-09-10
+  - Bump PATCH (6.12.0 → 6.12.1) before any dev/build per protocol
+  - Upgrade next to the latest patched 15.x and align eslint-config-next
+  - Harden next.config.js: images.remotePatterns allowlist (only approved hosts), disable SVG optimization, restrict formats, set minimumCacheTTL, add CSP and security headers globally
+  - Build and manual verification (no tests); then re-run npm audit and the original scanner
+  - Pre-commit MINOR bump (6.12.1 → 6.13.0) and documentation sync across README/ARCHITECTURE/TASKLIST/LEARNINGS/ROADMAP/RELEASE_NOTES/WARP.md
+- Dependencies: None beyond existing stack (Pages Router, Atlas-only, JavaScript). No new libs.
+- Success Criteria: Scanner no longer reports #30, #28, #26; build passes; images render correctly; headers present.
+

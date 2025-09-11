@@ -1,8 +1,24 @@
 # NARIMATO Release Notes
 
-**Current Version:** 6.11.1 (Ordered onboarding via Card.sortIndex)
-**Date:** 2025-09-10
-**Last Updated:** 2025-09-10T11:18:49.000Z
+**Current Version:** 6.13.0 (Security hardening: Next.js upgrade + image optimizer/CSP)
+**Date:** 2025-09-11
+**Last Updated:** 2025-09-11T03:56:38.000Z
+
+## [v6.13.0] — 2025-09-11T03:56:38.000Z
+
+### Security: Next.js Upgrade and Configuration Hardening
+- Upgraded Next.js from 15.4.4 → 15.5.2 to remediate:
+  - Improper Middleware Redirect Handling → SSRF risk
+  - Cache Key Confusion in Image Optimization API routes
+  - Image Optimization Content Injection
+- Hardened next.config.js:
+  - images.remotePatterns: explicit https allowlist
+  - dangerouslyAllowSVG=false; formats=['image/avif','image/webp']; contentDispositionType='attachment'; minimumCacheTTL=60
+  - Global security headers: CSP, X-Content-Type-Options=nosniff, X-Frame-Options=DENY, Referrer-Policy=no-referrer, Permissions-Policy, COOP/CORP
+- Validation:
+  - Build: ✅ Next.js production build successful
+  - Security scan: ✅ npm audit (moderate) — 0 vulnerabilities
+- Notes: No new dependencies required; optional sharp not installed (Squoosh fallback acceptable).
 
 ## [v6.12.0] — 2025-09-10T13:13:51.000Z
 
