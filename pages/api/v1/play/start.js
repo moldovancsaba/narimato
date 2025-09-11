@@ -1,3 +1,5 @@
+// FUNCTIONAL: Start unified play session (mode-aware) with rate limiting and versioned payloads
+// STRATEGIC: Ensures consistent, versioned API responses and tenant-scoped, guarded entrypoints
 import { validate } from '../../../../lib/validation/util';
 import { applyRateLimit } from '../../../../lib/middleware/rateLimit';
 import { z } from 'zod';

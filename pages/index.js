@@ -1,3 +1,5 @@
+// FUNCTIONAL: Landing page linking to core flows (Organizations, Cards, Play, Rankings)
+// STRATEGIC: Provides a simple, low-friction entry to main features (no breadcrumbs per policy)
 import Link from 'next/link';
 
 export default function Home() {
