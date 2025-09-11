@@ -307,3 +307,13 @@ Next steps:
 - Dependencies: None beyond existing stack (Pages Router, Atlas-only, JavaScript). No new libs.
 - Success Criteria: Scanner no longer reports #30, #28, #26; build passes; images render correctly; headers present.
 
+# Update — 2025-09-11T04:11:36.000Z
+- Author: Agent Mode (AI)
+- Security Remediation Delivered: v6.13.0
+- Actions:
+  - Merged PR #5 (security: upgrade next to 15.5.2 and harden image/CSP)
+  - Deployed to production with vercel --prod
+  - Scanner validation: npm audit (moderate) → 0 vulnerabilities
+- Production URL: https://narimato-bfp9bb1g9-narimato.vercel.app
+- Notes: Image allowlist set to i.ibb.co, images.unsplash.com, cdn.narimato.com
+
