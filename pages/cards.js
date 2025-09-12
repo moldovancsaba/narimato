@@ -1,6 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import { getSessionUser } from '../lib/system/userAuth';
+
+export async function getServerSideProps(ctx) {
+  // FUNCTIONAL: Server-side admin guard for Cards management.
+  // STRATEGIC: Avoids client-side flicker and enforces protection uniformly.
+  const user = getSessionUser(ctx.req);
+  if (!user) {
+    const next = encodeURIComponent(ctx.resolvedUrl || '/cards');
+    return { redirect: { destination: `/admin/login?next=${next}`, permanent: false } };
+  }
+  return { props: {} };
+}
 
 export default function Cards() {
   const router = useRouter();

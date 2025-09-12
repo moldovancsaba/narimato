@@ -1,8 +1,8 @@
 # Development Learnings
 
-**Current Version:** 7.0.0 (MAJOR: MVP access control — page passwords + admin session)
+**Current Version:** 7.1.0 (MINOR: Credential admin + SSR route guards)
 **Date:** 2025-09-07
-**Last Updated:** 2025-09-12T09:05:46.000Z
+**Last Updated:** 2025-09-12T12:29:11.000Z
 
 ### Next.js Security Hardening (v6.13.0) — Frontend / Security / Process
 - Functional: Upgraded Next.js to 15.5.2 and hardened next.config.js with strict images allowlist (remotePatterns), disabled SVG optimization, modern image formats, and global security headers (CSP, nosniff, DENY, Referrer-Policy, Permissions-Policy, COOP/CORP).
@@ -199,6 +199,10 @@
    - **Hierarchical Redirects**: Proper redirect information for complex flows
    - **State Transitions**: Clear communication of state changes to frontend
 
+### MessMass-Style User Management + SSR Guards (v7.1.0) — Backend / Frontend / Security / Process
+- Functional: Implemented credential-based admin login with HttpOnly cookie, admin users CRUD (create/regenerate), SSR guards for /organizations and /cards to prevent unauthenticated flashes, and a one-off seed script to create/rotate the initial superadmin.
+- Strategic: Moves from page-password gating to a proper user system for admin flows while keeping end-user play/results public; eliminates client-side guard flicker; maintains existing stack without introducing new dependencies.
+- Timestamp: 2025-09-12T12:29:11.000Z
 ### Performance Impact Analysis
 1. **Algorithm Improvements**:
    - **Comparison Reduction**: ~40% fewer comparisons per card ranking

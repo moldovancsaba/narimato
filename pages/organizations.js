@@ -1,5 +1,17 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { getSessionUser } from '../lib/system/userAuth';
+
+export async function getServerSideProps(ctx) {
+  // FUNCTIONAL: Server-side admin guard to prevent unauthenticated flash and ensure clean redirects.
+  // STRATEGIC: Uses existing cookie session (MessMass-style) to gate admin pages consistently.
+  const user = getSessionUser(ctx.req);
+  if (!user) {
+    const next = encodeURIComponent(ctx.resolvedUrl || '/organizations');
+    return { redirect: { destination: `/admin/login?next=${next}`, permanent: false } };
+  }
+  return { props: {} };
+}
 
 export default function Organizations() {
   const [organizations, setOrganizations] = useState([]);

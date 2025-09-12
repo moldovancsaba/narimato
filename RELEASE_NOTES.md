@@ -1,8 +1,24 @@
 # NARIMATO Release Notes
 
-**Current Version:** 7.0.0 (MAJOR: MVP access control — page passwords + admin session)
+**Current Version:** 7.1.0 (MINOR: MessMass-style user management + SSR guards)
 **Date:** 2025-09-12
 **Last Updated:** 2025-09-12T09:05:46.000Z
+
+## [v7.1.0] — 2025-09-12T12:29:11.000Z
+
+### Minor: Credential-Based Admin + SSR Guards
+- Summary: Added MessMass-style user management with credential login, admin users CRUD (create/regenerate passwords), SSR route guards for administration pages, and initial superadmin seeding script.
+- Impact: /organizations and /cards require admin login via /admin/login. /play and /rankings remain public for end users. Shareable results links available at /r/[playId].
+- Backend:
+  - New model/utilities already present: lib/models/User.js, lib/system/userAuth.js
+  - New APIs: /api/admin/login, /api/admin/users (list/create), /api/admin/users/password (regenerate)
+  - New script: scripts/seed-superadmin.js (creates or rotates admin@narimato.com and prints password once)
+- Frontend:
+  - Added SSR guards (getServerSideProps) to /organizations and /cards; removed client-side guard flicker
+  - Admin pages: /admin/login, /admin/users
+- Documentation:
+  - Bumped to 7.1.0 across docs; ISO 8601 timestamps with milliseconds
+- Build verification: npm run build passed
 
 ## [v7.0.0] — 2025-09-12T09:05:46.000Z
 
