@@ -1,6 +1,6 @@
 # NARIMATO Architecture
 
-**Current Version:** 6.14.0 (ESLint CLI migration + environment-aware CSP for dev; security headers unchanged in prod)
+**Current Version:** 7.0.0 (MAJOR: MVP access control — page passwords + admin session; dev CSP remains environment-aware; prod headers unchanged)
 **Date:** 2025-10-12
 **Last Updated:** 2025-09-11T13:12:26.000Z
 
@@ -55,6 +55,31 @@ Temporary backward compatibility exports exist for legacy field names but will b
   - Global headers() returns CSP, X-Content-Type-Options=nosniff, X-Frame-Options=DENY, Referrer-Policy=no-referrer, Permissions-Policy, COOP/CORP for all routes.
   - Development uses an environment-aware CSP to permit Next.js dev overlay and HMR (unsafe-inline/eval + ws) without weakening production.
 - STRATEGIC: Reduces SSRF/open-redirect vectors and constrains Next Image Optimization attack surface (cache key confusion, content injection) across tenants while preserving developer experience in dev.
+
+## MVP Auth: Admin Session & Page-Specific Passwords (v6.15.0+)
+- FUNCTIONAL: Lightweight access control to protect sensitive pages (initially Play) per-organization using a page password, with an admin bypass via an HttpOnly cookie session.
+- STRATEGIC: Provides immediate protection without introducing a full auth stack; reuses multi-tenant patterns and centralized constants; upgrade path to RBAC remains open.
+
+Key components:
+- Model: `/lib/models/PagePassword.js` — per-org, per-page record with salted SHA-256 hash, usage metrics, timestamps
+- Service: `/lib/system/pagePassword.js` — create/regenerate + validate + shareable link helper
+- Admin session utils: `/lib/system/adminAuth.js` — cookie encode/decode, token generation, getters
+- API routes (Pages Router):
+  - `POST /api/system/admin/login` — env-based admin login via `ADMIN_PASSWORD`; sets HttpOnly cookie (7d)
+  - `DELETE /api/system/admin/login` — logout; clears cookie
+  - `GET /api/system/admin/auth` — session status for client-side bypass
+  - `POST /api/system/page-passwords` — admin-only create/regenerate page password; returns shareable link (optional `pp`)
+  - `PUT /api/system/page-passwords` — public validate; admin cookie bypasses check
+- Client component: `/components/PagePasswordPrompt.js` — prompts for a password and stores a short-lived sessionStorage key; auto-validates from shareable link param `pp` if present
+- Integration: `/pages/play.js` — gates content per-organization; key = `auth_{org}_play_{org}`
+
+Environment:
+- `ADMIN_PASSWORD` (required to enable admin login)
+
+Security & UX notes:
+- Cookie: HttpOnly; SameSite=Lax; Secure in production; Max-Age=7 days
+- sessionStorage TTLs: 24h for page password; 7d for admin bypass
+- CSP unchanged; endpoints leverage existing rate limiter
 
 ## System Overview
 

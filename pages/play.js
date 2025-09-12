@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { calculateCardSize } from '../lib/utils/cardSizing';
 import { event } from '../lib/analytics/ga';
 import { useSwipeGestures } from '../lib/utils/useSwipeGestures';
+import PagePasswordPrompt from '../components/PagePasswordPrompt';
 export default function Play() {
   const router = useRouter();
   const { org, deck } = router.query;
@@ -21,6 +22,7 @@ export default function Play() {
   const [cardTransitions, setCardTransitions] = useState({ left: null, right: null });
   const [previousCard, setPreviousCard] = useState(null);
   const [swipeTransition, setSwipeTransition] = useState(null);
+  const [authorized, setAuthorized] = useState(false); // FUNCTIONAL: Page access flag (per-org)
   const cardRef = useRef(null); // FUNCTIONAL: DOM handle for attaching swipe gestures
 
   // FUNCTIONAL: Onboarding orchestration state
@@ -37,17 +39,42 @@ export default function Play() {
 
   const [showHidden, setShowHidden] = useState(() => router.query.includeHidden === 'true');
 
+  // FUNCTIONAL: Initialize authorization from sessionStorage per-organization
+  // STRATEGIC: Avoids unnecessary network calls before access is granted
   useEffect(() => {
-    if (org) {
-      fetchDecks();
+    if (!org) {
+      setAuthorized(true); // org not selected yet — show organization selector freely
+      return;
     }
-  }, [org, showHidden]);
+    try {
+      const key = `auth_${org}_play_${org}`;
+      const raw = typeof window !== 'undefined' ? window.sessionStorage.getItem(key) : null;
+      if (!raw) {
+        setAuthorized(false);
+        return;
+      }
+      const parsed = JSON.parse(raw);
+      const exp = Date.parse(parsed?.expiresAt || '');
+      if (Number.isFinite(exp) && exp > Date.now()) {
+        setAuthorized(true);
+      } else {
+        if (typeof window !== 'undefined') window.sessionStorage.removeItem(key);
+        setAuthorized(false);
+      }
+    } catch {
+      setAuthorized(false);
+    }
+  }, [org]);
 
   useEffect(() => {
-    if (org && deck) {
-      startPlay();
-    }
-  }, [org, deck]);
+    if (!org || !authorized) return;
+    fetchDecks();
+  }, [org, showHidden, authorized]);
+
+  useEffect(() => {
+    if (!org || !deck || !authorized) return;
+    startPlay();
+  }, [org, deck, authorized]);
 
   // FUNCTIONAL: Initialize card sizing and setup resize handlers
   // STRATEGIC: Ensures responsive game interface across all devices
@@ -912,6 +939,18 @@ const nextData = await nextRes.json();
   };
 
   if (loading) return <div style={{ padding: '2rem' }}>Loading...</div>;
+
+  // Guard: Require page password/admin when organization context is present
+  if (org && !authorized) {
+    return (
+      <PagePasswordPrompt
+        organizationId={org}
+        pageId={org}
+        pageType="play"
+        onSuccess={() => setAuthorized(true)}
+      />
+    );
+  }
 
   // Organization selection
   if (!org) {

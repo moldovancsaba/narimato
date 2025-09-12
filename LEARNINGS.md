@@ -1,8 +1,8 @@
 # Development Learnings
 
-**Current Version:** 6.14.0 (ESLint CLI migration + environment-aware CSP in dev)
+**Current Version:** 7.0.0 (MAJOR: MVP access control — page passwords + admin session)
 **Date:** 2025-09-07
-**Last Updated:** 2025-09-11T13:12:26.000Z
+**Last Updated:** 2025-09-12T09:05:46.000Z
 
 ### Next.js Security Hardening (v6.13.0) — Frontend / Security / Process
 - Functional: Upgraded Next.js to 15.5.2 and hardened next.config.js with strict images allowlist (remotePatterns), disabled SVG optimization, modern image formats, and global security headers (CSP, nosniff, DENY, Referrer-Policy, Permissions-Policy, COOP/CORP).
@@ -10,6 +10,11 @@
 - Timestamp: 2025-09-11T03:56:38.000Z
 
 ### Dev CSP Over-Restriction (v6.14.0) — Frontend / Security / Process
+
+### MVP Auth & Page Passwords (v6.15.0) — Backend / Frontend / Security
+- Functional: Added env-based admin session (HttpOnly cookie; 7d TTL) and per-organization page passwords to gate the Play page. Exposed endpoints under /api/system for login/logout/auth and create/validate passwords; client prompt component with auto-validate from shareable links; sessionStorage TTLs (24h page; 7d admin).
+- Strategic: Provides immediate access control with minimal surface area and reuse of existing stack; sets a foundation for future RBAC without introducing complexity now.
+- Timestamp: 2025-09-12T10:30:00.000Z
 - Functional: Strict production CSP was being applied in development, blocking Next.js dev overlay and HMR, resulting in a blank page. Updated next.config.js to make CSP environment-aware (dev permits 'unsafe-inline'/'unsafe-eval' and ws/wss localhost ports; production remains strict).
 - Strategic: Preserve developer velocity and debugging ergonomics without weakening production security posture. Environment-aware policies maintain defense-in-depth in production while avoiding local false positives.
 - Timestamp: 2025-09-11T13:12:26.000Z

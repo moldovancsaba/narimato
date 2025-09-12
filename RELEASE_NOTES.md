@@ -1,8 +1,46 @@
 # NARIMATO Release Notes
 
-**Current Version:** 6.14.0 (ESLint CLI migration + local fieldnames plugin; environment-aware dev CSP)
-**Date:** 2025-09-11
-**Last Updated:** 2025-09-11T13:12:26.000Z
+**Current Version:** 7.0.0 (MAJOR: MVP access control — page passwords + admin session)
+**Date:** 2025-09-12
+**Last Updated:** 2025-09-12T09:05:46.000Z
+
+## [v7.0.0] — 2025-09-12T09:05:46.000Z
+
+### Major: MVP Access Control Baseline
+- Summary: Introduced admin session (HttpOnly cookie) and per-organization page passwords. Play page is now gated per-organization.
+- Impact: Access to /play for an organization now requires either an admin session or the correct page password. Existing direct links without authorization will show a password prompt.
+- Backend:
+  - Mongoose model `lib/models/PagePassword.js` with salted SHA-256 hash and usage metrics
+  - Service helpers `lib/system/pagePassword.js` (create/regenerate/validate; shareable link)
+  - Admin utilities `lib/system/adminAuth.js` (cookie; 7-day TTL; Secure in prod)
+- API:
+  - `POST /api/system/admin/login` (env `ADMIN_PASSWORD`), `DELETE /api/system/admin/login` (logout)
+  - `GET /api/system/admin/auth` (session status)
+  - `POST /api/system/page-passwords` (admin-only), `PUT /api/system/page-passwords` (validate)
+- Frontend:
+  - `components/PagePasswordPrompt.js` + integration in `pages/play.js` (per-org gating)
+  - Auto-validate from shareable link `?pp=...` once; sessionStorage TTL: 24h (page), 7d (admin)
+- Documentation:
+  - Updated README, ARCHITECTURE, WARP, TASKLIST, ROADMAP, LEARNINGS to 7.0.0 with ISO 8601 timestamps
+- Build verification: Run `npm run build` before commit (no tests per MVP)
+
+## [v6.15.0] — 2025-09-12T10:30:00.000Z
+
+### MVP Access Control: Page Passwords + Admin Session
+- Backend:
+  - New Mongoose model `lib/models/PagePassword.js` with salted SHA-256 hash and usage metrics
+  - Service helpers `lib/system/pagePassword.js` to create/regenerate/validate and generate shareable links
+  - Admin session utilities `lib/system/adminAuth.js` (HttpOnly cookie; 7-day TTL)
+- API:
+  - `POST /api/system/admin/login` (env `ADMIN_PASSWORD`), `DELETE /api/system/admin/login` (logout)
+  - `GET /api/system/admin/auth` (session status)
+  - `POST /api/system/page-passwords` (admin-only create/regenerate), `PUT /api/system/page-passwords` (validate)
+- Frontend:
+  - `components/PagePasswordPrompt.js` and integration into `pages/play.js` gating per-organization access
+  - Shareable link auto-validate via `?pp=...` once; sessionStorage TTL: 24h (page), 7d (admin)
+- Documentation:
+  - Updated README, ARCHITECTURE, WARP, TASKLIST, ROADMAP, LEARNINGS to v6.15.0 with ISO 8601 timestamps
+- Build verification: ✅ Next.js production build recommended before commit (no tests)
 
 ## [v6.14.0] — 2025-09-11T13:12:26.000Z
 

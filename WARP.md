@@ -6,7 +6,7 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 NARIMATO is an anonymous, session-based card ranking application built with Next.js 15.5.2, MongoDB, JavaScript, and sophisticated binary search ranking algorithms. It's architected as a multi-tenant system with organization-level customization and ELO-based global rankings.
 
-**Current Version:** 6.14.0 (ESLint CLI migration + dev CSP for HMR; production security headers unchanged)
+**Current Version:** 7.0.0 (MAJOR: MVP access control — page passwords + admin session; dev CSP for HMR; production security headers unchanged)
 
 ## Essential Development Commands
 
@@ -180,6 +180,7 @@ export function createOrgDbConnect(organizationId: string) { ... }
 ```bash
 # .env.local (required)
 MONGODB_URI=mongodb+srv://...     # MongoDB Atlas connection
+ADMIN_PASSWORD=change-me          # Enables admin login (env-based)
 ORGANIZATION_DB_URIS={}           # JSON map of org-specific URIs (optional)
 ```
 
@@ -254,6 +255,9 @@ Supported play modes: vote_only, swipe_only, swipe_more, vote_more, rank_only, r
 - `/api/v1/presets/backgrounds` - Theme background presets
 - `/api/v1/presets/fonts` - Font presets
 - `/api/v1/upload/imgbb` - Image upload service
+- `/api/system/admin/login` - Admin login/logout (POST to login, DELETE to logout)
+- `/api/system/admin/auth` - Admin session status (GET)
+- `/api/system/page-passwords` - Page passwords (POST create/regenerate, PUT validate)
 
 ### Security Middleware
 - Rate limiting: 100 requests/minute per IP (see `/lib/middleware/rateLimit.js`)

@@ -1,10 +1,23 @@
 # NARIMATO Task List
 
-**Current Version:** 6.14.0
+**Current Version:** 7.0.0
 **Date:** 2025-09-08T09:21:11.000Z
-**Last Updated:** 2025-09-11T13:12:26.000Z
+**Last Updated:** 2025-09-12T09:05:46.000Z
 
 ## High Priority Tasks
+
+### MVP Access Control — Admin Login + Page Passwords (Play Protection)
+- Owner: AI Agent
+- Expected Delivery Date: 2025-09-12T10:00:00.000Z
+- Status: Completed ✅
+- Completion Date: 2025-09-12T10:30:00.000Z
+- Details: Implemented env-based admin session (HttpOnly cookie) and per-organization page password protection for Play. Added APIs under /api/system, client prompt, and Play integration. Updated docs and version to v6.15.0.
+- Subtasks:
+  - Model and service helpers for page passwords
+  - Admin login/logout and auth status endpoints
+  - Public validate endpoint with admin bypass
+  - Client prompt and Play page gating
+  - Docs sync and version bump (minor)
 
 ### Security: Next.js Vulnerabilities Remediation (#30, #28, #26)
 - Owner: AI Agent
