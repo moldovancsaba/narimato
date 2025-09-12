@@ -1,13 +1,13 @@
 # NARIMATO
 
-![Version](https://img.shields.io/badge/version-7.2.0-blue.svg)
+![Version](https://img.shields.io/badge/version-7.3.0-blue.svg)
 ![Next.js](https://img.shields.io/badge/Next.js-15.5.2-black.svg)
 ![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)
 ![MongoDB](https://img.shields.io/badge/MongoDB-7.0+-green.svg)
 
 NARIMATO is an anonymous, session-based card ranking application built with Next.js, MongoDB, and sophisticated binary search ranking algorithms. Global rankings are powered by ELO rating system for accurate skill-based card comparisons.
 
-**Current Version:** 7.2.0 *(MINOR: Home and admin pages gated (SSR); legacy page-password and env-admin removed)*
+**Current Version:** 7.3.0 *(MINOR: Global Logout control in UI; confirms SSR gatekeeping)*
 
 ## ✨ Key Features
 

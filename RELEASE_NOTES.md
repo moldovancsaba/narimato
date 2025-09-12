@@ -1,8 +1,17 @@
 # NARIMATO Release Notes
 
-**Current Version:** 7.2.0 (MINOR: SSR-gated home + admin; legacy page-password/env-admin removed)
+**Current Version:** 7.3.0 (MINOR: Global Logout control; SSR gatekeeping UX)
 **Date:** 2025-09-12
 **Last Updated:** 2025-09-12T09:05:46.000Z
+
+## [v7.3.0] — 2025-09-12T16:52:17.000Z
+
+### Minor: Global Logout control in UI
+- Summary: Added a global Logout button (top-right) that appears only when an admin session is present; it ends the session and redirects to /admin/login.
+- Impact: Makes it easy to verify SSR-protected routes and end admin sessions on shared devices.
+- Frontend:
+  - New AdminSessionControls in pages/_app.js; checks session via GET /api/admin/login; DELETE /api/admin/login to logout.
+- Build verification: npm run build passed
 
 ## [v7.2.0] — 2025-09-12T13:15:00.000Z
 

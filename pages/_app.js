@@ -1,7 +1,7 @@
 // FUNCTIONAL: Next.js custom App component with GA4 integration
 // STRATEGIC: Central location for analytics initialization, Consent Mode, and SPA route tracking
 
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Script from 'next/script';
 import { GA_ID, isProd, pageview } from '../lib/analytics/ga';
@@ -79,8 +79,64 @@ export default function MyApp({ Component, pageProps }) {
         </>
       )}
 
+      {/* FUNCTIONAL: Global admin session controls (Logout) */}
+      {/* STRATEGIC: Make it easy to end admin sessions and verify SSR gatekeeping */}
+      <AdminSessionControls />
+
       <Component {...pageProps} />
     </>
+  );
+}
+
+// FUNCTIONAL: Renders a fixed Logout button when an admin session is present
+// STRATEGIC: Users can explicitly end sessions and confirm protected routes redirect
+function AdminSessionControls() {
+  const router = useRouter();
+  const [authed, setAuthed] = React.useState(false);
+  const [busy, setBusy] = React.useState(false);
+
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await fetch('/api/admin/login');
+        if (!mounted) return;
+        setAuthed(res.ok);
+      } catch {
+        if (!mounted) return;
+        setAuthed(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  async function logout() {
+    setBusy(true);
+    try {
+      await fetch('/api/admin/login', { method: 'DELETE' });
+      // After logout, redirect to login page
+      router.replace('/admin/login');
+    } catch {
+      router.replace('/admin/login');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!authed) return null;
+
+  return (
+    <div style={{ position: 'fixed', top: 8, right: 8, zIndex: 9999 }}>
+      <button
+        onClick={logout}
+        disabled={busy}
+        className="btn btn-secondary btn-sm"
+        title="Logout"
+        style={{ cursor: 'pointer' }}
+      >
+        {busy ? 'Logging out…' : 'Logout'}
+      </button>
+    </div>
   );
 }
 

@@ -1,8 +1,8 @@
 # Development Learnings
 
-**Current Version:** 7.2.0 (MINOR: Admin SSR gating + legacy removal)
+**Current Version:** 7.3.0 (MINOR: Logout control + SSR verification UX)
 **Date:** 2025-09-07
-**Last Updated:** 2025-09-12T13:15:00.000Z
+**Last Updated:** 2025-09-12T16:52:17.000Z
 
 ### Next.js Security Hardening (v6.13.0) — Frontend / Security / Process
 - Functional: Upgraded Next.js to 15.5.2 and hardened next.config.js with strict images allowlist (remotePatterns), disabled SVG optimization, modern image formats, and global security headers (CSP, nosniff, DENY, Referrer-Policy, Permissions-Policy, COOP/CORP).
@@ -199,10 +199,10 @@
    - **Hierarchical Redirects**: Proper redirect information for complex flows
    - **State Transitions**: Clear communication of state changes to frontend
 
-### Admin SSR Gating + Legacy Removal (v7.2.0) — Backend / Frontend / Security / Process
-- Functional: Added SSR guards to the homepage and /admin/users; deactivated legacy page-password API and env-admin endpoints (return 410 Gone).
-- Strategic: Consolidates authentication to one system (credential users), simplifies mental model, and eliminates flicker by enforcing server-side checks.
-- Timestamp: 2025-09-12T13:15:00.000Z
+### Global Logout Control (v7.3.0) — Frontend / Security / Process
+- Functional: Added Logout in the global UI when an admin session exists; clears cookie session via DELETE /api/admin/login and redirects to /admin/login.
+- Strategic: Facilitates manual verification of SSR gatekeeping and safer shared-device workflows.
+- Timestamp: 2025-09-12T16:52:17.000Z
 ### Performance Impact Analysis
 1. **Algorithm Improvements**:
    - **Comparison Reduction**: ~40% fewer comparisons per card ranking
