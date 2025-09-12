@@ -1,8 +1,21 @@
 # NARIMATO Release Notes
 
-**Current Version:** 7.1.0 (MINOR: MessMass-style user management + SSR guards)
+**Current Version:** 7.2.0 (MINOR: SSR-gated home + admin; legacy page-password/env-admin removed)
 **Date:** 2025-09-12
 **Last Updated:** 2025-09-12T09:05:46.000Z
+
+## [v7.2.0] — 2025-09-12T13:15:00.000Z
+
+### Minor: Gate homepage and admin pages; remove legacy auth flows
+- Summary: Secured “/” and admin pages (SSR) with credential-based sessions; removed legacy page-password flow and env-based admin endpoints.
+- Impact: All admin surfaces are SSR-protected and redirect to /admin/login. End-user pages remain public: /play, /rankings, /r/[playId].
+- Backend:
+  - Deactivated legacy endpoints: /api/system/page-passwords, /api/system/admin/login, /api/system/admin/auth now return 410 Gone
+- Frontend:
+  - SSR guards added: / (home), /admin/users (in addition to /organizations and /cards)
+- Documentation:
+  - Updated version and notes; maintained ISO 8601 timestamps with milliseconds
+- Build verification: npm run build passed
 
 ## [v7.1.0] — 2025-09-12T12:29:11.000Z
 

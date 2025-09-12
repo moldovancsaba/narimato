@@ -3,6 +3,18 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { getSessionUser } from '../../lib/system/userAuth';
+
+export async function getServerSideProps(ctx) {
+  // FUNCTIONAL: Server-side guard for admin users page (no client flicker).
+  // STRATEGIC: Aligns all admin pages behind the same credential cookie.
+  const user = getSessionUser(ctx.req);
+  if (!user) {
+    const next = encodeURIComponent(ctx.resolvedUrl || '/admin/users');
+    return { redirect: { destination: `/admin/login?next=${next}`, permanent: false } };
+  }
+  return { props: {} };
+}
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);

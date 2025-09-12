@@ -1,6 +1,18 @@
 // FUNCTIONAL: Landing page linking to core flows (Organizations, Cards, Play, Rankings)
 // STRATEGIC: Provides a simple, low-friction entry to main features (no breadcrumbs per policy)
 import Link from 'next/link';
+import { getSessionUser } from '../lib/system/userAuth';
+
+export async function getServerSideProps(ctx) {
+  // FUNCTIONAL: Secure homepage for admins only; redirect unauthenticated users to admin login.
+  // STRATEGIC: Home acts as an administrative entry point; end-user surfaces remain public (/play, /rankings).
+  const user = getSessionUser(ctx.req);
+  if (!user) {
+    const next = encodeURIComponent(ctx.resolvedUrl || '/');
+    return { redirect: { destination: `/admin/login?next=${next}`, permanent: false } };
+  }
+  return { props: {} };
+}
 
 export default function Home() {
   return (

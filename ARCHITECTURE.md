@@ -1,8 +1,8 @@
 # NARIMATO Architecture
 
-**Current Version:** 7.1.0 (MINOR: Credential-based Admin User Management + SSR route guards; dev CSP remains environment-aware; prod headers unchanged)
+**Current Version:** 7.2.0 (MINOR: SSR-gated admin surfaces; legacy page-password/env-admin removed; dev CSP remains environment-aware; prod headers unchanged)
 **Date:** 2025-10-12
-**Last Updated:** 2025-09-12T12:29:11.000Z
+**Last Updated:** 2025-09-12T13:15:00.000Z
 
 ## ⚡ UUID Field Standardization (v3.7.1+)
 

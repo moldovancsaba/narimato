@@ -5,11 +5,7 @@ import { applyRateLimit } from '../../../../lib/middleware/rateLimit';
 import { getAdminUser } from '../../../../lib/system/adminAuth';
 
 export default async function handler(req, res) {
-  const limited = await applyRateLimit(req, res, { windowMs: 60_000, max: 60, key: 'system:admin:auth' });
-  if (limited) return;
-
-  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
-  const user = getAdminUser(req);
-  if (!user) return res.status(401).json({ error: 'Not authenticated' });
-  return res.status(200).json({ user });
+  // FUNCTIONAL: Legacy env-admin session check removed.
+  // STRATEGIC: Use credential session via /api/admin/login; this endpoint now returns 410 Gone.
+  return res.status(410).json({ error: 'Gone: env-admin auth removed as of v7.2.0. Use /api/admin/login (GET) for status.' });
 }
