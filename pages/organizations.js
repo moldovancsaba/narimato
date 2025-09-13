@@ -21,10 +21,7 @@ export default function Organizations() {
   const [editingOrg, setEditingOrg] = useState(null);
   const [editFormData, setEditFormData] = useState({ name: '', slug: '', description: '' });
 
-  useEffect(() => {
-    fetchOrganizations();
-  }, [fetchOrganizations]);
-
+  // Define fetchOrganizations before using it in useEffect to avoid TDZ issues under SSR/prerender
   const fetchOrganizations = useCallback(async () => {
     try {
       const res = await fetch('/api/organizations');
@@ -36,6 +33,10 @@ export default function Organizations() {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    fetchOrganizations();
+  }, [fetchOrganizations]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -235,7 +236,7 @@ export default function Organizations() {
                       <Link href={`/cards?org=${org[CARD_FIELDS.UUID]}`} className="btn btn-primary">
                         🎴 Manage Cards
                       </Link>
-                      <Link href={`/play?org=${org[CARD_FIELDS.UUID]}`} className="btn btn.warning">
+                      <Link href={`/play?org=${org[CARD_FIELDS.UUID]}`} className="btn btn-warning">
                         🎮 Play
                       </Link>
                       <button onClick={() => startEdit(org)} className="btn btn-info">
