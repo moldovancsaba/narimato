@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { getSessionUser } from '../lib/system/userAuth';
+import { CARD_FIELDS } from '../lib/constants/fields';
 
 export async function getServerSideProps(ctx) {
   // FUNCTIONAL: Server-side admin guard for Cards management.
@@ -39,15 +40,15 @@ export default function Cards() {
 
   useEffect(() => {
     fetchOrganizations();
-  }, []);
+  }, [fetchOrganizations]);
 
   useEffect(() => {
     if (org) {
       fetchCards();
     }
-  }, [org]);
+  }, [org, fetchCards]);
 
-  const fetchOrganizations = async () => {
+  const fetchOrganizations = useCallback(async () => {
     try {
       const res = await fetch('/api/organizations');
       const data = await res.json();
@@ -57,9 +58,9 @@ export default function Cards() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchCards = async () => {
+  const fetchCards = useCallback(async () => {
     try {
       const res = await fetch(`/api/cards?organizationId=${org}`);
       const data = await res.json();
@@ -90,13 +91,13 @@ export default function Cards() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [org, router.query.includeHidden]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const isEditing = editingCard !== null;
-      const url = isEditing ? `/api/cards/${editingCard.uuid}` : '/api/cards';
+      const url = isEditing ? `/api/cards/${editingCard[CARD_FIELDS.UUID]}` : '/api/cards';
       const method = isEditing ? 'PUT' : 'POST';
       
       const res = await fetch(url, {
@@ -189,10 +190,10 @@ export default function Cards() {
           </div>
         ) : (
           <div style={{ display: 'grid', gap: '1rem' }}>
-            {organizations.map(organization => (
-              <div key={organization.uuid} style={{ padding: '1rem', border: '1px solid #ddd', borderRadius: '4px' }}>
+              {organizations.map(organization => (
+              <div key={organization[CARD_FIELDS.UUID]} style={{ padding: '1rem', border: '1px solid #ddd', borderRadius: '4px' }}>
                 <h3>{organization.name}</h3>
-                <Link href={`/cards?org=${organization.uuid}`} className="btn btn-primary">
+                <Link href={`/cards?org=${organization[CARD_FIELDS.UUID]}`} className="btn btn-primary">
                   🎴 Manage Cards for This Organization
                 </Link>
               </div>
@@ -230,14 +231,14 @@ export default function Cards() {
         }}>
           {editingCard ? '📝 Edit Card: "' + editingCard.title + '"' : 'Create New Card'}
         </h2>
-        {editingCard && (
+          {editingCard && (
           <p style={{ 
             color: '#007bff', 
             fontSize: '0.9rem', 
             marginBottom: '1rem',
             fontStyle: 'italic'
           }}>
-            💡 Editing card with UUID: {editingCard.uuid}
+            💡 Editing card with UUID: {editingCard[CARD_FIELDS.UUID]}
           </p>
         )}
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1rem' }}>
@@ -271,14 +272,14 @@ export default function Cards() {
             {cards
               .filter(card => card.isParent && card.hasChildren)
               .map(parentCard => (
-                <option key={parentCard.uuid} value={parentCard.name}>
+                <option key={parentCard[CARD_FIELDS.UUID]} value={parentCard.name}>
                   📁 {parentCard.name.startsWith('#') ? parentCard.name.substring(1) : parentCard.name} ({parentCard.title})
                 </option>
               ))
             }
             <optgroup label="All Available Cards">
               {cards.map(card => (
-                <option key={`all-${card.uuid}`} value={card.name}>
+                <option key={`all-${card[CARD_FIELDS.UUID]}`} value={card.name}>
                   📄 {card.name.startsWith('#') ? card.name.substring(1) : card.name} ({card.title})
                 </option>
               ))}
@@ -373,7 +374,7 @@ export default function Cards() {
                 </h3>
                 <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
                   {deckCards.slice(0, 3).map(card => (
-                    <div key={card.uuid} style={{ padding: '0.25rem 0.5rem', background: '#f8f9fa', borderRadius: '4px', fontSize: '0.75rem' }}>
+                    <div key={card[CARD_FIELDS.UUID]} style={{ padding: '0.25rem 0.5rem', background: '#f8f9fa', borderRadius: '4px', fontSize: '0.75rem' }}>
                       {card.title}
                     </div>
                   ))}
@@ -396,7 +397,7 @@ export default function Cards() {
         <h2>All Cards ({cards.length})</h2>
         <div className="card-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
           {cards.map(card => (
-            <div key={card.uuid} className="card-with-info">
+            <div key={card[CARD_FIELDS.UUID]} className="card-with-info">
               <div className={`card card-md card-interactive ${card.imageUrl ? 'has-image' : ''}`}>
                 <div className="card-title">{card.title}</div>
                 {card.description && <div className="card-description">{card.description}</div>}
@@ -421,7 +422,7 @@ export default function Cards() {
                       ✏️ Edit
                     </button>
                     <button 
-                      onClick={() => handleDelete(card.uuid)}
+                      onClick={() => handleDelete(card[CARD_FIELDS.UUID])}
                       className="btn btn-secondary btn-sm"
                     >
                       🗑️ Delete

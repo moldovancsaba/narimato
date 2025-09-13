@@ -1,6 +1,7 @@
 const { connectDB } = require('../../../lib/db');
 const Play = require('../../../lib/models/Play');
 const Card = require('../../../lib/models/Card');
+const { fieldNames } = require('../../../lib/constants/fieldNames');
 const { getDeckCards } = require('../../../lib/utils/cardUtils');
 const { v4: uuidv4 } = require('uuid');
 
@@ -21,7 +22,7 @@ export default async function handler(req, res) {
     // Get the parent card
     const parentCard = await Card.findOne({ 
       organizationId, 
-      uuid: parentCardId, 
+      [fieldNames.CardUUID]: parentCardId, 
       isParent: true,
       isActive: true 
     });
@@ -46,10 +47,10 @@ export default async function handler(req, res) {
 
     // Create child ranking session - ONLY siblings compete
     const shuffledChildren = [...children].sort(() => Math.random() - 0.5);
-    const childIds = shuffledChildren.map(child => child.uuid);
+    const childIds = shuffledChildren.map(child => child[fieldNames.CardUUID]);
 
     const childPlay = new Play({
-      uuid: uuidv4(),
+      [fieldNames.PlayUUID]: uuidv4(),
       organizationId,
       deckTag: `${parentCard.name}_children`, // Special deck tag for child sessions
       cardIds: childIds,
@@ -64,15 +65,15 @@ export default async function handler(req, res) {
 
     // Return child ranking session
     res.json({
-      childPlayId: childPlay.uuid,
+      childPlayId: childPlay[fieldNames.PlayUUID],
       parentCard: {
-        id: parentCard.uuid,
+        id: parentCard[fieldNames.CardUUID],
         title: parentCard.title,
         name: parentCard.name
       },
       totalChildren: children.length,
       children: shuffledChildren.map(child => ({
-        id: child.uuid,
+        id: child[fieldNames.CardUUID],
         title: child.title,
         description: child.description,
         imageUrl: child.imageUrl
@@ -81,7 +82,7 @@ export default async function handler(req, res) {
       message: `Child ranking session started for "${parentCard.title}"`
     });
 
-    console.log(`✅ Child ranking session created: ${childPlay.uuid}`);
+    console.log(`✅ Child ranking session created: ${childPlay[fieldNames.PlayUUID]}`);
 
   } catch (error) {
     console.error('Rank children error:', error);

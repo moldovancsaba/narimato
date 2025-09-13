@@ -174,8 +174,6 @@ Next steps:
   - Play page: track onboarding completion per deck (in-memory) and skip re-trigger.
   - Ensures onboarding runs once, then resumes the intended deck/mode without restarting.
 - Verification: Build executed next
-
-# Update — 2025-09-10T11:29:27.000Z
 - Author: Agent Mode (AI)
 - Patch Release: v6.11.2 — Deck-Specific Onboarding Pairing
 - Changes:
@@ -201,7 +199,7 @@ Next steps:
   - Cards UI: new "Onboarding" checkbox with help text and warning for non-parent/no-children
   - Play orchestration: auto-run onboarding segments before selected deck (client-side queue; shallow routing); skip selected deck’s parent when flagged
   - Analytics: onboarding_auto_start and onboarding_complete events
-  - Docs & version sync across README, ARCHITECTURE, TASKLIST, LEARNINGS, ROADMAP, RELEASE_NOTES, WARP.md; ISO 8601 timestamps
+  - Docs & version sync across README, ARCHITECTURE, TASKLIST, ROADMAP, LEARNINGS, RELEASE_NOTES, WARP.md; ISO 8601 timestamps
 - Verification: Build to be run now; deployment pending confirmation
 
 # Update — 2025-09-08T09:31:56.000Z
@@ -328,6 +326,26 @@ Next steps:
   - Verified build success (Next.js 15.5.2)
 - Documentation:
   - Updated version markers and timestamps across README.md, ARCHITECTURE.md, TASKLIST.md, LEARNINGS.md, ROADMAP.md, RELEASE_NOTES.md, WARP.md
+- Next:
+  - Consider refactoring flagged field-naming warnings progressively (rule currently warns, not errors)
+
+# Plan — 2025-09-13T00:00:00.000Z
+- Author: Agent Mode (AI)
+- Title: Eliminate ESLint fieldnames warnings across services/utils (computed property access)
+- Objective: Replace dot-notation usages of uuid/cardId/personalRanking/sessionId with computed property access via centralized constants (CARD_FIELDS, SESSION_FIELDS, VOTE_FIELDS) to satisfy fieldnames/field-naming-consistency and achieve zero-warning builds.
+- Scope:
+  - Services: DecisionTreeEngine, RankMoreEngine, RankOnlyEngine, SwipeMoreEngine, SwipeOnlyEngine, VoteMoreEngine, VoteOnlyService, hierarchicalSessionManager
+  - Utils: ranking.js (validate), plus any residual occurrences
+- Steps:
+  1) Refactor services/utils to use bracket notation with constants for all reads/writes of the specified fields
+  2) Run production build and iterate until zero warnings
+  3) Update documentation (ROADMAP/TASKLIST/LEARNINGS) and prepare version bump to 7.4.0 upon success
+- Compliance:
+  - ISO 8601 UTC timestamps with milliseconds
+  - No tests; No breadcrumbs; Atlas-only DB
+- Verification:
+  - npm run build must show zero warnings
+  - Manual smoke on core flows (play, swipe-only, rankings, results)
 - Next:
   - Consider refactoring flagged field-naming warnings progressively (rule currently warns, not errors)
 

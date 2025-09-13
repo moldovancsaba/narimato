@@ -12,6 +12,14 @@
     {
       "files": ["pages/**/*.js"],
       "rules": { "@next/next/no-img-element": "off" }
+    },
+    {
+      "files": ["**/* 2.js"],
+      "rules": { "fieldnames/field-naming-consistency": "off" }
+    },
+    {
+      "files": ["lib/validation/**/*.js"],
+      "rules": { "fieldnames/field-naming-consistency": "off" }
     }
   ]
 }

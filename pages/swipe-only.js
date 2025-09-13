@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { haptics } from '../lib/utils/haptics';
@@ -19,15 +19,34 @@ export default function SwipeOnly() {
   const cardRef = useRef(null);
 
 
-  useEffect(() => {
-    if (org && deck) {
-      startSwipeSession();
+  // FUNCTIONAL: Get current card for swiping
+  // STRATEGIC: Simple card retrieval for swipe-only interface
+  const getCurrentCard = useCallback(async (playId) => {
+    try {
+      const res = await fetch(`/api/v1/play/${playId}/next`);
+      
+      if (res.ok) {
+        const data = await res.json();
+        
+        if (data.completed) {
+          setCompleted(true);
+          setCurrentCard(null);
+        } else {
+          setCurrentCard(data.currentCard || data.card || null);
+          setProgress(data.progress || null);
+        }
+      } else {
+        console.error('Failed to get current card');
+      }
+    } catch (error) {
+      console.error('Error getting current card:', error);
     }
-  }, [org, deck]);
+  }, []);
 
   // FUNCTIONAL: Initialize SwipeOnly session using dedicated API
   // STRATEGIC: Pure swipe workflow - no hierarchical or voting state management
-  const startSwipeSession = async () => {
+  const startSwipeSession = useCallback(async () => {
+    if (!org || !deck) return;
     try {
       console.log('🎆 Starting SwipeOnly session for deck:', deck);
       
@@ -58,35 +77,12 @@ export default function SwipeOnly() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [org, deck, router, getCurrentCard]);
 
-  // FUNCTIONAL: Get current card for swiping
-  // STRATEGIC: Simple card retrieval for swipe-only interface
-  const getCurrentCard = async (playId) => {
-    try {
-      const res = await fetch(`/api/v1/play/${playId}/next`);
-      
-      if (res.ok) {
-        const data = await res.json();
-        
-        if (data.completed) {
-          setCompleted(true);
-          setCurrentCard(null);
-        } else {
-          setCurrentCard(data.currentCard || data.card || null);
-          setProgress(data.progress || null);
-        }
-      } else {
-        console.error('Failed to get current card');
-      }
-    } catch (error) {
-      console.error('Error getting current card:', error);
-    }
-  };
 
   // FUNCTIONAL: Process swipe action
   // STRATEGIC: Pure swipe processing - left = dislike, right = like
-  const handleSwipe = async (direction) => {
+  const handleSwipe = useCallback(async (direction) => {
     if (!session || !currentCard) return;
 
     // Perceptual feedback is handled by the shared swipe gesture hook (light + micro-bump)
@@ -135,10 +131,8 @@ export default function SwipeOnly() {
       console.error('Failed to process swipe:', error);
       alert('Failed to process swipe');
     }
-  };
+  }, [session, currentCard, org, deck, router, getCurrentCard]);
 
-  // FUNCTIONAL: Handle keyboard controls
-  // STRATEGIC: Accessible swipe controls - left arrow = dislike, right arrow = like
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (currentCard && !loading) {
@@ -154,7 +148,14 @@ export default function SwipeOnly() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentCard, loading]);
+  }, [currentCard, loading, handleSwipe]);
+
+  // Kick off session when org/deck available
+  useEffect(() => {
+    if (org && deck) {
+      startSwipeSession();
+    }
+  }, [org, deck, startSwipeSession]);
 
   // FUNCTIONAL: Attach cross-device swipe gestures via shared hook
   // STRATEGIC: Reuses centralized heuristics and haptics without duplicating logic

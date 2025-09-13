@@ -1,6 +1,7 @@
 const { connectDB } = require('../../../lib/db');
 const DecisionTreeEngine = require('../../../lib/services/DecisionTreeEngine');
 const Play = require('../../../lib/models/Play');
+const { fieldNames } = require('../../../lib/constants/fieldNames');
 
 // FUNCTIONAL: Clean decision tree engine
 // STRATEGIC: Simple, working implementation built from scratch
@@ -28,8 +29,8 @@ export default async function handler(req, res) {
     }).sort({ createdAt: -1 });
     
     if (existingSession) {
-      console.log('🔁 Resuming session:', existingSession.uuid);
-      const sessionData = await engine.getSessionData(existingSession.uuid);
+      console.log('🔁 Resuming session:', existingSession[fieldNames.PlayUUID]);
+      const sessionData = await engine.getSessionData(existingSession[fieldNames.PlayUUID]);
       return res.json({
         ...sessionData,
         resumed: true

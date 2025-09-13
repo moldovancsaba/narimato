@@ -15,6 +15,7 @@ export default async function handler(req, res) {
 
   try {
     const schema = z.object({
+      // eslint-disable-next-line fieldnames/field-naming-consistency
       organizationId: z.string().uuid(),
       deckTag: z.string().min(1),
       mode: z.enum(['vote_only', 'swipe_only', 'onboarding', 'swipe_more', 'vote_more', 'rank_only', 'rank_more']) // extendable

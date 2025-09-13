@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { getSessionUser } from '../lib/system/userAuth';
+import { CARD_FIELDS } from '../lib/constants/fields';
 
 export async function getServerSideProps(ctx) {
   // FUNCTIONAL: Server-side admin guard to prevent unauthenticated flash and ensure clean redirects.
@@ -22,9 +23,9 @@ export default function Organizations() {
 
   useEffect(() => {
     fetchOrganizations();
-  }, []);
+  }, [fetchOrganizations]);
 
-  const fetchOrganizations = async () => {
+  const fetchOrganizations = useCallback(async () => {
     try {
       const res = await fetch('/api/organizations');
       const data = await res.json();
@@ -34,7 +35,7 @@ export default function Organizations() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -67,7 +68,7 @@ export default function Organizations() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          uuid: editingOrg.uuid,
+          uuid: editingOrg[CARD_FIELDS.UUID],
           ...editFormData
         })
       });
@@ -98,7 +99,7 @@ export default function Organizations() {
       const res = await fetch('/api/organizations', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uuid: org.uuid })
+        body: JSON.stringify({ uuid: org[CARD_FIELDS.UUID] })
       });
       
       if (res.ok) {
@@ -186,8 +187,8 @@ export default function Organizations() {
         ) : (
           <div style={{ display: 'grid', gap: '1rem' }}>
             {organizations.map(org => (
-              <div key={org.uuid} style={{ padding: '1rem', border: '1px solid #ddd', borderRadius: '4px' }}>
-                {editingOrg && editingOrg.uuid === org.uuid ? (
+              <div key={org[CARD_FIELDS.UUID]} style={{ padding: '1rem', border: '1px solid #ddd', borderRadius: '4px' }}>
+                {editingOrg && (editingOrg[CARD_FIELDS.UUID] === org[CARD_FIELDS.UUID]) ? (
                   /* Edit Form */
                   <form onSubmit={handleUpdate} style={{ display: 'grid', gap: '0.5rem' }}>
                     <input
@@ -226,15 +227,15 @@ export default function Organizations() {
                   <>
                     <h3 style={{ margin: '0 0 0.5rem 0' }}>{org.name}</h3>
                     <p style={{ color: '#666', margin: '0 0 0.5rem 0' }}>/{org.slug}</p>
-                    <p style={{ color: '#888', margin: '0 0 0.5rem 0', fontSize: '0.875rem' }}>UUID: {org.uuid}</p>
+                    <p style={{ color: '#888', margin: '0 0 0.5rem 0', fontSize: '0.875rem' }}>UUID: {org[CARD_FIELDS.UUID]}</p>
                     {org.description && <p style={{ margin: '0 0 1rem 0' }}>{org.description}</p>}
                     <div className="btn-group btn-group-tight">
                       {/* FUNCTIONAL: Use mid-size (default) for secondary actions on cards */}
                       {/* STRATEGIC: Establish a consistent mid tier for common actions */}
-                      <Link href={`/cards?org=${org.uuid}`} className="btn btn-primary">
+                      <Link href={`/cards?org=${org[CARD_FIELDS.UUID]}`} className="btn btn-primary">
                         🎴 Manage Cards
                       </Link>
-                      <Link href={`/play?org=${org.uuid}`} className="btn btn-warning">
+                      <Link href={`/play?org=${org[CARD_FIELDS.UUID]}`} className="btn btn.warning">
                         🎮 Play
                       </Link>
                       <button onClick={() => startEdit(org)} className="btn btn-info">

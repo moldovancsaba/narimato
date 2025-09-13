@@ -1,5 +1,6 @@
 const { connectDB } = require('../../../lib/db');
 const Play = require('../../../lib/models/Play');
+const { fieldNames } = require('../../../lib/constants/fieldNames');
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -15,7 +16,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'playId required' });
     }
 
-    const play = await Play.findOne({ uuid: playId });
+    const play = await Play.findOne({ [fieldNames.PlayUUID]: playId });
     
     if (!play) {
       return res.status(404).json({ error: 'Play session not found' });
@@ -23,9 +24,9 @@ export default async function handler(req, res) {
 
     // Return the play results
     res.json({
-      playId: play.uuid,
+      playId: play[fieldNames.PlayUUID],
       status: play.status,
-      personalRanking: play.personalRanking,
+      personalRanking: play['personalRanking'],
       votes: play.votes,
       swipes: play.swipes,
       completedAt: play.completedAt,

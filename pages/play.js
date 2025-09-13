@@ -1,9 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+/* eslint-disable @next/next/no-css-tags */
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { calculateCardSize } from '../lib/utils/cardSizing';
 import { event } from '../lib/analytics/ga';
 import { useSwipeGestures } from '../lib/utils/useSwipeGestures';
+import { CARD_FIELDS } from '../lib/constants/fields';
 export default function Play() {
   const router = useRouter();
   const { org, deck } = router.query;
@@ -70,17 +72,264 @@ export default function Play() {
       }
     })();
     return () => { mounted = false; };
-  }, [router.query.includeHidden]);
+  }, [router, router.query.includeHidden]);
+
+  const fetchDecks = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/cards?organizationId=${org}`);
+      const data = await res.json();
+      
+      // Group into decks
+      const deckGroups = {};
+      data.cards?.forEach(card => {
+        if (card.parentTag) {
+          if (!deckGroups[card.parentTag]) {
+            deckGroups[card.parentTag] = [];
+          }
+          deckGroups[card.parentTag].push(card);
+        }
+      });
+      
+      const includeHidden = isAdmin && showHidden === true;
+      const playableDecks = Object.entries(deckGroups)
+        .filter(([tag, grpCards]) => grpCards.length >= 2)
+        .filter(([tag]) => {
+          const parent = data.cards.find(c => c.name === tag);
+          if (!parent) return true;
+          return includeHidden ? true : (parent.isPlayable !== false);
+        })
+        .map(([tag, grpCards]) => ({ tag, cards: grpCards }));
+      
+      setDecks(playableDecks);
+    } catch (error) {
+      console.error('Failed to fetch decks:', error);
+    }
+  }, [org, isAdmin, showHidden]);
 
   useEffect(() => {
     if (!org) return;
     fetchDecks();
-  }, [org, showHidden, isAdmin]);
+  }, [org, showHidden, isAdmin, fetchDecks]);
+
+  // Check hierarchical status to determine next step after completion
+  const checkHierarchicalStatus = useCallback(async () => {
+    if (!currentPlay) return;
+
+    const { mode } = router.query;
+    if (mode === 'swipe-only' || mode === 'swipe-more') {
+      try { event('play_complete', { playId: currentPlay.playId, mode, hierarchical: false }); } catch (e) {}
+      router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}&mode=${mode}`);
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/play/hierarchical-status?playId=${currentPlay.playId}&organizationId=${org}`);
+      if (res.ok) {
+        const statusData = await res.json();
+        if (statusData.isHierarchical) {
+          switch (statusData.action) {
+            case 'start_child_session':
+              try { event('segment_end', { playId: currentPlay.playId, segment: 'parent', outcome: 'child_session_start' }); } catch (e) {}
+              router.push(`/play?org=${org}&deck=child&playId=${statusData.data.childSessionId}`);
+              return;
+            case 'show_hierarchical_results':
+              try { const { mode } = router.query; event('play_complete', { playId: currentPlay.playId, mode, hierarchical: true }); } catch (e) {}
+              alert(`Hierarchical ranking complete!\n\nRanked ${statusData.data.totalItems} items in families.`);
+              setTimeout(() => { router.push(`/results?playId=${statusData.playId}&org=${org}&deck=${encodeURIComponent(deck)}&hierarchical=true`); }, 1500);
+              return;
+            case 'initialize_hierarchical':
+              try {
+                const initRes = await fetch('/api/play/hierarchical-status', {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ playId: currentPlay.playId, organizationId: org, action: 'initialize' })
+                });
+                if (initRes.ok) {
+                  setTimeout(() => { checkHierarchicalStatus(); }, 1000);
+                } else {
+                  router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}`);
+                }
+              } catch (error) {
+                router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}`);
+              }
+              return;
+            case 'show_standard_results':
+              try { const { mode } = router.query; event('play_complete', { playId: currentPlay.playId, mode, hierarchical: false }); } catch (e) {}
+              router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}`);
+              return;
+            default:
+              break;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error checking hierarchical status:', error);
+    }
+
+    router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}`);
+  }, [currentPlay, router, org, deck]);
+
+  // Hierarchical onboarding and session start
+  const computeOnboardingQueue = useCallback(async (orgId, selectedDeckTag) => {
+    try {
+      const res = await fetch(`/api/cards?organizationId=${orgId}`);
+      const data = await res.json();
+      const all = Array.isArray(data.cards) ? data.cards : [];
+
+      const normalize = (str) => (str || '').toString().replace(/^#/, '').toLowerCase().trim();
+      const baseDeck = normalize(selectedDeckTag);
+      const stripOnboardingSuffix = (name) => {
+        const n = normalize(name);
+        if (n.endsWith('_onboarding')) return n.slice(0, -'_onboarding'.length);
+        if (n.endsWith('-onboarding')) return n.slice(0, -'-onboarding'.length);
+        if (n.endsWith(' onboarding')) return n.slice(0, -' onboarding'.length);
+        return n;
+      };
+
+      const parents = all.filter(c => !c.parentTag && c.isOnboarding === true);
+      const matched = parents.filter(p => stripOnboardingSuffix(p.name) === baseDeck);
+      const queue = matched
+        .map(p => ({ parent: p, count: all.filter(c => c.parentTag === p.name).length }))
+        .filter(x => x.count >= 2)
+        .map(x => x.parent.name);
+      return queue;
+    } catch (e) {
+      console.error('Failed to compute onboarding queue:', e);
+      return [];
+    }
+  }, []);
+
+  const startPlay = useCallback(async (options = {}) => {
+    try {
+      const { playId, mode } = router.query;
+      const requestedMode = options.modeOverride || mode;
+      const requestedDeck = options.deckOverride || deck;
+
+      if (!playId && requestedDeck !== 'child' && requestedMode !== 'onboarding' && !isRunningOnboardingRef.current && !onboardingDoneRef.current.has(requestedDeck)) {
+        const queue = await computeOnboardingQueue(org, requestedDeck);
+        if (queue.length > 0) {
+          originalIntentRef.current = { mode: requestedMode, deckTag: requestedDeck };
+          onboardingQueueRef.current = queue;
+          onboardingIndexRef.current = 0;
+          isRunningOnboardingRef.current = true;
+          try {
+            event('onboarding_auto_start', { org, queueLength: queue.length, queuedDeckTags: queue, skippedDeckTag: requestedDeck, startedAt: new Date().toISOString() });
+          } catch (e) {}
+          const params = new URLSearchParams(router.query);
+          params.set('mode', 'onboarding');
+          params.set('deck', queue[0]);
+          router.replace({ pathname: router.pathname, query: Object.fromEntries(params.entries()) }, undefined, { shallow: true });
+          return;
+        }
+      }
+
+      if (playId && requestedDeck === 'child') {
+        console.log('🌳 Loading child session via hierarchical status:', playId);
+        try {
+          const statusRes = await fetch(`/api/play/hierarchical-status?playId=${playId}&organizationId=${org}`);
+          if (statusRes.ok) {
+            const statusData = await statusRes.json();
+            if (statusData.isHierarchical && statusData.action === 'continue_child_session' && statusData.data) {
+              const childData = statusData.data;
+              setCurrentPlay({
+                playId: childData.childSessionId || playId,
+                deckTag: childData.parentName || 'child-session',
+                totalCards: childData.totalCards || childData.cards?.length || 1,
+                cards: childData.cards || [],
+                currentCardId: childData.currentCardId
+              });
+              if (childData.cards && childData.currentCardId) {
+                const currentCardFound = childData.cards.find(c => c.id === childData.currentCardId);
+                setCurrentCard(currentCardFound);
+              }
+              setVotingContext(null);
+              setPlayComplete(false);
+              return;
+            }
+            console.log('🔄 Child session status unclear, checking hierarchical flow');
+            await checkHierarchicalStatus();
+            return;
+          }
+        } catch (error) {
+          console.error('Error loading child session:', error);
+        }
+        const res = await fetch(`/api/play/current?playId=${playId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.completed) {
+            await checkHierarchicalStatus();
+            return;
+          }
+          setCurrentPlay({
+            playId: data.playId || playId,
+            deckTag: data.deckTag || 'child-session',
+            totalCards: data.totalCards || 1,
+            cards: data.currentCard ? [data.currentCard] : [],
+            currentCardId: data.currentCard?.id
+          });
+          if (data.currentCard) {
+            setCurrentCard(data.currentCard);
+          }
+          setVotingContext(null);
+          setPlayComplete(false);
+          return;
+        }
+        console.error('Failed to load child session, redirecting to home');
+        alert('Failed to load child session');
+        router.push('/');
+        return;
+      }
+
+      let apiEndpoint = '/api/play/start';
+      if (mode === 'vote-only' || mode === 'swipe-only' || mode === 'onboarding' || mode === 'swipe-more' || mode === 'vote-more' || mode === 'rank-only' || mode === 'rank-more') {
+        apiEndpoint = '/api/v1/play/start';
+      }
+
+      const res = await fetch(apiEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          organizationId: org,
+          deckTag: deck,
+          mode: mode === 'vote-only' ? 'vote_only' : (mode === 'swipe-only' ? 'swipe_only' : (mode === 'onboarding' ? 'onboarding' : (mode === 'swipe-more' ? 'swipe_more' : (mode === 'vote-more' ? 'vote_more' : (mode === 'rank-only' ? 'rank_only' : (mode === 'rank-more' ? 'rank_more' : undefined))))))
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        try {
+          const { mode } = router.query;
+          event('play_start', { playId: data.playId, org, deck, mode, resumed: data.resumed || false, initial_state: data.votingContext ? 'voting' : (data.currentCardId ? 'swipe' : 'unknown') });
+        } catch (e) {}
+        setCurrentPlay(data);
+        if ((mode === 'vote-only' || mode === 'vote-more') && data.comparison) {
+          setVotingContext({ newCard: data.comparison.card1.id, compareWith: data.comparison.card2.id });
+          setCurrentCard(null);
+        } else if (data.votingContext) {
+          setVotingContext(data.votingContext);
+          setCurrentCard(null);
+        } else if (data.currentCardId) {
+          const currentCardFound = data.cards.find(c => c.id === data.currentCardId);
+          setCurrentCard(currentCardFound);
+          setVotingContext(null);
+        } else {
+          setCurrentCard(null);
+          setVotingContext(null);
+        }
+        setPlayComplete(false);
+      } else {
+        const error = await res.json();
+        alert(error.error);
+      }
+    } catch (error) {
+      console.error('Failed to start play:', error);
+      alert('Failed to start play session');
+    }
+  }, [router, deck, org, checkHierarchicalStatus, computeOnboardingQueue]);
 
   useEffect(() => {
     if (!org || !deck) return;
     startPlay();
-  }, [org, deck]);
+  }, [org, deck, startPlay]);
 
   // FUNCTIONAL: Initialize card sizing and setup resize handlers
   // STRATEGIC: Ensures responsive game interface across all devices
@@ -156,7 +405,7 @@ export default function Play() {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [currentCard, votingContext]);
+  }, [currentCard, votingContext, router.query.mode, handleVote, handleSwipe]);
 
 
   const fetchOrganizations = async () => {
@@ -171,401 +420,11 @@ export default function Play() {
     }
   };
 
-  const fetchDecks = async () => {
-    try {
-      const res = await fetch(`/api/cards?organizationId=${org}`);
-      const data = await res.json();
-      
-      // Group into decks
-      const deckGroups = {};
-      data.cards?.forEach(card => {
-        if (card.parentTag) {
-          if (!deckGroups[card.parentTag]) {
-            deckGroups[card.parentTag] = [];
-          }
-          deckGroups[card.parentTag].push(card);
-        }
-      });
-      
-      const includeHidden = isAdmin && showHidden === true;
-      const playableDecks = Object.entries(deckGroups)
-        .filter(([tag, grpCards]) => grpCards.length >= 2)
-        .filter(([tag]) => {
-          const parent = data.cards.find(c => c.name === tag);
-          if (!parent) return true;
-          return includeHidden ? true : (parent.isPlayable !== false);
-        })
-        .map(([tag, grpCards]) => ({ tag, cards: grpCards }));
-      
-      setDecks(playableDecks);
-    } catch (error) {
-      console.error('Failed to fetch decks:', error);
-    }
-  };
-
-  // FUNCTIONAL: Compute onboarding queue of parent decks marked as isOnboarding
-  // STRATEGIC: Client-side detection avoids new endpoints while respecting existing APIs
-  const computeOnboardingQueue = async (orgId, selectedDeckTag) => {
-    try {
-      const res = await fetch(`/api/cards?organizationId=${orgId}`);
-      const data = await res.json();
-      const all = Array.isArray(data.cards) ? data.cards : [];
-
-      // FUNCTIONAL: Normalize deckTag and onboarding parent names to pair specific onboarding to a deck
-      // STRATEGIC: Simple naming convention without new schema — "{Deck} Onboarding" pairs to "{Deck}"
-      const normalize = (str) => (str || '')
-        .toString()
-        .replace(/^#/, '')
-        .toLowerCase()
-        .trim();
-
-      const baseDeck = normalize(selectedDeckTag);
-
-      const stripOnboardingSuffix = (name) => {
-        const n = normalize(name);
-        // Handle variants: "_onboarding", "-onboarding", " onboarding"
-        if (n.endsWith('_onboarding')) return n.slice(0, -'_onboarding'.length);
-        if (n.endsWith('-onboarding')) return n.slice(0, -'-onboarding'.length);
-        if (n.endsWith(' onboarding')) return n.slice(0, -' onboarding'.length);
-        return n; // no suffix
-      };
-
-      // Candidate onboarding parents: root + isOnboarding
-      const parents = all.filter(c => !c.parentTag && c.isOnboarding === true);
-
-      // Pair only the onboarding parent whose base name matches the selected deck base
-      const matched = parents.filter(p => stripOnboardingSuffix(p.name) === baseDeck);
-
-      // Count immediate children and build the (single) queue if valid
-      const queue = matched
-        .map(p => ({ parent: p, count: all.filter(c => c.parentTag === p.name).length }))
-        .filter(x => x.count >= 2) // requires at least 2 children
-        .map(x => x.parent.name);
-
-      return queue; // will be [] or [ "#deck_onboarding" ]
-    } catch (e) {
-      console.error('Failed to compute onboarding queue:', e);
-      return [];
-    }
-  };
-
-  const startPlay = async (options = {}) => {
-    try {
-      // Check if this is a child session (playId in URL)
-      const { playId, mode } = router.query;
-      const requestedMode = options.modeOverride || mode;
-      const requestedDeck = options.deckOverride || deck;
-      
-      // Orchestrate org-level onboarding segments before starting non-onboarding sessions
-      if (!playId && requestedDeck !== 'child' && requestedMode !== 'onboarding' && !isRunningOnboardingRef.current && !onboardingDoneRef.current.has(requestedDeck)) {
-        const queue = await computeOnboardingQueue(org, requestedDeck);
-        if (queue.length > 0) {
-          originalIntentRef.current = { mode: requestedMode, deckTag: requestedDeck };
-          onboardingQueueRef.current = queue;
-          onboardingIndexRef.current = 0;
-          isRunningOnboardingRef.current = true;
-          try {
-            event('onboarding_auto_start', {
-              org: org,
-              queueLength: queue.length,
-              queuedDeckTags: queue,
-              skippedDeckTag: requestedDeck,
-              startedAt: new Date().toISOString()
-            });
-          } catch (e) { /* noop */ }
-          // Switch URL to onboarding mode and first onboarding deck; use shallow to avoid full reload
-          const params = new URLSearchParams(router.query);
-          params.set('mode', 'onboarding');
-          params.set('deck', queue[0]);
-          router.replace({ pathname: router.pathname, query: Object.fromEntries(params.entries()) }, undefined, { shallow: true });
-          return; // Defer actual session start to useEffect re-run with updated query
-        }
-      }
-
-      if (playId && requestedDeck === 'child') {
-        // FUNCTIONAL: Load child session using hierarchical status API
-        // STRATEGIC: Get complete child session data including all cards from hierarchical flow
-        console.log('🌳 Loading child session via hierarchical status:', playId);
-        
-        try {
-          const statusRes = await fetch(`/api/play/hierarchical-status?playId=${playId}&organizationId=${org}`);
-          
-          if (statusRes.ok) {
-            const statusData = await statusRes.json();
-            console.log('📊 Child session hierarchical data:', statusData);
-            
-            if (statusData.isHierarchical && statusData.action === 'continue_child_session' && statusData.data) {
-              // Use data from hierarchical status API
-              const childData = statusData.data;
-              
-              setCurrentPlay({
-                playId: childData.childSessionId || playId,
-                deckTag: childData.parentName || 'child-session',
-                totalCards: childData.totalCards || childData.cards?.length || 1,
-                cards: childData.cards || [],
-                currentCardId: childData.currentCardId
-              });
-              
-              // Set current card
-              if (childData.cards && childData.currentCardId) {
-                const currentCard = childData.cards.find(c => c.id === childData.currentCardId);
-                setCurrentCard(currentCard);
-              }
-              
-              setVotingContext(null);
-              setPlayComplete(false);
-              return;
-            }
-            
-            // If child session is completed or not found, check status
-            console.log('🔄 Child session status unclear, checking hierarchical flow');
-            await checkHierarchicalStatus();
-            return;
-          } else {
-            console.error('Failed to get hierarchical status for child session');
-          }
-        } catch (error) {
-          console.error('Error loading child session:', error);
-        }
-        
-        // Fallback: Try loading with current API
-        console.log('🔄 Trying fallback child session load...');
-        const res = await fetch(`/api/play/current?playId=${playId}`);
-        
-        if (res.ok) {
-          const data = await res.json();
-          
-          if (data.completed) {
-            await checkHierarchicalStatus();
-            return;
-          }
-          
-          setCurrentPlay({
-            playId: data.playId || playId,
-            deckTag: data.deckTag || 'child-session',
-            totalCards: data.totalCards || 1,
-            cards: data.currentCard ? [data.currentCard] : [],
-            currentCardId: data.currentCard?.id
-          });
-          
-          if (data.currentCard) {
-            setCurrentCard(data.currentCard);
-          }
-          
-          setVotingContext(null);
-          setPlayComplete(false);
-          return;
-        }
-        
-        // If all fails, show error
-        console.error('Failed to load child session, redirecting to home');
-        alert('Failed to load child session');
-        router.push('/');
-        return;
-      }
-      
-      // Normal deck start - check for specific modes
-      let apiEndpoint = '/api/play/start';
-      // Unified dispatcher endpoint
-if (mode === 'vote-only' || mode === 'swipe-only' || mode === 'onboarding' || mode === 'swipe-more' || mode === 'vote-more' || mode === 'rank-only' || mode === 'rank-more') {
-        apiEndpoint = '/api/v1/play/start';
-      }
-      
-      const res = await fetch(apiEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          organizationId: org, 
-          deckTag: deck, 
-mode: mode === 'vote-only' ? 'vote_only' : (mode === 'swipe-only' ? 'swipe_only' : (mode === 'onboarding' ? 'onboarding' : (mode === 'swipe-more' ? 'swipe_more' : (mode === 'vote-more' ? 'vote_more' : (mode === 'rank-only' ? 'rank_only' : (mode === 'rank-more' ? 'rank_more' : undefined))))))
-        })
-      });
-      
-      if (res.ok) {
-        const data = await res.json();
-        // FUNCTIONAL: Track play session start event
-        // STRATEGIC: Captures entry point and mode for funnel analysis (production-only)
-        try {
-          const { mode } = router.query;
-          event('play_start', {
-            playId: data.playId,
-            org,
-            deck,
-            mode,
-            resumed: data.resumed || false,
-            initial_state: data.votingContext ? 'voting' : (data.currentCardId ? 'swipe' : 'unknown')
-          });
-        } catch (e) { /* noop */ }
-        console.log('🎮 Play session data:', {
-          playId: data.playId,
-          state: data.state,
-          hasVotingContext: !!data.votingContext,
-          currentCardId: data.currentCardId,
-          resumed: data.resumed
-        });
-        
-        setCurrentPlay(data);
-        
-        // FUNCTIONAL: Handle both swiping and voting states properly
-        // STRATEGIC: Resume exactly where the user left off
-        if ((mode === 'vote-only' || mode === 'vote-more') && data.comparison) {
-          setVotingContext({ newCard: data.comparison.card1.id, compareWith: data.comparison.card2.id });
-          setCurrentCard(null);
-        } else if (data.votingContext) {
-          // Session is in voting mode - set up voting context
-          console.log('🗳️ Resuming in voting mode:', data.votingContext);
-          setVotingContext(data.votingContext);
-          setCurrentCard(null); // No current card in voting mode
-        } else if (data.currentCardId) {
-          // Session is in swiping mode - set up current card
-          console.log('👆 Resuming in swiping mode, card:', data.currentCardId);
-          const currentCard = data.cards.find(c => c.id === data.currentCardId);
-          setCurrentCard(currentCard);
-          setVotingContext(null);
-        } else {
-          // No current card and no voting - might be completed
-          console.log('⚠️ No current card or voting context');
-          setCurrentCard(null);
-          setVotingContext(null);
-        }
-        
-        setPlayComplete(false);
-      } else {
-        const error = await res.json();
-        alert(error.error);
-      }
-    } catch (error) {
-      console.error('Failed to start play:', error);
-      alert('Failed to start play session');
-    }
-  };
-
-  const checkHierarchicalStatus = async () => {
-    if (!currentPlay) return;
-    
-    // Check if we're in a specific mode that needs direct results redirect
-    const { mode } = router.query;
-    if (mode === 'swipe-only' || mode === 'swipe-more') {
-      console.log(`🔚 ${mode} session completion - redirecting to results`);
-      // FUNCTIONAL: Track play session completion for swipe-only/swipe-more
-      // STRATEGIC: Measures completion rates for pure swipe modes (production-only)
-      try {
-        event('play_complete', { playId: currentPlay.playId, mode, hierarchical: false });
-      } catch (e) { /* noop */ }
-      router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}&mode=${mode}`);
-      return;
-    }
-
-    try {
-      console.log('🔍 Checking hierarchical status for playId:', currentPlay.playId);
-      const res = await fetch(`/api/play/hierarchical-status?playId=${currentPlay.playId}&organizationId=${org}`);
-      
-      if (res.ok) {
-        const statusData = await res.json();
-        console.log('📊 Hierarchical status response:', statusData);
-        
-        if (statusData.isHierarchical) {
-          switch (statusData.action) {
-            case 'start_child_session':
-              // FUNCTIONAL: Smooth transition to child session without blocking popup
-              // STRATEGIC: Better UX by avoiding alert interruption
-              console.log(`🌳 Parent ranking complete - starting child session: ${statusData.data.childSessionId}`);
-              // FUNCTIONAL: Track hierarchical flow progression
-              // STRATEGIC: Monitors multi-level gameplay patterns (production-only)
-              try {
-                event('segment_end', {
-                  playId: currentPlay.playId,
-                  segment: 'parent',
-                  outcome: 'child_session_start'
-                });
-              } catch (e) { /* noop */ }
-              
-              // Direct redirect without alert popup
-              router.push(`/play?org=${org}&deck=child&playId=${statusData.data.childSessionId}`);
-              return;
-              
-            case 'show_hierarchical_results':
-              // Show hierarchical completion message and redirect to results
-              // FUNCTIONAL: Track play session completion (hierarchical)
-              // STRATEGIC: Measures hierarchical completion usage (production-only)
-              try {
-                const { mode } = router.query;
-                event('play_complete', { playId: currentPlay.playId, mode, hierarchical: true });
-              } catch (e) { /* noop */ }
-              alert(`Hierarchical ranking complete!\n\nRanked ${statusData.data.totalItems} items in families.`);
-              
-              setTimeout(() => {
-                router.push(`/results?playId=${statusData.playId}&org=${org}&deck=${encodeURIComponent(deck)}&hierarchical=true`);
-              }, 1500);
-              return;
-              
-            case 'initialize_hierarchical':
-              // FUNCTIONAL: Handle hierarchical initialization without popup
-              // STRATEGIC: Prevent infinite reload loop by handling initialization server-side
-              console.log('⚠️ Session needs hierarchical initialization - delegating to server');
-              
-              try {
-                // Call server-side initialization instead of reloading page
-                const initRes = await fetch('/api/play/hierarchical-status', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ 
-                    playId: currentPlay.playId, 
-                    organizationId: org,
-                    action: 'initialize'
-                  })
-                });
-                
-                if (initRes.ok) {
-                  const initData = await initRes.json();
-                  console.log('✅ Hierarchical initialization triggered:', initData);
-                  
-                  // Check status again after initialization
-                  setTimeout(() => {
-                    checkHierarchicalStatus();
-                  }, 1000);
-                } else {
-                  console.error('Failed to initialize hierarchical session');
-                  // Fallback to normal results if initialization fails
-                  router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}`);
-                }
-              } catch (error) {
-                console.error('Error initializing hierarchical session:', error);
-                // Fallback to normal results on error
-                router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}`);
-              }
-              return;
-              
-            case 'show_standard_results':
-              // Standard completion - no hierarchical processing needed
-              console.log('✅ Standard session completion - showing results');
-              // FUNCTIONAL: Track play session completion (standard)
-              // STRATEGIC: Measures standard flow completion (production-only)
-              try {
-                const { mode } = router.query;
-                event('play_complete', { playId: currentPlay.playId, mode, hierarchical: false });
-              } catch (e) { /* noop */ }
-              router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}`);
-              return;
-              
-            default:
-              console.log('ℹ️ Unknown hierarchical action:', statusData.action);
-          }
-        }
-      } else {
-        console.error('Failed to fetch hierarchical status:', res.statusText);
-      }
-    } catch (error) {
-      console.error('Error checking hierarchical status:', error);
-    }
-    
-    // If no hierarchical action needed, proceed with normal completion
-    console.log('🔚 Standard session completion');
-    router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}`);
-  };
 
 
-  const handleSwipe = async (direction) => {
+
+
+  const handleSwipe = useCallback(async (direction) => {
     if (!currentPlay || !currentCard) return;
 
     try {
@@ -726,7 +585,7 @@ if (mode === 'swipe-only' || mode === 'onboarding' || mode === 'swipe-more' || m
       console.error('Failed to swipe:', error);
       alert('Failed to swipe card');
     }
-  };
+  }, [currentPlay, currentCard, router, org, deck, checkHierarchicalStatus]);
 
   // NOTE: All hooks must remain at the top-level of the component (no conditionals)
   // Place gesture hook after handler declaration to avoid TDZ for onSwipe reference
@@ -734,7 +593,7 @@ if (mode === 'swipe-only' || mode === 'onboarding' || mode === 'swipe-more' || m
   const allowedDirections = (router.query.mode === 'onboarding') ? ['right'] : ['left', 'right'];
   useSwipeGestures({ ref: cardRef, enabled: !!currentCard && !votingContext, onSwipe: handleSwipe, allowedDirections });
 
-  const handleVote = async (winner) => {
+  const handleVote = useCallback(async (winner) => {
     if (!votingContext) return;
 
     try {
@@ -942,7 +801,7 @@ const nextData = await nextRes.json();
       console.error('Failed to vote:', error);
       alert('Failed to vote');
     }
-  };
+  }, [votingContext, currentPlay, router, org, deck, previousVotingContext, checkHierarchicalStatus]);
 
   if (loading) return <div style={{ padding: '2rem' }}>Loading...</div>;
 
@@ -966,9 +825,9 @@ const nextData = await nextRes.json();
         ) : (
           <div style={{ display: 'grid', gap: '1rem' }}>
             {organizations.map(organization => (
-              <div key={organization.uuid} style={{ padding: '1rem', border: '1px solid #ddd', borderRadius: '4px' }}>
+              <div key={organization[CARD_FIELDS.UUID]} style={{ padding: '1rem', border: '1px solid #ddd', borderRadius: '4px' }}>
                 <h3>{organization.name}</h3>
-                <Link href={`/play?org=${organization.uuid}`} className="btn btn-warning">
+                <Link href={`/play?org=${organization[CARD_FIELDS.UUID]}`} className="btn btn-warning">
                   Select This Organization
                 </Link>
               </div>
@@ -1016,7 +875,7 @@ const nextData = await nextRes.json();
                 <h3 style={{ color: '#28a745' }}>{deckInfo.tag} ({deckInfo.cards.length} cards)</h3>
                 <div style={{ marginBottom: '1rem' }}>
                   {deckInfo.cards.slice(0, 3).map(card => (
-                    <span key={card.uuid} style={{ display: 'inline-block', margin: '0.25rem', padding: '0.25rem 0.5rem', background: '#f8f9fa', borderRadius: '4px', fontSize: '0.75rem' }}>
+                    <span key={card[CARD_FIELDS.UUID]} style={{ display: 'inline-block', margin: '0.25rem', padding: '0.25rem 0.5rem', background: '#f8f9fa', borderRadius: '4px', fontSize: '0.75rem' }}>
                       {card.title}
                     </span>
                   ))}

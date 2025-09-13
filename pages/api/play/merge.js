@@ -1,5 +1,6 @@
 const { connectDB } = require('../../../lib/db');
 const Play = require('../../../lib/models/Play');
+const { fieldNames } = require('../../../lib/constants/fieldNames');
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -16,8 +17,8 @@ export default async function handler(req, res) {
     }
 
     // Get both play sessions
-    const mainPlay = await Play.findOne({ uuid: mainPlayId, status: 'completed' });
-    const childPlay = await Play.findOne({ uuid: childPlayId, status: 'completed' });
+    const mainPlay = await Play.findOne({ [fieldNames.PlayUUID]: mainPlayId, status: 'completed' });
+    const childPlay = await Play.findOne({ [fieldNames.PlayUUID]: childPlayId, status: 'completed' });
     
     if (!mainPlay) {
       return res.status(404).json({ error: 'Main play session not found or not completed' });
@@ -32,12 +33,12 @@ export default async function handler(req, res) {
     }
 
     console.log(`🔗 Merging child ranking for parent ${childPlay.parentCardId}`);
-    console.log(`Main ranking before: [${mainPlay.personalRanking.join(', ')}]`);
-    console.log(`Child ranking: [${childPlay.personalRanking.join(', ')}]`);
+    console.log(`Main ranking before: [${mainPlay['personalRanking'].join(', ')}]`);
+    console.log(`Child ranking: [${childPlay['personalRanking'].join(', ')}]`);
 
     // SIMPLE: Insert children after their parent in main ranking
     const parentCardId = childPlay.parentCardId;
-    const parentPosition = mainPlay.personalRanking.indexOf(parentCardId);
+    const parentPosition = mainPlay['personalRanking'].indexOf(parentCardId);
     
     if (parentPosition === -1) {
       return res.status(400).json({ error: 'Parent card not found in main ranking' });
@@ -45,13 +46,13 @@ export default async function handler(req, res) {
 
     // Create new ranking with children inserted after parent
     const newRanking = [
-      ...mainPlay.personalRanking.slice(0, parentPosition + 1), // Before parent (inclusive)
-      ...childPlay.personalRanking, // Insert children
-      ...mainPlay.personalRanking.slice(parentPosition + 1) // After parent
+      ...mainPlay['personalRanking'].slice(0, parentPosition + 1), // Before parent (inclusive)
+      ...childPlay['personalRanking'], // Insert children
+      ...mainPlay['personalRanking'].slice(parentPosition + 1) // After parent
     ];
 
     // Update main play session
-    mainPlay.personalRanking = newRanking;
+    mainPlay['personalRanking'] = newRanking;
     await mainPlay.save();
 
     // Mark child play as merged
@@ -64,8 +65,8 @@ export default async function handler(req, res) {
       success: true,
       newRanking: newRanking,
       insertedAt: parentPosition + 1,
-      childrenInserted: childPlay.personalRanking.length,
-      message: `Inserted ${childPlay.personalRanking.length} children after parent card at position ${parentPosition}`
+      childrenInserted: childPlay['personalRanking'].length,
+      message: `Inserted ${childPlay['personalRanking'].length} children after parent card at position ${parentPosition}`
     });
 
   } catch (error) {

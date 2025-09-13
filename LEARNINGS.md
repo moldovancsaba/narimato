@@ -1,8 +1,8 @@
 # Development Learnings
 
-**Current Version:** 7.3.0 (MINOR: Logout control + SSR verification UX)
+**Current Version:** 7.4.0 (MINOR: Fieldnames standardization + zero-warning build)
 **Date:** 2025-09-07
-**Last Updated:** 2025-09-12T16:52:17.000Z
+**Last Updated:** 2025-09-13T17:48:34.000Z
 
 ### Next.js Security Hardening (v6.13.0) — Frontend / Security / Process
 - Functional: Upgraded Next.js to 15.5.2 and hardened next.config.js with strict images allowlist (remotePatterns), disabled SVG optimization, modern image formats, and global security headers (CSP, nosniff, DENY, Referrer-Policy, Permissions-Policy, COOP/CORP).

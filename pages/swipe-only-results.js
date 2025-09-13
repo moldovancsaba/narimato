@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 
@@ -15,9 +15,9 @@ export default function SwipeOnlyResults() {
     if (playId) {
       fetchResults();
     }
-  }, [playId]);
+  }, [playId, fetchResults]);
 
-  const fetchResults = async () => {
+  const fetchResults = useCallback(async () => {
     try {
       const res = await fetch(`/api/swipe-only/${playId}/results`);
       if (res.ok) {
@@ -31,7 +31,7 @@ export default function SwipeOnlyResults() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [playId]);
 
   if (loading) {
     return <div style={{ padding: '2rem' }}>Loading results...</div>;

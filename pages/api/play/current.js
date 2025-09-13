@@ -1,6 +1,8 @@
 const { connectDB } = require('../../../lib/db');
 const Play = require('../../../lib/models/Play');
 const Card = require('../../../lib/models/Card');
+const { fieldNames } = require('../../../lib/constants/fieldNames');
+const { CARD_FIELDS, VOTE_FIELDS } = require('../../../lib/constants/fields');
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -16,30 +18,30 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'playId required' });
     }
 
-    const play = await Play.findOne({ uuid: playId, status: 'active' });
+    const play = await Play.findOne({ [fieldNames.PlayUUID]: playId, status: 'active' });
     
     if (!play) {
       return res.status(404).json({ error: 'Active play session not found' });
     }
 
     // Get next card to play
-    const swipedIds = play.swipes.map(swipe => swipe.cardId);
+    const swipedIds = play.swipes.map(swipe => swipe[CARD_FIELDS.ID]);
     const remainingCardIds = play.cardIds.filter(id => !swipedIds.includes(id));
     
     if (remainingCardIds.length === 0) {
       return res.json({
-        playId: play.uuid,
+        playId: play[fieldNames.PlayUUID],
         completed: true,
         currentCard: null,
         remainingCards: 0,
         totalCards: play.cardIds.length,
-        currentRanking: play.personalRanking
+        currentRanking: play[VOTE_FIELDS.PERSONAL_RANKING]
       });
     }
 
     // Get the current card details
     const currentCardId = remainingCardIds[0];
-    const currentCard = await Card.findOne({ uuid: currentCardId });
+    const currentCard = await Card.findOne({ [fieldNames.CardUUID]: currentCardId });
 
     if (!currentCard) {
       console.error('Card not found in database:', currentCardId);
@@ -51,10 +53,10 @@ export default async function handler(req, res) {
 
     // Return current card and session info
     res.json({
-      playId: play.uuid,
+      playId: play[fieldNames.PlayUUID],
       completed: false,
       currentCard: {
-        id: currentCard.uuid,
+        id: currentCard[CARD_FIELDS.UUID],
         title: currentCard.title,
         description: currentCard.description,
         imageUrl: currentCard.imageUrl,
@@ -64,7 +66,7 @@ export default async function handler(req, res) {
       remainingCards: remainingCardIds.length,
       totalCards: play.cardIds.length,
       swipedCards: swipedIds.length,
-      currentRanking: play.personalRanking,
+      currentRanking: play[VOTE_FIELDS.PERSONAL_RANKING],
       state: play.state
     });
 

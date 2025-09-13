@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { event } from '../lib/analytics/ga';
+import { CARD_FIELDS, VOTE_FIELDS } from '../lib/constants/fields';
 
 export default function Results() {
   const router = useRouter();
@@ -19,7 +20,7 @@ export default function Results() {
       fetchGlobalRankings();
       fetchCards();
     }
-  }, [playId]);
+  }, [playId, fetchResults, fetchGlobalRankings, fetchCards]);
 
   // FUNCTIONAL: Track results page engagement
   // STRATEGIC: Measures post-play behavior and results consumption (production-only)
@@ -34,7 +35,7 @@ export default function Results() {
     }
   }, [results, playId, org, deck, mode]);
 
-  const fetchResults = async () => {
+  const fetchResults = useCallback(async () => {
     try {
       // Use unified results API for all modes
       let apiEndpoint = `/api/v1/play/${playId}/results`;
@@ -49,9 +50,9 @@ export default function Results() {
     } catch (error) {
       console.error('Failed to fetch results:', error);
     }
-  };
+  }, [playId]);
 
-  const fetchGlobalRankings = async () => {
+  const fetchGlobalRankings = useCallback(async () => {
     try {
       const res = await fetch(`/api/cards/rankings?organizationId=${org}`);
       if (res.ok) {
@@ -65,9 +66,9 @@ export default function Results() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [org]);
 
-  const fetchCards = async () => {
+  const fetchCards = useCallback(async () => {
     try {
       const res = await fetch(`/api/cards?organizationId=${org}`);
       if (res.ok) {
@@ -77,14 +78,14 @@ export default function Results() {
     } catch (error) {
       console.error('Failed to fetch cards:', error);
     }
-  };
+  }, [org]);
 
   const getCardDetails = (cardId) => {
-    return cards.find(card => card.uuid === cardId) || { title: 'Unknown Card', description: '' };
+    return cards.find(card => card[CARD_FIELDS.UUID] === cardId) || { title: 'Unknown Card', description: '' };
   };
 
   const getGlobalRank = (cardId) => {
-    const rank = globalRankings.findIndex(ranking => ranking.cardId === cardId);
+    const rank = globalRankings.findIndex(ranking => ranking[CARD_FIELDS.ID] === cardId);
     return rank >= 0 ? rank + 1 : null;
   };
 
@@ -204,10 +205,10 @@ export default function Results() {
           {Array.isArray(results.ranking) && results.ranking.length > 0 ? (
             // Mode-specific APIs return 'ranking' array with card objects
             results.ranking.map((rankingItem, index) => {
-              const card = rankingItem.card || getCardDetails(rankingItem.cardId);
-              const globalRank = getGlobalRank(card.id || card.uuid);
+              const card = rankingItem.card || getCardDetails(rankingItem[CARD_FIELDS.ID]);
+              const globalRank = getGlobalRank(card.id || card[CARD_FIELDS.UUID]);
               return (
-                <div key={card.id || card.uuid} className="card-with-info">
+                <div key={card.id || card[CARD_FIELDS.UUID]} className="card-with-info">
                   <div className={`card card-md card-interactive ${card.imageUrl ? 'has-image' : ''} ${
                     index === 0 ? 'card-winner' : index === 1 ? 'card-selected' : index === 2 ? 'card-error' : ''
                   }`}>
@@ -243,9 +244,9 @@ export default function Results() {
                 </div>
               );
             })
-          ) : Array.isArray(results.personalRanking) && results.personalRanking.length > 0 ? (
+          ) : Array.isArray(results[VOTE_FIELDS.PERSONAL_RANKING]) && results[VOTE_FIELDS.PERSONAL_RANKING].length > 0 ? (
             // Classic API returns 'personalRanking' array with card IDs
-            results.personalRanking.map((cardId, index) => {
+            results[VOTE_FIELDS.PERSONAL_RANKING].map((cardId, index) => {
               const card = getCardDetails(cardId);
               const globalRank = getGlobalRank(cardId);
               return (
@@ -329,10 +330,10 @@ export default function Results() {
         ) : (
           <div className="card-grid card-grid-sm">
             {globalRankings.slice(0, 12).map((ranking, index) => {
-              const card = getCardDetails(ranking.cardId);
-              const isInMyRanking = results.personalRanking?.includes(ranking.cardId);
+              const card = getCardDetails(ranking[CARD_FIELDS.ID]);
+              const isInMyRanking = results[VOTE_FIELDS.PERSONAL_RANKING]?.includes(ranking[CARD_FIELDS.ID]);
               return (
-                <div key={ranking.cardId} className="card-with-info">
+                <div key={ranking[CARD_FIELDS.ID]} className="card-with-info">
                   <div className={`card card-sm card-interactive ${card.imageUrl ? 'has-image' : ''} ${
                     isInMyRanking ? 'card-success' : index < 3 ? 'card-selected' : ''
                   }`}>

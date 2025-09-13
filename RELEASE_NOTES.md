@@ -1,8 +1,21 @@
 # NARIMATO Release Notes
 
-**Current Version:** 7.3.0 (MINOR: Global Logout control; SSR gatekeeping UX)
-**Date:** 2025-09-12
-**Last Updated:** 2025-09-12T09:05:46.000Z
+## [v7.4.0] — 2025-09-13T17:48:34.000Z
+
+### Minor: Fieldnames computed property standardization; zero-warning build
+- Summary: Standardized all services/utils to use computed property access via centralized constants (CARD_FIELDS, SESSION_FIELDS, VOTE_FIELDS). Eliminated custom ESLint rule warnings (fieldnames/field-naming-consistency) across the codebase.
+- Impact: Improves maintainability and consistency; prevents field drift; stabilizes builds with zero warnings.
+- Backend/Services:
+  - Refactored DecisionTreeEngine, RankMoreEngine, RankOnlyEngine, SwipeMoreEngine, SwipeOnlyEngine, VoteMoreEngine, VoteOnlyService, hierarchicalSessionManager to use constants (uuid/cardId/personalRanking/sessionId).
+- Utils:
+  - ranking.js aligned with CARD_FIELDS.ID for family-aware flows and ELO updates.
+- Documentation:
+  - Updated README.md, WARP.md, ROADMAP.md, TASKLIST.md, ARCHITECTURE.md, LEARNINGS.md, RELEASE_NOTES.md to v7.4.0 with ISO 8601 timestamps.
+- Build verification: npm run build → success with zero warnings.
+
+**Current Version:** 7.4.0 (MINOR: Fieldnames computed property standardization; zero-warning build)
+**Date:** 2025-09-13
+**Last Updated:** 2025-09-13T17:48:34.000Z
 
 ## [v7.3.0] — 2025-09-12T16:52:17.000Z
 

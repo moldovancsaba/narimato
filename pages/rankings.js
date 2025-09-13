@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import { CARD_FIELDS } from '../lib/constants/fields';
 
 export default function Rankings() {
   const router = useRouter();
@@ -15,7 +16,7 @@ export default function Rankings() {
 
   useEffect(() => {
     fetchOrganizations();
-  }, []);
+  }, [fetchOrganizations]);
 
   // FUNCTIONAL: Admin session flag for gating admin-only UI and logic
   // STRATEGIC: Rankings is public, but admin-only controls require a session
@@ -52,16 +53,16 @@ export default function Rankings() {
       }
     })();
     return () => { mounted = false; };
-  }, [router.query.includeHidden]);
+  }, [router, router.query.includeHidden]);
 
   useEffect(() => {
     if (org) {
       fetchCards();
       fetchRankings();
     }
-  }, [org, selectedDeck, showHidden, isAdmin]);
+  }, [org, selectedDeck, showHidden, isAdmin, fetchCards, fetchRankings]);
 
-  const fetchOrganizations = async () => {
+  const fetchOrganizations = useCallback(async () => {
     try {
       const res = await fetch('/api/organizations');
       const data = await res.json();
@@ -69,16 +70,16 @@ export default function Rankings() {
       
       // If no org selected, select the first one
       if (!org && data.organizations?.length > 0) {
-        router.push(`/rankings?org=${data.organizations[0].uuid}`);
+        router.push(`/rankings?org=${data.organizations[0][CARD_FIELDS.UUID]}`);
       }
     } catch (error) {
       console.error('Failed to fetch organizations:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [org, router]);
 
-  const fetchCards = async () => {
+  const fetchCards = useCallback(async () => {
     try {
       const res = await fetch(`/api/cards?organizationId=${org}`);
       const data = await res.json();
@@ -111,9 +112,9 @@ export default function Rankings() {
     } catch (error) {
       console.error('Failed to fetch cards:', error);
     }
-  };
+  }, [org, isAdmin, showHidden]);
 
-  const fetchRankings = async () => {
+  const fetchRankings = useCallback(async () => {
     try {
       const params = new URLSearchParams({ organizationId: org });
       if (selectedDeck && selectedDeck !== 'all') {
@@ -126,14 +127,14 @@ export default function Rankings() {
     } catch (error) {
       console.error('Failed to fetch rankings:', error);
     }
-  };
+  }, [org, selectedDeck]);
 
   const getCardDetails = (cardId) => {
-    return cards.find(card => card.uuid === cardId) || { title: 'Unknown Card', description: '', parentTag: '' };
+    return cards.find(card => card[CARD_FIELDS.UUID] === cardId) || { title: 'Unknown Card', description: '', parentTag: '' };
   };
 
   const getOrgName = (orgId) => {
-    const org = organizations.find(o => o.uuid === orgId);
+    const org = organizations.find(o => o[CARD_FIELDS.UUID] === orgId);
     return org ? org.name : 'Unknown Organization';
   };
 
@@ -184,11 +185,11 @@ export default function Rankings() {
       <div style={{ marginBottom: '2rem' }}>
         <h3>Organization</h3>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          {organizations.map(organization => (
+            {organizations.map(organization => (
             <Link
-              key={organization.uuid}
-              href={`/rankings?org=${organization.uuid}`}
-              className={`btn ${org === organization.uuid ? 'btn-primary' : 'btn-muted'}`}
+              key={organization[CARD_FIELDS.UUID]}
+              href={`/rankings?org=${organization[CARD_FIELDS.UUID]}`}
+              className={`btn ${org === organization[CARD_FIELDS.UUID] ? 'btn-primary' : 'btn-muted'}`}
             >
               {organization.name}
             </Link>
@@ -295,12 +296,12 @@ export default function Rankings() {
 
                 {/* Rankings */}
                 {rankings.map((ranking, index) => {
-                  const card = getCardDetails(ranking.cardId);
+                  const card = getCardDetails(ranking[CARD_FIELDS.ID]);
                   const isTopThree = index < 3;
                   
                   return (
                     <div 
-                      key={ranking.cardId}
+                      key={ranking[CARD_FIELDS.ID]}
                       style={{ 
                         display: 'grid', 
                         gridTemplateColumns: '60px 80px 1fr 120px 100px 100px 80px', 
@@ -382,7 +383,7 @@ export default function Rankings() {
               <div className="rankings-mobile" style={{ display: 'none' }}>
                 <div className="card-grid" style={{ gridTemplateColumns: '1fr', gap: '1rem' }}>
                   {rankings.map((ranking, index) => {
-                    const card = getCardDetails(ranking.cardId);
+                    const card = getCardDetails(ranking[CARD_FIELDS.ID]);
                     const isTopThree = index < 3;
                     
                     const cardClasses = [
@@ -394,7 +395,7 @@ export default function Rankings() {
                     ].filter(Boolean).join(' ');
                     
                     return (
-                      <div key={ranking.cardId} className="card-with-info">
+                      <div key={ranking[CARD_FIELDS.ID]} className="card-with-info">
                         <div className={cardClasses}>
                           <div className="card-title">{card.title}</div>
                           {card.description && <div className="card-description">{card.description}</div>}

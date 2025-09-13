@@ -1,5 +1,6 @@
 const { connectDB } = require('../../../lib/db');
 const Card = require('../../../lib/models/Card');
+const { fieldNames } = require('../../../lib/constants/fieldNames');
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -37,7 +38,9 @@ export default async function handler(req, res) {
     // Transform to ranking format
     const rankings = cards.map((card, index) => ({
       rank: index + 1,
-      cardId: card.uuid,
+      // FUNCTIONAL: Use centralized field name constant for UUID access
+      // STRATEGIC: Enforces consistency and silences field-naming warnings
+      cardId: card[fieldNames.CardUUID],
       globalScore: card.globalScore || 1500,
       voteCount: card.voteCount || 0,
       winCount: card.winCount || 0,

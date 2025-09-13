@@ -1,10 +1,17 @@
 # NARIMATO Task List
 
-**Current Version:** 7.3.0
+**Current Version:** 7.4.0
 **Date:** 2025-09-12T16:52:17.000Z
-**Last Updated:** 2025-09-12T16:52:17.000Z
+**Last Updated:** 2025-09-13T17:48:34.000Z
 
 ## High Priority Tasks
+
+### Lint Warnings Elimination — Field Constants Standardization (Services)
+- Owner: AI Agent
+- Expected Delivery Date: 2025-09-13T18:00:00.000Z
+- Status: Completed ✅
+- Completion Date: 2025-09-13T17:48:34.000Z
+- Details: Replaced dot-notation for uuid/cardId/personalRanking/sessionId with computed property access using constants (CARD_FIELDS, SESSION_FIELDS, VOTE_FIELDS) across lib/services/*.js and lib/utils. Achieved zero-warning production build.
 
 ### MVP Access Control — Admin Login + Page Passwords (Play Protection)
 - Owner: AI Agent

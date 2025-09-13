@@ -1,6 +1,10 @@
 import { connectDB } from '../../../lib/db.js';
 import Play from '../../../lib/models/Play.js';
 import Card from '../../../lib/models/Card.js';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const { fieldNames } = require('../../../lib/constants/fieldNames');
+const { CARD_FIELDS, SESSION_FIELDS, VOTE_FIELDS } = require('../../../lib/constants/fields');
 
 export default async function handler(req, res) {
   if (!['GET', 'POST'].includes(req.method)) {
@@ -27,7 +31,7 @@ export default async function handler(req, res) {
           const engine = new DecisionTreeEngine();
           
           // Check if the session needs hierarchical processing
-          const session = await Play.findOne({ uuid: playId });
+          const session = await Play.findOne({ [fieldNames.PlayUUID]: playId });
           if (!session) {
             throw new Error('Play session not found');
           }
@@ -54,7 +58,7 @@ export default async function handler(req, res) {
               action: 'show_standard_results',
               data: {
                 message: 'Session completed - no hierarchical processing needed',
-                ranking: session.personalRanking
+                ranking: session[VOTE_FIELDS.PERSONAL_RANKING]
               }
             });
           }
@@ -78,7 +82,7 @@ export default async function handler(req, res) {
     }
 
     // Get the play session with all fields
-    const play = await Play.findOne({ uuid: playId }).exec();
+    const play = await Play.findOne({ [fieldNames.PlayUUID]: playId }).exec();
     
     if (!play) {
       return res.status(404).json({ error: 'Play session not found' });
@@ -89,7 +93,7 @@ export default async function handler(req, res) {
 
     // Check what type of hierarchical state we're in
     const response = {
-      playId: play.uuid,
+      playId: play[fieldNames.PlayUUID],
       status: play.status,
       hierarchicalPhase: play.hierarchicalPhase,
       isHierarchical: false,
@@ -101,16 +105,16 @@ export default async function handler(req, res) {
     if (play.status === 'waiting_for_children') {
       console.log(`   Child sessions: ${JSON.stringify(play.childSessions, null, 2)}`);
       const activeChild = play.childSessions?.find(cs => cs.status === 'active');
-      console.log(`   Active child found: ${activeChild ? activeChild.sessionId : 'none'}`);
+      console.log(`   Active child found: ${activeChild ? activeChild[SESSION_FIELDS.ID] : 'none'}`);
       
       if (activeChild) {
         // Get child session details
-        const childSession = await Play.findOne({ uuid: activeChild.sessionId });
+        const childSession = await Play.findOne({ [fieldNames.PlayUUID]: activeChild[SESSION_FIELDS.ID] });
         console.log(`   Child session in DB: ${childSession ? 'found' : 'not found'}`);
         
         if (childSession) {
           const childCards = await Card.find({
-            uuid: { $in: childSession.cardIds },
+            [fieldNames.CardUUID]: { $in: childSession.cardIds },
             organizationId: play.organizationId,
             isActive: true
           });
@@ -118,12 +122,12 @@ export default async function handler(req, res) {
           response.isHierarchical = true;
           response.action = 'start_child_session';
           response.data = {
-            childSessionId: childSession.uuid,
+            childSessionId: childSession[fieldNames.PlayUUID],
             parentName: activeChild.parentName,
             parentPosition: activeChild.parentPosition || 1,
             totalCards: childCards.length,
             cards: childCards.map(card => ({
-              id: card.uuid,
+              id: card[fieldNames.CardUUID],
               title: card.title,
               description: card.description,
               imageUrl: card.imageUrl
@@ -132,7 +136,7 @@ export default async function handler(req, res) {
             message: `Now rank the "${activeChild.parentName}" family`
           };
 
-          console.log(`✅ Active child session found: ${activeChild.sessionId} for "${activeChild.parentName}"`);
+          console.log(`✅ Active child session found: ${activeChild[SESSION_FIELDS.ID]} for \"${activeChild.parentName}\"`);
         }
       }
     }
@@ -153,7 +157,7 @@ export default async function handler(req, res) {
       response.isHierarchical = true;
       response.action = 'continue_child_session';
       response.data = {
-        childSessionId: play.uuid,
+        childSessionId: play[fieldNames.PlayUUID],
         parentName: play.currentParentName,
         parentPosition: play.parentRankPosition,
         message: `Continue ranking the "${play.currentParentName}" family`
