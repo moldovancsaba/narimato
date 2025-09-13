@@ -56,6 +56,10 @@ Temporary backward compatibility exports exist for legacy field names but will b
   - Development uses an environment-aware CSP to permit Next.js dev overlay and HMR (unsafe-inline/eval + ws) without weakening production.
 - STRATEGIC: Reduces SSRF/open-redirect vectors and constrains Next Image Optimization attack surface (cache key confusion, content injection) across tenants while preserving developer experience in dev.
 
+## Admin-only Hidden Decks Toggle (v7.3.x)
+- FUNCTIONAL: Hidden decks are excluded by default for end users. When an admin session is present, Play and Rankings display an admin-only “Show hidden decks” toggle that includes hidden decks in listings.
+- STRATEGIC: Keeps public UX clean while enabling admin verification and internal flows. Client code clamps URL tampering (includeHidden is ignored when not admin).
+
 ## MVP Auth: Admin Session & Page-Specific Passwords (v6.15.0+)
 - FUNCTIONAL: Lightweight access control to protect sensitive pages (initially Play) per-organization using a page password, with an admin bypass via an HttpOnly cookie session.
 - STRATEGIC: Provides immediate protection without introducing a full auth stack; reuses multi-tenant patterns and centralized constants; upgrade path to RBAC remains open.

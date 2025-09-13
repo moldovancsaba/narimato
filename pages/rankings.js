@@ -17,14 +17,49 @@ export default function Rankings() {
     fetchOrganizations();
   }, []);
 
-  const [showHidden, setShowHidden] = useState(() => router.query.includeHidden === 'true');
+  // FUNCTIONAL: Admin session flag for gating admin-only UI and logic
+  // STRATEGIC: Rankings is public, but admin-only controls require a session
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // FUNCTIONAL: Whether to include hidden decks in filters (admin-only)
+  // STRATEGIC: Prevents URL param manipulation from exposing hidden decks to non-admin users
+  const [showHidden, setShowHidden] = useState(false);
+
+  // FUNCTIONAL: Detect admin session and clamp includeHidden behavior
+  // STRATEGIC: Ensures non-admin users cannot enable hidden decks via URL params
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await fetch('/api/admin/login');
+        if (!mounted) return;
+        const ok = res.ok === true;
+        setIsAdmin(ok);
+        if (ok) {
+          setShowHidden(router.query.includeHidden === 'true');
+        } else {
+          if (router.query.includeHidden === 'true') {
+            const params = new URLSearchParams(router.query);
+            params.delete('includeHidden');
+            router.replace({ pathname: router.pathname, query: Object.fromEntries(params.entries()) }, undefined, { shallow: true });
+          }
+          setShowHidden(false);
+        }
+      } catch {
+        if (!mounted) return;
+        setIsAdmin(false);
+        setShowHidden(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [router.query.includeHidden]);
 
   useEffect(() => {
     if (org) {
       fetchCards();
       fetchRankings();
     }
-  }, [org, selectedDeck, showHidden]);
+  }, [org, selectedDeck, showHidden, isAdmin]);
 
   const fetchOrganizations = async () => {
     try {
@@ -62,7 +97,7 @@ export default function Rankings() {
         }
       });
       
-      const includeHidden = showHidden === true;
+      const includeHidden = isAdmin && showHidden === true;
       const deckList = Object.entries(deckGroups)
         .filter(([tag, grpCards]) => grpCards.length >= 2)
         .filter(([tag]) => {
@@ -166,22 +201,24 @@ export default function Rankings() {
           {/* Deck Filter */}
           <div style={{ marginBottom: '3rem' }}>
             <h3>Filter by Deck</h3>
-            <div style={{ margin: '0.5rem 0 1rem 0' }}>
-              <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: '#666' }}>
-                <input
-                  type="checkbox"
-                  checked={showHidden}
-                  onChange={(e) => {
-                    const checked = e.target.checked;
-                    setShowHidden(checked);
-                    const params = new URLSearchParams(router.query);
-                    if (checked) params.set('includeHidden', 'true'); else params.delete('includeHidden');
-                    router.replace({ pathname: router.pathname, query: Object.fromEntries(params.entries()) }, undefined, { shallow: true });
-                  }}
-                />
-                (admin) Show hidden decks
-              </label>
-            </div>
+            {isAdmin && (
+              <div style={{ margin: '0.5rem 0 1rem 0' }}>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: '#666' }}>
+                  <input
+                    type="checkbox"
+                    checked={showHidden}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setShowHidden(checked);
+                      const params = new URLSearchParams(router.query);
+                      if (checked) params.set('includeHidden', 'true'); else params.delete('includeHidden');
+                      router.replace({ pathname: router.pathname, query: Object.fromEntries(params.entries()) }, undefined, { shallow: true });
+                    }}
+                  />
+                  (admin) Show hidden decks
+                </label>
+              </div>
+            )}
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <button
                 onClick={() => handleDeckChange('all')}

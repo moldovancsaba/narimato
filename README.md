@@ -24,6 +24,7 @@ NARIMATO is an anonymous, session-based card ranking application built with Next
   - **Swipe-More**: Enhanced swiping with smart decision tree - optimized ranking
   - **Rank-Only**: Swipe to shortlist, then vote to order the liked set
   - **Rank-More**: Multi-level “family by family” ranking — roots swipe→vote, then randomly ordered families per level, flattened output
+- **Admin-only Hidden Decks Toggle**: Hidden decks are excluded by default for end users. Logged-in admins can enable “Show hidden decks” on Play and Rankings; URL tampering is clamped for non-admins.
 - **Hashtag Hierarchy System**: Multi-level card organization through parent-child hashtag relationships
 - **Dynamic Text Scaling**: Automatic font sizing for optimal readability
 - **Modern Typography**: Professional Fira Code SemiBold font for enhanced aesthetics

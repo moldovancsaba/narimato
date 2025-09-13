@@ -11,6 +11,11 @@
 
 ### Dev CSP Over-Restriction (v6.14.0) — Frontend / Security / Process
 
+### Build Normalization & Module Restoration (v7.3.x) — Dev / Frontend / Process
+- Functional: Restored missing canonical modules by reusing existing " 2.js" duplicates (analytics, utils, services); reintroduced haptics and Web Audio tick utilities; removed a duplicate API route file (rankChildren 2.js) to ensure clean routes; production build now succeeds.
+- Strategic: Followed Reuse Before Creation to avoid duplication; aligned ESM/CJS exports with import sites; stabilized builds without introducing new dependencies.
+- Timestamp: 2025-09-13T11:13:46.000Z
+
 ### MVP Auth & Page Passwords (v6.15.0) — Backend / Frontend / Security
 - Functional: Added env-based admin session (HttpOnly cookie; 7d TTL) and per-organization page passwords to gate the Play page. Exposed endpoints under /api/system for login/logout/auth and create/validate passwords; client prompt component with auto-validate from shareable links; sessionStorage TTLs (24h page; 7d admin).
 - Strategic: Provides immediate access control with minimal surface area and reuse of existing stack; sets a foundation for future RBAC without introducing complexity now.

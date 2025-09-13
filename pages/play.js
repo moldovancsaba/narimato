@@ -35,12 +35,47 @@ export default function Play() {
     fetchOrganizations();
   }, []);
 
-  const [showHidden, setShowHidden] = useState(() => router.query.includeHidden === 'true');
+  // FUNCTIONAL: Admin session flag for gating admin-only UI and logic
+  // STRATEGIC: Public pages remain accessible, but admin-only controls require a session
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // FUNCTIONAL: Whether to include hidden decks in selection (admin-only)
+  // STRATEGIC: Prevents URL param manipulation from exposing hidden decks to non-admin users
+  const [showHidden, setShowHidden] = useState(false);
+
+  // FUNCTIONAL: Detect admin session and clamp includeHidden behavior
+  // STRATEGIC: Ensures non-admin users cannot enable hidden decks via URL params
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await fetch('/api/admin/login');
+        if (!mounted) return;
+        const ok = res.ok === true;
+        setIsAdmin(ok);
+        if (ok) {
+          setShowHidden(router.query.includeHidden === 'true');
+        } else {
+          if (router.query.includeHidden === 'true') {
+            const params = new URLSearchParams(router.query);
+            params.delete('includeHidden');
+            router.replace({ pathname: router.pathname, query: Object.fromEntries(params.entries()) }, undefined, { shallow: true });
+          }
+          setShowHidden(false);
+        }
+      } catch {
+        if (!mounted) return;
+        setIsAdmin(false);
+        setShowHidden(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [router.query.includeHidden]);
 
   useEffect(() => {
     if (!org) return;
     fetchDecks();
-  }, [org, showHidden]);
+  }, [org, showHidden, isAdmin]);
 
   useEffect(() => {
     if (!org || !deck) return;
@@ -152,7 +187,7 @@ export default function Play() {
         }
       });
       
-      const includeHidden = showHidden === true;
+      const includeHidden = isAdmin && showHidden === true;
       const playableDecks = Object.entries(deckGroups)
         .filter(([tag, grpCards]) => grpCards.length >= 2)
         .filter(([tag]) => {
@@ -949,23 +984,25 @@ const nextData = await nextRes.json();
     return (
       <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
         <h1>Play - Select Deck</h1>
-        {/* Admin Toggle: Show hidden decks */}
-        <div style={{ margin: '0.5rem 0 1rem 0' }}>
-          <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: '#666' }}>
-            <input
-              type="checkbox"
-              checked={showHidden}
-              onChange={(e) => {
-                const checked = e.target.checked;
-                setShowHidden(checked);
-                const params = new URLSearchParams(router.query);
-                if (checked) params.set('includeHidden', 'true'); else params.delete('includeHidden');
-                router.replace({ pathname: router.pathname, query: Object.fromEntries(params.entries()) }, undefined, { shallow: true });
-              }}
-            />
-            (admin) Show hidden decks
-          </label>
-        </div>
+        {/* Admin Toggle: Show hidden decks (admin-only) */}
+        {isAdmin && (
+          <div style={{ margin: '0.5rem 0 1rem 0' }}>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: '#666' }}>
+              <input
+                type="checkbox"
+                checked={showHidden}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setShowHidden(checked);
+                  const params = new URLSearchParams(router.query);
+                  if (checked) params.set('includeHidden', 'true'); else params.delete('includeHidden');
+                  router.replace({ pathname: router.pathname, query: Object.fromEntries(params.entries()) }, undefined, { shallow: true });
+                }}
+              />
+              (admin) Show hidden decks
+            </label>
+          </div>
+        )}
         
         {decks.length === 0 ? (
           <div>
