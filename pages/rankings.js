@@ -14,9 +14,6 @@ export default function Rankings() {
   const [loading, setLoading] = useState(true);
   const [selectedDeck, setSelectedDeck] = useState(deck || 'all');
 
-  useEffect(() => {
-    fetchOrganizations();
-  }, [fetchOrganizations]);
 
   // FUNCTIONAL: Admin session flag for gating admin-only UI and logic
   // STRATEGIC: Rankings is public, but admin-only controls require a session
@@ -55,12 +52,6 @@ export default function Rankings() {
     return () => { mounted = false; };
   }, [router, router.query.includeHidden]);
 
-  useEffect(() => {
-    if (org) {
-      fetchCards();
-      fetchRankings();
-    }
-  }, [org, selectedDeck, showHidden, isAdmin, fetchCards, fetchRankings]);
 
   const fetchOrganizations = useCallback(async () => {
     try {
@@ -78,6 +69,11 @@ export default function Rankings() {
       setLoading(false);
     }
   }, [org, router]);
+
+  // EFFECT ORDER: Declare callbacks above effects to avoid TDZ in minified builds
+  useEffect(() => {
+    fetchOrganizations();
+  }, [fetchOrganizations]);
 
   const fetchCards = useCallback(async () => {
     try {
@@ -128,6 +124,14 @@ export default function Rankings() {
       console.error('Failed to fetch rankings:', error);
     }
   }, [org, selectedDeck]);
+
+  // EFFECT ORDER: Place this after callback declarations to avoid TDZ in production
+  useEffect(() => {
+    if (org) {
+      fetchCards();
+      fetchRankings();
+    }
+  }, [org, selectedDeck, showHidden, isAdmin, fetchCards, fetchRankings]);
 
   const getCardDetails = (cardId) => {
     return cards.find(card => card[CARD_FIELDS.UUID] === cardId) || { title: 'Unknown Card', description: '', parentTag: '' };

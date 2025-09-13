@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-css-tags */
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { calculateCardSize } from '../lib/utils/cardSizing';
@@ -25,6 +25,11 @@ export default function Play() {
   const [swipeTransition, setSwipeTransition] = useState(null);
   const cardRef = useRef(null); // FUNCTIONAL: DOM handle for attaching swipe gestures
 
+  // Stable derived values used within callbacks; memoized to satisfy exhaustive-deps without re-creating values each render
+  const playId = useMemo(() => currentPlay?.playId, [currentPlay?.playId]);
+  const playCards = useMemo(() => currentPlay?.cards || [], [currentPlay?.cards]);
+  const hierarchicalLevel = useMemo(() => currentPlay?.hierarchicalLevel || null, [currentPlay?.hierarchicalLevel]);
+
   // FUNCTIONAL: Onboarding orchestration state
   // STRATEGIC: Enables organization-wide onboarding segments using existing onboarding engine
   const onboardingQueueRef = useRef([]); // Array of deckTag strings (parent names)
@@ -33,9 +38,6 @@ export default function Play() {
   const isRunningOnboardingRef = useRef(false);
   const onboardingDoneRef = useRef(new Set()); // FUNCTIONAL: Tracks which deck has already run onboarding in this page session
 
-  useEffect(() => {
-    fetchOrganizations();
-  }, []);
 
   // FUNCTIONAL: Admin session flag for gating admin-only UI and logic
   // STRATEGIC: Public pages remain accessible, but admin-only controls require a session
@@ -357,55 +359,6 @@ export default function Play() {
     }
   }, [votingContext]);
 
-  // FUNCTIONAL: Handle keyboard controls for game interactions
-  // STRATEGIC: Provides accessible game controls and improved UX
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      // Ignore if user is typing in an input
-      if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
-        return;
-      }
-
-      if (votingContext) {
-        // VOTE MODE: LEFT = Card 1, RIGHT = Card 2
-        if (event.code === 'ArrowLeft') {
-          event.preventDefault();
-          setKeyboardActive('left');
-          handleVote(votingContext.newCard);
-        } else if (event.code === 'ArrowRight') {
-          event.preventDefault();
-          setKeyboardActive('right');
-          handleVote(votingContext.compareWith);
-        }
-      } else if (currentCard) {
-        // SWIPE MODE
-        const isOnboarding = router.query.mode === 'onboarding';
-        if (event.code === 'ArrowLeft') {
-          if (!isOnboarding) {
-            event.preventDefault();
-            setKeyboardActive('dislike');
-            handleSwipe('left');
-          }
-        } else if (event.code === 'ArrowRight') {
-          event.preventDefault();
-          setKeyboardActive('like');
-          handleSwipe('right');
-        }
-      }
-    };
-
-    const handleKeyUp = () => {
-      setKeyboardActive(null);
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-    
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }, [currentCard, votingContext, router.query.mode, handleVote, handleSwipe]);
 
 
   const fetchOrganizations = async () => {
@@ -420,19 +373,24 @@ export default function Play() {
     }
   };
 
+  // EFFECT ORDER: Declare callback before effect to avoid TDZ in minified builds
+  useEffect(() => {
+    fetchOrganizations();
+  }, []);
+
 
 
 
 
   const handleSwipe = useCallback(async (direction) => {
-    if (!currentPlay || !currentCard) return;
+    if (!playId || !currentCard) return;
 
     try {
       // Check mode for appropriate API endpoint
       const { mode } = router.query;
       let apiEndpoint = '/api/play/swipe';
 if (mode === 'swipe-only' || mode === 'onboarding' || mode === 'swipe-more' || mode === 'rank-only' || mode === 'rank-more') {
-        apiEndpoint = `/api/v1/play/${currentPlay.playId}/input`;
+        apiEndpoint = `/api/v1/play/${playId}/input`;
       } else if (mode === 'vote-only') {
         // vote-only does not use swipe
         apiEndpoint = null;
@@ -454,19 +412,19 @@ if (mode === 'swipe-only' || mode === 'onboarding' || mode === 'swipe-more' || m
           // STRATEGIC: Monitors user interaction patterns with cards (production-only)
           try {
             const { mode } = router.query;
-            event('swipe_action', {
-              playId: currentPlay.playId,
+event('swipe_action', {
+              playId: playId,
               mode,
               cardId: currentCard?.id,
               direction,
-              hierarchicalLevel: currentPlay?.hierarchicalLevel || null
+              hierarchicalLevel: hierarchicalLevel
             });
           } catch (e) { /* noop */ }
           
           // Rank-More: engine may instruct to return to swiping a new family immediately
           if (data.returnToSwipe && data.nextCardId) {
             // If engine supplies a fresh card list for the new family, use it
-            const newCards = Array.isArray(data.cards) && data.cards.length > 0 ? data.cards : currentPlay.cards;
+const newCards = Array.isArray(data.cards) && data.cards.length > 0 ? data.cards : playCards;
             setCurrentPlay(prev => ({ ...prev, cards: newCards }));
             const nextCard = newCards.find(c => c.id === data.nextCardId) || null;
             setVotingContext(null);
@@ -516,11 +474,11 @@ if (mode === 'swipe-only' || mode === 'onboarding' || mode === 'swipe-more' || m
 
           // For rank-only and rank-more, redirect straight to results when session fully completes
           if (mode === 'rank-only') {
-              router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}&mode=${mode}`);
+router.push(`/results?playId=${playId}&org=${org}&deck=${encodeURIComponent(deck)}&mode=${mode}`);
               return;
             }
             if (mode === 'rank-more') {
-              router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}&mode=${mode}`);
+router.push(`/results?playId=${playId}&org=${org}&deck=${encodeURIComponent(deck)}&mode=${mode}`);
               return;
             }
             // Check hierarchical status to determine next action
@@ -531,7 +489,7 @@ if (mode === 'swipe-only' || mode === 'onboarding' || mode === 'swipe-more' || m
           } else if (data.nextCardId) {
             // HIERARCHICAL SWIPEMORE or same-family transition
             let nextCard;
-            let updatedCards = currentPlay.cards;
+            let updatedCards = playCards;
             
             if (data.newLevelCards) {
               // SwipeMore transitioned to a new hierarchical level
@@ -554,7 +512,7 @@ if (mode === 'swipe-only' || mode === 'onboarding' || mode === 'swipe-more' || m
               nextCard = updatedCards.find(c => c.id === data.nextCardId);
             } else {
               // Regular card transition within the same level
-              nextCard = currentPlay.cards.find(c => c.id === data.nextCardId);
+              nextCard = playCards.find(c => c.id === data.nextCardId);
             }
             
             // FUNCTIONAL: Track swipe transitions for visual feedback
@@ -585,7 +543,7 @@ if (mode === 'swipe-only' || mode === 'onboarding' || mode === 'swipe-more' || m
       console.error('Failed to swipe:', error);
       alert('Failed to swipe card');
     }
-  }, [currentPlay, currentCard, router, org, deck, checkHierarchicalStatus]);
+  }, [currentCard, router, org, deck, checkHierarchicalStatus, playId, playCards, hierarchicalLevel, currentPlay]);
 
   // NOTE: All hooks must remain at the top-level of the component (no conditionals)
   // Place gesture hook after handler declaration to avoid TDZ for onSwipe reference
@@ -600,7 +558,7 @@ if (mode === 'swipe-only' || mode === 'onboarding' || mode === 'swipe-more' || m
       const { mode } = router.query;
 if (mode === 'vote-only' || mode === 'vote-more' || mode === 'rank-only' || mode === 'rank-more') {
         const loser = winner === votingContext.newCard ? votingContext.compareWith : votingContext.newCard;
-        const res = await fetch(`/api/v1/play/${currentPlay.playId}/input`, {
+const res = await fetch(`/api/v1/play/${playId}/input`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'vote', payload: { winner, loser } })
@@ -614,14 +572,14 @@ if (mode === 'vote-only' || mode === 'vote-more' || mode === 'rank-only' || mode
         // STRATEGIC: Captures decision-making patterns in vote-based modes (production-only)
         try {
           const loserId = loser;
-          event('vote_cast', {
-            playId: currentPlay.playId,
+            event('vote_cast', {
+            playId: playId,
             mode, // vote-only or vote-more
             winner,
             loser: loserId
           });
         } catch (e) { /* noop */ }
-        const nextRes = await fetch(`/api/v1/play/${currentPlay.playId}/next`);
+const nextRes = await fetch(`/api/v1/play/${playId}/next`);
         if (!nextRes.ok) {
           alert('Failed to get next comparison');
           return;
@@ -632,14 +590,14 @@ const nextData = await nextRes.json();
           if (Array.isArray(nextData.cards) && nextData.cards.length > 0) {
             setCurrentPlay(prev => ({ ...prev, cards: nextData.cards }));
           }
-          const pool = (nextData.cards && nextData.cards.length > 0) ? nextData.cards : currentPlay.cards;
+const pool = (nextData.cards && nextData.cards.length > 0) ? nextData.cards : playCards;
           const nextCard = pool.find(c => c.id === nextData.nextCardId);
           setVotingContext(null);
           setCurrentCard(nextCard || null);
           return;
         }
         if (nextData.completed) {
-          router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}&mode=${mode}`);
+router.push(`/results?playId=${playId}&org=${org}&deck=${encodeURIComponent(deck)}&mode=${mode}`);
           return;
         }
         // If we're moving to a new family, update available cards to resolve UI details
@@ -653,7 +611,7 @@ const nextData = await nextRes.json();
 
       // Classic / swipe-more flow
       if (mode === 'swipe-more') {
-        const res = await fetch(`/api/v1/play/${currentPlay.playId}/input`, {
+const res = await fetch(`/api/v1/play/${playId}/input`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -672,7 +630,7 @@ const nextData = await nextRes.json();
           // STRATEGIC: Captures hybrid mode decision-making (production-only)
           try {
             event('vote_cast', {
-              playId: currentPlay.playId,
+              playId: playId,
               mode: 'swipe-more',
               cardA: votingContext.newCard,
               cardB: votingContext.compareWith,
@@ -696,13 +654,13 @@ const nextData = await nextRes.json();
             setPreviousVotingContext(votingContext);
             setVotingContext(newContext);
           } else if (data.returnToSwipe && data.nextCardId) {
-            const nextCard = currentPlay.cards.find(c => c.id === data.nextCardId);
+const nextCard = playCards.find(c => c.id === data.nextCardId);
             setCurrentCard(nextCard);
             setVotingContext(null);
           } else {
             const { mode } = router.query;
             const modeParam = mode ? `&mode=${mode}` : '';
-            router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}${modeParam}`);
+router.push(`/results?playId=${playId}&org=${org}&deck=${encodeURIComponent(deck)}${modeParam}`);
             return;
           }
         } else {
@@ -715,7 +673,7 @@ const nextData = await nextRes.json();
       // Fallback legacy classic flow (kept for compatibility if mode is not set)
       const apiEndpoint = '/api/play/vote';
       const requestBody = {
-        playId: currentPlay.playId,
+playId: playId,
         cardA: votingContext.newCard,
         cardB: votingContext.compareWith,
         winner
@@ -734,7 +692,7 @@ const nextData = await nextRes.json();
         try {
           const { mode } = router.query;
           event('vote_cast', {
-            playId: currentPlay.playId,
+playId: playId,
             mode: mode || 'classic',
             cardA: votingContext.newCard,
             cardB: votingContext.compareWith,
@@ -783,14 +741,14 @@ const nextData = await nextRes.json();
           setPreviousVotingContext(votingContext);
           setVotingContext(newContext);
         } else if (data.returnToSwipe && data.nextCardId) {
-          const nextCard = currentPlay.cards.find(c => c.id === data.nextCardId);
+const nextCard = playCards.find(c => c.id === data.nextCardId);
           setCurrentCard(nextCard);
           setVotingContext(null);
         } else {
           // Session completed
           const { mode } = router.query;
           const modeParam = mode ? `&mode=${mode}` : '';
-          router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}${modeParam}`);
+router.push(`/results?playId=${playId}&org=${org}&deck=${encodeURIComponent(deck)}${modeParam}`);
           return;
         }
       } else {
@@ -801,7 +759,58 @@ const nextData = await nextRes.json();
       console.error('Failed to vote:', error);
       alert('Failed to vote');
     }
-  }, [votingContext, currentPlay, router, org, deck, previousVotingContext, checkHierarchicalStatus]);
+}, [votingContext, router, org, deck, previousVotingContext, checkHierarchicalStatus, playId, playCards]);
+
+  // FUNCTIONAL: Handle keyboard controls for game interactions
+  // STRATEGIC: Provides accessible game controls and improved UX
+  // EFFECT ORDER: Place after handlers (handleVote, handleSwipe) to avoid TDZ in production builds
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      // Ignore if user is typing in an input
+      if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      if (votingContext) {
+        // VOTE MODE: LEFT = Card 1, RIGHT = Card 2
+        if (event.code === 'ArrowLeft') {
+          event.preventDefault();
+          setKeyboardActive('left');
+          handleVote(votingContext.newCard);
+        } else if (event.code === 'ArrowRight') {
+          event.preventDefault();
+          setKeyboardActive('right');
+          handleVote(votingContext.compareWith);
+        }
+      } else if (currentCard) {
+        // SWIPE MODE
+        const isOnboarding = router.query.mode === 'onboarding';
+        if (event.code === 'ArrowLeft') {
+          if (!isOnboarding) {
+            event.preventDefault();
+            setKeyboardActive('dislike');
+            handleSwipe('left');
+          }
+        } else if (event.code === 'ArrowRight') {
+          event.preventDefault();
+          setKeyboardActive('like');
+          handleSwipe('right');
+        }
+      }
+    };
+
+    const handleKeyUp = () => {
+      setKeyboardActive(null);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [currentCard, votingContext, router.query.mode, handleVote, handleSwipe]);
 
   if (loading) return <div style={{ padding: '2rem' }}>Loading...</div>;
 

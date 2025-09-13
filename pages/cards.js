@@ -38,15 +38,6 @@ export default function Cards() {
   });
   const [editingCard, setEditingCard] = useState(null);
 
-  useEffect(() => {
-    fetchOrganizations();
-  }, [fetchOrganizations]);
-
-  useEffect(() => {
-    if (org) {
-      fetchCards();
-    }
-  }, [org, fetchCards]);
 
   const fetchOrganizations = useCallback(async () => {
     try {
@@ -92,6 +83,17 @@ export default function Cards() {
       setLoading(false);
     }
   }, [org, router.query.includeHidden]);
+
+  // EFFECT ORDER: Declare callbacks above effects to avoid TDZ in minified builds
+  useEffect(() => {
+    fetchOrganizations();
+  }, [fetchOrganizations]);
+
+  useEffect(() => {
+    if (org) {
+      fetchCards();
+    }
+  }, [org, fetchCards]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

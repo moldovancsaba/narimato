@@ -14,13 +14,6 @@ export default function Results() {
   const [loading, setLoading] = useState(true);
   const [copySuccess, setCopySuccess] = useState('');
 
-  useEffect(() => {
-    if (playId) {
-      fetchResults();
-      fetchGlobalRankings();
-      fetchCards();
-    }
-  }, [playId, fetchResults, fetchGlobalRankings, fetchCards]);
 
   // FUNCTIONAL: Track results page engagement
   // STRATEGIC: Measures post-play behavior and results consumption (production-only)
@@ -79,6 +72,15 @@ export default function Results() {
       console.error('Failed to fetch cards:', error);
     }
   }, [org]);
+
+  // EFFECT ORDER: Place effect after the callbacks to avoid TDZ in production builds
+  useEffect(() => {
+    if (playId) {
+      fetchResults();
+      fetchGlobalRankings();
+      fetchCards();
+    }
+  }, [playId, fetchResults, fetchGlobalRankings, fetchCards]);
 
   const getCardDetails = (cardId) => {
     return cards.find(card => card[CARD_FIELDS.UUID] === cardId) || { title: 'Unknown Card', description: '' };

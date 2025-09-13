@@ -11,11 +11,6 @@ export default function SwipeOnlyResults() {
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (playId) {
-      fetchResults();
-    }
-  }, [playId, fetchResults]);
 
   const fetchResults = useCallback(async () => {
     try {
@@ -32,6 +27,13 @@ export default function SwipeOnlyResults() {
       setLoading(false);
     }
   }, [playId]);
+
+  // EFFECT ORDER: Place effect after callback declaration to avoid TDZ in production
+  useEffect(() => {
+    if (playId) {
+      fetchResults();
+    }
+  }, [playId, fetchResults]);
 
   if (loading) {
     return <div style={{ padding: '2rem' }}>Loading results...</div>;
