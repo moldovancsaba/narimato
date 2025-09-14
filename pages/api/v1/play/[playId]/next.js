@@ -4,6 +4,7 @@ import { applyRateLimit } from '../../../../../lib/middleware/rateLimit';
 import { getPlayAndEngine } from '../../../../../lib/services/play/PlayDispatcher';
 import { withApiVersion } from '../../../../../lib/middleware/apiVersion';
 import { buildErrorEnvelope, ERROR_CODES } from '../../../../../lib/utils/errors';
+import { connectDB } from '../../../../../lib/db';
 // GET /api/v1/play/[playId]/next
 export default withApiVersion(async function handler(req, res) {
   const limited = await applyRateLimit(req, res, { windowMs: 60_000, max: 120, key: 'play:next' });
@@ -11,6 +12,8 @@ export default withApiVersion(async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
+    await connectDB();
+
     const { playId } = validate(playIdParamSchema, req.query || {});
     const { engine } = await getPlayAndEngine(playId);
     const result = await engine.getNext(playId);

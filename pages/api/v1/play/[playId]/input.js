@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { getPlayAndEngine } from '../../../../../lib/services/play/PlayDispatcher';
 import { withApiVersion } from '../../../../../lib/middleware/apiVersion';
 import { buildErrorEnvelope, ERROR_CODES } from '../../../../../lib/utils/errors';
+import { connectDB } from '../../../../../lib/db';
 // POST /api/v1/play/[playId]/input
 // body: { action, payload }
 export default async function handler(req, res) {
@@ -13,6 +14,8 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
+    await connectDB();
+
     const { playId } = validate(playIdParamSchema, req.query || {});
     const bodySchema = z.object({
       action: z.string(),

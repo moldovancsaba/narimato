@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { getEngineByMode } from '../../../../lib/services/play/PlayDispatcher';
 import { withApiVersion, resolveVersioned } from '../../../../lib/middleware/apiVersion';
 import { buildErrorEnvelope, ERROR_CODES } from '../../../../lib/utils/errors';
+import { connectDB } from '../../../../lib/db';
 // POST /api/v1/play/start
 // body: { organizationId, deckTag, mode }
 export default async function handler(req, res) {
@@ -12,10 +13,12 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
+    await connectDB();
+
     const schema = z.object({
       organizationId: z.string().uuid(),
       deckTag: z.string().min(1),
-      mode: z.enum(['vote_only', 'swipe_only', 'swipe_more', 'vote_more', 'rank_only', 'rank_more']) // extendable
+      mode: z.enum(['vote_only', 'swipe_only', 'onboarding', 'swipe_more', 'vote_more', 'rank_only', 'rank_more']) // extendable
     });
     const { organizationId, deckTag, mode } = validate(schema, req.body || {});
 
