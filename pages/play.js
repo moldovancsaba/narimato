@@ -160,6 +160,39 @@ export default function Play() {
     try {
       // Check if this is a child session (playId in URL)
       const { playId, mode } = router.query;
+
+      // Auto-run onboarding intro if available for the selected deck (once per page session)
+      if (!playId && deck && mode !== 'onboarding' && deck !== 'child') {
+        const doneKey = `onb_done_${org}_${deck}`;
+        if (typeof window !== 'undefined' && !sessionStorage.getItem(doneKey)) {
+          const res = await fetch(`/api/cards?organizationId=${org}`);
+          const data = await res.json();
+          const all = Array.isArray(data.cards) ? data.cards : [];
+          const normalize = (str) => (str || '').toString().replace(/^#/, '').toLowerCase().trim();
+          const base = normalize(deck);
+          const candidates = new Set([
+            `${base}_onboarding`,
+            `${base}-onboarding`,
+            `${base} onboarding`
+          ]);
+          // Find parent/root onboarding deck
+          const parent = all.find(c => !c.parentTag && candidates.has(normalize(c.name)));
+          if (parent) {
+            const children = all.filter(c => c.parentTag === parent.name);
+            if (children.length >= 2) {
+              // Store original intent and start onboarding deck
+              try {
+                sessionStorage.setItem(`onb_orig_${org}_${deck}` , JSON.stringify({ mode, deck }));
+              } catch (_) {}
+              const params = new URLSearchParams(router.query);
+              params.set('mode', 'onboarding');
+              params.set('deck', parent.name);
+              router.replace({ pathname: router.pathname, query: Object.fromEntries(params.entries()) }, undefined, { shallow: true });
+              return; // defer normal start until onboarding completes
+            }
+          }
+        }
+      }
       
       if (playId && deck === 'child') {
         // FUNCTIONAL: Load child session using hierarchical status API
@@ -322,8 +355,36 @@ mode: mode === 'vote-only' ? 'vote_only' : (mode === 'swipe-only' ? 'swipe_only'
   const checkHierarchicalStatus = async () => {
     if (!currentPlay) return;
     
-    // Check if we're in a specific mode that needs direct results redirect
     const { mode } = router.query;
+    // Onboarding: after completion, restore original deck/mode
+    if (mode === 'onboarding') {
+      try {
+        const keys = Object.keys(sessionStorage);
+        const origKey = keys.find(k => k.startsWith('onb_orig_'));
+        if (origKey) {
+          const orig = JSON.parse(sessionStorage.getItem(origKey));
+          // mark done to prevent re-trigger
+          const doneKey = origKey.replace('onb_orig_', 'onb_done_');
+          sessionStorage.setItem(doneKey, '1');
+          sessionStorage.removeItem(origKey);
+          const params = new URLSearchParams(router.query);
+          if (orig.mode) params.set('mode', orig.mode); else params.delete('mode');
+          if (orig.deck) params.set('deck', orig.deck);
+          params.delete('playId');
+          router.replace({ pathname: router.pathname, query: Object.fromEntries(params.entries()) }, undefined, { shallow: true });
+          return;
+        }
+      } catch (_) {}
+      // Fallback: return to deck selection
+      const params = new URLSearchParams(router.query);
+      params.delete('mode');
+      params.delete('playId');
+      router.replace({ pathname: router.pathname, query: Object.fromEntries(params.entries()) }, undefined, { shallow: true });
+      return;
+    }
+    
+    // Check if we're in a specific mode that needs direct results redirect
+    const { mode: mode2 } = router.query;
     if (mode === 'swipe-only' || mode === 'swipe-more') {
       console.log(`🔚 ${mode} session completion - redirecting to results`);
       // FUNCTIONAL: Track play session completion for swipe-only/swipe-more
