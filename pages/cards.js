@@ -109,7 +109,8 @@ export default function Cards() {
       description: card.description,
       imageUrl: card.imageUrl,
       parentTag: card.parentTag || '',
-      isPlayable: typeof card.isPlayable === 'boolean' ? card.isPlayable : true
+      isPlayable: typeof card.isPlayable === 'boolean' ? card.isPlayable : true,
+      isOnboarding: typeof card.isOnboarding === 'boolean' ? card.isOnboarding : false
     });
     
     // Scroll to the edit form smoothly
@@ -143,7 +144,7 @@ export default function Cards() {
   
   const cancelEdit = () => {
     setEditingCard(null);
-    setFormData({ title: '', description: '', imageUrl: '', parentTag: '' });
+    setFormData({ title: '', description: '', imageUrl: '', parentTag: '', isPlayable: true, isOnboarding: false });
   };
 
   // Organization selection
@@ -262,16 +263,26 @@ export default function Cards() {
           </select>
           {/* FUNCTIONAL: Control whether a parent/root card's deck appears in selection lists */}
           {/* STRATEGIC: Hide internal decision-tree segments but still allow direct play via link */}
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <input
-              type="checkbox"
-              checked={!!formData.isPlayable}
-              onChange={(e) => setFormData(prev => ({ ...prev, isPlayable: e.target.checked }))}
-            />
-            Playable (public)
-          </label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', flexWrap: 'wrap' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <input
+                type="checkbox"
+                checked={!!formData.isPlayable}
+                onChange={(e) => setFormData(prev => ({ ...prev, isPlayable: e.target.checked }))}
+              />
+              Playable (public)
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <input
+                type="checkbox"
+                checked={!!formData.isOnboarding}
+                onChange={(e) => setFormData(prev => ({ ...prev, isOnboarding: e.target.checked }))}
+              />
+              Onboarding (right-only intro deck)
+            </label>
+          </div>
           <div style={{ color: '#666', fontSize: '0.85rem', marginTop: '-0.5rem' }}>
-            If this is a parent card (root with children), this flag controls whether its deck appears in Play/Rankings lists. Hidden decks can still be played directly by link.
+            If this is a parent card (root with children), these flags control whether its deck appears in Play/Rankings (Playable) and whether it’s used as an onboarding intro (Onboarding).
           </div>
           <div className="btn-group btn-group-tight">
             {/* FUNCTIONAL: Elevate create action to large size; keep edit at mid */}

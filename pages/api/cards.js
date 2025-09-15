@@ -39,7 +39,7 @@ async function handleGet(req, res) {
 
 async function handlePost(req, res) {
   try {
-    const { organizationId, title, description, imageUrl, hashtags, isPlayable } = req.body;
+    const { organizationId, title, description, imageUrl, hashtags, isPlayable, isOnboarding } = req.body;
     let { name, parentTag } = req.body;
     
     if (!organizationId || !title) {
@@ -125,6 +125,7 @@ async function handlePost(req, res) {
       parentTag: parentTag || null,
       isActive: true,
       isPlayable: typeof isPlayable === 'boolean' ? isPlayable : true,
+      isOnboarding: typeof isOnboarding === 'boolean' ? isOnboarding : false,
       globalScore: 1500 // Starting ELO rating
     });
 
@@ -133,7 +134,7 @@ async function handlePost(req, res) {
     res.status(201).json({ card });
   } catch (error) {
     console.error('Create card error:', error);
-    if (error.code === 11000) {
+    if (error?.code === 11000) {
       return res.status(400).json({ error: 'Card with this name already exists' });
     }
     res.status(500).json({ error: 'Internal server error' });
