@@ -75,6 +75,8 @@ export default function Play() {
       }
 
       if (votingContext) {
+        // Prevent vote UI for onboarding
+        if (router.query.mode === 'onboarding') return;
         // VOTE MODE: LEFT = Card 1, RIGHT = Card 2
         if (event.code === 'ArrowLeft') {
           event.preventDefault();
@@ -86,11 +88,14 @@ export default function Play() {
           handleVote(votingContext.compareWith);
         }
       } else if (currentCard) {
-        // SWIPE MODE: LEFT = Dislike, RIGHT = Like
+        // SWIPE MODE: LEFT = Dislike, RIGHT = Like (right-only for onboarding)
+        const isOnboarding = router.query.mode === 'onboarding';
         if (event.code === 'ArrowLeft') {
-          event.preventDefault();
-          setKeyboardActive('dislike');
-          handleSwipe('left');
+          if (!isOnboarding) {
+            event.preventDefault();
+            setKeyboardActive('dislike');
+            handleSwipe('left');
+          }
         } else if (event.code === 'ArrowRight') {
           event.preventDefault();
           setKeyboardActive('like');
@@ -279,7 +284,7 @@ export default function Play() {
       // Normal deck start - check for specific modes
       let apiEndpoint = '/api/play/start';
       // Unified dispatcher endpoint
-if (mode === 'vote-only' || mode === 'swipe-only' || mode === 'swipe-more' || mode === 'vote-more' || mode === 'rank-only' || mode === 'rank-more') {
+if (mode === 'vote-only' || mode === 'swipe-only' || mode === 'onboarding' || mode === 'swipe-more' || mode === 'vote-more' || mode === 'rank-only' || mode === 'rank-more') {
         apiEndpoint = '/api/v1/play/start';
       }
       
@@ -289,7 +294,7 @@ if (mode === 'vote-only' || mode === 'swipe-only' || mode === 'swipe-more' || mo
         body: JSON.stringify({ 
           organizationId: org, 
           deckTag: deck, 
-mode: mode === 'vote-only' ? 'vote_only' : (mode === 'swipe-only' ? 'swipe_only' : (mode === 'swipe-more' ? 'swipe_more' : (mode === 'vote-more' ? 'vote_more' : (mode === 'rank-only' ? 'rank_only' : (mode === 'rank-more' ? 'rank_more' : undefined)))))
+mode: mode === 'vote-only' ? 'vote_only' : (mode === 'swipe-only' ? 'swipe_only' : (mode === 'onboarding' ? 'onboarding' : (mode === 'swipe-more' ? 'swipe_more' : (mode === 'vote-more' ? 'vote_more' : (mode === 'rank-only' ? 'rank_only' : (mode === 'rank-more' ? 'rank_more' : undefined))))))
         })
       });
       
