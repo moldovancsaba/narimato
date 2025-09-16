@@ -8,13 +8,22 @@ export default function Results() {
   const { playId, org, deck, mode } = router.query;
 
   const [results, setResults] = useState(null);
+  const [resultsLoading, setResultsLoading] = useState(false);
+  const [resultsError, setResultsError] = useState(null); // 'not-found' when 404
+
   const [globalRankings, setGlobalRankings] = useState([]);
+  const [rankingsLoading, setRankingsLoading] = useState(false);
+
   const [cards, setCards] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [cardsLoading, setCardsLoading] = useState(false);
+
   const [copySuccess, setCopySuccess] = useState('');
 
   useEffect(() => {
     if (playId) {
+      setResultsLoading(true);
+      setRankingsLoading(true);
+      setCardsLoading(true);
       fetchResults();
       fetchGlobalRankings();
       fetchCards();
@@ -36,6 +45,7 @@ export default function Results() {
 
   const fetchResults = async () => {
     try {
+      setResultsError(null);
       // Use unified results API for all modes
       let apiEndpoint = `/api/v1/play/${playId}/results`;
       
@@ -43,11 +53,15 @@ export default function Results() {
       if (res.ok) {
         const data = await res.json();
         setResults(data);
+      } else if (res.status === 404) {
+        setResultsError('not-found');
       } else {
         console.error('Failed to fetch results');
       }
     } catch (error) {
       console.error('Failed to fetch results:', error);
+    } finally {
+      setResultsLoading(false);
     }
   };
 
@@ -63,7 +77,7 @@ export default function Results() {
     } catch (error) {
       console.error('Failed to fetch global rankings:', error);
     } finally {
-      setLoading(false);
+      setRankingsLoading(false);
     }
   };
 
@@ -76,6 +90,8 @@ export default function Results() {
       }
     } catch (error) {
       console.error('Failed to fetch cards:', error);
+    } finally {
+      setCardsLoading(false);
     }
   };
 
@@ -121,9 +137,12 @@ export default function Results() {
     }
   };
 
+  const loading = resultsLoading || rankingsLoading || cardsLoading;
+
   if (loading) return <div style={{ padding: '2rem' }}>Loading results...</div>;
 
-  if (!results) {
+  // Only show Not Found when the results endpoint explicitly returned 404
+  if (resultsError === 'not-found') {
     return (
       <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
         <h1>Results Not Found</h1>
@@ -132,6 +151,9 @@ export default function Results() {
       </div>
     );
   }
+
+  // Defensive guard: if results still null for any reason, keep loading instead of flashing Not Found
+  if (!results) return <div style={{ padding: '2rem' }}>Loading results...</div>;
 
   return (
     <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif', maxWidth: '800px', margin: '0 auto' }}>
