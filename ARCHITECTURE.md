@@ -1,8 +1,8 @@
 # NARIMATO Architecture
 
-**Current Version:** 6.6.0 (Rank‑More Play Mode)
-**Date:** 2025-10-12
-**Last Updated:** 2025-09-07T12:57:30.000Z
+**Current Version:** 6.9.0 (Onboarding UX + Right-Swipe Semantics)
+**Date:** 2025-09-16T07:11:23.000Z
+**Last Updated:** 2025-09-16T07:11:23.000Z
 
 ## ⚡ UUID Field Standardization (v3.7.1+)
 

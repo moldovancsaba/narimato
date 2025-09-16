@@ -1,8 +1,17 @@
 # NARIMATO Release Notes
 
-**Current Version:** 6.8.0 (Rank‑More Play Mode)
+**Current Version:** 6.9.0 (Onboarding UX + Right-Swipe Semantics)
 **Date:** 2025-09-07
-**Last Updated:** 2025-09-08T08:58:21.000Z
+**Last Updated:** 2025-09-16T07:11:23.000Z
+
+## [v6.9.0] — 2025-09-16T07:11:23.000Z
+
+### Onboarding UX and Server Contract Alignment
+- Onboarding now correctly uses right-swipe (👍 Like) semantics while hiding the left/dislike control.
+- Client sends unified v1 swipe payloads during onboarding: { action: 'swipe', payload: { cardId, direction: 'right' } }.
+- Server onboarding sessions remain non-persistent (index-based advancement) with no ranking side effects.
+- Keyboard: ArrowLeft ignored during onboarding; ArrowRight advances.
+- Fixes 400 errors on input endpoint caused by mismatched 'next' action.
 
 ## [v6.8.0] — 2025-09-08T08:58:21.000Z
 

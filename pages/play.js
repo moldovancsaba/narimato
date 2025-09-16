@@ -513,123 +513,138 @@ mode: mode === 'vote-only' ? 'vote_only' : (mode === 'swipe-only' ? 'swipe_only'
     if (!currentPlay || !currentCard) return;
 
     try {
-      // Check mode for appropriate API endpoint
       const { mode } = router.query;
+      const isOnboarding = mode === 'onboarding';
+
+      // Block left/dislike during onboarding at the client level
+      if (isOnboarding && direction === 'left') return;
+
+      // Determine endpoint and body based on mode
       let apiEndpoint = '/api/play/swipe';
-if (mode === 'swipe-only' || mode === 'swipe-more' || mode === 'rank-only' || mode === 'rank-more') {
+      if (
+        mode === 'swipe-only' ||
+        mode === 'swipe-more' ||
+        mode === 'rank-only' ||
+        mode === 'rank-more' ||
+        mode === 'onboarding'
+      ) {
         apiEndpoint = `/api/v1/play/${currentPlay.playId}/input`;
       } else if (mode === 'vote-only') {
         // vote-only does not use swipe
         apiEndpoint = null;
       }
-      
+
+      if (!apiEndpoint) return;
+
+      const body = JSON.stringify(
+        apiEndpoint.startsWith('/api/v1')
+          ? { action: 'swipe', payload: { cardId: currentCard.id, direction } }
+          : { playId: currentPlay.playId, cardId: currentCard.id, direction }
+      );
+
       const res = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(
-          mode === 'swipe-only' || mode === 'swipe-more' || mode === 'rank-only' || mode === 'rank-more'
-            ? { action: 'swipe', payload: { cardId: currentCard.id, direction } }
-            : { playId: currentPlay.playId, cardId: currentCard.id, direction }
-        )
+        body
       });
 
-        if (res.ok) {
-          const data = await res.json();
-          // FUNCTIONAL: Track swipe gesture for engagement metrics
-          // STRATEGIC: Monitors user interaction patterns with cards (production-only)
-          try {
-            const { mode } = router.query;
-            event('swipe_action', {
-              playId: currentPlay.playId,
-              mode,
-              cardId: currentCard?.id,
-              direction,
-              hierarchicalLevel: currentPlay?.hierarchicalLevel || null
-            });
-          } catch (e) { /* noop */ }
-          
-          // Rank-More: engine may instruct to return to swiping a new family immediately
-          if (data.returnToSwipe && data.nextCardId) {
-            // If engine supplies a fresh card list for the new family, use it
-            const newCards = Array.isArray(data.cards) && data.cards.length > 0 ? data.cards : currentPlay.cards;
-            setCurrentPlay(prev => ({ ...prev, cards: newCards }));
-            const nextCard = newCards.find(c => c.id === data.nextCardId) || null;
-            setVotingContext(null);
-            setPreviousCard(currentCard);
-            setSwipeTransition('new-level');
-            setTimeout(() => setSwipeTransition(null), 600);
-            setCurrentCard(nextCard);
+      if (res.ok) {
+        const data = await res.json();
+        // FUNCTIONAL: Track user progression
+        // STRATEGIC: For onboarding, we still use swipe semantics to teach the gesture
+        try {
+          event('swipe_action', {
+            playId: currentPlay.playId,
+            mode,
+            cardId: currentCard?.id,
+            direction,
+            hierarchicalLevel: currentPlay?.hierarchicalLevel || null
+          });
+        } catch (e) { /* noop */ }
+
+        // Handle engine responses
+        // Rank-More: engine may instruct to return to swiping a new family immediately
+        if (data.returnToSwipe && data.nextCardId) {
+          // If engine supplies a fresh card list for the new family, use it
+          const newCards = Array.isArray(data.cards) && data.cards.length > 0 ? data.cards : currentPlay.cards;
+          setCurrentPlay(prev => ({ ...prev, cards: newCards }));
+          const nextCard = newCards.find(c => c.id === data.nextCardId) || null;
+          setVotingContext(null);
+          setPreviousCard(currentCard);
+          setSwipeTransition('new-level');
+          setTimeout(() => setSwipeTransition(null), 600);
+          setCurrentCard(nextCard);
+          return;
+        }
+
+        if (data.completed) {
+          // For rank-only and rank-more, redirect straight to results when session fully completes
+          if (mode === 'rank-only') {
+            router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}&mode=${mode}`);
             return;
+          }
+          if (mode === 'rank-more') {
+            router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}&mode=${mode}`);
+            return;
+          }
+          // Onboarding or standard: determine next action
+          await checkHierarchicalStatus();
+          return;
+        } else if (data.requiresVoting) {
+          setVotingContext(data.votingContext);
+        } else if (data.nextCardId) {
+          // HIERARCHICAL SWIPEMORE or same-family transition
+          let nextCard;
+          let updatedCards = currentPlay.cards;
+
+          if (data.newLevelCards) {
+            // SwipeMore transitioned to a new hierarchical level
+            console.log('🌳 Transitioning to new hierarchical level:', data.hierarchicalLevel);
+            console.log('📋 New level cards:', data.newLevelCards.map(c => c.title));
+
+            // Update the cards array with the new level
+            updatedCards = data.newLevelCards;
+            nextCard = data.newLevelCards.find(c => c.id === data.nextCardId);
+
+            // Update currentPlay state with new cards
+            setCurrentPlay(prev => ({
+              ...prev,
+              cards: updatedCards
+            }));
+          } else if (Array.isArray(data.cards) && data.cards.length > 0) {
+            // Rank-More family transition without newLevelCards key
+            updatedCards = data.cards;
+            setCurrentPlay(prev => ({ ...prev, cards: updatedCards }));
+            nextCard = updatedCards.find(c => c.id === data.nextCardId);
+          } else {
+            // Regular card transition within the same level
+            nextCard = currentPlay.cards.find(c => c.id === data.nextCardId);
           }
 
-          if (data.completed) {
-            // For rank-only and rank-more, redirect straight to results when session fully completes
-            if (mode === 'rank-only') {
-              router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}&mode=${mode}`);
-              return;
-            }
-            if (mode === 'rank-more') {
-              router.push(`/results?playId=${currentPlay.playId}&org=${org}&deck=${encodeURIComponent(deck)}&mode=${mode}`);
-              return;
-            }
-            // Check hierarchical status to determine next action
-            await checkHierarchicalStatus();
-            return;
-          } else if (data.requiresVoting) {
-            setVotingContext(data.votingContext);
-          } else if (data.nextCardId) {
-            // HIERARCHICAL SWIPEMORE or same-family transition
-            let nextCard;
-            let updatedCards = currentPlay.cards;
-            
-            if (data.newLevelCards) {
-              // SwipeMore transitioned to a new hierarchical level
-              console.log('🌳 Transitioning to new hierarchical level:', data.hierarchicalLevel);
-              console.log('📋 New level cards:', data.newLevelCards.map(c => c.title));
-              
-              // Update the cards array with the new level
-              updatedCards = data.newLevelCards;
-              nextCard = data.newLevelCards.find(c => c.id === data.nextCardId);
-              
-              // Update currentPlay state with new cards
-              setCurrentPlay(prev => ({
-                ...prev,
-                cards: updatedCards
-              }));
-            } else if (Array.isArray(data.cards) && data.cards.length > 0) {
-              // Rank-More family transition without newLevelCards key
-              updatedCards = data.cards;
-              setCurrentPlay(prev => ({ ...prev, cards: updatedCards }));
-              nextCard = updatedCards.find(c => c.id === data.nextCardId);
-            } else {
-              // Regular card transition within the same level
-              nextCard = currentPlay.cards.find(c => c.id === data.nextCardId);
-            }
-            
-            // FUNCTIONAL: Track swipe transitions for visual feedback
-            // STRATEGIC: Shows user when a new card appears after swipe
-            if (currentCard && currentCard.id !== data.nextCardId) {
-              const transitionType = data.newLevelCards || (Array.isArray(data.cards) && data.cards.length > 0) ? 'new-level' : 'new-card';
-              setSwipeTransition(transitionType);
-              
-              // Clear transition after animation completes
-              setTimeout(() => {
-                setSwipeTransition(null);
-              }, 600);
-            }
-            
-            setPreviousCard(currentCard);
-            setCurrentCard(nextCard);
-            
-            if (!nextCard) {
-              console.error('❌ Next card not found:', data.nextCardId);
-              console.error('Available cards:', updatedCards.map(c => ({ id: c.id, title: c.title })));
-            }
+          // FUNCTIONAL: Track swipe transitions for visual feedback
+          // STRATEGIC: Shows user when a new card appears after swipe/next
+          if (currentCard && currentCard.id !== data.nextCardId) {
+            const transitionType = data.newLevelCards || (Array.isArray(data.cards) && data.cards.length > 0) ? 'new-level' : 'new-card';
+            setSwipeTransition(transitionType);
+
+            // Clear transition after animation completes
+            setTimeout(() => {
+              setSwipeTransition(null);
+            }, 600);
           }
-        } else {
-          const error = await res.json();
-          alert(error.error);
+
+          setPreviousCard(currentCard);
+          setCurrentCard(nextCard);
+
+          if (!nextCard) {
+            console.error('❌ Next card not found:', data.nextCardId);
+            console.error('Available cards:', updatedCards.map(c => ({ id: c.id, title: c.title })));
+          }
         }
+      } else {
+        const error = await res.json();
+        alert(error.error);
+      }
     } catch (error) {
       console.error('Failed to swipe:', error);
       alert('Failed to swipe card');
@@ -1171,6 +1186,8 @@ const nextData = await nextRes.json();
       '--emoji-size': `${cardConfig.emojiSize}px`
     };
 
+    const isOnboarding = router.query.mode === 'onboarding';
+
     return (
       <>
         <link rel="stylesheet" href="/styles/game.css" />
@@ -1214,7 +1231,49 @@ const nextData = await nextRes.json();
                   width: `${cardConfig.cardSize}px`,
                   gap: '20px'
                 }}>
-                  {/* DISLIKE BUTTON (👎) - Left half */}
+                  {isOnboarding ? (
+                    // Onboarding: single Continue button centered
+                    <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                      <button 
+                        className={`game-action-button like ${keyboardActive === 'like' ? 'pulse' : ''}`}
+                        onClick={() => handleSwipe('right')}
+                        tabIndex="0"
+                        aria-label="Like card"
+                        style={{ minWidth: '50%' }}
+                      >
+                        👍
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      {/* DISLIKE BUTTON (👎) - Left half */}
+                      <button 
+                        className={`game-action-button dislike ${keyboardActive === 'dislike' ? 'pulse' : ''}`}
+                        onClick={() => handleSwipe('left')}
+                        tabIndex="0"
+                        aria-label="Dislike card"
+                      >
+                        👎
+                      </button>
+                      
+                      {/* LIKE BUTTON (👍) - Right half */}
+                      <button 
+                        className={`game-action-button like ${keyboardActive === 'like' ? 'pulse' : ''}`}
+                        onClick={() => handleSwipe('right')}
+                        tabIndex="0"
+                        aria-label="Like card"
+                      >
+                        👍
+                      </button>
+                    </>
+                  )}
+                </div>
+              </>
+            ) : (
+              // LANDSCAPE LAYOUT: Button, Card, Button horizontally
+              <>
+                {/* DISLIKE BUTTON (👎) - Left position; hidden during onboarding */}
+                {!isOnboarding && (
                   <button 
                     className={`game-action-button dislike ${keyboardActive === 'dislike' ? 'pulse' : ''}`}
                     onClick={() => handleSwipe('left')}
@@ -1223,30 +1282,7 @@ const nextData = await nextRes.json();
                   >
                     👎
                   </button>
-                  
-                  {/* LIKE BUTTON (👍) - Right half */}
-                  <button 
-                    className={`game-action-button like ${keyboardActive === 'like' ? 'pulse' : ''}`}
-                    onClick={() => handleSwipe('right')}
-                    tabIndex="0"
-                    aria-label="Like card"
-                  >
-                    👍
-                  </button>
-                </div>
-              </>
-            ) : (
-              // LANDSCAPE LAYOUT: Button, Card, Button horizontally
-              <>
-                {/* DISLIKE BUTTON (👎) - Left position */}
-                <button 
-                  className={`game-action-button dislike ${keyboardActive === 'dislike' ? 'pulse' : ''}`}
-                  onClick={() => handleSwipe('left')}
-                  tabIndex="0"
-                  aria-label="Dislike card"
-                >
-                  👎
-                </button>
+                )}
                 
                 {/* GAME CARD */}
                 <div className={`game-card ${currentCard.imageUrl ? 'has-image' : ''} ${
@@ -1257,12 +1293,12 @@ const nextData = await nextRes.json();
                   {currentCard.imageUrl && <img src={currentCard.imageUrl} alt={currentCard.title} className="game-card-image" />}
                 </div>
                 
-                {/* LIKE BUTTON (👍) - Right position */}
+                {/* LIKE / CONTINUE BUTTON (👍 or Continue) - Right position */}
                 <button 
                   className={`game-action-button like ${keyboardActive === 'like' ? 'pulse' : ''}`}
                   onClick={() => handleSwipe('right')}
                   tabIndex="0"
-                  aria-label="Like card"
+                  aria-label={'Like card'}
                 >
                   👍
                 </button>

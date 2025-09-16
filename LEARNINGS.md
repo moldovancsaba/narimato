@@ -1,8 +1,16 @@
 # Development Learnings
 
-**Current Version:** 6.4.0 (Rank‑More Play Mode)
-**Date:** 2025-09-07
-**Last Updated:** 2025-09-07T11:34:45.000Z
+**Current Version:** 6.9.0 (Onboarding UX + Right-Swipe Semantics)
+**Date:** 2025-09-16T07:11:23.000Z
+**Last Updated:** 2025-09-16T07:11:23.000Z
+
+### Onboarding UX and Server Contract Alignment (v6.9.0) — Frontend / Backend
+- Functional: Onboarding cards advance via right-swipe (👍) while dislike is hidden; client sends unified v1 swipe payloads.
+- Strategic: Teaches primary gesture consistently while ensuring onboarding has zero impact on rankings.
+- Learnings:
+  - Maintain unified input shapes across modes to prevent schema errors (400s).
+  - Client-side guards should block left actions during onboarding; keyboard parity is required.
+  - Keep onboarding sessions index-based on the server to avoid accidental persistence.
 
 ### Rank-More Orchestration (v6.4.0) — Backend / Frontend / Process
 - Functional: Added hierarchical multi-level ranking that composes Rank-Only per family; families processed in random order per level; flattened output only.
