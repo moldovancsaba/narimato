@@ -1,10 +1,36 @@
 # NARIMATO Task List
 
-**Current Version:** 6.9.0
-**Date:** 2025-09-16T07:11:23.000Z
-**Last Updated:** 2025-09-16T07:11:23.000Z
+**Current Version:** 7.1.0
+**Date:** 2025-09-27T21:18:25.000Z
+**Last Updated:** 2025-09-27T21:18:25.000Z
 
 ## High Priority Tasks
+
+- Title: Verify build for v7.0.0
+  Owner: moldovancsaba
+  Expected Delivery Date: 2025-09-23T16:00:00.000Z
+  Status: Not Started
+
+- Title: Visual QA — /results desktop and mobile
+  Owner: moldovancsaba
+  Expected Delivery Date: 2025-09-23T17:00:00.000Z
+  Status: Not Started
+
+- Title: Commit and push v7.0.0 to main
+  Owner: moldovancsaba
+  Expected Delivery Date: 2025-09-23T18:00:00.000Z
+  Status: Not Started
+
+- Title: Prepare deployment and release verification
+  Owner: moldovancsaba
+  Expected Delivery Date: 2025-09-23T19:00:00.000Z
+  Status: Not Started
+
+### Deck-Scoped Results Two-Column Comparison
+- Owner: AI Agent
+- Expected Delivery Date: 2025-09-19T12:30:00.000Z
+- Status: In Progress
+- Details: Update results page to filter Global Rankings by deck (organizationId + parentTag), add responsive two-column layout (Personal vs Global), and add summary showing personal top 3/last vs global top 3/last. Reuse existing endpoints; no breadcrumbs; ISO 8601 timestamps.
 
 ### API Versioning Negotiation (Header-Based)
 - Owner: AI Agent
@@ -155,6 +181,13 @@
 - **Details:** Create an admin panel for card CRUD operations, bulk card import/export, and card categorization/tagging system. Requires authentication system.
 
 ## Completed Tasks
+
+### Security: Patch Next.js Vulnerabilities (Image Optimization & Middleware Redirect)
+- Owner: AI Agent
+- Expected Delivery Date: 2025-09-18T19:16:18.000Z
+- Status: Completed ✅
+- Completion Date: 2025-09-18T19:16:18.000Z
+- Details: Updated next from 15.4.4 → 15.5.3 and eslint-config-next 15.4.4 → 15.5.3. Ran npm install and verified npm audit reports 0 vulnerabilities. Advisories addressed: GHSA-g5qg-72qw-gw5v, GHSA-xv57-4mr9-wg8v, GHSA-4342-x723-ch2f.
 
 ### Version Negotiation Framework (v6.6.0)
 - Owner: AI Agent

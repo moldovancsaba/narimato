@@ -25,7 +25,14 @@ async function handleGet(req, res) {
 
     const query = { organizationId, isActive: true };
     if (parentTag) {
-      query.parentTag = parentTag;
+      // Include only deck descendants (children and deeper), and explicitly exclude the deck parent itself
+      query.$and = [
+        { name: { $ne: parentTag } },
+        { $or: [
+          { parentTag: parentTag },
+          { hashtags: parentTag }
+        ]}
+      ];
     }
 
     const cards = await Card.find(query).sort({ globalScore: -1 });

@@ -1,8 +1,44 @@
 # NARIMATO Release Notes
 
-**Current Version:** 6.9.0 (Onboarding UX + Right-Swipe Semantics)
-**Date:** 2025-09-07
-**Last Updated:** 2025-09-16T07:11:23.000Z
+**Current Version:** 7.1.0
+**Date:** 2025-09-27T21:18:25.000Z
+**Last Updated:** 2025-09-27T21:18:25.000Z
+
+## [v7.1.0] — 2025-09-27T21:18:25.000Z
+
+### Added/Changed
+- Swipe interactions: 50% of card width threshold; under threshold snaps back, over threshold completes swipe; pointer events added for mouse; smooth 180ms transitions.
+- Vote interactions: Safe tap on cards (movement < 10px) to avoid accidental votes.
+- Results UI: Centered summary block and its content.
+- Global rankings (deck-scoped): Include all descendants via hashtags; exclude the deck parent itself.
+- Onboarding: Broadened detection and allow single-child onboarding decks.
+
+### Notes
+- Mobile-friendly gestures with touch-action: pan-y to prevent horizontal browser panning conflicts.
+- All timestamps use ISO 8601 with milliseconds (UTC).
+
+## [v7.0.0] — 2025-09-23T12:18:46.000Z
+
+### Changed
+- Results comparison UI alignment improvements:
+  - Personal column now flush-right near the page center; Global column flush-left near the center
+  - Header titles biased toward center (Personal right, Global left)
+  - Inter-column gap reduced from 2rem to 1rem for header and rows
+  - Per-row card heights equalized; info blocks aligned independently of card content
+  - Removed residual left-column gap in mode=rank-more
+- Documentation updated and synchronized (README, ROADMAP, TASKLIST, ARCHITECTURE, LEARNINGS)
+
+### Notes
+- Mobile behavior preserved (stacked, centered)
+- No breadcrumbs; tests prohibited per project policy
+- All timestamps follow ISO 8601 with milliseconds (UTC)
+
+## [v6.9.1] — 2025-09-18T21:07:21.000Z
+
+### Security Maintenance
+- Updated Next.js to 15.5.3 to remediate advisories GHSA-g5qg-72qw-gw5v, GHSA-xv57-4mr9-wg8v, GHSA-4342-x723-ch2f.
+- Updated eslint-config-next to 15.5.3 for tooling alignment.
+- Verified successful production build and npm audit reports 0 vulnerabilities.
 
 ## [v6.9.0] — 2025-09-16T07:11:23.000Z
 

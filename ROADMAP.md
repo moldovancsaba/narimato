@@ -1,12 +1,12 @@
 # NARIMATO Development Roadmap
 
-**Current Version:** 6.9.0
-**Date:** 2025-09-16T07:11:23.000Z
-**Last Updated:** 2025-09-16T07:11:23.000Z
+**Current Version:** 7.1.0
+**Date:** 2025-09-27T21:18:25.000Z
+**Last Updated:** 2025-09-27T21:18:25.000Z
 
 > Note: Roadmap contains only forward-looking items. Completed and historical work is tracked in RELEASE_NOTES.md.
 
-## Q3 2025 — Near-Term (Now → Sep 2025)
+## Q4 2025 — Near-Term (Now → Dec 2025)
 
 ### Critical Priority
 - Error Response Standards (Structured Envelope + Taxonomy)
@@ -99,6 +99,7 @@
 - Code quality, comprehensive error handling, documentation currency
 - Monitoring/alerting, infra scaling (DB/CDN/load balancing)
 - Security & compliance (audits, vulns, certifications)
+  - Next.js image optimization advisories patched to 15.5.3 (2025-09-18T19:16:18.000Z); continue weekly audits and apply non-breaking updates promptly
 
 ## Success Metrics
 

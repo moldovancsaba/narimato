@@ -149,3 +149,64 @@ Next steps:
   - Synchronized ROADMAP.md Current Version to 6.6.0 and Last Updated timestamp
 - Links: ROADMAP.md updated accordingly
 
+# Update — 2025-09-18T19:16:18.000Z
+- Author: Agent Mode (AI)
+- Security: Patched Next.js vulnerabilities (GHSA-g5qg-72qw-gw5v, GHSA-xv57-4mr9-wg8v, GHSA-4342-x723-ch2f)
+- Actions:
+  - Bumped next from 15.4.4 to 15.5.3 (patched)
+  - Bumped eslint-config-next from 15.4.4 to 15.5.3 to keep linting presets aligned
+  - Ran npm install to update lockfile
+  - Verified with npm audit: 0 vulnerabilities
+- Notes: No code changes beyond dependency updates. Build verification on request.
+
+# Plan — 2025-09-18T21:07:21.000Z
+- Author: Agent Mode (AI)
+- Action: Bump patch and run dev
+- Steps:
+  - Increment version 6.9.0 → 6.9.1 per protocol
+  - Sync documentation (README, ROADMAP, TASKLIST, LEARNINGS, RELEASE_NOTES, ARCHITECTURE) with ISO 8601 ms timestamps
+- Start Next.js dev server non-interactively and log PID and output path
+
+# Plan — 2025-09-19T11:49:14.000Z
+- Author: Agent Mode (AI)
+- Feature: Results page — deck-scoped Global Rankings and two-column comparison
+- Why: Users should see how their personal ranking compares to global rankings for the same deck only; avoids cross-deck noise
+- Scope:
+  - Derive deck from results payload if not in query
+  - Filter Global Rankings endpoint with organizationId + parentTag (deck)
+  - Fetch only deck cards for ID→details mapping
+  - Two columns: 🏆 Your Personal Ranking (left) vs 🌍 Global Rankings (right)
+  - Summary bar: personal top 3/last vs global top 3/last
+- Notes: Reused existing endpoints (/api/cards, /api/cards/rankings) — no new APIs
+
+# Plan — 2025-09-23T12:18:46.000Z
+
+# Update — 2025-09-27T21:18:25.000Z
+- Author: Agent Mode (AI)
+- Minor Release: v7.1.0 — Interaction Improvements and Global Ranking Fixes
+- Changes:
+  - Swipe: 50% threshold behavior with pointer drag support; smooth transitions.
+  - Vote: Safe tap threshold (<10px).
+  - Results: Centered summary section.
+  - Global Rankings: Include deck descendants (via hashtags) and exclude the deck parent from lists.
+- Docs: Synchronized all docs with ISO 8601 UTC ms timestamps.
+- Author: Agent Mode (AI)
+- Subject: Major UI alignment update for /results — personal vs global columns
+- Version: Target 7.0.0 (MAJOR)
+- Scope:
+  - Align personal ranking column flush-right near center
+  - Align header titles toward center (personal right, global left)
+  - Reduce inter-column gap to 1rem
+  - Equalize per-row card heights and align info blocks independently of card content
+  - Remove residual left-column gap in rank-more mode
+- Strategy:
+  - Scoped styled-jsx updates in pages/results.js; no global design system changes
+  - Maintain mobile UX: stacked, centered
+  - No tests (policy)
+- Documentation:
+  - Update README.md, ROADMAP.md (forward-looking only), TASKLIST.md, RELEASE_NOTES.md, ARCHITECTURE.md, LEARNINGS.md
+- Next:
+  - Bump to 7.0.0
+  - Build verification and visual QA on /results (desktop+mobile)
+  - Commit and push with versioned message; prepare deployment
+

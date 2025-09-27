@@ -1,8 +1,18 @@
 # Development Learnings
 
-**Current Version:** 6.9.0 (Onboarding UX + Right-Swipe Semantics)
-**Date:** 2025-09-16T07:11:23.000Z
-**Last Updated:** 2025-09-16T07:11:23.000Z
+**Current Version:** 7.1.0
+**Date:** 2025-09-27T21:18:25.000Z
+**Last Updated:** 2025-09-27T21:18:25.000Z
+
+### Swipe/Vote Interaction Refinement (v7.1.0) — Frontend
+- Swipe: Using a 50% width threshold provides a clear, predictable interaction; snap-back prevents accidental swipes; pointer events ensure desktop parity.
+- Vote: Safe tap recognition (movement < 10px) avoids accidental votes while maintaining responsiveness.
+- CSS touch-action pan-y resolves conflicts with horizontal browser panning without blocking vertical scroll.
+
+### Results Page Alignment (v7.0.0) — Frontend
+- Issue: Personal column cards showed ~150px gap in mode=rank-more.
+  - Cause: .card-md max-width constraint inside a wider container; card centered within box despite right-aligned text.
+  - Fix: Scoped per-page CSS to flush-align the card node using align-self and auto margins; kept info text right-aligned; equalized row heights; decoupled info block alignment from card height; reduced inter-column gap to 1rem; centered titles on mobile.
 
 ### Onboarding UX and Server Contract Alignment (v6.9.0) — Frontend / Backend
 - Functional: Onboarding cards advance via right-swipe (👍) while dislike is hidden; client sends unified v1 swipe payloads.
