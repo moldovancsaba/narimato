@@ -1,13 +1,13 @@
 # NARIMATO
 
-![Version](https://img.shields.io/badge/version-6.9.0-blue.svg)
-![Next.js](https://img.shields.io/badge/Next.js-15.4.4-black.svg)
+![Version](https://img.shields.io/badge/version-7.1.0-blue.svg)
+![Next.js](https://img.shields.io/badge/Next.js-15.5.3-black.svg)
 ![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)
 ![MongoDB](https://img.shields.io/badge/MongoDB-7.0+-green.svg)
 
 NARIMATO is an anonymous, session-based card ranking application built with Next.js, MongoDB, and sophisticated binary search ranking algorithms. Global rankings are powered by ELO rating system for accurate skill-based card comparisons.
 
-**Current Version:** 6.9.0 (Onboarding UX + Right-Swipe Semantics)
+**Current Version:** 7.1.0 — Swipe/vote interaction improvements (50% swipe threshold with pointer support, safe tap voting); deck global rankings include descendants and exclude deck parent; centered results summary.
 
 ## ✨ Key Features
 
@@ -142,7 +142,7 @@ For full request/response examples, see docs/API_REFERENCE.md.
 - **Cross-Platform Support**: Full touch and mouse support with smooth transitions
 - **Responsive Design**: Improved experience across all device orientations
 
-## 📚 Documentation
+## 📚 Documentation (Last updated: 2025-09-27T21:18:25.000Z)
 
 - [API Reference](./docs/API_REFERENCE.md) — Unified Play API (start/input/next/results) with per-mode examples
 

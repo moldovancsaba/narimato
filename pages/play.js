@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { calculateCardSize } from '../lib/utils/cardSizing';
@@ -20,6 +20,112 @@ export default function Play() {
   const [cardTransitions, setCardTransitions] = useState({ left: null, right: null });
   const [previousCard, setPreviousCard] = useState(null);
   const [swipeTransition, setSwipeTransition] = useState(null);
+
+  // Touch/Pointer swipe handling for swipe mode (50% width threshold)
+  const swipeTouchStartX = useRef(null);
+  const pointerStartX = useRef(null);
+  const pointerActiveId = useRef(null);
+  const [swipeDrag, setSwipeDrag] = useState({ dx: 0, animating: false });
+  const onSwipeTouchStart = (e) => {
+    if (!currentCard || !cardConfig) return;
+    if (!e.touches || e.touches.length === 0) return;
+    swipeTouchStartX.current = e.touches[0].clientX;
+    setSwipeDrag({ dx: 0, animating: false });
+  };
+  const onSwipeTouchMove = (e) => {
+    if (swipeTouchStartX.current == null) return;
+    if (!e.touches || e.touches.length === 0) return;
+    const dx = e.touches[0].clientX - swipeTouchStartX.current;
+    setSwipeDrag({ dx, animating: false });
+    if (Math.abs(dx) > 2) {
+      // Avoid page scroll during deliberate drag
+      e.preventDefault();
+    }
+  };
+  const onSwipeTouchEnd = () => {
+    if (swipeTouchStartX.current == null) return;
+    const dx = swipeDrag.dx || 0;
+    swipeTouchStartX.current = null;
+    const width = cardConfig?.cardSize || 300;
+    const threshold = width * 0.5;
+    if (Math.abs(dx) >= threshold) {
+      const dir = dx > 0 ? 'right' : 'left';
+      // Animate off-screen then record swipe
+      const off = (dir === 'right' ? 1 : -1) * (width * 1.2);
+      setSwipeDrag({ dx: off, animating: true });
+      setTimeout(() => {
+        setSwipeDrag({ dx: 0, animating: false });
+        handleSwipe(dir);
+      }, 180);
+    } else {
+      // Snap back to center
+      setSwipeDrag({ dx: 0, animating: true });
+      setTimeout(() => setSwipeDrag({ dx: 0, animating: false }), 180);
+    }
+  };
+
+  // Pointer fallback (mouse/touch) for swipe mode
+  const onSwipePointerDown = (e) => {
+    if (!currentCard || !cardConfig) return;
+    pointerActiveId.current = e.pointerId;
+    pointerStartX.current = e.clientX;
+    try { e.currentTarget.setPointerCapture?.(e.pointerId); } catch (_) {}
+    setSwipeDrag({ dx: 0, animating: false });
+  };
+  const onSwipePointerMove = (e) => {
+    if (pointerActiveId.current == null || e.pointerId !== pointerActiveId.current) return;
+    const dx = e.clientX - (pointerStartX.current || 0);
+    setSwipeDrag({ dx, animating: false });
+    if (Math.abs(dx) > 2) e.preventDefault();
+  };
+  const onSwipePointerUp = (e) => {
+    if (pointerActiveId.current == null || e.pointerId !== pointerActiveId.current) return;
+    const dx = swipeDrag.dx || 0;
+    pointerActiveId.current = null;
+    pointerStartX.current = null;
+    try { e.currentTarget.releasePointerCapture?.(e.pointerId); } catch (_) {}
+    const width = cardConfig?.cardSize || 300;
+    const threshold = width * 0.5;
+    if (Math.abs(dx) >= threshold) {
+      const dir = dx > 0 ? 'right' : 'left';
+      const off = (dir === 'right' ? 1 : -1) * (width * 1.2);
+      setSwipeDrag({ dx: off, animating: true });
+      setTimeout(() => {
+        setSwipeDrag({ dx: 0, animating: false });
+        handleSwipe(dir);
+      }, 180);
+    } else {
+      setSwipeDrag({ dx: 0, animating: true });
+      setTimeout(() => setSwipeDrag({ dx: 0, animating: false }), 180);
+    }
+  };
+
+  // Touch safety for vote mode: only register tap if move < 10px
+  const voteTouchA = useRef({ startX: 0, startY: 0, moved: false });
+  const voteTouchB = useRef({ startX: 0, startY: 0, moved: false });
+  const voteOnTouchStart = (which, e) => {
+    if (!e.touches || e.touches.length === 0) return;
+    const t = e.touches[0];
+    const ref = which === 'A' ? voteTouchA.current : voteTouchB.current;
+    ref.startX = t.clientX;
+    ref.startY = t.clientY;
+    ref.moved = false;
+  };
+  const voteOnTouchMove = (which, e) => {
+    const ref = which === 'A' ? voteTouchA.current : voteTouchB.current;
+    if (!e.touches || e.touches.length === 0) return;
+    const t = e.touches[0];
+    const dx = Math.abs(t.clientX - ref.startX);
+    const dy = Math.abs(t.clientY - ref.startY);
+    if (dx > 10 || dy > 10) ref.moved = true;
+  };
+  const voteOnTouchEnd = (which, e, onVote) => {
+    const ref = which === 'A' ? voteTouchA.current : voteTouchB.current;
+    if (!ref.moved && typeof onVote === 'function') {
+      e.preventDefault();
+      onVote();
+    }
+  };
 
   useEffect(() => {
     fetchOrganizations();
@@ -181,10 +287,14 @@ export default function Play() {
             `${base} onboarding`
           ]);
           // Find parent/root onboarding deck
-          const parent = all.find(c => !c.parentTag && candidates.has(normalize(c.name)));
+          const parent =
+            // Prefer explicitly flagged onboarding parents that include base token
+            all.find(c => !c.parentTag && c.isOnboarding === true && normalize(c.name).includes(base)) ||
+            // Fallback to name pattern matching
+            all.find(c => !c.parentTag && candidates.has(normalize(c.name)));
           if (parent) {
             const children = all.filter(c => c.parentTag === parent.name);
-            if (children.length >= 2) {
+            if (children.length >= 1) {
               // Store original intent and start onboarding deck
               try {
                 sessionStorage.setItem(`onb_orig_${org}_${deck}` , JSON.stringify({ mode, deck }));
@@ -1145,6 +1255,9 @@ const nextData = await nextRes.json();
               onClick={() => handleVote(cardA.id)}
               tabIndex="0"
               onKeyDown={(e) => e.key === 'Enter' && handleVote(cardA.id)}
+              onTouchStart={(e) => voteOnTouchStart('A', e)}
+              onTouchMove={(e) => voteOnTouchMove('A', e)}
+              onTouchEnd={(e) => voteOnTouchEnd('A', e, () => handleVote(cardA.id))}
             >
               <div className="game-card-title">{cardA.title}</div>
               {cardA.description && <div className="game-card-description">{cardA.description}</div>}
@@ -1165,6 +1278,9 @@ const nextData = await nextRes.json();
               onClick={() => handleVote(cardB.id)}
               tabIndex="0"
               onKeyDown={(e) => e.key === 'Enter' && handleVote(cardB.id)}
+              onTouchStart={(e) => voteOnTouchStart('B', e)}
+              onTouchMove={(e) => voteOnTouchMove('B', e)}
+              onTouchEnd={(e) => voteOnTouchEnd('B', e, () => handleVote(cardB.id))}
             >
               <div className="game-card-title">{cardB.title}</div>
               {cardB.description && <div className="game-card-description">{cardB.description}</div>}
@@ -1215,10 +1331,19 @@ const nextData = await nextRes.json();
                 )}
                 
                 {/* GAME CARD */}
-                <div className={`game-card ${currentCard.imageUrl ? 'has-image' : ''} ${
+                <div
+                  className={`game-card ${currentCard.imageUrl ? 'has-image' : ''} ${
                   swipeTransition === 'new-card' ? 'card-changed' : 
                   swipeTransition === 'new-level' ? 'card-changed' : 'entering'
-                }`}>
+                }`}
+                  style={{ transform: `translateX(${swipeDrag.dx}px) rotate(${swipeDrag.dx * 0.03}deg)`, transition: swipeDrag.animating ? 'transform 180ms ease-out' : 'none' }}
+                  onTouchStart={onSwipeTouchStart}
+                  onTouchMove={onSwipeTouchMove}
+                  onTouchEnd={onSwipeTouchEnd}
+                  onPointerDown={onSwipePointerDown}
+                  onPointerMove={onSwipePointerMove}
+                  onPointerUp={onSwipePointerUp}
+                >
                   <div className="game-card-title">{currentCard.title}</div>
                   {currentCard.description && <div className="game-card-description">{currentCard.description}</div>}
                   {currentCard.imageUrl && <img src={currentCard.imageUrl} alt={currentCard.title} className="game-card-image" />}
@@ -1231,49 +1356,35 @@ const nextData = await nextRes.json();
                   width: `${cardConfig.cardSize}px`,
                   gap: '20px'
                 }}>
-                  {isOnboarding ? (
-                    // Onboarding: single Continue button centered
-                    <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                      <button 
-                        className={`game-action-button like ${keyboardActive === 'like' ? 'pulse' : ''}`}
-                        onClick={() => handleSwipe('right')}
-                        tabIndex="0"
-                        aria-label="Like card"
-                        style={{ minWidth: '50%' }}
-                      >
-                        👍
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      {/* DISLIKE BUTTON (👎) - Left half */}
-                      <button 
-                        className={`game-action-button dislike ${keyboardActive === 'dislike' ? 'pulse' : ''}`}
-                        onClick={() => handleSwipe('left')}
-                        tabIndex="0"
-                        aria-label="Dislike card"
-                      >
-                        👎
-                      </button>
-                      
-                      {/* LIKE BUTTON (👍) - Right half */}
-                      <button 
-                        className={`game-action-button like ${keyboardActive === 'like' ? 'pulse' : ''}`}
-                        onClick={() => handleSwipe('right')}
-                        tabIndex="0"
-                        aria-label="Like card"
-                      >
-                        👍
-                      </button>
-                    </>
+                  {/* DISLIKE BUTTON (👎) - Left half; hidden during onboarding */}
+                  {!isOnboarding && (
+                    <button 
+                      className={`game-action-button dislike ${keyboardActive === 'dislike' ? 'pulse' : ''}`}
+                      onClick={() => handleSwipe('left')}
+                      tabIndex="0"
+                      aria-label="Dislike card"
+                    >
+                      👎
+                    </button>
                   )}
+                  
+                  {/* LIKE BUTTON (👍) - Right half (exact same as swipe-only) */}
+                  <button 
+                    className={`game-action-button like ${keyboardActive === 'like' ? 'pulse' : ''}`}
+                    onClick={() => handleSwipe('right')}
+                    tabIndex="0"
+                    aria-label="Like card"
+                  >
+                    👍
+                  </button>
                 </div>
               </>
             ) : (
               // LANDSCAPE LAYOUT: Button, Card, Button horizontally
               <>
                 {/* DISLIKE BUTTON (👎) - Left position; hidden during onboarding */}
-                {!isOnboarding && (
+                {/* To keep the card perfectly centered in onboarding (landscape), insert a spacer matching the button size. Why: Without the left button, the remaining right button would offset the card from center. */}
+                {!isOnboarding ? (
                   <button 
                     className={`game-action-button dislike ${keyboardActive === 'dislike' ? 'pulse' : ''}`}
                     onClick={() => handleSwipe('left')}
@@ -1282,12 +1393,27 @@ const nextData = await nextRes.json();
                   >
                     👎
                   </button>
+                ) : (
+                  <div
+                    className="game-action-button-spacer"
+                    aria-hidden="true"
+                    style={{ width: 'var(--button-size)', height: 'var(--button-size)' }}
+                  />
                 )}
                 
                 {/* GAME CARD */}
-                <div className={`game-card ${currentCard.imageUrl ? 'has-image' : ''} ${
+                <div
+                  className={`game-card ${currentCard.imageUrl ? 'has-image' : ''} ${
                   swipeTransition === 'new-card' ? 'card-changed' : 'entering'
-                }`}>
+                }`}
+                  style={{ transform: `translateX(${swipeDrag.dx}px) rotate(${swipeDrag.dx * 0.03}deg)`, transition: swipeDrag.animating ? 'transform 180ms ease-out' : 'none' }}
+                  onTouchStart={onSwipeTouchStart}
+                  onTouchMove={onSwipeTouchMove}
+                  onTouchEnd={onSwipeTouchEnd}
+                  onPointerDown={onSwipePointerDown}
+                  onPointerMove={onSwipePointerMove}
+                  onPointerUp={onSwipePointerUp}
+                >
                   <div className="game-card-title">{currentCard.title}</div>
                   {currentCard.description && <div className="game-card-description">{currentCard.description}</div>}
                   {currentCard.imageUrl && <img src={currentCard.imageUrl} alt={currentCard.title} className="game-card-image" />}

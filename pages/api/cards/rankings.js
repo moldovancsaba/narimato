@@ -18,19 +18,25 @@ export default async function handler(req, res) {
     // Build query
     const query = { 
       organizationId, 
-      isActive: true,
-      voteCount: { $gt: 0 } // Only include cards that have been voted on
+      isActive: true
     };
     
     if (parentTag) {
-      query.parentTag = parentTag;
+      // Include only deck descendants (children and deeper), and explicitly exclude the deck parent itself
+      query.$and = [
+        { name: { $ne: parentTag } },
+        { $or: [
+          { parentTag: parentTag },
+          { hashtags: parentTag }
+        ]}
+      ];
     }
 
     // Get cards sorted by global score (ELO rating)
     const cards = await Card.find(query)
       .sort({ 
-        globalScore: -1,    // Primary: ELO score descending
-        voteCount: -1,      // Secondary: Vote count descending  
+        voteCount: -1,      // Primary: show cards with votes first
+        globalScore: -1,    // Secondary: ELO score descending
         winCount: -1        // Tertiary: Win count descending
       });
 

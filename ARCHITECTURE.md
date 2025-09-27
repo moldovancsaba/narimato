@@ -1,8 +1,8 @@
 # NARIMATO Architecture
 
-**Current Version:** 6.9.0 (Onboarding UX + Right-Swipe Semantics)
-**Date:** 2025-09-16T07:11:23.000Z
-**Last Updated:** 2025-09-16T07:11:23.000Z
+**Current Version:** 7.1.0
+**Date:** 2025-09-27T21:18:25.000Z
+**Last Updated:** 2025-09-27T21:18:25.000Z
 
 ## ⚡ UUID Field Standardization (v3.7.1+)
 
@@ -50,6 +50,23 @@ Temporary backward compatibility exports exist for legacy field names but will b
 - Frontend components updated to handle uniform UUID fields
 
 ## System Overview
+
+- Results Page Alignment (v7.0.0)
+
+- Interactions (v7.1.0)
+  - Swipe: 50% width threshold; snap-back under threshold; complete over threshold; pointer events for mouse drag; 180ms ease-out transitions; slight rotation while dragging.
+  - Vote: Safe tap only (movement < 10px) to register vote; prevents accidental votes during small drags.
+  - CSS: touch-action: pan-y on game cards to avoid horizontal browser panning.
+  - Role: Present side-by-side comparison of personal and global rankings for a given deck
+  - Desktop strategy:
+    - Personal (left) column content right-aligned; Global (right) column content left-aligned — both close to center
+    - Header titles biased toward center (Personal right, Global left)
+    - Inter-column gap set to 1rem
+    - Equalized per-row card heights; info blocks aligned independently of card content
+    - Flush-align card boxes to center edge using align-self and auto margins
+  - Mobile strategy:
+    - Columns stack, centered; titles centered
+  - Dependencies: styled-jsx in pages/results.js; public/styles/cards.css for base card system
 
 NARIMATO is a comprehensive card ranking application featuring advanced content management capabilities. Built with Next.js, MongoDB, and sophisticated UI components, it provides a complete ecosystem for card creation, editing, and ranking with features including smart hashtag management, deck organization, and real-time collaborative ranking.
 

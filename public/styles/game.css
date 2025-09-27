@@ -53,6 +53,8 @@
 .game-card {
   /* Inherits from base card styling */
   background: #FFFFFF;
+  /* Allow vertical scrolling but disable browser horizontal panning to improve swipe gestures */
+  touch-action: pan-y;
   border: 3px solid #333333;
   border-radius: 16px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
