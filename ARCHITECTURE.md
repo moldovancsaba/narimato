@@ -1,8 +1,7 @@
 # NARIMATO Architecture
 
-**Current Version:** 7.1.0
-**Date:** 2025-09-27T21:18:25.000Z
-**Last Updated:** 2025-09-27T21:18:25.000Z
+**Current Version:** 7.1.0  
+**Last Updated:** 2025-12-22T08:52:52.000Z
 
 ## ⚡ UUID Field Standardization (v3.7.1+)
 
@@ -15,16 +14,18 @@
 - **DeckUUID**: For all deck identifiers
 
 ### Field Constants Location
-All field constants are centralized in `/app/lib/constants/fieldNames.ts`:
+All field constants are centralized in `lib/constants/fieldNames.js`:
 
-```typescript
+```javascript
+// FUNCTIONAL: UUID field name constants for consistent data access
+// STRATEGIC: Single source of truth prevents field naming errors
 export const UUID_FIELDS = {
   ORGANIZATION: 'OrganizationUUID',
   SESSION: 'SessionUUID',
   PLAY: 'PlayUUID', 
   CARD: 'CardUUID',
   DECK: 'DeckUUID'
-} as const;
+};
 ```
 
 ### Models Updated

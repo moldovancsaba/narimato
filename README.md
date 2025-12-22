@@ -1,7 +1,7 @@
 # NARIMATO
 
 ![Version](https://img.shields.io/badge/version-7.1.0-blue.svg)
-![Next.js](https://img.shields.io/badge/Next.js-15.5.3-black.svg)
+![Next.js](https://img.shields.io/badge/Next.js-15.5.9-black.svg)
 ![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)
 ![MongoDB](https://img.shields.io/badge/MongoDB-7.0+-green.svg)
 
@@ -32,125 +32,37 @@ NARIMATO is an anonymous, session-based card ranking application built with Next
 - **Dark Mode Support**: Full dark mode for enhanced visual comfort
 - **Comprehensive Error Handling**: Graceful degradation and automatic recovery
 
-## 🔥 Latest Features (v5.2.0)
+## 🚀 Unified API
 
-### Enhanced Play Modes Architecture
-- **Multiple Play Modes**: Optimized ranking approaches for different user preferences
-- **Swipe-Only Mode**: Pure preference-based ranking using like/dislike mechanics
-  - Simple first-liked-first-ranked algorithm
-  - Clean swipe interface without voting complexity
-  - Optimized for quick preference-based sorting
-- **Swipe-More Mode**: Enhanced swiping with intelligent decision tree
-  - Hierarchical card organization with smart level transitions
-  - Combines swiping efficiency with voting precision
-  - Optimized multi-level ranking system
-- **Classic Mode**: Enhanced version of the original swipe-then-vote flow
-  - Maintains existing complex hierarchical ranking system
-  - Backward compatible with all existing sessions
+**All 6 play modes use a single, versioned API:**
 
-### Technical Implementation
-- **Pluggable Engines**: `VoteOnlyService`, `SwipeOnlyEngine`, `SwipeMoreEngine` registered under a central dispatcher
-- **Unified API**: Single, versioned surface for all plays:
-- `POST /api/v1/play/start` — { organizationId, deckTag, mode: 'swipe_only' | 'vote_only' | 'swipe_more' | 'vote_more' | 'rank_only' | 'rank_more' }
-  - `POST /api/v1/play/{playId}/input` — { action: 'swipe' | 'vote', payload }
-  - `GET /api/v1/play/{playId}/next`
-  - `GET /api/v1/play/{playId}/results`
-- **Mode Selection UI**: Deck selection with clear mode choices
-- **Unified Interface**: Existing responsive game UI adapts to each mode
+```
+POST /api/v1/play/start
+POST /api/v1/play/{playId}/input
+GET  /api/v1/play/{playId}/next
+GET  /api/v1/play/{playId}/results
+```
 
-### Play Modes (Overview)
-- Swipe-Only: Pure like/dislike; ranking = order of likes (first liked = rank 1)
-- Vote-Only: UNRANKED/RANKED/PERSONAL algorithm with random opponent selection and strict pruning
-- Swipe-More: Controller that runs multiple Swipe-Only segments (root family, then children of liked) and aggregates results
-- Vote-More: Controller that runs multiple Vote-Only segments per family (root, then children of winners) and aggregates results
-- Rank-Only: Two-segment flow — swipe-only to collect liked, then vote-only to rank the liked set
+**Modes**: vote-only, swipe-only, swipe-more, vote-more, rank-only, rank-more
 
-### Unified API Quickstart
-- Start
-  - POST /api/v1/play/start — { organizationId, deckTag, mode: 'swipe_only' | 'vote_only' | 'swipe_more' | 'vote_more' }
-- Input
-  - Swipe: POST /api/v1/play/{playId}/input — { action: 'swipe', payload: { cardId, direction } }
-  - Vote: POST /api/v1/play/{playId}/input — { action: 'vote', payload: { winner, loser } } (vote-only)
-  - Swipe-More tie-break: { action: 'vote', payload: { cardA, cardB, winner } }
-- Next
-  - GET /api/v1/play/{playId}/next
-- Results
-  - GET /api/v1/play/{playId}/results
+For complete API documentation with request/response examples, see [docs/API_REFERENCE.md](./docs/API_REFERENCE.md).
 
-For full request/response examples, see docs/API_REFERENCE.md.
+## 📚 Documentation
 
-## 🔥 Recent Improvements (v4.0.0)
+**Last Updated:** 2025-12-22T08:52:52.000Z
 
-### Major Database Schema Migration & Multi-Tenant Architecture
-- **Schema Field Migration**: Successfully migrated from `cardId` to `cardUUID` field naming across the entire codebase
-- **Robust Schema Migration**: Implemented automatic MongoDB index migration with old index cleanup and new index creation
-- **Multi-Tenant Context Support**: Fixed organization UUID context propagation across all API endpoints
-- **Global Rankings Restoration**: Resolved E11000 duplicate key errors that were blocking global ranking calculations
-- **Complete Session Flow**: Fixed end-to-end game session flow from swiping to voting to final rankings
+### Core Documentation
+- **[WARP.md](./WARP.md)** - Single source of truth for AI agents (onboarding, rules, commands)
+- **[Architecture](./ARCHITECTURE.md)** - System architecture and technical overview
+- **[API Reference](./docs/API_REFERENCE.md)** - Unified Play API documentation
 
-### Database and Index Management
-- **Automatic Index Migration**: Drops old `cardId_1` indexes and creates new `cardUUID` indexes automatically
-- **Collection Rebuilding**: Clears and rebuilds GlobalRanking collection when schema conflicts are detected
-- **Error Prevention**: Eliminates duplicate key constraint errors during bulk write operations
-- **Data Integrity**: Ensures consistent field naming and indexing across all database operations
+### Project Governance
+- **[Roadmap](./ROADMAP.md)** - Development roadmap (forward-looking only)
+- **[Task List](./TASKLIST.md)** - Prioritized implementation tasks and status
+- **[Release Notes](./RELEASE_NOTES.md)** - Version history and change log
+- **[Learnings](./LEARNINGS.md)** - Development insights and lessons learned
 
-### Multi-Tenant Architecture Fixes
-- **Organization Context**: Fixed missing organization UUID headers in global ranking API calls
-- **Tenant Isolation**: Proper data isolation between different organizations
-- **Context Propagation**: Organization context properly flows through React components to API calls
-- **Backend Validation**: Server-side validation of organization context for all requests
-
-## 🔥 Previous Improvements (v3.6.3)
-
-### Play-Based Architecture Implementation
-- **Session Management Overhaul**: Migrated from deck-based Sessions to Play-based architecture for better state management
-- **Hashtag Hierarchy System**: Implemented sophisticated multi-level card organization using parent-child hashtag relationships
-- **Dynamic Card Selection**: Cards are now selected dynamically based on user-chosen deck tags instead of static deck structures
-- **API Modernization**: Updated all endpoints to use Play model (`/api/v1/play/start`, `/api/v1/play/results`) replacing session-based endpoints
-- **Unified Documentation**: Complete alignment of technical specification with current system architecture
-
-### Build and Performance Fixes
-- **Global Rankings API Fix**: Resolved issue where completed Play sessions weren't showing in global rankings due to incorrect hashtag filtering
-- **Session Completion Bug**: Resolved critical bugs where play sessions remained in 'active' status preventing results retrieval
-- **Card Rendering Standardization**: Unified all card displays to use `body.imageUrl` for consistent media rendering
-- **Build Stability**: Fixed critical build-breaking syntax errors and verified successful compilation
-- **Quality Assurance**: Verified successful build execution and complete system functionality
-
-## 🔥 Previous Improvements (v3.6.1)
-
-### Card Editor Enhancements
-- **Enhanced Card Editor**: Complete redesign supporting both new card creation and existing card editing
-- **UUID Display**: Prominent display of card UUIDs when editing existing cards
-- **Smart Hashtag Editor**: Advanced hashtag management with:
-  - Predictive text suggestions based on common hashtags
-  - Enter to add, click X to remove functionality
-  - Keyboard navigation with arrow keys
-  - Duplicate prevention and visual feedback
-- **URL-Friendly Slugs**: Editable slug input with automatic formatting for SEO-friendly URLs
-- **Dual Card Types**: Support for both text and media cards with type-specific validation
-- **Seamless Navigation**: Direct editing from card list page with proper state management
-
-### Technical Improvements
-- **Suspense Boundary Fix**: Resolved Next.js useSearchParams SSR issues
-- **Schema Optimization**: Fixed Mongoose duplicate index warnings for cleaner builds
-- **Form Validation**: Comprehensive validation for card types and required fields
-- **Live Preview Integration**: Real-time preview updates with new card fields
-
-### Previous Features (v3.4.0)
-- **Sophisticated Swipe Animations**: Real-time drag feedback with smooth spring animations
-- **Consolidated Gesture Handling**: Unified swipe detection for desktop and mobile
-- **Cross-Platform Support**: Full touch and mouse support with smooth transitions
-- **Responsive Design**: Improved experience across all device orientations
-
-## 📚 Documentation (Last updated: 2025-09-27T21:18:25.000Z)
-
-- [API Reference](./docs/API_REFERENCE.md) — Unified Play API (start/input/next/results) with per-mode examples
-
-- **[📋 Roadmap](./ROADMAP.md)** - Development roadmap (forward-looking only)
-- **[✅ Task List](./TASKLIST.md)** - Prioritized implementation tasks and status
-- **[📦 Release Notes](./RELEASE_NOTES.md)** - Version history and change log
-- **[🏗️ Architecture](./ARCHITECTURE.md)** - System architecture and technical overview
-- **[🧠 Learnings](./LEARNINGS.md)** - Development insights and lessons learned
+For complete documentation index, see [WARP.md](./WARP.md).
 
 ## 🚀 Quick Start
 
