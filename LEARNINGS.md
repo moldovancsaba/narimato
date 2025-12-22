@@ -1,8 +1,7 @@
 # Development Learnings
 
-**Current Version:** 7.1.0
-**Date:** 2025-09-27T21:18:25.000Z
-**Last Updated:** 2025-09-27T21:18:25.000Z
+**Current Version:** 7.1.0  
+**Last Updated:** 2025-12-22T08:52:52.000Z
 
 ### Swipe/Vote Interaction Refinement (v7.1.0) — Frontend
 - Swipe: Using a 50% width threshold provides a clear, predictable interaction; snap-back prevents accidental swipes; pointer events ensure desktop parity.
