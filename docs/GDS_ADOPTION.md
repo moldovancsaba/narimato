@@ -17,7 +17,7 @@ SSOT: `/Users/Shared/Projects/GENERAL_DESIGN_SYSTEM` (v2.2.0)
 
 ## Packages
 
-- `@gds/theme`, `@gds/core` — `file:` link to GENERAL_DESIGN_SYSTEM packages
+- `@gds/theme`, `@gds/core` — vendored under `packages/` (built from GENERAL_DESIGN_SYSTEM; see `packages/README.md`)
 - `@mantine/core`, `@mantine/hooks`, `@mantine/notifications`, `@mantine/modals`
 
 ## Migration state
