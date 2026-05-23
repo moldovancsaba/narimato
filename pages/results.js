@@ -32,7 +32,14 @@ export default function Results() {
   // by fetching any card's organizationId from /api/cards/[uuid]. For simplicity and consistency
   // with current routes, we keep queryOrg as authoritative here.
   const [orgFromCard, setOrgFromCard] = useState('');
-  const org = queryOrg || orgFromCard;
+  const [orgFromMeta, setOrgFromMeta] = useState('');
+  const org =
+    queryOrg ||
+    orgFromCard ||
+    orgFromMeta ||
+    results?.organizationId ||
+    results?.sessionInfo?.organizationId ||
+    '';
   const deck = derivedDeck;
 
   useEffect(() => {
@@ -48,28 +55,44 @@ export default function Results() {
     if (!playId) return;
     if (!deck) return; // wait until deck is known
 
-    // If org not provided in query, try to derive from any known card ID
+    if (!org && playId) {
+      fetch(`/api/v1/play/${encodeURIComponent(playId)}/meta`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((meta) => {
+          if (meta?.organizationId) setOrgFromMeta(meta.organizationId);
+        })
+        .catch(() => {});
+    }
+
     if (!org && results) {
-      const candidateId = (Array.isArray(results.ranking) && results.ranking[0]?.card?.id) ||
-                          (Array.isArray(results.personalRanking) && results.personalRanking[0]) || '';
-      if (candidateId) {
-        // Fetch the card to read organizationId
-        fetch(`/api/cards/${encodeURIComponent(candidateId)}`)
-          .then(r => r.ok ? r.json() : null)
-          .then(card => {
-            if (card && card.organizationId) {
-              setOrgFromCard(card.organizationId);
-            }
+      const candidateId =
+        (Array.isArray(results.ranking) && (results.ranking[0]?.card?.id || results.ranking[0]?.cardId)) ||
+        (Array.isArray(results.personalRanking) && results.personalRanking[0]) ||
+        '';
+      const knownOrg =
+        results.organizationId || results.sessionInfo?.organizationId || queryOrg || '';
+      if (candidateId && knownOrg) {
+        fetch(`/api/cards/${encodeURIComponent(candidateId)}?organizationId=${encodeURIComponent(knownOrg)}`)
+          .then((r) => (r.ok ? r.json() : null))
+          .then((card) => {
+            if (card?.organizationId) setOrgFromCard(card.organizationId);
           })
           .catch(() => {});
       }
     }
 
-    if (!org) return; // still not known; wait for org derivation
+    const resolvedOrg =
+      queryOrg ||
+      orgFromMeta ||
+      orgFromCard ||
+      results?.organizationId ||
+      results?.sessionInfo?.organizationId ||
+      '';
+    if (!resolvedOrg) return;
 
-    fetchGlobalRankings(org, deck);
-    fetchCards(org, deck);
-  }, [playId, results, org, deck]);
+    fetchGlobalRankings(resolvedOrg, deck);
+    fetchCards(resolvedOrg, deck);
+  }, [playId, results, queryOrg, orgFromMeta, orgFromCard, deck]);
 
   // FUNCTIONAL: Track results page engagement
   // STRATEGIC: Measures post-play behavior and results consumption (production-only)
@@ -245,8 +268,21 @@ export default function Results() {
     const missing = [...needed].filter(id => id && !known.has(id));
     if (missing.length === 0) return;
 
+    const cardOrg =
+      queryOrg ||
+      orgFromMeta ||
+      orgFromCard ||
+      results?.organizationId ||
+      results?.sessionInfo?.organizationId ||
+      '';
+    if (!cardOrg) return;
+
     Promise.all(
-      missing.map(id => fetch(`/api/cards/${encodeURIComponent(id)}`).then(r => r.ok ? r.json() : null))
+      missing.map((id) =>
+        fetch(
+          `/api/cards/${encodeURIComponent(id)}?organizationId=${encodeURIComponent(cardOrg)}`
+        ).then((r) => (r.ok ? r.json() : null))
+      )
     ).then(list => {
       const toAdd = list.filter(c => c && c.uuid && !known.has(c.uuid));
       if (toAdd.length > 0) setExtraCards(prev => [...prev, ...toAdd]);
