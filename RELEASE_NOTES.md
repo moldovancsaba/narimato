@@ -1,8 +1,24 @@
 # NARIMATO Release Notes
 
-**Current Version:** 7.1.0
-**Date:** 2025-09-27T21:18:25.000Z
-**Last Updated:** 2025-09-27T21:18:25.000Z
+**Current Version:** 7.2.0
+**Date:** 2026-05-23T00:00:00.000Z
+**Last Updated:** 2026-05-23T00:00:00.000Z
+
+## [v7.2.0] — 2026-05-23T00:00:00.000Z
+
+### Added
+- Per-organization MongoDB routing (`buildOrgMongoUri`, `withOrganization`, `PlaySessionIndex` on master)
+- ADRs: vote-only supported ([001](docs/adr/001-vote-only-status.md)), multi-tenant DB ([002](docs/adr/002-multi-tenant-database.md))
+- Docs: `docs/FUTURE.md`, `docs/DEPRECATED_API.md`, aligned API reference and unified spec
+
+### Changed
+- `/vote-only` redirects to `/play?mode=vote-only` (410 page was erroneous leftover)
+- Results `mode` field normalized to `snake_case` in engines
+- Client vote debounce (100ms) on `pages/play.js`
+- Removed 35 unused `* 2.js` duplicate files under `lib/`
+
+### Documentation
+- README, WARP, ARCHITECTURE banner, canonical spec updated to match codebase
 
 ## [v7.1.0] — 2025-09-27T21:18:25.000Z
 

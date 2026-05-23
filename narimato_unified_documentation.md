@@ -1,7 +1,7 @@
 # NARIMATO — Unified Technical Documentation
 
-Current Version: 6.9.0 (Onboarding UX + Right-Swipe Semantics)
-Last Updated: 2025-09-16T10:33:40.000Z
+Current Version: 7.2.0 (Doc & architecture alignment + multi-tenant DB routing)
+Last Updated: 2026-05-23T00:00:00.000Z
 Scope: This is the canonical engineering specification for NARIMATO. Other docs (README, ARCHITECTURE, API_REFERENCE, ROADMAP, TASKLIST, RELEASE_NOTES, LEARNINGS) are companion governance and navigation documents and must remain consistent with this file.
 
 Table of Contents
@@ -23,14 +23,13 @@ Table of Contents
 ---
 
 1. Project Overview
-NARIMATO is an anonymous, Play‑based card ranking application. Users interact via swiping and/or voting, producing personal rankings (binary search O(log n) placement) and global rankings (ELO‑based) per organization. The system is multi‑tenant and versioned.
+NARIMATO is an anonymous, Play‑based card ranking application. Users interact via swiping and/or voting, producing personal rankings (mode-specific engines; v1 vote uses VoteOnlyService) and global rankings (ELO on `Card.globalScore`) per organization. The system is multi‑tenant with master + per‑org MongoDB databases (ADR 002).
 
 2. Technology Stack & Compliance
 - Runtime: Node.js 20+
-- Framework: Next.js 15.4.4 (Pages Router)
+- Framework: Next.js 15.5.9 (Pages Router)
 - Language: JavaScript
 - Styling: Custom CSS (public/styles)
-- Animations: @react-spring/web, @use-gesture/react
 - Validation: zod
 - Database: MongoDB (Atlas only). Localhost MongoDB is prohibited.
 - Tests: PROHIBITED (MVP Factory rule)
@@ -84,20 +83,17 @@ Onboarding (intro deck, v6.9.0):
 - Start API: POST /api/v1/play/start supports mode: 'onboarding' and returns cards[] and currentCardId.
 - Auto-run: client detects an onboarding parent deck for the selected deck and runs it first when present (naming patterns: <deck>_onboarding, <deck>-onboarding, or "<deck> onboarding"); requires ≥2 intro cards. After completion, original deck/mode resumes.
 
-Ranking mechanics (personal): Binary search placement with accumulated bounds, O(log n) comparisons. Global rankings: ELO‑based aggregation.
+Ranking mechanics (personal): See `docs/API_REFERENCE.md` and issue #18 — v1 vote modes use VoteOnlyService; legacy binary search exists in `BinarySearchEngine` (not on unified dispatcher path). Global rankings: ELO on `Card` (`lib/utils/ranking.js`).
 
 7. Cards & Organizations APIs
-- /api/cards — list/create/update (Pages Router)
-- /api/cards/[uuid] — individual card management
-- /api/cards/rankings — rankings helpers
-- /api/v1/admin/organizations — administration
-Card content conventions:
-- Card.name is a hashtag (e.g., #SPORT). Prefer “hashtags” over “tags”.
-- Card.body: imageUrl (optional), textContent (optional), background { type, value, textColor }
+- `/api/cards`, `/api/cards/[uuid]`, `/api/cards/rankings` — tenant DB (`organizationId` required)
+- `/api/organizations` — master DB registry
+- Play session index on master: `PlaySessionIndex` maps `playId` → `organizationId`
+Card fields: `name` (hashtag), `title`, `description`, `imageUrl`, `parentTag`, `hashtags`
 
 8. Security, Rate Limiting, Vote Integrity & Caching
-- Rate limiting: 100 requests/minute per IP (see middleware)
-- Vote integrity: dual‑layer protection
+- Rate limiting: start 60/min, input/next/results 120/min per IP
+- Vote integrity: server 2s dedupe (`VoteOnlyService`); client 100ms debounce (`pages/play.js`)
   - Client: 100ms debounce + UI state lock to prevent rapid clicks
   - Server: deduplicate identical votes within a 2s window
 - Organization caching
@@ -105,10 +101,7 @@ Card content conventions:
 - Headers & policies
   - HTTPS with HSTS; CSP in production; no sensitive data in client storage
 
-9. Organization‑Level Theming
-- Fields on Organization: theme.backgroundCSS, theme.googleFontURL, theme.emojiList, theme.iconList
-- Injection: background CSS injected into a dedicated background layer; fonts loaded dynamically
-- Security: sanitize and scope CSS to background layer; clean up on changes
+9. Organization‑Level Theming (not implemented — see docs/FUTURE.md)
 
 10. Environment Management
 Required env:

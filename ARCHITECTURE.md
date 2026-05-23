@@ -1,7 +1,10 @@
 # NARIMATO Architecture
 
-**Current Version:** 7.1.0  
-**Last Updated:** 2025-12-22T08:52:52.000Z
+**Current Version:** 7.2.0  
+**Last Updated:** 2026-05-23T00:00:00.000Z
+
+> **Canonical spec:** [narimato_unified_documentation.md](./narimato_unified_documentation.md)  
+> Aspirational sections below (TypeScript paths, Session model, theming, literal `*UUID` DB columns) are **outdated** unless marked otherwise. See [docs/FUTURE.md](./docs/FUTURE.md).
 
 ## ⚡ UUID Field Standardization (v3.7.1+)
 
