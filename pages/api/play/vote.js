@@ -1,4 +1,5 @@
-const { connectDB } = require('../../../lib/db');
+const { connectMaster } = require('../../../lib/db');
+const { withPlayOrganization } = require('../../../lib/api/playRoute');
 const DecisionTreeEngine = require('../../../lib/services/DecisionTreeEngine');
 
 // FUNCTIONAL: Clean decision tree engine
@@ -11,7 +12,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    await connectDB();
+    await connectMaster();
 
     const { playId, cardA, cardB, winner } = req.body;
     
@@ -23,9 +24,9 @@ export default async function handler(req, res) {
 
     console.log(`🗳️ Processing vote: ${winner} wins between ${cardA} and ${cardB}`);
 
-    // FUNCTIONAL: Process vote through clean decision tree engine
-    // STRATEGIC: Built-from-scratch implementation that actually works
-    const result = await engine.processVote(playId, cardA, cardB, winner);
+    const result = await withPlayOrganization(playId, async () =>
+      engine.processVote(playId, cardA, cardB, winner)
+    );
 
     // FUNCTIONAL: Build API response with hierarchical redirect information
     // STRATEGIC: Provide complete information for UI state management

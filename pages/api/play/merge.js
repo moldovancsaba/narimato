@@ -1,4 +1,5 @@
-const { connectDB } = require('../../../lib/db');
+const { connectMaster } = require('../../../lib/db');
+const { withPlayOrganization } = require('../../../lib/api/playRoute');
 const Play = require('../../../lib/models/Play');
 
 export default async function handler(req, res) {
@@ -7,7 +8,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    await connectDB();
+    await connectMaster();
 
     const { mainPlayId, childPlayId } = req.body;
     
@@ -15,7 +16,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'mainPlayId and childPlayId required' });
     }
 
-    // Get both play sessions
+    return await withPlayOrganization(mainPlayId, async () => {
     const mainPlay = await Play.findOne({ uuid: mainPlayId, status: 'completed' });
     const childPlay = await Play.findOne({ uuid: childPlayId, status: 'completed' });
     
@@ -66,6 +67,7 @@ export default async function handler(req, res) {
       insertedAt: parentPosition + 1,
       childrenInserted: childPlay.personalRanking.length,
       message: `Inserted ${childPlay.personalRanking.length} children after parent card at position ${parentPosition}`
+    });
     });
 
   } catch (error) {

@@ -1,4 +1,5 @@
-import { connectDB } from '../../../lib/db.js';
+import { connectMaster } from '../../../lib/db.js';
+import { withPlayOrganization } from '../../../lib/api/playRoute.js';
 import Play from '../../../lib/models/Play.js';
 import Card from '../../../lib/models/Card.js';
 
@@ -8,7 +9,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    await connectDB();
+    await connectMaster();
 
     // Handle POST request for hierarchical initialization
     if (req.method === 'POST') {

@@ -1,4 +1,5 @@
-const { connectDB } = require('../../../lib/db');
+const { connectMaster } = require('../../../lib/db');
+const { withPlayOrganization } = require('../../../lib/api/playRoute');
 const Play = require('../../../lib/models/Play');
 const Card = require('../../../lib/models/Card');
 
@@ -8,7 +9,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    await connectDB();
+    await connectMaster();
 
     const { playId } = req.query;
     
@@ -16,6 +17,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'playId required' });
     }
 
+    return await withPlayOrganization(playId, async () => {
     const play = await Play.findOne({ uuid: playId, status: 'active' });
     
     if (!play) {
@@ -66,6 +68,7 @@ export default async function handler(req, res) {
       swipedCards: swipedIds.length,
       currentRanking: play.personalRanking,
       state: play.state
+    });
     });
 
   } catch (error) {

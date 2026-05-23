@@ -1,4 +1,5 @@
-const { connectDB } = require('../../../lib/db');
+const { connectMaster } = require('../../../lib/db');
+const { withPlayOrganization } = require('../../../lib/api/playRoute');
 const Play = require('../../../lib/models/Play');
 const Card = require('../../../lib/models/Card');
 const { v4: uuidv4 } = require('uuid');
@@ -9,7 +10,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    await connectDB();
+    await connectMaster();
 
     const { playId } = req.body;
     
@@ -17,6 +18,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'playId required' });
     }
 
+    return await withPlayOrganization(playId, async () => {
     const play = await Play.findOne({ uuid: playId, status: 'completed' });
     
     if (!play) {
@@ -78,6 +80,7 @@ export default async function handler(req, res) {
       parentExpansions: parentExpansions,
       currentRanking: play.personalRanking,
       message: `Found ${parentExpansions.length} parent card(s) that can be expanded`
+    });
     });
 
   } catch (error) {

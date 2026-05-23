@@ -1,4 +1,5 @@
-const { connectDB } = require('../../../lib/db');
+const { connectMaster } = require('../../../lib/db');
+const { withOrganization } = require('../../../lib/tenantContext');
 const Card = require('../../../lib/models/Card');
 
 export default async function handler(req, res) {
@@ -6,58 +7,53 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const { organizationId, parentTag } = req.query;
+
+  if (!organizationId) {
+    return res.status(400).json({ error: 'organizationId required' });
+  }
+
   try {
-    await connectDB();
+    await connectMaster();
+    return await withOrganization(organizationId, async () => {
+      const query = {
+        organizationId,
+        isActive: true,
+      };
 
-    const { organizationId, parentTag } = req.query;
-    
-    if (!organizationId) {
-      return res.status(400).json({ error: 'organizationId required' });
-    }
+      if (parentTag) {
+        query.$and = [
+          { name: { $ne: parentTag } },
+          {
+            $or: [{ parentTag: parentTag }, { hashtags: parentTag }],
+          },
+        ];
+      }
 
-    // Build query
-    const query = { 
-      organizationId, 
-      isActive: true
-    };
-    
-    if (parentTag) {
-      // Include only deck descendants (children and deeper), and explicitly exclude the deck parent itself
-      query.$and = [
-        { name: { $ne: parentTag } },
-        { $or: [
-          { parentTag: parentTag },
-          { hashtags: parentTag }
-        ]}
-      ];
-    }
-
-    // Get cards sorted by global score (ELO rating)
-    const cards = await Card.find(query)
-      .sort({ 
-        voteCount: -1,      // Primary: show cards with votes first
-        globalScore: -1,    // Secondary: ELO score descending
-        winCount: -1        // Tertiary: Win count descending
+      const cards = await Card.find(query).sort({
+        voteCount: -1,
+        globalScore: -1,
+        winCount: -1,
       });
 
-    // Transform to ranking format
-    const rankings = cards.map((card, index) => ({
-      rank: index + 1,
-      cardId: card.uuid,
-      globalScore: card.globalScore || 1500,
-      voteCount: card.voteCount || 0,
-      winCount: card.winCount || 0,
-      winRate: card.voteCount > 0 ? Math.round((card.winCount / card.voteCount) * 100) : 0
-    }));
+      const rankings = cards.map((card, index) => ({
+        rank: index + 1,
+        cardId: card.uuid,
+        globalScore: card.globalScore || 1500,
+        voteCount: card.voteCount || 0,
+        winCount: card.winCount || 0,
+        winRate: card.voteCount > 0 ? Math.round((card.winCount / card.voteCount) * 100) : 0,
+      }));
 
-    res.json({
-      rankings,
-      totalCards: rankings.length,
-      lastUpdated: new Date().toISOString()
+      res.json({
+        rankings,
+        totalCards: rankings.length,
+        lastUpdated: new Date().toISOString(),
+      });
     });
-
   } catch (error) {
     console.error('Rankings fetch error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    const status = error.statusCode || 500;
+    res.status(status).json({ error: error.message || 'Internal server error' });
   }
 }

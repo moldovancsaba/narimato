@@ -1,4 +1,5 @@
-const { connectDB } = require('../../../lib/db');
+const { connectMaster } = require('../../../lib/db');
+const { withPlayOrganization } = require('../../../lib/api/playRoute');
 const DecisionTreeEngine = require('../../../lib/services/DecisionTreeEngine');
 
 // FUNCTIONAL: Clean decision tree engine
@@ -11,7 +12,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    await connectDB();
+    await connectMaster();
 
     const { playId, cardId, direction } = req.body;
     
@@ -29,7 +30,9 @@ export default async function handler(req, res) {
 
     // FUNCTIONAL: Process swipe through clean decision tree engine
     // STRATEGIC: Built-from-scratch implementation that actually works
-    const result = await engine.processSwipe(playId, cardId, direction);
+    const result = await withPlayOrganization(playId, async () =>
+      engine.processSwipe(playId, cardId, direction)
+    );
 
     // FUNCTIONAL: Build API response with hierarchical redirect information
     // STRATEGIC: Provide complete information for UI state management

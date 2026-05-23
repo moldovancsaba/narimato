@@ -1,9 +1,9 @@
-const { connectDB } = require('../../../lib/db');
+const { connectMaster } = require('../../../lib/db');
+const { withOrganization } = require('../../../lib/tenantContext');
+const { registerPlaySession } = require('../../../lib/playSessionIndex');
 const DecisionTreeEngine = require('../../../lib/services/DecisionTreeEngine');
 const Play = require('../../../lib/models/Play');
 
-// FUNCTIONAL: Clean decision tree engine
-// STRATEGIC: Simple, working implementation built from scratch
 const engine = new DecisionTreeEngine();
 
 export default async function handler(req, res) {
@@ -12,37 +12,37 @@ export default async function handler(req, res) {
   }
 
   try {
-    await connectDB();
-
     const { organizationId, deckTag } = req.body;
-    
+
     if (!organizationId || !deckTag) {
       return res.status(400).json({ error: 'organizationId and deckTag required' });
     }
-    
-    // Check for existing session
-    const existingSession = await Play.findOne({ 
-      organizationId, 
-      deckTag, 
-      status: { $in: ['active', 'waiting_for_children'] }
-    }).sort({ createdAt: -1 });
-    
-    if (existingSession) {
-      console.log('🔁 Resuming session:', existingSession.uuid);
-      const sessionData = await engine.getSessionData(existingSession.uuid);
-      return res.json({
-        ...sessionData,
-        resumed: true
-      });
+
+    await connectMaster();
+
+    const sessionData = await withOrganization(organizationId, async () => {
+      const existingSession = await Play.findOne({
+        organizationId,
+        deckTag,
+        status: { $in: ['active', 'waiting_for_children'] },
+      }).sort({ createdAt: -1 });
+
+      if (existingSession) {
+        const data = await engine.getSessionData(existingSession.uuid);
+        return { ...data, resumed: true };
+      }
+
+      return engine.createSession(organizationId, deckTag);
+    });
+
+    if (sessionData.playId) {
+      await registerPlaySession(sessionData.playId, organizationId, 'classic');
     }
 
-    // Create new session
-    console.log('🎆 Creating new session for:', deckTag);
-    const sessionData = await engine.createSession(organizationId, deckTag);
     res.json(sessionData);
-
   } catch (error) {
     console.error('Play start error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    const status = error.statusCode || 500;
+    res.status(status).json({ error: error.message || 'Internal server error' });
   }
 }
