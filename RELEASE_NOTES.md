@@ -180,13 +180,14 @@
 - Validation via Zod; org header required
 - Anti-dup votes and tenant scoping enforced
 
-As part of a security and compliance review, the Vote-Only play mode has been removed from the codebase. All related UI, API routes, and engines are neutralized. Historical release entries may reference Vote-Only, but the feature is not available as of v5.4.0.
+> **Correction (2026-05-23, ADR 001):** The following removal notice was **erroneous leftover text**. Vote-only remains supported via the unified API (`mode: vote_only`) and `pages/play.js`. See `docs/adr/001-vote-only-status.md`.
 
-- Removed UI button and routing from play page
-- Neutralized `/pages/api/vote-only/*` with HTTP 410 Gone
-- Deprecated VoteOnlyEngine to throw on import
-- Reverted Play model: removed `isVoteOnly`, `unrankedDeck`, `rankedDeck`, `voteHistory`, and `vote_only` state
-- Updated documentation (README, ARCHITECTURE, RELEASE_NOTES)
+~~As part of a security and compliance review, the Vote-Only play mode has been removed from the codebase.~~
+
+~~- Removed UI button and routing from play page~~  
+~~- Neutralized `/pages/api/vote-only/*` with HTTP 410 Gone~~  
+~~- Deprecated VoteOnlyEngine to throw on import~~  
+~~- Reverted Play model: removed `isVoteOnly`, `unrankedDeck`, `rankedDeck`, `voteHistory`, and `vote_only` state~~
 
 This release delivers comprehensive user interface improvements across all major pages, implementing consistent emoji-enhanced buttons and fixing critical UX issues. The update improves visual appeal, removes admin-only functionality from user interfaces, and enhances the voting experience.
 
