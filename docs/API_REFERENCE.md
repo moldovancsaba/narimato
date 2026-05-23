@@ -187,7 +187,7 @@ Response variants
 - Swipe-only
 {
   "playId": "<uuid>",
-  "mode": "swipe-only",
+  "mode": "swipe_only",
   "completed": true,
   "ranking": [ { "rank": 1, "card": { ... }, "swipedAt": "..." }, ... ],
   "statistics": { "totalCards": 10, "likedCards": 6, "rejectedCards": 4, "totalSwipes": 10 },
@@ -207,7 +207,7 @@ Response variants
 - Swipe-more
 {
   "playId": "<uuid>",
-  "mode": "swipe-more",
+  "mode": "swipe_more",
   "completed": true,
   "ranking": [ { "card": { ... }, "familyLevel": 0, "familyContext": "root", "familyTag": "#company", "overallRank": 1, "familyRank": 1 }, ... ],
   "statistics": { "totalFamilies": 3, "totalLiked": 12, "totalSwipes": 45, "familyBreakdown": [ ... ] },
@@ -262,6 +262,23 @@ Common HTTP status codes:
 
 
 ---
+
+## Route inventory (`pages/api/`)
+
+| Method | Path | Status |
+|--------|------|--------|
+| GET/POST | `/api/cards` | Active |
+| GET/PUT/DELETE | `/api/cards/[uuid]` | Active |
+| GET | `/api/cards/rankings` | Active |
+| GET/POST/PUT/DELETE | `/api/organizations` | Active (master DB) |
+| POST | `/api/v1/play/start` | Active |
+| POST | `/api/v1/play/[playId]/input` | Active |
+| GET | `/api/v1/play/[playId]/next` | Active |
+| GET | `/api/v1/play/[playId]/results` | Active |
+| POST | `/api/v1/play/vote-only/start` | Deprecated compat |
+| POST | `/api/admin/login` | Active (admin) |
+| * | `/api/system/page-passwords` | **410 Gone** |
+| POST/GET | `/api/play/*` | Deprecated — [DEPRECATED_API.md](./DEPRECATED_API.md) |
 
 ## Historical specifications (removed)
 

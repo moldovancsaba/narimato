@@ -1,4 +1,4 @@
-require('dotenv').config({ path: '.env.local' });
+require('./load-env');
 const { connectMaster } = require('../lib/db');
 const { registerOrganizationModel } = require('../lib/models/Organization');
 
