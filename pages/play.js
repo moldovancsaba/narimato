@@ -22,6 +22,8 @@ export default function Play() {
   const [swipeTransition, setSwipeTransition] = useState(null);
 
   // Touch/Pointer swipe handling for swipe mode (50% width threshold)
+  const lastVoteAt = useRef(0);
+  const voteInFlight = useRef(false);
   const swipeTouchStartX = useRef(null);
   const pointerStartX = useRef(null);
   const pointerActiveId = useRef(null);
@@ -763,6 +765,11 @@ mode: mode === 'vote-only' ? 'vote_only' : (mode === 'swipe-only' ? 'swipe_only'
 
   const handleVote = async (winner) => {
     if (!votingContext) return;
+    const now = Date.now();
+    if (now - lastVoteAt.current < 100) return;
+    lastVoteAt.current = now;
+    if (voteInFlight.current) return;
+    voteInFlight.current = true;
 
     try {
       const { mode } = router.query;
@@ -968,6 +975,8 @@ const nextData = await nextRes.json();
     } catch (error) {
       console.error('Failed to vote:', error);
       alert('Failed to vote');
+    } finally {
+      voteInFlight.current = false;
     }
   };
 
