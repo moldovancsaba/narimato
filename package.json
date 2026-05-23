@@ -9,8 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@gds/core": "file:../../../Shared/Projects/GENERAL_DESIGN_SYSTEM/packages/gds-core",
-    "@gds/theme": "file:../../../Shared/Projects/GENERAL_DESIGN_SYSTEM/packages/gds-theme",
+    "@gds/core": "file:./packages/gds-core",
+    "@gds/theme": "file:./packages/gds-theme",
     "@mantine/core": "^7.17.8",
     "@mantine/hooks": "^7.17.8",
     "@mantine/modals": "^7.17.8",
