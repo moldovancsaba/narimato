@@ -1,49 +1,66 @@
 import Link from 'next/link';
+import { Button, List, Paper, Stack, Text, Title, SimpleGrid, ThemeIcon } from '@mantine/core';
+import { IconCards, IconBuilding, IconPlayerPlay, IconChartBar } from '@tabler/icons-react';
+import { NarimatoShell } from '../components/NarimatoShell';
 
 export default function Home() {
   return (
-    <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
-      <h1>NARIMATO - Card Ranking System</h1>
-      
-      <div style={{ marginTop: '2rem' }}>
-        <h2>Features:</h2>
-        <ul>
-          <li><strong>Organizations</strong> - Manage different groups</li>
-          <li><strong>Cards</strong> - Create cards with hashtag-based hierarchy</li>
-          <li><strong>Decks</strong> - Cards with children are playable decks</li>
-          <li><strong>Play</strong> - Rank cards using swipe (like/dislike) and vote (compare)</li>
-          <li><strong>Rankings</strong> - Personal (Binary Search) + Global (ELO)</li>
-        </ul>
-      </div>
+    <NarimatoShell title="NARIMATO">
+      <Stack gap="lg">
+        <Title order={1}>Card ranking system</Title>
+        <Text c="dimmed">
+          Organizations, hashtag decks, swipe and vote play modes, personal and global rankings.
+        </Text>
 
-      <div style={{ marginTop: '2rem' }}>
-        <h2>Quick Links:</h2>
-        <div className="btn-group">
-          <Link href="/organizations" className="btn btn-info">
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+          <Paper withBorder p="md" radius="md">
+            <ThemeIcon size="lg" variant="light" mb="sm">
+              <IconBuilding />
+            </ThemeIcon>
+            <Text fw={600}>Organizations</Text>
+            <Text size="sm" c="dimmed">
+              Manage tenant groups and isolated card databases.
+            </Text>
+          </Paper>
+          <Paper withBorder p="md" radius="md">
+            <ThemeIcon size="lg" variant="light" mb="sm">
+              <IconCards />
+            </ThemeIcon>
+            <Text fw={600}>Cards & decks</Text>
+            <Text size="sm" c="dimmed">
+              Hashtag hierarchy; parents with children become playable decks.
+            </Text>
+          </Paper>
+        </SimpleGrid>
+
+        <SimpleGrid cols={{ base: 1, xs: 2, sm: 4 }} spacing="sm">
+          <Button component={Link} href="/organizations" variant="light">
             Organizations
-          </Link>
-          <Link href="/cards" className="btn btn-primary">
-            🎴 Cards
-          </Link>
-          <Link href="/play" className="btn btn-warning">
-            🎮 Play
-          </Link>
-          <Link href="/rankings" className="btn btn-dark">
+          </Button>
+          <Button component={Link} href="/cards" variant="filled">
+            Cards
+          </Button>
+          <Button component={Link} href="/play" color="orange" variant="filled">
+            Play
+          </Button>
+          <Button component={Link} href="/rankings" color="dark" variant="outline">
             Rankings
-          </Link>
-        </div>
-      </div>
+          </Button>
+        </SimpleGrid>
 
-      <div style={{ marginTop: '2rem', padding: '1rem', background: '#f8f9fa', borderRadius: '4px' }}>
-        <h3>How it works:</h3>
-        <ol>
-          <li>Create an <strong>Organization</strong></li>
-          <li>Add <strong>Cards</strong> with parent hashtags (e.g., #food → #pizza, #burger)</li>
-          <li>Cards with children become <strong>Decks</strong></li>
-          <li><strong>Play</strong> a deck: swipe cards (like/dislike), vote on comparisons</li>
-          <li>Get your <strong>Personal Ranking</strong> (binary search) and contribute to <strong>Global Rankings</strong> (ELO)</li>
-        </ol>
-      </div>
-    </div>
+        <Paper withBorder p="md" radius="md" bg="gray.0">
+          <Title order={3} mb="sm">
+            How it works
+          </Title>
+          <List type="ordered" spacing="xs">
+            <List.Item>Create an organization</List.Item>
+            <List.Item>Add cards with parent hashtags (e.g. #food → #pizza)</List.Item>
+            <List.Item>Parent cards with children become decks</List.Item>
+            <List.Item>Play: swipe and/or vote to rank</List.Item>
+            <List.Item>View personal results and global ELO rankings</List.Item>
+          </List>
+        </Paper>
+      </Stack>
+    </NarimatoShell>
   );
 }

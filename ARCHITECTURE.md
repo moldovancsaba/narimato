@@ -43,7 +43,7 @@ There is no separate `Session` collection — session state lives on `Play` and 
     - Flush-align card boxes to center edge using align-self and auto margins
   - Mobile strategy:
     - Columns stack, centered; titles centered
-  - Dependencies: styled-jsx in pages/results.js; public/styles/cards.css for base card system
+  - UI: Mantine 7 + GDS (`docs/GDS_ADOPTION.md`); play layout in `styles/playGame.module.css`
 
 NARIMATO is a comprehensive card ranking application featuring advanced content management capabilities. Built with Next.js, MongoDB, and sophisticated UI components, it provides a complete ecosystem for card creation, editing, and ranking with features including smart hashtag management, deck organization, and real-time collaborative ranking.
 

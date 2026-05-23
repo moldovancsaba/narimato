@@ -1,14 +1,21 @@
-// FUNCTIONAL: Admin login page
-// STRATEGIC: Redirects already-authenticated users; supports redirect back via ?next=
-
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
+import {
+  Button,
+  Center,
+  Paper,
+  PasswordInput,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+} from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 
 export default function AdminLogin() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -19,52 +26,65 @@ export default function AdminLogin() {
           const next = router.query.next || '/admin/users';
           router.replace(next);
         }
-      } catch {}
+      } catch {
+        /* not logged in */
+      }
     })();
   }, [router]);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
-    setError('');
     try {
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.error || 'Login failed');
-        setLoading(false);
+        notifications.show({ color: 'red', message: data.error || 'Login failed' });
         return;
       }
       const next = router.query.next || '/admin/users';
       router.replace(next);
-    } catch (err) {
-      setError('Network error');
+    } catch {
+      notifications.show({ color: 'red', message: 'Network error' });
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div style={{ padding: '2rem', maxWidth: 420, margin: '0 auto', fontFamily: 'Arial, sans-serif' }}>
-      <h1>Admin Login</h1>
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: 12 }}>
-          <label>Email</label>
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)} style={{ width: '100%' }} />
-        </div>
-        <div style={{ marginBottom: 12 }}>
-          <label>Password</label>
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)} style={{ width: '100%' }} />
-        </div>
-        {error && <div style={{ color: '#f33', marginBottom: 12 }}>{error}</div>}
-        <button className="btn btn-primary" disabled={loading || !email || !password}>
-          {loading ? 'Signing in…' : 'Sign in'}
-        </button>
-      </form>
-    </div>
+    <Center mih="100vh" p="md">
+      <Paper withBorder p="xl" radius="md" w="100%" maw={420}>
+        <Title order={2} mb="lg">
+          Admin login
+        </Title>
+        <form onSubmit={handleSubmit}>
+          <Stack gap="md">
+            <TextInput
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <PasswordInput
+              label="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <Button type="submit" loading={loading} disabled={!email || !password} fullWidth>
+              Sign in
+            </Button>
+            <Text size="xs" c="dimmed" ta="center">
+              NARIMATO administration
+            </Text>
+          </Stack>
+        </form>
+      </Paper>
+    </Center>
   );
 }

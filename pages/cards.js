@@ -1,6 +1,26 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import {
+  Badge,
+  Button,
+  Checkbox,
+  Group,
+  Image,
+  Loader,
+  Paper,
+  Select,
+  SimpleGrid,
+  Stack,
+  Text,
+  TextInput,
+  Textarea,
+  Title,
+} from '@mantine/core';
+import { notifications } from '@mantine/notifications';
+import { modals } from '@mantine/modals';
+import { EmptyState } from '@gds/core';
+import { NarimatoShell } from '../components/NarimatoShell';
 
 export default function Cards() {
   const router = useRouter();
@@ -15,7 +35,8 @@ export default function Cards() {
     description: '',
     imageUrl: '',
     parentTag: '',
-    isPlayable: true
+    isPlayable: true,
+    isOnboarding: false,
   });
   const [editingCard, setEditingCard] = useState(null);
 
@@ -24,10 +45,8 @@ export default function Cards() {
   }, []);
 
   useEffect(() => {
-    if (org) {
-      fetchCards();
-    }
-  }, [org]);
+    if (org) fetchCards();
+  }, [org, router.query.includeHidden]);
 
   const fetchOrganizations = async () => {
     try {
@@ -37,7 +56,7 @@ export default function Cards() {
     } catch (error) {
       console.error('Failed to fetch organizations:', error);
     } finally {
-      setLoading(false);
+      if (!org) setLoading(false);
     }
   };
 
@@ -46,25 +65,22 @@ export default function Cards() {
       const res = await fetch(`/api/cards?organizationId=${org}`);
       const data = await res.json();
       setCards(data.cards || []);
-      
-      // Group decks
+
       const deckGroups = {};
-      data.cards?.forEach(card => {
+      data.cards?.forEach((card) => {
         if (card.parentTag) {
-          if (!deckGroups[card.parentTag]) {
-            deckGroups[card.parentTag] = [];
-          }
+          if (!deckGroups[card.parentTag]) deckGroups[card.parentTag] = [];
           deckGroups[card.parentTag].push(card);
         }
       });
-      
+
       const includeHidden = router.query.includeHidden === 'true';
       const filtered = Object.entries(deckGroups)
-        .filter(([tag, grpCards]) => grpCards.length >= 2)
+        .filter(([, grpCards]) => grpCards.length >= 2)
         .filter(([tag]) => {
-          const parent = data.cards.find(c => c.name === tag);
-          if (!parent) return true; // fallback
-          return includeHidden ? true : (parent.isPlayable !== false);
+          const parent = data.cards.find((c) => c.name === tag);
+          if (!parent) return true;
+          return includeHidden ? true : parent.isPlayable !== false;
         });
       setDecks(filtered);
     } catch (error) {
@@ -74,35 +90,55 @@ export default function Cards() {
     }
   };
 
+  const parentOptions = [
+    { value: '', label: 'Root card (no parent)' },
+    ...cards
+      .filter((card) => card.isParent && card.hasChildren)
+      .map((parentCard) => ({
+        value: parentCard.name,
+        label: `${parentCard.name} (${parentCard.title})`,
+      })),
+    ...cards.map((card) => ({
+      value: card.name,
+      label: `${card.name} (${card.title})`,
+    })),
+  ];
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const isEditing = editingCard !== null;
       const url = isEditing ? `/api/cards/${editingCard.uuid}` : '/api/cards';
       const method = isEditing ? 'PUT' : 'POST';
-      
+
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, organizationId: org })
+        body: JSON.stringify({ ...formData, organizationId: org }),
       });
-      
+
       if (res.ok) {
-        setFormData({ title: '', description: '', imageUrl: '', parentTag: '' });
+        setFormData({
+          title: '',
+          description: '',
+          imageUrl: '',
+          parentTag: '',
+          isPlayable: true,
+          isOnboarding: false,
+        });
         setEditingCard(null);
         fetchCards();
+        notifications.show({ color: 'green', message: isEditing ? 'Card updated' : 'Card created' });
       } else {
         const error = await res.json();
-        alert(error.error);
+        notifications.show({ color: 'red', message: error.error || 'Save failed' });
       }
-    } catch (error) {
-      console.error('Failed to save card:', error);
-      alert('Failed to save card');
+    } catch {
+      notifications.show({ color: 'red', message: 'Failed to save card' });
     }
   };
-  
+
   const handleEdit = (card) => {
-    console.log('🔧 Editing card:', card.title); // Debug log
     setEditingCard(card);
     setFormData({
       title: card.title,
@@ -110,288 +146,210 @@ export default function Cards() {
       imageUrl: card.imageUrl,
       parentTag: card.parentTag || '',
       isPlayable: typeof card.isPlayable === 'boolean' ? card.isPlayable : true,
-      isOnboarding: typeof card.isOnboarding === 'boolean' ? card.isOnboarding : false
+      isOnboarding: typeof card.isOnboarding === 'boolean' ? card.isOnboarding : false,
     });
-    
-    // Scroll to the edit form smoothly
-    setTimeout(() => {
-      const editForm = document.querySelector('h2');
-      if (editForm) {
-        editForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }, 100);
-  };
-  
-  const handleDelete = async (cardUuid) => {
-    if (!confirm('Are you sure you want to delete this card?')) return;
-    
-    try {
-      const res = await fetch(`/api/cards/${cardUuid}`, {
-        method: 'DELETE'
-      });
-      
-      if (res.ok) {
-        fetchCards();
-      } else {
-        const error = await res.json();
-        alert(error.error);
-      }
-    } catch (error) {
-      console.error('Failed to delete card:', error);
-      alert('Failed to delete card');
-    }
-  };
-  
-  const cancelEdit = () => {
-    setEditingCard(null);
-    setFormData({ title: '', description: '', imageUrl: '', parentTag: '', isPlayable: true, isOnboarding: false });
   };
 
-  // Organization selection
+  const handleDelete = (card) => {
+    modals.openConfirmModal({
+      title: 'Delete card',
+      children: <Text size="sm">Delete &quot;{card.title}&quot;?</Text>,
+      labels: { confirm: 'Delete', cancel: 'Cancel' },
+      confirmProps: { color: 'red' },
+      onConfirm: async () => {
+        const res = await fetch(`/api/cards/${card.uuid}`, { method: 'DELETE' });
+        if (res.ok) {
+          fetchCards();
+          notifications.show({ color: 'green', message: 'Card deleted' });
+        } else {
+          const error = await res.json();
+          notifications.show({ color: 'red', message: error.error || 'Delete failed' });
+        }
+      },
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingCard(null);
+    setFormData({
+      title: '',
+      description: '',
+      imageUrl: '',
+      parentTag: '',
+      isPlayable: true,
+      isOnboarding: false,
+    });
+  };
+
   if (!org) {
     return (
-      <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
-        <div style={{ marginBottom: '2rem' }}>
-          {/* FUNCTIONAL: Standardize small back navigation button */}
-          {/* STRATEGIC: Consistent back button size across all pages */}
-          <Link href="/" className="btn btn-light btn-sm">← Back to Home</Link>
-        </div>
-        
-        <h1>Cards - Select Organization</h1>
-        
-        {organizations.length === 0 ? (
-          <div>
-            <p>No organizations found.</p>
-            <Link href="/organizations">Create an organization first</Link>
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gap: '1rem' }}>
-            {organizations.map(organization => (
-              <div key={organization.uuid} style={{ padding: '1rem', border: '1px solid #ddd', borderRadius: '4px' }}>
-                <h3>{organization.name}</h3>
-                <Link href={`/cards?org=${organization.uuid}`} className="btn btn-primary">
-                  🎴 Manage Cards for This Organization
-                </Link>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <NarimatoShell title="Cards">
+        <Stack gap="lg">
+          <Title order={1}>Select organization</Title>
+          {loading ? (
+            <Loader />
+          ) : organizations.length === 0 ? (
+            <EmptyState
+              title="No organizations"
+              action={
+                <Button component={Link} href="/organizations">
+                  Create organization
+                </Button>
+              }
+            />
+          ) : (
+            <Stack gap="md">
+              {organizations.map((organization) => (
+                <Paper key={organization.uuid} withBorder p="md" radius="md">
+                  <Title order={4}>{organization.name}</Title>
+                  <Button component={Link} href={`/cards?org=${organization.uuid}`} mt="sm">
+                    Manage cards
+                  </Button>
+                </Paper>
+              ))}
+            </Stack>
+          )}
+        </Stack>
+      </NarimatoShell>
     );
   }
 
-  if (loading) return <div style={{ padding: '2rem' }}>Loading cards...</div>;
+  if (loading) {
+    return (
+      <NarimatoShell title="Cards">
+        <Loader />
+      </NarimatoShell>
+    );
+  }
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
-      <div style={{ marginBottom: '2rem' }}>
-        {/* FUNCTIONAL: Standardize small back navigation button */}
-        {/* STRATEGIC: Consistent back button size across all pages */}
-        <Link href="/" className="btn btn-light btn-sm">← Back to Home</Link>
-      </div>
+    <NarimatoShell title="Cards">
+      <Stack gap="lg">
+        <Title order={1}>Cards</Title>
+        <Text c="dimmed">Organization: {org}</Text>
 
-      <h1>Cards Management</h1>
-      <p style={{ color: '#666' }}>Organization: {org}</p>
-
-      <div style={{ 
-        marginBottom: '3rem', 
-        padding: '1rem', 
-        border: editingCard ? '2px solid #007bff' : '1px solid #ddd', 
-        borderRadius: '4px',
-        backgroundColor: editingCard ? '#f8f9ff' : 'white',
-        boxShadow: editingCard ? '0 4px 12px rgba(0, 123, 255, 0.15)' : 'none'
-      }}>
-        <h2 style={{ 
-          color: editingCard ? '#007bff' : '#333',
-          fontSize: editingCard ? '1.5rem' : '1.25rem'
-        }}>
-          {editingCard ? '📝 Edit Card: "' + editingCard.title + '"' : 'Create New Card'}
-        </h2>
-        {editingCard && (
-          <p style={{ 
-            color: '#007bff', 
-            fontSize: '0.9rem', 
-            marginBottom: '1rem',
-            fontStyle: 'italic'
-          }}>
-            💡 Editing card with UUID: {editingCard.uuid}
-          </p>
-        )}
-        <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1rem' }}>
-          <input
-            type="text"
-            placeholder="Card Title"
-            value={formData.title}
-            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-            required
-            style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-          />
-          <textarea
-            placeholder="Description (optional)"
-            value={formData.description}
-            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-            style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px', minHeight: '60px' }}
-          />
-          <input
-            type="url"
-            placeholder="Image URL (optional)"
-            value={formData.imageUrl}
-            onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
-            style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-          />
-          <select
-            value={formData.parentTag}
-            onChange={(e) => setFormData(prev => ({ ...prev, parentTag: e.target.value }))}
-            style={{ padding: '0.5rem', border: '1px solid #ddd', borderRadius: '4px' }}
-          >
-            <option value="">🏠 Root Card (no parent)</option>
-            {cards
-              .filter(card => card.isParent && card.hasChildren)
-              .map(parentCard => (
-                <option key={parentCard.uuid} value={parentCard.name}>
-                  📁 {parentCard.name.startsWith('#') ? parentCard.name.substring(1) : parentCard.name} ({parentCard.title})
-                </option>
-              ))
-            }
-            <optgroup label="All Available Cards">
-              {cards.map(card => (
-                <option key={`all-${card.uuid}`} value={card.name}>
-                  📄 {card.name.startsWith('#') ? card.name.substring(1) : card.name} ({card.title})
-                </option>
-              ))}
-            </optgroup>
-          </select>
-          {/* FUNCTIONAL: Control whether a parent/root card's deck appears in selection lists */}
-          {/* STRATEGIC: Hide internal decision-tree segments but still allow direct play via link */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', flexWrap: 'wrap' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <input
-                type="checkbox"
+        <Paper withBorder p="md" radius="md">
+          <Title order={3} mb="md" c={editingCard ? 'blue' : undefined}>
+            {editingCard ? `Edit: ${editingCard.title}` : 'Create card'}
+          </Title>
+          <form onSubmit={handleSubmit}>
+            <Stack gap="sm">
+              <TextInput
+                label="Title"
+                value={formData.title}
+                onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
+                required
+              />
+              <Textarea
+                label="Description"
+                value={formData.description}
+                onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+              />
+              <TextInput
+                label="Image URL"
+                value={formData.imageUrl}
+                onChange={(e) => setFormData((prev) => ({ ...prev, imageUrl: e.target.value }))}
+              />
+              <Select
+                label="Parent tag"
+                data={parentOptions}
+                value={formData.parentTag}
+                onChange={(value) => setFormData((prev) => ({ ...prev, parentTag: value || '' }))}
+                searchable
+                clearable
+              />
+              <Checkbox
+                label="Playable (public)"
                 checked={!!formData.isPlayable}
-                onChange={(e) => setFormData(prev => ({ ...prev, isPlayable: e.target.checked }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, isPlayable: e.currentTarget.checked }))
+                }
               />
-              Playable (public)
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <input
-                type="checkbox"
+              <Checkbox
+                label="Onboarding (right-only intro deck)"
                 checked={!!formData.isOnboarding}
-                onChange={(e) => setFormData(prev => ({ ...prev, isOnboarding: e.target.checked }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, isOnboarding: e.currentTarget.checked }))
+                }
               />
-              Onboarding (right-only intro deck)
-            </label>
-          </div>
-          <div style={{ color: '#666', fontSize: '0.85rem', marginTop: '-0.5rem' }}>
-            If this is a parent card (root with children), these flags control whether its deck appears in Play/Rankings (Playable) and whether it’s used as an onboarding intro (Onboarding).
-          </div>
-          <div className="btn-group btn-group-tight">
-            {/* FUNCTIONAL: Elevate create action to large size; keep edit at mid */}
-            {/* STRATEGIC: Primary creation CTAs should stand out; edits remain secondary */}
-            <button type="submit" className={`btn btn-primary ${editingCard ? '' : 'btn-lg'}`}>
-              {editingCard ? 'Update Card' : 'Create Card'}
-            </button>
-            {editingCard && (
-              <button type="button" onClick={cancelEdit} className="btn btn-muted">
-                Cancel
-              </button>
-            )}
-          </div>
-        </form>
-      </div>
+              <Group>
+                <Button type="submit">{editingCard ? 'Update' : 'Create'}</Button>
+                {editingCard ? (
+                  <Button variant="default" type="button" onClick={cancelEdit}>
+                    Cancel
+                  </Button>
+                ) : null}
+              </Group>
+            </Stack>
+          </form>
+        </Paper>
 
-      <div style={{ marginBottom: '3rem' }}>
-        <h2>Playable Decks ({decks.length})</h2>
+        <Title order={2}>Playable decks ({decks.length})</Title>
         {decks.length === 0 ? (
-          <p style={{ color: '#666' }}>No playable decks yet. Create cards with the same parent hashtag to form decks.</p>
+          <Text c="dimmed">No playable decks yet.</Text>
         ) : (
-          <div style={{ display: 'grid', gap: '1rem' }}>
-            {decks.map(([tag, deckCards]) => (
-              <div key={tag} style={{ padding: '1rem', border: '2px solid #28a745', borderRadius: '4px' }}>
-                <h3 style={{ margin: '0 0 0.5rem 0', color: '#28a745' }}>
-                  {tag.startsWith('#') ? tag.substring(1) : tag} ({deckCards.length} cards)
-                  {(() => {
-                    const includeHidden = router.query.includeHidden === 'true';
-                    const parent = cards.find(c => c.name === tag);
-                    const isHidden = parent && parent.isPlayable === false;
-                    return includeHidden && isHidden ? (
-                      <span style={{ marginLeft: '0.5rem', color: '#dc3545', fontSize: '0.85rem' }} title="Hidden deck (not publicly listed)">🙈 Hidden</span>
-                    ) : null;
-                  })()}
-                </h3>
-                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-                  {deckCards.slice(0, 3).map(card => (
-                    <div key={card.uuid} style={{ padding: '0.25rem 0.5rem', background: '#f8f9fa', borderRadius: '4px', fontSize: '0.75rem' }}>
-                      {card.title}
-                    </div>
-                  ))}
-                  {deckCards.length > 3 && (
-                    <div style={{ padding: '0.25rem 0.5rem', background: '#e9ecef', borderRadius: '4px', fontSize: '0.75rem' }}>
-                      +{deckCards.length - 3} more
-                    </div>
-                  )}
-                </div>
-                <Link href={`/play?org=${org}`} className="btn btn-warning">
-                  🎮 Play (choose deck & mode)
-                </Link>
-              </div>
-            ))}
-          </div>
+          <Stack gap="md">
+            {decks.map(([tag, deckCards]) => {
+              const parent = cards.find((c) => c.name === tag);
+              const isHidden = parent && parent.isPlayable === false;
+              return (
+                <Paper key={tag} withBorder p="md" radius="md">
+                  <Group mb="sm">
+                    <Title order={4} c="green">
+                      {tag}
+                    </Title>
+                    <Badge color="green">{deckCards.length} cards</Badge>
+                    {isHidden ? <Badge color="red">Hidden</Badge> : null}
+                  </Group>
+                  <Button component={Link} href={`/play?org=${org}`} color="orange" size="sm">
+                    Play
+                  </Button>
+                </Paper>
+              );
+            })}
+          </Stack>
         )}
-      </div>
 
-      <div>
-        <h2>All Cards ({cards.length})</h2>
-        <div className="card-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))' }}>
-          {cards.map(card => (
-            <div key={card.uuid} className="card-with-info">
-              <div className={`card card-md card-interactive ${card.imageUrl ? 'has-image' : ''}`}>
-                <div className="card-title">{card.title}</div>
-                {card.description && <div className="card-description">{card.description}</div>}
-                {card.imageUrl && <img src={card.imageUrl} alt={card.title} className="card-image" />}
-              </div>
-              <div className="card-info">
-              <div className="card-info-title">{card.name.startsWith('#') ? card.name.substring(1) : card.name}</div>
-                <div className="card-info-meta">
-                  {card.parentTag && (
-                    <div style={{ color: '#28a745', marginBottom: '0.25rem' }}>
-                      Deck: {card.parentTag.startsWith('#') ? card.parentTag.substring(1) : card.parentTag}
-                    </div>
-                  )}
-                  <div style={{ marginBottom: '0.5rem' }}>
-                    Score: {card.globalScore} • Votes: {card.voteCount}
-                  </div>
-                  <div className="btn-group btn-group-tight">
-                    <button 
-                      onClick={() => handleEdit(card)}
-                      className="btn btn-info btn-sm"
-                    >
-                      ✏️ Edit
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(card.uuid)}
-                      className="btn btn-secondary btn-sm"
-                    >
-                      🗑️ Delete
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <Title order={2}>All cards ({cards.length})</Title>
+        <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="md">
+          {cards.map((card) => (
+            <Paper key={card.uuid} withBorder p="md" radius="md">
+              {card.imageUrl ? (
+                <Image src={card.imageUrl} alt={card.title} h={120} fit="cover" radius="sm" mb="sm" />
+              ) : null}
+              <Text fw={600}>{card.title}</Text>
+              <Text size="sm" c="dimmed">
+                {card.name}
+              </Text>
+              {card.parentTag ? (
+                <Text size="xs" c="green">
+                  Deck: {card.parentTag}
+                </Text>
+              ) : null}
+              <Text size="xs" c="dimmed">
+                Score {card.globalScore} · Votes {card.voteCount}
+              </Text>
+              <Group mt="sm">
+                <Button size="xs" variant="light" onClick={() => handleEdit(card)}>
+                  Edit
+                </Button>
+                <Button size="xs" color="red" variant="light" onClick={() => handleDelete(card)}>
+                  Delete
+                </Button>
+              </Group>
+            </Paper>
           ))}
-        </div>
-      </div>
+        </SimpleGrid>
 
-      {/* Navigation Links */}
-      <div style={{ textAlign: 'center', paddingTop: '2rem', marginTop: '2rem', borderTop: '1px solid #eee' }}>
-        <div className="btn-group">
-          <Link href={`/play?org=${org}`} className="btn btn-info">
-            🎮 Play Decks
-          </Link>
-          <Link href={`/rankings?org=${org}`} className="btn btn-dark">
-            🏆 View Rankings
-          </Link>
-        </div>
-      </div>
-    </div>
+        <Group justify="center">
+          <Button component={Link} href={`/play?org=${org}`} variant="light">
+            Play decks
+          </Button>
+          <Button component={Link} href={`/rankings?org=${org}`} variant="outline">
+            Rankings
+          </Button>
+        </Group>
+      </Stack>
+    </NarimatoShell>
   );
 }

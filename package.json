@@ -9,6 +9,13 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@gds/core": "file:../../../Shared/Projects/GENERAL_DESIGN_SYSTEM/packages/gds-core",
+    "@gds/theme": "file:../../../Shared/Projects/GENERAL_DESIGN_SYSTEM/packages/gds-theme",
+    "@mantine/core": "^7.17.8",
+    "@mantine/hooks": "^7.17.8",
+    "@mantine/modals": "^7.17.8",
+    "@mantine/notifications": "^7.17.8",
+    "@tabler/icons-react": "^3.31.0",
     "dotenv": "^17.2.1",
     "mongoose": "^8.1.0",
     "next": "15.5.9",

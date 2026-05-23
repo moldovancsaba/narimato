@@ -119,7 +119,9 @@ NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX # Optional: GA4 measurement ID
 
 /scripts              # Database management scripts
 /docs                 # Technical documentation
-/public/styles        # CSS files (cards.css, game.css, etc.)
+/components           # NarimatoShell, NarimatoProviders, play surfaces
+/lib/ui               # narimatoTheme (extends @gds/theme)
+/styles               # playGame.module.css (Mantine CSS variables only)
 ```
 
 ### Key Patterns
@@ -390,8 +392,7 @@ No step may be skipped.
 - **Framework**: Next.js 15.5.3 (Pages Router)
 - **Database**: MongoDB 7.0+ (Atlas only)
 - **Language**: JavaScript (not TypeScript)
-- **Styling**: Custom CSS in `public/styles` + styled-jsx
-- **Animations**: @react-spring/web, @use-gesture/react
+- **Styling**: Mantine 7 + GDS (`@gds/theme`, `@gds/core`) — see `docs/GDS_ADOPTION.md`
 - **Validation**: zod
 - **Analytics**: GA4 (production-only)
 
@@ -516,7 +517,7 @@ narimato/
 ├── lib/                # Core logic (models, services, utils)
 ├── scripts/            # Database management
 ├── docs/               # Technical documentation
-├── public/styles/      # CSS files
+├── styles/             # Mantine CSS-module tokens (play layout)
 ├── README.md           # Product overview
 ├── ARCHITECTURE.md     # Technical architecture
 ├── WARP.md             # This file (AI rules)
