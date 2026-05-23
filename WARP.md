@@ -2,8 +2,8 @@
 
 This file provides guidance to WARP (warp.dev) when working with code in this repository.
 
-**Current Version:** 7.1.0  
-**Last Updated:** 2025-12-21T21:10:00.000Z  
+**Current Version:** 7.2.0  
+**Last Updated:** 2026-05-23T00:00:00.000Z  
 **Purpose:** Comprehensive AI agent onboarding and project governance
 
 ---
@@ -24,17 +24,16 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 
 ## Project Overview
 
-NARIMATO is an anonymous, session-based card ranking application built with Next.js 15.5.3, MongoDB, and ELO-powered global rankings. The system uses a Pages Router API with a Play-centric session model and binary-search-based ranking.
+NARIMATO is an anonymous, session-based card ranking application built with Next.js 15.5.9, MongoDB Atlas, and ELO-powered global rankings. Pages Router + JavaScript. Canonical spec: `narimato_unified_documentation.md`.
 
-**Current Version:** 7.1.0
+**Current Version:** 7.2.0
 
 ### Key Capabilities
-- **6 Play Modes**: vote-only, swipe-only, swipe-more, vote-more, rank-only, rank-more
-- **Multi-Tenant**: Separate databases per organization with master metadata DB
-- **Binary Search Ranking**: O(log n) card positioning algorithm
-- **ELO Global Rankings**: Cross-session skill-based card comparisons
-- **Hashtag Hierarchy**: Multi-level card organization via parent-child relationships
-- **Organization Theming**: Custom backgrounds, fonts, emojis/icons per org
+- **7 Play Modes**: vote_only, swipe_only, swipe_more, vote_more, rank_only, rank_more, onboarding
+- **Multi-Tenant**: Master DB + per-org databases via `buildOrgMongoUri()` / `withOrganization()` ([ADR 002](docs/adr/002-multi-tenant-database.md))
+- **Personal ranking**: Mode engines (`VoteOnlyService` for v1 vote modes)
+- **ELO Global Rankings**: `Card.globalScore` via `lib/utils/ranking.js`
+- **Hashtag Hierarchy**: `parentTag` / deck hashtags on cards
 
 ---
 
@@ -417,16 +416,14 @@ No step may be skipped.
 - `CardUUID` — Card identifiers
 - `DeckUUID` — Deck identifiers
 
-**NEVER use**: `sessionId`, `cardId`, `uuid`, `id`, or any other variations.
-**ALWAYS**: Import constants from `fieldNames.js`
+Use `lib/constants/fieldNames.js` — logical names map to Mongo keys:
 
 ```javascript
-// ✅ CORRECT
-import { UUID_FIELDS } from '@/lib/constants/fieldNames';
-const cardId = data[UUID_FIELDS.CARD];
-
-// ❌ WRONG
-const cardId = data.cardId;
+const { fieldNames } = require('../constants/fieldNames');
+// fieldNames.OrganizationUUID → 'organizationId'
+// fieldNames.CardUUID → 'uuid'
+// fieldNames.DeckUUID → 'deckTag'
+await Card.find({ [fieldNames.OrganizationUUID]: organizationId });
 ```
 
 ### Multi-Tenant Database Architecture
@@ -475,7 +472,7 @@ Applied at runtime via organization context.
 ## Operational Notes
 
 ### Rate Limiting
-- **Default**: 100 requests/minute per IP
+- **Play start**: 60 requests/minute per IP; **input/next/results**: 120/min
 - **Implementation**: `lib/middleware/rateLimit.js`
 - Applies to all API endpoints
 
