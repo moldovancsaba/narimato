@@ -1,9 +1,8 @@
-const { connectDB } = require('../../lib/db');
-const Organization = require('../../lib/models/Organization');
+const { connectMaster, getMasterOrganizationModel } = require('../../lib/db');
 const { v4: uuidv4 } = require('uuid');
 
 export default async function handler(req, res) {
-  await connectDB();
+  await connectMaster();
 
   switch (req.method) {
     case 'GET':
@@ -21,8 +20,9 @@ export default async function handler(req, res) {
 
 async function handleGet(req, res) {
   try {
+    const Organization = getMasterOrganizationModel();
     const organizations = await Organization.find({ isActive: true })
-      .select('uuid name slug description createdAt')
+      .select('uuid name slug description databaseName createdAt')
       .sort({ createdAt: -1 });
     
     res.json({ organizations });
@@ -34,6 +34,7 @@ async function handleGet(req, res) {
 
 async function handlePost(req, res) {
   try {
+    const Organization = getMasterOrganizationModel();
     const { name, slug, description } = req.body;
     
     if (!name || !slug) {
@@ -46,12 +47,14 @@ async function handlePost(req, res) {
       return res.status(400).json({ error: 'Slug already exists' });
     }
 
+    const orgUuid = uuidv4();
     const organization = new Organization({
-      uuid: uuidv4(),
+      uuid: orgUuid,
       name,
       slug: slug.toLowerCase(),
       description: description || '',
-      isActive: true
+      databaseName: orgUuid,
+      isActive: true,
     });
 
     await organization.save();
@@ -67,6 +70,7 @@ async function handlePost(req, res) {
 // STRATEGIC: Allows organizations to modify their profile information
 async function handlePut(req, res) {
   try {
+    const Organization = getMasterOrganizationModel();
     const { uuid, name, slug, description } = req.body;
     
     if (!uuid) {
@@ -112,6 +116,7 @@ async function handlePut(req, res) {
 // STRATEGIC: Preserves data integrity while hiding organization from users
 async function handleDelete(req, res) {
   try {
+    const Organization = getMasterOrganizationModel();
     const { uuid } = req.body;
     
     if (!uuid) {

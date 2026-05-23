@@ -1,4 +1,5 @@
-const { connectDB } = require('../../../lib/db');
+const { connectMaster } = require('../../../lib/db');
+const { withOrganization } = require('../../../lib/tenantContext');
 const Play = require('../../../lib/models/Play');
 
 export default async function handler(req, res) {
@@ -7,7 +8,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    await connectDB();
+    await connectMaster();
 
     const { organizationId } = req.query;
     
@@ -15,15 +16,14 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'organizationId required' });
     }
 
-    // Delete all play sessions for this organization
-    const result = await Play.deleteMany({ organizationId });
-    
-    console.log(`🧹 Cleaned up ${result.deletedCount} play sessions for org ${organizationId}`);
-
-    res.json({ 
-      success: true, 
-      deletedCount: result.deletedCount,
-      message: `Deleted ${result.deletedCount} play sessions`
+    return await withOrganization(organizationId, async () => {
+      const result = await Play.deleteMany({ organizationId });
+      console.log(`🧹 Cleaned up ${result.deletedCount} play sessions for org ${organizationId}`);
+      res.json({
+        success: true,
+        deletedCount: result.deletedCount,
+        message: `Deleted ${result.deletedCount} play sessions`,
+      });
     });
 
   } catch (error) {

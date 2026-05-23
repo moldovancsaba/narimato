@@ -1,4 +1,6 @@
-const { connectDB } = require('../../../lib/db');
+const { connectMaster } = require('../../../lib/db');
+const { withOrganization } = require('../../../lib/tenantContext');
+const { registerPlaySession } = require('../../../lib/playSessionIndex');
 const Play = require('../../../lib/models/Play');
 const Card = require('../../../lib/models/Card');
 const { getDeckCards } = require('../../../lib/utils/cardUtils');
@@ -10,7 +12,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    await connectDB();
+    await connectMaster();
 
     const { parentCardId, organizationId } = req.body;
     
@@ -18,7 +20,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'parentCardId and organizationId required' });
     }
 
-    // Get the parent card
+    return await withOrganization(organizationId, async () => {
     const parentCard = await Card.findOne({ 
       organizationId, 
       uuid: parentCardId, 
@@ -82,7 +84,8 @@ export default async function handler(req, res) {
     });
 
     console.log(`✅ Child ranking session created: ${childPlay.uuid}`);
-
+    await registerPlaySession(childPlay.uuid, organizationId, 'classic');
+    });
   } catch (error) {
     console.error('Rank children error:', error);
     res.status(500).json({ error: 'Internal server error' });

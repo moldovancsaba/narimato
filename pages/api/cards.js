@@ -1,42 +1,49 @@
-const { connectDB } = require('../../lib/db');
+const { connectMaster } = require('../../lib/db');
+const { withOrganization } = require('../../lib/tenantContext');
 const Card = require('../../lib/models/Card');
 const { v4: uuidv4 } = require('uuid');
 
 export default async function handler(req, res) {
-  await connectDB();
+  const organizationId = req.query.organizationId || req.body?.organizationId;
+  if (!organizationId) {
+    return res.status(400).json({ error: 'organizationId required' });
+  }
 
-  switch (req.method) {
-    case 'GET':
-      return handleGet(req, res);
-    case 'POST':
-      return handlePost(req, res);
-    default:
-      return res.status(405).json({ error: 'Method not allowed' });
+  try {
+    await connectMaster();
+    return await withOrganization(organizationId, async () => {
+      switch (req.method) {
+        case 'GET':
+          return handleGet(req, res);
+        case 'POST':
+          return handlePost(req, res);
+        default:
+          return res.status(405).json({ error: 'Method not allowed' });
+      }
+    });
+  } catch (error) {
+    console.error('Cards API error:', error);
+    const status = error.statusCode || 500;
+    return res.status(status).json({ error: error.message || 'Internal server error' });
   }
 }
 
 async function handleGet(req, res) {
   try {
     const { organizationId, parentTag } = req.query;
-    
-    if (!organizationId) {
-      return res.status(400).json({ error: 'organizationId required' });
-    }
 
     const query = { organizationId, isActive: true };
     if (parentTag) {
-      // Include only deck descendants (children and deeper), and explicitly exclude the deck parent itself
       query.$and = [
         { name: { $ne: parentTag } },
-        { $or: [
-          { parentTag: parentTag },
-          { hashtags: parentTag }
-        ]}
+        {
+          $or: [{ parentTag: parentTag }, { hashtags: parentTag }],
+        },
       ];
     }
 
     const cards = await Card.find(query).sort({ globalScore: -1 });
-    
+
     res.json({ cards });
   } catch (error) {
     console.error('Get cards error:', error);
@@ -46,75 +53,55 @@ async function handleGet(req, res) {
 
 async function handlePost(req, res) {
   try {
-    const { organizationId, title, description, imageUrl, hashtags, isPlayable, isOnboarding } = req.body;
+    const { organizationId, title, description, imageUrl, hashtags, isPlayable, isOnboarding } =
+      req.body;
     let { name, parentTag } = req.body;
-    
+
     if (!organizationId || !title) {
       return res.status(400).json({ error: 'organizationId and title required' });
     }
-    
-    // Generate name if not provided
+
     if (!name) {
       name = `${title.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')}`;
     }
-    // Remove # if user added it, we'll add it properly
     if (name.startsWith('#')) {
       name = name.substring(1);
     }
-    // Now add # prefix properly
     name = `#${name}`;
-    
-    // FUNCTIONAL: Prevent circular references in card hierarchy during creation
-    // STRATEGIC: Ensures SwipeMore engine never encounters infinite loops
+
     if (parentTag?.trim()) {
       const cleanParentTag = parentTag.trim();
-      
-      // Prevent card from being its own parent (name hasn't been created yet, but check anyway)
+
       if (cleanParentTag === name) {
-        return res.status(400).json({ 
-          error: `Card cannot be its own parent. "${name}" cannot have parentTag "${cleanParentTag}"` 
+        return res.status(400).json({
+          error: `Card cannot be its own parent. "${name}" cannot have parentTag "${cleanParentTag}"`,
         });
       }
-      
-      // Check for potential circular references with existing cards
-      const allCards = await Card.find({ 
-        organizationId, 
-        isActive: true 
+
+      const allCards = await Card.find({
+        organizationId,
+        isActive: true,
       });
-      
-      // Check if setting this parentTag would create a circular reference
-      // by seeing if any existing card has our name as an ancestor
+
       const visited = new Set();
       let currentParentTag = cleanParentTag;
-      
+
       while (currentParentTag && !visited.has(currentParentTag)) {
         visited.add(currentParentTag);
-        
-        // If we find our own card name in the parent chain, it would be circular
+
         if (currentParentTag === name) {
           return res.status(400).json({
-            error: `Circular reference detected. Setting parentTag to "${cleanParentTag}" would create a loop: ${Array.from(visited).join(' → ')} → ${name}`
+            error: `Circular reference detected. Setting parentTag to "${cleanParentTag}" would create a loop: ${Array.from(visited).join(' → ')} → ${name}`,
           });
         }
-        
-        // Find the parent card and continue up the chain
-        const parentCard = allCards.find(c => c.name === currentParentTag || c.name === `#${currentParentTag}`);
+
+        const parentCard = allCards.find(
+          (c) => c.name === currentParentTag || c.name === `#${currentParentTag}`
+        );
         currentParentTag = parentCard?.parentTag;
       }
     }
 
-    // HASHTAG MANAGEMENT: Ensure name always starts with #
-    if (!name) {
-      name = `${title.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')}`;
-    }
-    // Remove # if user added it, we'll add it properly
-    if (name.startsWith('#')) {
-      name = name.substring(1);
-    }
-    // Now add # prefix properly
-    name = `#${name}`;
-    
-    // HASHTAG MANAGEMENT: Ensure parentTag starts with # if provided
     if (parentTag) {
       if (!parentTag.startsWith('#')) {
         parentTag = `#${parentTag}`;
@@ -133,7 +120,7 @@ async function handlePost(req, res) {
       isActive: true,
       isPlayable: typeof isPlayable === 'boolean' ? isPlayable : true,
       isOnboarding: typeof isOnboarding === 'boolean' ? isOnboarding : false,
-      globalScore: 1500 // Starting ELO rating
+      globalScore: 1500,
     });
 
     await card.save();

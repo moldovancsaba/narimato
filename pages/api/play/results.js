@@ -1,4 +1,5 @@
-const { connectDB } = require('../../../lib/db');
+const { connectMaster } = require('../../../lib/db');
+const { withPlayOrganization } = require('../../../lib/api/playRoute');
 const Play = require('../../../lib/models/Play');
 
 export default async function handler(req, res) {
@@ -7,7 +8,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    await connectDB();
+    await connectMaster();
 
     const { playId } = req.query;
     
@@ -15,13 +16,13 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'playId required' });
     }
 
+    return await withPlayOrganization(playId, async () => {
     const play = await Play.findOne({ uuid: playId });
     
     if (!play) {
       return res.status(404).json({ error: 'Play session not found' });
     }
 
-    // Return the play results
     res.json({
       playId: play.uuid,
       status: play.status,
@@ -31,6 +32,7 @@ export default async function handler(req, res) {
       completedAt: play.completedAt,
       organizationId: play.organizationId,
       deckTag: play.deckTag
+    });
     });
 
   } catch (error) {

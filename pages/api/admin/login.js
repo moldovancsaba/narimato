@@ -1,14 +1,14 @@
 // FUNCTIONAL: Admin login/logout/status via credentialed users
 // STRATEGIC: Centralizes admin session management for protected routes (MessMass-style)
 
-import { connectDB } from '../../../lib/db';
-import User from '../../../lib/models/User';
+import { connectMaster, getMasterUserModel } from '../../../lib/db';
 import { z } from 'zod';
 import { validate } from '../../../lib/validation/util';
 import { hashPassword, createSessionToken, setSessionCookie, clearSessionCookie, getSessionUser } from '../../../lib/system/userAuth';
 
 export default async function handler(req, res) {
-  await connectDB();
+  await connectMaster();
+  const User = getMasterUserModel();
 
   if (req.method === 'GET') {
     const user = getSessionUser(req);
