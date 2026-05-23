@@ -2,7 +2,7 @@ import { validate } from '../../../../../lib/validation/util';
 import { playIdParamSchema } from '../../../../../lib/validation/common';
 import { applyRateLimit } from '../../../../../lib/middleware/rateLimit';
 import { z } from 'zod';
-import { getPlayAndEngine } from '../../../../../lib/services/play/PlayDispatcher';
+import { runWithPlay } from '../../../../../lib/services/play/PlayDispatcher';
 import { buildErrorEnvelope, ERROR_CODES } from '../../../../../lib/utils/errors';
 import { connectMaster } from '../../../../../lib/db';
 import { withApiVersion } from '../../../../../lib/middleware/apiVersion';
@@ -27,8 +27,9 @@ export default withApiVersion(async function handler(req, res) {
     });
     const { action, payload } = validate(bodySchema, req.body || {});
 
-    const { engine } = await getPlayAndEngine(playId);
-    const result = await engine.handleInput(playId, { action, payload });
+    const result = await runWithPlay(playId, ({ engine }) =>
+      engine.handleInput(playId, { action, payload })
+    );
     return res.status(200).json(result);
   } catch (err) {
     const status = err.statusCode || 500;

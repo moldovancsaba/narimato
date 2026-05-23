@@ -1,7 +1,7 @@
 import { validate } from '../../../../../lib/validation/util';
 import { playIdParamSchema } from '../../../../../lib/validation/common';
 import { applyRateLimit } from '../../../../../lib/middleware/rateLimit';
-import { getPlayAndEngine } from '../../../../../lib/services/play/PlayDispatcher';
+import { runWithPlay } from '../../../../../lib/services/play/PlayDispatcher';
 import { withApiVersion } from '../../../../../lib/middleware/apiVersion';
 import { buildErrorEnvelope, ERROR_CODES } from '../../../../../lib/utils/errors';
 import { connectMaster } from '../../../../../lib/db';
@@ -15,8 +15,7 @@ export default withApiVersion(async function handler(req, res) {
     await connectMaster();
 
     const { playId } = validate(playIdParamSchema, req.query || {});
-    const { engine } = await getPlayAndEngine(playId);
-    const result = await engine.getResults(playId);
+    const result = await runWithPlay(playId, ({ engine }) => engine.getResults(playId));
     return res.status(200).json(result);
   } catch (err) {
     const status = err.statusCode || 500;

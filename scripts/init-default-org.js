@@ -101,6 +101,9 @@ async function initializeDefaultOrganization() {
           title: '#SampleDeck',
           description: 'This is a sample parent card for testing',
           hashtags: ['#SampleDeck'],
+          isParent: true,
+          hasChildren: true,
+          isPlayable: true,
           isActive: true,
         },
         {
@@ -110,6 +113,7 @@ async function initializeDefaultOrganization() {
           title: 'Sample Card 1',
           description: 'First sample card for ranking',
           hashtags: ['#SampleDeck'],
+          parentTag: '#SampleDeck',
           isActive: true,
         },
         {
@@ -119,6 +123,7 @@ async function initializeDefaultOrganization() {
           title: 'Sample Card 2',
           description: 'Second sample card for ranking',
           hashtags: ['#SampleDeck'],
+          parentTag: '#SampleDeck',
           isActive: true,
         },
         {
@@ -128,6 +133,7 @@ async function initializeDefaultOrganization() {
           title: 'Sample Card 3',
           description: 'Third sample card for ranking',
           hashtags: ['#SampleDeck'],
+          parentTag: '#SampleDeck',
           isActive: true,
         },
       ];
