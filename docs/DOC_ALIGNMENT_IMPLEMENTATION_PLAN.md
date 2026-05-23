@@ -92,6 +92,19 @@ flowchart TD
 
 ---
 
+## Phase 3 — Post-program (ongoing)
+
+| Item | Status |
+|------|--------|
+| `runWithPlay` tenant context for v1 input/next/results | Done |
+| Results payloads include `organizationId` | Done |
+| `GET /api/v1/play/{playId}/meta` for share URLs without `?org=` | Done |
+| `pages/results.js` org resolution + card fetches | Done |
+| Sample deck `parentTag` in init script | Done |
+| `scripts/e2e-v1-play.js` | Done |
+| Migrate `pages/play.js` off legacy `/api/play/*` (hierarchical) | Backlog |
+| Trim remaining ARCHITECTURE aspirational sections | Partial |
+
 ## Issue index
 
 See GitHub issues with label `doc-alignment` and milestone **Doc & Architecture Alignment**.

@@ -275,6 +275,7 @@ Common HTTP status codes:
 | POST | `/api/v1/play/[playId]/input` | Active |
 | GET | `/api/v1/play/[playId]/next` | Active |
 | GET | `/api/v1/play/[playId]/results` | Active |
+| GET | `/api/v1/play/[playId]/meta` | Active (org resolution for share links) |
 | POST | `/api/v1/play/vote-only/start` | Deprecated compat |
 | POST | `/api/admin/login` | Active (admin) |
 | * | `/api/system/page-passwords` | **410 Gone** |
