@@ -1,7 +1,7 @@
 # Documentation & Architecture Alignment — Implementation Plan
 
 **Program:** Align NARIMATO documentation and product claims with the running codebase (audit: May 2026).  
-**App version:** 7.1.0 → target **7.2.0** when Phase 0 ships.  
+**App version:** **7.2.0** (shipped 2026-05-23).  
 **GitHub project:** [{narimato} - From IDEA to LIVE](https://github.com/users/moldovancsaba/projects/33)  
 **Tracking:** GitHub issues labeled `doc-alignment` + milestone `Doc & Architecture Alignment`
 
@@ -85,10 +85,10 @@ flowchart TD
 
 ## Definition of done (program)
 
-- [ ] New contributor can follow **one doc** + README without hitting contradictions
-- [ ] Every HTTP route in `pages/api/` is documented or explicitly marked deprecated
-- [ ] No README feature without code path or “planned” label in `docs/FUTURE.md`
-- [ ] GitHub project #33 has all deliverable issues with Status ≠ IDEABANK (except open ADRs)
+- [x] New contributor can follow **one doc** + README without hitting contradictions
+- [x] Every HTTP route in `pages/api/` is documented or explicitly marked deprecated
+- [x] No README feature without code path or “planned” label in `docs/FUTURE.md`
+- [x] GitHub issues #11–#25 closed with delivery commits on `main`
 
 ---
 

@@ -1,6 +1,13 @@
 # Database scripts
 
-Requires `.env.local` with `MONGODB_URI` (Atlas `mongodb+srv://`).
+Requires `MONGODB_URI` in `.env.local` (Atlas `mongodb+srv://`).
+
+```bash
+vercel link --project narimato --yes   # once
+vercel env pull .env.local --yes       # refresh secrets
+```
+
+All scripts call `scripts/load-env.js` (loads `.env.local` then `.env`).
 
 | Script | Purpose |
 |--------|---------|
@@ -8,6 +15,7 @@ Requires `.env.local` with `MONGODB_URI` (Atlas `mongodb+srv://`).
 | `setup-databases.js` | Seed default org in master |
 | `init-default-org.js` | Default org + sample cards (org DB) |
 | `backfill-org-database-name.js` | Set `databaseName` on legacy org rows |
+| `smoke-multi-tenant.js` | Verify master + per-org routing |
 | `seed-superadmin.js` | Admin user on master DB |
 
 **Architecture (v7.2+):** Master DB holds `organizations` and `playsessionindices`. Each org has isolated data in `databaseName` (usually org uuid). Runtime routing: `lib/db.js` + `lib/tenantContext.js`.

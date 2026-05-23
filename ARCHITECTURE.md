@@ -6,52 +6,25 @@
 > **Canonical spec:** [narimato_unified_documentation.md](./narimato_unified_documentation.md)  
 > Aspirational sections below (TypeScript paths, Session model, theming, literal `*UUID` DB columns) are **outdated** unless marked otherwise. See [docs/FUTURE.md](./docs/FUTURE.md).
 
-## ⚡ UUID Field Standardization (v3.7.1+)
+## Field naming (`lib/constants/fieldNames.js`)
 
-**CRITICAL ARCHITECTURAL CHANGE**: All UUID fields throughout the codebase now use standardized naming:
+Constants such as `OrganizationUUID` and `PlayUUID` are **logical names**; MongoDB fields use conventional keys:
 
-- **OrganizationUUID**: For all organization identifiers
-- **SessionUUID**: For all session identifiers
-- **PlayUUID**: For all play session identifiers  
-- **CardUUID**: For all card identifiers
-- **DeckUUID**: For all deck identifiers
+| Constant | MongoDB field | Usage |
+|----------|---------------|--------|
+| `OrganizationUUID` | `organizationId` | Tenant scope on cards and plays |
+| `PlayUUID` / `SessionUUID` | `uuid` | Play session document id |
+| `CardUUID` | `uuid` | Card document id |
+| `DeckUUID` | `deckTag` | Hashtag deck selector |
 
-### Field Constants Location
-All field constants are centralized in `lib/constants/fieldNames.js`:
+There is no separate `Session` collection — session state lives on `Play` and mode-specific play models.
 
-```javascript
-// FUNCTIONAL: UUID field name constants for consistent data access
-// STRATEGIC: Single source of truth prevents field naming errors
-export const UUID_FIELDS = {
-  ORGANIZATION: 'OrganizationUUID',
-  SESSION: 'SessionUUID',
-  PLAY: 'PlayUUID', 
-  CARD: 'CardUUID',
-  DECK: 'DeckUUID'
-};
-```
+## Multi-tenant data (v7.2)
 
-### Models Updated
-- **Play Model**: Uses standardized PlayUUID, SessionUUID, DeckUUID
-- **Session Model**: Uses standardized SessionUUID
-- **Card Model**: Uses standardized CardUUID
-
-### Validation Functions
-Standardized validation functions available:
-- `validateOrganizationUUID(OrganizationUUID: string): boolean`
-- `validateSessionUUID(SessionUUID: string): boolean`
-- `validatePlayUUID(PlayUUID: string): boolean`
-- `validateCardUUID(CardUUID: string): boolean`
-- `validateDeckUUID(DeckUUID: string): boolean`
-
-### Backward Compatibility
-Temporary backward compatibility exports exist for legacy field names but will be removed in a future version.
-
-### Migration Impact
-- All models use standardized field naming
-- Database queries updated to use new field constants
-- API responses maintain consistency with standardized field names
-- Frontend components updated to handle uniform UUID fields
+- **Master DB** (`MONGODB_URI`): `organizations`, `users`, `pagepasswords`, `playsessionindexes`
+- **Per-org DB** (`databaseName` on org, or org `uuid`): `cards`, `plays`, `swipeonlyplays`, etc.
+- **Routing:** `withOrganization(organizationId)` and `withPlayOrganization(playId)` in `lib/tenantContext.js` / `lib/api/playRoute.js`
+- **ADR:** [docs/adr/002-multi-tenant-database.md](./docs/adr/002-multi-tenant-database.md)
 
 ## System Overview
 
@@ -294,13 +267,7 @@ Base styles for the background layer:
 
 ## Theming
 
-NARIMATO supports both light and dark themes to enhance user experience and accessibility. The theming system is built using CSS custom properties and a `data-theme` attribute, allowing for easy extension and modification.
-
-### Implementation
-- **Strategy**: Class-based dark mode is enabled in `tailwind.config.js` (`darkMode: 'class'`).
-- **Activation**: The dark theme is activated by adding `data-theme="dark"` to the `<html>` element in `app/layout.tsx`.
-- **CSS Variables**: A comprehensive set of CSS variables for colors, shadows, and other themeable properties is defined in `app/globals.css`. The `:root` selector defines the light theme, and the `[data-theme="dark"]` attribute selector overrides these variables for the dark theme.
-- **Usage**: Components use Tailwind CSS utility classes that are configured to respect the dark mode variant (e.g., `bg-white dark:bg-gray-900`).
+> **Not implemented in v7.2.** Application-wide dark mode, Tailwind theme toggles, and organization-level theming are described in older docs only. See [docs/FUTURE.md](./docs/FUTURE.md).
 
 ## System Components
 
@@ -377,18 +344,32 @@ See docs/API_REFERENCE.md for detailed request/response examples for all modes u
   - Transitions: Engine may return `{ returnToSwipe, nextCardId, cards }` to switch back to swiping a new family.
   - Results: flattened list only — parent followed by ranked descendants (depth-first).
 
-### Database Models
-- **Session**: Core session state with optimistic locking
-- **Card**: Individual card data with content validation, hashtags, and slug support
-- **Play**: Dynamic session management with hashtag-based card selection
-- **PersonalRanking**: User-specific card rankings
-- **GlobalRanking**: ELO-based aggregate rankings across all sessions (primary metric: ELO rating, not total score)
-- **SystemVersion**: Application version tracking
-- **FontPreset**: Customizable font configurations for card styling
-- **BackgroundPreset**: Background and styling presets for visual customization
+### Database models (v7.2 — matches `lib/models/`)
+
+| Model | Database | Role |
+|-------|----------|------|
+| `Organization` | Master | Tenant registry; `uuid`, `slug`, `databaseName`, `settings` |
+| `PlaySessionIndex` | Master | Maps `playId` → `organizationId` for cross-tenant play routes |
+| `User` | Master | Admin users (`pages/api/admin/login.js`) |
+| `PagePassword` | Master | Legacy page passwords (API returns 410; schema retained) |
+| `Card` | Per-org | Cards, hashtags, hierarchy, **global ELO** (`globalScore`, `voteCount`, `winCount`) |
+| `Play` | Per-org | Classic / hierarchical decision-tree sessions |
+| `SwipeOnlyPlay` | Per-org | Unified v1 `swipe_only` persistence |
+| `SwipeMorePlay` | Per-org | Unified v1 `swipe_more` |
+| `VoteMorePlay` | Per-org | Unified v1 `vote_more` |
+| `RankOnlyPlay` | Per-org | Unified v1 `rank_only` |
+| `RankMorePlay` | Per-org | Unified v1 `rank_more` |
+
+**Dual persistence:** `PlayDispatcher` resolves `playId` via `PlaySessionIndex`, then loads the mode-specific model (`SwipeOnlyPlay`, etc.) or legacy `Play` for `/api/play/*` classic flows. Personal rankings are stored on the active play document (`personalRanking`, mode-specific fields) — not a separate `PersonalRanking` collection.
+
+**Global rankings:** Computed from `Card.globalScore` (ELO in `lib/utils/ranking.js`), not a `GlobalRanking` collection. See [docs/RANKING_ALGORITHMS.md](./docs/RANKING_ALGORITHMS.md).
+
+**Planned but not implemented:** `Session`, `GlobalRanking`, `FontPreset`, `BackgroundPreset`, org theming — [docs/FUTURE.md](./docs/FUTURE.md).
+
+**Decks:** Logical grouping (parent `#hashtag` card + children), not a MongoDB collection.
 
 ### Deck Playability Rules
-- **Minimum Card Threshold**: DECK_RULES.MIN_CARDS_FOR_PLAYABLE = 2 (defined in constants/fieldNames.ts)
+- **Minimum Card Threshold**: `DECK_RULES.MIN_CARDS_FOR_PLAYABLE = 2` (in `lib/constants/fieldNames.js`)
 - **Purpose**: Ensures meaningful ranking experiences by requiring at least 2 cards for comparison
 - **Implementation**: Enforced in cardHierarchy.ts filtering logic, cards API responses, and play start API validation
 - **User Experience Impact**: Prevents single-card deck sessions that provide no ranking/comparison opportunities

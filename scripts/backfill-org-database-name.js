@@ -2,7 +2,7 @@
  * One-time: set databaseName on master organizations missing it (defaults to uuid).
  * Run: node scripts/backfill-org-database-name.js
  */
-require('dotenv').config({ path: '.env.local' });
+require('./load-env');
 const { connectMaster, getMasterOrganizationModel } = require('../lib/db');
 
 async function main() {
