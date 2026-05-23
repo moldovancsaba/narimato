@@ -1,20 +1,11 @@
 import { Html, Head, Main, NextScript } from 'next/document';
+import { ColorSchemeScript, mantineHtmlProps } from '@mantine/core';
 
 export default function Document() {
   return (
-    <Html>
+    <Html lang="en" {...mantineHtmlProps}>
       <Head>
-        {/* FUNCTIONAL: Imports universal button design system CSS */}
-        {/* STRATEGIC: Ensures consistent button styling across all pages */}
-        <link rel="stylesheet" href="/styles/buttons.css" />
-        
-        {/* FUNCTIONAL: Imports universal card design system CSS */}
-        {/* STRATEGIC: Ensures consistent card styling across all pages */}
-        <link rel="stylesheet" href="/styles/cards.css" />
-        
-        {/* FUNCTIONAL: Imports game-specific styling for Swipe & Vote interfaces */}
-        {/* STRATEGIC: Provides dynamic responsive game layouts with keyboard support */}
-        <link rel="stylesheet" href="/styles/game.css" />
+        <ColorSchemeScript defaultColorScheme="light" />
       </Head>
       <body>
         <Main />

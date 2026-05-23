@@ -1,13 +1,22 @@
-// FUNCTIONAL: Admin users management page
-// STRATEGIC: Allows creation of users with generated passwords and lists existing users
-
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import {
+  Alert,
+  Button,
+  Code,
+  Group,
+  Paper,
+  Select,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+} from '@mantine/core';
+import { notifications } from '@mantine/notifications';
+import { NarimatoShell } from '../../components/NarimatoShell';
 import { getSessionUser } from '../../lib/system/userAuth';
 
 export async function getServerSideProps(ctx) {
-  // FUNCTIONAL: Server-side guard for admin users page (no client flicker).
-  // STRATEGIC: Aligns all admin pages behind the same credential cookie.
   const user = getSessionUser(ctx.req);
   if (!user) {
     const next = encodeURIComponent(ctx.resolvedUrl || '/admin/users');
@@ -37,7 +46,9 @@ export default function AdminUsers() {
           const data = await list.json();
           setUsers(Array.isArray(data.users) ? data.users : []);
         }
-      } catch (e) { setError('Failed to load users'); }
+      } catch {
+        setError('Failed to load users');
+      }
     })();
   }, []);
 
@@ -47,71 +58,108 @@ export default function AdminUsers() {
     setLastPassword('');
     try {
       const res = await fetch('/api/admin/users', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, role })
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, role }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error || 'Failed to create user'); return; }
+      if (!res.ok) {
+        setError(data.error || 'Failed to create user');
+        return;
+      }
       setLastPassword(data.password || '');
       setEmail('');
+      notifications.show({ color: 'green', message: 'User created' });
       const list = await fetch('/api/admin/users');
       if (list.ok) setUsers((await list.json()).users || []);
-    } catch { setError('Network error'); }
+    } catch {
+      setError('Network error');
+    }
   }
 
-  async function regenerate(email) {
+  async function regenerate(userEmail) {
     setError('');
     setLastPassword('');
     try {
       const res = await fetch('/api/admin/users/password', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: userEmail }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error || 'Failed to regenerate password'); return; }
+      if (!res.ok) {
+        setError(data.error || 'Failed to regenerate password');
+        return;
+      }
       setLastPassword(data.password || '');
-    } catch { setError('Network error'); }
+      notifications.show({ color: 'green', message: 'Password regenerated' });
+    } catch {
+      setError('Network error');
+    }
   }
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
-      <div style={{ marginBottom: '1rem' }}>
-        <Link href="/" className="btn btn-light btn-sm">← Back to Home</Link>
-      </div>
-      <h1>Admin Users</h1>
-      <form onSubmit={createUser} style={{ maxWidth: 520 }}>
-        <div style={{ marginBottom: 8 }}>
-          <label>Email</label>
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)} style={{ width: '100%' }} required />
-        </div>
-        <div style={{ marginBottom: 8 }}>
-          <label>Role</label>
-          <select value={role} onChange={e => setRole(e.target.value)}>
-            <option value="superadmin">superadmin</option>
-            <option value="admin">admin</option>
-            <option value="editor">editor</option>
-          </select>
-        </div>
-        <button className="btn btn-primary">Create User</button>
-      </form>
-      {error && <div style={{ color: '#f33', marginTop: 12 }}>{error}</div>}
-      {lastPassword && (
-        <div style={{ marginTop: 12, background: '#111', color: '#fff', padding: 12, borderRadius: 6 }}>
-          Generated password: <code>{lastPassword}</code>
-        </div>
-      )}
+    <NarimatoShell title="Admin users">
+      <Stack gap="lg" maw={640}>
+        <Title order={1}>Admin users</Title>
 
-      <h2 style={{ marginTop: '2rem' }}>Existing Users</h2>
-      <div style={{ display: 'grid', gap: 8 }}>
-        {users.map(u => (
-          <div key={u.email} style={{ border: '1px solid #ddd', padding: 12, borderRadius: 6 }}>
-            <div><strong>{u.email}</strong> — {u.role}</div>
-            <div style={{ marginTop: 8 }}>
-              <button className="btn btn-secondary" onClick={() => regenerate(u.email)}>Regenerate Password</button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+        <Paper withBorder p="md" radius="md">
+          <form onSubmit={createUser}>
+            <Stack gap="sm">
+              <TextInput
+                label="Email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <Select
+                label="Role"
+                value={role}
+                onChange={setRole}
+                data={[
+                  { value: 'superadmin', label: 'superadmin' },
+                  { value: 'admin', label: 'admin' },
+                  { value: 'editor', label: 'editor' },
+                ]}
+              />
+              <Button type="submit">Create user</Button>
+            </Stack>
+          </form>
+        </Paper>
+
+        {error ? (
+          <Alert color="red">{error}</Alert>
+        ) : null}
+        {lastPassword ? (
+          <Alert color="dark" title="Generated password">
+            <Code>{lastPassword}</Code>
+          </Alert>
+        ) : null}
+
+        <Title order={2}>Existing users</Title>
+        <Stack gap="sm">
+          {users.map((u) => (
+            <Paper key={u.email} withBorder p="md" radius="md">
+              <Group justify="space-between">
+                <div>
+                  <Text fw={600}>{u.email}</Text>
+                  <Text size="sm" c="dimmed">
+                    {u.role}
+                  </Text>
+                </div>
+                <Button size="sm" variant="light" onClick={() => regenerate(u.email)}>
+                  Regenerate password
+                </Button>
+              </Group>
+            </Paper>
+          ))}
+        </Stack>
+
+        <Button component={Link} href="/" variant="default">
+          Home
+        </Button>
+      </Stack>
+    </NarimatoShell>
   );
 }

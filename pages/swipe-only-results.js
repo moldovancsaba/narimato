@@ -1,31 +1,34 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-
-// FUNCTIONAL: SwipeOnly results page using existing results UI patterns
-// STRATEGIC: Reuse existing results display logic for consistency
+import {
+  Badge,
+  Button,
+  Group,
+  Image,
+  Loader,
+  Paper,
+  SimpleGrid,
+  Stack,
+  Text,
+  Title,
+} from '@mantine/core';
+import { NarimatoShell } from '../components/NarimatoShell';
 
 export default function SwipeOnlyResults() {
   const router = useRouter();
-  const { playId, org, deck } = router.query;
+  const { playId, org } = router.query;
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (playId) {
-      fetchResults();
-    }
+    if (playId) fetchResults();
   }, [playId]);
 
   const fetchResults = async () => {
     try {
       const res = await fetch(`/api/swipe-only/${playId}/results`);
-      if (res.ok) {
-        const data = await res.json();
-        setResults(data);
-      } else {
-        console.error('Failed to fetch SwipeOnly results');
-      }
+      if (res.ok) setResults(await res.json());
     } catch (error) {
       console.error('Error fetching results:', error);
     } finally {
@@ -34,93 +37,79 @@ export default function SwipeOnlyResults() {
   };
 
   if (loading) {
-    return <div style={{ padding: '2rem' }}>Loading results...</div>;
+    return (
+      <NarimatoShell title="Swipe results">
+        <Loader />
+      </NarimatoShell>
+    );
   }
 
   if (!results) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center' }}>
-        <h2>Results not found</h2>
-        <Link href={`/play?org=${org}`}>← Back to deck selection</Link>
-      </div>
+      <NarimatoShell title="Swipe results">
+        <Stack gap="md">
+          <Title order={2}>Results not found</Title>
+          <Button component={Link} href={`/play?org=${org}`} variant="light">
+            Back to play
+          </Button>
+        </Stack>
+      </NarimatoShell>
     );
   }
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
-      <div style={{ marginBottom: '2rem' }}>
-        <Link href={`/play?org=${org}`} style={{ color: '#0070f3' }}>← Back to deck selection</Link>
-      </div>
+    <NarimatoShell title="Swipe results">
+      <Stack gap="lg">
+        <Title order={1}>Swipe results</Title>
+        <Text c="dimmed">Deck: {results.sessionInfo.deckTag}</Text>
 
-      <h1>🎉 Swipe Results</h1>
-      <p>Deck: <strong>{results.sessionInfo.deckTag}</strong></p>
+        <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
+          <Paper withBorder p="md" radius="md">
+            <Text fw={600}>Total cards</Text>
+            <Text>{results.statistics.totalCards}</Text>
+          </Paper>
+          <Paper withBorder p="md" radius="md" bg="green.0">
+            <Text fw={600}>Liked</Text>
+            <Text>{results.statistics.likedCards}</Text>
+          </Paper>
+          <Paper withBorder p="md" radius="md" bg="red.0">
+            <Text fw={600}>Rejected</Text>
+            <Text>{results.statistics.rejectedCards}</Text>
+          </Paper>
+        </SimpleGrid>
 
-      <div style={{ marginBottom: '2rem' }}>
-        <h3>Statistics</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-          <div style={{ padding: '1rem', background: '#f8f9fa', borderRadius: '4px' }}>
-            <strong>Total Cards:</strong> {results.statistics.totalCards}
-          </div>
-          <div style={{ padding: '1rem', background: '#e8f5e8', borderRadius: '4px' }}>
-            <strong>Liked Cards:</strong> {results.statistics.likedCards}
-          </div>
-          <div style={{ padding: '1rem', background: '#ffe8e8', borderRadius: '4px' }}>
-            <strong>Rejected Cards:</strong> {results.statistics.rejectedCards}
-          </div>
-        </div>
-      </div>
+        <Title order={2}>Your ranking</Title>
+        {results.ranking.length > 0 ? (
+          <Stack gap="sm">
+            {results.ranking.map((item, index) => (
+              <Paper key={item.card.id} withBorder p="md" radius="md">
+                <Group wrap="nowrap">
+                  <Badge size="lg" color={index < 3 ? 'yellow' : 'gray'}>
+                    #{item.rank}
+                  </Badge>
+                  <div style={{ flex: 1 }}>
+                    <Text fw={600}>{item.card.title}</Text>
+                    {item.card.description ? (
+                      <Text size="sm" c="dimmed">
+                        {item.card.description}
+                      </Text>
+                    ) : null}
+                  </div>
+                  {item.card.imageUrl ? (
+                    <Image src={item.card.imageUrl} w={60} h={60} radius="sm" alt="" />
+                  ) : null}
+                </Group>
+              </Paper>
+            ))}
+          </Stack>
+        ) : (
+          <Text c="dimmed">No cards were liked in this session.</Text>
+        )}
 
-      <h3>Your Ranking (by preference)</h3>
-      {results.ranking.length > 0 ? (
-        <div style={{ display: 'grid', gap: '1rem' }}>
-          {results.ranking.map((item, index) => (
-            <div 
-              key={item.card.id} 
-              style={{ 
-                padding: '1rem', 
-                border: '1px solid #ddd', 
-                borderRadius: '4px',
-                background: index < 3 ? ['#ffd700', '#c0c0c0', '#cd7f32'][index] : '#f8f9fa',
-                color: index < 3 ? 'white' : 'black'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ 
-                  fontSize: '1.5rem', 
-                  fontWeight: 'bold',
-                  minWidth: '3rem',
-                  textAlign: 'center'
-                }}>
-                  #{item.rank}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <h4 style={{ margin: '0 0 0.5rem 0' }}>{item.card.title}</h4>
-                  {item.card.description && (
-                    <p style={{ margin: '0', fontSize: '0.9rem', opacity: 0.8 }}>
-                      {item.card.description}
-                    </p>
-                  )}
-                </div>
-                {item.card.imageUrl && (
-                  <img 
-                    src={item.card.imageUrl} 
-                    alt={item.card.title}
-                    style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px' }}
-                  />
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p>No cards were liked in this session.</p>
-      )}
-
-      <div style={{ marginTop: '2rem' }}>
-        <Link href={`/play?org=${org}`} className="btn btn-primary">
-          Rank Another Deck
-        </Link>
-      </div>
-    </div>
+        <Button component={Link} href={`/play?org=${org}`}>
+          Rank another deck
+        </Button>
+      </Stack>
+    </NarimatoShell>
   );
 }

@@ -1,8 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
-import Link from 'next/link';
+import { Loader, Center } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import { calculateCardSize } from '../lib/utils/cardSizing';
 import { event } from '../lib/analytics/ga';
+import { PlayVoteSurface } from '../components/play/PlayVoteSurface';
+import { PlaySwipeSurface } from '../components/play/PlaySwipeSurface';
+import {
+  PlayOrgPicker,
+  PlayDeckPicker,
+  PlayComplete,
+} from '../components/play/PlayPicker';
 export default function Play() {
   const router = useRouter();
   const { org, deck } = router.query;
@@ -388,7 +396,7 @@ export default function Play() {
         
         // If all fails, show error
         console.error('Failed to load child session, redirecting to home');
-        alert('Failed to load child session');
+        notifications.show({ color: 'red', message: 'Failed to load child session' });
         router.push('/');
         return;
       }
@@ -461,11 +469,11 @@ mode: mode === 'vote-only' ? 'vote_only' : (mode === 'swipe-only' ? 'swipe_only'
         setPlayComplete(false);
       } else {
         const error = await res.json();
-        alert(error.error);
+        notifications.show({ color: 'red', message: error.error });
       }
     } catch (error) {
       console.error('Failed to start play:', error);
-      alert('Failed to start play session');
+      notifications.show({ color: 'red', message: 'Failed to start play session' });
     }
   };
 
@@ -549,7 +557,11 @@ mode: mode === 'vote-only' ? 'vote_only' : (mode === 'swipe-only' ? 'swipe_only'
                 const { mode } = router.query;
                 event('play_complete', { playId: currentPlay.playId, mode, hierarchical: true });
               } catch (e) { /* noop */ }
-              alert(`Hierarchical ranking complete!\n\nRanked ${statusData.data.totalItems} items in families.`);
+              notifications.show({
+                color: 'green',
+                title: 'Hierarchical ranking complete',
+                message: `Ranked ${statusData.data.totalItems} items in families.`,
+              });
               
               setTimeout(() => {
                 router.push(`/results?playId=${statusData.playId}&org=${org}&deck=${encodeURIComponent(deck)}&hierarchical=true`);
@@ -755,11 +767,11 @@ mode: mode === 'vote-only' ? 'vote_only' : (mode === 'swipe-only' ? 'swipe_only'
         }
       } else {
         const error = await res.json();
-        alert(error.error);
+        notifications.show({ color: 'red', message: error.error });
       }
     } catch (error) {
       console.error('Failed to swipe:', error);
-      alert('Failed to swipe card');
+      notifications.show({ color: 'red', message: 'Failed to swipe card' });
     }
   };
 
@@ -782,7 +794,7 @@ if (mode === 'vote-only' || mode === 'vote-more' || mode === 'rank-only' || mode
         });
         if (!res.ok) {
           const error = await res.json();
-          alert(error.error || 'Vote failed');
+          notifications.show({ color: 'red', message: error.error || 'Vote failed' });
           return;
         }
         // FUNCTIONAL: Track voting behavior for preference analysis
@@ -798,7 +810,7 @@ if (mode === 'vote-only' || mode === 'vote-more' || mode === 'rank-only' || mode
         } catch (e) { /* noop */ }
         const nextRes = await fetch(`/api/v1/play/${currentPlay.playId}/next`);
         if (!nextRes.ok) {
-          alert('Failed to get next comparison');
+          notifications.show({ color: 'red', message: 'Failed to get next comparison' });
           return;
         }
 const nextData = await nextRes.json();
@@ -882,7 +894,7 @@ const nextData = await nextRes.json();
           }
         } else {
           const error = await res.json();
-          alert(error.error);
+          notifications.show({ color: 'red', message: error.error });
         }
         return;
       }
@@ -970,261 +982,51 @@ const nextData = await nextRes.json();
         }
       } else {
         const error = await res.json();
-        alert(error.error);
+        notifications.show({ color: 'red', message: error.error });
       }
     } catch (error) {
       console.error('Failed to vote:', error);
-      alert('Failed to vote');
+      notifications.show({ color: 'red', message: 'Failed to vote' });
     } finally {
       voteInFlight.current = false;
     }
   };
 
-  if (loading) return <div style={{ padding: '2rem' }}>Loading...</div>;
-
-  // Organization selection
-  if (!org) {
+  if (loading) {
     return (
-      <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
-        <div style={{ marginBottom: '2rem' }}>
-          {/* FUNCTIONAL: Standardize small back navigation button */}
-          {/* STRATEGIC: Consistent design across pages */}
-          <Link href="/" className="btn btn-light btn-sm">← Back to Home</Link>
-        </div>
-        
-        <h1>Play - Select Organization</h1>
-        
-        {organizations.length === 0 ? (
-          <div>
-            <p>No organizations found.</p>
-            <Link href="/organizations">Create an organization first</Link>
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gap: '1rem' }}>
-            {organizations.map(organization => (
-              <div key={organization.uuid} style={{ padding: '1rem', border: '1px solid #ddd', borderRadius: '4px' }}>
-                <h3>{organization.name}</h3>
-                <Link href={`/play?org=${organization.uuid}`} className="btn btn-warning">
-                  Select This Organization
-                </Link>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <Center mih="50vh">
+        <Loader />
+      </Center>
     );
   }
 
-  // Deck selection
+  if (!org) {
+    return <PlayOrgPicker organizations={organizations} loading={false} />;
+  }
+
   if (!deck) {
     return (
-      <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
-        <h1>Play - Select Deck</h1>
-        {/* Admin Toggle: Show hidden decks */}
-        <div style={{ margin: '0.5rem 0 1rem 0' }}>
-          <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', color: '#666' }}>
-            <input
-              type="checkbox"
-              checked={showHidden}
-              onChange={(e) => {
-                const checked = e.target.checked;
-                setShowHidden(checked);
-                const params = new URLSearchParams(router.query);
-                if (checked) params.set('includeHidden', 'true'); else params.delete('includeHidden');
-                router.replace({ pathname: router.pathname, query: Object.fromEntries(params.entries()) }, undefined, { shallow: true });
-              }}
-            />
-            (admin) Show hidden decks
-          </label>
-        </div>
-        
-        {decks.length === 0 ? (
-          <div>
-            <p>No playable decks found in this organization.</p>
-            <Link href={`/cards?org=${org}`}>Add cards to create decks</Link>
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gap: '1rem' }}>
-            {decks.map(deckInfo => (
-              <div key={deckInfo.tag} style={{ padding: '1rem', border: '2px solid #28a745', borderRadius: '4px' }}>
-                <h3 style={{ color: '#28a745' }}>{deckInfo.tag} ({deckInfo.cards.length} cards)</h3>
-                <div style={{ marginBottom: '1rem' }}>
-                  {deckInfo.cards.slice(0, 3).map(card => (
-                    <span key={card.uuid} style={{ display: 'inline-block', margin: '0.25rem', padding: '0.25rem 0.5rem', background: '#f8f9fa', borderRadius: '4px', fontSize: '0.75rem' }}>
-                      {card.title}
-                    </span>
-                  ))}
-                  {deckInfo.cards.length > 3 && (
-                    <span style={{ padding: '0.25rem 0.5rem', background: '#e9ecef', borderRadius: '4px', fontSize: '0.75rem' }}>
-                      +{deckInfo.cards.length - 3} more
-                    </span>
-                  )}
-                </div>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  <Link 
-                    href={`/play?org=${org}&deck=${encodeURIComponent(deckInfo.tag)}&mode=swipe-only`} 
-                    onClick={() => {
-                      try {
-                        event('mode_selected', { org, deckTag: deckInfo.tag, mode: 'swipe-only' });
-                      } catch (e) { /* noop */ }
-                    }}
-                    className="btn" 
-                    style={{ 
-                      background: '#ff6b6b', 
-                      color: 'white', 
-                      textDecoration: 'none',
-                      padding: '0.5rem 1rem',
-                      borderRadius: '4px',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontSize: '0.9rem',
-                      fontWeight: '500'
-                    }}
-                  >
-                    👆 Swipe Only
-                  </Link>
-                  <Link 
-                    href={`/play?org=${org}&deck=${encodeURIComponent(deckInfo.tag)}&mode=vote-only`} 
-                    onClick={() => {
-                      try {
-                        event('mode_selected', { org, deckTag: deckInfo.tag, mode: 'vote-only' });
-                      } catch (e) { /* noop */ }
-                    }}
-                    className="btn" 
-                    style={{ 
-                      background: '#17a2b8', 
-                      color: 'white', 
-                      textDecoration: 'none',
-                      padding: '0.5rem 1rem',
-                      borderRadius: '4px',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontSize: '0.9rem',
-                      fontWeight: '500'
-                    }}
-                  >
-                    🗳️ Vote Only
-                  </Link>
-                  <Link 
-                    href={`/play?org=${org}&deck=${encodeURIComponent(deckInfo.tag)}&mode=swipe-more`} 
-                    onClick={() => {
-                      try {
-                        event('mode_selected', { org, deckTag: deckInfo.tag, mode: 'swipe-more' });
-                      } catch (e) { /* noop */ }
-                    }}
-                    className="btn" 
-                    style={{ 
-                      background: '#845ec2', 
-                      color: 'white', 
-                      textDecoration: 'none',
-                      padding: '0.5rem 1rem',
-                      borderRadius: '4px',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontSize: '0.9rem',
-                      fontWeight: '500'
-                    }}
-                  >
-                    🔄 Swipe More
-                  </Link>
-                  <Link 
-                    href={`/play?org=${org}&deck=${encodeURIComponent(deckInfo.tag)}&mode=vote-more`} 
-                    onClick={() => {
-                      try {
-                        event('mode_selected', { org, deckTag: deckInfo.tag, mode: 'vote-more' });
-                      } catch (e) { /* noop */ }
-                    }}
-                    className="btn" 
-                    style={{ 
-                      background: '#0d6efd', 
-                      color: 'white', 
-                      textDecoration: 'none',
-                      padding: '0.5rem 1rem',
-                      borderRadius: '4px',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontSize: '0.9rem',
-                      fontWeight: '500'
-                    }}
-                  >
-                    🗳️ Vote More
-                  </Link>
-                  <Link 
-                    href={`/play?org=${org}&deck=${encodeURIComponent(deckInfo.tag)}&mode=rank-only`} 
-                    onClick={() => {
-                      try {
-                        event('mode_selected', { org, deckTag: deckInfo.tag, mode: 'rank-only' });
-                      } catch (e) { /* noop */ }
-                    }}
-                    className="btn" 
-                    style={{ 
-                      background: '#20c997', 
-                      color: 'white', 
-                      textDecoration: 'none',
-                      padding: '0.5rem 1rem',
-                      borderRadius: '4px',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontSize: '0.9rem',
-                      fontWeight: '500'
-                    }}
-                  >
-                    👆+🗳️ Rank Only
-                  </Link>
-                  <Link 
-                    href={`/play?org=${org}&deck=${encodeURIComponent(deckInfo.tag)}&mode=rank-more`} 
-                    onClick={() => {
-                      try {
-                        event('mode_selected', { org, deckTag: deckInfo.tag, mode: 'rank-more' });
-                      } catch (e) { /* noop */ }
-                    }}
-                    className="btn" 
-                    style={{ 
-                      background: '#fd7e14', 
-                      color: 'white', 
-                      textDecoration: 'none',
-                      padding: '0.5rem 1rem',
-                      borderRadius: '4px',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontSize: '0.9rem',
-                      fontWeight: '500'
-                    }}
-                  >
-                    👆+🗳️ Rank More
-                  </Link>
-                </div>
-                <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#666' }}>
-                  <div><strong>Swipe Only:</strong> Like/dislike each card → ranking by preference</div>
-                  <div><strong>Swipe More:</strong> Enhanced swiping with smart decision tree → optimized ranking</div>
-                  <div><strong>Vote Only:</strong> Pure comparison voting → tournament-style ranking</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <PlayDeckPicker
+        org={org}
+        decks={decks}
+        showHidden={showHidden}
+        onShowHiddenChange={(checked) => {
+          setShowHidden(checked);
+          const params = new URLSearchParams(router.query);
+          if (checked) params.set('includeHidden', 'true');
+          else params.delete('includeHidden');
+          router.replace(
+            { pathname: router.pathname, query: Object.fromEntries(params.entries()) },
+            undefined,
+            { shallow: true }
+          );
+        }}
+      />
     );
   }
 
-  // Play completed
   if (playComplete) {
-    return (
-      <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif', textAlign: 'center' }}>
-        <h1>🎉 Play Complete!</h1>
-        <p>You've finished ranking all the cards in the {deck} deck.</p>
-        <div style={{ marginTop: '2rem' }}>
-          <div className="btn-group">
-            <Link href={`/play?org=${org}`} className="btn btn-info">
-              Play Another Deck
-            </Link>
-            <Link href="/" className="btn btn-muted">
-              Back to Home
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
+    return <PlayComplete org={org} deck={deck} />;
   }
 
   // VOTE MODE: Dynamic layout with VS separator
@@ -1235,219 +1037,57 @@ const nextData = await nextRes.json();
     // Defensive guard: if cards are not yet loaded (e.g., after switching families), wait
     if (!cardA || !cardB) {
       return (
-        <div style={{ padding: '2rem', textAlign: 'center' }}>
-          Preparing next comparison...
-        </div>
+        <Center mih="100vh">
+          <Loader />
+        </Center>
       );
     }
 
-    // FUNCTIONAL: Apply dynamic sizing via CSS custom properties
-    // STRATEGIC: Ensures consistent sizing across orientations and screen sizes
-    const gameStyle = {
-      '--card-size': `${cardConfig.cardSize}px`,
-      '--button-size': `${cardConfig.buttonSize}px`,
-      '--emoji-size': `${cardConfig.emojiSize}px`,
-      '--emoji-font-size': `${cardConfig.emojiSize * 0.6}px`
-    };
-
     return (
-      <>
-        <link rel="stylesheet" href="/styles/game.css" />
-        <div className="game-container" style={gameStyle}>
-          <div className={`game-layout game-mode-vote ${cardConfig.orientation}`}>
-            {/* CARD A */}
-            <div 
-              className={`game-card ${cardA.imageUrl ? 'has-image' : ''} ${keyboardActive === 'left' ? 'keyboard-active' : ''} ${
-                cardTransitions.left === 'changed' ? 'card-changed' : 
-                cardTransitions.left === 'same' ? 'card-same' : 'entering'
-              }`}
-              onClick={() => handleVote(cardA.id)}
-              tabIndex="0"
-              onKeyDown={(e) => e.key === 'Enter' && handleVote(cardA.id)}
-              onTouchStart={(e) => voteOnTouchStart('A', e)}
-              onTouchMove={(e) => voteOnTouchMove('A', e)}
-              onTouchEnd={(e) => voteOnTouchEnd('A', e, () => handleVote(cardA.id))}
-            >
-              <div className="game-card-title">{cardA.title}</div>
-              {cardA.description && <div className="game-card-description">{cardA.description}</div>}
-              {cardA.imageUrl && <img src={cardA.imageUrl} alt={cardA.title} className="game-card-image" />}
-            </div>
-            
-            {/* VS SEPARATOR */}
-            <div className="game-vs-separator">
-              😈
-            </div>
-            
-            {/* CARD B */}
-            <div 
-              className={`game-card ${cardB.imageUrl ? 'has-image' : ''} ${keyboardActive === 'right' ? 'keyboard-active' : ''} ${
-                cardTransitions.right === 'changed' ? 'card-changed' : 
-                cardTransitions.right === 'same' ? 'card-same' : 'entering'
-              }`}
-              onClick={() => handleVote(cardB.id)}
-              tabIndex="0"
-              onKeyDown={(e) => e.key === 'Enter' && handleVote(cardB.id)}
-              onTouchStart={(e) => voteOnTouchStart('B', e)}
-              onTouchMove={(e) => voteOnTouchMove('B', e)}
-              onTouchEnd={(e) => voteOnTouchEnd('B', e, () => handleVote(cardB.id))}
-            >
-              <div className="game-card-title">{cardB.title}</div>
-              {cardB.description && <div className="game-card-description">{cardB.description}</div>}
-              {cardB.imageUrl && <img src={cardB.imageUrl} alt={cardB.title} className="game-card-image" />}
-            </div>
-          </div>
-        </div>
-      </>
+      <PlayVoteSurface
+        cardA={cardA}
+        cardB={cardB}
+        cardConfig={cardConfig}
+        keyboardActive={keyboardActive}
+        cardTransitions={cardTransitions}
+        voteTouchHandlers={{
+          onTouchStart: voteOnTouchStart,
+          onTouchMove: voteOnTouchMove,
+          onTouchEnd: voteOnTouchEnd,
+        }}
+        onVote={handleVote}
+      />
     );
   }
 
-  // SWIPE MODE: Dynamic layout with action buttons
   if (currentCard && cardConfig) {
-    // FUNCTIONAL: Apply dynamic sizing via CSS custom properties
-    // STRATEGIC: Ensures consistent sizing across orientations and screen sizes
-    const gameStyle = {
-      '--card-size': `${cardConfig.cardSize}px`,
-      '--button-size': `${cardConfig.buttonSize}px`,
-      '--emoji-size': `${cardConfig.emojiSize}px`
-    };
-
     const isOnboarding = router.query.mode === 'onboarding';
 
     return (
-      <>
-        <link rel="stylesheet" href="/styles/game.css" />
-        <div className="game-container" style={gameStyle}>
-          <div className={`game-layout game-mode-swipe ${cardConfig.orientation}`}>
-            {cardConfig.orientation === 'portrait' ? (
-              // PORTRAIT LAYOUT: Card on top, buttons below in row
-              <>
-                {/* HIERARCHICAL LEVEL INDICATOR */}
-                {router.query.mode === 'swipe-more' && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '10px',
-                    left: '10px',
-                    background: 'rgba(132, 94, 194, 0.9)',
-                    color: 'white',
-                    padding: '4px 8px',
-                    borderRadius: '12px',
-                    fontSize: '0.7rem',
-                    fontWeight: 'bold',
-                    zIndex: 10
-                  }}>
-                    🌳 Level {swipeTransition === 'new-level' ? '↗️' : (currentPlay?.hierarchicalLevel || 1)}
-                  </div>
-                )}
-                
-                {/* GAME CARD */}
-                <div
-                  className={`game-card ${currentCard.imageUrl ? 'has-image' : ''} ${
-                  swipeTransition === 'new-card' ? 'card-changed' : 
-                  swipeTransition === 'new-level' ? 'card-changed' : 'entering'
-                }`}
-                  style={{ transform: `translateX(${swipeDrag.dx}px) rotate(${swipeDrag.dx * 0.03}deg)`, transition: swipeDrag.animating ? 'transform 180ms ease-out' : 'none' }}
-                  onTouchStart={onSwipeTouchStart}
-                  onTouchMove={onSwipeTouchMove}
-                  onTouchEnd={onSwipeTouchEnd}
-                  onPointerDown={onSwipePointerDown}
-                  onPointerMove={onSwipePointerMove}
-                  onPointerUp={onSwipePointerUp}
-                >
-                  <div className="game-card-title">{currentCard.title}</div>
-                  {currentCard.description && <div className="game-card-description">{currentCard.description}</div>}
-                  {currentCard.imageUrl && <img src={currentCard.imageUrl} alt={currentCard.title} className="game-card-image" />}
-                </div>
-                
-                {/* BUTTON ROW */}
-                <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  width: `${cardConfig.cardSize}px`,
-                  gap: '20px'
-                }}>
-                  {/* DISLIKE BUTTON (👎) - Left half; hidden during onboarding */}
-                  {!isOnboarding && (
-                    <button 
-                      className={`game-action-button dislike ${keyboardActive === 'dislike' ? 'pulse' : ''}`}
-                      onClick={() => handleSwipe('left')}
-                      tabIndex="0"
-                      aria-label="Dislike card"
-                    >
-                      👎
-                    </button>
-                  )}
-                  
-                  {/* LIKE BUTTON (👍) - Right half (exact same as swipe-only) */}
-                  <button 
-                    className={`game-action-button like ${keyboardActive === 'like' ? 'pulse' : ''}`}
-                    onClick={() => handleSwipe('right')}
-                    tabIndex="0"
-                    aria-label="Like card"
-                  >
-                    👍
-                  </button>
-                </div>
-              </>
-            ) : (
-              // LANDSCAPE LAYOUT: Button, Card, Button horizontally
-              <>
-                {/* DISLIKE BUTTON (👎) - Left position; hidden during onboarding */}
-                {/* To keep the card perfectly centered in onboarding (landscape), insert a spacer matching the button size. Why: Without the left button, the remaining right button would offset the card from center. */}
-                {!isOnboarding ? (
-                  <button 
-                    className={`game-action-button dislike ${keyboardActive === 'dislike' ? 'pulse' : ''}`}
-                    onClick={() => handleSwipe('left')}
-                    tabIndex="0"
-                    aria-label="Dislike card"
-                  >
-                    👎
-                  </button>
-                ) : (
-                  <div
-                    className="game-action-button-spacer"
-                    aria-hidden="true"
-                    style={{ width: 'var(--button-size)', height: 'var(--button-size)' }}
-                  />
-                )}
-                
-                {/* GAME CARD */}
-                <div
-                  className={`game-card ${currentCard.imageUrl ? 'has-image' : ''} ${
-                  swipeTransition === 'new-card' ? 'card-changed' : 'entering'
-                }`}
-                  style={{ transform: `translateX(${swipeDrag.dx}px) rotate(${swipeDrag.dx * 0.03}deg)`, transition: swipeDrag.animating ? 'transform 180ms ease-out' : 'none' }}
-                  onTouchStart={onSwipeTouchStart}
-                  onTouchMove={onSwipeTouchMove}
-                  onTouchEnd={onSwipeTouchEnd}
-                  onPointerDown={onSwipePointerDown}
-                  onPointerMove={onSwipePointerMove}
-                  onPointerUp={onSwipePointerUp}
-                >
-                  <div className="game-card-title">{currentCard.title}</div>
-                  {currentCard.description && <div className="game-card-description">{currentCard.description}</div>}
-                  {currentCard.imageUrl && <img src={currentCard.imageUrl} alt={currentCard.title} className="game-card-image" />}
-                </div>
-                
-                {/* LIKE / CONTINUE BUTTON (👍 or Continue) - Right position */}
-                <button 
-                  className={`game-action-button like ${keyboardActive === 'like' ? 'pulse' : ''}`}
-                  onClick={() => handleSwipe('right')}
-                  tabIndex="0"
-                  aria-label={'Like card'}
-                >
-                  👍
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      </>
+      <PlaySwipeSurface
+        currentCard={currentCard}
+        cardConfig={cardConfig}
+        swipeDrag={swipeDrag}
+        swipeTransition={swipeTransition}
+        isOnboarding={isOnboarding}
+        showLevelBadge={router.query.mode === 'swipe-more'}
+        hierarchicalLevel={currentPlay?.hierarchicalLevel}
+        onSwipeTouchStart={onSwipeTouchStart}
+        onSwipeTouchMove={onSwipeTouchMove}
+        onSwipeTouchEnd={onSwipeTouchEnd}
+        onSwipePointerDown={onSwipePointerDown}
+        onSwipePointerMove={onSwipePointerMove}
+        onSwipePointerUp={onSwipePointerUp}
+        onSwipeLeft={() => handleSwipe('left')}
+        onSwipeRight={() => handleSwipe('right')}
+        keyboardActive={keyboardActive}
+      />
     );
   }
 
   return (
-    <div style={{ padding: '2rem', textAlign: 'center' }}>
-      <p>Loading play session...</p>
-    </div>
+    <Center mih="50vh">
+      <Loader />
+    </Center>
   );
 }

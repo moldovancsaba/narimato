@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { Button, Stack, Text, Title } from '@mantine/core';
+import { NarimatoShell } from '../components/NarimatoShell';
 
 export async function getServerSideProps({ res }) {
   if (res) {
@@ -9,12 +11,16 @@ export async function getServerSideProps({ res }) {
 
 export default function VoteOnlyResultsRemoved() {
   return (
-    <div style={{ padding: '2rem', textAlign: 'center', fontFamily: 'Arial, sans-serif' }}>
-      <h1>🗳️ Vote-Only Results Unavailable</h1>
-      <p>Vote-Only mode was removed. Results are no longer available.</p>
-      <div style={{ marginTop: '1.5rem' }}>
-        <Link href="/play" className="btn btn-primary">Return to Play</Link>
-      </div>
-    </div>
+    <NarimatoShell title="Unavailable">
+      <Stack align="center" gap="md" py="xl">
+        <Title order={1}>Vote-only results unavailable</Title>
+        <Text c="dimmed" ta="center">
+          Vote-only mode was removed. Results are no longer available.
+        </Text>
+        <Button component={Link} href="/play">
+          Return to play
+        </Button>
+      </Stack>
+    </NarimatoShell>
   );
 }

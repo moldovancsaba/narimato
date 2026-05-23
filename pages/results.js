@@ -1,7 +1,41 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import {
+  Badge,
+  Button,
+  Grid,
+  Group,
+  Image,
+  Loader,
+  Paper,
+  SimpleGrid,
+  Stack,
+  Text,
+  Title,
+} from '@mantine/core';
 import { event } from '../lib/analytics/ga';
+import { NarimatoShell } from '../components/NarimatoShell';
+
+function ResultCard({ card, rankLabel, meta }) {
+  return (
+    <Paper withBorder p="md" radius="md" w={{ base: '100%', sm: 360 }}>
+      <Stack gap="xs">
+        {card.imageUrl ? (
+          <Image src={card.imageUrl} alt={card.title} h={120} fit="cover" radius="sm" />
+        ) : null}
+        <Text fw={700}>{card.title}</Text>
+        {card.description ? (
+          <Text size="sm" c="dimmed">
+            {card.description}
+          </Text>
+        ) : null}
+        <Text fw={600}>{rankLabel}</Text>
+        {meta}
+      </Stack>
+    </Paper>
+  );
+}
 
 export default function Results() {
   const router = useRouter();
@@ -291,253 +325,207 @@ export default function Results() {
 
   const loading = resultsLoading || rankingsLoading || cardsLoading;
 
-  if (loading) return <div style={{ padding: '2rem' }}>Loading results...</div>;
-
-  // Only show Not Found when the results endpoint explicitly returned 404
-  if (resultsError === 'not-found') {
+  if (loading) {
     return (
-      <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
-        <h1>Results Not Found</h1>
-        <p>Unable to load results for this play session.</p>
-        <Link href="/play" style={{ color: '#0070f3' }}>← Back to Play</Link>
-      </div>
+      <NarimatoShell title="Results">
+        <Loader />
+      </NarimatoShell>
     );
   }
 
-  // Defensive guard: if results still null for any reason, keep loading instead of flashing Not Found
-  if (!results) return <div style={{ padding: '2rem' }}>Loading results...</div>;
+  if (resultsError === 'not-found') {
+    return (
+      <NarimatoShell title="Results">
+        <Stack gap="md">
+          <Title order={1}>Results not found</Title>
+          <Text c="dimmed">Unable to load results for this play session.</Text>
+          <Button component={Link} href="/play" variant="light">
+            Back to play
+          </Button>
+        </Stack>
+      </NarimatoShell>
+    );
+  }
+
+  if (!results) {
+    return (
+      <NarimatoShell title="Results">
+        <Loader />
+      </NarimatoShell>
+    );
+  }
+
+  const modeLabel =
+    mode === 'swipe-only'
+      ? 'Swipe only'
+      : mode === 'swipe-more'
+        ? 'Swipe + vote'
+        : mode === 'vote-only'
+          ? 'Vote only'
+          : mode === 'vote-more'
+            ? 'Vote more'
+            : mode === 'rank-only'
+              ? 'Rank only'
+              : mode;
+
+  const rowCount = Math.max(
+    Array.isArray(results.ranking)
+      ? results.ranking.length
+      : Array.isArray(results.personalRanking)
+        ? results.personalRanking.length
+        : 0,
+    fullGlobalRankings.length
+  );
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif', maxWidth: '1100px', margin: '0 auto' }}>
-      <style jsx>{`
-        /* Results Compare Grid alignment updates
-           - What: Bring Personal and Global columns closer and align titles toward the center.
-           - Why: Improves horizontal proximity and visual balance as requested, while preserving
-                  right alignment for Personal content and left alignment for Global content on desktop. */
-        .compare-grid { display: grid; grid-template-columns: 1fr; row-gap: 1rem; }
+    <NarimatoShell title="Results">
+      <Stack gap="lg" maw={1100} mx="auto">
+        <Stack align="center" gap="xs">
+          <Title order={1}>Your {deck} results</Title>
+          <Text c="dimmed" ta="center">
+            {mode === 'swipe-only'
+              ? 'Swipe-based preference ranking'
+              : mode === 'swipe-more'
+                ? 'Hybrid swipe + vote ranking'
+                : 'How you ranked cards in this deck'}
+          </Text>
+          {mode ? <Badge>{modeLabel}</Badge> : null}
+        </Stack>
 
-        /* Two-column header: reduce inter-column gap from 2rem -> 1rem; keep items aligned at bottom. */
-        .compare-header { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: end; }
+        <Paper withBorder p="md" radius="md" ta="center">
+          <Title order={3} mb="sm">
+            Share results
+          </Title>
+          <Group justify="center">
+            <Button variant="light" onClick={copyToClipboard}>
+              Copy link
+            </Button>
+            <Button onClick={shareResults}>Share</Button>
+          </Group>
+          {copySuccess ? (
+            <Text size="sm" c="green" mt="sm">
+              {copySuccess}
+            </Text>
+          ) : null}
+        </Paper>
 
-        /* Row layout: mirror header spacing (2rem -> 1rem) and keep alignment by column. */
-        .compare-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
+        <Paper withBorder p="md" radius="md">
+          <Title order={3} ta="center" mb="md">
+            Summary — {deck}
+          </Title>
+          <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} spacing="md">
+            <div>
+              <Text fw={600}>Your top 3</Text>
+              <Text size="sm">
+                {summary.personalTop3.map((id) => getCardDetails(id).title).filter(Boolean).join(' · ') ||
+                  '—'}
+              </Text>
+            </div>
+            <div>
+              <Text fw={600}>Global top 3</Text>
+              <Text size="sm">
+                {summary.globalTop3.map((id) => getCardDetails(id).title).filter(Boolean).join(' · ') ||
+                  '—'}
+              </Text>
+            </div>
+            <div>
+              <Text fw={600}>Your last</Text>
+              <Text size="sm">
+                {summary.personalLast ? getCardDetails(summary.personalLast).title : '—'}
+              </Text>
+            </div>
+            <div>
+              <Text fw={600}>Global last</Text>
+              <Text size="sm">
+                {summary.globalLast ? getCardDetails(summary.globalLast).title : '—'}
+              </Text>
+            </div>
+          </SimpleGrid>
+        </Paper>
 
-        /* Desktop column content alignment:
-           - Personal (left column) content right-aligned to sit near the page center.
-           - Global   (right column) content left-aligned to sit near the page center. */
-        .leftCell { display: flex; justify-content: flex-end; }
-        .rightCell { display: flex; justify-content: flex-start; }
+        <Grid gutter="md">
+          <Grid.Col span={{ base: 12, md: 6 }}>
+            <Title order={3} mb="md">
+              Personal ranking
+            </Title>
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, md: 6 }}>
+            <Title order={3} mb="md">
+              Global rankings
+            </Title>
+          </Grid.Col>
+        </Grid>
 
-        /* Card height equalization and info block alignment for perfect row alignment.
-           What: Ensure cards have equal heights per row and info blocks align independently.
-           Why: Achieves precise visual alignment between Personal and Global columns regardless
-                of card content differences (title length, description, images). */
-        
-        /* Card containers: flexible layout with consistent structure */
-        .card-with-info {
-          display: flex;
-          flex-direction: column;
-          height: 100%;
-        }
-        
-        /* Cards: equalized minimum height with flex growth */
-        .compare-row .card {
-          min-height: 120px;
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-        }
-        
-        /* Info blocks: consistent positioning at bottom with proper text alignment */
-        .card-info {
-          margin-top: auto;
-          padding-top: 0.5rem;
-        }
-        
-        /* Personal (left) column: right-align all info text to sit flush toward center */
-        .leftCell .card-info { display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
-        .leftCell .card-info-title { text-align: right; }
-        .leftCell .card-info-meta { text-align: right; }
-        
-        /* Global (right) column: explicitly left-align info text for symmetry */
-        .rightCell .card-info { display: flex; flex-direction: column; align-items: flex-start; text-align: left; }
-        .rightCell .card-info-title { text-align: left; }
-        .rightCell .card-info-meta { text-align: left; }
+        {Array.from({ length: rowCount }).map((_, index) => {
+          const leftItem = Array.isArray(results.ranking) ? results.ranking[index] : undefined;
+          const leftId = leftItem
+            ? leftItem.card?.id || leftItem.cardId
+            : Array.isArray(results.personalRanking)
+              ? results.personalRanking[index]
+              : undefined;
+          const leftCard = leftItem
+            ? leftItem.card || (leftItem.cardId ? getCardDetails(leftItem.cardId) : null)
+            : leftId
+              ? getCardDetails(leftId)
+              : null;
+          const leftGRank = leftCard ? getGlobalRank(leftCard.id || leftCard.uuid) : null;
 
-        /* Ensure the card boxes themselves align flush to the center edge per column */
-        .leftCell .card-with-info .card { align-self: flex-end; margin-left: auto; }
-        .rightCell .card-with-info .card { align-self: flex-start; margin-right: auto; }
+          const rightItem = fullGlobalRankings[index];
+          const rightCard = rightItem ? getCardDetails(rightItem.cardId) : null;
+          const isInMyRanking = rightItem ? personalIds.includes(rightItem.cardId) : false;
 
-        /* Desktop header title alignment:
-           - Personal title pushed inward and right-aligned to match its column content.
-           - Global   title pushed inward and left-aligned to match its column content. */
-        .compare-header h2:first-child { justify-self: end; text-align: right; }
-        .compare-header h2:last-child  { justify-self: start; text-align: left; }
+          return (
+            <Grid key={index} gutter="md" align="flex-start">
+              <Grid.Col span={{ base: 12, md: 6 }}>
+                {leftCard ? (
+                  <ResultCard
+                    card={leftCard}
+                    rankLabel={
+                      index === 0 ? '🥇 #1' : index === 1 ? '🥈 #2' : index === 2 ? '🥉 #3' : `#${index + 1}`
+                    }
+                    meta={
+                      <Stack gap={2}>
+                        {leftGRank ? <Text size="sm">Global rank: #{leftGRank}</Text> : null}
+                        {mode === 'swipe-only' && leftItem?.swipedAt ? (
+                          <Text size="xs" c="dimmed">
+                            Liked: {new Date(leftItem.swipedAt).toLocaleTimeString()}
+                          </Text>
+                        ) : null}
+                      </Stack>
+                    }
+                  />
+                ) : null}
+              </Grid.Col>
+              <Grid.Col span={{ base: 12, md: 6 }}>
+                {rightCard ? (
+                  <ResultCard
+                    card={rightCard}
+                    rankLabel={`#${index + 1} global`}
+                    meta={
+                      <Stack gap={2}>
+                        <Text size="sm">
+                          Score: {rightItem.globalScore} · Votes: {rightItem.voteCount}
+                        </Text>
+                        {isInMyRanking ? (
+                          <Text size="sm" c="green">
+                            In your ranking
+                          </Text>
+                        ) : null}
+                      </Stack>
+                    }
+                  />
+                ) : null}
+              </Grid.Col>
+            </Grid>
+          );
+        })}
 
-        @media (max-width: 900px) {
-          /* On mobile, stack columns and center titles/content for clarity. */
-          .compare-header, .compare-row { grid-template-columns: 1fr; }
-          .leftCell, .rightCell { justify-content: center; }
-          .compare-header h2 { justify-self: center; text-align: center; }
-        }
-      `}</style>
-
-      <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-        <h1>🎉 Your {deck} Ranking Results!</h1>
-        <p style={{ color: '#666' }}>
-          {mode === 'swipe-only' ? 'Your swipe-based preference ranking' : 
-           mode === 'swipe-more' ? 'Your hybrid swipe + vote ranking' :
-           'Here\'s how you ranked the cards in this deck'}
-        </p>
-        {mode && (
-          <div style={{ 
-            display: 'inline-block', 
-            padding: '0.25rem 0.75rem', 
-            background: mode === 'swipe-only' ? '#ff6b6b' : 
-                       mode === 'swipe-more' ? '#845ec2' : 
-                       mode === 'vote-only' ? '#17a2b8' : '#845ec2',
-            color: 'white', 
-            borderRadius: '12px', 
-            fontSize: '0.8rem', 
-            fontWeight: '500' 
-          }}>
-            {mode === 'swipe-only' ? '👆 Swipe Only' : 
-             mode === 'swipe-more' ? '🔄 Swipe + Vote' : 
-             mode === 'vote-only' ? '🗳️ Vote Only' : 
-             mode === 'vote-more' ? '🗳️ Vote More' : 
-             mode === 'rank-only' ? '👆+🗳️ Rank Only' : mode}
-          </div>
-        )}
-      </div>
-
-      {/* Share Section */}
-      <div style={{ 
-        background: '#f8f9fa', 
-        padding: '1.5rem', 
-        borderRadius: '8px', 
-        marginBottom: '2rem', 
-        textAlign: 'center' 
-      }}>
-        <h3 style={{ margin: '0 0 1rem 0' }}>📤 Share Your Results</h3>
-        <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#666' }}>
-          Share this link so others can see your ranking!
-        </p>
-        <div className="btn-group">
-          <button onClick={copyToClipboard} className="btn btn-info">📋 Copy Link</button>
-          <button onClick={shareResults} className="btn btn-primary">📱 Share</button>
-        </div>
-        {copySuccess && (
-          <div style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: '#28a745' }}>
-            {copySuccess}
-          </div>
-        )}
-      </div>
-
-      {/* Summary: Personal vs Global Top/Bottom for this deck */}
-      <div style={{ background: '#fff', border: '1px solid #eee', borderRadius: '8px', padding: '1rem', marginBottom: '2rem', textAlign: 'center' }}>
-        <h3 style={{ margin: '0 0 0.75rem 0' }}>📊 Summary — Deck: {deck}</h3>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', fontSize: '0.95rem', color: '#333', justifyContent: 'center' }}>
-          <div>
-            <div style={{ fontWeight: 600 }}>🏆 Your Top 3</div>
-            <div>{summary.personalTop3.map(id => getCardDetails(id).title).filter(Boolean).join(' • ') || '—'}</div>
-          </div>
-          <div>
-            <div style={{ fontWeight: 600 }}>🌍 Global Top 3</div>
-            <div>{summary.globalTop3.map(id => getCardDetails(id).title).filter(Boolean).join(' • ') || '—'}</div>
-          </div>
-          <div>
-            <div style={{ fontWeight: 600 }}>🏁 Your Last</div>
-            <div>{summary.personalLast ? getCardDetails(summary.personalLast).title : '—'}</div>
-          </div>
-          <div>
-            <div style={{ fontWeight: 600 }}>🧭 Global Last</div>
-            <div>{summary.globalLast ? getCardDetails(summary.globalLast).title : '—'}</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Two Columns: aligned row-by-row */}
-      <div className="compare-grid">
-        <div className="compare-header">
-          <h2>🏆 Your Personal Ranking</h2>
-          <h2>🌍 Global Rankings</h2>
-        </div>
-        {Array.from({ length: Math.max(
-            (Array.isArray(results.ranking) ? results.ranking.length : (Array.isArray(results.personalRanking) ? results.personalRanking.length : 0)),
-            fullGlobalRankings.length
-          ) }).map((_, index) => {
-            const leftItem = Array.isArray(results.ranking) ? results.ranking[index] : undefined;
-            const leftId = leftItem ? (leftItem.card?.id || leftItem.cardId) : (Array.isArray(results.personalRanking) ? results.personalRanking[index] : undefined);
-            const leftCard = leftItem ? (leftItem.card || (leftItem.cardId ? getCardDetails(leftItem.cardId) : null)) : (leftId ? getCardDetails(leftId) : null);
-            const leftGRank = leftCard ? getGlobalRank(leftCard.id || leftCard.uuid) : null;
-
-            const rightItem = fullGlobalRankings[index];
-            const rightCard = rightItem ? getCardDetails(rightItem.cardId) : null;
-            const isInMyRanking = rightItem ? personalIds.includes(rightItem.cardId) : false;
-
-            return (
-              <div key={index} className="compare-row">
-                <div className="leftCell">
-                  {leftCard ? (
-                    <div className="card-with-info" style={{ width: '360px', maxWidth: '100%' }}>
-                      <div className={`card card-md card-interactive ${leftCard.imageUrl ? 'has-image' : ''} ${index === 0 ? 'card-winner' : index === 1 ? 'card-selected' : index === 2 ? 'card-error' : ''}`}>
-                        <div className="card-title">{leftCard.title}</div>
-                        {leftCard.description && <div className="card-description">{leftCard.description}</div>}
-                        {leftCard.imageUrl && <img src={leftCard.imageUrl} alt={leftCard.title} className="card-image" />}
-                      </div>
-                      <div className="card-info">
-                        <div className="card-info-title" style={{ color: index === 0 ? '#856404' : index === 1 ? '#495057' : index === 2 ? '#721c24' : '#333' }}>
-                          {index === 0 ? '🥇 #1' : index === 1 ? '🥈 #2' : index === 2 ? '🥉 #3' : `#${index + 1}`}
-                        </div>
-                        {leftGRank && (
-                          <div className="card-info-meta">Global Rank: #{leftGRank}</div>
-                        )}
-                        {mode === 'swipe-only' && leftItem?.swipedAt && (
-                          <div className="card-info-meta">Liked: {new Date(leftItem.swipedAt).toLocaleTimeString()}</div>
-                        )}
-                        {mode === 'swipe-more' && leftItem && (
-                          <div className="card-info-meta">
-                            {leftItem.swipedAt && (<div>Liked: {new Date(leftItem.swipedAt).toLocaleTimeString()}</div>)}
-                            {leftItem.wins !== undefined && leftItem.totalComparisons && (<div>Votes: {leftItem.wins}/{leftItem.totalComparisons}</div>)}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ) : <div style={{ width: '360px', maxWidth: '100%' }} /> }
-                </div>
-                <div className="rightCell">
-                  {rightCard ? (
-                    <div className="card-with-info" style={{ width: '360px', maxWidth: '100%' }}>
-                      <div className={`card card-md card-interactive ${rightCard.imageUrl ? 'has-image' : ''} ${isInMyRanking ? 'card-success' : index < 3 ? 'card-selected' : ''}`}>
-                        <div className="card-title">{rightCard.title}</div>
-                        {rightCard.description && <div className="card-description">{rightCard.description}</div>}
-                        {rightCard.imageUrl && <img src={rightCard.imageUrl} alt={rightCard.title} className="card-image" />}
-                      </div>
-                      <div className="card-info">
-                        <div className="card-info-title" style={{ color: index < 3 ? '#856404' : '#333' }}>#{index + 1} Global</div>
-                        <div className="card-info-meta">
-                          Score: {rightItem.globalScore} • Votes: {rightItem.voteCount}
-                          {isInMyRanking && <div style={{ color: '#28a745' }}>✓ In your ranking</div>}
-                        </div>
-                      </div>
-                    </div>
-                  ) : <div style={{ width: '360px', maxWidth: '100%' }} /> }
-                </div>
-              </div>
-            );
-          })}
-      </div>
-
-      {/* Action Buttons */}
-      <div style={{ textAlign: 'center', paddingTop: '2rem', borderTop: '1px solid #eee' }}>
-        <Link 
-          href={`/play?org=${org}`}
-          className="btn btn-warning"
-        >
-          🎮 Play Another Deck
-        </Link>
-      </div>
-    </div>
+        <Group justify="center">
+          <Button component={Link} href={`/play?org=${org}`} color="orange">
+            Play another deck
+          </Button>
+        </Group>
+      </Stack>
+    </NarimatoShell>
   );
 }
