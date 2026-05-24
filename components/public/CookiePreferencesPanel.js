@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button, Paper, Stack, Switch, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { StatusBadge } from '@gds/core';
+import { NarimatoFormField } from '../NarimatoFormField';
 import {
   CONSENT,
   applyConsent,
@@ -48,12 +49,15 @@ export function CookiePreferencesPanel({ showSavedMessage = true }) {
             </StatusBadge>
           </Stack>
 
-          <Switch
+          <NarimatoFormField
             label="Analytics cookies"
             description="Google Analytics 4 with IP anonymisation. Helps us understand how the site is used."
-            checked={analytics}
-            onChange={(e) => setAnalytics(e.currentTarget.checked)}
-          />
+          >
+            <Switch
+              checked={analytics}
+              onChange={(e) => setAnalytics(e.currentTarget.checked)}
+            />
+          </NarimatoFormField>
 
           <Button onClick={save} w={{ base: '100%', sm: 'auto' }}>
             Save preferences

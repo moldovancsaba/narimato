@@ -1,58 +1,6 @@
-"use strict";
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-
-// src/index.ts
-var index_exports = {};
-__export(index_exports, {
-  AccessSummary: () => AccessSummary,
-  ArticleShell: () => ArticleShell,
-  AuthShell: () => AuthShell,
-  ConfirmDialog: () => ConfirmDialog,
-  DataToolbar: () => DataToolbar,
-  EmptyState: () => EmptyState,
-  FormField: () => FormField,
-  GdsIcons: () => GdsIcons,
-  GdsVocabulary: () => GdsVocabulary,
-  MediaCard: () => MediaCard,
-  MetricCard: () => MetricCard,
-  ProductCard: () => ProductCard,
-  ProgressCard: () => ProgressCard,
-  PublicShell: () => PublicShell,
-  SemanticButton: () => SemanticButton,
-  StateBlock: () => StateBlock,
-  StatusBadge: () => StatusBadge,
-  ThemeToggle: () => ThemeToggle,
-  UploadDropzone: () => UploadDropzone,
-  ar: () => ar,
-  de: () => de,
-  en: () => en,
-  fr: () => fr,
-  he: () => he,
-  hu: () => hu,
-  it: () => it,
-  ru: () => ru
-});
-module.exports = __toCommonJS(index_exports);
-
 // src/StatusBadge.tsx
-var import_core = require("@mantine/core");
-var import_jsx_runtime = require("react/jsx-runtime");
+import { Badge } from "@mantine/core";
+import { jsx } from "react/jsx-runtime";
 var statusColorMap = {
   success: "green",
   warning: "yellow",
@@ -61,136 +9,216 @@ var statusColorMap = {
   neutral: "gray"
 };
 function StatusBadge({ status, children, ...props }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_core.Badge, { color: statusColorMap[status], variant: "light", ...props, children });
+  return /* @__PURE__ */ jsx(Badge, { color: statusColorMap[status], variant: "light", ...props, children });
 }
 
 // src/EmptyState.tsx
-var import_core2 = require("@mantine/core");
-var import_jsx_runtime2 = require("react/jsx-runtime");
+import { Stack, Text, Title, Box } from "@mantine/core";
+import { jsx as jsx2, jsxs } from "react/jsx-runtime";
 function EmptyState({ icon, title, description, action }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime2.jsxs)(import_core2.Stack, { align: "center", justify: "center", gap: "md", py: "xl", ta: "center", children: [
-    icon && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_core2.Box, { c: "dimmed", children: icon }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_core2.Title, { order: 3, children: title }),
-    /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_core2.Text, { c: "dimmed", maw: 400, children: description }),
-    action && /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(import_core2.Box, { mt: "md", children: action })
+  return /* @__PURE__ */ jsxs(Stack, { align: "center", justify: "center", gap: "md", py: "xl", ta: "center", children: [
+    icon && /* @__PURE__ */ jsx2(Box, { c: "dimmed", children: icon }),
+    /* @__PURE__ */ jsx2(Title, { order: 3, children: title }),
+    /* @__PURE__ */ jsx2(Text, { c: "dimmed", maw: 400, children: description }),
+    action && /* @__PURE__ */ jsx2(Box, { mt: "md", children: action })
   ] });
 }
 
-// src/ConfirmDialog.tsx
-var import_core4 = require("@mantine/core");
-
-// src/SemanticButton.tsx
-var import_react = require("react");
-var import_core3 = require("@mantine/core");
-var import_theme = require("@gds/theme");
-var import_icons_react2 = require("@tabler/icons-react");
-
 // src/icons.ts
-var import_icons_react = require("@tabler/icons-react");
+import {
+  IconDashboard,
+  IconSettings,
+  IconUsers,
+  IconPlus,
+  IconEdit,
+  IconTrash,
+  IconSearch,
+  IconDeviceFloppy,
+  IconCheck,
+  IconAlertTriangle,
+  IconAlertCircle,
+  IconInfoCircle,
+  IconChevronDown,
+  IconChevronUp,
+  IconX,
+  IconSquareCheck,
+  IconSquareX,
+  IconMenu2,
+  IconMoon,
+  IconSun,
+  IconChartBar,
+  IconPlayerPlay,
+  IconRocket,
+  IconBan,
+  IconThumbUp,
+  IconHome,
+  IconInbox,
+  IconCalendar,
+  IconPhoto,
+  IconHistory,
+  IconUser,
+  IconSend,
+  IconArrowBackUp,
+  IconArrowForwardUp,
+  IconPaperclip,
+  IconUpload,
+  IconDownload,
+  IconPrinter,
+  IconCopy,
+  IconCopyPlus,
+  IconChecks,
+  IconClearAll,
+  IconCamera,
+  IconVideo,
+  IconCameraRotate,
+  IconBolt,
+  IconBook,
+  IconNotebook,
+  IconCertificate,
+  IconSchool,
+  IconBooks,
+  IconAward,
+  IconMoodKid,
+  IconUsersGroup,
+  IconTarget,
+  IconFlag,
+  IconFlame,
+  IconGift,
+  IconLanguage,
+  IconPalette,
+  IconTrophy,
+  IconCrown,
+  IconPlayerPause,
+  IconMessage,
+  IconMail,
+  IconRefresh,
+  IconTrendingUp,
+  IconTrendingDown,
+  IconCurrencyDollar,
+  IconLayoutGrid,
+  IconList,
+  IconDoorExit,
+  IconBell,
+  IconArrowLeft,
+  IconEye,
+  IconEyeOff,
+  IconHelpCircle,
+  IconFilter,
+  IconArrowsSort,
+  IconFileExport,
+  IconFileImport,
+  IconTrashOff,
+  IconToggleLeft,
+  IconLogin,
+  IconUserPlus,
+  IconShieldCheck,
+  IconFileText,
+  IconShare
+} from "@tabler/icons-react";
 var GdsIcons = {
   // Navigation
-  Dashboard: import_icons_react.IconDashboard,
-  Settings: import_icons_react.IconSettings,
-  Users: import_icons_react.IconUsers,
-  Analytics: import_icons_react.IconChartBar,
-  Home: import_icons_react.IconHome,
-  Inbox: import_icons_react.IconInbox,
-  Calendar: import_icons_react.IconCalendar,
-  Gallery: import_icons_react.IconPhoto,
-  History: import_icons_react.IconHistory,
-  Profile: import_icons_react.IconUser,
+  Dashboard: IconDashboard,
+  Settings: IconSettings,
+  Users: IconUsers,
+  Analytics: IconChartBar,
+  Home: IconHome,
+  Inbox: IconInbox,
+  Calendar: IconCalendar,
+  Gallery: IconPhoto,
+  History: IconHistory,
+  Profile: IconUser,
   // Actions
-  Add: import_icons_react.IconPlus,
-  Edit: import_icons_react.IconEdit,
-  Delete: import_icons_react.IconTrash,
-  Search: import_icons_react.IconSearch,
-  Save: import_icons_react.IconDeviceFloppy,
-  Play: import_icons_react.IconPlayerPlay,
-  Start: import_icons_react.IconRocket,
-  Send: import_icons_react.IconSend,
-  Reply: import_icons_react.IconArrowBackUp,
-  Forward: import_icons_react.IconArrowForwardUp,
-  Attach: import_icons_react.IconPaperclip,
-  Upload: import_icons_react.IconUpload,
-  Download: import_icons_react.IconDownload,
-  Print: import_icons_react.IconPrinter,
-  Copy: import_icons_react.IconCopy,
-  Duplicate: import_icons_react.IconCopyPlus,
-  Check: import_icons_react.IconSquareCheck,
-  Uncheck: import_icons_react.IconSquareX,
-  Complete: import_icons_react.IconChecks,
-  Clear: import_icons_react.IconClearAll,
-  Cancel: import_icons_react.IconBan,
-  Confirm: import_icons_react.IconThumbUp,
-  Close: import_icons_react.IconX,
+  Add: IconPlus,
+  Edit: IconEdit,
+  Delete: IconTrash,
+  Search: IconSearch,
+  Save: IconDeviceFloppy,
+  Play: IconPlayerPlay,
+  Start: IconRocket,
+  Send: IconSend,
+  Reply: IconArrowBackUp,
+  Forward: IconArrowForwardUp,
+  Attach: IconPaperclip,
+  Upload: IconUpload,
+  Download: IconDownload,
+  Print: IconPrinter,
+  Copy: IconCopy,
+  Duplicate: IconCopyPlus,
+  Check: IconSquareCheck,
+  Uncheck: IconSquareX,
+  Complete: IconChecks,
+  Clear: IconClearAll,
+  Cancel: IconBan,
+  Confirm: IconThumbUp,
+  Close: IconX,
   // Preferences & System
-  Language: import_icons_react.IconLanguage,
-  Theme: import_icons_react.IconPalette,
+  Language: IconLanguage,
+  Theme: IconPalette,
   // Media
-  Capture: import_icons_react.IconCamera,
-  Record: import_icons_react.IconVideo,
-  Flip: import_icons_react.IconCameraRotate,
-  Flash: import_icons_react.IconBolt,
+  Capture: IconCamera,
+  Record: IconVideo,
+  Flip: IconCameraRotate,
+  Flash: IconBolt,
   // Domain specific
-  Course: import_icons_react.IconBook,
-  Lesson: import_icons_react.IconNotebook,
-  Certificate: import_icons_react.IconCertificate,
-  Student: import_icons_react.IconSchool,
-  Class: import_icons_react.IconBooks,
-  Grade: import_icons_react.IconAward,
-  Child: import_icons_react.IconMoodKid,
-  Family: import_icons_react.IconUsersGroup,
-  Habit: import_icons_react.IconTarget,
-  Goal: import_icons_react.IconFlag,
-  Streak: import_icons_react.IconFlame,
-  Reward: import_icons_react.IconGift,
+  Course: IconBook,
+  Lesson: IconNotebook,
+  Certificate: IconCertificate,
+  Student: IconSchool,
+  Class: IconBooks,
+  Grade: IconAward,
+  Child: IconMoodKid,
+  Family: IconUsersGroup,
+  Habit: IconTarget,
+  Goal: IconFlag,
+  Streak: IconFlame,
+  Reward: IconGift,
   // Feedback
-  Success: import_icons_react.IconCheck,
-  Warning: import_icons_react.IconAlertTriangle,
-  Danger: import_icons_react.IconAlertCircle,
-  Info: import_icons_react.IconInfoCircle,
+  Success: IconCheck,
+  Warning: IconAlertTriangle,
+  Danger: IconAlertCircle,
+  Info: IconInfoCircle,
   // Analysis additions
-  Trophy: import_icons_react.IconTrophy,
-  Crown: import_icons_react.IconCrown,
-  Pause: import_icons_react.IconPlayerPause,
-  Message: import_icons_react.IconMessage,
-  Mail: import_icons_react.IconMail,
-  Refresh: import_icons_react.IconRefresh,
-  TrendingUp: import_icons_react.IconTrendingUp,
-  TrendingDown: import_icons_react.IconTrendingDown,
-  Currency: import_icons_react.IconCurrencyDollar,
-  Grid: import_icons_react.IconLayoutGrid,
-  List: import_icons_react.IconList,
-  Logout: import_icons_react.IconDoorExit,
-  Notifications: import_icons_react.IconBell,
-  Back: import_icons_react.IconArrowLeft,
-  Eye: import_icons_react.IconEye,
-  EyeOff: import_icons_react.IconEyeOff,
-  Help: import_icons_react.IconHelpCircle,
-  Filter: import_icons_react.IconFilter,
-  Sort: import_icons_react.IconArrowsSort,
+  Trophy: IconTrophy,
+  Crown: IconCrown,
+  Pause: IconPlayerPause,
+  Message: IconMessage,
+  Mail: IconMail,
+  Refresh: IconRefresh,
+  TrendingUp: IconTrendingUp,
+  TrendingDown: IconTrendingDown,
+  Currency: IconCurrencyDollar,
+  Grid: IconLayoutGrid,
+  List: IconList,
+  Logout: IconDoorExit,
+  Notifications: IconBell,
+  Back: IconArrowLeft,
+  Eye: IconEye,
+  EyeOff: IconEyeOff,
+  Help: IconHelpCircle,
+  Filter: IconFilter,
+  Sort: IconArrowsSort,
   // New Audit-driven additions
-  Export: import_icons_react.IconFileExport,
-  Import: import_icons_react.IconFileImport,
-  Preview: import_icons_react.IconEye,
-  Clone: import_icons_react.IconCopy,
-  Restore: import_icons_react.IconTrashOff,
-  Toggle: import_icons_react.IconToggleLeft,
-  Submit: import_icons_react.IconCheck,
-  Reset: import_icons_react.IconRefresh,
-  Login: import_icons_react.IconLogin,
-  Register: import_icons_react.IconUserPlus,
-  Verify: import_icons_react.IconShieldCheck,
-  Launch: import_icons_react.IconRocket,
-  Draft: import_icons_react.IconFileText,
-  Refer: import_icons_react.IconShare,
-  Evidence: import_icons_react.IconPaperclip,
+  Export: IconFileExport,
+  Import: IconFileImport,
+  Preview: IconEye,
+  Clone: IconCopy,
+  Restore: IconTrashOff,
+  Toggle: IconToggleLeft,
+  Submit: IconCheck,
+  Reset: IconRefresh,
+  Login: IconLogin,
+  Register: IconUserPlus,
+  Verify: IconShieldCheck,
+  Launch: IconRocket,
+  Draft: IconFileText,
+  Refer: IconShare,
+  Evidence: IconPaperclip,
   // System
-  ChevronDown: import_icons_react.IconChevronDown,
-  ChevronUp: import_icons_react.IconChevronUp,
-  Menu: import_icons_react.IconMenu2,
-  Moon: import_icons_react.IconMoon,
-  Sun: import_icons_react.IconSun
+  ChevronDown: IconChevronDown,
+  ChevronUp: IconChevronUp,
+  Menu: IconMenu2,
+  Moon: IconMoon,
+  Sun: IconSun
 };
 
 // src/vocabulary.ts
@@ -289,118 +317,34 @@ var GdsVocabulary = {
   evidence: { id: "gds.action.evidence", defaultMessage: "Evidence", icon: GdsIcons.Evidence, feedback: { icon: GdsIcons.Evidence, color: "teal", messageId: "gds.feedback.added" } }
 };
 
-// src/SemanticButton.tsx
-var import_jsx_runtime3 = require("react/jsx-runtime");
-function SemanticButton({ action, loading, feedbackState, feedbackText, ...props }) {
-  const { t } = (0, import_theme.useGdsTranslation)();
-  const config = GdsVocabulary[action];
-  const [internalFeedback, setInternalFeedback] = (0, import_react.useState)(null);
-  (0, import_react.useEffect)(() => {
-    if (feedbackState) {
-      setInternalFeedback(feedbackState);
-      const timer = setTimeout(() => setInternalFeedback(null), 2e3);
-      return () => clearTimeout(timer);
-    }
-  }, [feedbackState]);
-  let Icon = config.icon;
-  let label = t(config.id, config.defaultMessage);
-  let color = props.color;
-  if (internalFeedback === "success") {
-    const defaultFeedback = "feedback" in config && config.feedback ? config.feedback : { icon: import_icons_react2.IconCheck, color: "teal", messageId: "gds.feedback.saved" };
-    Icon = defaultFeedback.icon;
-    label = feedbackText || t(defaultFeedback.messageId, "Success");
-    color = defaultFeedback.color;
-  } else if (internalFeedback === "error") {
-    Icon = import_icons_react2.IconX;
-    label = feedbackText || t("gds.feedback.error", "Something went wrong");
-    color = "red";
-  }
-  return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
-    import_core3.Button,
-    {
-      leftSection: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(Icon, { size: "1rem" }),
-      loading,
-      color,
-      ...props,
-      children: label
-    }
-  );
-}
-
-// src/ConfirmDialog.tsx
-var import_jsx_runtime4 = require("react/jsx-runtime");
-function ConfirmDialog({
-  opened,
-  onClose,
-  onConfirm,
-  title,
-  children,
-  confirmAction = "confirm",
-  cancelAction = "cancel",
-  isDanger = true,
-  loading = false
-}) {
-  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_core4.Modal, { opened, onClose, title, centered: true, trapFocus: true, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(import_core4.Text, { size: "sm", mb: "xl", children }),
-    /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_core4.Group, { justify: "flex-end", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(SemanticButton, { action: cancelAction, variant: "default", onClick: onClose, disabled: loading }),
-      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(SemanticButton, { action: confirmAction, color: isDanger ? "red" : "violet", onClick: onConfirm, loading })
-    ] })
-  ] });
-}
-
-// src/ThemeToggle.tsx
-var import_core5 = require("@mantine/core");
-var import_theme2 = require("@gds/theme");
-var import_jsx_runtime5 = require("react/jsx-runtime");
-function ThemeToggle({ size = "md" }) {
-  const { setColorScheme } = (0, import_core5.useMantineColorScheme)();
-  const computedColorScheme = (0, import_core5.useComputedColorScheme)("light", { getInitialValueInEffect: true });
-  const { t } = (0, import_theme2.useGdsTranslation)();
-  const toggleColorScheme = () => {
-    setColorScheme(computedColorScheme === "dark" ? "light" : "dark");
-  };
-  const isDark = computedColorScheme === "dark";
-  return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
-    import_core5.ActionIcon,
-    {
-      onClick: toggleColorScheme,
-      variant: "default",
-      size,
-      "aria-label": t("gds.aria.themeToggle", "Toggle color scheme"),
-      children: isDark ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(GdsIcons.Sun, { size: "1.2rem" }) : /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(GdsIcons.Moon, { size: "1.2rem" })
-    }
-  );
-}
-
 // src/MetricCard.tsx
-var import_core6 = require("@mantine/core");
-var import_jsx_runtime6 = require("react/jsx-runtime");
+import { Badge as Badge2, Card, Group, Stack as Stack2, Text as Text2, ThemeIcon, Title as Title2 } from "@mantine/core";
+import { jsx as jsx3, jsxs as jsxs2 } from "react/jsx-runtime";
 var trendColors = {
   positive: "teal",
   negative: "red",
   neutral: "gray"
 };
 function MetricCard({ label, value, description, trend, icon, footer }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_core6.Card, { withBorder: true, radius: "lg", padding: "lg", children: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_core6.Stack, { gap: "md", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_core6.Group, { justify: "space-between", align: "flex-start", wrap: "nowrap", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_core6.Stack, { gap: 4, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_core6.Text, { size: "sm", c: "dimmed", fw: 600, children: label }),
-        /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_core6.Title, { order: 3, children: value })
+  return /* @__PURE__ */ jsx3(Card, { withBorder: true, radius: "lg", padding: "lg", children: /* @__PURE__ */ jsxs2(Stack2, { gap: "md", children: [
+    /* @__PURE__ */ jsxs2(Group, { justify: "space-between", align: "flex-start", wrap: "nowrap", children: [
+      /* @__PURE__ */ jsxs2(Stack2, { gap: 4, children: [
+        /* @__PURE__ */ jsx3(Text2, { size: "sm", c: "dimmed", fw: 600, children: label }),
+        /* @__PURE__ */ jsx3(Title2, { order: 3, children: value })
       ] }),
-      icon ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_core6.ThemeIcon, { variant: "light", size: "xl", radius: "xl", "aria-hidden": true, children: icon }) : null
+      icon ? /* @__PURE__ */ jsx3(ThemeIcon, { variant: "light", size: "xl", radius: "xl", "aria-hidden": true, children: icon }) : null
     ] }),
-    description || trend ? /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_core6.Group, { justify: "space-between", align: "center", gap: "sm", children: [
-      description ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_core6.Text, { size: "sm", c: "dimmed", flex: 1, children: description }) : /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("span", {}),
-      trend ? /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_core6.Badge, { color: trendColors[trend.tone ?? "neutral"], variant: "light", children: trend.label }) : null
+    description || trend ? /* @__PURE__ */ jsxs2(Group, { justify: "space-between", align: "center", gap: "sm", children: [
+      description ? /* @__PURE__ */ jsx3(Text2, { size: "sm", c: "dimmed", flex: 1, children: description }) : /* @__PURE__ */ jsx3("span", {}),
+      trend ? /* @__PURE__ */ jsx3(Badge2, { color: trendColors[trend.tone ?? "neutral"], variant: "light", children: trend.label }) : null
     ] }) : null,
     footer
   ] }) });
 }
 
 // src/ProgressCard.tsx
-var import_core7 = require("@mantine/core");
-var import_jsx_runtime7 = require("react/jsx-runtime");
+import { Card as Card2, Group as Group2, Progress, Stack as Stack3, Text as Text3, Title as Title3 } from "@mantine/core";
+import { jsx as jsx4, jsxs as jsxs3 } from "react/jsx-runtime";
 function ProgressCard({
   label,
   value,
@@ -409,31 +353,31 @@ function ProgressCard({
   description,
   action
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_core7.Card, { withBorder: true, radius: "lg", padding: "lg", children: /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_core7.Stack, { gap: "md", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_core7.Group, { justify: "space-between", align: "flex-start", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_core7.Stack, { gap: 4, children: [
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_core7.Text, { size: "sm", c: "dimmed", fw: 600, children: label }),
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_core7.Title, { order: 3, children: value })
+  return /* @__PURE__ */ jsx4(Card2, { withBorder: true, radius: "lg", padding: "lg", children: /* @__PURE__ */ jsxs3(Stack3, { gap: "md", children: [
+    /* @__PURE__ */ jsxs3(Group2, { justify: "space-between", align: "flex-start", children: [
+      /* @__PURE__ */ jsxs3(Stack3, { gap: 4, children: [
+        /* @__PURE__ */ jsx4(Text3, { size: "sm", c: "dimmed", fw: 600, children: label }),
+        /* @__PURE__ */ jsx4(Title3, { order: 3, children: value })
       ] }),
       action
     ] }),
-    description ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_core7.Text, { size: "sm", c: "dimmed", children: description }) : null,
-    /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_core7.Stack, { gap: 6, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_core7.Group, { justify: "space-between", gap: "sm", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_core7.Text, { size: "sm", fw: 500, children: progressLabel ?? "Progress" }),
-        /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_core7.Text, { size: "sm", c: "dimmed", children: [
+    description ? /* @__PURE__ */ jsx4(Text3, { size: "sm", c: "dimmed", children: description }) : null,
+    /* @__PURE__ */ jsxs3(Stack3, { gap: 6, children: [
+      /* @__PURE__ */ jsxs3(Group2, { justify: "space-between", gap: "sm", children: [
+        /* @__PURE__ */ jsx4(Text3, { size: "sm", fw: 500, children: progressLabel ?? "Progress" }),
+        /* @__PURE__ */ jsxs3(Text3, { size: "sm", c: "dimmed", children: [
           Math.round(progress),
           "%"
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(import_core7.Progress, { value: progress, radius: "xl", size: "md" })
+      /* @__PURE__ */ jsx4(Progress, { value: progress, radius: "xl", size: "md" })
     ] })
   ] }) });
 }
 
 // src/ProductCard.tsx
-var import_core8 = require("@mantine/core");
-var import_jsx_runtime8 = require("react/jsx-runtime");
+import { Badge as Badge3, Card as Card3, Group as Group3, Menu, Stack as Stack4, Text as Text4, ThemeIcon as ThemeIcon2, Title as Title4, ActionIcon } from "@mantine/core";
+import { jsx as jsx5, jsxs as jsxs4 } from "react/jsx-runtime";
 function ProductCard({
   title,
   description,
@@ -446,47 +390,47 @@ function ProductCard({
   footer
 }) {
   const MoreIcon = GdsIcons.Menu;
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.Card, { withBorder: true, radius: "lg", padding: "lg", children: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_core8.Stack, { gap: "md", children: [
+  return /* @__PURE__ */ jsx5(Card3, { withBorder: true, radius: "lg", padding: "lg", children: /* @__PURE__ */ jsxs4(Stack4, { gap: "md", children: [
     media,
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_core8.Group, { justify: "space-between", align: "flex-start", wrap: "nowrap", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_core8.Group, { align: "flex-start", gap: "sm", wrap: "nowrap", children: [
-        icon ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.ThemeIcon, { variant: "light", size: "xl", radius: "xl", "aria-hidden": true, children: icon }) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_core8.Stack, { gap: 4, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.Title, { order: 4, children: title }),
-          description ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.Text, { size: "sm", c: "dimmed", lineClamp: 3, children: description }) : null
+    /* @__PURE__ */ jsxs4(Group3, { justify: "space-between", align: "flex-start", wrap: "nowrap", children: [
+      /* @__PURE__ */ jsxs4(Group3, { align: "flex-start", gap: "sm", wrap: "nowrap", children: [
+        icon ? /* @__PURE__ */ jsx5(ThemeIcon2, { variant: "light", size: "xl", radius: "xl", "aria-hidden": true, children: icon }) : null,
+        /* @__PURE__ */ jsxs4(Stack4, { gap: 4, children: [
+          /* @__PURE__ */ jsx5(Title4, { order: 4, children: title }),
+          description ? /* @__PURE__ */ jsx5(Text4, { size: "sm", c: "dimmed", lineClamp: 3, children: description }) : null
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_core8.Group, { gap: "xs", align: "center", wrap: "nowrap", children: [
-        typeof status === "string" ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.Badge, { variant: "light", children: status }) : status,
-        secondaryActions.length ? /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_core8.Menu, { position: "bottom-end", withinPortal: true, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.Menu.Target, { children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.ActionIcon, { variant: "subtle", "aria-label": "More actions", children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(MoreIcon, { size: "1rem" }) }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.Menu.Dropdown, { children: secondaryActions.map(
-            (action) => action.href ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.Menu.Item, { component: "a", href: action.href, color: action.color, children: action.label }, action.label) : /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.Menu.Item, { onClick: action.onClick, color: action.color, children: action.label }, action.label)
+      /* @__PURE__ */ jsxs4(Group3, { gap: "xs", align: "center", wrap: "nowrap", children: [
+        typeof status === "string" ? /* @__PURE__ */ jsx5(Badge3, { variant: "light", children: status }) : status,
+        secondaryActions.length ? /* @__PURE__ */ jsxs4(Menu, { position: "bottom-end", withinPortal: true, children: [
+          /* @__PURE__ */ jsx5(Menu.Target, { children: /* @__PURE__ */ jsx5(ActionIcon, { variant: "subtle", "aria-label": "More actions", children: /* @__PURE__ */ jsx5(MoreIcon, { size: "1rem" }) }) }),
+          /* @__PURE__ */ jsx5(Menu.Dropdown, { children: secondaryActions.map(
+            (action) => action.href ? /* @__PURE__ */ jsx5(Menu.Item, { component: "a", href: action.href, color: action.color, children: action.label }, action.label) : /* @__PURE__ */ jsx5(Menu.Item, { onClick: action.onClick, color: action.color, children: action.label }, action.label)
           ) })
         ] }) : null
       ] })
     ] }),
-    metadata.length ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.Stack, { gap: 6, children: metadata.map((item) => /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_core8.Group, { justify: "space-between", gap: "sm", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.Text, { size: "sm", c: "dimmed", children: item.label }),
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.Text, { size: "sm", fw: 500, ta: "right", children: item.value })
+    metadata.length ? /* @__PURE__ */ jsx5(Stack4, { gap: 6, children: metadata.map((item) => /* @__PURE__ */ jsxs4(Group3, { justify: "space-between", gap: "sm", children: [
+      /* @__PURE__ */ jsx5(Text4, { size: "sm", c: "dimmed", children: item.label }),
+      /* @__PURE__ */ jsx5(Text4, { size: "sm", fw: 500, ta: "right", children: item.value })
     ] }, item.label)) }) : null,
-    primaryAction ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.Group, { justify: "space-between", children: primaryAction }) : null,
+    primaryAction ? /* @__PURE__ */ jsx5(Group3, { justify: "space-between", children: primaryAction }) : null,
     footer
   ] }) });
 }
 
 // src/StateBlock.tsx
-var import_core9 = require("@mantine/core");
-var import_jsx_runtime9 = require("react/jsx-runtime");
+import { Loader, Stack as Stack5, Text as Text5, ThemeIcon as ThemeIcon3, Title as Title5 } from "@mantine/core";
+import { jsx as jsx6, jsxs as jsxs5 } from "react/jsx-runtime";
 var variantConfig = {
-  loading: { color: "violet", icon: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_core9.Loader, { size: "sm" }) },
-  empty: { color: "gray", icon: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GdsIcons.Inbox, { size: "1.1rem" }) },
-  error: { color: "red", icon: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GdsIcons.Danger, { size: "1.1rem" }) },
-  permission: { color: "orange", icon: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GdsIcons.Verify, { size: "1.1rem" }) },
-  disabled: { color: "gray", icon: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GdsIcons.Toggle, { size: "1.1rem" }) },
-  success: { color: "teal", icon: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GdsIcons.Success, { size: "1.1rem" }) },
-  info: { color: "blue", icon: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GdsIcons.Info, { size: "1.1rem" }) },
-  "not-enough-data": { color: "yellow", icon: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GdsIcons.Analytics, { size: "1.1rem" }) }
+  loading: { color: "violet", icon: /* @__PURE__ */ jsx6(Loader, { size: "sm" }) },
+  empty: { color: "gray", icon: /* @__PURE__ */ jsx6(GdsIcons.Inbox, { size: "1.1rem" }) },
+  error: { color: "red", icon: /* @__PURE__ */ jsx6(GdsIcons.Danger, { size: "1.1rem" }) },
+  permission: { color: "orange", icon: /* @__PURE__ */ jsx6(GdsIcons.Verify, { size: "1.1rem" }) },
+  disabled: { color: "gray", icon: /* @__PURE__ */ jsx6(GdsIcons.Toggle, { size: "1.1rem" }) },
+  success: { color: "teal", icon: /* @__PURE__ */ jsx6(GdsIcons.Success, { size: "1.1rem" }) },
+  info: { color: "blue", icon: /* @__PURE__ */ jsx6(GdsIcons.Info, { size: "1.1rem" }) },
+  "not-enough-data": { color: "yellow", icon: /* @__PURE__ */ jsx6(GdsIcons.Analytics, { size: "1.1rem" }) }
 };
 function StateBlock({
   variant,
@@ -497,8 +441,8 @@ function StateBlock({
   compact = false
 }) {
   const config = variantConfig[variant];
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
-    import_core9.Stack,
+  return /* @__PURE__ */ jsxs5(
+    Stack5,
     {
       align: compact ? "flex-start" : "center",
       justify: "center",
@@ -506,10 +450,10 @@ function StateBlock({
       py: compact ? "md" : "xl",
       ta: compact ? "left" : "center",
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_core9.ThemeIcon, { variant: "light", color: config.color, size: compact ? "lg" : "xl", radius: "xl", children: icon ?? config.icon }),
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(import_core9.Stack, { gap: 6, align: compact ? "flex-start" : "center", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_core9.Title, { order: compact ? 4 : 3, children: title }),
-          description ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_core9.Text, { c: "dimmed", maw: compact ? void 0 : 480, children: description }) : null
+        /* @__PURE__ */ jsx6(ThemeIcon3, { variant: "light", color: config.color, size: compact ? "lg" : "xl", radius: "xl", children: icon ?? config.icon }),
+        /* @__PURE__ */ jsxs5(Stack5, { gap: 6, align: compact ? "flex-start" : "center", children: [
+          /* @__PURE__ */ jsx6(Title5, { order: compact ? 4 : 3, children: title }),
+          description ? /* @__PURE__ */ jsx6(Text5, { c: "dimmed", maw: compact ? void 0 : 480, children: description }) : null
         ] }),
         action
       ]
@@ -518,8 +462,8 @@ function StateBlock({
 }
 
 // src/DataToolbar.tsx
-var import_core10 = require("@mantine/core");
-var import_jsx_runtime10 = require("react/jsx-runtime");
+import { Badge as Badge4, Group as Group4, Stack as Stack6 } from "@mantine/core";
+import { jsx as jsx7, jsxs as jsxs6 } from "react/jsx-runtime";
 function DataToolbar({
   searchSlot,
   filterSlot,
@@ -528,20 +472,20 @@ function DataToolbar({
   createAction,
   activeFilters = []
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(import_core10.Stack, { gap: "sm", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(import_core10.Group, { justify: "space-between", align: "flex-start", gap: "sm", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(import_core10.Group, { flex: 1, align: "flex-start", gap: "sm", children: [
+  return /* @__PURE__ */ jsxs6(Stack6, { gap: "sm", children: [
+    /* @__PURE__ */ jsxs6(Group4, { justify: "space-between", align: "flex-start", gap: "sm", children: [
+      /* @__PURE__ */ jsxs6(Group4, { flex: 1, align: "flex-start", gap: "sm", children: [
         searchSlot,
         filterSlot,
         sortSlot
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(import_core10.Group, { gap: "sm", children: [
+      /* @__PURE__ */ jsxs6(Group4, { gap: "sm", children: [
         resetAction,
         createAction
       ] })
     ] }),
-    activeFilters.length ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_core10.Group, { gap: "xs", children: activeFilters.map((filter) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
-      import_core10.Badge,
+    activeFilters.length ? /* @__PURE__ */ jsx7(Group4, { gap: "xs", children: activeFilters.map((filter) => /* @__PURE__ */ jsx7(
+      Badge4,
       {
         variant: "light",
         rightSection: filter.onRemove ? "\xD7" : void 0,
@@ -555,8 +499,8 @@ function DataToolbar({
 }
 
 // src/PublicShell.tsx
-var import_core11 = require("@mantine/core");
-var import_jsx_runtime11 = require("react/jsx-runtime");
+import { AppShell, Box as Box2, Burger, Container, Group as Group5, Stack as Stack7, Text as Text6 } from "@mantine/core";
+import { jsx as jsx8, jsxs as jsxs7 } from "react/jsx-runtime";
 function PublicShell({
   brand,
   navigation,
@@ -567,160 +511,97 @@ function PublicShell({
   headerBordered = true,
   compact = false
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(import_core11.AppShell, { header: { height: 72 }, footer: mobileNavigation ? { height: 68 } : void 0, padding: 0, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.AppShell.Header, { withBorder: headerBordered, children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Container, { size: compact ? "md" : "lg", h: "100%", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(import_core11.Group, { h: "100%", justify: "space-between", wrap: "nowrap", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(import_core11.Group, { wrap: "nowrap", gap: "sm", children: [
-        mobileNavigation ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Burger, { hiddenFrom: "sm", disabled: true, opened: false, "aria-hidden": true }) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Box, { children: brand })
+  return /* @__PURE__ */ jsxs7(AppShell, { header: { height: 72 }, footer: mobileNavigation ? { height: 68 } : void 0, padding: 0, children: [
+    /* @__PURE__ */ jsx8(AppShell.Header, { withBorder: headerBordered, children: /* @__PURE__ */ jsx8(Container, { size: compact ? "md" : "lg", h: "100%", children: /* @__PURE__ */ jsxs7(Group5, { h: "100%", justify: "space-between", wrap: "nowrap", children: [
+      /* @__PURE__ */ jsxs7(Group5, { wrap: "nowrap", gap: "sm", children: [
+        mobileNavigation ? /* @__PURE__ */ jsx8(Burger, { hiddenFrom: "sm", disabled: true, opened: false, "aria-hidden": true }) : null,
+        /* @__PURE__ */ jsx8(Box2, { children: brand })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Group, { visibleFrom: "sm", gap: "lg", children: navigation }),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Group, { gap: "sm", children: actions })
+      /* @__PURE__ */ jsx8(Group5, { visibleFrom: "sm", gap: "lg", children: navigation }),
+      /* @__PURE__ */ jsx8(Group5, { gap: "sm", children: actions })
     ] }) }) }),
-    mobileNavigation ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.AppShell.Footer, { withBorder: true, children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Container, { size: compact ? "md" : "lg", h: "100%", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Group, { h: "100%", justify: "space-around", wrap: "nowrap", children: mobileNavigation }) }) }) : null,
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(import_core11.AppShell.Main, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Container, { size: compact ? "md" : "lg", py: "xl", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Stack, { gap: "xl", children }) }),
-      footer ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Box, { component: "footer", py: "xl", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Container, { size: compact ? "md" : "lg", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Text, { size: "sm", c: "dimmed", children: footer }) }) }) : null
+    mobileNavigation ? /* @__PURE__ */ jsx8(AppShell.Footer, { withBorder: true, children: /* @__PURE__ */ jsx8(Container, { size: compact ? "md" : "lg", h: "100%", children: /* @__PURE__ */ jsx8(Group5, { h: "100%", justify: "space-around", wrap: "nowrap", children: mobileNavigation }) }) }) : null,
+    /* @__PURE__ */ jsxs7(AppShell.Main, { children: [
+      /* @__PURE__ */ jsx8(Container, { size: compact ? "md" : "lg", py: "xl", children: /* @__PURE__ */ jsx8(Stack7, { gap: "xl", children }) }),
+      footer ? /* @__PURE__ */ jsx8(Box2, { component: "footer", py: "xl", children: /* @__PURE__ */ jsx8(Container, { size: compact ? "md" : "lg", children: /* @__PURE__ */ jsx8(Text6, { size: "sm", c: "dimmed", children: footer }) }) }) : null
     ] })
   ] });
 }
 
 // src/AuthShell.tsx
-var import_core12 = require("@mantine/core");
-var import_jsx_runtime12 = require("react/jsx-runtime");
+import { Box as Box3, Card as Card4, Container as Container2, Group as Group6, Stack as Stack8, Text as Text7, Title as Title6 } from "@mantine/core";
+import { jsx as jsx9, jsxs as jsxs8 } from "react/jsx-runtime";
 function AuthShell({ title, description, brand, footer, helper, children }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_core12.Box, { py: { base: "xl", md: "4rem" }, children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_core12.Container, { size: "xs", children: /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_core12.Stack, { gap: "xl", children: [
-    brand ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_core12.Group, { justify: "center", children: brand }) : null,
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_core12.Card, { withBorder: true, radius: "lg", padding: "xl", children: /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_core12.Stack, { gap: "lg", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_core12.Stack, { gap: "xs", ta: "center", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_core12.Title, { order: 2, children: title }),
-        description ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_core12.Text, { c: "dimmed", size: "sm", children: description }) : null
+  return /* @__PURE__ */ jsx9(Box3, { py: { base: "xl", md: "4rem" }, children: /* @__PURE__ */ jsx9(Container2, { size: "xs", children: /* @__PURE__ */ jsxs8(Stack8, { gap: "xl", children: [
+    brand ? /* @__PURE__ */ jsx9(Group6, { justify: "center", children: brand }) : null,
+    /* @__PURE__ */ jsx9(Card4, { withBorder: true, radius: "lg", padding: "xl", children: /* @__PURE__ */ jsxs8(Stack8, { gap: "lg", children: [
+      /* @__PURE__ */ jsxs8(Stack8, { gap: "xs", ta: "center", children: [
+        /* @__PURE__ */ jsx9(Title6, { order: 2, children: title }),
+        description ? /* @__PURE__ */ jsx9(Text7, { c: "dimmed", size: "sm", children: description }) : null
       ] }),
       children,
-      helper ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_core12.Text, { size: "sm", c: "dimmed", ta: "center", children: helper }) : null
+      helper ? /* @__PURE__ */ jsx9(Text7, { size: "sm", c: "dimmed", ta: "center", children: helper }) : null
     ] }) }),
-    footer ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_core12.Text, { size: "sm", c: "dimmed", ta: "center", children: footer }) : null
+    footer ? /* @__PURE__ */ jsx9(Text7, { size: "sm", c: "dimmed", ta: "center", children: footer }) : null
   ] }) }) });
 }
 
 // src/ArticleShell.tsx
-var import_core13 = require("@mantine/core");
-var import_jsx_runtime13 = require("react/jsx-runtime");
+import { Container as Container3, Group as Group7, Stack as Stack9, Text as Text8, Title as Title7 } from "@mantine/core";
+import { jsx as jsx10, jsxs as jsxs9 } from "react/jsx-runtime";
 function ArticleShell({ eyebrow, title, lead, meta, sideRail, children }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(import_core13.Container, { size: "lg", py: "xl", children: /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(import_core13.Group, { align: "flex-start", gap: "xl", wrap: "nowrap", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(import_core13.Stack, { gap: "lg", maw: 760, flex: 1, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(import_core13.Stack, { gap: "sm", children: [
-        eyebrow ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(import_core13.Text, { size: "sm", fw: 700, c: "dimmed", tt: "uppercase", children: eyebrow }) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(import_core13.Title, { order: 1, children: title }),
-        lead ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(import_core13.Text, { size: "lg", c: "dimmed", children: lead }) : null,
-        meta ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(import_core13.Group, { gap: "md", children: meta }) : null
+  return /* @__PURE__ */ jsx10(Container3, { size: "lg", py: "xl", children: /* @__PURE__ */ jsxs9(Group7, { align: "flex-start", gap: "xl", wrap: "nowrap", children: [
+    /* @__PURE__ */ jsxs9(Stack9, { gap: "lg", maw: 760, flex: 1, children: [
+      /* @__PURE__ */ jsxs9(Stack9, { gap: "sm", children: [
+        eyebrow ? /* @__PURE__ */ jsx10(Text8, { size: "sm", fw: 700, c: "dimmed", tt: "uppercase", children: eyebrow }) : null,
+        /* @__PURE__ */ jsx10(Title7, { order: 1, children: title }),
+        lead ? /* @__PURE__ */ jsx10(Text8, { size: "lg", c: "dimmed", children: lead }) : null,
+        meta ? /* @__PURE__ */ jsx10(Group7, { gap: "md", children: meta }) : null
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(import_core13.Stack, { gap: "md", children })
+      /* @__PURE__ */ jsx10(Stack9, { gap: "md", children })
     ] }),
-    sideRail ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(import_core13.Stack, { visibleFrom: "lg", gap: "md", w: 240, children: sideRail }) : null
+    sideRail ? /* @__PURE__ */ jsx10(Stack9, { visibleFrom: "lg", gap: "md", w: 240, children: sideRail }) : null
   ] }) });
 }
 
-// src/UploadDropzone.tsx
-var import_react2 = require("react");
-var import_core14 = require("@mantine/core");
-var import_jsx_runtime14 = require("react/jsx-runtime");
-function UploadDropzone({
-  title,
-  description,
-  onFilesSelected,
-  accept,
-  multiple = true,
-  actionLabel = "Choose files"
-}) {
-  const inputRef = (0, import_react2.useRef)(null);
-  const [dragging, setDragging] = (0, import_react2.useState)(false);
-  const UploadIcon = GdsIcons.Upload;
-  const forwardFiles = (files) => {
-    if (!files?.length || !onFilesSelected) {
-      return;
-    }
-    onFilesSelected(Array.from(files));
-  };
-  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
-    import_core14.Box,
-    {
-      onDragOver: (event) => {
-        event.preventDefault();
-        setDragging(true);
-      },
-      onDragLeave: () => setDragging(false),
-      onDrop: (event) => {
-        event.preventDefault();
-        setDragging(false);
-        forwardFiles(event.dataTransfer.files);
-      },
-      p: "xl",
-      style: {
-        border: `1px dashed var(${dragging ? "--mantine-color-violet-6" : "--mantine-color-default-border"})`,
-        borderRadius: "var(--mantine-radius-lg)",
-        background: dragging ? "var(--mantine-color-violet-light)" : "transparent"
-      },
-      children: [
-        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
-          "input",
-          {
-            ref: inputRef,
-            type: "file",
-            hidden: true,
-            accept,
-            multiple,
-            onChange: (event) => forwardFiles(event.currentTarget.files)
-          }
-        ),
-        /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(import_core14.Stack, { align: "center", ta: "center", gap: "sm", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(UploadIcon, { size: "1.5rem" }),
-          /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(import_core14.Text, { fw: 600, children: title }),
-          description ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(import_core14.Text, { size: "sm", c: "dimmed", children: description }) : null,
-          /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(import_core14.Group, { children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(import_core14.Button, { variant: "light", onClick: () => inputRef.current?.click(), children: actionLabel }) })
-        ] })
-      ]
-    }
-  );
-}
-
 // src/MediaCard.tsx
-var import_core15 = require("@mantine/core");
-var import_jsx_runtime15 = require("react/jsx-runtime");
+import { ActionIcon as ActionIcon2, Badge as Badge5, Card as Card5, Group as Group8, Stack as Stack10, Text as Text9, Title as Title8 } from "@mantine/core";
+import { jsx as jsx11, jsxs as jsxs10 } from "react/jsx-runtime";
 function MediaCard({ title, image, description, status, overlay, actions = [] }) {
   const EyeIcon = GdsIcons.Eye;
-  return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(import_core15.Card, { withBorder: true, radius: "lg", padding: "md", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(import_core15.Card.Section, { pos: "relative", children: [
+  return /* @__PURE__ */ jsxs10(Card5, { withBorder: true, radius: "lg", padding: "md", children: [
+    /* @__PURE__ */ jsxs10(Card5.Section, { pos: "relative", children: [
       image,
-      overlay ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { position: "absolute", inset: 12, display: "flex", justifyContent: "flex-end", alignItems: "flex-start" }, children: overlay }) : null
+      overlay ? /* @__PURE__ */ jsx11("div", { style: { position: "absolute", inset: 12, display: "flex", justifyContent: "flex-end", alignItems: "flex-start" }, children: overlay }) : null
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(import_core15.Stack, { gap: "sm", mt: "md", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(import_core15.Group, { justify: "space-between", align: "flex-start", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(import_core15.Stack, { gap: 4, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_core15.Title, { order: 4, children: title }),
-          description ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_core15.Text, { size: "sm", c: "dimmed", lineClamp: 2, children: description }) : null
+    /* @__PURE__ */ jsxs10(Stack10, { gap: "sm", mt: "md", children: [
+      /* @__PURE__ */ jsxs10(Group8, { justify: "space-between", align: "flex-start", children: [
+        /* @__PURE__ */ jsxs10(Stack10, { gap: 4, children: [
+          /* @__PURE__ */ jsx11(Title8, { order: 4, children: title }),
+          description ? /* @__PURE__ */ jsx11(Text9, { size: "sm", c: "dimmed", lineClamp: 2, children: description }) : null
         ] }),
-        status ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_core15.Badge, { variant: "light", children: status }) : null
+        status ? /* @__PURE__ */ jsx11(Badge5, { variant: "light", children: status }) : null
       ] }),
-      actions.length ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_core15.Group, { justify: "flex-end", gap: "xs", children: actions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_core15.ActionIcon, { variant: "light", "aria-label": action.label, onClick: action.onClick, children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(EyeIcon, { size: "1rem" }) }, action.label)) }) : null
+      actions.length ? /* @__PURE__ */ jsx11(Group8, { justify: "flex-end", gap: "xs", children: actions.map((action) => /* @__PURE__ */ jsx11(ActionIcon2, { variant: "light", "aria-label": action.label, onClick: action.onClick, children: /* @__PURE__ */ jsx11(EyeIcon, { size: "1rem" }) }, action.label)) }) : null
     ] })
   ] });
 }
 
 // src/AccessSummary.tsx
-var import_core16 = require("@mantine/core");
-var import_jsx_runtime16 = require("react/jsx-runtime");
+import { Badge as Badge6, Card as Card6, Group as Group9, Stack as Stack11, Text as Text10, Title as Title9 } from "@mantine/core";
+import { jsx as jsx12, jsxs as jsxs11 } from "react/jsx-runtime";
 function AccessSummary({ title, roles, scope, blocked = false, description }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(import_core16.Card, { withBorder: true, radius: "lg", padding: "lg", children: /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(import_core16.Stack, { gap: "sm", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(import_core16.Group, { justify: "space-between", align: "center", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(import_core16.Title, { order: 4, children: title }),
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(import_core16.Badge, { color: blocked ? "red" : "teal", variant: "light", children: blocked ? "Blocked" : "Allowed" })
+  return /* @__PURE__ */ jsx12(Card6, { withBorder: true, radius: "lg", padding: "lg", children: /* @__PURE__ */ jsxs11(Stack11, { gap: "sm", children: [
+    /* @__PURE__ */ jsxs11(Group9, { justify: "space-between", align: "center", children: [
+      /* @__PURE__ */ jsx12(Title9, { order: 4, children: title }),
+      /* @__PURE__ */ jsx12(Badge6, { color: blocked ? "red" : "teal", variant: "light", children: blocked ? "Blocked" : "Allowed" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(import_core16.Group, { gap: "xs", children: roles.map((role) => /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(import_core16.Badge, { variant: "outline", children: role }, role)) }),
-    scope ? /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(import_core16.Text, { size: "sm", c: "dimmed", children: [
+    /* @__PURE__ */ jsx12(Group9, { gap: "xs", children: roles.map((role) => /* @__PURE__ */ jsx12(Badge6, { variant: "outline", children: role }, role)) }),
+    scope ? /* @__PURE__ */ jsxs11(Text10, { size: "sm", c: "dimmed", children: [
       "Scope: ",
       scope
     ] }) : null,
-    description ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(import_core16.Text, { size: "sm", children: description }) : null
+    description ? /* @__PURE__ */ jsx12(Text10, { size: "sm", children: description }) : null
   ] }) });
 }
 
@@ -1901,44 +1782,27 @@ var ar = {
   "gds.state.emptyData": "\u0644\u0627 \u062A\u0648\u062C\u062F \u0628\u064A\u0627\u0646\u0627\u062A \u0645\u062A\u0627\u062D\u0629."
 };
 
-// src/FormField.tsx
-var import_core17 = require("@mantine/core");
-var import_jsx_runtime17 = require("react/jsx-runtime");
-function FormField({ label, description, error, children }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Box, { component: "label", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(import_core17.Stack, { gap: 4, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Text, { size: "xs", fw: 600, c: "dimmed", children: label }),
-    description ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Text, { size: "xs", c: "dimmed", children: description }) : null,
-    children,
-    error ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Text, { size: "xs", c: "red.7", children: error }) : null
-  ] }) });
-}
-// Annotate the CommonJS export names for ESM import in node:
-0 && (module.exports = {
-  AccessSummary,
-  ArticleShell,
-  AuthShell,
-  ConfirmDialog,
-  DataToolbar,
+export {
+  StatusBadge,
   EmptyState,
-  FormField,
   GdsIcons,
   GdsVocabulary,
-  MediaCard,
   MetricCard,
-  ProductCard,
   ProgressCard,
-  PublicShell,
-  SemanticButton,
+  ProductCard,
   StateBlock,
-  StatusBadge,
-  ThemeToggle,
-  UploadDropzone,
-  ar,
-  de,
+  DataToolbar,
+  PublicShell,
+  AuthShell,
+  ArticleShell,
+  MediaCard,
+  AccessSummary,
   en,
-  fr,
-  he,
   hu,
+  de,
+  fr,
   it,
-  ru
-});
+  ru,
+  he,
+  ar
+};

@@ -17,15 +17,15 @@ var __copyProps = (to, from, except, desc) => {
 };
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// src/index.ts
-var index_exports = {};
-__export(index_exports, {
+// src/client.ts
+var client_exports = {};
+__export(client_exports, {
   GdsProvider: () => GdsProvider,
   extendGdsTheme: () => extendGdsTheme,
   gdsTheme: () => gdsTheme,
   useGdsTranslation: () => useGdsTranslation
 });
-module.exports = __toCommonJS(index_exports);
+module.exports = __toCommonJS(client_exports);
 
 // src/theme.ts
 var import_core = require("@mantine/core");

@@ -16,6 +16,7 @@ import {
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { ConfirmDialog, EmptyState, StatusBadge } from '@gds/core';
+import { NarimatoFormField } from '../NarimatoFormField';
 import { NarimatoPageHeader } from '../NarimatoPageHeader';
 import { NarimatoSemanticButton } from '../NarimatoSemanticButton';
 import { operatorApi } from '../../lib/operator/clientApi';
@@ -215,15 +216,20 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
             Organization
           </Text>
           <Stack gap="sm">
-            <Select
-              label="Active org"
-              data={organizations.map((o) => ({ value: o.uuid, label: `${o.name} (${o.slug})` }))}
-              value={orgId || null}
-              onChange={setOrgIdInternal}
-            />
+            <NarimatoFormField label="Active org">
+              <Select
+                data={organizations.map((o) => ({ value: o.uuid, label: `${o.name} (${o.slug})` }))}
+                value={orgId || null}
+                onChange={setOrgIdInternal}
+              />
+            </NarimatoFormField>
             <SimpleGrid cols={{ base: 1, sm: 2 }}>
-              <TextInput label="New org name" value={orgName} onChange={(e) => setOrgName(e.target.value)} />
-              <TextInput label="Slug" value={orgSlug} onChange={(e) => setOrgSlug(e.target.value)} />
+              <NarimatoFormField label="New org name">
+                <TextInput value={orgName} onChange={(e) => setOrgName(e.target.value)} />
+              </NarimatoFormField>
+              <NarimatoFormField label="Slug">
+                <TextInput value={orgSlug} onChange={(e) => setOrgSlug(e.target.value)} />
+              </NarimatoFormField>
             </SimpleGrid>
             <NarimatoSemanticButton
               action="add"
@@ -249,12 +255,13 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
           {simplified ? 'Describe your topic' : 'Topic clarification (local agent)'}
         </Text>
         <Stack gap="sm">
-          <TextInput
-            label="Topic title"
-            value={topicTitle}
-            onChange={(e) => setTopicTitle(e.target.value)}
-            placeholder="e.g. European football legends"
-          />
+          <NarimatoFormField label="Topic title">
+            <TextInput
+              value={topicTitle}
+              onChange={(e) => setTopicTitle(e.target.value)}
+              placeholder="e.g. European football legends"
+            />
+          </NarimatoFormField>
           <NarimatoSemanticButton
             action="start"
             onClick={async () => {
@@ -270,13 +277,16 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
               }
             }}
           />
-          <Textarea label="Chat log" value={chatLog} readOnly minRows={4} />
-          <Textarea
-            label="Your message"
-            value={chatInput}
-            onChange={(e) => setChatInput(e.target.value)}
-            placeholder="Clarify the deck topic…"
-          />
+          <NarimatoFormField label="Chat log">
+            <Textarea value={chatLog} readOnly minRows={4} />
+          </NarimatoFormField>
+          <NarimatoFormField label="Your message">
+            <Textarea
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              placeholder="Clarify the deck topic…"
+            />
+          </NarimatoFormField>
           <NarimatoSemanticButton
             action="send"
             onClick={async () => {
@@ -298,29 +308,38 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
             }}
           />
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
-            <TextInput label="Deck root hashtag" value={deckRoot} onChange={(e) => setDeckRoot(e.target.value)} />
-            <TextInput label="Card count" type="number" value={cardCount} onChange={(e) => setCardCount(e.target.value)} />
+            <NarimatoFormField label="Deck root hashtag">
+              <TextInput value={deckRoot} onChange={(e) => setDeckRoot(e.target.value)} />
+            </NarimatoFormField>
+            <NarimatoFormField label="Card count">
+              <TextInput type="number" value={cardCount} onChange={(e) => setCardCount(e.target.value)} />
+            </NarimatoFormField>
           </SimpleGrid>
-          <TextInput
-            label="Hierarchy levels"
-            type="number"
-            value={hierarchyLevels}
-            onChange={(e) => setHierarchyLevels(e.target.value)}
-          />
-          <Textarea label="Approved summary" value={approvedSummary} onChange={(e) => setApprovedSummary(e.target.value)} />
+          <NarimatoFormField label="Hierarchy levels">
+            <TextInput
+              type="number"
+              value={hierarchyLevels}
+              onChange={(e) => setHierarchyLevels(e.target.value)}
+            />
+          </NarimatoFormField>
+          <NarimatoFormField label="Approved summary">
+            <Textarea value={approvedSummary} onChange={(e) => setApprovedSummary(e.target.value)} />
+          </NarimatoFormField>
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
-            <TextInput
-              label="Branch tag (REPLACE_BRANCH)"
-              value={targetBranchTag}
-              onChange={(e) => setTargetBranchTag(e.target.value)}
-              placeholder="#Soccer"
-            />
-            <TextInput
-              label="Regenerate tag (REGENERATE_TAG)"
-              value={regenerateTag}
-              onChange={(e) => setRegenerateTag(e.target.value)}
-              placeholder="#Player-Name"
-            />
+            <NarimatoFormField label="Branch tag (REPLACE_BRANCH)">
+              <TextInput
+                value={targetBranchTag}
+                onChange={(e) => setTargetBranchTag(e.target.value)}
+                placeholder="#Soccer"
+              />
+            </NarimatoFormField>
+            <NarimatoFormField label="Regenerate tag (REGENERATE_TAG)">
+              <TextInput
+                value={regenerateTag}
+                onChange={(e) => setRegenerateTag(e.target.value)}
+                placeholder="#Player-Name"
+              />
+            </NarimatoFormField>
           </SimpleGrid>
           <NarimatoSemanticButton
             action="confirm"
@@ -356,16 +375,19 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
           Generation
         </Text>
         <Stack gap="sm">
-          <Select label="Regeneration mode" data={REGEN_MODES} value={regenMode} onChange={setRegenMode} />
-          <Select
-            label="Use fixture (skip Ollama)"
-            data={[
-              { value: '0', label: 'No — call Ollama (brain)' },
-              { value: '1', label: 'Yes — smoke fixture only' },
-            ]}
-            value={useFixture}
-            onChange={setUseFixture}
-          />
+          <NarimatoFormField label="Regeneration mode">
+            <Select data={REGEN_MODES} value={regenMode} onChange={setRegenMode} />
+          </NarimatoFormField>
+          <NarimatoFormField label="Use fixture (skip Ollama)">
+            <Select
+              data={[
+                { value: '0', label: 'No — call Ollama (brain)' },
+                { value: '1', label: 'Yes — smoke fixture only' },
+              ]}
+              value={useFixture}
+              onChange={setUseFixture}
+            />
+          </NarimatoFormField>
           <Group>
             <NarimatoSemanticButton
               action="start"
@@ -525,16 +547,19 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
           Per-deck auto-approval
         </Text>
         <Stack gap="sm">
-          <TextInput label="Deck root hashtag" value={autoDeck} onChange={(e) => setAutoDeck(e.target.value)} />
-          <Select
-            label="Auto-approve generated cards"
-            data={[
-              { value: '0', label: 'Off (HiTL)' },
-              { value: '1', label: 'On' },
-            ]}
-            value={autoApprove}
-            onChange={setAutoApprove}
-          />
+          <NarimatoFormField label="Deck root hashtag">
+            <TextInput value={autoDeck} onChange={(e) => setAutoDeck(e.target.value)} />
+          </NarimatoFormField>
+          <NarimatoFormField label="Auto-approve generated cards">
+            <Select
+              data={[
+                { value: '0', label: 'Off (HiTL)' },
+                { value: '1', label: 'On' },
+              ]}
+              value={autoApprove}
+              onChange={setAutoApprove}
+            />
+          </NarimatoFormField>
           <NarimatoSemanticButton
             action="save"
             onClick={async () => {
@@ -562,20 +587,24 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
         </Text>
         <Stack gap="sm">
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
-            <TextInput label="Title" value={cardTitle} onChange={(e) => setCardTitle(e.target.value)} />
-            <TextInput
-              label="Name (#tag)"
-              value={cardName}
-              onChange={(e) => setCardName(e.target.value)}
-              placeholder="#MyCard"
-            />
+            <NarimatoFormField label="Title">
+              <TextInput value={cardTitle} onChange={(e) => setCardTitle(e.target.value)} />
+            </NarimatoFormField>
+            <NarimatoFormField label="Name (#tag)">
+              <TextInput
+                value={cardName}
+                onChange={(e) => setCardName(e.target.value)}
+                placeholder="#MyCard"
+              />
+            </NarimatoFormField>
           </SimpleGrid>
-          <TextInput
-            label="Parent deck tag"
-            value={cardParent}
-            onChange={(e) => setCardParent(e.target.value)}
-            placeholder="#SampleDeck"
-          />
+          <NarimatoFormField label="Parent deck tag">
+            <TextInput
+              value={cardParent}
+              onChange={(e) => setCardParent(e.target.value)}
+              placeholder="#SampleDeck"
+            />
+          </NarimatoFormField>
           <NarimatoSemanticButton
             action="add"
             onClick={async () => {

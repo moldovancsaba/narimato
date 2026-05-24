@@ -9,18 +9,19 @@ Narimato is a **standalone product repository**. The [General Design System (GDS
 | **What we ship** | App code + **vendored** `packages/gds-*` | Source docs + `@gds/core` / `@gds/theme` builds |
 | **Where rules live** | `docs/GDS_ADOPTION.md` (this file) only | GDS repo (`FOUNDATION.md`, governance, etc.) |
 
-**Pinned GDS version:** 2.2.0 (2026-05-23)
+**Pinned GDS version:** 2.3.0 (2026-05-24)
 
-### Last audit (2026-05-23)
+### Last audit (2026-05-24)
 
 Checked [general-design-system](https://github.com/moldovancsaba/general-design-system) on GitHub against Narimato’s vendored `packages/gds-*`.
 
 | Check | Result |
 |-------|--------|
-| GDS policy release | **2.2.0** (governance + pattern service; mostly docs/rules) |
-| GDS package builds vs Narimato | **In sync** — no `npm run gds:sync` needed right now |
+| GDS policy release | **2.3.0** (shared primitives: `MetricCard`, `FormField`, shells, data patterns) |
+| GDS package builds vs Narimato | **Synced** via `npm run gds:sync` |
 | Narimato CI guard | **Passing** |
 | Breaking API gaps | **None found** — `ConfirmDialog` already uses `confirmAction` |
+| New primitives adopted | `MetricCard` via `NarimatoMetricCard`; `FormField` via `NarimatoFormField` on all shell/operator/admin forms |
 
 **Optional polish (2026-05-23):** SemanticButton, metric card, and shell light/dark mode shipped — see [GDS_OPTIONAL_IMPROVEMENTS_PLAN.md](./GDS_OPTIONAL_IMPROVEMENTS_PLAN.md). Immersive `/play` remains a documented exception (no shell toggle).
 
@@ -71,9 +72,11 @@ Narimato’s mapping to GDS pattern families (see GDS `PATTERN_SERVICE_MODEL.md`
 | Admin shell | `components/admin/AdminShell.js` | Done |
 | Auth shell | `components/NarimatoAuthShell.js` | Done |
 | Page header | `components/NarimatoPageHeader.js` | Done |
+| Form field | `components/NarimatoFormField.js` | Done |
 | Article / legal | `PublicShell` on legal routes | Partial |
 | State block | `EmptyState`, `StatusBadge`, `ConfirmDialog` from `@gds/core` | Done |
-| Metric card | `components/NarimatoMetricCard.js` → `OperatorDashboard.js` | Done |
+| Metric card | `components/NarimatoMetricCard.js` → GDS `MetricCard` → `OperatorDashboard.js` | Done |
+| Form field | `components/NarimatoFormField.js` (GDS FormField pattern) → operator, public, admin forms | Done |
 | Semantic CTA | `components/NarimatoSemanticButton.js` → operator + landing | Done |
 | Shell theme toggle | `components/NarimatoThemeToggle.js` → public/operator/admin/auth shells | Done |
 | Data toolbar / table | — | N/A |

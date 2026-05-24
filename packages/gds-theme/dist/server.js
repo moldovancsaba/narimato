@@ -17,15 +17,13 @@ var __copyProps = (to, from, except, desc) => {
 };
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// src/index.ts
-var index_exports = {};
-__export(index_exports, {
-  GdsProvider: () => GdsProvider,
+// src/server.ts
+var server_exports = {};
+__export(server_exports, {
   extendGdsTheme: () => extendGdsTheme,
-  gdsTheme: () => gdsTheme,
-  useGdsTranslation: () => useGdsTranslation
+  gdsTheme: () => gdsTheme
 });
-module.exports = __toCommonJS(index_exports);
+module.exports = __toCommonJS(server_exports);
 
 // src/theme.ts
 var import_core = require("@mantine/core");
@@ -110,40 +108,8 @@ var gdsTheme = baseTheme;
 function extendGdsTheme(overrides = {}) {
   return (0, import_core.mergeMantineTheme)(baseTheme, overrides);
 }
-
-// src/GdsProvider.tsx
-var import_core2 = require("@mantine/core");
-var import_modals = require("@mantine/modals");
-var import_notifications = require("@mantine/notifications");
-
-// src/i18n.ts
-var import_react = require("react");
-var GdsI18nContext = (0, import_react.createContext)({
-  locale: "en",
-  messages: {}
-});
-function useGdsTranslation() {
-  const { messages, locale } = (0, import_react.useContext)(GdsI18nContext);
-  return {
-    t: (id, defaultMessage) => messages[id] || defaultMessage,
-    locale
-  };
-}
-
-// src/GdsProvider.tsx
-var import_jsx_runtime = require("react/jsx-runtime");
-function GdsProvider({ children, locale = "en", messages = {} }) {
-  const isRtl = ["ar", "he"].includes(locale);
-  const dir = isRtl ? "rtl" : "ltr";
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_core2.DirectionProvider, { initialDirection: dir, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(GdsI18nContext.Provider, { value: { locale, messages }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_core2.MantineProvider, { theme: gdsTheme, withCssVariables: true, withGlobalClasses: true, defaultColorScheme: "light", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_modals.ModalsProvider, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_notifications.Notifications, {}),
-    /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_core2.Box, { dir, h: "100%", children })
-  ] }) }) }) });
-}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
-  GdsProvider,
   extendGdsTheme,
-  gdsTheme,
-  useGdsTranslation
+  gdsTheme
 });

@@ -13,6 +13,7 @@ import {
   Title,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
+import { NarimatoFormField } from '../../components/NarimatoFormField';
 import { AdminShell } from '../../components/admin/AdminShell';
 import { NarimatoPageHeader } from '../../components/NarimatoPageHeader';
 import { getSessionUser } from '../../lib/system/userAuth';
@@ -107,23 +108,25 @@ export default function AdminUsers() {
         <Paper withBorder p="md" radius="md">
           <form onSubmit={createUser}>
             <Stack gap="sm">
-              <TextInput
-                label="Email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-              <Select
-                label="Role"
-                value={role}
-                onChange={setRole}
-                data={[
-                  { value: 'superadmin', label: 'superadmin' },
-                  { value: 'admin', label: 'admin' },
-                  { value: 'editor', label: 'editor' },
-                ]}
-              />
+              <NarimatoFormField label="Email">
+                <TextInput
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </NarimatoFormField>
+              <NarimatoFormField label="Role">
+                <Select
+                  value={role}
+                  onChange={setRole}
+                  data={[
+                    { value: 'superadmin', label: 'superadmin' },
+                    { value: 'admin', label: 'admin' },
+                    { value: 'editor', label: 'editor' },
+                  ]}
+                />
+              </NarimatoFormField>
               <Button type="submit">Create user</Button>
             </Stack>
           </form>

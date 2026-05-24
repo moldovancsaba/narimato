@@ -17,16 +17,15 @@ var __copyProps = (to, from, except, desc) => {
 };
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// src/index.ts
-var index_exports = {};
-__export(index_exports, {
+// src/client.ts
+var client_exports = {};
+__export(client_exports, {
   AccessSummary: () => AccessSummary,
   ArticleShell: () => ArticleShell,
   AuthShell: () => AuthShell,
   ConfirmDialog: () => ConfirmDialog,
   DataToolbar: () => DataToolbar,
   EmptyState: () => EmptyState,
-  FormField: () => FormField,
   GdsIcons: () => GdsIcons,
   GdsVocabulary: () => GdsVocabulary,
   MediaCard: () => MediaCard,
@@ -48,7 +47,7 @@ __export(index_exports, {
   it: () => it,
   ru: () => ru
 });
-module.exports = __toCommonJS(index_exports);
+module.exports = __toCommonJS(client_exports);
 
 // src/StatusBadge.tsx
 var import_core = require("@mantine/core");
@@ -1900,18 +1899,6 @@ var ar = {
   "gds.aria.themeToggle": "\u062A\u0628\u062F\u064A\u0644 \u0646\u0638\u0627\u0645 \u0627\u0644\u0623\u0644\u0648\u0627\u0646",
   "gds.state.emptyData": "\u0644\u0627 \u062A\u0648\u062C\u062F \u0628\u064A\u0627\u0646\u0627\u062A \u0645\u062A\u0627\u062D\u0629."
 };
-
-// src/FormField.tsx
-var import_core17 = require("@mantine/core");
-var import_jsx_runtime17 = require("react/jsx-runtime");
-function FormField({ label, description, error, children }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Box, { component: "label", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(import_core17.Stack, { gap: 4, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Text, { size: "xs", fw: 600, c: "dimmed", children: label }),
-    description ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Text, { size: "xs", c: "dimmed", children: description }) : null,
-    children,
-    error ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Text, { size: "xs", c: "red.7", children: error }) : null
-  ] }) });
-}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   AccessSummary,
@@ -1920,7 +1907,6 @@ function FormField({ label, description, error, children }) {
   ConfirmDialog,
   DataToolbar,
   EmptyState,
-  FormField,
   GdsIcons,
   GdsVocabulary,
   MediaCard,
