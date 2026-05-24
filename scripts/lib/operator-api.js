@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const {
   connectMaster,
@@ -49,6 +51,8 @@ async function getStatusPayload() {
   const snapHb = await GlobalSetting.findOne({ key: 'local_ai_worker_heartbeat:snapshot-worker' });
   return {
     ports: PORTS,
+    operatorUi: 'react-gds',
+    operatorBundle: fs.existsSync(path.join(__dirname, '../local-operator/bundle.js')),
     ollama: ollamaStatus.reachable,
     brain: {
       ready: ollamaStatus.reachable && ollamaStatus.modelReady,

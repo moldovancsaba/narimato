@@ -3,7 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Narimato Local Operator</title>
+    <title>Narimato Setup</title>
+    <script>
+      try {
+        var key = 'mantine-color-scheme-value';
+        var stored = window.localStorage.getItem(key);
+        var scheme =
+          stored === 'dark' || stored === 'light'
+            ? stored
+            : window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light';
+        document.documentElement.setAttribute('data-mantine-color-scheme', scheme);
+      } catch (e) {
+        document.documentElement.setAttribute('data-mantine-color-scheme', 'light');
+      }
+    </script>
     <link rel="stylesheet" href="/bundle.css" />
   </head>
   <body>
