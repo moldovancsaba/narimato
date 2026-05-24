@@ -6,6 +6,7 @@ import { useRouter } from 'next/router';
 import Script from 'next/script';
 import { GA_ID, isProd, pageview } from '../lib/analytics/ga';
 import { NarimatoProviders } from '../components/NarimatoProviders';
+import { CookieConsent } from '../components/public/CookieConsent';
 
 export default function MyApp({ Component, pageProps }) {
   const router = useRouter();
@@ -82,6 +83,7 @@ export default function MyApp({ Component, pageProps }) {
 
       <NarimatoProviders>
         <Component {...pageProps} />
+        <CookieConsent />
       </NarimatoProviders>
     </>
   );

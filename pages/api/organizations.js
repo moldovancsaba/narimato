@@ -1,5 +1,6 @@
 const { connectMaster, getMasterOrganizationModel } = require('../../lib/db');
 const { v4: uuidv4 } = require('uuid');
+const { blockVercelMutation } = require('../../lib/intelligence/vercelGuard');
 
 export default async function handler(req, res) {
   await connectMaster();
@@ -33,6 +34,7 @@ async function handleGet(req, res) {
 }
 
 async function handlePost(req, res) {
+  if (blockVercelMutation(req, res)) return;
   try {
     const Organization = getMasterOrganizationModel();
     const { name, slug, description } = req.body;
@@ -69,6 +71,7 @@ async function handlePost(req, res) {
 // FUNCTIONAL: Updates existing organization with new data
 // STRATEGIC: Allows organizations to modify their profile information
 async function handlePut(req, res) {
+  if (blockVercelMutation(req, res)) return;
   try {
     const Organization = getMasterOrganizationModel();
     const { uuid, name, slug, description } = req.body;
@@ -115,6 +118,7 @@ async function handlePut(req, res) {
 // FUNCTIONAL: Soft deletes organization by setting isActive to false
 // STRATEGIC: Preserves data integrity while hiding organization from users
 async function handleDelete(req, res) {
+  if (blockVercelMutation(req, res)) return;
   try {
     const Organization = getMasterOrganizationModel();
     const { uuid } = req.body;

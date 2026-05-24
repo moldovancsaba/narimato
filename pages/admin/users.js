@@ -13,7 +13,8 @@ import {
   Title,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { NarimatoShell } from '../../components/NarimatoShell';
+import { AdminShell } from '../../components/admin/AdminShell';
+import { NarimatoPageHeader } from '../../components/NarimatoPageHeader';
 import { getSessionUser } from '../../lib/system/userAuth';
 
 export async function getServerSideProps(ctx) {
@@ -99,9 +100,9 @@ export default function AdminUsers() {
   }
 
   return (
-    <NarimatoShell title="Admin users">
+    <AdminShell title="Admin users">
       <Stack gap="lg" maw={640}>
-        <Title order={1}>Admin users</Title>
+        <NarimatoPageHeader title="Admin users" />
 
         <Paper withBorder p="md" radius="md">
           <form onSubmit={createUser}>
@@ -160,6 +161,6 @@ export default function AdminUsers() {
           Home
         </Button>
       </Stack>
-    </NarimatoShell>
+    </AdminShell>
   );
 }

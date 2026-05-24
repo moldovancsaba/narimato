@@ -2,6 +2,9 @@ const { connectMaster } = require('../../lib/db');
 const { withOrganization } = require('../../lib/tenantContext');
 const Card = require('../../lib/models/Card');
 const { v4: uuidv4 } = require('uuid');
+const { blockVercelMutation } = require('../../lib/intelligence/vercelGuard');
+const { getProjectedCards } = require('../../lib/intelligence/projectionReader');
+const { markOrgDirty } = require('../../lib/intelligence/dirtyQueue');
 
 export default async function handler(req, res) {
   const organizationId = req.query.organizationId || req.body?.organizationId;
@@ -31,6 +34,16 @@ export default async function handler(req, res) {
 async function handleGet(req, res) {
   try {
     const { organizationId, parentTag } = req.query;
+    const useProjection = req.query.projection !== 'false';
+
+    if (useProjection) {
+      const { cards, source, freshness } = await getProjectedCards(
+        organizationId,
+        require('../../lib/tenantContext').getTenantModels(),
+        { parentTag }
+      );
+      return res.json({ cards, meta: { source, freshness } });
+    }
 
     const query = { organizationId, isActive: true };
     if (parentTag) {
@@ -52,6 +65,7 @@ async function handleGet(req, res) {
 }
 
 async function handlePost(req, res) {
+  if (blockVercelMutation(req, res)) return;
   try {
     const { organizationId, title, description, imageUrl, hashtags, isPlayable, isOnboarding } =
       req.body;
@@ -124,6 +138,7 @@ async function handlePost(req, res) {
     });
 
     await card.save();
+    await markOrgDirty(organizationId, parentTag || name);
 
     res.status(201).json({ card });
   } catch (error) {

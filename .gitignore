@@ -39,6 +39,13 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local intelligence logs (launchd)
+/logs/*.log
+
+# built operator UI bundle (regenerate with npm run build:operator)
+/scripts/local-operator/bundle.js
+/scripts/local-operator/bundle.css
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

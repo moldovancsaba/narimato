@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import {
-  Badge,
   Button,
   Checkbox,
   Group,
@@ -14,8 +13,10 @@ import {
   Text,
   Title,
 } from '@mantine/core';
-import { EmptyState } from '@gds/core';
-import { NarimatoShell } from '../components/NarimatoShell';
+import { EmptyState, StatusBadge } from '@gds/core';
+import { PublicShell } from '../components/public/PublicShell';
+import { NarimatoPageHeader } from '../components/NarimatoPageHeader';
+import { useSurveyGate } from '../lib/hooks/useSurveyGate';
 
 const RANK_MEDALS = ['🥇', '🥈', '🥉'];
 
@@ -30,6 +31,8 @@ export default function Rankings() {
   const [loading, setLoading] = useState(true);
   const [selectedDeck, setSelectedDeck] = useState(deck || 'all');
   const [showHidden, setShowHidden] = useState(() => router.query.includeHidden === 'true');
+
+  useSurveyGate(org);
 
   useEffect(() => {
     fetchOrganizations();
@@ -117,17 +120,19 @@ export default function Rankings() {
 
   if (loading) {
     return (
-      <NarimatoShell title="Rankings">
+      <PublicShell containerSize="lg">
         <Loader />
-      </NarimatoShell>
+      </PublicShell>
     );
   }
 
   return (
-    <NarimatoShell title="Rankings">
+    <PublicShell containerSize="lg">
       <Stack gap="lg">
-        <Title order={1}>Global rankings</Title>
-        <Text c="dimmed">ELO ratings across all users</Text>
+        <NarimatoPageHeader
+          title="Global rankings"
+          subtitle="ELO ratings across all users"
+        />
 
         <div>
           <Text fw={600} mb="xs">
@@ -227,9 +232,9 @@ export default function Rankings() {
                                 <div>
                                   <Text fw={500}>{card.title}</Text>
                                   {card.parentTag ? (
-                                    <Badge size="xs" color="green" variant="light">
+                                    <StatusBadge size="xs" status="success" variant="light">
                                       {card.parentTag}
-                                    </Badge>
+                                    </StatusBadge>
                                   ) : null}
                                 </div>
                               </Group>
@@ -258,6 +263,6 @@ export default function Rankings() {
           </>
         ) : null}
       </Stack>
-    </NarimatoShell>
+    </PublicShell>
   );
 }

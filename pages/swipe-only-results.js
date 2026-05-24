@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import {
-  Badge,
   Button,
   Group,
   Image,
@@ -13,13 +12,18 @@ import {
   Text,
   Title,
 } from '@mantine/core';
-import { NarimatoShell } from '../components/NarimatoShell';
+import { StatusBadge } from '@gds/core';
+import { PublicShell } from '../components/public/PublicShell';
+import { NarimatoPageHeader } from '../components/NarimatoPageHeader';
+import { useSurveyGate } from '../lib/hooks/useSurveyGate';
 
 export default function SwipeOnlyResults() {
   const router = useRouter();
   const { playId, org } = router.query;
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  useSurveyGate(org);
 
   useEffect(() => {
     if (playId) fetchResults();
@@ -38,30 +42,32 @@ export default function SwipeOnlyResults() {
 
   if (loading) {
     return (
-      <NarimatoShell title="Swipe results">
+      <PublicShell containerSize="lg">
         <Loader />
-      </NarimatoShell>
+      </PublicShell>
     );
   }
 
   if (!results) {
     return (
-      <NarimatoShell title="Swipe results">
+      <PublicShell containerSize="lg">
         <Stack gap="md">
-          <Title order={2}>Results not found</Title>
+          <NarimatoPageHeader title="Results not found" />
           <Button component={Link} href={`/play?org=${org}`} variant="light">
             Back to play
           </Button>
         </Stack>
-      </NarimatoShell>
+      </PublicShell>
     );
   }
 
   return (
-    <NarimatoShell title="Swipe results">
+    <PublicShell containerSize="lg">
       <Stack gap="lg">
-        <Title order={1}>Swipe results</Title>
-        <Text c="dimmed">Deck: {results.sessionInfo.deckTag}</Text>
+        <NarimatoPageHeader
+          title="Swipe results"
+          subtitle={`Deck: ${results.sessionInfo.deckTag}`}
+        />
 
         <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
           <Paper withBorder p="md" radius="md">
@@ -78,15 +84,17 @@ export default function SwipeOnlyResults() {
           </Paper>
         </SimpleGrid>
 
-        <Title order={2}>Your ranking</Title>
+        <Text fw={600} mb="sm">
+          Your ranking
+        </Text>
         {results.ranking.length > 0 ? (
           <Stack gap="sm">
             {results.ranking.map((item, index) => (
               <Paper key={item.card.id} withBorder p="md" radius="md">
                 <Group wrap="nowrap">
-                  <Badge size="lg" color={index < 3 ? 'yellow' : 'gray'}>
+                  <StatusBadge size="lg" status={index < 3 ? 'warning' : 'neutral'}>
                     #{item.rank}
-                  </Badge>
+                  </StatusBadge>
                   <div style={{ flex: 1 }}>
                     <Text fw={600}>{item.card.title}</Text>
                     {item.card.description ? (
@@ -110,6 +118,6 @@ export default function SwipeOnlyResults() {
           Rank another deck
         </Button>
       </Stack>
-    </NarimatoShell>
+    </PublicShell>
   );
 }

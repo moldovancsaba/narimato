@@ -1,6 +1,7 @@
 import Link from 'next/link';
-import { Button, Stack, Text, Title } from '@mantine/core';
-import { NarimatoShell } from '../components/NarimatoShell';
+import { Button, Stack } from '@mantine/core';
+import { PublicShell } from '../components/public/PublicShell';
+import { NarimatoPageHeader } from '../components/NarimatoPageHeader';
 
 export async function getServerSideProps({ res }) {
   if (res) {
@@ -11,16 +12,16 @@ export async function getServerSideProps({ res }) {
 
 export default function VoteOnlyResultsRemoved() {
   return (
-    <NarimatoShell title="Unavailable">
+    <PublicShell>
       <Stack align="center" gap="md" py="xl">
-        <Title order={1}>Vote-only results unavailable</Title>
-        <Text c="dimmed" ta="center">
-          Vote-only mode was removed. Results are no longer available.
-        </Text>
+        <NarimatoPageHeader
+          title="Vote-only results unavailable"
+          subtitle="Vote-only mode was removed. Results are no longer available."
+        />
         <Button component={Link} href="/play">
           Return to play
         </Button>
       </Stack>
-    </NarimatoShell>
+    </PublicShell>
   );
 }

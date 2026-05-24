@@ -119,7 +119,7 @@ NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX # Optional: GA4 measurement ID
 
 /scripts              # Database management scripts
 /docs                 # Technical documentation
-/components           # NarimatoShell, NarimatoProviders, play surfaces
+/components           # NarimatoProviders, PublicShell, play surfaces
 /lib/ui               # narimatoTheme (extends @gds/theme)
 /styles               # playGame.module.css (Mantine CSS variables only)
 ```

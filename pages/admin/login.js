@@ -1,16 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import {
-  Button,
-  Center,
-  Paper,
-  PasswordInput,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from '@mantine/core';
+import { Button, PasswordInput, Stack, TextInput } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
+import { NarimatoAuthShell } from '../../components/NarimatoAuthShell';
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -56,35 +48,27 @@ export default function AdminLogin() {
   }
 
   return (
-    <Center mih="100vh" p="md">
-      <Paper withBorder p="xl" radius="md" w="100%" maw={420}>
-        <Title order={2} mb="lg">
-          Admin login
-        </Title>
-        <form onSubmit={handleSubmit}>
-          <Stack gap="md">
-            <TextInput
-              label="Email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <PasswordInput
-              label="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <Button type="submit" loading={loading} disabled={!email || !password} fullWidth>
-              Sign in
-            </Button>
-            <Text size="xs" c="dimmed" ta="center">
-              NARIMATO administration
-            </Text>
-          </Stack>
-        </form>
-      </Paper>
-    </Center>
+    <NarimatoAuthShell title="Admin login" subtitle="NARIMATO administration">
+      <form onSubmit={handleSubmit}>
+        <Stack gap="md">
+          <TextInput
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <PasswordInput
+            label="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          <Button type="submit" loading={loading} disabled={!email || !password} fullWidth>
+            Sign in
+          </Button>
+        </Stack>
+      </form>
+    </NarimatoAuthShell>
   );
 }

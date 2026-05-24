@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import {
-  Badge,
   Button,
   Grid,
   Group,
@@ -14,8 +13,11 @@ import {
   Text,
   Title,
 } from '@mantine/core';
+import { StatusBadge } from '@gds/core';
 import { event } from '../lib/analytics/ga';
-import { NarimatoShell } from '../components/NarimatoShell';
+import { PublicShell } from '../components/public/PublicShell';
+import { NarimatoPageHeader } from '../components/NarimatoPageHeader';
+import { useSurveyGate } from '../lib/hooks/useSurveyGate';
 
 function ResultCard({ card, rankLabel, meta }) {
   return (
@@ -75,6 +77,8 @@ export default function Results() {
     results?.sessionInfo?.organizationId ||
     '';
   const deck = derivedDeck;
+
+  useSurveyGate(org);
 
   useEffect(() => {
     if (!playId) return;
@@ -327,31 +331,30 @@ export default function Results() {
 
   if (loading) {
     return (
-      <NarimatoShell title="Results">
+      <PublicShell containerSize="lg">
         <Loader />
-      </NarimatoShell>
+      </PublicShell>
     );
   }
 
   if (resultsError === 'not-found') {
     return (
-      <NarimatoShell title="Results">
+      <PublicShell containerSize="lg">
         <Stack gap="md">
-          <Title order={1}>Results not found</Title>
-          <Text c="dimmed">Unable to load results for this play session.</Text>
+          <NarimatoPageHeader title="Results not found" subtitle="Unable to load results for this play session." />
           <Button component={Link} href="/play" variant="light">
             Back to play
           </Button>
         </Stack>
-      </NarimatoShell>
+      </PublicShell>
     );
   }
 
   if (!results) {
     return (
-      <NarimatoShell title="Results">
+      <PublicShell containerSize="lg">
         <Loader />
-      </NarimatoShell>
+      </PublicShell>
     );
   }
 
@@ -378,18 +381,20 @@ export default function Results() {
   );
 
   return (
-    <NarimatoShell title="Results">
+    <PublicShell containerSize="lg">
       <Stack gap="lg" maw={1100} mx="auto">
         <Stack align="center" gap="xs">
-          <Title order={1}>Your {deck} results</Title>
-          <Text c="dimmed" ta="center">
-            {mode === 'swipe-only'
-              ? 'Swipe-based preference ranking'
-              : mode === 'swipe-more'
-                ? 'Hybrid swipe + vote ranking'
-                : 'How you ranked cards in this deck'}
-          </Text>
-          {mode ? <Badge>{modeLabel}</Badge> : null}
+          <NarimatoPageHeader
+            title={`Your ${deck} results`}
+            subtitle={
+              mode === 'swipe-only'
+                ? 'Swipe-based preference ranking'
+                : mode === 'swipe-more'
+                  ? 'Hybrid swipe + vote ranking'
+                  : 'How you ranked cards in this deck'
+            }
+          />
+          {mode ? <StatusBadge status="info">{modeLabel}</StatusBadge> : null}
         </Stack>
 
         <Paper withBorder p="md" radius="md" ta="center">
@@ -526,6 +531,6 @@ export default function Results() {
           </Button>
         </Group>
       </Stack>
-    </NarimatoShell>
+    </PublicShell>
   );
 }

@@ -6,7 +6,22 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "intelligence:guardian": "node scripts/guardian.js",
+    "intelligence:install": "bash scripts/install-intelligence-launchd.sh",
+    "intelligence:uninstall": "bash scripts/uninstall-intelligence-launchd.sh",
+    "intelligence:sync": "node scripts/sync.js",
+    "intelligence:snapshot-worker": "node scripts/snapshot-worker.js",
+    "intelligence:status-server": "node scripts/status-server.js",
+    "intelligence:build-projection": "node scripts/build-projection.js",
+    "intelligence:init": "node scripts/init-intelligence.js",
+    "intelligence:smoke-projection": "node scripts/smoke-projection.js",
+    "intelligence:backfill-approval": "node scripts/backfill-card-approval.js",
+    "intelligence:e2e": "node scripts/e2e-intelligence.js",
+    "intelligence:ci-guard": "node scripts/ci-intelligence-guard.js",
+    "gds:ci-guard": "node scripts/ci-gds-guard.js",
+    "gds:sync": "bash scripts/gds-sync-packages.sh",
+    "build:operator": "node scripts/build-operator-ui.js"
   },
   "dependencies": {
     "@gds/core": "file:./packages/gds-core",
@@ -15,7 +30,6 @@
     "@mantine/hooks": "^7.17.8",
     "@mantine/modals": "^7.17.8",
     "@mantine/notifications": "^7.17.8",
-    "@tabler/icons-react": "^3.31.0",
     "dotenv": "^17.2.1",
     "mongoose": "^8.1.0",
     "next": "15.5.9",
@@ -25,6 +39,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "esbuild": "^0.25.0",
     "eslint": "^8",
     "eslint-config-next": "15.5.9"
   },

@@ -9,7 +9,7 @@
   padding: var(--mantine-spacing-md);
   background: linear-gradient(
     135deg,
-    var(--mantine-color-brand-4) 0%,
+    var(--mantine-color-violet-4) 0%,
     var(--mantine-color-violet-6) 100%
   );
 }
@@ -40,12 +40,12 @@
 }
 
 .playCard:focus-visible {
-  outline: 2px solid var(--mantine-color-brand-6);
+  outline: 2px solid var(--mantine-color-violet-6);
   outline-offset: 4px;
 }
 
 .keyboardActive {
-  box-shadow: 0 0 0 3px var(--mantine-color-brand-3);
+  box-shadow: 0 0 0 3px var(--mantine-color-violet-3);
 }
 
 .vs {
