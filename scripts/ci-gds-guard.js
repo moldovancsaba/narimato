@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** CI guard: enforce GDS adoption rules in app code (GDS 2.2.0). */
+/** CI guard: enforce GDS adoption rules in app code (GDS 2.3.0). */
 const fs = require('fs');
 const path = require('path');
 

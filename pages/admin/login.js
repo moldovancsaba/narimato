@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { Button, PasswordInput, Stack, TextInput } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
+import { NarimatoFormField } from '../../components/NarimatoFormField';
 import { NarimatoAuthShell } from '../../components/NarimatoAuthShell';
 
 export default function AdminLogin() {
@@ -51,19 +52,21 @@ export default function AdminLogin() {
     <NarimatoAuthShell title="Admin login" subtitle="NARIMATO administration">
       <form onSubmit={handleSubmit}>
         <Stack gap="md">
-          <TextInput
-            label="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <PasswordInput
-            label="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <NarimatoFormField label="Email">
+            <TextInput
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </NarimatoFormField>
+          <NarimatoFormField label="Password">
+            <PasswordInput
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </NarimatoFormField>
           <Button type="submit" loading={loading} disabled={!email || !password} fullWidth>
             Sign in
           </Button>

@@ -1,4 +1,5 @@
 import { Alert, Paper, Select, Stack, Text } from '@mantine/core';
+import { NarimatoFormField } from '../NarimatoFormField';
 
 export function OperatorOrgPicker({
   organizations,
@@ -40,14 +41,14 @@ export function OperatorOrgPicker({
   return (
     <Paper withBorder p={compact ? 'sm' : 'md'} radius="md" bg="gray.0">
       <Stack gap="xs">
-        <Select
-          label="Working on"
-          description="All survey setup applies to this organisation"
-          data={organizations.map((o) => ({ value: o.uuid, label: o.name }))}
-          value={orgId || null}
-          onChange={onOrgChange}
-          maw={420}
-        />
+        <NarimatoFormField label="Working on" description="All survey setup applies to this organisation">
+          <Select
+            data={organizations.map((o) => ({ value: o.uuid, label: o.name }))}
+            value={orgId || null}
+            onChange={onOrgChange}
+            maw={420}
+          />
+        </NarimatoFormField>
         {active && !compact ? (
           <Text size="xs" c="dimmed">
             Participants will see content from <Text span fw={600}>{active.name}</Text> after they enter the survey password.

@@ -11,6 +11,7 @@ import {
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { GdsIcons } from '@gds/core';
+import { NarimatoFormField } from '../components/NarimatoFormField';
 import { PublicShell } from '../components/public/PublicShell';
 import { NarimatoPageHeader } from '../components/NarimatoPageHeader';
 import { NarimatoSemanticButton } from '../components/NarimatoSemanticButton';
@@ -89,14 +90,15 @@ export default function LandingPage() {
             <Text size="sm" c="dimmed">
               Your organisation shared a password with you. Paste it below to open your personal survey.
             </Text>
-            <PasswordInput
-              label="Survey password"
-              placeholder="Paste password from your invite"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              size="md"
-            />
+            <NarimatoFormField label="Survey password">
+              <PasswordInput
+                placeholder="Paste password from your invite"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                size="md"
+              />
+            </NarimatoFormField>
             <NarimatoSemanticButton
               type="submit"
               action="start"

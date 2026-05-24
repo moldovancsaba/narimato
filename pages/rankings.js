@@ -14,6 +14,7 @@ import {
   Title,
 } from '@mantine/core';
 import { EmptyState, StatusBadge } from '@gds/core';
+import { NarimatoFormField } from '../components/NarimatoFormField';
 import { PublicShell } from '../components/public/PublicShell';
 import { NarimatoPageHeader } from '../components/NarimatoPageHeader';
 import { useSurveyGate } from '../lib/hooks/useSurveyGate';
@@ -155,22 +156,23 @@ export default function Rankings() {
 
         {org ? (
           <>
-            <Checkbox
-              label="(admin) Show hidden decks"
-              checked={showHidden}
-              onChange={(e) => {
-                const checked = e.currentTarget.checked;
-                setShowHidden(checked);
-                const params = new URLSearchParams(router.query);
-                if (checked) params.set('includeHidden', 'true');
-                else params.delete('includeHidden');
-                router.replace(
-                  { pathname: router.pathname, query: Object.fromEntries(params.entries()) },
-                  undefined,
-                  { shallow: true }
-                );
-              }}
-            />
+            <NarimatoFormField label="(admin) Show hidden decks">
+              <Checkbox
+                checked={showHidden}
+                onChange={(e) => {
+                  const checked = e.currentTarget.checked;
+                  setShowHidden(checked);
+                  const params = new URLSearchParams(router.query);
+                  if (checked) params.set('includeHidden', 'true');
+                  else params.delete('includeHidden');
+                  router.replace(
+                    { pathname: router.pathname, query: Object.fromEntries(params.entries()) },
+                    undefined,
+                    { shallow: true }
+                  );
+                }}
+              />
+            </NarimatoFormField>
 
             <Group gap="xs">
               <Button

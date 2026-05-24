@@ -12,6 +12,7 @@ import {
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { ConfirmDialog, EmptyState } from '@gds/core';
+import { NarimatoFormField } from '../NarimatoFormField';
 import { NarimatoPageHeader } from '../NarimatoPageHeader';
 import { NarimatoSemanticButton } from '../NarimatoSemanticButton';
 import { slugifyOrganisationName } from './operatorCopy';
@@ -100,30 +101,35 @@ export function OperatorOrganizationsPanel({
           }}
         >
           <Stack gap="sm">
-            <TextInput
-              label="Organisation name"
-              placeholder="e.g. Acme Research"
-              value={form.name}
-              onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
-              required
-            />
-            <Textarea
-              label="Description (optional)"
-              placeholder="Internal note — participants do not see this"
-              value={form.description}
-              onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
-            />
+            <NarimatoFormField label="Organisation name">
+              <TextInput
+                placeholder="e.g. Acme Research"
+                value={form.name}
+                onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                required
+              />
+            </NarimatoFormField>
+            <NarimatoFormField label="Description (optional)">
+              <Textarea
+                placeholder="Internal note — participants do not see this"
+                value={form.description}
+                onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+              />
+            </NarimatoFormField>
             <Button variant="subtle" size="xs" w="fit-content" onClick={() => setShowAdvanced((v) => !v)} type="button">
               {showAdvanced ? 'Hide advanced options' : 'Advanced options'}
             </Button>
             <Collapse in={showAdvanced}>
-              <TextInput
+              <NarimatoFormField
                 label="Short URL name"
                 description={suggestedSlug ? `Suggested: ${suggestedSlug}` : 'Used internally — lowercase, no spaces'}
-                value={slugOverride}
-                onChange={(e) => setSlugOverride(e.target.value)}
-                placeholder={suggestedSlug || 'acme-research'}
-              />
+              >
+                <TextInput
+                  value={slugOverride}
+                  onChange={(e) => setSlugOverride(e.target.value)}
+                  placeholder={suggestedSlug || 'acme-research'}
+                />
+              </NarimatoFormField>
             </Collapse>
             <NarimatoSemanticButton type="submit" action="add" />
           </Stack>
@@ -161,9 +167,15 @@ export function OperatorOrganizationsPanel({
                   }}
                 >
                   <Stack gap="sm">
-                    <TextInput label="Name" value={editForm.name} onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))} required />
-                    <TextInput label="Short URL name" value={editForm.slug} onChange={(e) => setEditForm((p) => ({ ...p, slug: e.target.value }))} required />
-                    <Textarea label="Description" value={editForm.description} onChange={(e) => setEditForm((p) => ({ ...p, description: e.target.value }))} />
+                    <NarimatoFormField label="Name">
+                      <TextInput value={editForm.name} onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))} required />
+                    </NarimatoFormField>
+                    <NarimatoFormField label="Short URL name">
+                      <TextInput value={editForm.slug} onChange={(e) => setEditForm((p) => ({ ...p, slug: e.target.value }))} required />
+                    </NarimatoFormField>
+                    <NarimatoFormField label="Description">
+                      <Textarea value={editForm.description} onChange={(e) => setEditForm((p) => ({ ...p, description: e.target.value }))} />
+                    </NarimatoFormField>
                     <Group>
                       <NarimatoSemanticButton type="submit" action="save" />
                       <NarimatoSemanticButton
