@@ -5,7 +5,7 @@ These items appear in older docs or roadmaps but are **not implemented** in the 
 | Capability | Notes |
 |------------|--------|
 | Organization theming | `backgroundCSS`, Google Fonts URL, emoji/icon lists — no schema or UI |
-| Application dark mode | No `data-theme`, Tailwind, or global theme toggle |
+| Application dark mode | **Shell pages** (public, operator, admin, auth) support light/dark via Mantine + GDS `ThemeToggle`; immersive `/play` excepted |
 | Optimistic locking on Play | No `version` field or 409 concurrency handling |
 | `Session` / `GlobalRanking` collections | Session state is on Play + mode models; ELO is on `Card.globalScore` |
 | TypeScript / App Router | Pages Router JavaScript only |

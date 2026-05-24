@@ -38,6 +38,8 @@ Legacy `/api/play/*` routes remain for classic/hierarchical client paths — [do
 
 ## Documentation
 
+- **[docs/GDS_OPTIONAL_IMPROVEMENTS_PLAN.md](./docs/GDS_OPTIONAL_IMPROVEMENTS_PLAN.md)** — planned GDS polish (semantic buttons, metrics, dark mode)
+- **[docs/WHAT_IS_NARIMATO.md](./docs/WHAT_IS_NARIMATO.md)** — what belongs to this project vs other folders (GDS, Amanoba, etc.)
 - **[narimato_unified_documentation.md](./narimato_unified_documentation.md)** — canonical spec
 - **[WARP.md](./WARP.md)** — AI agent onboarding
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** — diagrams (some sections historical; see banner)

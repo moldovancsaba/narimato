@@ -4,6 +4,7 @@ import { Loader, Center } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { calculateCardSize } from '../lib/utils/cardSizing';
 import { event } from '../lib/analytics/ga';
+import { useSurveyGate } from '../lib/hooks/useSurveyGate';
 import { PlayVoteSurface } from '../components/play/PlayVoteSurface';
 import { PlaySwipeSurface } from '../components/play/PlaySwipeSurface';
 import {
@@ -17,6 +18,7 @@ export default function Play() {
 
   const [organizations, setOrganizations] = useState([]);
   const [decks, setDecks] = useState([]);
+  const [projectionMeta, setProjectionMeta] = useState(null);
   const [currentPlay, setCurrentPlay] = useState(null);
   const [currentCard, setCurrentCard] = useState(null);
   const [votingContext, setVotingContext] = useState(null);
@@ -143,6 +145,8 @@ export default function Play() {
 
   const [showHidden, setShowHidden] = useState(() => router.query.includeHidden === 'true');
 
+  useSurveyGate(org);
+
   useEffect(() => {
     if (org) {
       fetchDecks();
@@ -247,12 +251,21 @@ export default function Play() {
 
   const fetchDecks = async () => {
     try {
-      const res = await fetch(`/api/cards?organizationId=${org}`);
+      const params = new URLSearchParams({ organizationId: org });
+      if (showHidden) params.set('includeHidden', 'true');
+      const res = await fetch(`/api/play/decks?${params.toString()}`);
       const data = await res.json();
-      
-      // Group into decks
+
+      if (data.decks?.length) {
+        setDecks(data.decks);
+        setProjectionMeta(data.meta || null);
+        return;
+      }
+
+      const fallback = await fetch(`/api/cards?organizationId=${org}&projection=false`);
+      const fallbackData = await fallback.json();
       const deckGroups = {};
-      data.cards?.forEach(card => {
+      fallbackData.cards?.forEach(card => {
         if (card.parentTag) {
           if (!deckGroups[card.parentTag]) {
             deckGroups[card.parentTag] = [];
@@ -265,13 +278,14 @@ export default function Play() {
       const playableDecks = Object.entries(deckGroups)
         .filter(([tag, grpCards]) => grpCards.length >= 2)
         .filter(([tag]) => {
-          const parent = data.cards.find(c => c.name === tag);
+          const parent = fallbackData.cards.find(c => c.name === tag);
           if (!parent) return true;
           return includeHidden ? true : (parent.isPlayable !== false);
         })
         .map(([tag, grpCards]) => ({ tag, cards: grpCards }));
       
       setDecks(playableDecks);
+      setProjectionMeta(fallbackData.meta || { source: 'fallback', freshness: { status: 'missing' } });
     } catch (error) {
       console.error('Failed to fetch decks:', error);
     }
@@ -1009,18 +1023,7 @@ const nextData = await nextRes.json();
       <PlayDeckPicker
         org={org}
         decks={decks}
-        showHidden={showHidden}
-        onShowHiddenChange={(checked) => {
-          setShowHidden(checked);
-          const params = new URLSearchParams(router.query);
-          if (checked) params.set('includeHidden', 'true');
-          else params.delete('includeHidden');
-          router.replace(
-            { pathname: router.pathname, query: Object.fromEntries(params.entries()) },
-            undefined,
-            { shallow: true }
-          );
-        }}
+        projectionMeta={projectionMeta}
       />
     );
   }

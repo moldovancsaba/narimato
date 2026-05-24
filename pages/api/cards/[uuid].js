@@ -1,6 +1,8 @@
 const { connectMaster } = require('../../../lib/db');
 const { withOrganization } = require('../../../lib/tenantContext');
 const Card = require('../../../lib/models/Card');
+const { blockVercelMutation } = require('../../../lib/intelligence/vercelGuard');
+const { markOrgDirty } = require('../../../lib/intelligence/dirtyQueue');
 
 export default async function handler(req, res) {
   if (req.method !== 'GET' && req.method !== 'PUT' && req.method !== 'DELETE') {
@@ -28,6 +30,7 @@ export default async function handler(req, res) {
       }
 
       if (req.method === 'PUT') {
+        if (blockVercelMutation(req, res)) return;
         let { title, description, imageUrl, parentTag, name, isPlayable } = req.body;
 
         if (!title?.trim()) {
@@ -97,16 +100,19 @@ export default async function handler(req, res) {
         }
 
         await card.save();
+        await markOrgDirty(organizationId, card.parentTag || card.name);
         return res.status(200).json(card);
       }
 
       if (req.method === 'DELETE') {
+        if (blockVercelMutation(req, res)) return;
         const card = await Card.findOne({ uuid, organizationId });
         if (!card) {
           return res.status(404).json({ error: 'Card not found' });
         }
 
         await Card.deleteOne({ uuid });
+        await markOrgDirty(organizationId);
         return res.status(200).json({ message: 'Card deleted successfully' });
       }
     });

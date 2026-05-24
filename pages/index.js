@@ -1,66 +1,149 @@
-import Link from 'next/link';
-import { Button, List, Paper, Stack, Text, Title, SimpleGrid, ThemeIcon } from '@mantine/core';
-import { IconCards, IconBuilding, IconPlayerPlay, IconChartBar } from '@tabler/icons-react';
-import { NarimatoShell } from '../components/NarimatoShell';
+import { useState } from 'react';
+import { useRouter } from 'next/router';
+import {
+  Alert,
+  List,
+  Paper,
+  PasswordInput,
+  Stack,
+  Text,
+  ThemeIcon,
+} from '@mantine/core';
+import { notifications } from '@mantine/notifications';
+import { GdsIcons } from '@gds/core';
+import { PublicShell } from '../components/public/PublicShell';
+import { NarimatoPageHeader } from '../components/NarimatoPageHeader';
+import { NarimatoSemanticButton } from '../components/NarimatoSemanticButton';
+import { CONTACT_EMAIL } from '../components/public/PublicFooter';
 
-export default function Home() {
+export default function LandingPage() {
+  const router = useRouter();
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const locked = router.isReady && router.query.locked === '1';
+
+  async function unlockSurvey(e) {
+    e.preventDefault();
+    if (!password.trim()) return;
+    setLoading(true);
+    try {
+      const res = await fetch('/api/survey/unlock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: password.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        notifications.show({ color: 'red', message: data.error || 'Invalid survey password' });
+        return;
+      }
+      notifications.show({ color: 'green', message: 'Welcome — opening your survey' });
+      router.push(data.redirectUrl || '/play');
+    } catch {
+      notifications.show({ color: 'red', message: 'Could not verify password' });
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <NarimatoShell title="NARIMATO">
-      <Stack gap="lg">
-        <Title order={1}>Card ranking system</Title>
-        <Text c="dimmed">
-          Organizations, hashtag decks, swipe and vote play modes, personal and global rankings.
-        </Text>
+    <PublicShell>
+      <Stack gap="xl">
+        {locked ? (
+          <Alert color="yellow" variant="light" title="Survey password required">
+            Enter the password your organisation shared with you to access this survey.
+          </Alert>
+        ) : null}
 
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-          <Paper withBorder p="md" radius="md">
-            <ThemeIcon size="lg" variant="light" mb="sm">
-              <IconBuilding />
-            </ThemeIcon>
-            <Text fw={600}>Organizations</Text>
-            <Text size="sm" c="dimmed">
-              Manage tenant groups and isolated card databases.
+        <NarimatoPageHeader
+          title="Deep surveys, fast and fun"
+          subtitle="Narimato helps organisations understand what people really prefer — through swipe-and-rank play that feels like a game, not a form."
+        />
+
+        <Paper withBorder p="lg" radius="md" bg="violet.0">
+          <Stack gap="md">
+            <GroupIconRow
+              icon={GdsIcons.Users}
+              title="For organisations"
+              text="Run structured preference surveys across decks of options — teams, products, ideas, or priorities."
+            />
+            <GroupIconRow
+              icon={GdsIcons.Play}
+              title="For participants"
+              text="Answer in minutes with intuitive swipe and vote modes. No account required — just your personal access password."
+            />
+            <GroupIconRow
+              icon={GdsIcons.Analytics}
+              title="For insight"
+              text="See ranked results and ELO-style scores that reveal true preferences, not just top-of-mind picks."
+            />
+          </Stack>
+        </Paper>
+
+        <Paper withBorder p="lg" radius="md" component="form" onSubmit={unlockSurvey}>
+          <Stack gap="md">
+            <Text fw={600} size="lg">
+              Enter your survey password
             </Text>
-          </Paper>
-          <Paper withBorder p="md" radius="md">
-            <ThemeIcon size="lg" variant="light" mb="sm">
-              <IconCards />
-            </ThemeIcon>
-            <Text fw={600}>Cards & decks</Text>
             <Text size="sm" c="dimmed">
-              Hashtag hierarchy; parents with children become playable decks.
+              Your organisation shared a password with you. Paste it below to open your personal survey.
             </Text>
-          </Paper>
-        </SimpleGrid>
+            <PasswordInput
+              label="Survey password"
+              placeholder="Paste password from your invite"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              size="md"
+            />
+            <NarimatoSemanticButton
+              type="submit"
+              action="start"
+              loading={loading}
+              disabled={!password.trim()}
+              size="md"
+              fullWidth
+            />
+          </Stack>
+        </Paper>
 
-        <SimpleGrid cols={{ base: 1, xs: 2, sm: 4 }} spacing="sm">
-          <Button component={Link} href="/organizations" variant="light">
-            Organizations
-          </Button>
-          <Button component={Link} href="/cards" variant="filled">
-            Cards
-          </Button>
-          <Button component={Link} href="/play" color="orange" variant="filled">
-            Play
-          </Button>
-          <Button component={Link} href="/rankings" color="dark" variant="outline">
-            Rankings
-          </Button>
-        </SimpleGrid>
-
-        <Paper withBorder p="md" radius="md" bg="gray.0">
-          <Title order={3} mb="sm">
-            How it works
-          </Title>
-          <List type="ordered" spacing="xs">
-            <List.Item>Create an organization</List.Item>
-            <List.Item>Add cards with parent hashtags (e.g. #food → #pizza)</List.Item>
-            <List.Item>Parent cards with children become decks</List.Item>
-            <List.Item>Play: swipe and/or vote to rank</List.Item>
-            <List.Item>View personal results and global ELO rankings</List.Item>
+        <Stack gap="xs">
+          <Text fw={600}>How it works</Text>
+          <List spacing="xs" size="sm" c="dimmed">
+            <List.Item>Your organisation sets up a Narimato survey locally</List.Item>
+            <List.Item>Participants receive a unique password</List.Item>
+            <List.Item>Swipe or vote through cards — ranking happens automatically</List.Item>
+            <List.Item>Results feed back to your organisation&apos;s dashboard</List.Item>
           </List>
+        </Stack>
+
+        <Paper withBorder p="md" radius="md">
+          <Text fw={600} mb={4}>
+            Get in touch
+          </Text>
+          <Text size="sm" c="dimmed">
+            Want Narimato for your organisation? Email{' '}
+            <Text component="a" href={`mailto:${CONTACT_EMAIL}`} span c="violet" inherit>
+              {CONTACT_EMAIL}
+            </Text>
+          </Text>
         </Paper>
       </Stack>
-    </NarimatoShell>
+    </PublicShell>
+  );
+}
+
+function GroupIconRow({ icon: Icon, title, text }) {
+  return (
+    <Stack gap={4}>
+      <ThemeIcon size="lg" variant="light" color="violet">
+        <Icon size="1.1rem" />
+      </ThemeIcon>
+      <Text fw={600}>{title}</Text>
+      <Text size="sm" c="dimmed">
+        {text}
+      </Text>
+    </Stack>
   );
 }

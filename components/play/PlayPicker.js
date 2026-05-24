@@ -2,16 +2,15 @@ import Link from 'next/link';
 import {
   Badge,
   Button,
-  Checkbox,
   Group,
   Loader,
   Paper,
   Stack,
-  Text,
   Title,
 } from '@mantine/core';
-import { EmptyState } from '@gds/core';
-import { NarimatoShell } from '../NarimatoShell';
+import { EmptyState, StatusBadge } from '@gds/core';
+import { PublicShell } from '../public/PublicShell';
+import { NarimatoPageHeader } from '../NarimatoPageHeader';
 import { event } from '../../lib/analytics/ga';
 
 const MODES = [
@@ -23,26 +22,32 @@ const MODES = [
   { key: 'rank-more', label: 'Rank more', color: 'orange' },
 ];
 
+function projectionStatus(freshness) {
+  if (freshness === 'fresh') return 'success';
+  if (freshness === 'missing') return 'warning';
+  return 'neutral';
+}
+
 export function PlayOrgPicker({ organizations, loading }) {
   if (loading) {
     return (
-      <NarimatoShell title="Play">
+      <PublicShell>
         <Loader />
-      </NarimatoShell>
+      </PublicShell>
     );
   }
 
   return (
-    <NarimatoShell title="Play">
+    <PublicShell>
       <Stack gap="lg">
-        <Title order={1}>Select organization</Title>
+        <NarimatoPageHeader title="Select survey" subtitle="Choose your organisation's survey to continue." />
         {organizations.length === 0 ? (
           <EmptyState
-            title="No organizations"
-            description="Create an organization before playing."
+            title="No surveys available"
+            description="Enter your survey password on the home page, or contact your organiser."
             action={
-              <Button component={Link} href="/organizations">
-                Create organization
+              <Button component={Link} href="/">
+                Back to home
               </Button>
             }
           />
@@ -51,45 +56,42 @@ export function PlayOrgPicker({ organizations, loading }) {
             {organizations.map((organization) => (
               <Paper key={organization.uuid} withBorder p="md" radius="md">
                 <Title order={4}>{organization.name}</Title>
-                <Button
-                  component={Link}
-                  href={`/play?org=${organization.uuid}`}
-                  color="orange"
-                  mt="sm"
-                >
-                  Select
+                <Button component={Link} href={`/play?org=${organization.uuid}`} color="violet" mt="sm">
+                  Open survey
                 </Button>
               </Paper>
             ))}
           </Stack>
         )}
       </Stack>
-    </NarimatoShell>
+    </PublicShell>
   );
 }
 
-export function PlayDeckPicker({
-  org,
-  decks,
-  showHidden,
-  onShowHiddenChange,
-}) {
+export function PlayDeckPicker({ org, decks, projectionMeta }) {
+  const freshness = projectionMeta?.freshness?.status || 'unknown';
+
   return (
-    <NarimatoShell title="Play">
+    <PublicShell>
       <Stack gap="lg">
-        <Title order={1}>Select deck</Title>
-        <Checkbox
-          label="(admin) Show hidden decks"
-          checked={showHidden}
-          onChange={(e) => onShowHiddenChange(e.currentTarget.checked)}
-        />
+        <NarimatoPageHeader title="Select deck" subtitle="Pick a deck to start ranking." />
+        {projectionMeta ? (
+          <Group gap="xs">
+            <StatusBadge status={projectionStatus(freshness)} variant="light">
+              Projection: {freshness}
+            </StatusBadge>
+            {projectionMeta.source ? (
+              <Badge variant="outline">via {projectionMeta.source}</Badge>
+            ) : null}
+          </Group>
+        ) : null}
         {decks.length === 0 ? (
           <EmptyState
-            title="No playable decks"
-            description="Add cards with parent hashtags to form decks."
+            title="No decks yet"
+            description="Your organiser has not published any playable decks. Check back later."
             action={
-              <Button component={Link} href={`/cards?org=${org}`}>
-                Manage cards
+              <Button component={Link} href="/">
+                Home
               </Button>
             }
           />
@@ -98,12 +100,10 @@ export function PlayDeckPicker({
             {decks.map((deckInfo) => (
               <Paper key={deckInfo.tag} withBorder p="md" radius="md">
                 <Group justify="space-between" mb="sm">
-                  <Title order={4} c="green">
-                    {deckInfo.tag}
-                  </Title>
-                  <Badge color="green" variant="light">
+                  <Title order={4}>{deckInfo.tag}</Title>
+                  <StatusBadge status="success" variant="light">
                     {deckInfo.cards.length} cards
-                  </Badge>
+                  </StatusBadge>
                 </Group>
                 <Group gap="xs" mb="md">
                   {deckInfo.cards.slice(0, 3).map((card) => (
@@ -125,11 +125,7 @@ export function PlayDeckPicker({
                       color={mode.color}
                       onClick={() => {
                         try {
-                          event('mode_selected', {
-                            org,
-                            deckTag: deckInfo.tag,
-                            mode: mode.key,
-                          });
+                          event('mode_selected', { org, deckTag: deckInfo.tag, mode: mode.key });
                         } catch {
                           /* noop */
                         }
@@ -144,18 +140,18 @@ export function PlayDeckPicker({
           </Stack>
         )}
       </Stack>
-    </NarimatoShell>
+    </PublicShell>
   );
 }
 
 export function PlayComplete({ org, deck }) {
   return (
-    <NarimatoShell title="Play complete">
+    <PublicShell>
       <Stack align="center" gap="lg" py="xl">
-        <Title order={1}>Play complete</Title>
-        <Text c="dimmed" ta="center">
-          You finished ranking all cards in {deck}.
-        </Text>
+        <NarimatoPageHeader
+          title="Survey complete"
+          subtitle={`You finished ranking all cards in ${deck}.`}
+        />
         <Group>
           <Button component={Link} href={`/play?org=${org}`} variant="light">
             Play another deck
@@ -165,6 +161,6 @@ export function PlayComplete({ org, deck }) {
           </Button>
         </Group>
       </Stack>
-    </NarimatoShell>
+    </PublicShell>
   );
 }

@@ -3,8 +3,20 @@
 **Current Version:** 7.2.0  
 **Last Updated:** 2026-05-23T00:00:00.000Z
 
+> **Project boundaries (non-technical):** [docs/WHAT_IS_NARIMATO.md](./docs/WHAT_IS_NARIMATO.md) — Narimato vs GDS, Amanoba, and other directories.  
 > **Canonical spec:** [narimato_unified_documentation.md](./narimato_unified_documentation.md)  
 > Aspirational sections below (TypeScript paths, Session model, theming, literal `*UUID` DB columns) are **outdated** unless marked otherwise. See [docs/FUTURE.md](./docs/FUTURE.md).
+
+## External dependencies (not part of this repo)
+
+| Dependency | Relationship |
+|------------|----------------|
+| [General Design System](https://github.com/moldovancsaba/general-design-system) | Separate project; vendored under `packages/gds-*` — [docs/GDS_ADOPTION.md](./docs/GDS_ADOPTION.md) |
+| MongoDB Atlas | Hosted database service |
+| Vercel | Hosting for the public Next.js app |
+| Mantine / Next.js | npm libraries |
+
+Other product folders on disk (e.g. Amanoba, Camera) are unrelated codebases unless explicitly integrated.
 
 ## Field naming (`lib/constants/fieldNames.js`)
 

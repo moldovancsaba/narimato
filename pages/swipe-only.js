@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { Button, Center, Loader, Stack, Text, Title } from '@mantine/core';
+import { Button, Center, Loader, Stack, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { calculateCardSize } from '../lib/utils/cardSizing';
 import { PlaySwipeSurface } from '../components/play/PlaySwipeSurface';
+import { PublicShell } from '../components/public/PublicShell';
+import { NarimatoPageHeader } from '../components/NarimatoPageHeader';
+import { useSurveyGate } from '../lib/hooks/useSurveyGate';
 
 // FUNCTIONAL: Pure SwipeOnly game interface - completely independent from existing play system
 // STRATEGIC: Simple, clean swipe-based ranking without any voting complexity
@@ -19,6 +22,8 @@ export default function SwipeOnly() {
   const [progress, setProgress] = useState(null);
   const [completed, setCompleted] = useState(false);
   const [cardConfig, setCardConfig] = useState(null);
+
+  useSurveyGate(org);
 
   useEffect(() => {
     if (org && deck) {
@@ -167,10 +172,9 @@ export default function SwipeOnly() {
 
   if (completed) {
     return (
-      <Center mih="100vh" p="md">
-        <Stack align="center" gap="md">
-          <Title order={1}>Swipe complete</Title>
-          <Text c="dimmed">Redirecting to results…</Text>
+      <PublicShell>
+        <Stack align="center" gap="md" py="xl">
+          <NarimatoPageHeader title="Swipe complete" subtitle="Redirecting to results…" />
           {session ? (
             <Button
               component={Link}
@@ -180,20 +184,20 @@ export default function SwipeOnly() {
             </Button>
           ) : null}
         </Stack>
-      </Center>
+      </PublicShell>
     );
   }
 
   if (!currentCard || !cardConfig) {
     return (
-      <Center mih="100vh" p="md">
-        <Stack align="center" gap="md">
-          <Title order={2}>No cards available</Title>
+      <PublicShell>
+        <Stack align="center" gap="md" py="xl">
+          <NarimatoPageHeader title="No cards available" />
           <Button component={Link} href={`/play?org=${org}`} variant="light">
             Back to play
           </Button>
         </Stack>
-      </Center>
+      </PublicShell>
     );
   }
 

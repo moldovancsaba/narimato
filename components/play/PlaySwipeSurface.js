@@ -1,5 +1,5 @@
-import { Paper, Text, Image, Group, ActionIcon, Badge, Box } from '@mantine/core';
-import { IconThumbDown, IconThumbUp } from '@tabler/icons-react';
+import { Paper, Text, Image, Group, ActionIcon, Box } from '@mantine/core';
+import { GdsIcons, StatusBadge } from '@gds/core';
 import classes from '../../styles/playGame.module.css';
 
 export function PlaySwipeSurface({
@@ -39,7 +39,7 @@ export function PlaySwipeSurface({
       className={keyboardActive === 'dislike' ? classes.keyboardActive : undefined}
       onClick={onSwipeLeft}
     >
-      <IconThumbDown size="60%" />
+      <GdsIcons.TrendingDown size="60%" />
     </ActionIcon>
   ) : (
     <Box w={cardConfig.buttonSize} h={cardConfig.buttonSize} />
@@ -55,7 +55,7 @@ export function PlaySwipeSurface({
       className={keyboardActive === 'like' ? classes.keyboardActive : undefined}
       onClick={onSwipeRight}
     >
-      <IconThumbUp size="60%" />
+      <GdsIcons.TrendingUp size="60%" />
     </ActionIcon>
   );
 
@@ -108,9 +108,16 @@ export function PlaySwipeSurface({
     <Box className={classes.root} style={gameStyle}>
       <Box className={`${classes.layout} ${orientationClass}`} pos="relative">
         {showLevelBadge ? (
-          <Badge pos="absolute" top={10} left={10} color="grape" variant="filled" style={{ zIndex: 10 }}>
-            Level {swipeTransition === 'new-level' ? '↗️' : hierarchicalLevel || 1}
-          </Badge>
+          <StatusBadge
+            status="info"
+            pos="absolute"
+            top={10}
+            left={10}
+            variant="filled"
+            style={{ zIndex: 10 }}
+          >
+            Level {swipeTransition === 'new-level' ? '↗' : hierarchicalLevel || 1}
+          </StatusBadge>
         ) : null}
 
         {cardConfig.orientation === 'landscape' ? (
