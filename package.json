@@ -14,6 +14,7 @@
     "intelligence:snapshot-worker": "node scripts/snapshot-worker.js",
     "intelligence:status-server": "node scripts/status-server.js",
     "intelligence:build-projection": "node scripts/build-projection.js",
+    "intelligence:refresh-projection": "node scripts/refresh-projection.js",
     "intelligence:init": "node scripts/init-intelligence.js",
     "intelligence:smoke-projection": "node scripts/smoke-projection.js",
     "intelligence:backfill-approval": "node scripts/backfill-card-approval.js",
