@@ -1,4 +1,5 @@
 const { PORTS } = require('../../../lib/intelligence/constants');
+const { getLocalAiLinks, flattenLocalAiLinks } = require('../../../lib/intelligence/localAiLinks');
 
 /**
  * Proxy-friendly status for /local-ai (dev). Fetches local status-server when reachable.
@@ -22,13 +23,21 @@ export default async function handler(req, res) {
       });
     }
     const payload = await response.json();
-    return res.status(200).json({ reachable: true, ports: PORTS, ...payload });
+    const links = getLocalAiLinks(PORTS);
+    return res.status(200).json({
+      reachable: true,
+      ports: PORTS,
+      links: { ...links, flattened: flattenLocalAiLinks(links) },
+      ...payload,
+    });
   } catch (err) {
+    const links = getLocalAiLinks(PORTS);
     return res.status(200).json({
       reachable: false,
       ports: PORTS,
       error: err.message || 'Local intelligence offline',
-      operatorUrl: `http://127.0.0.1:${PORTS.STATUS}`,
+      operatorUrl: links.operator.url,
+      links: { ...links, flattened: flattenLocalAiLinks(links) },
     });
   }
 }

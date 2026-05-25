@@ -23,6 +23,7 @@ const { getProjectedDecks } = require('../../lib/intelligence/projectionReader')
 const { checkOllamaReachable, getOllamaStatus } = require('../../lib/intelligence/ollama');
 const { JOB_TYPES, TOPIC_STATUS, PORTS, CARD_APPROVAL } = require('../../lib/intelligence/constants');
 const { refreshOrgProjection } = require('../../lib/intelligence/projectionBuilder');
+const { getLocalAiLinks, flattenLocalAiLinks } = require('../../lib/intelligence/localAiLinks');
 
 async function readBody(req) {
   return new Promise((resolve, reject) => {
@@ -50,8 +51,10 @@ async function getStatusPayload() {
   const syncHb = await GlobalSetting.findOne({ key: 'local_ai_worker_heartbeat:sync' });
   const snapHb = await GlobalSetting.findOne({ key: 'local_ai_worker_heartbeat:snapshot-worker' });
   const guardianHb = await GlobalSetting.findOne({ key: 'local_ai_worker_heartbeat:guardian' });
+  const links = getLocalAiLinks(PORTS);
   return {
     ports: PORTS,
+    links: { ...links, flattened: flattenLocalAiLinks(links) },
     operatorUi: 'react-gds',
     operatorBundle: fs.existsSync(path.join(__dirname, '../local-operator/bundle.js')),
     ollama: ollamaStatus.reachable,

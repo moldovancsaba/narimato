@@ -12,7 +12,9 @@ export function LocalOperatorNotice({ compact = false }) {
         <Anchor href={OPERATOR_URL} target="_blank" rel="noopener noreferrer">
           {OPERATOR_URL}
         </Anchor>
-        . Start workers with <code>npm run intelligence:guardian</code>.
+        . Double-click <strong>Open Narimato Local AI</strong> on your Desktop, or run{' '}
+        <code>npm run intelligence:open</code> (install shortcut: <code>npm run intelligence:desktop</code>
+        ).
       </Text>
     </Alert>
   );
