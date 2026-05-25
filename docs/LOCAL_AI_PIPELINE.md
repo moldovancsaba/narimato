@@ -95,10 +95,12 @@ open http://127.0.0.1:10006
 
 Card mutations call `markOrgDirty(orgId)` → `snapshot-worker` rebuilds projection → play reads fresh JSON.
 
-## CI
+## CI & E2E
 
 ```bash
-npm run intelligence:ci-guard
+npm run intelligence:ci-guard   # dual-runtime boundary (see INTELLIGENCE_CI_GUARDS.md)
+npm run intelligence:e2e        # corpus → jobs → projection → play (needs guardian + dev)
 ```
 
-Blocks Ollama imports and management mutations in Vercel-facing paths.
+Guardian at login: `npm run intelligence:install` (LaunchAgent `com.narimato.intelligence`).
+Template plist: `scripts/launchd/com.narimato.intelligence.plist`.

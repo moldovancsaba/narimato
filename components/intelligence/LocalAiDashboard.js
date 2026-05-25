@@ -107,6 +107,17 @@ export function LocalAiDashboard() {
         </Paper>
         <Paper p="md" withBorder style={gdsAccentSurface}>
           <Text size="sm" c="dimmed">
+            Guardian
+          </Text>
+          <Title order={4}>
+            {status?.workers?.guardian?.running ? 'Supervising' : 'Unknown'}
+          </Title>
+          <Text size="xs" c="dimmed">
+            npm run intelligence:install
+          </Text>
+        </Paper>
+        <Paper p="md" withBorder style={gdsAccentSurface}>
+          <Text size="sm" c="dimmed">
             Dirty orgs
           </Text>
           <Title order={4}>{status?.dirty?.orgIds?.length ?? 0}</Title>
