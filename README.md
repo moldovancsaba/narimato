@@ -38,6 +38,8 @@ Legacy `/api/play/*` routes remain for classic/hierarchical client paths — [do
 
 ## Documentation
 
+- **Local intelligence** — [ADR 003](./docs/adr/003-local-ai-dual-runtime.md), [ADR 004](./docs/adr/004-intelligence-product-policy.md), [WEBAPP_READ_MODEL_LLD.md](./docs/WEBAPP_READ_MODEL_LLD.md), [LOCAL_AI_PIPELINE.md](./docs/LOCAL_AI_PIPELINE.md)
+- **[docs/GDS_ADOPTION.md](./docs/GDS_ADOPTION.md)** — GDS 2.3 adoption (vendored `@gds/*`)
 - **[docs/GDS_OPTIONAL_IMPROVEMENTS_PLAN.md](./docs/GDS_OPTIONAL_IMPROVEMENTS_PLAN.md)** — planned GDS polish (semantic buttons, metrics, dark mode)
 - **[docs/WHAT_IS_NARIMATO.md](./docs/WHAT_IS_NARIMATO.md)** — what belongs to this project vs other folders (GDS, Amanoba, etc.)
 - **[narimato_unified_documentation.md](./narimato_unified_documentation.md)** — canonical spec
