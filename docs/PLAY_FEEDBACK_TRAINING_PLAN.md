@@ -1,6 +1,6 @@
 # Play feedback training — implementation plan
 
-**Status:** Proposed (2026-05-24)  
+**Status:** MVP implemented (2026-05-24) — Phases 0–3 + prompt injection (Phase 4 subset)  
 **ADR:** [adr/005-play-feedback-training.md](./adr/005-play-feedback-training.md)  
 **Schemas:** [PLAY_FEEDBACK_TRAINING_LLD.md](./PLAY_FEEDBACK_TRAINING_LLD.md)  
 **Architecture baseline:** [adr/003-local-ai-dual-runtime.md](./adr/003-local-ai-dual-runtime.md)
@@ -78,11 +78,11 @@ flowchart TB
 
 - [x] ADR 005 (this program’s architecture decision)
 - [x] LLD schemas ([PLAY_FEEDBACK_TRAINING_LLD.md](./PLAY_FEEDBACK_TRAINING_LLD.md))
-- [ ] `lib/models/PlayFeedbackEvent.js` + register in tenant models
-- [ ] `lib/intelligence/playFeedbackRecorder.js`
-- [ ] Wire recorder into play results completion (v1 + unified v1 API paths)
-- [ ] Zod schema `lib/intelligence/playFeedbackSchema.js`
-- [ ] Env keys in [INTELLIGENCE_ENV.example](./INTELLIGENCE_ENV.example)
+- [x] `lib/models/PlayFeedbackEvent.js` + register in tenant models
+- [x] `lib/intelligence/playFeedbackRecorder.js`
+- [x] Wire recorder into play results completion (`/api/v1/play/[playId]/results`)
+- [x] Zod schema `lib/intelligence/playFeedbackSchema.js`
+- [x] Env keys in [INTELLIGENCE_ENV.example](./INTELLIGENCE_ENV.example)
 
 ### Env
 
@@ -107,8 +107,8 @@ flowchart TB
 
 ### Deliverables
 
-- [ ] `lib/models/PlayFeedbackAggregate.js`
-- [ ] `lib/intelligence/playFeedbackExtractor.js`
+- [x] `lib/models/PlayFeedbackAggregate.js`
+- [x] `lib/intelligence/playFeedbackExtractor.js`
   - Inputs: event + `Play` + `Card` snapshots
   - Outputs: merge into aggregate (top/bottom cards, pairwise wins, swipe rates, confidence)
 - [ ] `RECONCILE_PLAY_FEEDBACK` step 1: extract only (no LLM), unit tests with fixture events
@@ -136,9 +136,9 @@ flowchart TB
 
 ### Deliverables
 
-- [ ] Master models: `IntelligenceMemory`, `IntelligenceRule`, `IntelligencePersona` ([LLD](./PLAY_FEEDBACK_TRAINING_LLD.md))
-- [ ] `lib/db.js` registration + `getMaster*Model` helpers
-- [ ] Operator API (local only):
+- [x] Master models: `IntelligenceMemory`, `IntelligenceRule`, `IntelligencePersona` ([LLD](./PLAY_FEEDBACK_TRAINING_LLD.md))
+- [x] `lib/db.js` registration + `getMaster*Model` helpers
+- [x] Operator API (local only):
   - `GET /api/intelligence/memory`
   - `GET /api/intelligence/rules`
   - `GET /api/intelligence/persona`
@@ -172,8 +172,8 @@ flowchart TB
 
 ### Replace stub
 
-- [ ] `lib/intelligence/jobHandlers.js` — real `RECONCILE_PLAY_FEEDBACK` branch
-- [ ] Cooldown: skip enqueue if job completed for `playId` within `PLAY_FEEDBACK_RECONCILE_COOLDOWN_H`
+- [x] `lib/intelligence/jobHandlers.js` — real `RECONCILE_PLAY_FEEDBACK` branch
+- [x] Cooldown: skip enqueue if job completed for `playId` within `PLAY_FEEDBACK_RECONCILE_COOLDOWN_H`
 
 ### Acceptance
 
@@ -188,9 +188,9 @@ flowchart TB
 
 ### Deliverables
 
-- [ ] `lib/intelligence/promptContext.js` — `buildGenerationContext()`
-- [ ] Inject into `runTopicChat` (`jobHandlers.js`)
-- [ ] Inject into `GENERATE_DECK_CARDS` / `PLAN_DECK` prompts
+- [x] `lib/intelligence/promptContext.js` — `buildGenerationContext()`
+- [x] Inject into `runTopicChat` (`jobHandlers.js`)
+- [x] Inject into `GENERATE_DECK_CARDS` / `PLAN_DECK` prompts
 - [ ] New job `DISTILL_PLAY_MEMORIES` (batch, no play session required)
 - [ ] New job `TRAIN_PERSONA_FROM_PLAY` (batch when `sessionCount >= minSessionsBeforeTrain`)
 

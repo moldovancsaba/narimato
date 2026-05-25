@@ -21,6 +21,7 @@
     "intelligence:smoke-projection": "node scripts/smoke-projection.js",
     "intelligence:backfill-approval": "node scripts/backfill-card-approval.js",
     "intelligence:e2e": "node scripts/e2e-intelligence.js",
+    "intelligence:test-play-feedback": "node scripts/test-play-feedback.js",
     "intelligence:ci-guard": "node scripts/ci-intelligence-guard.js",
     "gds:ci-guard": "node scripts/ci-gds-guard.js",
     "gds:sync": "bash scripts/gds-sync-packages.sh",

@@ -443,6 +443,58 @@ async function routeOperatorApi(req, res, pathname) {
       return;
     }
 
+    if (pathname === '/api/play-feedback/events' && req.method === 'GET') {
+      const url = new URL(req.url, 'http://127.0.0.1');
+      const orgId = url.searchParams.get('organizationId');
+      if (!orgId) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'organizationId required' }));
+        return;
+      }
+      const limit = Math.min(Number(url.searchParams.get('limit')) || 20, 100);
+      await withOrganization(orgId, async () => {
+        const { getTenantModels } = require('../../lib/tenantContext');
+        const { PlayFeedbackEvent, PlayFeedbackAggregate } = getTenantModels();
+        const deck = url.searchParams.get('deckRootTag');
+        const query = { organizationId: orgId };
+        if (deck) query.deckRootTag = deck;
+        const events = await PlayFeedbackEvent.find(query)
+          .sort({ completedAt: -1 })
+          .limit(limit);
+        const aggregates = await PlayFeedbackAggregate.find(
+          deck ? { organizationId: orgId, deckRootTag: deck } : { organizationId: orgId }
+        );
+        const {
+          getMasterIntelligenceMemoryModel,
+          getMasterIntelligenceRuleModel,
+          getMasterIntelligencePersonaModel,
+        } = require('../../lib/db');
+        const memories = await getMasterIntelligenceMemoryModel()
+          .find({ organizationId: orgId, ...(deck ? { deckRootTag: deck } : {}) })
+          .sort({ updatedAt: -1 })
+          .limit(20);
+        const rules = await getMasterIntelligenceRuleModel()
+          .find({ organizationId: orgId, active: true })
+          .sort({ priority: -1 })
+          .limit(20);
+        const persona = await getMasterIntelligencePersonaModel().findOne({
+          organizationId: orgId,
+          deckRootTag: deck || '',
+        });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            events,
+            aggregates,
+            memories,
+            rules,
+            persona,
+          })
+        );
+      });
+      return;
+    }
+
     if (pathname === '/api/projection/refresh' && req.method === 'POST') {
       const body = await readBody(req);
       await withOrganization(body.organizationId, async () => {

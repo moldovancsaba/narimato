@@ -2,7 +2,7 @@
 
 Hierarchy: **ADR 003/004/005** → this doc → `WEBAPP_READ_MODEL_LLD.md` → `LOCAL_AI_PIPELINE.md` → UI via `docs/GDS_ADOPTION.md`.
 
-**Play feedback training (proposed):** [adr/005-play-feedback-training.md](./adr/005-play-feedback-training.md) · [PLAY_FEEDBACK_TRAINING_PLAN.md](./PLAY_FEEDBACK_TRAINING_PLAN.md) · [PLAY_FEEDBACK_TRAINING_LLD.md](./PLAY_FEEDBACK_TRAINING_LLD.md)
+**Play feedback training:** [adr/005-play-feedback-training.md](./adr/005-play-feedback-training.md) · [PLAY_FEEDBACK_TRAINING_PLAN.md](./PLAY_FEEDBACK_TRAINING_PLAN.md) · [PLAY_FEEDBACK_TRAINING_LLD.md](./PLAY_FEEDBACK_TRAINING_LLD.md)
 
 **Program #26 (v1):** P0–P4 delivered on `main` — guardian + launchd (#44), `INTELLIGENCE_CI_GUARDS.md` (#45), `npm run intelligence:e2e` (#46).
 
@@ -18,10 +18,10 @@ Local Mac intelligence generates Narimato deck/card content. Vercel webapp is pl
 ## Models
 
 **Master:** `PipelineJob`, `TopicSpec`, `GlobalSetting`, `DeckIntelligenceConfig`, `Organization`.  
-**Master (ADR 005, planned):** `IntelligenceMemory`, `IntelligenceRule`, `IntelligencePersona`.
+**Master (ADR 005):** `IntelligenceMemory`, `IntelligenceRule`, `IntelligencePersona`.
 
 **Per-org:** `Card` (with lineage + approval), `IntelligenceSnapshot`, play collections.  
-**Per-org (ADR 005, planned):** `PlayFeedbackEvent`, `PlayFeedbackAggregate`.
+**Per-org (ADR 005):** `PlayFeedbackEvent`, `PlayFeedbackAggregate`.
 
 ## Code map
 
@@ -34,8 +34,7 @@ Local Mac intelligence generates Narimato deck/card content. Vercel webapp is pl
 | Job registry | `scripts/lib/pipeline-jobs.js` |
 | Jobs | `lib/intelligence/jobHandlers.js`, `jobQueue.js` |
 | Ollama | `lib/intelligence/ollama.js` |
-| Play feedback (stub) | `lib/intelligence/playFeedback.js` |
-| Play feedback (planned) | `playFeedbackRecorder.js`, `playFeedbackExtractor.js`, `playFeedbackReconcile.js`, `promptContext.js` |
+| Play feedback | `playFeedback.js`, `playFeedbackRecorder.js`, `playFeedbackExtractor.js`, `playFeedbackReconcile.js`, `promptContext.js`, `intelligenceStore.js` |
 | Workers | `scripts/sync.js`, `snapshot-worker.js`, `status-server.js`, `guardian.js` |
 | Operator API | `scripts/lib/operator-api.js` |
 

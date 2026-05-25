@@ -18,14 +18,12 @@ export default withApiVersion(async function handler(req, res) {
     const result = await runWithPlay(playId, async ({ engine, play }) => {
       const data = await engine.getResults(playId);
       if (play?.organizationId && (data?.status === 'completed' || data?.completed)) {
-        const { enqueuePlayFeedbackReconciliation } = require('../../../../../lib/intelligence/playFeedback');
-        const deckTag = play.deckTag || play.parentTag || null;
-        enqueuePlayFeedbackReconciliation({
+        const { processPlayFeedbackOnComplete } = require('../../../../../lib/intelligence/playFeedback');
+        processPlayFeedbackOnComplete({
           organizationId: play.organizationId,
-          playId,
-          deckRootTag: deckTag,
-          mode: play.mode,
-        }).catch(() => {});
+          play,
+          results: data,
+        }).catch((err) => console.warn('Play feedback:', err.message));
       }
       return data;
     });
