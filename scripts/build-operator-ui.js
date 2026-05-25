@@ -6,6 +6,8 @@ const path = require('path');
 const entry = path.join(__dirname, 'local-operator/entry.jsx');
 const outfile = path.join(__dirname, 'local-operator/bundle.js');
 
+const linkShim = path.join(__dirname, 'local-operator/next-link-shim.jsx');
+
 esbuild
   .build({
     entryPoints: [entry],
@@ -15,7 +17,15 @@ esbuild
     platform: 'browser',
     loader: { '.js': 'jsx', '.css': 'css' },
     jsx: 'automatic',
-    define: { 'process.env.NODE_ENV': '"production"' },
+    alias: {
+      'next/link': linkShim,
+    },
+    banner: {
+      js: 'var process = { env: { NODE_ENV: "production" } };',
+    },
+    define: {
+      'process.env.NODE_ENV': '"production"',
+    },
     logLevel: 'info',
   })
   .then(() => {
