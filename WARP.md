@@ -168,6 +168,11 @@ NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX # Optional: GA4 measurement ID
 | Document | Location | Purpose |
 |----------|----------|----------|
 | **API_REFERENCE.md** | docs/ | Complete API documentation with examples |
+| **NARIMATO_INTELLIGENCE_SSOT.md** | docs/ | Intelligence program SSOT |
+| **WEBAPP_READ_MODEL_LLD.md** | docs/ | Projection v1 contract (Zod-validated) |
+| **LOCAL_AI_PIPELINE.md** | docs/ | Mac workers, jobs, operator SOP |
+| **adr/003-local-ai-dual-runtime.md** | docs/adr/ | Dual-runtime authority split |
+| **adr/004-intelligence-product-policy.md** | docs/adr/ | Corpus, HiTL, generation policy |
 | **UUID.md** | root | UUID-centric architecture standard |
 | **CARD_EDITOR.md** | docs/ | Card creation/editing system |
 | **MULTI_LEVEL_CARD_SYSTEM.md** | docs/ | Hierarchical card organization |

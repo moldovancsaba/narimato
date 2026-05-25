@@ -6,6 +6,7 @@ const { registerPipelineJobModel } = require('../lib/models/PipelineJob');
 const { registerTopicSpecModel } = require('../lib/models/TopicSpec');
 const { registerGlobalSettingModel } = require('../lib/models/GlobalSetting');
 const { registerDeckIntelligenceConfigModel } = require('../lib/models/DeckIntelligenceConfig');
+const { registerSourceModel } = require('../lib/models/Source');
 const { registerOrgModels } = require('../lib/models/registry');
 
 async function ensureMasterCollections(conn) {
@@ -14,6 +15,7 @@ async function ensureMasterCollections(conn) {
     registerTopicSpecModel(conn),
     registerGlobalSettingModel(conn),
     registerDeckIntelligenceConfigModel(conn),
+    registerSourceModel(conn),
   ];
   for (const Model of models) {
     await Model.createCollection().catch(() => {});
