@@ -1,11 +1,18 @@
 #!/usr/bin/env node
-/** CI guard: enforce GDS adoption rules in app code (GDS 2.4.x). */
+/** CI guard: Narimato app code must use GDS contracts (2.4.x), not raw Mantine semantics. */
 const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 const SCAN_DIRS = ['components', 'pages', 'lib/ui'];
 const SKIP_PREFIXES = ['packages/'];
+
+/** Immersive play runtime — documented exception in docs/GDS_ADOPTION.md */
+const EXEMPT_REL = new Set([
+  'components/play/PlaySwipeSurface.js',
+  'components/play/PlayVoteSurface.js',
+  'components/NarimatoSemanticButton.js',
+]);
 
 const RULES = [
   {
@@ -24,6 +31,31 @@ const RULES = [
     message: 'Use StatusBadge from @gds/core for semantic status colors',
   },
   {
+    name: 'no-mantine-alert',
+    pattern: /<Alert\b/,
+    message: 'Use NarimatoGdsAlert (GDS StateBlock) instead of Mantine Alert',
+  },
+  {
+    name: 'no-raw-mantine-button',
+    pattern: /<Button\b/,
+    message: 'Use NarimatoSemanticButton or NarimatoChoiceChip — no raw Mantine Button',
+  },
+  {
+    name: 'no-button-color-prop',
+    pattern: /<Button[^>]*\bcolor=/,
+    message: 'Use NarimatoSemanticButton (GDS SemanticButton) without Mantine color=',
+  },
+  {
+    name: 'no-themeicon-color',
+    pattern: /<ThemeIcon[^>]*\bcolor=/,
+    message: 'Use GdsIcons without ThemeIcon color=, or GDS composition primitives',
+  },
+  {
+    name: 'no-raw-mantine-accent-bg',
+    pattern: /bg=["'](?:violet|green|red|orange|yellow|blue|cyan|grape|teal)\./,
+    message: 'Use NarimatoAccentPanel or gdsAccentPanelStyle — never raw Mantine palette bg on shells',
+  },
+  {
     name: 'no-legacy-narimato-shell',
     pattern: /from ['"].*NarimatoShell['"]|from ['"]\.\/NarimatoShell['"]/,
     message: 'Use PublicShell or NarimatoOperatorShell — NarimatoShell is deprecated',
@@ -38,6 +70,7 @@ const RULES = [
 let violations = [];
 
 function shouldScan(rel) {
+  if (EXEMPT_REL.has(rel)) return false;
   if (SKIP_PREFIXES.some((prefix) => rel.startsWith(prefix))) return false;
   return /\.(js|jsx|ts|tsx)$/.test(rel);
 }
@@ -70,5 +103,4 @@ if (violations.length) {
   console.error('GDS CI guard failed:\n' + violations.join('\n'));
   process.exit(1);
 }
-
 console.log('GDS CI guard passed');

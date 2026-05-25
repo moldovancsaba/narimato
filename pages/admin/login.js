@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { Button, PasswordInput, Stack, TextInput } from '@mantine/core';
+import { PasswordInput, Stack, TextInput } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { NarimatoFormField } from '../../components/NarimatoFormField';
 import { NarimatoAuthShell } from '../../components/NarimatoAuthShell';
+import { NarimatoSemanticButton } from '../../components/NarimatoSemanticButton';
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -67,9 +68,13 @@ export default function AdminLogin() {
               required
             />
           </NarimatoFormField>
-          <Button type="submit" loading={loading} disabled={!email || !password} fullWidth>
-            Sign in
-          </Button>
+          <NarimatoSemanticButton
+            type="submit"
+            action="login"
+            loading={loading}
+            disabled={!email || !password}
+            fullWidth
+          />
         </Stack>
       </form>
     </NarimatoAuthShell>

@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import { Button, Center, Loader, Stack, Text } from '@mantine/core';
+import { Center, Loader, Stack, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { calculateCardSize } from '../lib/utils/cardSizing';
 import { PlaySwipeSurface } from '../components/play/PlaySwipeSurface';
+import { NarimatoSemanticButton } from '../components/NarimatoSemanticButton';
 import { PublicShell } from '../components/public/PublicShell';
 import { NarimatoPageHeader } from '../components/NarimatoPageHeader';
 import { useSurveyGate } from '../lib/hooks/useSurveyGate';
@@ -176,12 +177,11 @@ export default function SwipeOnly() {
         <Stack align="center" gap="md" py="xl">
           <NarimatoPageHeader title="Swipe complete" subtitle="Redirecting to results…" />
           {session ? (
-            <Button
+            <NarimatoSemanticButton
+              action="eye"
               component={Link}
               href={`/swipe-only-results?playId=${session.playId}&org=${org}&deck=${encodeURIComponent(deck)}`}
-            >
-              View results
-            </Button>
+            />
           ) : null}
         </Stack>
       </PublicShell>
@@ -193,9 +193,7 @@ export default function SwipeOnly() {
       <PublicShell>
         <Stack align="center" gap="md" py="xl">
           <NarimatoPageHeader title="No cards available" />
-          <Button component={Link} href={`/play?org=${org}`} variant="light">
-            Back to play
-          </Button>
+          <NarimatoSemanticButton action="back" component={Link} href={`/play?org=${org}`} variant="light" />
         </Stack>
       </PublicShell>
     );

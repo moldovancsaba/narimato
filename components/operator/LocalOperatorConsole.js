@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   Accordion,
-  Alert,
-  Button,
   Code,
   Group,
   Loader,
@@ -16,6 +14,7 @@ import {
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { ConfirmDialog, EmptyState, StatusBadge } from '@gds/core';
+import { NarimatoGdsAlert } from '../NarimatoGdsAlert';
 import { NarimatoFormField } from '../NarimatoFormField';
 import { NarimatoPageHeader } from '../NarimatoPageHeader';
 import { NarimatoSemanticButton } from '../NarimatoSemanticButton';
@@ -161,9 +160,11 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
       )}
 
       {simplified ? (
-        <Alert color="blue" variant="light" title="Advanced feature">
-          This area is for AI-generated content. If you only want to try Narimato, use the Home tab instead.
-        </Alert>
+        <NarimatoGdsAlert
+          color="blue"
+          title="Advanced feature"
+          description="This area is for AI-generated content. If you only want to try Narimato, use the Home tab instead."
+        />
       ) : null}
 
       {simplified ? (
@@ -412,7 +413,8 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
                 }
               }}
             />
-            <Button
+            <NarimatoSemanticButton
+              action="refresh"
               variant="default"
               onClick={async () => {
                 try {
@@ -425,9 +427,7 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
                   notifications.show({ color: 'red', message: err.message });
                 }
               }}
-            >
-              Refresh projection now
-            </Button>
+            />
           </Group>
         </Stack>
       </Paper>
@@ -469,10 +469,10 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
                     action="delete"
                     size="xs"
                     variant="default"
-                    color="red"
                     onClick={() => setRejectTarget(card)}
                   />
-                  <Button
+                  <NarimatoSemanticButton
+                    action="complete"
                     size="xs"
                     variant="light"
                     onClick={async () => {
@@ -483,8 +483,9 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
                     }}
                   >
                     👍
-                  </Button>
-                  <Button
+                  </NarimatoSemanticButton>
+                  <NarimatoSemanticButton
+                    action="cancel"
                     size="xs"
                     variant="light"
                     onClick={async () => {
@@ -495,7 +496,7 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
                     }}
                   >
                     👎
-                  </Button>
+                  </NarimatoSemanticButton>
                 </Group>
               </Paper>
             ))}
@@ -519,10 +520,9 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
               }
             }}
           />
-          <Button variant="default" onClick={loadPending}>
-            Reload
-          </Button>
-          <Button
+          <NarimatoSemanticButton action="refresh" variant="default" onClick={loadPending} />
+          <NarimatoSemanticButton
+            action="refresh"
             variant="default"
             onClick={async () => {
               try {
@@ -538,7 +538,7 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
             }}
           >
             Reconcile thumbs-down
-          </Button>
+          </NarimatoSemanticButton>
         </Group>
       </Paper>
 

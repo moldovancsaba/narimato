@@ -11,20 +11,15 @@ Narimato is a **standalone product repository**. The [General Design System (GDS
 
 **Pinned GDS version:** 2.4.3 (2026-05-25) — [sovereignsquad/general-design-system](https://github.com/sovereignsquad/general-design-system)
 
-### Last audit (2026-05-25)
-
-Synced from [general-design-system](https://github.com/sovereignsquad/general-design-system) `main` via `npm run gds:sync`.
+### Last audit (2026-05-24)
 
 | Check | Result |
 |-------|--------|
-| GDS policy release | **2.4.3** (`AccentPanel`, public/editorial primitives, `resolveAccentPanelStyles`) |
+| GDS policy release | **2.4.3** (`AccentPanel`, `resolveAccentPanelStyles`, public/editorial primitives) |
 | GDS package builds vs Narimato | **Synced** (`@gds/core` / `@gds/theme` 2.4.3) |
-| Narimato CI guard | **Passing** |
-| Breaking API gaps | **None** for current adapters |
-| Adapters | `NarimatoPageHeader`, `NarimatoFormField`, `NarimatoMetricCard`, `NarimatoSemanticButton` |
-| Color-mode accents | `lib/ui/gdsSurfaces.js` → GDS `resolveAccentPanelStyles` (replaces interim `light-dark` shim) |
-
-**Optional polish (2026-05-23):** SemanticButton, metric card, and shell light/dark mode shipped — see [GDS_OPTIONAL_IMPROVEMENTS_PLAN.md](./GDS_OPTIONAL_IMPROVEMENTS_PLAN.md). Immersive `/play` remains a documented exception (no shell toggle).
+| Narimato CI guard | **Passing** — no raw Mantine shell semantics |
+| Adapters | `NarimatoPageHeader`, `NarimatoFormField`, `NarimatoMetricCard`, `NarimatoSemanticButton`, `NarimatoGdsAlert`, `NarimatoAccentPanel`, `NarimatoChoiceChip` |
+| Accent surfaces | `lib/ui/gdsSurfaces.js` → GDS `resolveAccentPanelStyles`; prefer `NarimatoAccentPanel` on shells |
 
 When GDS changes again: build in the **GDS repo**, then in Narimato run `npm run gds:sync` and commit updated `packages/gds-*/dist`.
 
@@ -32,7 +27,7 @@ When GDS changes again: build in the **GDS repo**, then in Narimato run `npm run
 
 ## Required statement (Narimato adapter)
 
-> Narimato follows the [General Design System](https://github.com/sovereignsquad/general-design-system) via vendored `@gds/core` and `@gds/theme`. This repository documents Narimato-specific adapters, migration state, validation commands, and approved exceptions only.
+> Narimato follows the [General Design System](https://github.com/sovereignsquad/general-design-system) via vendored `@gds/core` and `@gds/theme`. Shell surfaces use GDS primitives and Narimato adapters only—never raw Mantine `Alert`, `Button`, `ThemeIcon color=`, or palette `bg="violet.0"` on product UI.
 
 ## How Narimato depends on GDS
 
@@ -41,11 +36,7 @@ When GDS changes again: build in the **GDS repo**, then in Narimato run `npm run
 3. **Local adapters** — Shells, headers, and theme extensions live under `components/` and `lib/ui/` in **this** repo only.
 4. **Sync** — When GDS releases new package builds, refresh vendored `dist/` with `npm run gds:sync` (see below). No need to change Narimato app structure unless GDS introduces breaking API changes.
 
-GDS may mention Narimato in its own portfolio docs; that is maintained **in the GDS repository**, not here.
-
 ## Updating vendored GDS packages
-
-On your machine, clone/build GDS separately, then copy into Narimato:
 
 ```bash
 # In the GDS repo (separate checkout):
@@ -62,8 +53,6 @@ Default sync path is `GDS_SSOT_ROOT` or `/Users/Shared/Projects/GENERAL_DESIGN_S
 
 ## Pattern contract inventory (Narimato)
 
-Narimato’s mapping to GDS pattern families (see GDS `PATTERN_SERVICE_MODEL.md` for definitions):
-
 | Pattern family | Narimato implementation | Status |
 |----------------|----------------------|--------|
 | Root provider | `components/NarimatoProviders.js` | Done |
@@ -72,14 +61,15 @@ Narimato’s mapping to GDS pattern families (see GDS `PATTERN_SERVICE_MODEL.md`
 | Operator shell | `components/operator/NarimatoOperatorShell.js` | Done |
 | Admin shell | `components/admin/AdminShell.js` | Done |
 | Auth shell | `components/NarimatoAuthShell.js` | Done |
-| Page header | `components/NarimatoPageHeader.js` → GDS `PageHeader` (`@gds/core/server`) | Done |
-| Form field | `components/NarimatoFormField.js` → GDS `FormField` (`@gds/core/server`) | Done |
-| Article / legal | `PublicShell` on legal routes | Partial |
-| State block | `EmptyState`, `StatusBadge`, `ConfirmDialog` from `@gds/core` | Done |
-| Metric card | `components/NarimatoMetricCard.js` → GDS `MetricCard` → `OperatorDashboard.js` | Done |
-| Semantic CTA | `components/NarimatoSemanticButton.js` → operator + landing | Done |
-| Shell theme toggle | `components/NarimatoThemeToggle.js` → public/operator/admin/auth shells | Done |
-| Data toolbar / table | — | N/A |
+| Page header | `components/NarimatoPageHeader.js` → GDS `PageHeader` | Done |
+| Form field | `components/NarimatoFormField.js` → GDS `FormField` | Done |
+| State block | `components/NarimatoGdsAlert.js` → GDS `StateBlock` | Done |
+| Accent panel | `components/NarimatoAccentPanel.js` → GDS `AccentPanel` | Done |
+| Semantic CTA | `components/NarimatoSemanticButton.js` → GDS `SemanticButton` | Done |
+| Filter / mode chip | `components/NarimatoChoiceChip.js` (neutral `Badge`, no `color=`) | Done |
+| Metric card | `components/NarimatoMetricCard.js` → GDS `MetricCard` | Done |
+| Empty / status | `EmptyState`, `StatusBadge`, `ConfirmDialog` from `@gds/core` | Done |
+| Shell theme toggle | `components/NarimatoThemeToggle.js` | Done |
 
 ## Product surfaces
 
@@ -88,7 +78,7 @@ Narimato’s mapping to GDS pattern families (see GDS `PATTERN_SERVICE_MODEL.md`
 | Public site | narimato.com | `PublicShell` |
 | Local setup | `127.0.0.1:10006` | `NarimatoOperatorShell` |
 | Admin | `/admin/*` | `AdminShell` / `NarimatoAuthShell` |
-| Immersive play | `/play`, `/swipe-only` | None (exception) |
+| Immersive play | `/play` (in-game), `PlaySwipeSurface`, `PlayVoteSurface` | Documented exception |
 
 ## Local adapter paths
 
@@ -96,30 +86,34 @@ Narimato’s mapping to GDS pattern families (see GDS `PATTERN_SERVICE_MODEL.md`
 |---------|------|
 | Root provider | `components/NarimatoProviders.js` |
 | Theme | `lib/ui/narimatoTheme.js` (`extendGdsTheme`) |
-| Accent surfaces | `lib/ui/gdsSurfaces.js` (interim; GDS [#82](https://github.com/sovereignsquad/general-design-system/issues/82)) |
+| Accent tokens | `lib/ui/gdsSurfaces.js` → `resolveAccentPanelStyles` |
+| GDS guard | `scripts/ci-gds-guard.js` |
 | Public UI | `components/public/*` |
 | Operator UI | `components/operator/*` |
-| Survey access | `lib/system/surveyAccess.js`, `lib/hooks/useSurveyGate.js` |
-| Play | `components/play/*`, `styles/playGame.module.css` |
+| Play pickers | `components/play/PlayPicker.js` (GDS shell; immersive surfaces exempt) |
 
 ## Enforcement in this repo
 
-`npm run gds:ci-guard` checks Narimato code only:
+`npm run gds:ci-guard` scans `components/`, `pages/`, and `lib/ui/`:
 
-- Use `GdsIcons` from `@gds/core`, not `@tabler/icons-react`
-- Use `ConfirmDialog` with `confirmAction` / `cancelAction`
-- Use `StatusBadge` for semantic colors, not `<Badge color=…>`
-- Do not import removed `NarimatoShell`
+- `GdsIcons` from `@gds/core`, not `@tabler/icons-react`
+- `ConfirmDialog` with `confirmAction` / `cancelAction`
+- `StatusBadge` for semantic colors, not `<Badge color=…>`
+- `NarimatoGdsAlert` instead of Mantine `<Alert>`
+- `NarimatoSemanticButton` or `NarimatoChoiceChip` instead of Mantine `<Button>`
+- No `<Button color=…>` or `<ThemeIcon color=…>`
+- No raw Mantine palette `bg="violet.0"` on shells — use `NarimatoAccentPanel` or `gdsAccentPanelStyle`
+- No deprecated `NarimatoShell` imports
 
 ## Approved Narimato-only exceptions
 
 | Surface | Reason |
 |---------|--------|
-| Immersive play | Full-viewport game UI; no `ThemeToggle` (custom CSS) |
-| Accent panels | Use `lib/ui/gdsSurfaces.js` (`light-dark`) — never raw `bg="violet.0"` on shell pages |
-| `playGame.module.css` | Play layout tokens |
-| Admin routes | Not on public nav |
-| LocalOperatorConsole utility actions | Reload / refresh projection keep plain `Button` (no GDS action key) |
+| `components/play/PlaySwipeSurface.js`, `PlayVoteSurface.js` | Full-viewport immersive game UI (exempt from guard) |
+| `components/NarimatoSemanticButton.js` | SSR prerender fallback uses Mantine `Button` without `color=` until hydrated |
+| `styles/playGame.module.css` | Play layout tokens |
+| `notifications.show({ color })` | Mantine notifications API (not shell markup) |
+| Admin routes | Not on public nav; still use GDS adapters |
 
 ## Validation
 

@@ -1,21 +1,12 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import {
-  Alert,
-  Button,
-  Code,
-  Group,
-  Paper,
-  Select,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from '@mantine/core';
+import { Code, Group, Paper, Select, Stack, Text, TextInput, Title } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { NarimatoFormField } from '../../components/NarimatoFormField';
+import { NarimatoGdsAlert } from '../../components/NarimatoGdsAlert';
 import { AdminShell } from '../../components/admin/AdminShell';
 import { NarimatoPageHeader } from '../../components/NarimatoPageHeader';
+import { NarimatoSemanticButton } from '../../components/NarimatoSemanticButton';
 import { getSessionUser } from '../../lib/system/userAuth';
 
 export async function getServerSideProps(ctx) {
@@ -127,18 +118,21 @@ export default function AdminUsers() {
                   ]}
                 />
               </NarimatoFormField>
-              <Button type="submit">Create user</Button>
+              <NarimatoSemanticButton type="submit" action="add" />
             </Stack>
           </form>
         </Paper>
 
-        {error ? (
-          <Alert color="red">{error}</Alert>
-        ) : null}
+        {error ? <NarimatoGdsAlert color="red" description={error} /> : null}
         {lastPassword ? (
-          <Alert color="dark" title="Generated password">
+          <Stack gap="xs">
+            <NarimatoGdsAlert
+              color="dark"
+              title="Generated password"
+              description="Copy and store this password securely."
+            />
             <Code>{lastPassword}</Code>
-          </Alert>
+          </Stack>
         ) : null}
 
         <Title order={2}>Existing users</Title>
@@ -152,17 +146,18 @@ export default function AdminUsers() {
                     {u.role}
                   </Text>
                 </div>
-                <Button size="sm" variant="light" onClick={() => regenerate(u.email)}>
-                  Regenerate password
-                </Button>
+                <NarimatoSemanticButton
+                  action="refresh"
+                  size="sm"
+                  variant="light"
+                  onClick={() => regenerate(u.email)}
+                />
               </Group>
             </Paper>
           ))}
         </Stack>
 
-        <Button component={Link} href="/" variant="default">
-          Home
-        </Button>
+        <NarimatoSemanticButton action="home" component={Link} href="/" variant="default" />
       </Stack>
     </AdminShell>
   );

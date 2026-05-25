@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
-  Alert,
   Anchor,
   Group,
   Loader,
@@ -14,6 +13,7 @@ import {
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { StatusBadge } from '@gds/core';
+import { NarimatoGdsAlert } from '../NarimatoGdsAlert';
 import { NarimatoPageHeader } from '../NarimatoPageHeader';
 import { NarimatoSemanticButton } from '../NarimatoSemanticButton';
 import { gdsAccentPanel } from '../../lib/ui/gdsSurfaces';
@@ -132,13 +132,20 @@ export function CorpusCardsConsole() {
         description="Ingest sources on the webapp; generation and HiTL approval run on the local operator console."
       />
 
-      <Alert color="blue">
-        Card mutations and Ollama generation require{' '}
-        <Anchor href="http://127.0.0.1:10006" target="_blank" rel="noreferrer">
-          local operator
-        </Anchor>
-        . See <Anchor href="/local-ai">/local-ai</Anchor> for worker status.
-      </Alert>
+      <NarimatoGdsAlert
+        color="blue"
+        title="Local operator required"
+        description="Card mutations and Ollama generation run on the Mac operator console."
+        action={
+          <>
+            <Anchor href="http://127.0.0.1:10006" target="_blank" rel="noreferrer">
+              Open operator
+            </Anchor>
+            {' · '}
+            <Anchor href="/local-ai">Local AI status</Anchor>
+          </>
+        }
+      />
 
       <Select
         label="Organization"
