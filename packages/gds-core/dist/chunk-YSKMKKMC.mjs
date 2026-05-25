@@ -605,6 +605,59 @@ function AccessSummary({ title, roles, scope, blocked = false, description }) {
   ] }) });
 }
 
+// src/FormField.tsx
+import { Box as Box4, Stack as Stack12, Text as Text11 } from "@mantine/core";
+import { jsx as jsx13, jsxs as jsxs12 } from "react/jsx-runtime";
+function FormField({ label, description, error, children }) {
+  return /* @__PURE__ */ jsx13(Box4, { component: "label", children: /* @__PURE__ */ jsxs12(Stack12, { gap: 4, children: [
+    /* @__PURE__ */ jsx13(Text11, { size: "xs", fw: 600, c: "dimmed", children: label }),
+    description ? /* @__PURE__ */ jsx13(Text11, { size: "xs", c: "dimmed", children: description }) : null,
+    children,
+    error ? /* @__PURE__ */ jsx13(Text11, { size: "xs", c: "red.7", children: error }) : null
+  ] }) });
+}
+
+// src/PageHeader.tsx
+import { Box as Box5, Group as Group10, Stack as Stack13, Text as Text12, Title as Title10 } from "@mantine/core";
+import { jsx as jsx14, jsxs as jsxs13 } from "react/jsx-runtime";
+function PageHeader({
+  title,
+  description,
+  eyebrow,
+  actions,
+  eyebrowVariant = "neutral"
+}) {
+  const eyebrowProps = eyebrowVariant === "ornamental" ? { tt: "uppercase", style: { letterSpacing: "0.12em" } } : {};
+  return /* @__PURE__ */ jsxs13(Group10, { justify: "space-between", align: "flex-start", gap: "lg", wrap: "wrap", children: [
+    /* @__PURE__ */ jsxs13(Stack13, { gap: "xs", children: [
+      eyebrow && /* @__PURE__ */ jsx14(Text12, { size: "xs", fw: 700, c: "dimmed", ...eyebrowProps, children: eyebrow }),
+      /* @__PURE__ */ jsx14(Title10, { order: 1, children: title }),
+      description && /* @__PURE__ */ jsx14(Text12, { c: "dimmed", maw: 720, children: description })
+    ] }),
+    actions ? /* @__PURE__ */ jsx14(Box5, { children: actions }) : null
+  ] });
+}
+
+// src/FilterDrawer.tsx
+import { Drawer, Group as Group11, Stack as Stack14 } from "@mantine/core";
+import { jsx as jsx15, jsxs as jsxs14 } from "react/jsx-runtime";
+function FilterDrawer({
+  opened,
+  onClose,
+  title,
+  children,
+  primaryAction,
+  secondaryAction
+}) {
+  return /* @__PURE__ */ jsx15(Drawer, { opened, onClose, title, position: "right", size: "md", children: /* @__PURE__ */ jsxs14(Stack14, { gap: "md", children: [
+    children,
+    primaryAction || secondaryAction ? /* @__PURE__ */ jsxs14(Group11, { justify: "space-between", mt: "md", children: [
+      secondaryAction ?? /* @__PURE__ */ jsx15("span", {}),
+      primaryAction
+    ] }) : null
+  ] }) });
+}
+
 // src/locales/en.ts
 var en = {
   "gds.action.settings": "Settings",
@@ -1797,6 +1850,9 @@ export {
   ArticleShell,
   MediaCard,
   AccessSummary,
+  FormField,
+  PageHeader,
+  FilterDrawer,
   en,
   hu,
   de,

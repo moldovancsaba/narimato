@@ -16,6 +16,7 @@ import { StatusBadge } from '@gds/core';
 import { PublicShell } from '../components/public/PublicShell';
 import { NarimatoPageHeader } from '../components/NarimatoPageHeader';
 import { useSurveyGate } from '../lib/hooks/useSurveyGate';
+import { gdsAccentSurface } from '../lib/ui/gdsSurfaces';
 
 export default function SwipeOnlyResults() {
   const router = useRouter();
@@ -74,11 +75,21 @@ export default function SwipeOnlyResults() {
             <Text fw={600}>Total cards</Text>
             <Text>{results.statistics.totalCards}</Text>
           </Paper>
-          <Paper withBorder p="md" radius="md" bg="green.0">
+          <Paper
+            withBorder
+            p="md"
+            radius="md"
+            style={{ backgroundColor: gdsAccentSurface.green }}
+          >
             <Text fw={600}>Liked</Text>
             <Text>{results.statistics.likedCards}</Text>
           </Paper>
-          <Paper withBorder p="md" radius="md" bg="red.0">
+          <Paper
+            withBorder
+            p="md"
+            radius="md"
+            style={{ backgroundColor: gdsAccentSurface.red }}
+          >
             <Text fw={600}>Rejected</Text>
             <Text>{results.statistics.rejectedCards}</Text>
           </Paper>

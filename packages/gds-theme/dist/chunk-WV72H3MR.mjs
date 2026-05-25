@@ -1,5 +1,5 @@
 // src/theme.ts
-import { DEFAULT_THEME, createTheme, mergeMantineTheme } from "@mantine/core";
+import { DEFAULT_THEME, createTheme, mergeMantineTheme, mergeThemeOverrides } from "@mantine/core";
 var baseTheme = mergeMantineTheme(DEFAULT_THEME, createTheme({
   primaryColor: "violet",
   fontFamily: "Inter, system-ui, Avenir, Helvetica, Arial, sans-serif",
@@ -25,19 +25,6 @@ var baseTheme = mergeMantineTheme(DEFAULT_THEME, createTheme({
         radius: "md",
         size: "sm",
         fw: 600
-      },
-      styles: {
-        root: {
-          transition: "transform 150ms ease, filter 120ms ease",
-          "&:hover": {
-            transform: "translateY(-1px)",
-            filter: "brightness(1.05)"
-          },
-          "&:active": {
-            transform: "translateY(0)",
-            filter: "brightness(0.95)"
-          }
-        }
       }
     },
     Card: {
@@ -48,8 +35,7 @@ var baseTheme = mergeMantineTheme(DEFAULT_THEME, createTheme({
       },
       styles: {
         root: {
-          backgroundColor: "var(--mantine-color-body)",
-          transition: "transform 150ms ease, box-shadow 150ms ease"
+          backgroundColor: "var(--mantine-color-body)"
         }
       }
     },
@@ -81,8 +67,42 @@ var gdsTheme = baseTheme;
 function extendGdsTheme(overrides = {}) {
   return mergeMantineTheme(baseTheme, overrides);
 }
+function withGdsMotion(overrides = {}) {
+  return extendGdsTheme(
+    mergeThemeOverrides(
+      {
+        components: {
+          Button: {
+            styles: {
+              root: {
+                transition: "transform 150ms ease, filter 120ms ease",
+                "&:hover": {
+                  transform: "translateY(-1px)",
+                  filter: "brightness(1.05)"
+                },
+                "&:active": {
+                  transform: "translateY(0)",
+                  filter: "brightness(0.95)"
+                }
+              }
+            }
+          },
+          Card: {
+            styles: {
+              root: {
+                transition: "transform 150ms ease, box-shadow 150ms ease"
+              }
+            }
+          }
+        }
+      },
+      overrides
+    )
+  );
+}
 
 export {
   gdsTheme,
-  extendGdsTheme
+  extendGdsTheme,
+  withGdsMotion
 };

@@ -1,4 +1,4 @@
-export { extendGdsTheme, gdsTheme } from './server.mjs';
+export { extendGdsTheme, gdsTheme, withGdsMotion } from './server.mjs';
 import * as react_jsx_runtime from 'react/jsx-runtime';
 import React from 'react';
 import '@mantine/core';

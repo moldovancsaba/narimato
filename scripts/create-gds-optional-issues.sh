@@ -78,7 +78,7 @@ PH3_TITLE="{narimato} GDS-3: Light and dark mode on shell pages"
 create_issue \
   "$PROGRAM_TITLE" \
   "## Objective
-Track optional UI polish so Narimato uses the external [General Design System](https://github.com/moldovancsaba/general-design-system) consistently. GDS and Narimato are **separate projects**; this program only changes the Narimato repo.
+Track optional UI polish so Narimato uses the external [General Design System](https://github.com/sovereignsquad/general-design-system) consistently. GDS and Narimato are **separate projects**; this program only changes the Narimato repo.
 
 ## Plan
 [docs/GDS_OPTIONAL_IMPROVEMENTS_PLAN.md](https://github.com/moldovancsaba/narimato/blob/main/docs/GDS_OPTIONAL_IMPROVEMENTS_PLAN.md)

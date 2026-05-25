@@ -18,6 +18,7 @@ import { NarimatoPageHeader } from '../NarimatoPageHeader';
 import { NarimatoSemanticButton } from '../NarimatoSemanticButton';
 import { LOCAL_TEST_URL, PUBLIC_SITE_URL } from './operatorCopy';
 import { operatorApi } from '../../lib/operator/clientApi';
+import { gdsAccentSurface } from '../../lib/ui/gdsSurfaces';
 
 export function OperatorSurveyPanel({ orgId }) {
   const [status, setStatus] = useState(null);
@@ -114,7 +115,12 @@ export function OperatorSurveyPanel({ orgId }) {
       />
 
       {needsSetup ? (
-        <Paper withBorder p="md" radius="md" bg="violet.0">
+        <Paper
+          withBorder
+          p="md"
+          radius="md"
+          style={{ backgroundColor: gdsAccentSurface.violet }}
+        >
           <Stack gap="sm">
             <Text fw={600}>Nothing to share yet</Text>
             <Text size="sm" c="dimmed">
@@ -208,7 +214,12 @@ export function OperatorSurveyPanel({ orgId }) {
         </Stack>
       </Paper>
 
-      <Paper withBorder p="md" radius="md" bg="gray.0">
+      <Paper
+        withBorder
+        p="md"
+        radius="md"
+        style={{ backgroundColor: gdsAccentSurface.gray }}
+      >
         <Stack gap="xs">
           <Text size="sm">
             <Text span fw={600}>

@@ -16,6 +16,7 @@ import { PublicShell } from '../components/public/PublicShell';
 import { NarimatoPageHeader } from '../components/NarimatoPageHeader';
 import { NarimatoSemanticButton } from '../components/NarimatoSemanticButton';
 import { CONTACT_EMAIL } from '../components/public/PublicFooter';
+import { gdsAccentSurface } from '../lib/ui/gdsSurfaces';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -62,7 +63,12 @@ export default function LandingPage() {
           subtitle="Narimato helps organisations understand what people really prefer — through swipe-and-rank play that feels like a game, not a form."
         />
 
-        <Paper withBorder p="lg" radius="md" bg="violet.0">
+        <Paper
+          withBorder
+          p="lg"
+          radius="md"
+          style={{ backgroundColor: gdsAccentSurface.violet }}
+        >
           <Stack gap="md">
             <GroupIconRow
               icon={GdsIcons.Users}

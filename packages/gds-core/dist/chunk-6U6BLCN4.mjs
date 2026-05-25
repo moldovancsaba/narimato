@@ -1,7 +1,7 @@
 import {
   GdsIcons,
   GdsVocabulary
-} from "./chunk-LYIFRKLS.mjs";
+} from "./chunk-YSKMKKMC.mjs";
 
 // src/SemanticButton.tsx
 import { useState, useEffect } from "react";
