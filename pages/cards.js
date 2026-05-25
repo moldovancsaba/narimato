@@ -1,7 +1,10 @@
-export async function getServerSideProps() {
-  return { redirect: { destination: '/', permanent: false } };
-}
+import { Container } from '@mantine/core';
+import { CorpusCardsConsole } from '../components/intelligence/CorpusCardsConsole';
 
-export default function CardsRedirect() {
-  return null;
+export default function CardsPage() {
+  return (
+    <Container size="md" py="xl">
+      <CorpusCardsConsole />
+    </Container>
+  );
 }

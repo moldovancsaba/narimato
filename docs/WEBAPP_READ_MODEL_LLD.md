@@ -2,7 +2,8 @@
 
 **Schema version:** 1  
 **Issue:** [#28](https://github.com/moldovancsaba/narimato/issues/28)  
-**Validator:** `lib/intelligence/projectionSchema.js` (Zod)
+**Validator:** `lib/intelligence/projectionSchema.js` (Zod)  
+**Adapter (routes):** `lib/webapp-projection.js` — `normalizeWebappProjection()`, `getProjectionFreshness()`
 
 ## Storage
 

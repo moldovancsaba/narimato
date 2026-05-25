@@ -15,7 +15,20 @@ export default withApiVersion(async function handler(req, res) {
     await connectMaster();
 
     const { playId } = validate(playIdParamSchema, req.query || {});
-    const result = await runWithPlay(playId, ({ engine }) => engine.getResults(playId));
+    const result = await runWithPlay(playId, async ({ engine, play }) => {
+      const data = await engine.getResults(playId);
+      if (play?.organizationId && (data?.status === 'completed' || data?.completed)) {
+        const { enqueuePlayFeedbackReconciliation } = require('../../../../../lib/intelligence/playFeedback');
+        const deckTag = play.deckTag || play.parentTag || null;
+        enqueuePlayFeedbackReconciliation({
+          organizationId: play.organizationId,
+          playId,
+          deckRootTag: deckTag,
+          mode: play.mode,
+        }).catch(() => {});
+      }
+      return data;
+    });
     return res.status(200).json(result);
   } catch (err) {
     const status = err.statusCode || 500;

@@ -1,7 +1,12 @@
-export async function getServerSideProps() {
-  return { redirect: { destination: '/', permanent: false } };
-}
+import { Container } from '@mantine/core';
+import { LocalAiDashboard } from '../components/intelligence/LocalAiDashboard';
+import { LocalOperatorNotice } from '../components/LocalOperatorNotice';
 
-export default function LocalAiRedirect() {
-  return null;
+export default function LocalAiPage() {
+  return (
+    <Container size="md" py="xl">
+      <LocalOperatorNotice />
+      <LocalAiDashboard />
+    </Container>
+  );
 }

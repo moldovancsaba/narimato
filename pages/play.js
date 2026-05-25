@@ -256,9 +256,21 @@ export default function Play() {
       const res = await fetch(`/api/play/decks?${params.toString()}`);
       const data = await res.json();
 
-      if (data.decks?.length) {
+      const meta = data.meta || null;
+      const useProjectionDecks =
+        data.decks?.length > 0 &&
+        meta?.source === 'projection' &&
+        meta?.freshness?.status !== 'missing';
+
+      if (useProjectionDecks) {
         setDecks(data.decks);
-        setProjectionMeta(data.meta || null);
+        setProjectionMeta(meta);
+        return;
+      }
+
+      if (data.decks?.length && !meta?.freshness) {
+        setDecks(data.decks);
+        setProjectionMeta(meta);
         return;
       }
 

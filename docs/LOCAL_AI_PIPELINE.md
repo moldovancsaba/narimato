@@ -34,11 +34,15 @@
 | `APPEND_CARDS` | Add cards; skip existing tags |
 | `REGENERATE_TAG` | Archive one tag + replace |
 | `REFRESH_PROJECTION` | Rebuild `webappProjection` (no LLM) |
-| `RECONCILE_FEEDBACK` | Operator thumbs feedback (stub reconcile) |
+| `INGEST_SOURCE` | Corpus `Source` → `TopicSpec` draft |
+| `RECONCILE_FEEDBACK` | Operator thumbs reconciliation |
+| `RECONCILE_PLAY_FEEDBACK` | Play results hook (stub; `INTELLIGENCE_PLAY_FEEDBACK_ENABLED=0`) |
 
-Legacy aliases: `INGEST_SOURCE` → topic/corpus writes; `RECONCILE_PLAY_FEEDBACK` → `RECONCILE_FEEDBACK`.
+Registry: `scripts/lib/pipeline-jobs.js` · adapter: `lib/webapp-projection.js`
 
 ## Env vars
+
+Template: [INTELLIGENCE_ENV.example](./INTELLIGENCE_ENV.example) (copy keys into `.env.local`).
 
 | Variable | Default |
 |----------|---------|

@@ -22,7 +22,10 @@ Local Mac intelligence generates Narimato deck/card content. Vercel webapp is pl
 | Area | Path |
 |------|------|
 | Constants | `lib/intelligence/constants.js` |
+| Webapp adapter | `lib/webapp-projection.js` (normalize + freshness) |
+| Corpus | `lib/models/Source.js`, `lib/intelligence/sourceService.js` |
 | Projection | `lib/intelligence/projectionBuilder.js`, `projectionReader.js` |
+| Job registry | `scripts/lib/pipeline-jobs.js` |
 | Jobs | `lib/intelligence/jobHandlers.js`, `jobQueue.js` |
 | Ollama | `lib/intelligence/ollama.js` |
 | Workers | `scripts/sync.js`, `snapshot-worker.js`, `status-server.js`, `guardian.js` |

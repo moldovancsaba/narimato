@@ -3,7 +3,7 @@ require('./load-env');
 const http = require('http');
 const { PORTS } = require('../lib/intelligence/constants');
 const { claimNextJob, completeJob, failJob } = require('../lib/intelligence/jobQueue');
-const { handleJob } = require('../lib/intelligence/jobHandlers');
+const { runJob } = require('./lib/pipeline-jobs');
 const { setWorkerHeartbeat } = require('../lib/intelligence/dirtyQueue');
 const { connectMaster } = require('../lib/db');
 
@@ -19,7 +19,7 @@ async function processOneJob() {
   running = true;
   lastJob = { uuid: job.uuid, type: job.type, at: new Date().toISOString() };
   try {
-    const result = await handleJob(job);
+    const result = await runJob(job);
     await completeJob(job.uuid, result);
     lastError = null;
     console.log(`✅ Job ${job.uuid} (${job.type}) completed`);
