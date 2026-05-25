@@ -1,10 +1,8 @@
-import { useState } from 'react';
-import Link from 'next/link';
 import { AppShell, Burger, Group, NavLink, ScrollArea, Stack, Text } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { GdsIcons } from '@gds/core';
 import { NarimatoThemeToggle } from '../NarimatoThemeToggle';
-import { NAV_SECTIONS, OPERATOR_EXTERNAL_LINKS } from './operatorCopy';
+import { LOCAL_TEST_URL, NAV_SECTIONS, OPERATOR_EXTERNAL_LINKS } from './operatorCopy';
 
 const TAB_ICONS = {
   dashboard: GdsIcons.Home,
@@ -88,8 +86,10 @@ export function NarimatoOperatorShell({ activeTab, onTabChange, children }) {
             />
           ))}
           <NavLink
-            component={Link}
-            href="/"
+            component="a"
+            href={LOCAL_TEST_URL}
+            target="_blank"
+            rel="noreferrer"
             label="Preview public site (dev)"
             description="Next.js home when running npm run dev"
             leftSection={<GdsIcons.Home size="1rem" />}
