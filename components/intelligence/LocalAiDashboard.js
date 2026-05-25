@@ -16,7 +16,7 @@ import { StatusBadge } from '@gds/core';
 import { LocalAiQuickLinks } from './LocalAiQuickLinks';
 import { NarimatoPageHeader } from '../NarimatoPageHeader';
 import { NarimatoSemanticButton } from '../NarimatoSemanticButton';
-import { gdsAccentSurface } from '../../lib/ui/gdsSurfaces';
+import { gdsAccentPanel } from '../../lib/ui/gdsSurfaces';
 
 export function LocalAiDashboard() {
   const [status, setStatus] = useState(null);
@@ -106,7 +106,7 @@ export function LocalAiDashboard() {
       </Group>
 
       <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="md">
-        <Paper p="md" withBorder style={gdsAccentSurface}>
+        <Paper p="md" withBorder style={gdsAccentPanel.default}>
           <Text size="sm" c="dimmed">
             Sync worker
           </Text>
@@ -115,7 +115,7 @@ export function LocalAiDashboard() {
             Health :{ports.SYNC || 10005}
           </Anchor>
         </Paper>
-        <Paper p="md" withBorder style={gdsAccentSurface}>
+        <Paper p="md" withBorder style={gdsAccentPanel.default}>
           <Text size="sm" c="dimmed">
             Snapshot worker
           </Text>
@@ -131,7 +131,7 @@ export function LocalAiDashboard() {
             Health :{ports.SNAPSHOT || 10007}
           </Anchor>
         </Paper>
-        <Paper p="md" withBorder style={gdsAccentSurface}>
+        <Paper p="md" withBorder style={gdsAccentPanel.default}>
           <Text size="sm" c="dimmed">
             Guardian
           </Text>
@@ -142,13 +142,13 @@ export function LocalAiDashboard() {
             npm run intelligence:install
           </Text>
         </Paper>
-        <Paper p="md" withBorder style={gdsAccentSurface}>
+        <Paper p="md" withBorder style={gdsAccentPanel.default}>
           <Text size="sm" c="dimmed">
             Dirty orgs
           </Text>
           <Title order={4}>{status?.dirty?.orgIds?.length ?? 0}</Title>
         </Paper>
-        <Paper p="md" withBorder style={gdsAccentSurface}>
+        <Paper p="md" withBorder style={gdsAccentPanel.default}>
           <Text size="sm" c="dimmed">
             Operator bundle
           </Text>
@@ -158,7 +158,7 @@ export function LocalAiDashboard() {
             </StatusBadge>
           </Group>
         </Paper>
-        <Paper p="md" withBorder style={gdsAccentSurface}>
+        <Paper p="md" withBorder style={gdsAccentPanel.default}>
           <Text size="sm" c="dimmed">
             Ollama
           </Text>
@@ -173,7 +173,7 @@ export function LocalAiDashboard() {
 
       <LocalAiQuickLinks links={status?.links} title="All related links" />
 
-      <Paper p="md" withBorder style={gdsAccentSurface}>
+      <Paper p="md" withBorder style={gdsAccentPanel.default}>
         <Title order={5} mb="sm">
           Operator menu (port {ports.STATUS || 10006})
         </Title>

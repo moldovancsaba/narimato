@@ -9,7 +9,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 if [[ ! -d "$GDS_ROOT/packages/gds-core/dist" ]]; then
   echo "GDS package dist not found at: $GDS_ROOT"
   echo "Clone and build the general-design-system repo first:"
-  echo "  git clone https://github.com/sovereignsquad/general-design-system.git"
+  echo "  git clone https://github.com/sovereignsquad/general-design-system.git  # SSOT: sovereignsquad/general-design-system"
   echo "  cd general-design-system && npm run build"
   exit 1
 fi

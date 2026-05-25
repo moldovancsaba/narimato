@@ -16,7 +16,7 @@ import { notifications } from '@mantine/notifications';
 import { StatusBadge } from '@gds/core';
 import { NarimatoPageHeader } from '../NarimatoPageHeader';
 import { NarimatoSemanticButton } from '../NarimatoSemanticButton';
-import { gdsAccentSurface } from '../../lib/ui/gdsSurfaces';
+import { gdsAccentPanel } from '../../lib/ui/gdsSurfaces';
 
 export function CorpusCardsConsole() {
   const [organizations, setOrganizations] = useState([]);
@@ -160,7 +160,7 @@ export function CorpusCardsConsole() {
         </NarimatoSemanticButton>
       </Group>
 
-      <Paper p="md" withBorder style={gdsAccentSurface} component="form" onSubmit={addSource}>
+      <Paper p="md" withBorder style={gdsAccentPanel.default} component="form" onSubmit={addSource}>
         <Title order={4} mb="sm">
           Add corpus source
         </Title>
@@ -182,7 +182,7 @@ export function CorpusCardsConsole() {
         <Loader />
       ) : (
         <>
-          <Paper p="md" withBorder style={gdsAccentSurface}>
+          <Paper p="md" withBorder style={gdsAccentPanel.default}>
             <Title order={5} mb="xs">
               Sources ({sources.length})
             </Title>
@@ -207,7 +207,7 @@ export function CorpusCardsConsole() {
             )}
           </Paper>
 
-          <Paper p="md" withBorder style={gdsAccentSurface}>
+          <Paper p="md" withBorder style={gdsAccentPanel.default}>
             <Title order={5} mb="xs">
               Pending approval ({pendingCards.length})
             </Title>
