@@ -18,6 +18,7 @@ import { NarimatoMetricCard } from '../NarimatoMetricCard';
 import { NarimatoPageHeader } from '../NarimatoPageHeader';
 import { NarimatoSemanticButton } from '../NarimatoSemanticButton';
 import { OperatorSetupSteps } from './OperatorSetupSteps';
+import { LocalAiQuickLinks } from '../intelligence/LocalAiQuickLinks';
 import { LOCAL_TEST_URL } from './operatorCopy';
 import { operatorApi } from '../../lib/operator/clientApi';
 import { gdsAccentSurface } from '../../lib/ui/gdsSurfaces';
@@ -260,6 +261,8 @@ export function OperatorDashboard({ orgId, organizations, onSelectTab }) {
           />
         </SimpleGrid>
       ) : null}
+
+      {status?.links ? <LocalAiQuickLinks links={status.links} title="Related URLs & tools" /> : null}
 
       <Accordion variant="contained" radius="md">
         <Accordion.Item value="system">

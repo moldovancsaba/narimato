@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "intelligence:guardian": "node scripts/guardian.js",
+    "intelligence:open": "bash scripts/open-local-ai.sh",
+    "intelligence:desktop": "bash scripts/install-desktop-launcher.sh",
     "intelligence:install": "bash scripts/install-intelligence-launchd.sh",
     "intelligence:uninstall": "bash scripts/uninstall-intelligence-launchd.sh",
     "intelligence:sync": "node scripts/sync.js",

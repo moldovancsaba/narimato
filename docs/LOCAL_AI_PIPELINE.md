@@ -104,3 +104,5 @@ npm run intelligence:e2e        # corpus → jobs → projection → play (needs
 
 Guardian at login: `npm run intelligence:install` (LaunchAgent `com.narimato.intelligence`).
 Template plist: `scripts/launchd/com.narimato.intelligence.plist`.
+
+**Desktop launcher (macOS):** `npm run intelligence:desktop` installs **Open Narimato Local AI.command** on your Desktop. It starts the stack if needed and opens the operator console (+ webapp hubs when `npm run dev` is running).

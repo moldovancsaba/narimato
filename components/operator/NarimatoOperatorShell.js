@@ -4,7 +4,7 @@ import { AppShell, Burger, Group, NavLink, ScrollArea, Stack, Text } from '@mant
 import { useDisclosure } from '@mantine/hooks';
 import { GdsIcons } from '@gds/core';
 import { NarimatoThemeToggle } from '../NarimatoThemeToggle';
-import { NAV_SECTIONS } from './operatorCopy';
+import { NAV_SECTIONS, OPERATOR_EXTERNAL_LINKS } from './operatorCopy';
 
 const TAB_ICONS = {
   dashboard: GdsIcons.Home,
@@ -71,11 +71,27 @@ export function NarimatoOperatorShell({ activeTab, onTabChange, children }) {
               })}
             </Stack>
           ))}
+          <Text size="xs" tt="uppercase" fw={700} c="dimmed" px="sm" mt="md" mb={4}>
+            Related pages
+          </Text>
+          {OPERATOR_EXTERNAL_LINKS.map((item) => (
+            <NavLink
+              key={item.href}
+              component="a"
+              href={item.href}
+              target="_blank"
+              rel="noreferrer"
+              label={item.label}
+              description={item.description}
+              leftSection={<GdsIcons.Forward size="1rem" stroke={1.5} />}
+              mb={4}
+            />
+          ))}
           <NavLink
             component={Link}
             href="/"
-            label="Preview public site"
-            description="See what participants see"
+            label="Preview public site (dev)"
+            description="Next.js home when running npm run dev"
             leftSection={<GdsIcons.Home size="1rem" />}
             mt="md"
           />
