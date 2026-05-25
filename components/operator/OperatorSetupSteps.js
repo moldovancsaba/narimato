@@ -1,5 +1,6 @@
 import { Box, Group, Paper, Stack, Text, ThemeIcon } from '@mantine/core';
 import { GdsIcons } from '@gds/core';
+import { gdsAccentSurface } from '../../lib/ui/gdsSurfaces';
 
 export function OperatorSetupSteps({ steps }) {
   return (
@@ -14,8 +15,9 @@ export function OperatorSetupSteps({ steps }) {
             withBorder
             p="md"
             radius="md"
-            bg={active ? 'violet.0' : undefined}
+            bg={undefined}
             style={{
+              backgroundColor: active ? gdsAccentSurface.violet : undefined,
               borderColor: done
                 ? 'var(--mantine-color-green-4)'
                 : active

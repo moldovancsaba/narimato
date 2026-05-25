@@ -49,7 +49,7 @@ These are **separate**. Narimato may **use** or **follow** them, but they are no
 
 | Not Narimato | What it is |
 |--------------|------------|
-| **General Design System (GDS)** | Its own project: [general-design-system](https://github.com/moldovancsaba/general-design-system). Design rules and shared UI components. Narimato **imports copies** into `packages/gds-*`; the full GDS repo stays elsewhere. |
+| **General Design System (GDS)** | Its own project: [general-design-system](https://github.com/sovereignsquad/general-design-system). Design rules and shared UI components. Narimato **imports copies** into `packages/gds-*`; the full GDS repo stays elsewhere. |
 | **Amanoba** | Another product folder on your disk — not Narimato |
 | **Camera** (or any other app folder) | Another product — not Narimato |
 | **Mantine**, **Next.js**, **MongoDB** | Third-party tools Narimato is **built with** (like electricity in a house — not the house itself) |

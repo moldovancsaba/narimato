@@ -1,5 +1,5 @@
 import * as react from 'react';
-import { ReactNode } from 'react';
+import react__default, { ReactNode } from 'react';
 import * as _tabler_icons_react from '@tabler/icons-react';
 import * as react_jsx_runtime from 'react/jsx-runtime';
 import { BadgeProps } from '@mantine/core';
@@ -1108,6 +1108,34 @@ interface AccessSummaryProps {
     description?: ReactNode;
 }
 declare function AccessSummary({ title, roles, scope, blocked, description }: AccessSummaryProps): react_jsx_runtime.JSX.Element;
+
+interface FormFieldProps {
+    label: string;
+    description?: string;
+    error?: string;
+    children: react__default.ReactNode;
+}
+declare function FormField({ label, description, error, children }: FormFieldProps): react_jsx_runtime.JSX.Element;
+
+type PageHeaderEyebrowVariant = 'neutral' | 'ornamental';
+interface PageHeaderProps {
+    title: string;
+    description?: string;
+    eyebrow?: string;
+    actions?: react__default.ReactNode;
+    eyebrowVariant?: PageHeaderEyebrowVariant;
+}
+declare function PageHeader({ title, description, eyebrow, actions, eyebrowVariant, }: PageHeaderProps): react_jsx_runtime.JSX.Element;
+
+interface FilterDrawerProps {
+    opened: boolean;
+    onClose: () => void;
+    title: string;
+    children: react__default.ReactNode;
+    primaryAction?: react__default.ReactNode;
+    secondaryAction?: react__default.ReactNode;
+}
+declare function FilterDrawer({ opened, onClose, title, children, primaryAction, secondaryAction, }: FilterDrawerProps): react_jsx_runtime.JSX.Element;
 
 declare const en: {
     'gds.action.settings': string;
@@ -2278,4 +2306,4 @@ declare const ar: {
     'gds.state.emptyData': string;
 };
 
-export { AccessSummary, type AccessSummaryProps, ArticleShell, type ArticleShellProps, AuthShell, type AuthShellProps, DataToolbar, type DataToolbarFilterChip, type DataToolbarProps, EmptyState, type EmptyStateProps, GdsIcons, GdsVocabulary, MediaCard, type MediaCardAction, type MediaCardProps, MetricCard, type MetricCardProps, ProductCard, type ProductCardAction, type ProductCardMetaItem, type ProductCardProps, ProgressCard, type ProgressCardProps, PublicShell, type PublicShellProps, type SemanticAction, StateBlock, type StateBlockProps, type StateBlockVariant, StatusBadge, type StatusBadgeProps, type StatusVariant, ar, de, en, fr, he, hu, it, ru };
+export { AccessSummary, type AccessSummaryProps, ArticleShell, type ArticleShellProps, AuthShell, type AuthShellProps, DataToolbar, type DataToolbarFilterChip, type DataToolbarProps, EmptyState, type EmptyStateProps, FilterDrawer, type FilterDrawerProps, FormField, type FormFieldProps, GdsIcons, GdsVocabulary, MediaCard, type MediaCardAction, type MediaCardProps, MetricCard, type MetricCardProps, PageHeader, type PageHeaderEyebrowVariant, type PageHeaderProps, ProductCard, type ProductCardAction, type ProductCardMetaItem, type ProductCardProps, ProgressCard, type ProgressCardProps, PublicShell, type PublicShellProps, type SemanticAction, StateBlock, type StateBlockProps, type StateBlockVariant, StatusBadge, type StatusBadgeProps, type StatusVariant, ar, de, en, fr, he, hu, it, ru };

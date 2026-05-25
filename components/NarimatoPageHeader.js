@@ -1,16 +1,13 @@
-import { Group, Stack, Text, Title } from '@mantine/core';
+import { Box } from '@mantine/core';
+import { PageHeader } from '@gds/core/server';
 
 /**
- * Thin local PageHeader contract (GDS TEMPLATES/AppPageHeader.tsx.template).
+ * Narimato adapter for GDS PageHeader (maps subtitle → description).
  */
-export function NarimatoPageHeader({ title, subtitle, actions }) {
+export function NarimatoPageHeader({ title, subtitle, actions, eyebrow }) {
   return (
-    <Group justify="space-between" align="flex-start" gap="md" wrap="wrap" mb="lg">
-      <Stack gap={4}>
-        <Title order={1}>{title}</Title>
-        {subtitle ? <Text c="dimmed">{subtitle}</Text> : null}
-      </Stack>
-      {actions ? <Group gap="sm">{actions}</Group> : null}
-    </Group>
+    <Box mb="lg">
+      <PageHeader title={title} description={subtitle} actions={actions} eyebrow={eyebrow} />
+    </Box>
   );
 }

@@ -2,11 +2,11 @@
 
 Status: Shipped (2026-05-23)  
 Created: 2026-05-23  
-Depends on: GDS **2.3.0** packages vendored in Narimato (`packages/gds-*`)
+Depends on: GDS **2.3.1** packages vendored in Narimato (`packages/gds-*`)
 
 This plan covers **optional** polish items from the [GDS adoption audit](./GDS_ADOPTION.md). None of them block surveys or setup from working today.
 
-**Reminder:** [General Design System](https://github.com/moldovancsaba/general-design-system) is a **separate project**. Narimato only changes its own repo; GDS updates flow in via `npm run gds:sync` when needed.
+**Reminder:** [General Design System](https://github.com/sovereignsquad/general-design-system) is a **separate project**. Narimato only changes its own repo; GDS updates flow in via `npm run gds:sync` when needed.
 
 ---
 

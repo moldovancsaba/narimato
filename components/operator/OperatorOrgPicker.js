@@ -1,5 +1,6 @@
 import { Alert, Paper, Select, Stack, Text } from '@mantine/core';
 import { NarimatoFormField } from '../NarimatoFormField';
+import { gdsAccentSurface } from '../../lib/ui/gdsSurfaces';
 
 export function OperatorOrgPicker({
   organizations,
@@ -39,7 +40,12 @@ export function OperatorOrgPicker({
   const active = organizations.find((o) => o.uuid === orgId);
 
   return (
-    <Paper withBorder p={compact ? 'sm' : 'md'} radius="md" bg="gray.0">
+    <Paper
+      withBorder
+      p={compact ? 'sm' : 'md'}
+      radius="md"
+      style={{ backgroundColor: gdsAccentSurface.gray }}
+    >
       <Stack gap="xs">
         <NarimatoFormField label="Working on" description="All survey setup applies to this organisation">
           <Select

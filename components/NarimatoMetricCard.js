@@ -1,4 +1,4 @@
-import { MetricCard, StatusBadge } from '@gds/core';
+import { MetricCard, StatusBadge } from '@gds/core/server';
 
 /**
  * Narimato adapter for GDS MetricCard (label + value + optional status/hint).

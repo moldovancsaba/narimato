@@ -21,7 +21,8 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 var server_exports = {};
 __export(server_exports, {
   extendGdsTheme: () => extendGdsTheme,
-  gdsTheme: () => gdsTheme
+  gdsTheme: () => gdsTheme,
+  withGdsMotion: () => withGdsMotion
 });
 module.exports = __toCommonJS(server_exports);
 
@@ -52,19 +53,6 @@ var baseTheme = (0, import_core.mergeMantineTheme)(import_core.DEFAULT_THEME, (0
         radius: "md",
         size: "sm",
         fw: 600
-      },
-      styles: {
-        root: {
-          transition: "transform 150ms ease, filter 120ms ease",
-          "&:hover": {
-            transform: "translateY(-1px)",
-            filter: "brightness(1.05)"
-          },
-          "&:active": {
-            transform: "translateY(0)",
-            filter: "brightness(0.95)"
-          }
-        }
       }
     },
     Card: {
@@ -75,8 +63,7 @@ var baseTheme = (0, import_core.mergeMantineTheme)(import_core.DEFAULT_THEME, (0
       },
       styles: {
         root: {
-          backgroundColor: "var(--mantine-color-body)",
-          transition: "transform 150ms ease, box-shadow 150ms ease"
+          backgroundColor: "var(--mantine-color-body)"
         }
       }
     },
@@ -108,8 +95,42 @@ var gdsTheme = baseTheme;
 function extendGdsTheme(overrides = {}) {
   return (0, import_core.mergeMantineTheme)(baseTheme, overrides);
 }
+function withGdsMotion(overrides = {}) {
+  return extendGdsTheme(
+    (0, import_core.mergeThemeOverrides)(
+      {
+        components: {
+          Button: {
+            styles: {
+              root: {
+                transition: "transform 150ms ease, filter 120ms ease",
+                "&:hover": {
+                  transform: "translateY(-1px)",
+                  filter: "brightness(1.05)"
+                },
+                "&:active": {
+                  transform: "translateY(0)",
+                  filter: "brightness(0.95)"
+                }
+              }
+            }
+          },
+          Card: {
+            styles: {
+              root: {
+                transition: "transform 150ms ease, box-shadow 150ms ease"
+              }
+            }
+          }
+        }
+      },
+      overrides
+    )
+  );
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   extendGdsTheme,
-  gdsTheme
+  gdsTheme,
+  withGdsMotion
 });

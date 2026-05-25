@@ -26,11 +26,13 @@ __export(index_exports, {
   ConfirmDialog: () => ConfirmDialog,
   DataToolbar: () => DataToolbar,
   EmptyState: () => EmptyState,
+  FilterDrawer: () => FilterDrawer,
   FormField: () => FormField,
   GdsIcons: () => GdsIcons,
   GdsVocabulary: () => GdsVocabulary,
   MediaCard: () => MediaCard,
   MetricCard: () => MetricCard,
+  PageHeader: () => PageHeader,
   ProductCard: () => ProductCard,
   ProgressCard: () => ProgressCard,
   PublicShell: () => PublicShell,
@@ -721,6 +723,59 @@ function AccessSummary({ title, roles, scope, blocked = false, description }) {
       scope
     ] }) : null,
     description ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(import_core16.Text, { size: "sm", children: description }) : null
+  ] }) });
+}
+
+// src/FormField.tsx
+var import_core17 = require("@mantine/core");
+var import_jsx_runtime17 = require("react/jsx-runtime");
+function FormField({ label, description, error, children }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Box, { component: "label", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(import_core17.Stack, { gap: 4, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Text, { size: "xs", fw: 600, c: "dimmed", children: label }),
+    description ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Text, { size: "xs", c: "dimmed", children: description }) : null,
+    children,
+    error ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Text, { size: "xs", c: "red.7", children: error }) : null
+  ] }) });
+}
+
+// src/PageHeader.tsx
+var import_core18 = require("@mantine/core");
+var import_jsx_runtime18 = require("react/jsx-runtime");
+function PageHeader({
+  title,
+  description,
+  eyebrow,
+  actions,
+  eyebrowVariant = "neutral"
+}) {
+  const eyebrowProps = eyebrowVariant === "ornamental" ? { tt: "uppercase", style: { letterSpacing: "0.12em" } } : {};
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(import_core18.Group, { justify: "space-between", align: "flex-start", gap: "lg", wrap: "wrap", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(import_core18.Stack, { gap: "xs", children: [
+      eyebrow && /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(import_core18.Text, { size: "xs", fw: 700, c: "dimmed", ...eyebrowProps, children: eyebrow }),
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(import_core18.Title, { order: 1, children: title }),
+      description && /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(import_core18.Text, { c: "dimmed", maw: 720, children: description })
+    ] }),
+    actions ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(import_core18.Box, { children: actions }) : null
+  ] });
+}
+
+// src/FilterDrawer.tsx
+var import_core19 = require("@mantine/core");
+var import_jsx_runtime19 = require("react/jsx-runtime");
+function FilterDrawer({
+  opened,
+  onClose,
+  title,
+  children,
+  primaryAction,
+  secondaryAction
+}) {
+  return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(import_core19.Drawer, { opened, onClose, title, position: "right", size: "md", children: /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(import_core19.Stack, { gap: "md", children: [
+    children,
+    primaryAction || secondaryAction ? /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(import_core19.Group, { justify: "space-between", mt: "md", children: [
+      secondaryAction ?? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", {}),
+      primaryAction
+    ] }) : null
   ] }) });
 }
 
@@ -1900,18 +1955,6 @@ var ar = {
   "gds.aria.themeToggle": "\u062A\u0628\u062F\u064A\u0644 \u0646\u0638\u0627\u0645 \u0627\u0644\u0623\u0644\u0648\u0627\u0646",
   "gds.state.emptyData": "\u0644\u0627 \u062A\u0648\u062C\u062F \u0628\u064A\u0627\u0646\u0627\u062A \u0645\u062A\u0627\u062D\u0629."
 };
-
-// src/FormField.tsx
-var import_core17 = require("@mantine/core");
-var import_jsx_runtime17 = require("react/jsx-runtime");
-function FormField({ label, description, error, children }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Box, { component: "label", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(import_core17.Stack, { gap: 4, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Text, { size: "xs", fw: 600, c: "dimmed", children: label }),
-    description ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Text, { size: "xs", c: "dimmed", children: description }) : null,
-    children,
-    error ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Text, { size: "xs", c: "red.7", children: error }) : null
-  ] }) });
-}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   AccessSummary,
@@ -1920,11 +1963,13 @@ function FormField({ label, description, error, children }) {
   ConfirmDialog,
   DataToolbar,
   EmptyState,
+  FilterDrawer,
   FormField,
   GdsIcons,
   GdsVocabulary,
   MediaCard,
   MetricCard,
+  PageHeader,
   ProductCard,
   ProgressCard,
   PublicShell,

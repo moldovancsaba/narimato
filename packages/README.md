@@ -1,6 +1,6 @@
 # Vendored GDS packages (external dependency)
 
-These directories are **copies of built output** from the separate [general-design-system](https://github.com/moldovancsaba/general-design-system) project. They are committed inside Narimato so deploys (e.g. Vercel) do not depend on another repo at build time.
+These directories are **copies of built output** from the separate [general-design-system](https://github.com/sovereignsquad/general-design-system) project. They are committed inside Narimato so deploys (e.g. Vercel) do not depend on another repo at build time.
 
 Narimato **consumes** GDS; it is not part of the GDS monorepo.
 

@@ -25,10 +25,13 @@ __export(server_exports, {
   AuthShell: () => AuthShell,
   DataToolbar: () => DataToolbar,
   EmptyState: () => EmptyState,
+  FilterDrawer: () => FilterDrawer,
+  FormField: () => FormField,
   GdsIcons: () => GdsIcons,
   GdsVocabulary: () => GdsVocabulary,
   MediaCard: () => MediaCard,
   MetricCard: () => MetricCard,
+  PageHeader: () => PageHeader,
   ProductCard: () => ProductCard,
   ProgressCard: () => ProgressCard,
   PublicShell: () => PublicShell,
@@ -560,6 +563,59 @@ function AccessSummary({ title, roles, scope, blocked = false, description }) {
       scope
     ] }) : null,
     description ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_core12.Text, { size: "sm", children: description }) : null
+  ] }) });
+}
+
+// src/FormField.tsx
+var import_core13 = require("@mantine/core");
+var import_jsx_runtime13 = require("react/jsx-runtime");
+function FormField({ label, description, error, children }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(import_core13.Box, { component: "label", children: /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(import_core13.Stack, { gap: 4, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(import_core13.Text, { size: "xs", fw: 600, c: "dimmed", children: label }),
+    description ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(import_core13.Text, { size: "xs", c: "dimmed", children: description }) : null,
+    children,
+    error ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(import_core13.Text, { size: "xs", c: "red.7", children: error }) : null
+  ] }) });
+}
+
+// src/PageHeader.tsx
+var import_core14 = require("@mantine/core");
+var import_jsx_runtime14 = require("react/jsx-runtime");
+function PageHeader({
+  title,
+  description,
+  eyebrow,
+  actions,
+  eyebrowVariant = "neutral"
+}) {
+  const eyebrowProps = eyebrowVariant === "ornamental" ? { tt: "uppercase", style: { letterSpacing: "0.12em" } } : {};
+  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(import_core14.Group, { justify: "space-between", align: "flex-start", gap: "lg", wrap: "wrap", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(import_core14.Stack, { gap: "xs", children: [
+      eyebrow && /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(import_core14.Text, { size: "xs", fw: 700, c: "dimmed", ...eyebrowProps, children: eyebrow }),
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(import_core14.Title, { order: 1, children: title }),
+      description && /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(import_core14.Text, { c: "dimmed", maw: 720, children: description })
+    ] }),
+    actions ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(import_core14.Box, { children: actions }) : null
+  ] });
+}
+
+// src/FilterDrawer.tsx
+var import_core15 = require("@mantine/core");
+var import_jsx_runtime15 = require("react/jsx-runtime");
+function FilterDrawer({
+  opened,
+  onClose,
+  title,
+  children,
+  primaryAction,
+  secondaryAction
+}) {
+  return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_core15.Drawer, { opened, onClose, title, position: "right", size: "md", children: /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(import_core15.Stack, { gap: "md", children: [
+    children,
+    primaryAction || secondaryAction ? /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(import_core15.Group, { justify: "space-between", mt: "md", children: [
+      secondaryAction ?? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", {}),
+      primaryAction
+    ] }) : null
   ] }) });
 }
 
@@ -1746,10 +1802,13 @@ var ar = {
   AuthShell,
   DataToolbar,
   EmptyState,
+  FilterDrawer,
+  FormField,
   GdsIcons,
   GdsVocabulary,
   MediaCard,
   MetricCard,
+  PageHeader,
   ProductCard,
   ProgressCard,
   PublicShell,

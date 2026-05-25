@@ -1,6 +1,6 @@
 import {
   gdsTheme
-} from "./chunk-NZLLZU3Z.mjs";
+} from "./chunk-WV72H3MR.mjs";
 
 // src/i18n.ts
 import { createContext, useContext } from "react";

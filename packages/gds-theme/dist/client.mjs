@@ -1,14 +1,16 @@
 import {
   GdsProvider,
   useGdsTranslation
-} from "./chunk-GZEAIIJB.mjs";
+} from "./chunk-BP2FDI4M.mjs";
 import {
   extendGdsTheme,
-  gdsTheme
-} from "./chunk-NZLLZU3Z.mjs";
+  gdsTheme,
+  withGdsMotion
+} from "./chunk-WV72H3MR.mjs";
 export {
   GdsProvider,
   extendGdsTheme,
   gdsTheme,
-  useGdsTranslation
+  useGdsTranslation,
+  withGdsMotion
 };

@@ -1,27 +1,28 @@
 # GDS adoption — Narimato
 
-Narimato is a **standalone product repository**. The [General Design System (GDS)](https://github.com/moldovancsaba/general-design-system) is a **separate repository**. Narimato **uses** GDS as a dependency; the two projects are not merged and do not share a codebase.
+Narimato is a **standalone product repository**. The [General Design System (GDS)](https://github.com/sovereignsquad/general-design-system) is a **separate repository**. Narimato **uses** GDS as a dependency; the two projects are not merged and do not share a codebase.
 
 | | Narimato | GDS |
 |---|----------|-----|
-| **Repository** | This repo (`narimato`) | [general-design-system](https://github.com/moldovancsaba/general-design-system) |
+| **Repository** | This repo (`narimato`) | [general-design-system](https://github.com/sovereignsquad/general-design-system) |
 | **Role** | Product app (survey / play / operator) | Design rules + shared UI packages |
 | **What we ship** | App code + **vendored** `packages/gds-*` | Source docs + `@gds/core` / `@gds/theme` builds |
 | **Where rules live** | `docs/GDS_ADOPTION.md` (this file) only | GDS repo (`FOUNDATION.md`, governance, etc.) |
 
-**Pinned GDS version:** 2.3.0 (2026-05-24)
+**Pinned GDS version:** 2.3.1 (2026-05-25) — [sovereignsquad/general-design-system](https://github.com/sovereignsquad/general-design-system)
 
-### Last audit (2026-05-24)
+### Last audit (2026-05-25)
 
-Checked [general-design-system](https://github.com/moldovancsaba/general-design-system) on GitHub against Narimato’s vendored `packages/gds-*`.
+Checked [general-design-system](https://github.com/sovereignsquad/general-design-system) on GitHub against Narimato’s vendored `packages/gds-*`.
 
 | Check | Result |
 |-------|--------|
-| GDS policy release | **2.3.0** (shared primitives: `MetricCard`, `FormField`, shells, data patterns) |
+| GDS policy release | **2.3.1** (`PageHeader`, server/client exports, theme motion opt-in) |
 | GDS package builds vs Narimato | **Synced** via `npm run gds:sync` |
 | Narimato CI guard | **Passing** |
 | Breaking API gaps | **None found** — `ConfirmDialog` already uses `confirmAction` |
-| New primitives adopted | `MetricCard` via `NarimatoMetricCard`; `FormField` via `NarimatoFormField` on all shell/operator/admin forms |
+| Adapters | `NarimatoPageHeader` → GDS `PageHeader` (`@gds/core/server`); `NarimatoFormField` → GDS `FormField` (`@gds/core/server`); `NarimatoMetricCard` → GDS `MetricCard` |
+| Color-mode accents | `lib/ui/gdsSurfaces.js` until GDS ships accent tokens ([#82](https://github.com/sovereignsquad/general-design-system/issues/82)) |
 
 **Optional polish (2026-05-23):** SemanticButton, metric card, and shell light/dark mode shipped — see [GDS_OPTIONAL_IMPROVEMENTS_PLAN.md](./GDS_OPTIONAL_IMPROVEMENTS_PLAN.md). Immersive `/play` remains a documented exception (no shell toggle).
 
@@ -31,7 +32,7 @@ When GDS changes again: build in the **GDS repo**, then in Narimato run `npm run
 
 ## Required statement (Narimato adapter)
 
-> Narimato follows the [General Design System](https://github.com/moldovancsaba/general-design-system) via vendored `@gds/core` and `@gds/theme`. This repository documents Narimato-specific adapters, migration state, validation commands, and approved exceptions only.
+> Narimato follows the [General Design System](https://github.com/sovereignsquad/general-design-system) via vendored `@gds/core` and `@gds/theme`. This repository documents Narimato-specific adapters, migration state, validation commands, and approved exceptions only.
 
 ## How Narimato depends on GDS
 
@@ -48,7 +49,7 @@ On your machine, clone/build GDS separately, then copy into Narimato:
 
 ```bash
 # In the GDS repo (separate checkout):
-git clone https://github.com/moldovancsaba/general-design-system.git
+git clone https://github.com/sovereignsquad/general-design-system.git
 cd general-design-system && npm run build
 
 # In Narimato (this repo):
@@ -71,12 +72,11 @@ Narimato’s mapping to GDS pattern families (see GDS `PATTERN_SERVICE_MODEL.md`
 | Operator shell | `components/operator/NarimatoOperatorShell.js` | Done |
 | Admin shell | `components/admin/AdminShell.js` | Done |
 | Auth shell | `components/NarimatoAuthShell.js` | Done |
-| Page header | `components/NarimatoPageHeader.js` | Done |
-| Form field | `components/NarimatoFormField.js` | Done |
+| Page header | `components/NarimatoPageHeader.js` → GDS `PageHeader` (`@gds/core/server`) | Done |
+| Form field | `components/NarimatoFormField.js` → GDS `FormField` (`@gds/core/server`) | Done |
 | Article / legal | `PublicShell` on legal routes | Partial |
 | State block | `EmptyState`, `StatusBadge`, `ConfirmDialog` from `@gds/core` | Done |
 | Metric card | `components/NarimatoMetricCard.js` → GDS `MetricCard` → `OperatorDashboard.js` | Done |
-| Form field | `components/NarimatoFormField.js` (GDS FormField pattern) → operator, public, admin forms | Done |
 | Semantic CTA | `components/NarimatoSemanticButton.js` → operator + landing | Done |
 | Shell theme toggle | `components/NarimatoThemeToggle.js` → public/operator/admin/auth shells | Done |
 | Data toolbar / table | — | N/A |
@@ -95,7 +95,8 @@ Narimato’s mapping to GDS pattern families (see GDS `PATTERN_SERVICE_MODEL.md`
 | Concern | Path |
 |---------|------|
 | Root provider | `components/NarimatoProviders.js` |
-| Theme | `lib/ui/narimatoTheme.js` |
+| Theme | `lib/ui/narimatoTheme.js` (`extendGdsTheme`) |
+| Accent surfaces | `lib/ui/gdsSurfaces.js` (interim; GDS [#82](https://github.com/sovereignsquad/general-design-system/issues/82)) |
 | Public UI | `components/public/*` |
 | Operator UI | `components/operator/*` |
 | Survey access | `lib/system/surveyAccess.js`, `lib/hooks/useSurveyGate.js` |
@@ -115,6 +116,7 @@ Narimato’s mapping to GDS pattern families (see GDS `PATTERN_SERVICE_MODEL.md`
 | Surface | Reason |
 |---------|--------|
 | Immersive play | Full-viewport game UI; no `ThemeToggle` (custom CSS) |
+| Accent panels | Use `lib/ui/gdsSurfaces.js` (`light-dark`) — never raw `bg="violet.0"` on shell pages |
 | `playGame.module.css` | Play layout tokens |
 | Admin routes | Not on public nav |
 | LocalOperatorConsole utility actions | Reload / refresh projection keep plain `Button` (no GDS action key) |

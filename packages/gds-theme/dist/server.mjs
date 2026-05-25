@@ -1,8 +1,10 @@
 import {
   extendGdsTheme,
-  gdsTheme
-} from "./chunk-NZLLZU3Z.mjs";
+  gdsTheme,
+  withGdsMotion
+} from "./chunk-WV72H3MR.mjs";
 export {
   extendGdsTheme,
-  gdsTheme
+  gdsTheme,
+  withGdsMotion
 };

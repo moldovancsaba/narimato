@@ -20,6 +20,7 @@ import { NarimatoSemanticButton } from '../NarimatoSemanticButton';
 import { OperatorSetupSteps } from './OperatorSetupSteps';
 import { LOCAL_TEST_URL } from './operatorCopy';
 import { operatorApi } from '../../lib/operator/clientApi';
+import { gdsAccentSurface } from '../../lib/ui/gdsSurfaces';
 
 export function OperatorDashboard({ orgId, organizations, onSelectTab }) {
   const [status, setStatus] = useState(null);
@@ -150,7 +151,14 @@ export function OperatorDashboard({ orgId, organizations, onSelectTab }) {
       <OperatorSetupSteps steps={setupSteps} />
 
       {hasOrg ? (
-        <Paper withBorder p="lg" radius="md" bg={allReady ? 'green.0' : 'violet.0'}>
+        <Paper
+          withBorder
+          p="lg"
+          radius="md"
+          style={{
+            backgroundColor: allReady ? gdsAccentSurface.green : gdsAccentSurface.violet,
+          }}
+        >
           <Stack gap="md" align={allReady ? 'stretch' : 'flex-start'}>
             <Text fw={600}>{allReady ? 'Try it yourself' : 'Quick setup'}</Text>
             {!allReady ? (
