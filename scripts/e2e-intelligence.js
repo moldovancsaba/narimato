@@ -169,6 +169,44 @@ async function main() {
     console.warn('⚠️  Play start skipped (dev server?):', err.message);
   }
 
+  if (process.env.INTELLIGENCE_PLAY_FEEDBACK_ENABLED === '1' && process.env.OLLAMA_SKIP === '1') {
+    const { withOrganization } = require('../lib/tenantContext');
+    const { PLAY_FEEDBACK_SCHEMA_VERSION } = require('../lib/intelligence/constants');
+    const e2ePlayId = `e2e-play-${uuidv4()}`;
+    await withOrganization(orgId, async () => {
+      const { PlayFeedbackEvent } = require('../lib/tenantContext').getTenantModels();
+      await PlayFeedbackEvent.create({
+        schemaVersion: PLAY_FEEDBACK_SCHEMA_VERSION,
+        uuid: uuidv4(),
+        organizationId: orgId,
+        playId: e2ePlayId,
+        deckRootTag: DECK,
+        mode: 'swipe_only',
+        completedAt: new Date(),
+        personalRanking: ['e2e-a', 'e2e-b', 'e2e-c'],
+        swipes: [
+          { cardId: 'e2e-a', direction: 'right', timestamp: new Date() },
+          { cardId: 'e2e-b', direction: 'left', timestamp: new Date() },
+          { cardId: 'e2e-c', direction: 'right', timestamp: new Date() },
+        ],
+        cardSnapshots: [
+          { uuid: 'e2e-a', name: '#A', title: 'E2E Top', globalScore: 1600, voteCount: 1 },
+          { uuid: 'e2e-b', name: '#B', title: 'E2E Low', globalScore: 1400, voteCount: 1 },
+          { uuid: 'e2e-c', name: '#C', title: 'E2E Mid', globalScore: 1500, voteCount: 1 },
+        ],
+      });
+    });
+    const pfStart = Date.now();
+    await enqueueJob({
+      organizationId: orgId,
+      type: JOB_TYPES.RECONCILE_PLAY_FEEDBACK,
+      payload: { playId: e2ePlayId, deckRootTag: DECK, mode: 'swipe_only' },
+    });
+    const pfJob = await waitForJob(orgId, JOB_TYPES.RECONCILE_PLAY_FEEDBACK, { sinceMs: pfStart });
+    if (pfJob.status === 'failed') throw new Error(`RECONCILE_PLAY_FEEDBACK failed: ${pfJob.error}`);
+    console.log('✅ RECONCILE_PLAY_FEEDBACK', pfJob.uuid);
+  }
+
   console.log('✅ E2E intelligence path OK (corpus → worker → projection → play)');
   process.exit(0);
 }

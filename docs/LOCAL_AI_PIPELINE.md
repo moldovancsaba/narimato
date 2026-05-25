@@ -36,7 +36,7 @@
 | `REFRESH_PROJECTION` | Rebuild `webappProjection` (no LLM) |
 | `INGEST_SOURCE` | Corpus `Source` → `TopicSpec` draft |
 | `RECONCILE_FEEDBACK` | Operator thumbs reconciliation |
-| `RECONCILE_PLAY_FEEDBACK` | Play results → memories/rules/persona (stub; see [PLAY_FEEDBACK_TRAINING_PLAN.md](./PLAY_FEEDBACK_TRAINING_PLAN.md)) |
+| `RECONCILE_PLAY_FEEDBACK` | Play results → memories/rules/persona ([PLAY_FEEDBACK_TRAINING_PLAN.md](./PLAY_FEEDBACK_TRAINING_PLAN.md); `INTELLIGENCE_PLAY_FEEDBACK_ENABLED=1`) |
 
 **Planned (ADR 005):** `DISTILL_PLAY_MEMORIES`, `TRAIN_PERSONA_FROM_PLAY` — batch training jobs.
 

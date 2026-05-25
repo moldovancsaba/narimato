@@ -1,6 +1,6 @@
 # ADR 005: Play feedback → intelligence training
 
-**Status:** Proposed  
+**Status:** Accepted (MVP implemented 2026-05-24)  
 **Date:** 2026-05-24  
 **Supersedes (deferred items):** [ADR 004](./004-intelligence-product-policy.md) — play→corpus reconciliation, re-vote prompts  
 **Implementation plan:** [PLAY_FEEDBACK_TRAINING_PLAN.md](../PLAY_FEEDBACK_TRAINING_PLAN.md)

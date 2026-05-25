@@ -18,7 +18,7 @@ const JOB_REGISTRY = Object.freeze({
   [JOB_TYPES.INGEST_SOURCE]: { description: 'Process corpus Source into topic draft', localOnly: true },
   [JOB_TYPES.RECONCILE_FEEDBACK]: { description: 'Operator thumbs reconciliation', localOnly: true },
   [JOB_TYPES.RECONCILE_PLAY_FEEDBACK]: {
-    description: 'Play session feedback stub (disabled by default)',
+    description: 'Play session → memories, rules, persona, content refinement',
     localOnly: true,
     disabledByDefault: true,
   },
