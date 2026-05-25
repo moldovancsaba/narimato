@@ -1,17 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import {
-  Button,
-  Collapse,
-  Group,
-  Loader,
-  Paper,
-  Stack,
-  Text,
-  TextInput,
-  Textarea,
-} from '@mantine/core';
+import { Collapse, Group, Loader, Paper, Stack, Text, TextInput, Textarea } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { ConfirmDialog, EmptyState } from '@gds/core';
+import { NarimatoChoiceChip } from '../NarimatoChoiceChip';
 import { NarimatoFormField } from '../NarimatoFormField';
 import { NarimatoPageHeader } from '../NarimatoPageHeader';
 import { NarimatoSemanticButton } from '../NarimatoSemanticButton';
@@ -116,9 +107,11 @@ export function OperatorOrganizationsPanel({
                 onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
               />
             </NarimatoFormField>
-            <Button variant="subtle" size="xs" w="fit-content" onClick={() => setShowAdvanced((v) => !v)} type="button">
-              {showAdvanced ? 'Hide advanced options' : 'Advanced options'}
-            </Button>
+            <NarimatoChoiceChip
+              label={showAdvanced ? 'Hide advanced options' : 'Advanced options'}
+              onClick={() => setShowAdvanced((v) => !v)}
+              size="xs"
+            />
             <Collapse in={showAdvanced}>
               <NarimatoFormField
                 label="Short URL name"
@@ -221,7 +214,6 @@ export function OperatorOrganizationsPanel({
                     <NarimatoSemanticButton
                       action="delete"
                       size="xs"
-                      color="red"
                       variant="subtle"
                       onClick={() => setDeleteTarget(org)}
                     />

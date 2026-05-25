@@ -1,20 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import {
-  Button,
-  Checkbox,
-  Group,
-  Image,
-  Loader,
-  Paper,
-  Stack,
-  Table,
-  Text,
-  Title,
-} from '@mantine/core';
+import { Checkbox, Group, Image, Loader, Paper, Stack, Table, Text, Title } from '@mantine/core';
 import { EmptyState, StatusBadge } from '@gds/core';
+import { NarimatoChoiceChip } from '../components/NarimatoChoiceChip';
 import { NarimatoFormField } from '../components/NarimatoFormField';
+import { NarimatoSemanticButton } from '../components/NarimatoSemanticButton';
 import { PublicShell } from '../components/public/PublicShell';
 import { NarimatoPageHeader } from '../components/NarimatoPageHeader';
 import { useSurveyGate } from '../lib/hooks/useSurveyGate';
@@ -141,15 +132,12 @@ export default function Rankings() {
           </Text>
           <Group gap="xs">
             {organizations.map((organization) => (
-              <Button
+              <NarimatoChoiceChip
                 key={organization.uuid}
-                component={Link}
+                label={organization.name}
+                active={org === organization.uuid}
                 href={`/rankings?org=${organization.uuid}`}
-                variant={org === organization.uuid ? 'filled' : 'light'}
-                size="sm"
-              >
-                {organization.name}
-              </Button>
+              />
             ))}
           </Group>
         </div>
@@ -175,22 +163,18 @@ export default function Rankings() {
             </NarimatoFormField>
 
             <Group gap="xs">
-              <Button
-                size="sm"
-                variant={selectedDeck === 'all' ? 'filled' : 'light'}
+              <NarimatoChoiceChip
+                label={`All decks (${rankings.length})`}
+                active={selectedDeck === 'all'}
                 onClick={() => handleDeckChange('all')}
-              >
-                All decks ({rankings.length})
-              </Button>
+              />
               {decks.map((deckInfo) => (
-                <Button
+                <NarimatoChoiceChip
                   key={deckInfo.tag}
-                  size="sm"
-                  variant={selectedDeck === deckInfo.tag ? 'filled' : 'light'}
+                  label={`${deckInfo.tag} (${deckInfo.count})`}
+                  active={selectedDeck === deckInfo.tag}
                   onClick={() => handleDeckChange(deckInfo.tag)}
-                >
-                  {deckInfo.tag} ({deckInfo.count})
-                </Button>
+                />
               ))}
             </Group>
 
@@ -198,11 +182,7 @@ export default function Rankings() {
               <EmptyState
                 title="No rankings yet"
                 description="Rankings appear after users play and vote."
-                action={
-                  <Button component={Link} href={`/play?org=${org}`} color="orange">
-                    Start playing
-                  </Button>
-                }
+                action={<NarimatoSemanticButton action="play" component={Link} href={`/play?org=${org}`} />}
               />
             ) : (
               <Paper withBorder radius="md">
@@ -255,12 +235,13 @@ export default function Rankings() {
             )}
 
             <Group justify="center">
-              <Button component={Link} href={`/play?org=${org}`} color="orange">
-                Play
-              </Button>
-              <Button component={Link} href={`/cards?org=${org}`} variant="light">
-                Manage cards
-              </Button>
+              <NarimatoSemanticButton action="play" component={Link} href={`/play?org=${org}`} />
+              <NarimatoSemanticButton
+                action="edit"
+                component={Link}
+                href={`/cards?org=${org}`}
+                variant="light"
+              />
             </Group>
           </>
         ) : null}

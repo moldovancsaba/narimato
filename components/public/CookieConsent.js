@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Paper, Stack, Text, Button, Group, Anchor } from '@mantine/core';
+import { Paper, Stack, Text, Group, Anchor } from '@mantine/core';
 import Link from 'next/link';
+import { NarimatoSemanticButton } from '../NarimatoSemanticButton';
 import {
   CONSENT,
   applyConsent,
@@ -63,15 +64,9 @@ export function CookieConsent() {
           .
         </Text>
         <Group gap="sm" wrap="wrap">
-          <Button size="sm" onClick={accept}>
-            Accept analytics
-          </Button>
-          <Button size="sm" variant="default" onClick={reject}>
-            Essential only
-          </Button>
-          <Button size="sm" variant="subtle" component={Link} href="/cookies">
-            Manage
-          </Button>
+          <NarimatoSemanticButton size="sm" action="analytics" onClick={accept} />
+          <NarimatoSemanticButton size="sm" action="cancel" variant="default" onClick={reject} />
+          <NarimatoSemanticButton size="sm" action="settings" variant="subtle" component={Link} href="/cookies" />
         </Group>
       </Stack>
     </Paper>

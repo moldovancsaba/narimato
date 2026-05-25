@@ -1,6 +1,7 @@
-import { Alert, Paper, Select, Stack, Text } from '@mantine/core';
+import { Paper, Select, Stack, Text } from '@mantine/core';
+import { NarimatoGdsAlert } from '../NarimatoGdsAlert';
 import { NarimatoFormField } from '../NarimatoFormField';
-import { gdsAccentSurface } from '../../lib/ui/gdsSurfaces';
+import { gdsAccentPanelStyle } from '../../lib/ui/gdsSurfaces';
 
 export function OperatorOrgPicker({
   organizations,
@@ -11,19 +12,14 @@ export function OperatorOrgPicker({
 }) {
   if (!organizations?.length) {
     return (
-      <Alert
-        title="Create your organisation first"
+      <NarimatoGdsAlert
         color="violet"
-        variant="light"
-      >
-        <Stack gap="xs">
-          <Text size="sm">
-            An organisation is the company or team that runs the survey — for example, your department or client.
-          </Text>
-          {onCreateClick ? (
+        title="Create your organisation first"
+        description="An organisation is the company or team that runs the survey — for example, your department or client."
+        action={
+          onCreateClick ? (
             <Text
               size="sm"
-              c="violet"
               fw={600}
               style={{ cursor: 'pointer' }}
               onClick={onCreateClick}
@@ -31,21 +27,16 @@ export function OperatorOrgPicker({
             >
               Go to Your organisation →
             </Text>
-          ) : null}
-        </Stack>
-      </Alert>
+          ) : null
+        }
+      />
     );
   }
 
   const active = organizations.find((o) => o.uuid === orgId);
 
   return (
-    <Paper
-      withBorder
-      p={compact ? 'sm' : 'md'}
-      radius="md"
-      style={{ backgroundColor: gdsAccentSurface.gray }}
-    >
+    <Paper withBorder p={compact ? 'sm' : 'md'} radius="md" style={gdsAccentPanelStyle('gray')}>
       <Stack gap="xs">
         <NarimatoFormField label="Working on" description="All survey setup applies to this organisation">
           <Select

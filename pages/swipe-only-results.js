@@ -1,22 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import {
-  Button,
-  Group,
-  Image,
-  Loader,
-  Paper,
-  SimpleGrid,
-  Stack,
-  Text,
-  Title,
-} from '@mantine/core';
+import { Group, Image, Loader, Paper, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import { StatusBadge } from '@gds/core';
+import { NarimatoAccentPanel } from '../components/NarimatoAccentPanel';
+import { NarimatoSemanticButton } from '../components/NarimatoSemanticButton';
 import { PublicShell } from '../components/public/PublicShell';
 import { NarimatoPageHeader } from '../components/NarimatoPageHeader';
 import { useSurveyGate } from '../lib/hooks/useSurveyGate';
-import { gdsAccentSurface } from '../lib/ui/gdsSurfaces';
 
 export default function SwipeOnlyResults() {
   const router = useRouter();
@@ -54,9 +45,7 @@ export default function SwipeOnlyResults() {
       <PublicShell containerSize="lg">
         <Stack gap="md">
           <NarimatoPageHeader title="Results not found" />
-          <Button component={Link} href={`/play?org=${org}`} variant="light">
-            Back to play
-          </Button>
+          <NarimatoSemanticButton action="back" component={Link} href={`/play?org=${org}`} variant="light" />
         </Stack>
       </PublicShell>
     );
@@ -75,24 +64,14 @@ export default function SwipeOnlyResults() {
             <Text fw={600}>Total cards</Text>
             <Text>{results.statistics.totalCards}</Text>
           </Paper>
-          <Paper
-            withBorder
-            p="md"
-            radius="md"
-            style={{ backgroundColor: gdsAccentSurface.green }}
-          >
+          <NarimatoAccentPanel tone="green">
             <Text fw={600}>Liked</Text>
             <Text>{results.statistics.likedCards}</Text>
-          </Paper>
-          <Paper
-            withBorder
-            p="md"
-            radius="md"
-            style={{ backgroundColor: gdsAccentSurface.red }}
-          >
+          </NarimatoAccentPanel>
+          <NarimatoAccentPanel tone="red">
             <Text fw={600}>Rejected</Text>
             <Text>{results.statistics.rejectedCards}</Text>
-          </Paper>
+          </NarimatoAccentPanel>
         </SimpleGrid>
 
         <Text fw={600} mb="sm">
@@ -125,9 +104,7 @@ export default function SwipeOnlyResults() {
           <Text c="dimmed">No cards were liked in this session.</Text>
         )}
 
-        <Button component={Link} href={`/play?org=${org}`}>
-          Rank another deck
-        </Button>
+        <NarimatoSemanticButton action="play" component={Link} href={`/play?org=${org}`} />
       </Stack>
     </PublicShell>
   );

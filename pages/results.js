@@ -1,20 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
-import {
-  Button,
-  Grid,
-  Group,
-  Image,
-  Loader,
-  Paper,
-  SimpleGrid,
-  Stack,
-  Text,
-  Title,
-} from '@mantine/core';
+import { Grid, Group, Image, Loader, Paper, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import { StatusBadge } from '@gds/core';
 import { event } from '../lib/analytics/ga';
+import { NarimatoSemanticButton } from '../components/NarimatoSemanticButton';
 import { PublicShell } from '../components/public/PublicShell';
 import { NarimatoPageHeader } from '../components/NarimatoPageHeader';
 import { useSurveyGate } from '../lib/hooks/useSurveyGate';
@@ -342,9 +332,7 @@ export default function Results() {
       <PublicShell containerSize="lg">
         <Stack gap="md">
           <NarimatoPageHeader title="Results not found" subtitle="Unable to load results for this play session." />
-          <Button component={Link} href="/play" variant="light">
-            Back to play
-          </Button>
+          <NarimatoSemanticButton action="back" component={Link} href="/play" variant="light" />
         </Stack>
       </PublicShell>
     );
@@ -402,10 +390,8 @@ export default function Results() {
             Share results
           </Title>
           <Group justify="center">
-            <Button variant="light" onClick={copyToClipboard}>
-              Copy link
-            </Button>
-            <Button onClick={shareResults}>Share</Button>
+            <NarimatoSemanticButton action="copy" variant="light" onClick={copyToClipboard} />
+            <NarimatoSemanticButton action="forward" onClick={shareResults} />
           </Group>
           {copySuccess ? (
             <Text size="sm" c="green" mt="sm">
@@ -526,9 +512,7 @@ export default function Results() {
         })}
 
         <Group justify="center">
-          <Button component={Link} href={`/play?org=${org}`} color="orange">
-            Play another deck
-          </Button>
+          <NarimatoSemanticButton action="play" component={Link} href={`/play?org=${org}`} />
         </Group>
       </Stack>
     </PublicShell>

@@ -1,6 +1,15 @@
-import { Box, Group, Paper, Stack, Text, ThemeIcon } from '@mantine/core';
+import { Box, Group, Paper, Stack, Text } from '@mantine/core';
 import { GdsIcons } from '@gds/core';
-import { gdsAccentSurface } from '../../lib/ui/gdsSurfaces';
+import { gdsAccentPanelStyle } from '../../lib/ui/gdsSurfaces';
+
+function stepIndicatorStyle(done, active) {
+  if (done) return gdsAccentPanelStyle('green');
+  if (active) return gdsAccentPanelStyle('violet');
+  return {
+    backgroundColor: 'var(--mantine-color-body)',
+    border: '1px solid var(--mantine-color-default-border)',
+  };
+}
 
 export function OperatorSetupSteps({ steps }) {
   return (
@@ -15,25 +24,23 @@ export function OperatorSetupSteps({ steps }) {
             withBorder
             p="md"
             radius="md"
-            bg={undefined}
-            style={{
-              backgroundColor: active ? gdsAccentSurface.violet : undefined,
-              borderColor: done
-                ? 'var(--mantine-color-green-4)'
-                : active
-                  ? 'var(--mantine-color-violet-4)'
-                  : undefined,
-            }}
+            style={active ? gdsAccentPanelStyle('violet') : undefined}
           >
             <Group align="flex-start" wrap="nowrap" gap="md">
-              <ThemeIcon
-                size={36}
-                radius="xl"
-                variant={done ? 'filled' : active ? 'light' : 'default'}
-                color={done ? 'green' : active ? 'violet' : 'gray'}
+              <Box
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  ...stepIndicatorStyle(done, active),
+                }}
               >
                 {done ? <GdsIcons.Check size="1.1rem" /> : <Text fw={700}>{index + 1}</Text>}
-              </ThemeIcon>
+              </Box>
               <Box style={{ flex: 1 }}>
                 <Group justify="space-between" align="flex-start" wrap="nowrap">
                   <Stack gap={4}>

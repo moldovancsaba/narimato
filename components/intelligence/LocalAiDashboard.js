@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  Alert,
   Anchor,
-  Code,
   Group,
   List,
   Loader,
@@ -13,6 +11,7 @@ import {
   Title,
 } from '@mantine/core';
 import { StatusBadge } from '@gds/core';
+import { NarimatoGdsAlert } from '../NarimatoGdsAlert';
 import { LocalAiQuickLinks } from './LocalAiQuickLinks';
 import { NarimatoPageHeader } from '../NarimatoPageHeader';
 import { NarimatoSemanticButton } from '../NarimatoSemanticButton';
@@ -71,23 +70,19 @@ export function LocalAiDashboard() {
       />
 
       {!reachable && (
-        <Alert color="orange" title="Local intelligence offline">
-          Double-click <strong>Open Narimato Local AI</strong> on your Desktop, or run{' '}
-          <Code>npm run intelligence:open</Code>. Install auto-start:{' '}
-          <Code>npm run intelligence:install</Code>
-          {status?.error ? (
-            <Text size="sm" mt="xs">
-              ({status.error})
-            </Text>
-          ) : null}
-        </Alert>
+        <NarimatoGdsAlert
+          color="orange"
+          title="Local intelligence offline"
+          description={`Double-click Open Narimato Local AI on your Desktop, or run npm run intelligence:open. ${status?.error || ''}`}
+        />
       )}
 
       {reachable && (
-        <Alert color={brainReady ? 'green' : 'yellow'} title="Status server reachable">
-          Ollama {status.ollama ? 'up' : 'down'} · model {status.brain?.model || '—'}
-          {status.brain?.modelReady ? '' : ' (model not ready)'}
-        </Alert>
+        <NarimatoGdsAlert
+          color={brainReady ? 'green' : 'yellow'}
+          title="Status server reachable"
+          description={`Ollama ${status.ollama ? 'up' : 'down'} · model ${status.brain?.model || '—'}${status.brain?.modelReady ? '' : ' (model not ready)'}`}
+        />
       )}
 
       <Group>

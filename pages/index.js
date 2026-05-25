@@ -1,22 +1,15 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import {
-  Alert,
-  List,
-  Paper,
-  PasswordInput,
-  Stack,
-  Text,
-  ThemeIcon,
-} from '@mantine/core';
+import { Box, List, Paper, PasswordInput, Stack, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { GdsIcons } from '@gds/core';
+import { NarimatoAccentPanel } from '../components/NarimatoAccentPanel';
 import { NarimatoFormField } from '../components/NarimatoFormField';
+import { NarimatoGdsAlert } from '../components/NarimatoGdsAlert';
 import { PublicShell } from '../components/public/PublicShell';
 import { NarimatoPageHeader } from '../components/NarimatoPageHeader';
 import { NarimatoSemanticButton } from '../components/NarimatoSemanticButton';
 import { CONTACT_EMAIL } from '../components/public/PublicFooter';
-import { gdsAccentSurface } from '../lib/ui/gdsSurfaces';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -53,9 +46,11 @@ export default function LandingPage() {
     <PublicShell>
       <Stack gap="xl">
         {locked ? (
-          <Alert color="yellow" variant="light" title="Survey password required">
-            Enter the password your organisation shared with you to access this survey.
-          </Alert>
+          <NarimatoGdsAlert
+            color="yellow"
+            title="Survey password required"
+            description="Enter the password your organisation shared with you to access this survey."
+          />
         ) : null}
 
         <NarimatoPageHeader
@@ -63,12 +58,7 @@ export default function LandingPage() {
           subtitle="Narimato helps organisations understand what people really prefer — through swipe-and-rank play that feels like a game, not a form."
         />
 
-        <Paper
-          withBorder
-          p="lg"
-          radius="md"
-          style={{ backgroundColor: gdsAccentSurface.violet }}
-        >
+        <NarimatoAccentPanel tone="violet">
           <Stack gap="md">
             <GroupIconRow
               icon={GdsIcons.Users}
@@ -86,7 +76,7 @@ export default function LandingPage() {
               text="See ranked results and ELO-style scores that reveal true preferences, not just top-of-mind picks."
             />
           </Stack>
-        </Paper>
+        </NarimatoAccentPanel>
 
         <Paper withBorder p="lg" radius="md" component="form" onSubmit={unlockSurvey}>
           <Stack gap="md">
@@ -132,7 +122,7 @@ export default function LandingPage() {
           </Text>
           <Text size="sm" c="dimmed">
             Want Narimato for your organisation? Email{' '}
-            <Text component="a" href={`mailto:${CONTACT_EMAIL}`} span c="violet" inherit>
+            <Text component="a" href={`mailto:${CONTACT_EMAIL}`} span inherit>
               {CONTACT_EMAIL}
             </Text>
           </Text>
@@ -145,9 +135,19 @@ export default function LandingPage() {
 function GroupIconRow({ icon: Icon, title, text }) {
   return (
     <Stack gap={4}>
-      <ThemeIcon size="lg" variant="light" color="violet">
+      <Box
+        style={{
+          width: 40,
+          height: 40,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 'var(--mantine-radius-md)',
+          backgroundColor: 'light-dark(var(--mantine-color-violet-0), var(--mantine-color-dark-6))',
+        }}
+      >
         <Icon size="1.1rem" />
-      </ThemeIcon>
+      </Box>
       <Text fw={600}>{title}</Text>
       <Text size="sm" c="dimmed">
         {text}

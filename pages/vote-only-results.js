@@ -1,7 +1,8 @@
 import Link from 'next/link';
-import { Button, Stack } from '@mantine/core';
+import { Stack } from '@mantine/core';
 import { PublicShell } from '../components/public/PublicShell';
 import { NarimatoPageHeader } from '../components/NarimatoPageHeader';
+import { NarimatoSemanticButton } from '../components/NarimatoSemanticButton';
 
 export async function getServerSideProps({ res }) {
   if (res) {
@@ -18,9 +19,7 @@ export default function VoteOnlyResultsRemoved() {
           title="Vote-only results unavailable"
           subtitle="Vote-only mode was removed. Results are no longer available."
         />
-        <Button component={Link} href="/play">
-          Return to play
-        </Button>
+        <NarimatoSemanticButton action="play" component={Link} href="/play" />
       </Stack>
     </PublicShell>
   );

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Button, Paper, Stack, Switch, Text } from '@mantine/core';
+import { Paper, Stack, Switch, Text } from '@mantine/core';
+import { NarimatoSemanticButton } from '../NarimatoSemanticButton';
 import { notifications } from '@mantine/notifications';
 import { StatusBadge } from '@gds/core';
 import { NarimatoFormField } from '../NarimatoFormField';
@@ -59,9 +60,7 @@ export function CookiePreferencesPanel({ showSavedMessage = true }) {
             />
           </NarimatoFormField>
 
-          <Button onClick={save} w={{ base: '100%', sm: 'auto' }}>
-            Save preferences
-          </Button>
+          <NarimatoSemanticButton action="save" onClick={save} w={{ base: '100%', sm: 'auto' }} />
 
           {saved ? (
             <Text size="xs" c="dimmed">

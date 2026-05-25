@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   Accordion,
-  Alert,
   Anchor,
   Code,
   CopyButton,
@@ -18,10 +17,11 @@ import { NarimatoMetricCard } from '../NarimatoMetricCard';
 import { NarimatoPageHeader } from '../NarimatoPageHeader';
 import { NarimatoSemanticButton } from '../NarimatoSemanticButton';
 import { OperatorSetupSteps } from './OperatorSetupSteps';
+import { NarimatoAccentPanel } from '../NarimatoAccentPanel';
+import { NarimatoGdsAlert } from '../NarimatoGdsAlert';
 import { LocalAiQuickLinks } from '../intelligence/LocalAiQuickLinks';
 import { LOCAL_TEST_URL } from './operatorCopy';
 import { operatorApi } from '../../lib/operator/clientApi';
-import { gdsAccentSurface } from '../../lib/ui/gdsSurfaces';
 
 export function OperatorDashboard({ orgId, organizations, onSelectTab }) {
   const [status, setStatus] = useState(null);
@@ -143,23 +143,17 @@ export function OperatorDashboard({ orgId, organizations, onSelectTab }) {
       />
 
       {!hasOrg ? (
-        <Alert color="violet" variant="light" title="Welcome to Narimato Setup">
-          Start by creating an organisation — for example, your company name or project title. You can change details
-          later.
-        </Alert>
+        <NarimatoGdsAlert
+          color="violet"
+          title="Welcome to Narimato Setup"
+          description="Start by creating an organisation — for example, your company name or project title. You can change details later."
+        />
       ) : null}
 
       <OperatorSetupSteps steps={setupSteps} />
 
       {hasOrg ? (
-        <Paper
-          withBorder
-          p="lg"
-          radius="md"
-          style={{
-            backgroundColor: allReady ? gdsAccentSurface.green : gdsAccentSurface.violet,
-          }}
-        >
+        <NarimatoAccentPanel tone={allReady ? 'green' : 'violet'}>
           <Stack gap="md" align={allReady ? 'stretch' : 'flex-start'}>
             <Text fw={600}>{allReady ? 'Try it yourself' : 'Quick setup'}</Text>
             {!allReady ? (
@@ -198,7 +192,7 @@ export function OperatorDashboard({ orgId, organizations, onSelectTab }) {
               )}
             </Group>
           </Stack>
-        </Paper>
+        </NarimatoAccentPanel>
       ) : (
         <NarimatoSemanticButton size="md" action="add" onClick={() => onSelectTab('organizations')} />
       )}
