@@ -49,6 +49,7 @@ async function getStatusPayload() {
   const ollamaStatus = await getOllamaStatus();
   const syncHb = await GlobalSetting.findOne({ key: 'local_ai_worker_heartbeat:sync' });
   const snapHb = await GlobalSetting.findOne({ key: 'local_ai_worker_heartbeat:snapshot-worker' });
+  const guardianHb = await GlobalSetting.findOne({ key: 'local_ai_worker_heartbeat:guardian' });
   return {
     ports: PORTS,
     operatorUi: 'react-gds',
@@ -63,6 +64,7 @@ async function getStatusPayload() {
     workers: {
       sync: syncHb?.value || null,
       snapshotWorker: snapHb?.value || null,
+      guardian: guardianHb?.value || null,
     },
   };
 }

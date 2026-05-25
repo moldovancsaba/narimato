@@ -2,6 +2,8 @@
 
 Hierarchy: **ADR 003/004** → this doc → `WEBAPP_READ_MODEL_LLD.md` → `LOCAL_AI_PIPELINE.md` → UI via `docs/GDS_ADOPTION.md`.
 
+**Program #26 (v1):** P0–P4 delivered on `main` — guardian + launchd (#44), `INTELLIGENCE_CI_GUARDS.md` (#45), `npm run intelligence:e2e` (#46).
+
 ## Product
 
 Local Mac intelligence generates Narimato deck/card content. Vercel webapp is play + projection reads only.
