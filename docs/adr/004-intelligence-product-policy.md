@@ -32,5 +32,9 @@ Local operator UI → topic chat with Ollama agent → approved `TopicSpec` on m
 
 ## Deferred
 
+Moved to [ADR 005](./005-play-feedback-training.md) (proposed):
+
 - Re-vote prompts when deck cards replaced after user play.
-- Swipe/vote/ELO reconciliation into corpus.
+- Swipe/vote/ELO reconciliation into corpus (rules, memories, persona, content refinement).
+
+Implementation plan: [PLAY_FEEDBACK_TRAINING_PLAN.md](../PLAY_FEEDBACK_TRAINING_PLAN.md).
