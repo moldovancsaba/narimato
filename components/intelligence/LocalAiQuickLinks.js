@@ -1,5 +1,5 @@
 import { Anchor, Paper, SimpleGrid, Stack, Text, Title } from '@mantine/core';
-import { gdsAccentSurface } from '../../lib/ui/gdsSurfaces';
+import { gdsAccentPanel } from '../../lib/ui/gdsSurfaces';
 
 /**
  * @param {{ links?: object, title?: string }} props
@@ -10,7 +10,7 @@ export function LocalAiQuickLinks({ links, title = 'Quick links' }) {
   if (!items.length) return null;
 
   return (
-    <Paper p="md" withBorder style={gdsAccentSurface}>
+    <Paper p="md" withBorder style={gdsAccentPanel.default}>
       <Title order={5} mb="sm">
         {title}
       </Title>

@@ -1,8 +1,8 @@
 import { SemanticAction } from './server.js';
-export { AccessSummary, AccessSummaryProps, ArticleShell, ArticleShellProps, AuthShell, AuthShellProps, DataToolbar, DataToolbarFilterChip, DataToolbarProps, EmptyState, EmptyStateProps, FilterDrawer, FilterDrawerProps, FormField, FormFieldProps, GdsIcons, GdsVocabulary, MediaCard, MediaCardAction, MediaCardProps, MetricCard, MetricCardProps, PageHeader, PageHeaderEyebrowVariant, PageHeaderProps, ProductCard, ProductCardAction, ProductCardMetaItem, ProductCardProps, ProgressCard, ProgressCardProps, PublicShell, PublicShellProps, StateBlock, StateBlockProps, StateBlockVariant, StatusBadge, StatusBadgeProps, StatusVariant, ar, de, en, fr, he, hu, it, ru } from './server.js';
+export { AccentPanel, AccentPanelProps, AccentPanelVariant, AccentTone, AccessSummary, AccessSummaryProps, ArticleShell, ArticleShellProps, AuthShell, AuthShellProps, BreadcrumbItem, CtaButtonGroup, CtaButtonGroupProps, DataToolbar, DataToolbarFilterChip, DataToolbarProps, DocsPageShell, DocsPageShellProps, EditorialHero, EditorialHeroAction, EditorialHeroMetaItem, EditorialHeroProps, EmptyState, EmptyStateProps, FeatureBand, FeatureBandItem, FeatureBandProps, FilterDrawer, FilterDrawerProps, FormField, FormFieldProps, GdsIcons, GdsLocale, GdsVocabulary, MediaCard, MediaCardAction, MediaCardProps, MetricCard, MetricCardProps, PageHeader, PageHeaderEyebrowVariant, PageHeaderProps, PlaceholderPanel, PlaceholderPanelProps, ProductCard, ProductCardAction, ProductCardMetaItem, ProductCardProps, ProgressCard, ProgressCardProps, PublicBrandFooter, PublicBrandFooterProps, PublicNav, PublicNavItem, PublicNavProps, PublicProductCard, PublicProductCardMetaItem, PublicProductCardProps, PublicProductCardState, PublicShell, PublicShellProps, PublicSiteFooter, PublicSiteFooterProps, SimpleDataTable, SimpleDataTableProps, SimpleTableColumn, StateBlock, StateBlockProps, StateBlockVariant, StatsSection, StatsSectionProps, StatusBadge, StatusBadgeProps, StatusVariant, ar, de, en, es, fr, gdsLocales, getGdsMessages, he, hu, it, resolveAccentPanelStyles, ru } from './server.js';
 import * as react_jsx_runtime from 'react/jsx-runtime';
 import react__default, { ReactNode } from 'react';
-import { ButtonProps } from '@mantine/core';
+import { ButtonProps, MantineColor } from '@mantine/core';
 import '@tabler/icons-react';
 
 interface ConfirmDialogProps {
@@ -42,6 +42,29 @@ interface SemanticButtonProps extends ButtonProps, Omit<react__default.Component
  */
 declare function SemanticButton({ action, loading, feedbackState, feedbackText, ...props }: SemanticButtonProps): react_jsx_runtime.JSX.Element;
 
+interface GameBoardTileProps {
+    face: ReactNode;
+    revealed: boolean;
+    matched: boolean;
+    disabled: boolean;
+    onPress: () => void;
+    /** Mantine color token for revealed (non-matched) highlight, e.g. `violet.5` or product primary. */
+    highlightColor?: MantineColor;
+}
+/**
+ * Governed flip/select tile for memory-match and similar game boards.
+ * Respects prefers-reduced-motion; motion is local to the tile, not global theme hover defaults.
+ */
+declare function GameBoardTile({ face, revealed, matched, disabled, onPress, highlightColor, }: GameBoardTileProps): react_jsx_runtime.JSX.Element;
+
+interface DocsCodeBlockProps {
+    code: string;
+    language?: string;
+    title?: string;
+    withCopy?: boolean;
+}
+declare function DocsCodeBlock({ code, language, title, withCopy }: DocsCodeBlockProps): react_jsx_runtime.JSX.Element;
+
 interface UploadDropzoneProps {
     title: string;
     description?: string;
@@ -49,7 +72,32 @@ interface UploadDropzoneProps {
     accept?: string;
     multiple?: boolean;
     actionLabel?: string;
+    mode?: 'panel' | 'inline';
 }
-declare function UploadDropzone({ title, description, onFilesSelected, accept, multiple, actionLabel, }: UploadDropzoneProps): react_jsx_runtime.JSX.Element;
+declare function UploadDropzone({ title, description, onFilesSelected, accept, multiple, actionLabel, mode, }: UploadDropzoneProps): react_jsx_runtime.JSX.Element;
 
-export { ConfirmDialog, type ConfirmDialogProps, SemanticAction, SemanticButton, type SemanticButtonProps, ThemeToggle, type ThemeToggleProps, UploadDropzone, type UploadDropzoneProps };
+type AccessRecoveryState = 'unauthenticated' | 'expired-session' | 'forbidden' | 'missing' | 'unavailable';
+interface AccessRecoveryAction {
+    action: SemanticAction;
+    onClick?: () => void;
+    loading?: boolean;
+    disabled?: boolean;
+    color?: string;
+    variant?: 'filled' | 'light' | 'outline' | 'subtle' | 'default';
+}
+interface AccessRecoveryPanelProps {
+    state: AccessRecoveryState;
+    title?: string;
+    description?: ReactNode;
+    primaryAction?: AccessRecoveryAction | null;
+    secondaryAction?: AccessRecoveryAction | null;
+    tertiaryAction?: AccessRecoveryAction | null;
+    onRetry?: () => void;
+    onSignIn?: () => void;
+    onBack?: () => void;
+    supportAction?: AccessRecoveryAction | null;
+    compact?: boolean;
+}
+declare function AccessRecoveryPanel({ state, title, description, primaryAction, secondaryAction, tertiaryAction, onRetry, onSignIn, onBack, supportAction, compact, }: AccessRecoveryPanelProps): react_jsx_runtime.JSX.Element;
+
+export { type AccessRecoveryAction, AccessRecoveryPanel, type AccessRecoveryPanelProps, type AccessRecoveryState, ConfirmDialog, type ConfirmDialogProps, DocsCodeBlock, type DocsCodeBlockProps, GameBoardTile, type GameBoardTileProps, SemanticAction, SemanticButton, type SemanticButtonProps, ThemeToggle, type ThemeToggleProps, UploadDropzone, type UploadDropzoneProps };

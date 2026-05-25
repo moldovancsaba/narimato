@@ -22,6 +22,8 @@ var index_exports = {};
 __export(index_exports, {
   GdsProvider: () => GdsProvider,
   extendGdsTheme: () => extendGdsTheme,
+  gdsDarkPublicTheme: () => gdsDarkPublicTheme,
+  gdsFlatSurfaceTheme: () => gdsFlatSurfaceTheme,
   gdsTheme: () => gdsTheme,
   useGdsTranslation: () => useGdsTranslation,
   withGdsMotion: () => withGdsMotion
@@ -94,6 +96,63 @@ var baseTheme = (0, import_core.mergeMantineTheme)(import_core.DEFAULT_THEME, (0
   }
 }));
 var gdsTheme = baseTheme;
+var gdsDarkPublicTheme = extendGdsTheme({
+  primaryColor: "violet",
+  components: {
+    AppShell: {
+      styles: {
+        main: {
+          backgroundColor: "var(--mantine-color-dark-8)"
+        }
+      }
+    },
+    Card: {
+      styles: {
+        root: {
+          backgroundColor: "var(--mantine-color-dark-7)",
+          borderColor: "var(--mantine-color-dark-4)"
+        }
+      }
+    },
+    Paper: {
+      styles: {
+        root: {
+          backgroundColor: "var(--mantine-color-dark-7)",
+          borderColor: "var(--mantine-color-dark-4)"
+        }
+      }
+    },
+    Table: {
+      styles: {
+        table: {
+          color: "var(--mantine-color-gray-0)"
+        }
+      }
+    }
+  }
+});
+var gdsFlatSurfaceTheme = extendGdsTheme({
+  shadows: {
+    xs: "none",
+    sm: "none",
+    md: "none",
+    lg: "none",
+    xl: "none"
+  },
+  components: {
+    Card: {
+      defaultProps: {
+        shadow: void 0,
+        withBorder: true
+      }
+    },
+    Paper: {
+      defaultProps: {
+        withBorder: true
+      }
+    }
+  }
+});
 function extendGdsTheme(overrides = {}) {
   return (0, import_core.mergeMantineTheme)(baseTheme, overrides);
 }
@@ -152,18 +211,26 @@ function useGdsTranslation() {
 
 // src/GdsProvider.tsx
 var import_jsx_runtime = require("react/jsx-runtime");
-function GdsProvider({ children, locale = "en", messages = {} }) {
+function GdsProvider({
+  children,
+  locale = "en",
+  messages = {},
+  theme = gdsTheme,
+  defaultColorScheme = "light"
+}) {
   const isRtl = ["ar", "he"].includes(locale);
   const dir = isRtl ? "rtl" : "ltr";
-  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_core2.DirectionProvider, { initialDirection: dir, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(GdsI18nContext.Provider, { value: { locale, messages }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_core2.MantineProvider, { theme: gdsTheme, withCssVariables: true, withGlobalClasses: true, defaultColorScheme: "light", children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_modals.ModalsProvider, { children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_core2.DirectionProvider, { initialDirection: dir, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(GdsI18nContext.Provider, { value: { locale, messages }, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_core2.MantineProvider, { theme, withCssVariables: true, withGlobalClasses: true, defaultColorScheme, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_modals.ModalsProvider, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_notifications.Notifications, {}),
     /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_core2.Box, { dir, h: "100%", children })
-  ] }) }) }) });
+  ] }) }) }) }) });
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   GdsProvider,
   extendGdsTheme,
+  gdsDarkPublicTheme,
+  gdsFlatSurfaceTheme,
   gdsTheme,
   useGdsTranslation,
   withGdsMotion

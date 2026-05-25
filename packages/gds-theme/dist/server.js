@@ -21,6 +21,8 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 var server_exports = {};
 __export(server_exports, {
   extendGdsTheme: () => extendGdsTheme,
+  gdsDarkPublicTheme: () => gdsDarkPublicTheme,
+  gdsFlatSurfaceTheme: () => gdsFlatSurfaceTheme,
   gdsTheme: () => gdsTheme,
   withGdsMotion: () => withGdsMotion
 });
@@ -92,6 +94,63 @@ var baseTheme = (0, import_core.mergeMantineTheme)(import_core.DEFAULT_THEME, (0
   }
 }));
 var gdsTheme = baseTheme;
+var gdsDarkPublicTheme = extendGdsTheme({
+  primaryColor: "violet",
+  components: {
+    AppShell: {
+      styles: {
+        main: {
+          backgroundColor: "var(--mantine-color-dark-8)"
+        }
+      }
+    },
+    Card: {
+      styles: {
+        root: {
+          backgroundColor: "var(--mantine-color-dark-7)",
+          borderColor: "var(--mantine-color-dark-4)"
+        }
+      }
+    },
+    Paper: {
+      styles: {
+        root: {
+          backgroundColor: "var(--mantine-color-dark-7)",
+          borderColor: "var(--mantine-color-dark-4)"
+        }
+      }
+    },
+    Table: {
+      styles: {
+        table: {
+          color: "var(--mantine-color-gray-0)"
+        }
+      }
+    }
+  }
+});
+var gdsFlatSurfaceTheme = extendGdsTheme({
+  shadows: {
+    xs: "none",
+    sm: "none",
+    md: "none",
+    lg: "none",
+    xl: "none"
+  },
+  components: {
+    Card: {
+      defaultProps: {
+        shadow: void 0,
+        withBorder: true
+      }
+    },
+    Paper: {
+      defaultProps: {
+        withBorder: true
+      }
+    }
+  }
+});
 function extendGdsTheme(overrides = {}) {
   return (0, import_core.mergeMantineTheme)(baseTheme, overrides);
 }
@@ -131,6 +190,8 @@ function withGdsMotion(overrides = {}) {
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   extendGdsTheme,
+  gdsDarkPublicTheme,
+  gdsFlatSurfaceTheme,
   gdsTheme,
   withGdsMotion
 });

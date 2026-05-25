@@ -64,6 +64,63 @@ var baseTheme = mergeMantineTheme(DEFAULT_THEME, createTheme({
   }
 }));
 var gdsTheme = baseTheme;
+var gdsDarkPublicTheme = extendGdsTheme({
+  primaryColor: "violet",
+  components: {
+    AppShell: {
+      styles: {
+        main: {
+          backgroundColor: "var(--mantine-color-dark-8)"
+        }
+      }
+    },
+    Card: {
+      styles: {
+        root: {
+          backgroundColor: "var(--mantine-color-dark-7)",
+          borderColor: "var(--mantine-color-dark-4)"
+        }
+      }
+    },
+    Paper: {
+      styles: {
+        root: {
+          backgroundColor: "var(--mantine-color-dark-7)",
+          borderColor: "var(--mantine-color-dark-4)"
+        }
+      }
+    },
+    Table: {
+      styles: {
+        table: {
+          color: "var(--mantine-color-gray-0)"
+        }
+      }
+    }
+  }
+});
+var gdsFlatSurfaceTheme = extendGdsTheme({
+  shadows: {
+    xs: "none",
+    sm: "none",
+    md: "none",
+    lg: "none",
+    xl: "none"
+  },
+  components: {
+    Card: {
+      defaultProps: {
+        shadow: void 0,
+        withBorder: true
+      }
+    },
+    Paper: {
+      defaultProps: {
+        withBorder: true
+      }
+    }
+  }
+});
 function extendGdsTheme(overrides = {}) {
   return mergeMantineTheme(baseTheme, overrides);
 }
@@ -103,6 +160,8 @@ function withGdsMotion(overrides = {}) {
 
 export {
   gdsTheme,
+  gdsDarkPublicTheme,
+  gdsFlatSurfaceTheme,
   extendGdsTheme,
   withGdsMotion
 };

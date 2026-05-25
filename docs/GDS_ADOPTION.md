@@ -9,20 +9,20 @@ Narimato is a **standalone product repository**. The [General Design System (GDS
 | **What we ship** | App code + **vendored** `packages/gds-*` | Source docs + `@gds/core` / `@gds/theme` builds |
 | **Where rules live** | `docs/GDS_ADOPTION.md` (this file) only | GDS repo (`FOUNDATION.md`, governance, etc.) |
 
-**Pinned GDS version:** 2.3.1 (2026-05-25) — [sovereignsquad/general-design-system](https://github.com/sovereignsquad/general-design-system)
+**Pinned GDS version:** 2.4.3 (2026-05-25) — [sovereignsquad/general-design-system](https://github.com/sovereignsquad/general-design-system)
 
 ### Last audit (2026-05-25)
 
-Checked [general-design-system](https://github.com/sovereignsquad/general-design-system) on GitHub against Narimato’s vendored `packages/gds-*`.
+Synced from [general-design-system](https://github.com/sovereignsquad/general-design-system) `main` via `npm run gds:sync`.
 
 | Check | Result |
 |-------|--------|
-| GDS policy release | **2.3.1** (`PageHeader`, server/client exports, theme motion opt-in) |
-| GDS package builds vs Narimato | **Synced** via `npm run gds:sync` |
+| GDS policy release | **2.4.3** (`AccentPanel`, public/editorial primitives, `resolveAccentPanelStyles`) |
+| GDS package builds vs Narimato | **Synced** (`@gds/core` / `@gds/theme` 2.4.3) |
 | Narimato CI guard | **Passing** |
-| Breaking API gaps | **None found** — `ConfirmDialog` already uses `confirmAction` |
-| Adapters | `NarimatoPageHeader` → GDS `PageHeader` (`@gds/core/server`); `NarimatoFormField` → GDS `FormField` (`@gds/core/server`); `NarimatoMetricCard` → GDS `MetricCard` |
-| Color-mode accents | `lib/ui/gdsSurfaces.js` until GDS ships accent tokens ([#82](https://github.com/sovereignsquad/general-design-system/issues/82)) |
+| Breaking API gaps | **None** for current adapters |
+| Adapters | `NarimatoPageHeader`, `NarimatoFormField`, `NarimatoMetricCard`, `NarimatoSemanticButton` |
+| Color-mode accents | `lib/ui/gdsSurfaces.js` → GDS `resolveAccentPanelStyles` (replaces interim `light-dark` shim) |
 
 **Optional polish (2026-05-23):** SemanticButton, metric card, and shell light/dark mode shipped — see [GDS_OPTIONAL_IMPROVEMENTS_PLAN.md](./GDS_OPTIONAL_IMPROVEMENTS_PLAN.md). Immersive `/play` remains a documented exception (no shell toggle).
 

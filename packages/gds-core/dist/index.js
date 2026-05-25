@@ -20,34 +20,53 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // src/index.ts
 var index_exports = {};
 __export(index_exports, {
+  AccentPanel: () => AccentPanel,
+  AccessRecoveryPanel: () => AccessRecoveryPanel,
   AccessSummary: () => AccessSummary,
   ArticleShell: () => ArticleShell,
   AuthShell: () => AuthShell,
   ConfirmDialog: () => ConfirmDialog,
+  CtaButtonGroup: () => CtaButtonGroup,
   DataToolbar: () => DataToolbar,
+  DocsCodeBlock: () => DocsCodeBlock,
+  DocsPageShell: () => DocsPageShell,
+  EditorialHero: () => EditorialHero,
   EmptyState: () => EmptyState,
+  FeatureBand: () => FeatureBand,
   FilterDrawer: () => FilterDrawer,
   FormField: () => FormField,
+  GameBoardTile: () => GameBoardTile,
   GdsIcons: () => GdsIcons,
   GdsVocabulary: () => GdsVocabulary,
   MediaCard: () => MediaCard,
   MetricCard: () => MetricCard,
   PageHeader: () => PageHeader,
+  PlaceholderPanel: () => PlaceholderPanel,
   ProductCard: () => ProductCard,
   ProgressCard: () => ProgressCard,
+  PublicBrandFooter: () => PublicBrandFooter,
+  PublicNav: () => PublicNav,
+  PublicProductCard: () => PublicProductCard,
   PublicShell: () => PublicShell,
+  PublicSiteFooter: () => PublicSiteFooter,
   SemanticButton: () => SemanticButton,
+  SimpleDataTable: () => SimpleDataTable,
   StateBlock: () => StateBlock,
+  StatsSection: () => StatsSection,
   StatusBadge: () => StatusBadge,
   ThemeToggle: () => ThemeToggle,
   UploadDropzone: () => UploadDropzone,
   ar: () => ar,
   de: () => de,
   en: () => en,
+  es: () => es,
   fr: () => fr,
+  gdsLocales: () => gdsLocales,
+  getGdsMessages: () => getGdsMessages,
   he: () => he,
   hu: () => hu,
   it: () => it,
+  resolveAccentPanelStyles: () => resolveAccentPanelStyles,
   ru: () => ru
 });
 module.exports = __toCommonJS(index_exports);
@@ -433,9 +452,46 @@ function ProgressCard({
   ] }) });
 }
 
-// src/ProductCard.tsx
+// src/GameBoardTile.tsx
 var import_core8 = require("@mantine/core");
+var import_hooks = require("@mantine/hooks");
 var import_jsx_runtime8 = require("react/jsx-runtime");
+function GameBoardTile({
+  face,
+  revealed,
+  matched,
+  disabled,
+  onPress,
+  highlightColor
+}) {
+  const theme = (0, import_core8.useMantineTheme)();
+  const reduceMotion = (0, import_hooks.useMediaQuery)("(prefers-reduced-motion: reduce)");
+  const highlighted = revealed && !matched;
+  const revealBg = highlightColor ?? (typeof theme.primaryColor === "string" ? `${theme.primaryColor}.5` : "violet.5");
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.UnstyledButton, { w: "100%", disabled, onClick: onPress, "aria-pressed": revealed, children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+    import_core8.Paper,
+    {
+      withBorder: true,
+      radius: "md",
+      p: "md",
+      bg: revealed ? revealBg : "dark.6",
+      styles: {
+        root: {
+          aspectRatio: "1",
+          opacity: matched ? 0.55 : 1,
+          cursor: disabled ? "not-allowed" : "pointer",
+          transition: reduceMotion ? "opacity 0.2s ease" : "transform 0.25s ease, background-color 0.25s ease, opacity 0.25s ease",
+          transform: reduceMotion || !highlighted ? "scale(1)" : "scale(1.02)"
+        }
+      },
+      children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.Center, { h: "100%", children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.Text, { size: "xl", fw: 700, children: face }) })
+    }
+  ) });
+}
+
+// src/ProductCard.tsx
+var import_core9 = require("@mantine/core");
+var import_jsx_runtime9 = require("react/jsx-runtime");
 function ProductCard({
   title,
   description,
@@ -448,47 +504,205 @@ function ProductCard({
   footer
 }) {
   const MoreIcon = GdsIcons.Menu;
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.Card, { withBorder: true, radius: "lg", padding: "lg", children: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_core8.Stack, { gap: "md", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_core9.Card, { withBorder: true, radius: "lg", padding: "lg", children: /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(import_core9.Stack, { gap: "md", children: [
     media,
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_core8.Group, { justify: "space-between", align: "flex-start", wrap: "nowrap", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_core8.Group, { align: "flex-start", gap: "sm", wrap: "nowrap", children: [
-        icon ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.ThemeIcon, { variant: "light", size: "xl", radius: "xl", "aria-hidden": true, children: icon }) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_core8.Stack, { gap: 4, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.Title, { order: 4, children: title }),
-          description ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.Text, { size: "sm", c: "dimmed", lineClamp: 3, children: description }) : null
+    /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(import_core9.Group, { justify: "space-between", align: "flex-start", wrap: "nowrap", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(import_core9.Group, { align: "flex-start", gap: "sm", wrap: "nowrap", children: [
+        icon ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_core9.ThemeIcon, { variant: "light", size: "xl", radius: "xl", "aria-hidden": true, children: icon }) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(import_core9.Stack, { gap: 4, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_core9.Title, { order: 4, children: title }),
+          description ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_core9.Text, { size: "sm", c: "dimmed", lineClamp: 3, children: description }) : null
         ] })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_core8.Group, { gap: "xs", align: "center", wrap: "nowrap", children: [
-        typeof status === "string" ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.Badge, { variant: "light", children: status }) : status,
-        secondaryActions.length ? /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_core8.Menu, { position: "bottom-end", withinPortal: true, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.Menu.Target, { children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.ActionIcon, { variant: "subtle", "aria-label": "More actions", children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(MoreIcon, { size: "1rem" }) }) }),
-          /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.Menu.Dropdown, { children: secondaryActions.map(
-            (action) => action.href ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.Menu.Item, { component: "a", href: action.href, color: action.color, children: action.label }, action.label) : /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.Menu.Item, { onClick: action.onClick, color: action.color, children: action.label }, action.label)
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(import_core9.Group, { gap: "xs", align: "center", wrap: "nowrap", children: [
+        typeof status === "string" ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_core9.Badge, { variant: "light", children: status }) : status,
+        secondaryActions.length ? /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(import_core9.Menu, { position: "bottom-end", withinPortal: true, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_core9.Menu.Target, { children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_core9.ActionIcon, { variant: "subtle", "aria-label": "More actions", children: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(MoreIcon, { size: "1rem" }) }) }),
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_core9.Menu.Dropdown, { children: secondaryActions.map(
+            (action) => action.href ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_core9.Menu.Item, { component: "a", href: action.href, color: action.color, children: action.label }, action.label) : /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_core9.Menu.Item, { onClick: action.onClick, color: action.color, children: action.label }, action.label)
           ) })
         ] }) : null
       ] })
     ] }),
-    metadata.length ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.Stack, { gap: 6, children: metadata.map((item) => /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_core8.Group, { justify: "space-between", gap: "sm", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.Text, { size: "sm", c: "dimmed", children: item.label }),
-      /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.Text, { size: "sm", fw: 500, ta: "right", children: item.value })
+    metadata.length ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_core9.Stack, { gap: 6, children: metadata.map((item) => /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(import_core9.Group, { justify: "space-between", gap: "sm", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_core9.Text, { size: "sm", c: "dimmed", children: item.label }),
+      /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_core9.Text, { size: "sm", fw: 500, ta: "right", children: item.value })
     ] }, item.label)) }) : null,
-    primaryAction ? /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_core8.Group, { justify: "space-between", children: primaryAction }) : null,
+    primaryAction ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_core9.Group, { justify: "space-between", children: primaryAction }) : null,
     footer
   ] }) });
 }
 
+// src/PublicProductCard.tsx
+var import_react2 = require("react");
+var import_core10 = require("@mantine/core");
+var import_jsx_runtime10 = require("react/jsx-runtime");
+var stateConfig = {
+  available: { label: "Available", color: "teal" },
+  limited: { label: "Limited", color: "yellow" },
+  "sold-out": { label: "Sold out", color: "red" },
+  preorder: { label: "Preorder", color: "violet" }
+};
+function enhanceAction(action, disabled) {
+  if (!(0, import_react2.isValidElement)(action)) {
+    return action;
+  }
+  return (0, import_react2.cloneElement)(action, {
+    disabled: disabled || Boolean(action.props.disabled),
+    "aria-disabled": disabled || void 0
+  });
+}
+function ImageFallback({ compact }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_core10.AspectRatio, { ratio: compact ? 16 / 9 : 4 / 3, children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+    import_core10.ThemeIcon,
+    {
+      size: "100%",
+      radius: "md",
+      variant: "light",
+      color: "gray",
+      "aria-label": "No product image available",
+      children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(GdsIcons.Gallery, { size: compact ? "1.5rem" : "2rem" })
+    }
+  ) });
+}
+function LoadingCard({ compact }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_core10.Card, { withBorder: true, radius: "lg", padding: compact ? "md" : "lg", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(import_core10.Stack, { gap: "md", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_core10.AspectRatio, { ratio: compact ? 16 / 9 : 4 / 3, children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_core10.Skeleton, { radius: "md" }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(import_core10.Stack, { gap: "xs", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_core10.Skeleton, { height: 20, radius: "sm", width: "70%" }),
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_core10.Skeleton, { height: 14, radius: "sm", width: "100%" }),
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_core10.Skeleton, { height: 14, radius: "sm", width: "85%" })
+    ] }),
+    /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(import_core10.Group, { justify: "space-between", align: "center", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_core10.Skeleton, { height: 18, radius: "sm", width: 72 }),
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_core10.Skeleton, { height: 36, radius: "md", width: 120 })
+    ] })
+  ] }) });
+}
+function PublicProductCard({
+  title,
+  description,
+  image,
+  price,
+  helperText,
+  state = "available",
+  primaryAction,
+  secondaryAction,
+  metadata = [],
+  compact = false,
+  loading = false,
+  disabled = false
+}) {
+  if (loading) {
+    return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(LoadingCard, { compact });
+  }
+  const isActionDisabled = disabled || state === "sold-out";
+  const resolvedPrimaryAction = enhanceAction(primaryAction, isActionDisabled);
+  const resolvedSecondaryAction = enhanceAction(secondaryAction, disabled);
+  const stateBadge = stateConfig[state];
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_core10.Card, { withBorder: true, radius: "lg", padding: compact ? "md" : "lg", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(import_core10.Stack, { gap: compact ? "sm" : "md", children: [
+    image ?? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(ImageFallback, { compact }),
+    /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(import_core10.Group, { justify: "space-between", align: "flex-start", wrap: "nowrap", gap: "sm", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(import_core10.Stack, { gap: 4, style: { minWidth: 0, flex: 1 }, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_core10.Title, { order: compact ? 5 : 4, lineClamp: 2, children: title }),
+        description ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_core10.Text, { size: "sm", c: "dimmed", lineClamp: compact ? 2 : 3, children: description }) : null
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_core10.Badge, { variant: "light", color: stateBadge.color, children: stateBadge.label })
+    ] }),
+    price || helperText ? /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(import_core10.Group, { justify: "space-between", align: "flex-end", gap: "sm", wrap: "nowrap", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(import_core10.Stack, { gap: 2, style: { minWidth: 0, flex: 1 }, children: [
+        price ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_core10.Text, { fw: 700, size: compact ? "md" : "lg", children: price }) : null,
+        helperText ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_core10.Text, { size: "xs", c: "dimmed", children: helperText }) : null
+      ] }),
+      resolvedPrimaryAction
+    ] }) : resolvedPrimaryAction ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_core10.Group, { justify: "flex-end", children: resolvedPrimaryAction }) : null,
+    metadata.length ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_core10.Stack, { gap: 6, children: metadata.map((item) => /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(import_core10.Group, { justify: "space-between", gap: "sm", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_core10.Text, { size: "sm", c: "dimmed", children: item.label }),
+      /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_core10.Text, { size: "sm", fw: 500, ta: "right", children: item.value })
+    ] }, item.label)) }) : null,
+    resolvedSecondaryAction ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_core10.Group, { justify: "flex-end", children: resolvedSecondaryAction }) : null
+  ] }) });
+}
+
+// src/AccentPanel.tsx
+var import_core11 = require("@mantine/core");
+var import_jsx_runtime11 = require("react/jsx-runtime");
+var toneStyles = {
+  gray: {
+    bg: "light-dark(var(--mantine-color-gray-0), color-mix(in srgb, var(--mantine-color-gray-7) 88%, black))",
+    border: "light-dark(var(--mantine-color-gray-2), color-mix(in srgb, var(--mantine-color-gray-4) 70%, transparent))",
+    color: "light-dark(var(--mantine-color-gray-9), var(--mantine-color-gray-0))"
+  },
+  violet: {
+    bg: "light-dark(var(--mantine-color-violet-0), color-mix(in srgb, var(--mantine-color-violet-9) 70%, black))",
+    border: "light-dark(var(--mantine-color-violet-2), color-mix(in srgb, var(--mantine-color-violet-4) 75%, transparent))",
+    color: "light-dark(var(--mantine-color-violet-9), var(--mantine-color-violet-0))"
+  },
+  green: {
+    bg: "light-dark(var(--mantine-color-green-0), color-mix(in srgb, var(--mantine-color-green-9) 72%, black))",
+    border: "light-dark(var(--mantine-color-green-2), color-mix(in srgb, var(--mantine-color-green-4) 78%, transparent))",
+    color: "light-dark(var(--mantine-color-green-9), var(--mantine-color-green-0))"
+  },
+  red: {
+    bg: "light-dark(var(--mantine-color-red-0), color-mix(in srgb, var(--mantine-color-red-9) 72%, black))",
+    border: "light-dark(var(--mantine-color-red-2), color-mix(in srgb, var(--mantine-color-red-4) 78%, transparent))",
+    color: "light-dark(var(--mantine-color-red-9), var(--mantine-color-red-0))"
+  },
+  amber: {
+    bg: "light-dark(var(--mantine-color-yellow-0), color-mix(in srgb, var(--mantine-color-yellow-8) 78%, black))",
+    border: "light-dark(var(--mantine-color-yellow-3), color-mix(in srgb, var(--mantine-color-yellow-5) 70%, transparent))",
+    color: "light-dark(var(--mantine-color-yellow-9), var(--mantine-color-yellow-0))"
+  },
+  blue: {
+    bg: "light-dark(var(--mantine-color-blue-0), color-mix(in srgb, var(--mantine-color-blue-9) 74%, black))",
+    border: "light-dark(var(--mantine-color-blue-2), color-mix(in srgb, var(--mantine-color-blue-4) 75%, transparent))",
+    color: "light-dark(var(--mantine-color-blue-9), var(--mantine-color-blue-0))"
+  }
+};
+function resolveAccentPanelStyles(tone = "violet", variant = "subtle") {
+  const token = toneStyles[tone];
+  if (variant === "soft-outline") {
+    return {
+      backgroundColor: "light-dark(var(--mantine-color-body), color-mix(in srgb, var(--mantine-color-dark-7) 92%, black))",
+      border: `1px solid ${token.border}`,
+      color: token.color
+    };
+  }
+  return {
+    backgroundColor: token.bg,
+    border: `1px solid ${token.border}`,
+    color: token.color
+  };
+}
+function AccentPanel({
+  tone = "violet",
+  variant = "subtle",
+  title,
+  badge,
+  children
+}) {
+  const styles = resolveAccentPanelStyles(tone, variant);
+  return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Paper, { withBorder: true, radius: "lg", p: "lg", style: styles, children: /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(import_core11.Stack, { gap: "sm", children: [
+    title || badge ? /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(import_core11.Group, { justify: "space-between", align: "flex-start", gap: "sm", wrap: "wrap", children: [
+      title ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Title, { order: 4, c: "inherit", children: title }) : /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Box, {}),
+      badge ? typeof badge === "string" ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Badge, { color: tone === "amber" ? "yellow" : tone, variant: "filled", children: badge }) : badge : null
+    ] }) : null,
+    typeof children === "string" ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Text, { c: "inherit", children }) : /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Box, { c: "inherit", children })
+  ] }) });
+}
+
 // src/StateBlock.tsx
-var import_core9 = require("@mantine/core");
-var import_jsx_runtime9 = require("react/jsx-runtime");
+var import_core12 = require("@mantine/core");
+var import_jsx_runtime12 = require("react/jsx-runtime");
 var variantConfig = {
-  loading: { color: "violet", icon: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_core9.Loader, { size: "sm" }) },
-  empty: { color: "gray", icon: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GdsIcons.Inbox, { size: "1.1rem" }) },
-  error: { color: "red", icon: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GdsIcons.Danger, { size: "1.1rem" }) },
-  permission: { color: "orange", icon: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GdsIcons.Verify, { size: "1.1rem" }) },
-  disabled: { color: "gray", icon: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GdsIcons.Toggle, { size: "1.1rem" }) },
-  success: { color: "teal", icon: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GdsIcons.Success, { size: "1.1rem" }) },
-  info: { color: "blue", icon: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GdsIcons.Info, { size: "1.1rem" }) },
-  "not-enough-data": { color: "yellow", icon: /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(GdsIcons.Analytics, { size: "1.1rem" }) }
+  loading: { color: "violet", icon: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_core12.Loader, { size: "sm" }) },
+  empty: { color: "gray", icon: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(GdsIcons.Inbox, { size: "1.1rem" }) },
+  error: { color: "red", icon: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(GdsIcons.Danger, { size: "1.1rem" }) },
+  permission: { color: "orange", icon: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(GdsIcons.Verify, { size: "1.1rem" }) },
+  disabled: { color: "gray", icon: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(GdsIcons.Toggle, { size: "1.1rem" }) },
+  success: { color: "teal", icon: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(GdsIcons.Success, { size: "1.1rem" }) },
+  info: { color: "blue", icon: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(GdsIcons.Info, { size: "1.1rem" }) },
+  "not-enough-data": { color: "yellow", icon: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(GdsIcons.Analytics, { size: "1.1rem" }) }
 };
 function StateBlock({
   variant,
@@ -499,8 +713,8 @@ function StateBlock({
   compact = false
 }) {
   const config = variantConfig[variant];
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
-    import_core9.Stack,
+  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
+    import_core12.Stack,
     {
       align: compact ? "flex-start" : "center",
       justify: "center",
@@ -508,10 +722,10 @@ function StateBlock({
       py: compact ? "md" : "xl",
       ta: compact ? "left" : "center",
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_core9.ThemeIcon, { variant: "light", color: config.color, size: compact ? "lg" : "xl", radius: "xl", children: icon ?? config.icon }),
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(import_core9.Stack, { gap: 6, align: compact ? "flex-start" : "center", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_core9.Title, { order: compact ? 4 : 3, children: title }),
-          description ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(import_core9.Text, { c: "dimmed", maw: compact ? void 0 : 480, children: description }) : null
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_core12.ThemeIcon, { variant: "light", color: config.color, size: compact ? "lg" : "xl", radius: "xl", children: icon ?? config.icon }),
+        /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_core12.Stack, { gap: 6, align: compact ? "flex-start" : "center", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_core12.Title, { order: compact ? 4 : 3, children: title }),
+          description ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_core12.Text, { c: "dimmed", maw: compact ? void 0 : 480, children: description }) : null
         ] }),
         action
       ]
@@ -520,8 +734,8 @@ function StateBlock({
 }
 
 // src/DataToolbar.tsx
-var import_core10 = require("@mantine/core");
-var import_jsx_runtime10 = require("react/jsx-runtime");
+var import_core13 = require("@mantine/core");
+var import_jsx_runtime13 = require("react/jsx-runtime");
 function DataToolbar({
   searchSlot,
   filterSlot,
@@ -530,20 +744,20 @@ function DataToolbar({
   createAction,
   activeFilters = []
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(import_core10.Stack, { gap: "sm", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(import_core10.Group, { justify: "space-between", align: "flex-start", gap: "sm", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(import_core10.Group, { flex: 1, align: "flex-start", gap: "sm", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(import_core13.Stack, { gap: "sm", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(import_core13.Group, { justify: "space-between", align: "flex-start", gap: "sm", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(import_core13.Group, { flex: 1, align: "flex-start", gap: "sm", children: [
         searchSlot,
         filterSlot,
         sortSlot
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(import_core10.Group, { gap: "sm", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(import_core13.Group, { gap: "sm", children: [
         resetAction,
         createAction
       ] })
     ] }),
-    activeFilters.length ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_core10.Group, { gap: "xs", children: activeFilters.map((filter) => /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
-      import_core10.Badge,
+    activeFilters.length ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(import_core13.Group, { gap: "xs", children: activeFilters.map((filter) => /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+      import_core13.Badge,
       {
         variant: "light",
         rightSection: filter.onRemove ? "\xD7" : void 0,
@@ -557,85 +771,476 @@ function DataToolbar({
 }
 
 // src/PublicShell.tsx
-var import_core11 = require("@mantine/core");
-var import_jsx_runtime11 = require("react/jsx-runtime");
+var import_core15 = require("@mantine/core");
+
+// src/PublicNav.tsx
+var import_core14 = require("@mantine/core");
+var import_jsx_runtime14 = require("react/jsx-runtime");
+function PublicNav({ items, activeId, renderLink }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(import_core14.Group, { component: "nav", "aria-label": "Primary", gap: "lg", wrap: "nowrap", children: items.map((item) => {
+    const active = item.id === activeId;
+    if (renderLink) {
+      return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { children: renderLink(item, active) }, item.id);
+    }
+    return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+      import_core14.Anchor,
+      {
+        href: item.href,
+        "aria-current": active ? "page" : void 0,
+        c: active ? "var(--mantine-color-text)" : "dimmed",
+        fw: active ? 700 : 500,
+        underline: "never",
+        target: item.external ? "_blank" : void 0,
+        rel: item.external ? "noreferrer" : void 0,
+        children: item.label
+      },
+      item.id
+    );
+  }) });
+}
+
+// src/PublicShell.tsx
+var import_jsx_runtime15 = require("react/jsx-runtime");
 function PublicShell({
   brand,
+  navItems,
+  activeNavId,
   navigation,
   actions,
   footer,
   mobileNavigation,
   children,
   headerBordered = true,
-  compact = false
+  compact = false,
+  maxContentWidth
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(import_core11.AppShell, { header: { height: 72 }, footer: mobileNavigation ? { height: 68 } : void 0, padding: 0, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.AppShell.Header, { withBorder: headerBordered, children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Container, { size: compact ? "md" : "lg", h: "100%", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(import_core11.Group, { h: "100%", justify: "space-between", wrap: "nowrap", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(import_core11.Group, { wrap: "nowrap", gap: "sm", children: [
-        mobileNavigation ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Burger, { hiddenFrom: "sm", disabled: true, opened: false, "aria-hidden": true }) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Box, { children: brand })
+  const resolvedNavigation = navigation ?? (navItems ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(PublicNav, { items: navItems, activeId: activeNavId }) : null);
+  const containerSize = maxContentWidth ?? (compact ? "md" : "lg");
+  return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(import_core15.AppShell, { header: { height: 72 }, footer: mobileNavigation ? { height: 68 } : void 0, padding: 0, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_core15.AppShell.Header, { withBorder: headerBordered, children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_core15.Container, { size: containerSize, h: "100%", children: /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(import_core15.Group, { h: "100%", justify: "space-between", wrap: "nowrap", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(import_core15.Group, { wrap: "nowrap", gap: "sm", children: [
+        mobileNavigation ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_core15.Burger, { hiddenFrom: "sm", disabled: true, opened: false, "aria-hidden": true }) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_core15.Box, { children: brand })
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Group, { visibleFrom: "sm", gap: "lg", children: navigation }),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Group, { gap: "sm", children: actions })
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_core15.Group, { visibleFrom: "sm", gap: "lg", children: resolvedNavigation }),
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_core15.Group, { gap: "sm", children: actions })
     ] }) }) }),
-    mobileNavigation ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.AppShell.Footer, { withBorder: true, children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Container, { size: compact ? "md" : "lg", h: "100%", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Group, { h: "100%", justify: "space-around", wrap: "nowrap", children: mobileNavigation }) }) }) : null,
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(import_core11.AppShell.Main, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Container, { size: compact ? "md" : "lg", py: "xl", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Stack, { gap: "xl", children }) }),
-      footer ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Box, { component: "footer", py: "xl", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Container, { size: compact ? "md" : "lg", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_core11.Text, { size: "sm", c: "dimmed", children: footer }) }) }) : null
+    mobileNavigation ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_core15.AppShell.Footer, { withBorder: true, children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_core15.Container, { size: containerSize, h: "100%", children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_core15.Group, { h: "100%", justify: "space-around", wrap: "nowrap", children: mobileNavigation }) }) }) : null,
+    /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(import_core15.AppShell.Main, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_core15.Container, { size: containerSize, py: "xl", children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_core15.Stack, { gap: "xl", children }) }),
+      footer ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_core15.Box, { component: typeof footer === "string" ? "footer" : "div", py: "xl", children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_core15.Container, { size: containerSize, children: typeof footer === "string" ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_core15.Text, { size: "sm", c: "dimmed", children: footer }) : footer }) }) : null
     ] })
   ] });
 }
 
+// src/PublicSiteFooter.tsx
+var import_core16 = require("@mantine/core");
+var import_jsx_runtime16 = require("react/jsx-runtime");
+function PublicSiteFooter({ children, meta }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(import_core16.Stack, { component: "footer", gap: "xs", children: [
+    children ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(import_core16.Text, { size: "sm", children }) : null,
+    meta ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(import_core16.Group, { gap: "sm", children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(import_core16.Text, { size: "xs", c: "dimmed", children: meta }) }) : null
+  ] });
+}
+
+// src/PublicBrandFooter.tsx
+var import_core17 = require("@mantine/core");
+var import_jsx_runtime17 = require("react/jsx-runtime");
+function PublicBrandFooter({
+  media,
+  brandTitle,
+  description,
+  actions,
+  secondary,
+  legal,
+  compact = false
+}) {
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Paper, { component: "footer", withBorder: true, radius: "xl", p: compact ? "lg" : "xl", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(import_core17.Stack, { gap: "lg", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(import_core17.Grid, { gutter: compact ? "lg" : "xl", align: "flex-start", children: [
+      media ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Grid.Col, { span: { base: 12, md: 4 }, children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Box, { children: media }) }) : null,
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Grid.Col, { span: { base: 12, md: media ? 4 : 6 }, children: /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(import_core17.Stack, { gap: "sm", children: [
+        brandTitle ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Title, { order: 4, children: brandTitle }) : null,
+        description ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Text, { c: "dimmed", children: description }) : null,
+        actions ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Box, { children: actions }) : null
+      ] }) }),
+      secondary ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Grid.Col, { span: { base: 12, md: media ? 4 : 6 }, children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Stack, { gap: "sm", children: secondary }) }) : null
+    ] }),
+    legal ? /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(import_jsx_runtime17.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Divider, {}),
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Group, { justify: "space-between", gap: "sm", wrap: "wrap", children: typeof legal === "string" ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Text, { size: "sm", c: "dimmed", children: legal }) : legal })
+    ] }) : null
+  ] }) });
+}
+
 // src/AuthShell.tsx
-var import_core12 = require("@mantine/core");
-var import_jsx_runtime12 = require("react/jsx-runtime");
+var import_core18 = require("@mantine/core");
+var import_jsx_runtime18 = require("react/jsx-runtime");
 function AuthShell({ title, description, brand, footer, helper, children }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_core12.Box, { py: { base: "xl", md: "4rem" }, children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_core12.Container, { size: "xs", children: /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_core12.Stack, { gap: "xl", children: [
-    brand ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_core12.Group, { justify: "center", children: brand }) : null,
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_core12.Card, { withBorder: true, radius: "lg", padding: "xl", children: /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_core12.Stack, { gap: "lg", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_core12.Stack, { gap: "xs", ta: "center", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_core12.Title, { order: 2, children: title }),
-        description ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_core12.Text, { c: "dimmed", size: "sm", children: description }) : null
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(import_core18.Box, { py: { base: "xl", md: "4rem" }, children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(import_core18.Container, { size: "xs", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(import_core18.Stack, { gap: "xl", children: [
+    brand ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(import_core18.Group, { justify: "center", children: brand }) : null,
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(import_core18.Card, { withBorder: true, radius: "lg", padding: "xl", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(import_core18.Stack, { gap: "lg", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(import_core18.Stack, { gap: "xs", ta: "center", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(import_core18.Title, { order: 2, children: title }),
+        description ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(import_core18.Text, { c: "dimmed", size: "sm", children: description }) : null
       ] }),
       children,
-      helper ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_core12.Text, { size: "sm", c: "dimmed", ta: "center", children: helper }) : null
+      helper ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(import_core18.Text, { size: "sm", c: "dimmed", ta: "center", children: helper }) : null
     ] }) }),
-    footer ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(import_core12.Text, { size: "sm", c: "dimmed", ta: "center", children: footer }) : null
+    footer ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(import_core18.Text, { size: "sm", c: "dimmed", ta: "center", children: footer }) : null
   ] }) }) });
 }
 
 // src/ArticleShell.tsx
-var import_core13 = require("@mantine/core");
-var import_jsx_runtime13 = require("react/jsx-runtime");
+var import_core19 = require("@mantine/core");
+var import_jsx_runtime19 = require("react/jsx-runtime");
 function ArticleShell({ eyebrow, title, lead, meta, sideRail, children }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(import_core13.Container, { size: "lg", py: "xl", children: /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(import_core13.Group, { align: "flex-start", gap: "xl", wrap: "nowrap", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(import_core13.Stack, { gap: "lg", maw: 760, flex: 1, children: [
-      /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(import_core13.Stack, { gap: "sm", children: [
-        eyebrow ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(import_core13.Text, { size: "sm", fw: 700, c: "dimmed", tt: "uppercase", children: eyebrow }) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(import_core13.Title, { order: 1, children: title }),
-        lead ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(import_core13.Text, { size: "lg", c: "dimmed", children: lead }) : null,
-        meta ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(import_core13.Group, { gap: "md", children: meta }) : null
+  return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(import_core19.Container, { size: "lg", py: "xl", children: /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(import_core19.Group, { align: "flex-start", gap: "xl", wrap: "nowrap", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(import_core19.Stack, { gap: "lg", maw: 760, flex: 1, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(import_core19.Stack, { gap: "sm", children: [
+        eyebrow ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(import_core19.Text, { size: "sm", fw: 700, c: "dimmed", tt: "uppercase", children: eyebrow }) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(import_core19.Title, { order: 1, children: title }),
+        lead ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(import_core19.Text, { size: "lg", c: "dimmed", children: lead }) : null,
+        meta ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(import_core19.Group, { gap: "md", children: meta }) : null
       ] }),
-      /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(import_core13.Stack, { gap: "md", children })
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(import_core19.Stack, { gap: "md", children })
     ] }),
-    sideRail ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(import_core13.Stack, { visibleFrom: "lg", gap: "md", w: 240, children: sideRail }) : null
+    sideRail ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(import_core19.Stack, { visibleFrom: "lg", gap: "md", w: 240, children: sideRail }) : null
   ] }) });
 }
 
+// src/DocsCodeBlock.tsx
+var import_react3 = require("react");
+var import_core20 = require("@mantine/core");
+var import_jsx_runtime20 = require("react/jsx-runtime");
+function DocsCodeBlock({ code, language, title, withCopy = true }) {
+  const [copied, setCopied] = (0, import_react3.useState)(false);
+  const handleCopy = async () => {
+    if (!navigator?.clipboard) {
+      return;
+    }
+    await navigator.clipboard.writeText(code);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1200);
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(import_core20.Paper, { withBorder: true, radius: "lg", p: "md", children: /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)(import_core20.Stack, { gap: "sm", children: [
+    title || withCopy ? /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)(import_core20.Group, { justify: "space-between", align: "center", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)(import_core20.Stack, { gap: 0, children: [
+        title ? /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(import_core20.Text, { fw: 600, children: title }) : null,
+        language ? /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(import_core20.Text, { size: "xs", c: "dimmed", children: language }) : null
+      ] }),
+      withCopy ? /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
+        import_core20.ActionIcon,
+        {
+          variant: "subtle",
+          "aria-label": copied ? "Copied code block" : "Copy code block",
+          onClick: () => {
+            void handleCopy();
+          },
+          children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(GdsIcons.Copy, { size: "1rem" })
+        }
+      ) : null
+    ] }) : null,
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(import_core20.Code, { block: true, children: code })
+  ] }) });
+}
+
+// src/CtaButtonGroup.tsx
+var import_core21 = require("@mantine/core");
+var import_jsx_runtime21 = require("react/jsx-runtime");
+function CtaButtonGroup({ primary, secondary, tertiary }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(import_core21.Stack, { gap: "sm", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(import_core21.Group, { gap: "sm", align: "stretch", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { children: primary }),
+      secondary ? /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { children: secondary }) : null
+    ] }),
+    tertiary ? /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("div", { children: tertiary }) : null
+  ] });
+}
+
+// src/DocsPageShell.tsx
+var import_core22 = require("@mantine/core");
+var import_jsx_runtime22 = require("react/jsx-runtime");
+function DocsPageShell({
+  breadcrumbs = [],
+  title,
+  lead,
+  eyebrow,
+  meta,
+  sideRail,
+  footerNext,
+  children
+}) {
+  return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(import_core22.Container, { size: "lg", py: "xl", children: /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(import_core22.Group, { align: "flex-start", gap: "xl", wrap: "nowrap", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(import_core22.Stack, { component: "article", gap: "lg", maw: 760, flex: 1, children: [
+      breadcrumbs.length ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(import_core22.Breadcrumbs, { children: breadcrumbs.map(
+        (crumb) => crumb.href ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(import_core22.Anchor, { href: crumb.href, children: crumb.label }, `${crumb.label}-${crumb.href}`) : /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(import_core22.Text, { children: crumb.label }, crumb.label)
+      ) }) : null,
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(import_core22.Stack, { gap: "sm", children: [
+        eyebrow ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(import_core22.Text, { size: "sm", fw: 700, c: "dimmed", children: eyebrow }) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(import_core22.Title, { order: 1, children: title }),
+        lead ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(import_core22.Text, { size: "lg", c: "dimmed", children: lead }) : null,
+        meta ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(import_core22.Group, { gap: "md", children: meta }) : null
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(import_core22.Stack, { gap: "md", children }),
+      footerNext ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(import_core22.Anchor, { href: footerNext.href, fw: 600, children: footerNext.label }) : null
+    ] }),
+    sideRail ? /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(import_core22.Stack, { visibleFrom: "lg", gap: "md", w: 240, children: sideRail }) : null
+  ] }) });
+}
+
+// src/EditorialHero.tsx
+var import_core23 = require("@mantine/core");
+var import_jsx_runtime23 = require("react/jsx-runtime");
+function resolveActionVariant(action, index, seenPrimary) {
+  const requested = action.variant ?? (index === 0 ? "primary" : "secondary");
+  if (requested === "primary" && !seenPrimary) {
+    return { variant: "filled", seenPrimary: true };
+  }
+  if (requested === "subtle") {
+    return { variant: "subtle", seenPrimary };
+  }
+  return { variant: "default", seenPrimary };
+}
+function HeroAction({ action, variant }) {
+  const content = /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+    import_core23.Anchor,
+    {
+      href: action.href,
+      onClick: action.onClick,
+      "aria-disabled": action.disabled || action.loading || void 0,
+      underline: "never",
+      c: variant === "filled" ? "white" : void 0,
+      style: {
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "0.625rem 1rem",
+        borderRadius: "var(--mantine-radius-md)",
+        fontWeight: 600,
+        minHeight: "2.5rem",
+        border: variant === "default" ? "1px solid var(--mantine-color-default-border)" : "1px solid transparent",
+        background: variant === "filled" ? "var(--mantine-color-violet-filled)" : variant === "subtle" ? "transparent" : "var(--mantine-color-default)",
+        opacity: action.disabled ? 0.6 : 1,
+        pointerEvents: action.disabled ? "none" : void 0
+      },
+      children: action.loading ? "Loading\u2026" : action.label
+    }
+  );
+  if (!action.href) {
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+      import_core23.Box,
+      {
+        component: "button",
+        type: "button",
+        onClick: action.onClick,
+        disabled: action.disabled || action.loading,
+        style: {
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "0.625rem 1rem",
+          borderRadius: "var(--mantine-radius-md)",
+          fontWeight: 600,
+          minHeight: "2.5rem",
+          border: variant === "default" ? "1px solid var(--mantine-color-default-border)" : "1px solid transparent",
+          background: variant === "filled" ? "var(--mantine-color-violet-filled)" : variant === "subtle" ? "transparent" : "var(--mantine-color-default)",
+          color: variant === "filled" ? "white" : "inherit",
+          cursor: action.disabled ? "not-allowed" : "pointer",
+          opacity: action.disabled ? 0.6 : 1
+        },
+        children: action.loading ? "Loading\u2026" : action.label
+      }
+    );
+  }
+  return content;
+}
+function LoadingHero({ compact }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(import_core23.Paper, { withBorder: true, radius: "xl", p: compact ? "lg" : "xl", children: /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(import_core23.Grid, { gutter: compact ? "lg" : "xl", align: "center", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(import_core23.Grid.Col, { span: { base: 12, md: 6 }, children: /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(import_core23.Stack, { gap: "md", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(import_core23.Skeleton, { height: 16, width: 96, radius: "xl" }),
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(import_core23.Skeleton, { height: 48, width: "90%", radius: "md" }),
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(import_core23.Skeleton, { height: 18, width: "100%", radius: "md" }),
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(import_core23.Skeleton, { height: 18, width: "82%", radius: "md" }),
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(import_core23.Group, { children: [
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(import_core23.Skeleton, { height: 40, width: 140, radius: "md" }),
+        /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(import_core23.Skeleton, { height: 40, width: 140, radius: "md" })
+      ] })
+    ] }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(import_core23.Grid.Col, { span: { base: 12, md: 6 }, children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(import_core23.AspectRatio, { ratio: 16 / 11, children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(import_core23.Skeleton, { radius: "lg" }) }) })
+  ] }) });
+}
+function MediaFallback() {
+  return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(import_core23.AspectRatio, { ratio: 16 / 11, children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+    import_core23.ThemeIcon,
+    {
+      size: "100%",
+      radius: "lg",
+      color: "gray",
+      variant: "light",
+      "aria-label": "Hero media is unavailable",
+      children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(GdsIcons.Gallery, { size: "2.5rem" })
+    }
+  ) });
+}
+function MediaFrame({
+  media,
+  mediaAlt,
+  mediaFade
+}) {
+  return /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
+    import_core23.Box,
+    {
+      component: "figure",
+      m: 0,
+      style: {
+        position: "relative",
+        overflow: "hidden",
+        borderRadius: "var(--mantine-radius-xl)",
+        minHeight: "100%"
+      },
+      "aria-label": mediaAlt,
+      children: [
+        media ?? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(MediaFallback, {}),
+        media && mediaFade !== "none" ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+          import_core23.Box,
+          {
+            "aria-hidden": true,
+            style: {
+              position: "absolute",
+              inset: 0,
+              pointerEvents: "none",
+              background: mediaFade === "background-blend" ? "linear-gradient(135deg, light-dark(rgba(255,255,255,0), rgba(17,24,39,0.08)) 0%, light-dark(rgba(255,255,255,0.42), rgba(17,24,39,0.54)) 100%)" : "linear-gradient(90deg, light-dark(rgba(255,255,255,0.9), rgba(17,24,39,0.72)) 0%, rgba(255,255,255,0) 28%)"
+            }
+          }
+        ) : null
+      ]
+    }
+  );
+}
+function EditorialHero({
+  eyebrow,
+  title,
+  description,
+  actions = [],
+  meta = [],
+  media,
+  mediaAlt,
+  mediaPosition = "right",
+  mediaFade = "soft-start",
+  align = "start",
+  compact = false,
+  loading = false,
+  error
+}) {
+  if (loading) {
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(LoadingHero, { compact });
+  }
+  const stackAlign = align === "center" ? "center" : "flex-start";
+  const textAlign = align === "center" ? "center" : "left";
+  let seenPrimary = false;
+  const renderedActions = actions.slice(0, 3).map((action, index) => {
+    const resolved = resolveActionVariant(action, index, seenPrimary);
+    seenPrimary = resolved.seenPrimary;
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(HeroAction, { action, variant: resolved.variant }, `${action.label}-${index}`);
+  });
+  const textSlot = /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(import_core23.Stack, { gap: compact ? "md" : "lg", justify: "center", h: "100%", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(import_core23.Stack, { gap: "sm", align: stackAlign, children: [
+      eyebrow ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(import_core23.Text, { size: "sm", fw: 700, c: "dimmed", ta: textAlign, children: eyebrow }) : null,
+      /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(import_core23.Title, { order: 1, maw: 760, ta: textAlign, children: title }),
+      description ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(import_core23.Text, { size: compact ? "md" : "lg", c: "dimmed", maw: 720, ta: textAlign, children: description }) : null
+    ] }),
+    renderedActions.length ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(
+      CtaButtonGroup,
+      {
+        primary: renderedActions[0],
+        secondary: renderedActions[1],
+        tertiary: renderedActions[2]
+      }
+    ) : null,
+    meta.length ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(import_core23.Group, { gap: "sm", wrap: "wrap", "aria-label": "Supporting details", children: meta.map((item) => /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(
+      import_core23.Group,
+      {
+        gap: 6,
+        px: "sm",
+        py: 6,
+        style: {
+          borderRadius: "var(--mantine-radius-xl)",
+          background: "light-dark(var(--mantine-color-gray-0), color-mix(in srgb, var(--mantine-color-dark-7) 92%, black))"
+        },
+        children: [
+          item.icon,
+          /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(import_core23.Text, { size: "sm", c: "dimmed", children: item.label })
+        ]
+      },
+      item.id
+    )) }) : null
+  ] });
+  const mediaSlot = error ? /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(AccentPanel, { tone: "red", variant: "soft-outline", title: "Media unavailable", children: error }) : /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(MediaFrame, { media, mediaAlt, mediaFade });
+  const textCol = /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(import_core23.Grid.Col, { span: { base: 12, md: 6 }, order: { base: 1, md: mediaPosition === "left" ? 2 : 1 }, children: textSlot });
+  const mediaCol = /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(import_core23.Grid.Col, { span: { base: 12, md: 6 }, order: { base: 2, md: mediaPosition === "left" ? 1 : 2 }, children: mediaSlot });
+  return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(import_core23.Paper, { component: "section", withBorder: true, radius: "xl", p: compact ? "lg" : "xl", children: /* @__PURE__ */ (0, import_jsx_runtime23.jsxs)(import_core23.Grid, { gutter: compact ? "lg" : "xl", align: "center", children: [
+    textCol,
+    mediaCol
+  ] }) });
+}
+
+// src/FeatureBand.tsx
+var import_core24 = require("@mantine/core");
+var import_jsx_runtime24 = require("react/jsx-runtime");
+function FeatureBandSkeleton({ columns = 3, bordered = true }) {
+  return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(import_core24.SimpleGrid, { cols: { base: 1, sm: Math.min(columns, 2), lg: columns }, spacing: "lg", children: Array.from({ length: columns }).map((_, index) => /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(import_core24.Paper, { withBorder: bordered, radius: "lg", p: "lg", children: /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(import_core24.Stack, { gap: "md", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(import_core24.Skeleton, { height: 42, width: 42, radius: "xl" }),
+    /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(import_core24.Stack, { gap: "xs", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(import_core24.Skeleton, { height: 20, width: "75%", radius: "md" }),
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(import_core24.Skeleton, { height: 14, width: "100%", radius: "md" }),
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(import_core24.Skeleton, { height: 14, width: "82%", radius: "md" })
+    ] })
+  ] }) }, index)) });
+}
+function FeatureBand({
+  items,
+  columns = 3,
+  bordered = true,
+  loading = false,
+  emptyState
+}) {
+  if (loading) {
+    return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(FeatureBandSkeleton, { columns, bordered });
+  }
+  if (!items.length) {
+    return emptyState ? /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(import_jsx_runtime24.Fragment, { children: emptyState }) : /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(
+      EmptyState,
+      {
+        title: "No supporting details available",
+        description: "Add shared feature-band items when this public surface needs trust, service, or location context."
+      }
+    );
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(import_core24.Box, { component: "section", "aria-label": "Supporting features", children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(import_core24.SimpleGrid, { cols: { base: 1, sm: Math.min(columns, 2), lg: columns }, spacing: "lg", children: items.map((item) => /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(import_core24.Paper, { withBorder: bordered, radius: "lg", p: "lg", children: /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(import_core24.Stack, { gap: "md", children: [
+    item.media ? item.media : item.icon ? /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(import_core24.Group, { children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(import_core24.ThemeIcon, { size: "xl", radius: "xl", variant: "light", color: "violet", children: item.icon }) }) : /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(import_core24.Group, { children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(import_core24.ThemeIcon, { size: "xl", radius: "xl", variant: "light", color: "gray", "aria-hidden": true, children: /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(GdsIcons.Info, { size: "1.25rem" }) }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime24.jsxs)(import_core24.Stack, { gap: "xs", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(import_core24.Title, { order: 4, children: item.title }),
+      item.description ? /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(import_core24.Text, { c: "dimmed", children: item.description }) : null,
+      item.meta ? /* @__PURE__ */ (0, import_jsx_runtime24.jsx)(import_core24.Text, { size: "sm", c: "dimmed", children: item.meta }) : null
+    ] })
+  ] }) }, item.id)) }) });
+}
+
 // src/UploadDropzone.tsx
-var import_react2 = require("react");
-var import_core14 = require("@mantine/core");
-var import_jsx_runtime14 = require("react/jsx-runtime");
+var import_react4 = require("react");
+var import_core25 = require("@mantine/core");
+var import_jsx_runtime25 = require("react/jsx-runtime");
 function UploadDropzone({
   title,
   description,
   onFilesSelected,
   accept,
   multiple = true,
-  actionLabel = "Choose files"
+  actionLabel = "Choose files",
+  mode = "panel"
 }) {
-  const inputRef = (0, import_react2.useRef)(null);
-  const [dragging, setDragging] = (0, import_react2.useState)(false);
+  const inputRef = (0, import_react4.useRef)(null);
+  const [dragging, setDragging] = (0, import_react4.useState)(false);
   const UploadIcon = GdsIcons.Upload;
   const forwardFiles = (files) => {
     if (!files?.length || !onFilesSelected) {
@@ -643,8 +1248,8 @@ function UploadDropzone({
     }
     onFilesSelected(Array.from(files));
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
-    import_core14.Box,
+  return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(
+    import_core25.Box,
     {
       onDragOver: (event) => {
         event.preventDefault();
@@ -656,14 +1261,14 @@ function UploadDropzone({
         setDragging(false);
         forwardFiles(event.dataTransfer.files);
       },
-      p: "xl",
+      p: mode === "inline" ? "md" : "xl",
       style: {
         border: `1px dashed var(${dragging ? "--mantine-color-violet-6" : "--mantine-color-default-border"})`,
         borderRadius: "var(--mantine-radius-lg)",
         background: dragging ? "var(--mantine-color-violet-light)" : "transparent"
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
           "input",
           {
             ref: inputRef,
@@ -674,11 +1279,11 @@ function UploadDropzone({
             onChange: (event) => forwardFiles(event.currentTarget.files)
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(import_core14.Stack, { align: "center", ta: "center", gap: "sm", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(UploadIcon, { size: "1.5rem" }),
-          /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(import_core14.Text, { fw: 600, children: title }),
-          description ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(import_core14.Text, { size: "sm", c: "dimmed", children: description }) : null,
-          /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(import_core14.Group, { children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(import_core14.Button, { variant: "light", onClick: () => inputRef.current?.click(), children: actionLabel }) })
+        /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(import_core25.Stack, { align: mode === "inline" ? "flex-start" : "center", ta: mode === "inline" ? "left" : "center", gap: "sm", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(UploadIcon, { size: "1.5rem" }),
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(import_core25.Text, { fw: 600, children: title }),
+          description ? /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(import_core25.Text, { size: "sm", c: "dimmed", children: description }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(import_core25.Group, { children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(import_core25.Button, { variant: "light", onClick: () => inputRef.current?.click(), children: actionLabel }) })
         ] })
       ]
     }
@@ -686,61 +1291,186 @@ function UploadDropzone({
 }
 
 // src/MediaCard.tsx
-var import_core15 = require("@mantine/core");
-var import_jsx_runtime15 = require("react/jsx-runtime");
+var import_core26 = require("@mantine/core");
+var import_jsx_runtime26 = require("react/jsx-runtime");
 function MediaCard({ title, image, description, status, overlay, actions = [] }) {
   const EyeIcon = GdsIcons.Eye;
-  return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(import_core15.Card, { withBorder: true, radius: "lg", padding: "md", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(import_core15.Card.Section, { pos: "relative", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)(import_core26.Card, { withBorder: true, radius: "lg", padding: "md", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)(import_core26.Card.Section, { pos: "relative", children: [
       image,
-      overlay ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { style: { position: "absolute", inset: 12, display: "flex", justifyContent: "flex-end", alignItems: "flex-start" }, children: overlay }) : null
+      overlay ? /* @__PURE__ */ (0, import_jsx_runtime26.jsx)("div", { style: { position: "absolute", inset: 12, display: "flex", justifyContent: "flex-end", alignItems: "flex-start" }, children: overlay }) : null
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(import_core15.Stack, { gap: "sm", mt: "md", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(import_core15.Group, { justify: "space-between", align: "flex-start", children: [
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(import_core15.Stack, { gap: 4, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_core15.Title, { order: 4, children: title }),
-          description ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_core15.Text, { size: "sm", c: "dimmed", lineClamp: 2, children: description }) : null
+    /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)(import_core26.Stack, { gap: "sm", mt: "md", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)(import_core26.Group, { justify: "space-between", align: "flex-start", children: [
+        /* @__PURE__ */ (0, import_jsx_runtime26.jsxs)(import_core26.Stack, { gap: 4, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(import_core26.Title, { order: 4, children: title }),
+          description ? /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(import_core26.Text, { size: "sm", c: "dimmed", lineClamp: 2, children: description }) : null
         ] }),
-        status ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_core15.Badge, { variant: "light", children: status }) : null
+        status ? /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(import_core26.Badge, { variant: "light", children: status }) : null
       ] }),
-      actions.length ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_core15.Group, { justify: "flex-end", gap: "xs", children: actions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(import_core15.ActionIcon, { variant: "light", "aria-label": action.label, onClick: action.onClick, children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(EyeIcon, { size: "1rem" }) }, action.label)) }) : null
+      actions.length ? /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(import_core26.Group, { justify: "flex-end", gap: "xs", children: actions.map((action) => /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(import_core26.ActionIcon, { variant: "light", "aria-label": action.label, onClick: action.onClick, children: /* @__PURE__ */ (0, import_jsx_runtime26.jsx)(EyeIcon, { size: "1rem" }) }, action.label)) }) : null
     ] })
   ] });
 }
 
 // src/AccessSummary.tsx
-var import_core16 = require("@mantine/core");
-var import_jsx_runtime16 = require("react/jsx-runtime");
+var import_core27 = require("@mantine/core");
+var import_jsx_runtime27 = require("react/jsx-runtime");
 function AccessSummary({ title, roles, scope, blocked = false, description }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(import_core16.Card, { withBorder: true, radius: "lg", padding: "lg", children: /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(import_core16.Stack, { gap: "sm", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(import_core16.Group, { justify: "space-between", align: "center", children: [
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(import_core16.Title, { order: 4, children: title }),
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(import_core16.Badge, { color: blocked ? "red" : "teal", variant: "light", children: blocked ? "Blocked" : "Allowed" })
+  return /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(import_core27.Card, { withBorder: true, radius: "lg", padding: "lg", children: /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)(import_core27.Stack, { gap: "sm", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)(import_core27.Group, { justify: "space-between", align: "center", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(import_core27.Title, { order: 4, children: title }),
+      /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(import_core27.Badge, { color: blocked ? "red" : "teal", variant: "light", children: blocked ? "Blocked" : "Allowed" })
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(import_core16.Group, { gap: "xs", children: roles.map((role) => /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(import_core16.Badge, { variant: "outline", children: role }, role)) }),
-    scope ? /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(import_core16.Text, { size: "sm", c: "dimmed", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(import_core27.Group, { gap: "xs", children: roles.map((role) => /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(import_core27.Badge, { variant: "outline", children: role }, role)) }),
+    scope ? /* @__PURE__ */ (0, import_jsx_runtime27.jsxs)(import_core27.Text, { size: "sm", c: "dimmed", children: [
       "Scope: ",
       scope
     ] }) : null,
-    description ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(import_core16.Text, { size: "sm", children: description }) : null
+    description ? /* @__PURE__ */ (0, import_jsx_runtime27.jsx)(import_core27.Text, { size: "sm", children: description }) : null
   ] }) });
 }
 
+// src/AccessRecoveryPanel.tsx
+var import_core28 = require("@mantine/core");
+var import_theme3 = require("@gds/theme");
+var import_jsx_runtime28 = require("react/jsx-runtime");
+var stateBlockVariantByState = {
+  unauthenticated: "permission",
+  "expired-session": "info",
+  forbidden: "permission",
+  missing: "error",
+  unavailable: "error"
+};
+var defaultCopyByState = {
+  unauthenticated: {
+    title: "Sign in required",
+    description: "Please sign in to continue to this content."
+  },
+  "expired-session": {
+    title: "Session expired",
+    description: "Sign in again or retry to continue where you left off."
+  },
+  forbidden: {
+    title: "You do not have access",
+    description: "This content is outside your current permissions or scope."
+  },
+  missing: {
+    title: "Content not found",
+    description: "The resource may have moved, been deleted, or never existed in this scope."
+  },
+  unavailable: {
+    title: "Content is temporarily unavailable",
+    description: "Try again in a moment or return to a safe destination."
+  }
+};
+function defaultActionsForState(state, {
+  onRetry,
+  onSignIn,
+  onBack,
+  supportAction
+}) {
+  const signInAction = onSignIn ? { action: "login", onClick: onSignIn } : null;
+  const retryAction = onRetry ? { action: "refresh", onClick: onRetry, variant: "light" } : null;
+  const backAction = onBack ? { action: "back", onClick: onBack, variant: "default" } : null;
+  switch (state) {
+    case "unauthenticated":
+      return { primary: signInAction, secondary: backAction, tertiary: supportAction ?? null };
+    case "expired-session":
+      return {
+        primary: signInAction ?? retryAction,
+        secondary: retryAction && signInAction ? retryAction : backAction,
+        tertiary: supportAction ?? null
+      };
+    case "forbidden":
+      return { primary: backAction, secondary: supportAction ?? null, tertiary: null };
+    case "missing":
+      return { primary: backAction, secondary: supportAction ?? null, tertiary: null };
+    case "unavailable":
+      return {
+        primary: retryAction ?? backAction,
+        secondary: retryAction && backAction ? backAction : supportAction ?? null,
+        tertiary: retryAction && backAction ? supportAction ?? null : null
+      };
+  }
+}
+function ActionGroup({
+  primaryAction,
+  secondaryAction,
+  tertiaryAction
+}) {
+  const actions = [primaryAction, secondaryAction, tertiaryAction].filter(Boolean);
+  if (actions.length === 0) {
+    return null;
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(import_core28.Group, { gap: "sm", justify: "center", wrap: "wrap", children: actions.map((actionConfig, index) => /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+    SemanticButton,
+    {
+      action: actionConfig.action,
+      onClick: actionConfig.onClick,
+      loading: actionConfig.loading,
+      disabled: actionConfig.disabled,
+      color: actionConfig.color,
+      variant: actionConfig.variant ?? (index === 0 ? "filled" : "default")
+    },
+    `${actionConfig.action}-${index}`
+  )) });
+}
+function AccessRecoveryPanel({
+  state,
+  title,
+  description,
+  primaryAction,
+  secondaryAction,
+  tertiaryAction,
+  onRetry,
+  onSignIn,
+  onBack,
+  supportAction,
+  compact = false
+}) {
+  const { t } = (0, import_theme3.useGdsTranslation)();
+  const defaultCopy = defaultCopyByState[state];
+  const defaults = defaultActionsForState(state, {
+    onRetry,
+    onSignIn,
+    onBack,
+    supportAction
+  });
+  return /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+    StateBlock,
+    {
+      variant: stateBlockVariantByState[state],
+      compact,
+      title: title ?? t(`gds.accessRecovery.${state}.title`, defaultCopy.title),
+      description: description ?? t(`gds.accessRecovery.${state}.description`, defaultCopy.description),
+      action: /* @__PURE__ */ (0, import_jsx_runtime28.jsx)(
+        ActionGroup,
+        {
+          primaryAction: primaryAction ?? defaults.primary,
+          secondaryAction: secondaryAction ?? defaults.secondary,
+          tertiaryAction: tertiaryAction ?? defaults.tertiary
+        }
+      )
+    }
+  );
+}
+
 // src/FormField.tsx
-var import_core17 = require("@mantine/core");
-var import_jsx_runtime17 = require("react/jsx-runtime");
+var import_core29 = require("@mantine/core");
+var import_jsx_runtime29 = require("react/jsx-runtime");
 function FormField({ label, description, error, children }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Box, { component: "label", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(import_core17.Stack, { gap: 4, children: [
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Text, { size: "xs", fw: 600, c: "dimmed", children: label }),
-    description ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Text, { size: "xs", c: "dimmed", children: description }) : null,
+  return /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(import_core29.Box, { component: "label", children: /* @__PURE__ */ (0, import_jsx_runtime29.jsxs)(import_core29.Stack, { gap: 4, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(import_core29.Text, { size: "xs", fw: 600, c: "dimmed", children: label }),
+    description ? /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(import_core29.Text, { size: "xs", c: "dimmed", children: description }) : null,
     children,
-    error ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(import_core17.Text, { size: "xs", c: "red.7", children: error }) : null
+    error ? /* @__PURE__ */ (0, import_jsx_runtime29.jsx)(import_core29.Text, { size: "xs", c: "red.7", children: error }) : null
   ] }) });
 }
 
 // src/PageHeader.tsx
-var import_core18 = require("@mantine/core");
-var import_jsx_runtime18 = require("react/jsx-runtime");
+var import_core30 = require("@mantine/core");
+var import_jsx_runtime30 = require("react/jsx-runtime");
 function PageHeader({
   title,
   description,
@@ -749,19 +1479,19 @@ function PageHeader({
   eyebrowVariant = "neutral"
 }) {
   const eyebrowProps = eyebrowVariant === "ornamental" ? { tt: "uppercase", style: { letterSpacing: "0.12em" } } : {};
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(import_core18.Group, { justify: "space-between", align: "flex-start", gap: "lg", wrap: "wrap", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(import_core18.Stack, { gap: "xs", children: [
-      eyebrow && /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(import_core18.Text, { size: "xs", fw: 700, c: "dimmed", ...eyebrowProps, children: eyebrow }),
-      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(import_core18.Title, { order: 1, children: title }),
-      description && /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(import_core18.Text, { c: "dimmed", maw: 720, children: description })
+  return /* @__PURE__ */ (0, import_jsx_runtime30.jsxs)(import_core30.Group, { justify: "space-between", align: "flex-start", gap: "lg", wrap: "wrap", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime30.jsxs)(import_core30.Stack, { gap: "xs", children: [
+      eyebrow && /* @__PURE__ */ (0, import_jsx_runtime30.jsx)(import_core30.Text, { size: "xs", fw: 700, c: "dimmed", ...eyebrowProps, children: eyebrow }),
+      /* @__PURE__ */ (0, import_jsx_runtime30.jsx)(import_core30.Title, { order: 1, children: title }),
+      description && /* @__PURE__ */ (0, import_jsx_runtime30.jsx)(import_core30.Text, { c: "dimmed", maw: 720, children: description })
     ] }),
-    actions ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(import_core18.Box, { children: actions }) : null
+    actions ? /* @__PURE__ */ (0, import_jsx_runtime30.jsx)(import_core30.Box, { children: actions }) : null
   ] });
 }
 
 // src/FilterDrawer.tsx
-var import_core19 = require("@mantine/core");
-var import_jsx_runtime19 = require("react/jsx-runtime");
+var import_core31 = require("@mantine/core");
+var import_jsx_runtime31 = require("react/jsx-runtime");
 function FilterDrawer({
   opened,
   onClose,
@@ -770,299 +1500,252 @@ function FilterDrawer({
   primaryAction,
   secondaryAction
 }) {
-  return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(import_core19.Drawer, { opened, onClose, title, position: "right", size: "md", children: /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(import_core19.Stack, { gap: "md", children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime31.jsx)(import_core31.Drawer, { opened, onClose, title, position: "right", size: "md", children: /* @__PURE__ */ (0, import_jsx_runtime31.jsxs)(import_core31.Stack, { gap: "md", children: [
     children,
-    primaryAction || secondaryAction ? /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(import_core19.Group, { justify: "space-between", mt: "md", children: [
-      secondaryAction ?? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", {}),
+    primaryAction || secondaryAction ? /* @__PURE__ */ (0, import_jsx_runtime31.jsxs)(import_core31.Group, { justify: "space-between", mt: "md", children: [
+      secondaryAction ?? /* @__PURE__ */ (0, import_jsx_runtime31.jsx)("span", {}),
       primaryAction
     ] }) : null
   ] }) });
 }
 
-// src/locales/en.ts
-var en = {
-  "gds.action.settings": "Settings",
-  "gds.action.analytics": "Analytics",
-  "gds.action.dashboard": "Dashboard",
-  "gds.action.play": "Play",
-  "gds.action.start": "Start",
-  "gds.action.users": "Users",
-  "gds.action.add": "Add",
-  "gds.action.edit": "Edit",
-  "gds.action.delete": "Delete",
-  "gds.action.save": "Save",
-  "gds.action.cancel": "Cancel",
-  "gds.action.confirm": "Confirm",
-  "gds.action.close": "Close",
-  "gds.action.language": "Language",
-  "gds.action.theme": "Theme",
-  "gds.action.home": "Home",
-  "gds.action.inbox": "Inbox",
-  "gds.action.calendar": "Calendar",
-  "gds.action.gallery": "Gallery",
-  "gds.action.history": "History",
-  "gds.action.profile": "Profile",
-  "gds.action.send": "Send",
-  "gds.action.reply": "Reply",
-  "gds.action.forward": "Forward",
-  "gds.action.attach": "Attach",
-  "gds.action.upload": "Upload",
-  "gds.action.download": "Download",
-  "gds.action.print": "Print",
-  "gds.action.copy": "Copy",
-  "gds.action.duplicate": "Duplicate",
-  "gds.action.check": "Check",
-  "gds.action.uncheck": "Uncheck",
-  "gds.action.complete": "Complete",
-  "gds.action.clear": "Clear",
-  "gds.action.capture": "Capture",
-  "gds.action.record": "Record",
-  "gds.action.flip": "Flip",
-  "gds.action.flash": "Flash",
-  "gds.action.course": "Course",
-  "gds.action.lesson": "Lesson",
-  "gds.action.certificate": "Certificate",
-  "gds.action.student": "Student",
-  "gds.action.class": "Class",
-  "gds.action.grade": "Grade",
-  "gds.action.child": "Child",
-  "gds.action.family": "Family",
-  "gds.action.habit": "Habit",
-  "gds.action.goal": "Goal",
-  "gds.action.streak": "Streak",
-  "gds.action.reward": "Reward",
-  "gds.action.trophy": "Trophy",
-  "gds.action.crown": "Crown",
-  "gds.action.pause": "Pause",
-  "gds.action.message": "Message",
-  "gds.action.mail": "Mail",
-  "gds.action.refresh": "Refresh",
-  "gds.action.trendingUp": "Trending Up",
-  "gds.action.trendingDown": "Trending Down",
-  "gds.action.currency": "Currency",
-  "gds.action.grid": "Grid",
-  "gds.action.list": "List",
-  "gds.action.logout": "Logout",
-  "gds.action.notifications": "Notifications",
-  "gds.action.back": "Back",
-  "gds.action.eye": "View",
-  "gds.action.eyeOff": "Hide",
-  "gds.action.help": "Help",
-  "gds.action.filter": "Filter",
-  "gds.action.sort": "Sort",
-  "gds.action.export": "Export",
-  "gds.action.import": "Import",
-  "gds.action.preview": "Preview",
-  "gds.action.clone": "Clone",
-  "gds.action.restore": "Restore",
-  "gds.action.toggle": "Toggle",
-  "gds.action.search": "Search",
-  "gds.action.submit": "Submit",
-  "gds.action.reset": "Reset",
-  "gds.action.login": "Login",
-  "gds.action.register": "Register",
-  "gds.action.verify": "Verify",
-  "gds.action.launch": "Launch",
-  "gds.action.draft": "Draft",
-  "gds.action.refer": "Refer",
-  "gds.action.evidence": "Evidence",
-  "gds.feedback.saved": "Saved",
-  "gds.feedback.error": "Something went wrong",
-  "gds.feedback.added": "Added",
-  "gds.feedback.edited": "Edited",
-  "gds.feedback.deleted": "Deleted",
-  "gds.feedback.canceled": "Canceled",
-  "gds.feedback.confirmed": "Confirmed",
-  "gds.feedback.closed": "Closed",
-  "gds.feedback.changed": "Changed",
-  "gds.feedback.loaded": "Loaded",
-  "gds.feedback.started": "Started",
-  "gds.feedback.opened": "Opened",
-  "gds.feedback.sent": "Sent",
-  "gds.feedback.replied": "Replied",
-  "gds.feedback.forwarded": "Forwarded",
-  "gds.feedback.attached": "Attached",
-  "gds.feedback.uploaded": "Uploaded",
-  "gds.feedback.downloaded": "Downloaded",
-  "gds.feedback.printed": "Printed",
-  "gds.feedback.copied": "Copied",
-  "gds.feedback.duplicated": "Duplicated",
-  "gds.feedback.checked": "Checked",
-  "gds.feedback.unchecked": "Unchecked",
-  "gds.feedback.completed": "Completed",
-  "gds.feedback.cleared": "Cleared",
-  "gds.feedback.captured": "Captured",
-  "gds.feedback.recorded": "Recorded",
-  "gds.feedback.flipped": "Flipped",
-  "gds.feedback.flashed": "Flashed",
-  "gds.feedback.done": "Done",
-  "gds.feedback.rewarded": "Rewarded",
-  "gds.feedback.paused": "Paused",
-  "gds.feedback.mailed": "Mailed",
-  "gds.feedback.refreshed": "Refreshed",
-  "gds.feedback.loggedOut": "Logged Out",
-  "gds.feedback.filtered": "Filtered",
-  "gds.feedback.sorted": "Sorted",
-  "gds.feedback.exported": "Exported",
-  "gds.feedback.imported": "Imported",
-  "gds.feedback.previewed": "Previewed",
-  "gds.feedback.cloned": "Cloned",
-  "gds.feedback.restored": "Restored",
-  "gds.feedback.toggled": "Toggled",
-  "gds.feedback.searched": "Searched",
-  "gds.feedback.submitted": "Submitted",
-  "gds.feedback.reset": "Reset",
-  "gds.feedback.loggedIn": "Logged In",
-  "gds.feedback.registered": "Registered",
-  "gds.feedback.verified": "Verified",
-  "gds.feedback.launched": "Launched",
-  "gds.feedback.drafted": "Drafted",
-  "gds.feedback.referred": "Referred",
-  "gds.aria.themeToggle": "Toggle color scheme",
-  "gds.state.emptyData": "No data available."
-};
+// src/PlaceholderPanel.tsx
+var import_core32 = require("@mantine/core");
+var import_jsx_runtime32 = require("react/jsx-runtime");
+function PlaceholderPanel({
+  title,
+  description,
+  badge,
+  footer,
+  children,
+  mode
+}) {
+  if (mode === "live" && children) {
+    return /* @__PURE__ */ (0, import_jsx_runtime32.jsx)(import_jsx_runtime32.Fragment, { children });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime32.jsx)(import_core32.Card, { children: /* @__PURE__ */ (0, import_jsx_runtime32.jsxs)(import_core32.Stack, { gap: "md", children: [
+    badge ? /* @__PURE__ */ (0, import_jsx_runtime32.jsx)(import_core32.Badge, { variant: "light", color: "blue", w: "fit-content", children: badge }) : null,
+    /* @__PURE__ */ (0, import_jsx_runtime32.jsxs)(import_core32.Stack, { gap: "xs", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime32.jsx)(import_core32.Title, { order: 4, children: title }),
+      /* @__PURE__ */ (0, import_jsx_runtime32.jsx)(import_core32.Text, { c: "dimmed", children: description })
+    ] }),
+    footer ? /* @__PURE__ */ (0, import_jsx_runtime32.jsx)(import_core32.Text, { size: "sm", children: footer }) : null,
+    /* @__PURE__ */ (0, import_jsx_runtime32.jsx)(
+      StateBlock,
+      {
+        variant: "not-enough-data",
+        title: "Content is not live yet",
+        description: "This surface is intentionally showing a governed placeholder until live data is available.",
+        compact: true
+      }
+    )
+  ] }) });
+}
 
-// src/locales/hu.ts
-var hu = {
-  "gds.action.settings": "Be\xE1ll\xEDt\xE1sok",
-  "gds.action.analytics": "Analitika",
-  "gds.action.dashboard": "Ir\xE1ny\xEDt\xF3pult",
-  "gds.action.play": "Lej\xE1tsz\xE1s",
-  "gds.action.start": "Ind\xEDt\xE1s",
-  "gds.action.users": "Felhaszn\xE1l\xF3k",
-  "gds.action.add": "Hozz\xE1ad\xE1s",
-  "gds.action.edit": "Szerkeszt\xE9s",
-  "gds.action.delete": "T\xF6rl\xE9s",
-  "gds.action.save": "Ment\xE9s",
-  "gds.action.cancel": "M\xE9gse",
-  "gds.action.confirm": "Meger\u0151s\xEDt\xE9s",
-  "gds.action.close": "Bez\xE1r\xE1s",
-  "gds.action.language": "Nyelv",
-  "gds.action.theme": "T\xE9ma",
-  "gds.action.home": "F\u0151oldal",
-  "gds.action.inbox": "Be\xE9rkez\u0151",
-  "gds.action.calendar": "Napt\xE1r",
-  "gds.action.gallery": "Gal\xE9ria",
-  "gds.action.history": "El\u0151zm\xE9nyek",
-  "gds.action.profile": "Profil",
-  "gds.action.send": "K\xFCld\xE9s",
-  "gds.action.reply": "V\xE1lasz",
-  "gds.action.forward": "Tov\xE1bb\xEDt\xE1s",
-  "gds.action.attach": "Csatol\xE1s",
-  "gds.action.upload": "Felt\xF6lt\xE9s",
-  "gds.action.download": "Let\xF6lt\xE9s",
-  "gds.action.print": "Nyomtat\xE1s",
-  "gds.action.copy": "M\xE1sol\xE1s",
-  "gds.action.duplicate": "Duplik\xE1l\xE1s",
-  "gds.action.check": "Jel\xF6l\xE9s",
-  "gds.action.uncheck": "Jel\xF6l\xE9s t\xF6rl\xE9se",
-  "gds.action.complete": "K\xE9sz",
-  "gds.action.clear": "Ki\xFCr\xEDt\xE9s",
-  "gds.action.capture": "Felv\xE9tel",
-  "gds.action.record": "R\xF6gz\xEDt\xE9s",
-  "gds.action.flip": "Ford\xEDt\xE1s",
-  "gds.action.flash": "Vaku",
-  "gds.action.course": "Tanfolyam",
-  "gds.action.lesson": "Lecke",
-  "gds.action.certificate": "Tan\xFAs\xEDtv\xE1ny",
-  "gds.action.student": "Tanul\xF3",
-  "gds.action.class": "Oszt\xE1ly",
-  "gds.action.grade": "Oszt\xE1lyzat",
-  "gds.action.child": "Gyermek",
-  "gds.action.family": "Csal\xE1d",
-  "gds.action.habit": "Szok\xE1s",
-  "gds.action.goal": "C\xE9l",
-  "gds.action.streak": "Sorozat",
-  "gds.action.reward": "Jutalom",
-  "gds.action.trophy": "Tr\xF3fea",
-  "gds.action.crown": "Korona",
-  "gds.action.pause": "Sz\xFCnet",
-  "gds.action.message": "\xDCzenet",
-  "gds.action.mail": "Lev\xE9l",
-  "gds.action.refresh": "Friss\xEDt\xE9s",
-  "gds.action.trendingUp": "N\xF6vekv\u0151 trend",
-  "gds.action.trendingDown": "Cs\xF6kken\u0151 trend",
-  "gds.action.currency": "P\xE9nznem",
-  "gds.action.grid": "R\xE1cs",
-  "gds.action.list": "Lista",
-  "gds.action.logout": "Kijelentkez\xE9s",
-  "gds.action.notifications": "\xC9rtes\xEDt\xE9sek",
-  "gds.action.back": "Vissza",
-  "gds.action.eye": "Megtekint\xE9s",
-  "gds.action.eyeOff": "Elrejt\xE9s",
-  "gds.action.help": "S\xFAg\xF3",
-  "gds.action.filter": "Sz\u0171r\u0151",
-  "gds.action.sort": "Rendez\xE9s",
-  "gds.action.export": "Export\xE1l\xE1s",
-  "gds.action.import": "Import\xE1l\xE1s",
-  "gds.action.preview": "El\u0151n\xE9zet",
-  "gds.action.clone": "Kl\xF3noz\xE1s",
-  "gds.action.restore": "Vissza\xE1ll\xEDt\xE1s",
-  "gds.action.toggle": "V\xE1lt\xE1s",
-  "gds.action.search": "Keres\xE9s",
-  "gds.action.submit": "K\xFCld\xE9s",
-  "gds.action.reset": "Alaphelyzet",
-  "gds.action.login": "Bejelentkez\xE9s",
-  "gds.action.register": "Regisztr\xE1ci\xF3",
-  "gds.action.verify": "Ellen\u0151rz\xE9s",
-  "gds.action.launch": "Ind\xEDt\xE1s",
-  "gds.action.draft": "Piszkozat",
-  "gds.action.refer": "Aj\xE1nl\xE1s",
-  "gds.action.evidence": "Bizony\xEDt\xE9k",
-  "gds.feedback.saved": "Mentve",
-  "gds.feedback.error": "Hiba t\xF6rt\xE9nt",
-  "gds.feedback.added": "Hozz\xE1adva",
-  "gds.feedback.edited": "Szerkesztve",
-  "gds.feedback.deleted": "T\xF6r\xF6lve",
-  "gds.feedback.canceled": "Megszak\xEDtva",
-  "gds.feedback.confirmed": "Meger\u0151s\xEDtve",
-  "gds.feedback.closed": "Bez\xE1rva",
-  "gds.feedback.changed": "Megv\xE1ltoztatva",
-  "gds.feedback.loaded": "Bet\xF6ltve",
-  "gds.feedback.started": "Elind\xEDtva",
-  "gds.feedback.opened": "Megnyitva",
-  "gds.feedback.sent": "Elk\xFCldve",
-  "gds.feedback.replied": "Megv\xE1laszolva",
-  "gds.feedback.forwarded": "Tov\xE1bb\xEDtva",
-  "gds.feedback.attached": "Csatolva",
-  "gds.feedback.uploaded": "Felt\xF6ltve",
-  "gds.feedback.downloaded": "Let\xF6ltve",
-  "gds.feedback.printed": "Kinyomtatva",
-  "gds.feedback.copied": "M\xE1solva",
-  "gds.feedback.duplicated": "Duplik\xE1lva",
-  "gds.feedback.checked": "Kijel\xF6lve",
-  "gds.feedback.unchecked": "Kijel\xF6l\xE9s t\xF6r\xF6lve",
-  "gds.feedback.completed": "Befejezve",
-  "gds.feedback.cleared": "Ki\xFCr\xEDtve",
-  "gds.feedback.captured": "R\xF6gz\xEDtve",
-  "gds.feedback.recorded": "Felv\xE9ve",
-  "gds.feedback.flipped": "Megford\xEDtva",
-  "gds.feedback.flashed": "Villantva",
-  "gds.feedback.done": "K\xE9sz",
-  "gds.feedback.rewarded": "Jutalmazva",
-  "gds.feedback.paused": "Sz\xFCneteltetve",
-  "gds.feedback.mailed": "Elk\xFCldve",
-  "gds.feedback.refreshed": "Friss\xEDtve",
-  "gds.feedback.loggedOut": "Kijelentkezve",
-  "gds.feedback.filtered": "Sz\u0171rve",
-  "gds.feedback.sorted": "Rendezve",
-  "gds.feedback.exported": "Export\xE1lva",
-  "gds.feedback.imported": "Import\xE1lva",
-  "gds.feedback.previewed": "El\u0151n\xE9zet bet\xF6ltve",
-  "gds.feedback.cloned": "Kl\xF3nozva",
-  "gds.feedback.restored": "Vissza\xE1ll\xEDtva",
-  "gds.feedback.toggled": "\xC1tv\xE1ltva",
-  "gds.feedback.searched": "Keresve",
-  "gds.feedback.submitted": "Elk\xFCldve",
-  "gds.feedback.reset": "Alaphelyzetbe \xE1ll\xEDtva",
-  "gds.feedback.loggedIn": "Bejelentkezve",
-  "gds.feedback.registered": "Regisztr\xE1lva",
-  "gds.feedback.verified": "Ellen\u0151rizve",
-  "gds.feedback.launched": "Elind\xEDtva",
-  "gds.feedback.drafted": "L\xE9trehozva",
-  "gds.feedback.referred": "Aj\xE1nlva",
-  "gds.aria.themeToggle": "Sz\xEDns\xE9ma v\xE1lt\xE1sa",
-  "gds.state.emptyData": "Nincs el\xE9rhet\u0151 adat."
+// src/SimpleDataTable.tsx
+var import_core33 = require("@mantine/core");
+var import_jsx_runtime33 = require("react/jsx-runtime");
+function SimpleDataTable({
+  columns,
+  rows,
+  loading = false,
+  error = null,
+  emptyTitle = "No data available",
+  emptyDescription = "There is no live data to show yet.",
+  getRowKey
+}) {
+  if (error) {
+    return /* @__PURE__ */ (0, import_jsx_runtime33.jsx)(StateBlock, { variant: "error", title: "Unable to load data", description: error, compact: true });
+  }
+  if (loading) {
+    return /* @__PURE__ */ (0, import_jsx_runtime33.jsx)(StateBlock, { variant: "loading", title: "Loading data", description: "Please wait while the shared dataset is prepared.", compact: true });
+  }
+  if (!rows.length) {
+    return /* @__PURE__ */ (0, import_jsx_runtime33.jsx)(StateBlock, { variant: "empty", title: emptyTitle, description: emptyDescription, compact: true });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime33.jsx)(import_core33.ScrollArea, { children: /* @__PURE__ */ (0, import_jsx_runtime33.jsxs)(import_core33.Table, { striped: true, highlightOnHover: true, withTableBorder: true, withColumnBorders: true, children: [
+    /* @__PURE__ */ (0, import_jsx_runtime33.jsx)(import_core33.Table.Thead, { children: /* @__PURE__ */ (0, import_jsx_runtime33.jsx)(import_core33.Table.Tr, { children: columns.map((column) => /* @__PURE__ */ (0, import_jsx_runtime33.jsx)(import_core33.Table.Th, { children: column.header }, String(column.key))) }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime33.jsx)(import_core33.Table.Tbody, { children: rows.map((row, index) => /* @__PURE__ */ (0, import_jsx_runtime33.jsx)(import_core33.Table.Tr, { children: columns.map((column) => /* @__PURE__ */ (0, import_jsx_runtime33.jsx)(import_core33.Table.Td, { children: column.render ? column.render(row) : String(row[column.key] ?? "") }, String(column.key))) }, getRowKey ? getRowKey(row, index) : index)) })
+  ] }) });
+}
+
+// src/StatsSection.tsx
+var import_core34 = require("@mantine/core");
+var import_jsx_runtime34 = require("react/jsx-runtime");
+function StatsSection({
+  title,
+  loading = false,
+  error = null,
+  belowThreshold = false,
+  thresholdMessage,
+  children,
+  placeholder
+}) {
+  let content = children;
+  if (error) {
+    content = /* @__PURE__ */ (0, import_jsx_runtime34.jsx)(StateBlock, { variant: "error", title: "Unable to load statistics", description: error, compact: true });
+  } else if (loading) {
+    content = /* @__PURE__ */ (0, import_jsx_runtime34.jsx)(StateBlock, { variant: "loading", title: "Loading statistics", description: "This shared data surface is still synchronizing.", compact: true });
+  } else if (belowThreshold) {
+    content = /* @__PURE__ */ (0, import_jsx_runtime34.jsx)(
+      StateBlock,
+      {
+        variant: "not-enough-data",
+        title: "Not enough data yet",
+        description: thresholdMessage ?? "This view is hidden until the reporting threshold is met.",
+        compact: true
+      }
+    );
+  } else if (placeholder) {
+    content = /* @__PURE__ */ (0, import_jsx_runtime34.jsx)(PlaceholderPanel, { ...placeholder, mode: "placeholder" });
+  }
+  return /* @__PURE__ */ (0, import_jsx_runtime34.jsxs)(import_core34.Stack, { gap: "md", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime34.jsx)(import_core34.Title, { order: 3, children: title }),
+    content
+  ] });
+}
+
+// src/locales/ar.ts
+var ar = {
+  "gds.action.settings": "\u0627\u0644\u0625\u0639\u062F\u0627\u062F\u0627\u062A",
+  "gds.action.analytics": "\u062A\u062D\u0644\u064A\u0644\u0627\u062A",
+  "gds.action.dashboard": "\u0644\u0648\u062D\u0629 \u0627\u0644\u0642\u064A\u0627\u062F\u0629",
+  "gds.action.play": "\u062A\u0634\u063A\u064A\u0644",
+  "gds.action.start": "\u0628\u062F\u0621",
+  "gds.action.users": "\u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645\u064A\u0646",
+  "gds.action.add": "\u0625\u0636\u0627\u0641\u0629",
+  "gds.action.edit": "\u062A\u0639\u062F\u064A\u0644",
+  "gds.action.delete": "\u062D\u0630\u0641",
+  "gds.action.save": "\u062D\u0641\u0638",
+  "gds.action.cancel": "\u0625\u0644\u063A\u0627\u0621",
+  "gds.action.confirm": "\u062A\u0623\u0643\u064A\u062F",
+  "gds.action.close": "\u0625\u063A\u0644\u0627\u0642",
+  "gds.action.language": "\u0627\u0644\u0644\u063A\u0629",
+  "gds.action.theme": "\u0627\u0644\u0633\u0645\u0629",
+  "gds.action.home": "\u0627\u0644\u0631\u0626\u064A\u0633\u064A\u0629",
+  "gds.action.inbox": "\u0635\u0646\u062F\u0648\u0642 \u0627\u0644\u0648\u0627\u0631\u062F",
+  "gds.action.calendar": "\u0627\u0644\u062A\u0642\u0648\u064A\u0645",
+  "gds.action.gallery": "\u0627\u0644\u0645\u0639\u0631\u0636",
+  "gds.action.history": "\u0627\u0644\u0633\u062C\u0644",
+  "gds.action.profile": "\u0627\u0644\u0645\u0644\u0641 \u0627\u0644\u0634\u062E\u0635\u064A",
+  "gds.action.send": "\u0625\u0631\u0633\u0627\u0644",
+  "gds.action.reply": "\u0631\u062F",
+  "gds.action.forward": "\u0625\u0639\u0627\u062F\u0629 \u062A\u0648\u062C\u064A\u0647",
+  "gds.action.attach": "\u0625\u0631\u0641\u0627\u0642",
+  "gds.action.upload": "\u0631\u0641\u0639",
+  "gds.action.download": "\u062A\u0646\u0632\u064A\u0644",
+  "gds.action.print": "\u0637\u0628\u0627\u0639\u0629",
+  "gds.action.copy": "\u0646\u0633\u062E",
+  "gds.action.duplicate": "\u062A\u0643\u0631\u0627\u0631",
+  "gds.action.check": "\u062A\u062D\u062F\u064A\u062F",
+  "gds.action.uncheck": "\u0625\u0644\u063A\u0627\u0621 \u0627\u0644\u062A\u062D\u062F\u064A\u062F",
+  "gds.action.complete": "\u0627\u0643\u062A\u0645\u0627\u0644",
+  "gds.action.clear": "\u0645\u0633\u062D",
+  "gds.action.capture": "\u0627\u0644\u062A\u0642\u0627\u0637",
+  "gds.action.record": "\u062A\u0633\u062C\u064A\u0644",
+  "gds.action.flip": "\u0642\u0644\u0628",
+  "gds.action.flash": "\u0641\u0644\u0627\u0634",
+  "gds.action.course": "\u062F\u0648\u0631\u0629",
+  "gds.action.lesson": "\u062F\u0631\u0633",
+  "gds.action.certificate": "\u0634\u0647\u0627\u062F\u0629",
+  "gds.action.student": "\u0637\u0627\u0644\u0628",
+  "gds.action.class": "\u0641\u0635\u0644",
+  "gds.action.grade": "\u062F\u0631\u062C\u0629",
+  "gds.action.child": "\u0637\u0641\u0644",
+  "gds.action.family": "\u0639\u0627\u0626\u0644\u0629",
+  "gds.action.habit": "\u0639\u0627\u062F\u0629",
+  "gds.action.goal": "\u0647\u062F\u0641",
+  "gds.action.streak": "\u0633\u0644\u0633\u0644\u0629",
+  "gds.action.reward": "\u0645\u0643\u0627\u0641\u0623\u0629",
+  "gds.action.trophy": "\u0643\u0623\u0633",
+  "gds.action.crown": "\u062A\u0627\u062C",
+  "gds.action.pause": "\u0625\u064A\u0642\u0627\u0641 \u0645\u0624\u0642\u062A",
+  "gds.action.message": "\u0631\u0633\u0627\u0644\u0629",
+  "gds.action.mail": "\u0628\u0631\u064A\u062F",
+  "gds.action.refresh": "\u062A\u062D\u062F\u064A\u062B",
+  "gds.action.trendingUp": "\u0627\u062A\u062C\u0627\u0647 \u0635\u0627\u0639\u062F",
+  "gds.action.trendingDown": "\u0627\u062A\u062C\u0627\u0647 \u0647\u0627\u0628\u0637",
+  "gds.action.currency": "\u0639\u0645\u0644\u0629",
+  "gds.action.grid": "\u0634\u0628\u0643\u0629",
+  "gds.action.list": "\u0642\u0627\u0626\u0645\u0629",
+  "gds.action.logout": "\u062A\u0633\u062C\u064A\u0644 \u062E\u0631\u0648\u062C",
+  "gds.action.notifications": "\u0625\u0634\u0639\u0627\u0631\u0627\u062A",
+  "gds.action.back": "\u0631\u062C\u0648\u0639",
+  "gds.action.eye": "\u0639\u0631\u0636",
+  "gds.action.eyeOff": "\u0625\u062E\u0641\u0627\u0621",
+  "gds.action.help": "\u0645\u0633\u0627\u0639\u062F\u0629",
+  "gds.action.filter": "\u062A\u0635\u0641\u064A\u0629",
+  "gds.action.sort": "\u0641\u0631\u0632",
+  "gds.action.export": "\u062A\u0635\u062F\u064A\u0631",
+  "gds.action.import": "\u0627\u0633\u062A\u064A\u0631\u0627\u062F",
+  "gds.action.preview": "\u0645\u0639\u0627\u064A\u0646\u0629",
+  "gds.action.clone": "\u0627\u0633\u062A\u0646\u0633\u0627\u062E",
+  "gds.action.restore": "\u0627\u0633\u062A\u0639\u0627\u062F\u0629",
+  "gds.action.toggle": "\u062A\u0628\u062F\u064A\u0644",
+  "gds.action.search": "\u0628\u062D\u062B",
+  "gds.action.submit": "\u0625\u0631\u0633\u0627\u0644",
+  "gds.action.reset": "\u0625\u0639\u0627\u062F\u0629 \u0636\u0628\u0637",
+  "gds.action.login": "\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644",
+  "gds.action.register": "\u062A\u0633\u062C\u064A\u0644",
+  "gds.action.verify": "\u062A\u062D\u0642\u0642",
+  "gds.action.launch": "\u0625\u0637\u0644\u0627\u0642",
+  "gds.action.draft": "\u0645\u0633\u0648\u062F\u0629",
+  "gds.action.refer": "\u0625\u062D\u0627\u0644\u0629",
+  "gds.action.evidence": "\u062F\u0644\u064A\u0644",
+  "gds.feedback.saved": "\u062A\u0645 \u0627\u0644\u062D\u0641\u0638",
+  "gds.feedback.error": "\u062D\u062F\u062B \u062E\u0637\u0623 \u0645\u0627",
+  "gds.feedback.added": "\u062A\u0645\u062A \u0627\u0644\u0625\u0636\u0627\u0641\u0629",
+  "gds.feedback.edited": "\u062A\u0645 \u0627\u0644\u062A\u0639\u062F\u064A\u0644",
+  "gds.feedback.deleted": "\u062A\u0645 \u0627\u0644\u062D\u0630\u0641",
+  "gds.feedback.canceled": "\u062A\u0645 \u0627\u0644\u0625\u0644\u063A\u0627\u0621",
+  "gds.feedback.confirmed": "\u062A\u0645 \u0627\u0644\u062A\u0623\u0643\u064A\u062F",
+  "gds.feedback.closed": "\u062A\u0645 \u0627\u0644\u0625\u063A\u0644\u0627\u0642",
+  "gds.feedback.changed": "\u062A\u0645 \u0627\u0644\u062A\u063A\u064A\u064A\u0631",
+  "gds.feedback.loaded": "\u062A\u0645 \u0627\u0644\u062A\u062D\u0645\u064A\u0644",
+  "gds.feedback.started": "\u062A\u0645 \u0627\u0644\u0628\u062F\u0621",
+  "gds.feedback.opened": "\u062A\u0645 \u0627\u0644\u0641\u062A\u062D",
+  "gds.feedback.sent": "\u062A\u0645 \u0627\u0644\u0625\u0631\u0633\u0627\u0644",
+  "gds.feedback.replied": "\u062A\u0645 \u0627\u0644\u0631\u062F",
+  "gds.feedback.forwarded": "\u062A\u0645\u062A \u0625\u0639\u0627\u062F\u0629 \u0627\u0644\u062A\u0648\u062C\u064A\u0647",
+  "gds.feedback.attached": "\u062A\u0645 \u0627\u0644\u0625\u0631\u0641\u0627\u0642",
+  "gds.feedback.uploaded": "\u062A\u0645 \u0627\u0644\u0631\u0641\u0639",
+  "gds.feedback.downloaded": "\u062A\u0645 \u0627\u0644\u062A\u0646\u0632\u064A\u0644",
+  "gds.feedback.printed": "\u062A\u0645\u062A \u0627\u0644\u0637\u0628\u0627\u0639\u0629",
+  "gds.feedback.copied": "\u062A\u0645 \u0627\u0644\u0646\u0633\u062E",
+  "gds.feedback.duplicated": "\u062A\u0645 \u0627\u0644\u062A\u0643\u0631\u0627\u0631",
+  "gds.feedback.checked": "\u062A\u0645 \u0627\u0644\u062A\u062D\u062F\u064A\u062F",
+  "gds.feedback.unchecked": "\u062A\u0645 \u0625\u0644\u063A\u0627\u0621 \u0627\u0644\u062A\u062D\u062F\u064A\u062F",
+  "gds.feedback.completed": "\u062A\u0645 \u0627\u0644\u0627\u0643\u062A\u0645\u0627\u0644",
+  "gds.feedback.cleared": "\u062A\u0645 \u0627\u0644\u0645\u0633\u062D",
+  "gds.feedback.captured": "\u062A\u0645 \u0627\u0644\u0627\u0644\u062A\u0642\u0627\u0637",
+  "gds.feedback.recorded": "\u062A\u0645 \u0627\u0644\u062A\u0633\u062C\u064A\u0644",
+  "gds.feedback.flipped": "\u062A\u0645 \u0627\u0644\u0642\u0644\u0628",
+  "gds.feedback.flashed": "\u062A\u0645 \u062A\u0634\u063A\u064A\u0644 \u0627\u0644\u0641\u0644\u0627\u0634",
+  "gds.feedback.done": "\u062A\u0645",
+  "gds.feedback.rewarded": "\u062A\u0645\u062A \u0627\u0644\u0645\u0643\u0627\u0641\u0623\u0629",
+  "gds.feedback.paused": "\u062A\u0645 \u0627\u0644\u0625\u064A\u0642\u0627\u0641 \u0627\u0644\u0645\u0624\u0642\u062A",
+  "gds.feedback.mailed": "\u062A\u0645 \u0627\u0644\u0625\u0631\u0633\u0627\u0644 \u0628\u0627\u0644\u0628\u0631\u064A\u062F",
+  "gds.feedback.refreshed": "\u062A\u0645 \u0627\u0644\u062A\u062D\u062F\u064A\u062B",
+  "gds.feedback.loggedOut": "\u062A\u0645 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062E\u0631\u0648\u062C",
+  "gds.feedback.filtered": "\u062A\u0645\u062A \u0627\u0644\u062A\u0635\u0641\u064A\u0629",
+  "gds.feedback.sorted": "\u062A\u0645 \u0627\u0644\u0641\u0631\u0632",
+  "gds.feedback.exported": "\u062A\u0645 \u0627\u0644\u062A\u0635\u062F\u064A\u0631",
+  "gds.feedback.imported": "\u062A\u0645 \u0627\u0644\u0627\u0633\u062A\u064A\u0631\u0627\u062F",
+  "gds.feedback.previewed": "\u062A\u0645\u062A \u0627\u0644\u0645\u0639\u0627\u064A\u0646\u0629",
+  "gds.feedback.cloned": "\u062A\u0645 \u0627\u0644\u0627\u0633\u062A\u0646\u0633\u0627\u062E",
+  "gds.feedback.restored": "\u062A\u0645\u062A \u0627\u0644\u0627\u0633\u062A\u0639\u0627\u062F\u0629",
+  "gds.feedback.toggled": "\u062A\u0645 \u0627\u0644\u062A\u0628\u062F\u064A\u0644",
+  "gds.feedback.searched": "\u062A\u0645 \u0627\u0644\u0628\u062D\u062B",
+  "gds.feedback.submitted": "\u062A\u0645 \u0627\u0644\u0625\u0631\u0633\u0627\u0644",
+  "gds.feedback.reset": "\u062A\u0645\u062A \u0625\u0639\u0627\u062F\u0629 \u0627\u0644\u0636\u0628\u0637",
+  "gds.feedback.loggedIn": "\u062A\u0645 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644",
+  "gds.feedback.registered": "\u062A\u0645 \u0627\u0644\u062A\u0633\u062C\u064A\u0644",
+  "gds.feedback.verified": "\u062A\u0645 \u0627\u0644\u062A\u062D\u0642\u0642",
+  "gds.feedback.launched": "\u062A\u0645 \u0627\u0644\u0625\u0637\u0644\u0627\u0642",
+  "gds.feedback.drafted": "\u062A\u0645 \u062D\u0641\u0638 \u0627\u0644\u0645\u0633\u0648\u062F\u0629",
+  "gds.feedback.referred": "\u062A\u0645\u062A \u0627\u0644\u0625\u062D\u0627\u0644\u0629",
+  "gds.aria.themeToggle": "\u062A\u0628\u062F\u064A\u0644 \u0646\u0638\u0627\u0645 \u0627\u0644\u0623\u0644\u0648\u0627\u0646",
+  "gds.state.emptyData": "\u0644\u0627 \u062A\u0648\u062C\u062F \u0628\u064A\u0627\u0646\u0627\u062A \u0645\u062A\u0627\u062D\u0629."
 };
 
 // src/locales/de.ts
@@ -1208,6 +1891,292 @@ var de = {
   "gds.state.emptyData": "Keine Daten verf\xFCgbar."
 };
 
+// src/locales/en.ts
+var en = {
+  "gds.action.settings": "Settings",
+  "gds.action.analytics": "Analytics",
+  "gds.action.dashboard": "Dashboard",
+  "gds.action.play": "Play",
+  "gds.action.start": "Start",
+  "gds.action.users": "Users",
+  "gds.action.add": "Add",
+  "gds.action.edit": "Edit",
+  "gds.action.delete": "Delete",
+  "gds.action.save": "Save",
+  "gds.action.cancel": "Cancel",
+  "gds.action.confirm": "Confirm",
+  "gds.action.close": "Close",
+  "gds.action.language": "Language",
+  "gds.action.theme": "Theme",
+  "gds.action.home": "Home",
+  "gds.action.inbox": "Inbox",
+  "gds.action.calendar": "Calendar",
+  "gds.action.gallery": "Gallery",
+  "gds.action.history": "History",
+  "gds.action.profile": "Profile",
+  "gds.action.send": "Send",
+  "gds.action.reply": "Reply",
+  "gds.action.forward": "Forward",
+  "gds.action.attach": "Attach",
+  "gds.action.upload": "Upload",
+  "gds.action.download": "Download",
+  "gds.action.print": "Print",
+  "gds.action.copy": "Copy",
+  "gds.action.duplicate": "Duplicate",
+  "gds.action.check": "Check",
+  "gds.action.uncheck": "Uncheck",
+  "gds.action.complete": "Complete",
+  "gds.action.clear": "Clear",
+  "gds.action.capture": "Capture",
+  "gds.action.record": "Record",
+  "gds.action.flip": "Flip",
+  "gds.action.flash": "Flash",
+  "gds.action.course": "Course",
+  "gds.action.lesson": "Lesson",
+  "gds.action.certificate": "Certificate",
+  "gds.action.student": "Student",
+  "gds.action.class": "Class",
+  "gds.action.grade": "Grade",
+  "gds.action.child": "Child",
+  "gds.action.family": "Family",
+  "gds.action.habit": "Habit",
+  "gds.action.goal": "Goal",
+  "gds.action.streak": "Streak",
+  "gds.action.reward": "Reward",
+  "gds.action.trophy": "Trophy",
+  "gds.action.crown": "Crown",
+  "gds.action.pause": "Pause",
+  "gds.action.message": "Message",
+  "gds.action.mail": "Mail",
+  "gds.action.refresh": "Refresh",
+  "gds.action.trendingUp": "Trending Up",
+  "gds.action.trendingDown": "Trending Down",
+  "gds.action.currency": "Currency",
+  "gds.action.grid": "Grid",
+  "gds.action.list": "List",
+  "gds.action.logout": "Logout",
+  "gds.action.notifications": "Notifications",
+  "gds.action.back": "Back",
+  "gds.action.eye": "View",
+  "gds.action.eyeOff": "Hide",
+  "gds.action.help": "Help",
+  "gds.action.filter": "Filter",
+  "gds.action.sort": "Sort",
+  "gds.action.export": "Export",
+  "gds.action.import": "Import",
+  "gds.action.preview": "Preview",
+  "gds.action.clone": "Clone",
+  "gds.action.restore": "Restore",
+  "gds.action.toggle": "Toggle",
+  "gds.action.search": "Search",
+  "gds.action.submit": "Submit",
+  "gds.action.reset": "Reset",
+  "gds.action.login": "Login",
+  "gds.action.register": "Register",
+  "gds.action.verify": "Verify",
+  "gds.action.launch": "Launch",
+  "gds.action.draft": "Draft",
+  "gds.action.refer": "Refer",
+  "gds.action.evidence": "Evidence",
+  "gds.feedback.saved": "Saved",
+  "gds.feedback.error": "Something went wrong",
+  "gds.feedback.added": "Added",
+  "gds.feedback.edited": "Edited",
+  "gds.feedback.deleted": "Deleted",
+  "gds.feedback.canceled": "Canceled",
+  "gds.feedback.confirmed": "Confirmed",
+  "gds.feedback.closed": "Closed",
+  "gds.feedback.changed": "Changed",
+  "gds.feedback.loaded": "Loaded",
+  "gds.feedback.started": "Started",
+  "gds.feedback.opened": "Opened",
+  "gds.feedback.sent": "Sent",
+  "gds.feedback.replied": "Replied",
+  "gds.feedback.forwarded": "Forwarded",
+  "gds.feedback.attached": "Attached",
+  "gds.feedback.uploaded": "Uploaded",
+  "gds.feedback.downloaded": "Downloaded",
+  "gds.feedback.printed": "Printed",
+  "gds.feedback.copied": "Copied",
+  "gds.feedback.duplicated": "Duplicated",
+  "gds.feedback.checked": "Checked",
+  "gds.feedback.unchecked": "Unchecked",
+  "gds.feedback.completed": "Completed",
+  "gds.feedback.cleared": "Cleared",
+  "gds.feedback.captured": "Captured",
+  "gds.feedback.recorded": "Recorded",
+  "gds.feedback.flipped": "Flipped",
+  "gds.feedback.flashed": "Flashed",
+  "gds.feedback.done": "Done",
+  "gds.feedback.rewarded": "Rewarded",
+  "gds.feedback.paused": "Paused",
+  "gds.feedback.mailed": "Mailed",
+  "gds.feedback.refreshed": "Refreshed",
+  "gds.feedback.loggedOut": "Logged Out",
+  "gds.feedback.filtered": "Filtered",
+  "gds.feedback.sorted": "Sorted",
+  "gds.feedback.exported": "Exported",
+  "gds.feedback.imported": "Imported",
+  "gds.feedback.previewed": "Previewed",
+  "gds.feedback.cloned": "Cloned",
+  "gds.feedback.restored": "Restored",
+  "gds.feedback.toggled": "Toggled",
+  "gds.feedback.searched": "Searched",
+  "gds.feedback.submitted": "Submitted",
+  "gds.feedback.reset": "Reset",
+  "gds.feedback.loggedIn": "Logged In",
+  "gds.feedback.registered": "Registered",
+  "gds.feedback.verified": "Verified",
+  "gds.feedback.launched": "Launched",
+  "gds.feedback.drafted": "Drafted",
+  "gds.feedback.referred": "Referred",
+  "gds.aria.themeToggle": "Toggle color scheme",
+  "gds.state.emptyData": "No data available."
+};
+
+// src/locales/es.ts
+var es = {
+  "gds.action.settings": "Configuraci\xF3n",
+  "gds.action.analytics": "Anal\xEDtica",
+  "gds.action.dashboard": "Panel",
+  "gds.action.play": "Reproducir",
+  "gds.action.start": "Iniciar",
+  "gds.action.users": "Usuarios",
+  "gds.action.add": "A\xF1adir",
+  "gds.action.edit": "Editar",
+  "gds.action.delete": "Eliminar",
+  "gds.action.save": "Guardar",
+  "gds.action.cancel": "Cancelar",
+  "gds.action.confirm": "Confirmar",
+  "gds.action.close": "Cerrar",
+  "gds.action.language": "Idioma",
+  "gds.action.theme": "Tema",
+  "gds.action.home": "Inicio",
+  "gds.action.inbox": "Bandeja de entrada",
+  "gds.action.calendar": "Calendario",
+  "gds.action.gallery": "Galer\xEDa",
+  "gds.action.history": "Historial",
+  "gds.action.profile": "Perfil",
+  "gds.action.send": "Enviar",
+  "gds.action.reply": "Responder",
+  "gds.action.forward": "Reenviar",
+  "gds.action.attach": "Adjuntar",
+  "gds.action.upload": "Subir",
+  "gds.action.download": "Descargar",
+  "gds.action.print": "Imprimir",
+  "gds.action.copy": "Copiar",
+  "gds.action.duplicate": "Duplicar",
+  "gds.action.check": "Marcar",
+  "gds.action.uncheck": "Desmarcar",
+  "gds.action.complete": "Completar",
+  "gds.action.clear": "Limpiar",
+  "gds.action.capture": "Capturar",
+  "gds.action.record": "Grabar",
+  "gds.action.flip": "Girar",
+  "gds.action.flash": "Flash",
+  "gds.action.course": "Curso",
+  "gds.action.lesson": "Lecci\xF3n",
+  "gds.action.certificate": "Certificado",
+  "gds.action.student": "Estudiante",
+  "gds.action.class": "Clase",
+  "gds.action.grade": "Calificaci\xF3n",
+  "gds.action.child": "Ni\xF1o",
+  "gds.action.family": "Familia",
+  "gds.action.habit": "H\xE1bito",
+  "gds.action.goal": "Objetivo",
+  "gds.action.streak": "Racha",
+  "gds.action.reward": "Recompensa",
+  "gds.action.trophy": "Trofeo",
+  "gds.action.crown": "Corona",
+  "gds.action.pause": "Pausa",
+  "gds.action.message": "Mensaje",
+  "gds.action.mail": "Correo",
+  "gds.action.refresh": "Actualizar",
+  "gds.action.trendingUp": "Tendencia al alza",
+  "gds.action.trendingDown": "Tendencia a la baja",
+  "gds.action.currency": "Moneda",
+  "gds.action.grid": "Cuadr\xEDcula",
+  "gds.action.list": "Lista",
+  "gds.action.logout": "Cerrar sesi\xF3n",
+  "gds.action.notifications": "Notificaciones",
+  "gds.action.back": "Volver",
+  "gds.action.eye": "Ver",
+  "gds.action.eyeOff": "Ocultar",
+  "gds.action.help": "Ayuda",
+  "gds.action.filter": "Filtrar",
+  "gds.action.sort": "Ordenar",
+  "gds.action.export": "Exportar",
+  "gds.action.import": "Importar",
+  "gds.action.preview": "Vista previa",
+  "gds.action.clone": "Clonar",
+  "gds.action.restore": "Restaurar",
+  "gds.action.toggle": "Alternar",
+  "gds.action.search": "Buscar",
+  "gds.action.submit": "Enviar",
+  "gds.action.reset": "Restablecer",
+  "gds.action.login": "Iniciar sesi\xF3n",
+  "gds.action.register": "Registrarse",
+  "gds.action.verify": "Verificar",
+  "gds.action.launch": "Lanzar",
+  "gds.action.draft": "Borrador",
+  "gds.action.refer": "Referir",
+  "gds.action.evidence": "Evidencia",
+  "gds.feedback.saved": "Guardado",
+  "gds.feedback.error": "Algo sali\xF3 mal",
+  "gds.feedback.added": "A\xF1adido",
+  "gds.feedback.edited": "Editado",
+  "gds.feedback.deleted": "Eliminado",
+  "gds.feedback.canceled": "Cancelado",
+  "gds.feedback.confirmed": "Confirmado",
+  "gds.feedback.closed": "Cerrado",
+  "gds.feedback.changed": "Cambiado",
+  "gds.feedback.loaded": "Cargado",
+  "gds.feedback.started": "Iniciado",
+  "gds.feedback.opened": "Abierto",
+  "gds.feedback.sent": "Enviado",
+  "gds.feedback.replied": "Respondido",
+  "gds.feedback.forwarded": "Reenviado",
+  "gds.feedback.attached": "Adjuntado",
+  "gds.feedback.uploaded": "Subido",
+  "gds.feedback.downloaded": "Descargado",
+  "gds.feedback.printed": "Impreso",
+  "gds.feedback.copied": "Copiado",
+  "gds.feedback.duplicated": "Duplicado",
+  "gds.feedback.checked": "Marcado",
+  "gds.feedback.unchecked": "Desmarcado",
+  "gds.feedback.completed": "Completado",
+  "gds.feedback.cleared": "Limpiado",
+  "gds.feedback.captured": "Capturado",
+  "gds.feedback.recorded": "Grabado",
+  "gds.feedback.flipped": "Girado",
+  "gds.feedback.flashed": "Flash activado",
+  "gds.feedback.done": "Hecho",
+  "gds.feedback.rewarded": "Recompensado",
+  "gds.feedback.paused": "Pausado",
+  "gds.feedback.mailed": "Enviado por correo",
+  "gds.feedback.refreshed": "Actualizado",
+  "gds.feedback.loggedOut": "Sesi\xF3n cerrada",
+  "gds.feedback.filtered": "Filtrado",
+  "gds.feedback.sorted": "Ordenado",
+  "gds.feedback.exported": "Exportado",
+  "gds.feedback.imported": "Importado",
+  "gds.feedback.previewed": "Previsualizado",
+  "gds.feedback.cloned": "Clonado",
+  "gds.feedback.restored": "Restaurado",
+  "gds.feedback.toggled": "Alternado",
+  "gds.feedback.searched": "Buscado",
+  "gds.feedback.submitted": "Enviado",
+  "gds.feedback.reset": "Restablecido",
+  "gds.feedback.loggedIn": "Sesi\xF3n iniciada",
+  "gds.feedback.registered": "Registrado",
+  "gds.feedback.verified": "Verificado",
+  "gds.feedback.launched": "Lanzado",
+  "gds.feedback.drafted": "Guardado como borrador",
+  "gds.feedback.referred": "Referido",
+  "gds.aria.themeToggle": "Alternar esquema de color",
+  "gds.state.emptyData": "No hay datos disponibles."
+};
+
 // src/locales/fr.ts
 var fr = {
   "gds.action.settings": "Param\xE8tres",
@@ -1349,6 +2318,292 @@ var fr = {
   "gds.feedback.referred": "R\xE9f\xE9r\xE9",
   "gds.aria.themeToggle": "Basculer le th\xE8me",
   "gds.state.emptyData": "Aucune donn\xE9e disponible."
+};
+
+// src/locales/he.ts
+var he = {
+  "gds.action.settings": "\u05D4\u05D2\u05D3\u05E8\u05D5\u05EA",
+  "gds.action.analytics": "\u05E0\u05D9\u05EA\u05D5\u05D7 \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD",
+  "gds.action.dashboard": "\u05DC\u05D5\u05D7 \u05D1\u05E7\u05E8\u05D4",
+  "gds.action.play": "\u05D4\u05E4\u05E2\u05DC",
+  "gds.action.start": "\u05D4\u05EA\u05D7\u05DC",
+  "gds.action.users": "\u05DE\u05E9\u05EA\u05DE\u05E9\u05D9\u05DD",
+  "gds.action.add": "\u05D4\u05D5\u05E1\u05E3",
+  "gds.action.edit": "\u05E2\u05E8\u05D5\u05DA",
+  "gds.action.delete": "\u05DE\u05D7\u05E7",
+  "gds.action.save": "\u05E9\u05DE\u05D5\u05E8",
+  "gds.action.cancel": "\u05D1\u05D9\u05D8\u0648\u0644",
+  "gds.action.confirm": "\u05D0\u05D9\u05E9\u05D5\u05E8",
+  "gds.action.close": "\u05E1\u05D2\u05D5\u05E8",
+  "gds.action.language": "\u05E9\u05E4\u05D4",
+  "gds.action.theme": "\u05E2\u05E8\u05DB\u05EA \u05E0\u05D5\u05E9\u05D0",
+  "gds.action.home": "\u05D3\u05E3 \u05D4\u05D1\u05D9\u05EA",
+  "gds.action.inbox": "\u05D3\u05D5\u05D0\u05E8 \u05E0\u05DB\u05E0\u05E1",
+  "gds.action.calendar": "\u05DC\u05D5\u05D7 \u05E9\u05E0\u05D4",
+  "gds.action.gallery": "\u05D2\u05DC\u05E8\u05D9\u05D4",
+  "gds.action.history": "\u05D4\u05D9\u05E1\u05D8\u05D5\u05E8\u05D9\u05D4",
+  "gds.action.profile": "\u05E4\u05E8\u05D5\u05E4\u05D9\u05DC",
+  "gds.action.send": "\u05E9\u05DC\u05D7",
+  "gds.action.reply": "\u05D4\u05E9\u05D1",
+  "gds.action.forward": "\u05D4\u05E2\u05D1\u05E8",
+  "gds.action.attach": "\u05E6\u05E8\u05E3",
+  "gds.action.upload": "\u05D4\u05E2\u05DC\u05D4",
+  "gds.action.download": "\u05D4\u05D5\u05E8\u05D3",
+  "gds.action.print": "\u05D4\u05D3\u05E4\u05E1",
+  "gds.action.copy": "\u05D4\u05E2\u05EA\u05E7",
+  "gds.action.duplicate": "\u05E9\u05DB\u05E4\u05DC",
+  "gds.action.check": "\u05E1\u05DE\u05DF",
+  "gds.action.uncheck": "\u05D1\u05D8\u05DC \u05E1\u05D9\u05DE\u05D5\u05DF",
+  "gds.action.complete": "\u05D4\u05E9\u05DC\u05DD",
+  "gds.action.clear": "\u05E0\u05E7\u05D4",
+  "gds.action.capture": "\u05E6\u05DC\u05DD",
+  "gds.action.record": "\u05D4\u05E7\u05DC\u05D8",
+  "gds.action.flip": "\u05D4\u05E4\u05D5\u05DA",
+  "gds.action.flash": "\u05DE\u05D1\u05D6\u05E7",
+  "gds.action.course": "\u05E7\u05D5\u05E8\u05E1",
+  "gds.action.lesson": "\u05E9\u05D9\u05E2\u05D5\u05E8",
+  "gds.action.certificate": "\u05EA\u05E2\u05D5\u05D3\u05D4",
+  "gds.action.student": "\u05EA\u05DC\u05DE\u05D9\u05D3",
+  "gds.action.class": "\u05DB\u05D9\u05EA\u05D4",
+  "gds.action.grade": "\u05E6\u05D9\u05D5\u05DF",
+  "gds.action.child": "\u05D9\u05DC\u05D3",
+  "gds.action.family": "\u05DE\u05E9\u05E4\u05D7\u05D4",
+  "gds.action.habit": "\u05D4\u05E8\u05D2\u05DC",
+  "gds.action.goal": "\u05DE\u05D8\u05E8\u05D4",
+  "gds.action.streak": "\u05E8\u05E6\u05E3",
+  "gds.action.reward": "\u05E4\u05E8\u05E1",
+  "gds.action.trophy": "\u05D2\u05D1\u05D9\u05E2",
+  "gds.action.crown": "\u05DB\u05EA\u05E8",
+  "gds.action.pause": "\u05D4\u05E9\u05D4\u05D4",
+  "gds.action.message": "\u05D4\u05D5\u05D3\u05E2\u05D4",
+  "gds.action.mail": "\u05D3\u05D5\u05D0\u05E8",
+  "gds.action.refresh": "\u05E8\u05E2\u05E0\u05DF",
+  "gds.action.trendingUp": "\u05DE\u05D2\u05DE\u05D4 \u05D7\u05D9\u05D5\u05D1\u05D9\u05EA",
+  "gds.action.trendingDown": "\u05DE\u05D2\u05DE\u05D4 \u05E9\u05DC\u05D9\u05DC\u05D9\u05EA",
+  "gds.action.currency": "\u05DE\u05D8\u05D1\u05E2",
+  "gds.action.grid": "\u05E8\u05E9\u05EA",
+  "gds.action.list": "\u05E8\u05E9\u05D9\u05DE\u05D4",
+  "gds.action.logout": "\u05D4\u05EA\u05E0\u05EA\u05E7",
+  "gds.action.notifications": "\u05D4\u05EA\u05E8\u05D0\u05D5\u05EA",
+  "gds.action.back": "\u05D7\u05D6\u05D5\u05E8",
+  "gds.action.eye": "\u05D4\u05E6\u05D2",
+  "gds.action.eyeOff": "\u05D4\u05E1\u05EA\u05E8",
+  "gds.action.help": "\u05E2\u05D6\u05E8\u05D4",
+  "gds.action.filter": "\u05E1\u05E0\u05DF",
+  "gds.action.sort": "\u05DE\u05D9\u05D9\u05DF",
+  "gds.action.export": "\u05D9\u05D9\u05E6\u05D5\u05D0",
+  "gds.action.import": "\u05D9\u05D9\u05D1\u05D5\u05D0",
+  "gds.action.preview": "\u05EA\u05E6\u05D5\u05D2\u05D4 \u05DE\u05E7\u05D3\u05D9\u05DE\u05D4",
+  "gds.action.clone": "\u05E9\u05DB\u05E4\u05D5\u05DC",
+  "gds.action.restore": "\u05E9\u05D7\u05D6\u05D5\u05E8",
+  "gds.action.toggle": "\u05D4\u05D7\u05DC\u05E4\u05D4",
+  "gds.action.search": "\u05D7\u05D9\u05E4\u05D5\u05E9",
+  "gds.action.submit": "\u05E9\u05DC\u05D9\u05D7\u05D4",
+  "gds.action.reset": "\u05D0\u05D9\u05E4\u05D5\u05E1",
+  "gds.action.login": "\u05D4\u05EA\u05D7\u05D1\u05E8\u05D5\u05EA",
+  "gds.action.register": "\u05D4\u05E8\u05E9\u05DE\u05D4",
+  "gds.action.verify": "\u05D0\u05D9\u05DE\u05D5\u05EA",
+  "gds.action.launch": "\u05D4\u05E9\u05E7\u05D4",
+  "gds.action.draft": "\u05D8\u05D9\u05D5\u05D8\u05D4",
+  "gds.action.refer": "\u05D4\u05E4\u05E0\u05D9\u05D4",
+  "gds.action.evidence": "\u05E8\u05D0\u05D9\u05D4",
+  "gds.feedback.saved": "\u05E0\u05E9\u05DE\u05E8",
+  "gds.feedback.error": "\u05DE\u05E9\u05D4\u05D5 \u05D4\u05E9\u05EA\u05D1\u05E9",
+  "gds.feedback.added": "\u05E0\u05D5\u05E1\u05E3",
+  "gds.feedback.edited": "\u05E0\u05E2\u05E8\u05DA",
+  "gds.feedback.deleted": "\u05E0\u05DE\u05D7\u05E7",
+  "gds.feedback.canceled": "\u05D1\u05D5\u05D8\u05DC",
+  "gds.feedback.confirmed": "\u05D0\u05D5\u05E9\u05E8",
+  "gds.feedback.closed": "\u05E0\u05E1\u05D2\u05E8",
+  "gds.feedback.changed": "\u05E9\u05D5\u05E0\u05D4",
+  "gds.feedback.loaded": "\u05E0\u05D8\u05E2\u05DF",
+  "gds.feedback.started": "\u05D4\u05D5\u05EA\u05D7\u05DC",
+  "gds.feedback.opened": "\u05E0\u05E4\u05EA\u05D7",
+  "gds.feedback.sent": "\u05E0\u05E9\u05DC\u05D7",
+  "gds.feedback.replied": "\u05E0\u05E2\u05E0\u05D4",
+  "gds.feedback.forwarded": "\u05D4\u05D5\u05E2\u05D1\u05E8",
+  "gds.feedback.attached": "\u05E6\u05D5\u05E8\u05E3",
+  "gds.feedback.uploaded": "\u05D4\u05D5\u05E2\u05DC\u05D4",
+  "gds.feedback.downloaded": "\u05D4\u05D5\u05E8\u05D3",
+  "gds.feedback.printed": "\u05D4\u05D5\u05D3\u05E4\u05E1",
+  "gds.feedback.copied": "\u05D4\u05D5\u05E2\u05EA\u05E7",
+  "gds.feedback.duplicated": "\u05E9\u05D5\u05DB\u05E4\u05DC",
+  "gds.feedback.checked": "\u05E1\u05D5\u05DE\u05DF",
+  "gds.feedback.unchecked": "\u05D4\u05E1\u05D9\u05DE\u05D5\u05DF \u05D1\u05D5\u05D8\u05DC",
+  "gds.feedback.completed": "\u05D4\u05D5\u05E9\u05DC\u05DD",
+  "gds.feedback.cleared": "\u05E0\u05D5\u05E7\u05D4",
+  "gds.feedback.captured": "\u05E6\u05D5\u05DC\u05DD",
+  "gds.feedback.recorded": "\u05D4\u05D5\u05E7\u05DC\u05D8",
+  "gds.feedback.flipped": "\u05E0\u05D4\u05E4\u05DA",
+  "gds.feedback.flashed": "\u05D4\u05D5\u05D1\u05D6\u05E7",
+  "gds.feedback.done": "\u05D1\u05D5\u05E6\u05E2",
+  "gds.feedback.rewarded": "\u05EA\u05D5\u05D2\u05DE\u05DC",
+  "gds.feedback.paused": "\u05D4\u05D5\u05E9\u05D4\u05D4",
+  "gds.feedback.mailed": "\u05E0\u05E9\u05DC\u05D7",
+  "gds.feedback.refreshed": "\u05E8\u05D5\u05E2\u05E0\u05DF",
+  "gds.feedback.loggedOut": "\u05D4\u05EA\u05E0\u05EA\u05E7",
+  "gds.feedback.filtered": "\u05E1\u05D5\u05E0\u05DF",
+  "gds.feedback.sorted": "\u05DE\u05D5\u05D9\u05DF",
+  "gds.feedback.exported": "\u05D9\u05D5\u05E6\u05D0",
+  "gds.feedback.imported": "\u05D9\u05D5\u05D1\u05D0",
+  "gds.feedback.previewed": "\u05D4\u05D5\u05E6\u05D2",
+  "gds.feedback.cloned": "\u05E9\u05D5\u05DB\u05E4\u05DC",
+  "gds.feedback.restored": "\u05E9\u05D5\u05D7\u05D6\u05E8",
+  "gds.feedback.toggled": "\u05D4\u05D5\u05D7\u05DC\u05E3",
+  "gds.feedback.searched": "\u05D7\u05D9\u05E4\u05D5\u05E9 \u05D4\u05D5\u05E9\u05DC\u05DD",
+  "gds.feedback.submitted": "\u05E0\u05E9\u05DC\u05D7",
+  "gds.feedback.reset": "\u05D0\u05D5\u05E4\u05E1",
+  "gds.feedback.loggedIn": "\u05D4\u05EA\u05D7\u05D1\u05E8",
+  "gds.feedback.registered": "\u05E0\u05E8\u05E9\u05DD",
+  "gds.feedback.verified": "\u05D0\u05D5\u05DE\u05EA",
+  "gds.feedback.launched": "\u05D4\u05D5\u05E9\u05E7",
+  "gds.feedback.drafted": "\u05E0\u05E9\u05DE\u05E8 \u05DB\u05D8\u05D9\u05D5\u05D8\u05D4",
+  "gds.feedback.referred": "\u05D4\u05D5\u05E4\u05E0\u05D4",
+  "gds.aria.themeToggle": "\u05D4\u05D7\u05DC\u05E3 \u05E2\u05E8\u05DB\u05EA \u05E6\u05D1\u05E2\u05D9\u05DD",
+  "gds.state.emptyData": "\u05D0\u05D9\u05DF \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD \u05D6\u05DE\u05D9\u05E0\u05D9\u05DD."
+};
+
+// src/locales/hu.ts
+var hu = {
+  "gds.action.settings": "Be\xE1ll\xEDt\xE1sok",
+  "gds.action.analytics": "Analitika",
+  "gds.action.dashboard": "Ir\xE1ny\xEDt\xF3pult",
+  "gds.action.play": "Lej\xE1tsz\xE1s",
+  "gds.action.start": "Ind\xEDt\xE1s",
+  "gds.action.users": "Felhaszn\xE1l\xF3k",
+  "gds.action.add": "Hozz\xE1ad\xE1s",
+  "gds.action.edit": "Szerkeszt\xE9s",
+  "gds.action.delete": "T\xF6rl\xE9s",
+  "gds.action.save": "Ment\xE9s",
+  "gds.action.cancel": "M\xE9gse",
+  "gds.action.confirm": "Meger\u0151s\xEDt\xE9s",
+  "gds.action.close": "Bez\xE1r\xE1s",
+  "gds.action.language": "Nyelv",
+  "gds.action.theme": "T\xE9ma",
+  "gds.action.home": "F\u0151oldal",
+  "gds.action.inbox": "Be\xE9rkez\u0151",
+  "gds.action.calendar": "Napt\xE1r",
+  "gds.action.gallery": "Gal\xE9ria",
+  "gds.action.history": "El\u0151zm\xE9nyek",
+  "gds.action.profile": "Profil",
+  "gds.action.send": "K\xFCld\xE9s",
+  "gds.action.reply": "V\xE1lasz",
+  "gds.action.forward": "Tov\xE1bb\xEDt\xE1s",
+  "gds.action.attach": "Csatol\xE1s",
+  "gds.action.upload": "Felt\xF6lt\xE9s",
+  "gds.action.download": "Let\xF6lt\xE9s",
+  "gds.action.print": "Nyomtat\xE1s",
+  "gds.action.copy": "M\xE1sol\xE1s",
+  "gds.action.duplicate": "Duplik\xE1l\xE1s",
+  "gds.action.check": "Jel\xF6l\xE9s",
+  "gds.action.uncheck": "Jel\xF6l\xE9s t\xF6rl\xE9se",
+  "gds.action.complete": "K\xE9sz",
+  "gds.action.clear": "Ki\xFCr\xEDt\xE9s",
+  "gds.action.capture": "Felv\xE9tel",
+  "gds.action.record": "R\xF6gz\xEDt\xE9s",
+  "gds.action.flip": "Ford\xEDt\xE1s",
+  "gds.action.flash": "Vaku",
+  "gds.action.course": "Tanfolyam",
+  "gds.action.lesson": "Lecke",
+  "gds.action.certificate": "Tan\xFAs\xEDtv\xE1ny",
+  "gds.action.student": "Tanul\xF3",
+  "gds.action.class": "Oszt\xE1ly",
+  "gds.action.grade": "Oszt\xE1lyzat",
+  "gds.action.child": "Gyermek",
+  "gds.action.family": "Csal\xE1d",
+  "gds.action.habit": "Szok\xE1s",
+  "gds.action.goal": "C\xE9l",
+  "gds.action.streak": "Sorozat",
+  "gds.action.reward": "Jutalom",
+  "gds.action.trophy": "Tr\xF3fea",
+  "gds.action.crown": "Korona",
+  "gds.action.pause": "Sz\xFCnet",
+  "gds.action.message": "\xDCzenet",
+  "gds.action.mail": "Lev\xE9l",
+  "gds.action.refresh": "Friss\xEDt\xE9s",
+  "gds.action.trendingUp": "N\xF6vekv\u0151 trend",
+  "gds.action.trendingDown": "Cs\xF6kken\u0151 trend",
+  "gds.action.currency": "P\xE9nznem",
+  "gds.action.grid": "R\xE1cs",
+  "gds.action.list": "Lista",
+  "gds.action.logout": "Kijelentkez\xE9s",
+  "gds.action.notifications": "\xC9rtes\xEDt\xE9sek",
+  "gds.action.back": "Vissza",
+  "gds.action.eye": "Megtekint\xE9s",
+  "gds.action.eyeOff": "Elrejt\xE9s",
+  "gds.action.help": "S\xFAg\xF3",
+  "gds.action.filter": "Sz\u0171r\u0151",
+  "gds.action.sort": "Rendez\xE9s",
+  "gds.action.export": "Export\xE1l\xE1s",
+  "gds.action.import": "Import\xE1l\xE1s",
+  "gds.action.preview": "El\u0151n\xE9zet",
+  "gds.action.clone": "Kl\xF3noz\xE1s",
+  "gds.action.restore": "Vissza\xE1ll\xEDt\xE1s",
+  "gds.action.toggle": "V\xE1lt\xE1s",
+  "gds.action.search": "Keres\xE9s",
+  "gds.action.submit": "K\xFCld\xE9s",
+  "gds.action.reset": "Alaphelyzet",
+  "gds.action.login": "Bejelentkez\xE9s",
+  "gds.action.register": "Regisztr\xE1ci\xF3",
+  "gds.action.verify": "Ellen\u0151rz\xE9s",
+  "gds.action.launch": "Ind\xEDt\xE1s",
+  "gds.action.draft": "Piszkozat",
+  "gds.action.refer": "Aj\xE1nl\xE1s",
+  "gds.action.evidence": "Bizony\xEDt\xE9k",
+  "gds.feedback.saved": "Mentve",
+  "gds.feedback.error": "Hiba t\xF6rt\xE9nt",
+  "gds.feedback.added": "Hozz\xE1adva",
+  "gds.feedback.edited": "Szerkesztve",
+  "gds.feedback.deleted": "T\xF6r\xF6lve",
+  "gds.feedback.canceled": "Megszak\xEDtva",
+  "gds.feedback.confirmed": "Meger\u0151s\xEDtve",
+  "gds.feedback.closed": "Bez\xE1rva",
+  "gds.feedback.changed": "Megv\xE1ltoztatva",
+  "gds.feedback.loaded": "Bet\xF6ltve",
+  "gds.feedback.started": "Elind\xEDtva",
+  "gds.feedback.opened": "Megnyitva",
+  "gds.feedback.sent": "Elk\xFCldve",
+  "gds.feedback.replied": "Megv\xE1laszolva",
+  "gds.feedback.forwarded": "Tov\xE1bb\xEDtva",
+  "gds.feedback.attached": "Csatolva",
+  "gds.feedback.uploaded": "Felt\xF6ltve",
+  "gds.feedback.downloaded": "Let\xF6ltve",
+  "gds.feedback.printed": "Kinyomtatva",
+  "gds.feedback.copied": "M\xE1solva",
+  "gds.feedback.duplicated": "Duplik\xE1lva",
+  "gds.feedback.checked": "Kijel\xF6lve",
+  "gds.feedback.unchecked": "Kijel\xF6l\xE9s t\xF6r\xF6lve",
+  "gds.feedback.completed": "Befejezve",
+  "gds.feedback.cleared": "Ki\xFCr\xEDtve",
+  "gds.feedback.captured": "R\xF6gz\xEDtve",
+  "gds.feedback.recorded": "Felv\xE9ve",
+  "gds.feedback.flipped": "Megford\xEDtva",
+  "gds.feedback.flashed": "Villantva",
+  "gds.feedback.done": "K\xE9sz",
+  "gds.feedback.rewarded": "Jutalmazva",
+  "gds.feedback.paused": "Sz\xFCneteltetve",
+  "gds.feedback.mailed": "Elk\xFCldve",
+  "gds.feedback.refreshed": "Friss\xEDtve",
+  "gds.feedback.loggedOut": "Kijelentkezve",
+  "gds.feedback.filtered": "Sz\u0171rve",
+  "gds.feedback.sorted": "Rendezve",
+  "gds.feedback.exported": "Export\xE1lva",
+  "gds.feedback.imported": "Import\xE1lva",
+  "gds.feedback.previewed": "El\u0151n\xE9zet bet\xF6ltve",
+  "gds.feedback.cloned": "Kl\xF3nozva",
+  "gds.feedback.restored": "Vissza\xE1ll\xEDtva",
+  "gds.feedback.toggled": "\xC1tv\xE1ltva",
+  "gds.feedback.searched": "Keresve",
+  "gds.feedback.submitted": "Elk\xFCldve",
+  "gds.feedback.reset": "Alaphelyzetbe \xE1ll\xEDtva",
+  "gds.feedback.loggedIn": "Bejelentkezve",
+  "gds.feedback.registered": "Regisztr\xE1lva",
+  "gds.feedback.verified": "Ellen\u0151rizve",
+  "gds.feedback.launched": "Elind\xEDtva",
+  "gds.feedback.drafted": "L\xE9trehozva",
+  "gds.feedback.referred": "Aj\xE1nlva",
+  "gds.aria.themeToggle": "Sz\xEDns\xE9ma v\xE1lt\xE1sa",
+  "gds.state.emptyData": "Nincs el\xE9rhet\u0151 adat."
 };
 
 // src/locales/it.ts
@@ -1637,353 +2892,69 @@ var ru = {
   "gds.state.emptyData": "\u041D\u0435\u0442 \u0434\u043E\u0441\u0442\u0443\u043F\u043D\u044B\u0445 \u0434\u0430\u043D\u043D\u044B\u0445."
 };
 
-// src/locales/he.ts
-var he = {
-  "gds.action.settings": "\u05D4\u05D2\u05D3\u05E8\u05D5\u05EA",
-  "gds.action.analytics": "\u05E0\u05D9\u05EA\u05D5\u05D7 \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD",
-  "gds.action.dashboard": "\u05DC\u05D5\u05D7 \u05D1\u05E7\u05E8\u05D4",
-  "gds.action.play": "\u05D4\u05E4\u05E2\u05DC",
-  "gds.action.start": "\u05D4\u05EA\u05D7\u05DC",
-  "gds.action.users": "\u05DE\u05E9\u05EA\u05DE\u05E9\u05D9\u05DD",
-  "gds.action.add": "\u05D4\u05D5\u05E1\u05E3",
-  "gds.action.edit": "\u05E2\u05E8\u05D5\u05DA",
-  "gds.action.delete": "\u05DE\u05D7\u05E7",
-  "gds.action.save": "\u05E9\u05DE\u05D5\u05E8",
-  "gds.action.cancel": "\u05D1\u05D9\u05D8\u0648\u0644",
-  "gds.action.confirm": "\u05D0\u05D9\u05E9\u05D5\u05E8",
-  "gds.action.close": "\u05E1\u05D2\u05D5\u05E8",
-  "gds.action.language": "\u05E9\u05E4\u05D4",
-  "gds.action.theme": "\u05E2\u05E8\u05DB\u05EA \u05E0\u05D5\u05E9\u05D0",
-  "gds.action.home": "\u05D3\u05E3 \u05D4\u05D1\u05D9\u05EA",
-  "gds.action.inbox": "\u05D3\u05D5\u05D0\u05E8 \u05E0\u05DB\u05E0\u05E1",
-  "gds.action.calendar": "\u05DC\u05D5\u05D7 \u05E9\u05E0\u05D4",
-  "gds.action.gallery": "\u05D2\u05DC\u05E8\u05D9\u05D4",
-  "gds.action.history": "\u05D4\u05D9\u05E1\u05D8\u05D5\u05E8\u05D9\u05D4",
-  "gds.action.profile": "\u05E4\u05E8\u05D5\u05E4\u05D9\u05DC",
-  "gds.action.send": "\u05E9\u05DC\u05D7",
-  "gds.action.reply": "\u05D4\u05E9\u05D1",
-  "gds.action.forward": "\u05D4\u05E2\u05D1\u05E8",
-  "gds.action.attach": "\u05E6\u05E8\u05E3",
-  "gds.action.upload": "\u05D4\u05E2\u05DC\u05D4",
-  "gds.action.download": "\u05D4\u05D5\u05E8\u05D3",
-  "gds.action.print": "\u05D4\u05D3\u05E4\u05E1",
-  "gds.action.copy": "\u05D4\u05E2\u05EA\u05E7",
-  "gds.action.duplicate": "\u05E9\u05DB\u05E4\u05DC",
-  "gds.action.check": "\u05E1\u05DE\u05DF",
-  "gds.action.uncheck": "\u05D1\u05D8\u05DC \u05E1\u05D9\u05DE\u05D5\u05DF",
-  "gds.action.complete": "\u05D4\u05E9\u05DC\u05DD",
-  "gds.action.clear": "\u05E0\u05E7\u05D4",
-  "gds.action.capture": "\u05E6\u05DC\u05DD",
-  "gds.action.record": "\u05D4\u05E7\u05DC\u05D8",
-  "gds.action.flip": "\u05D4\u05E4\u05D5\u05DA",
-  "gds.action.flash": "\u05DE\u05D1\u05D6\u05E7",
-  "gds.action.course": "\u05E7\u05D5\u05E8\u05E1",
-  "gds.action.lesson": "\u05E9\u05D9\u05E2\u05D5\u05E8",
-  "gds.action.certificate": "\u05EA\u05E2\u05D5\u05D3\u05D4",
-  "gds.action.student": "\u05EA\u05DC\u05DE\u05D9\u05D3",
-  "gds.action.class": "\u05DB\u05D9\u05EA\u05D4",
-  "gds.action.grade": "\u05E6\u05D9\u05D5\u05DF",
-  "gds.action.child": "\u05D9\u05DC\u05D3",
-  "gds.action.family": "\u05DE\u05E9\u05E4\u05D7\u05D4",
-  "gds.action.habit": "\u05D4\u05E8\u05D2\u05DC",
-  "gds.action.goal": "\u05DE\u05D8\u05E8\u05D4",
-  "gds.action.streak": "\u05E8\u05E6\u05E3",
-  "gds.action.reward": "\u05E4\u05E8\u05E1",
-  "gds.action.trophy": "\u05D2\u05D1\u05D9\u05E2",
-  "gds.action.crown": "\u05DB\u05EA\u05E8",
-  "gds.action.pause": "\u05D4\u05E9\u05D4\u05D4",
-  "gds.action.message": "\u05D4\u05D5\u05D3\u05E2\u05D4",
-  "gds.action.mail": "\u05D3\u05D5\u05D0\u05E8",
-  "gds.action.refresh": "\u05E8\u05E2\u05E0\u05DF",
-  "gds.action.trendingUp": "\u05DE\u05D2\u05DE\u05D4 \u05D7\u05D9\u05D5\u05D1\u05D9\u05EA",
-  "gds.action.trendingDown": "\u05DE\u05D2\u05DE\u05D4 \u05E9\u05DC\u05D9\u05DC\u05D9\u05EA",
-  "gds.action.currency": "\u05DE\u05D8\u05D1\u05E2",
-  "gds.action.grid": "\u05E8\u05E9\u05EA",
-  "gds.action.list": "\u05E8\u05E9\u05D9\u05DE\u05D4",
-  "gds.action.logout": "\u05D4\u05EA\u05E0\u05EA\u05E7",
-  "gds.action.notifications": "\u05D4\u05EA\u05E8\u05D0\u05D5\u05EA",
-  "gds.action.back": "\u05D7\u05D6\u05D5\u05E8",
-  "gds.action.eye": "\u05D4\u05E6\u05D2",
-  "gds.action.eyeOff": "\u05D4\u05E1\u05EA\u05E8",
-  "gds.action.help": "\u05E2\u05D6\u05E8\u05D4",
-  "gds.action.filter": "\u05E1\u05E0\u05DF",
-  "gds.action.sort": "\u05DE\u05D9\u05D9\u05DF",
-  "gds.action.export": "\u05D9\u05D9\u05E6\u05D5\u05D0",
-  "gds.action.import": "\u05D9\u05D9\u05D1\u05D5\u05D0",
-  "gds.action.preview": "\u05EA\u05E6\u05D5\u05D2\u05D4 \u05DE\u05E7\u05D3\u05D9\u05DE\u05D4",
-  "gds.action.clone": "\u05E9\u05DB\u05E4\u05D5\u05DC",
-  "gds.action.restore": "\u05E9\u05D7\u05D6\u05D5\u05E8",
-  "gds.action.toggle": "\u05D4\u05D7\u05DC\u05E4\u05D4",
-  "gds.action.search": "\u05D7\u05D9\u05E4\u05D5\u05E9",
-  "gds.action.submit": "\u05E9\u05DC\u05D9\u05D7\u05D4",
-  "gds.action.reset": "\u05D0\u05D9\u05E4\u05D5\u05E1",
-  "gds.action.login": "\u05D4\u05EA\u05D7\u05D1\u05E8\u05D5\u05EA",
-  "gds.action.register": "\u05D4\u05E8\u05E9\u05DE\u05D4",
-  "gds.action.verify": "\u05D0\u05D9\u05DE\u05D5\u05EA",
-  "gds.action.launch": "\u05D4\u05E9\u05E7\u05D4",
-  "gds.action.draft": "\u05D8\u05D9\u05D5\u05D8\u05D4",
-  "gds.action.refer": "\u05D4\u05E4\u05E0\u05D9\u05D4",
-  "gds.action.evidence": "\u05E8\u05D0\u05D9\u05D4",
-  "gds.feedback.saved": "\u05E0\u05E9\u05DE\u05E8",
-  "gds.feedback.error": "\u05DE\u05E9\u05D4\u05D5 \u05D4\u05E9\u05EA\u05D1\u05E9",
-  "gds.feedback.added": "\u05E0\u05D5\u05E1\u05E3",
-  "gds.feedback.edited": "\u05E0\u05E2\u05E8\u05DA",
-  "gds.feedback.deleted": "\u05E0\u05DE\u05D7\u05E7",
-  "gds.feedback.canceled": "\u05D1\u05D5\u05D8\u05DC",
-  "gds.feedback.confirmed": "\u05D0\u05D5\u05E9\u05E8",
-  "gds.feedback.closed": "\u05E0\u05E1\u05D2\u05E8",
-  "gds.feedback.changed": "\u05E9\u05D5\u05E0\u05D4",
-  "gds.feedback.loaded": "\u05E0\u05D8\u05E2\u05DF",
-  "gds.feedback.started": "\u05D4\u05D5\u05EA\u05D7\u05DC",
-  "gds.feedback.opened": "\u05E0\u05E4\u05EA\u05D7",
-  "gds.feedback.sent": "\u05E0\u05E9\u05DC\u05D7",
-  "gds.feedback.replied": "\u05E0\u05E2\u05E0\u05D4",
-  "gds.feedback.forwarded": "\u05D4\u05D5\u05E2\u05D1\u05E8",
-  "gds.feedback.attached": "\u05E6\u05D5\u05E8\u05E3",
-  "gds.feedback.uploaded": "\u05D4\u05D5\u05E2\u05DC\u05D4",
-  "gds.feedback.downloaded": "\u05D4\u05D5\u05E8\u05D3",
-  "gds.feedback.printed": "\u05D4\u05D5\u05D3\u05E4\u05E1",
-  "gds.feedback.copied": "\u05D4\u05D5\u05E2\u05EA\u05E7",
-  "gds.feedback.duplicated": "\u05E9\u05D5\u05DB\u05E4\u05DC",
-  "gds.feedback.checked": "\u05E1\u05D5\u05DE\u05DF",
-  "gds.feedback.unchecked": "\u05D4\u05E1\u05D9\u05DE\u05D5\u05DF \u05D1\u05D5\u05D8\u05DC",
-  "gds.feedback.completed": "\u05D4\u05D5\u05E9\u05DC\u05DD",
-  "gds.feedback.cleared": "\u05E0\u05D5\u05E7\u05D4",
-  "gds.feedback.captured": "\u05E6\u05D5\u05DC\u05DD",
-  "gds.feedback.recorded": "\u05D4\u05D5\u05E7\u05DC\u05D8",
-  "gds.feedback.flipped": "\u05E0\u05D4\u05E4\u05DA",
-  "gds.feedback.flashed": "\u05D4\u05D5\u05D1\u05D6\u05E7",
-  "gds.feedback.done": "\u05D1\u05D5\u05E6\u05E2",
-  "gds.feedback.rewarded": "\u05EA\u05D5\u05D2\u05DE\u05DC",
-  "gds.feedback.paused": "\u05D4\u05D5\u05E9\u05D4\u05D4",
-  "gds.feedback.mailed": "\u05E0\u05E9\u05DC\u05D7",
-  "gds.feedback.refreshed": "\u05E8\u05D5\u05E2\u05E0\u05DF",
-  "gds.feedback.loggedOut": "\u05D4\u05EA\u05E0\u05EA\u05E7",
-  "gds.feedback.filtered": "\u05E1\u05D5\u05E0\u05DF",
-  "gds.feedback.sorted": "\u05DE\u05D5\u05D9\u05DF",
-  "gds.feedback.exported": "\u05D9\u05D5\u05E6\u05D0",
-  "gds.feedback.imported": "\u05D9\u05D5\u05D1\u05D0",
-  "gds.feedback.previewed": "\u05D4\u05D5\u05E6\u05D2",
-  "gds.feedback.cloned": "\u05E9\u05D5\u05DB\u05E4\u05DC",
-  "gds.feedback.restored": "\u05E9\u05D5\u05D7\u05D6\u05E8",
-  "gds.feedback.toggled": "\u05D4\u05D5\u05D7\u05DC\u05E3",
-  "gds.feedback.searched": "\u05D7\u05D9\u05E4\u05D5\u05E9 \u05D4\u05D5\u05E9\u05DC\u05DD",
-  "gds.feedback.submitted": "\u05E0\u05E9\u05DC\u05D7",
-  "gds.feedback.reset": "\u05D0\u05D5\u05E4\u05E1",
-  "gds.feedback.loggedIn": "\u05D4\u05EA\u05D7\u05D1\u05E8",
-  "gds.feedback.registered": "\u05E0\u05E8\u05E9\u05DD",
-  "gds.feedback.verified": "\u05D0\u05D5\u05DE\u05EA",
-  "gds.feedback.launched": "\u05D4\u05D5\u05E9\u05E7",
-  "gds.feedback.drafted": "\u05E0\u05E9\u05DE\u05E8 \u05DB\u05D8\u05D9\u05D5\u05D8\u05D4",
-  "gds.feedback.referred": "\u05D4\u05D5\u05E4\u05E0\u05D4",
-  "gds.aria.themeToggle": "\u05D4\u05D7\u05DC\u05E3 \u05E2\u05E8\u05DB\u05EA \u05E6\u05D1\u05E2\u05D9\u05DD",
-  "gds.state.emptyData": "\u05D0\u05D9\u05DF \u05E0\u05EA\u05D5\u05E0\u05D9\u05DD \u05D6\u05DE\u05D9\u05E0\u05D9\u05DD."
+// src/locales/index.ts
+var gdsLocales = {
+  en,
+  es,
+  hu,
+  de,
+  fr,
+  it,
+  ru,
+  he,
+  ar
 };
-
-// src/locales/ar.ts
-var ar = {
-  "gds.action.settings": "\u0627\u0644\u0625\u0639\u062F\u0627\u062F\u0627\u062A",
-  "gds.action.analytics": "\u062A\u062D\u0644\u064A\u0644\u0627\u062A",
-  "gds.action.dashboard": "\u0644\u0648\u062D\u0629 \u0627\u0644\u0642\u064A\u0627\u062F\u0629",
-  "gds.action.play": "\u062A\u0634\u063A\u064A\u0644",
-  "gds.action.start": "\u0628\u062F\u0621",
-  "gds.action.users": "\u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645\u064A\u0646",
-  "gds.action.add": "\u0625\u0636\u0627\u0641\u0629",
-  "gds.action.edit": "\u062A\u0639\u062F\u064A\u0644",
-  "gds.action.delete": "\u062D\u0630\u0641",
-  "gds.action.save": "\u062D\u0641\u0638",
-  "gds.action.cancel": "\u0625\u0644\u063A\u0627\u0621",
-  "gds.action.confirm": "\u062A\u0623\u0643\u064A\u062F",
-  "gds.action.close": "\u0625\u063A\u0644\u0627\u0642",
-  "gds.action.language": "\u0627\u0644\u0644\u063A\u0629",
-  "gds.action.theme": "\u0627\u0644\u0633\u0645\u0629",
-  "gds.action.home": "\u0627\u0644\u0631\u0626\u064A\u0633\u064A\u0629",
-  "gds.action.inbox": "\u0635\u0646\u062F\u0648\u0642 \u0627\u0644\u0648\u0627\u0631\u062F",
-  "gds.action.calendar": "\u0627\u0644\u062A\u0642\u0648\u064A\u0645",
-  "gds.action.gallery": "\u0627\u0644\u0645\u0639\u0631\u0636",
-  "gds.action.history": "\u0627\u0644\u0633\u062C\u0644",
-  "gds.action.profile": "\u0627\u0644\u0645\u0644\u0641 \u0627\u0644\u0634\u062E\u0635\u064A",
-  "gds.action.send": "\u0625\u0631\u0633\u0627\u0644",
-  "gds.action.reply": "\u0631\u062F",
-  "gds.action.forward": "\u0625\u0639\u0627\u062F\u0629 \u062A\u0648\u062C\u064A\u0647",
-  "gds.action.attach": "\u0625\u0631\u0641\u0627\u0642",
-  "gds.action.upload": "\u0631\u0641\u0639",
-  "gds.action.download": "\u062A\u0646\u0632\u064A\u0644",
-  "gds.action.print": "\u0637\u0628\u0627\u0639\u0629",
-  "gds.action.copy": "\u0646\u0633\u062E",
-  "gds.action.duplicate": "\u062A\u0643\u0631\u0627\u0631",
-  "gds.action.check": "\u062A\u062D\u062F\u064A\u062F",
-  "gds.action.uncheck": "\u0625\u0644\u063A\u0627\u0621 \u0627\u0644\u062A\u062D\u062F\u064A\u062F",
-  "gds.action.complete": "\u0627\u0643\u062A\u0645\u0627\u0644",
-  "gds.action.clear": "\u0645\u0633\u062D",
-  "gds.action.capture": "\u0627\u0644\u062A\u0642\u0627\u0637",
-  "gds.action.record": "\u062A\u0633\u062C\u064A\u0644",
-  "gds.action.flip": "\u0642\u0644\u0628",
-  "gds.action.flash": "\u0641\u0644\u0627\u0634",
-  "gds.action.course": "\u062F\u0648\u0631\u0629",
-  "gds.action.lesson": "\u062F\u0631\u0633",
-  "gds.action.certificate": "\u0634\u0647\u0627\u062F\u0629",
-  "gds.action.student": "\u0637\u0627\u0644\u0628",
-  "gds.action.class": "\u0641\u0635\u0644",
-  "gds.action.grade": "\u062F\u0631\u062C\u0629",
-  "gds.action.child": "\u0637\u0641\u0644",
-  "gds.action.family": "\u0639\u0627\u0626\u0644\u0629",
-  "gds.action.habit": "\u0639\u0627\u062F\u0629",
-  "gds.action.goal": "\u0647\u062F\u0641",
-  "gds.action.streak": "\u0633\u0644\u0633\u0644\u0629",
-  "gds.action.reward": "\u0645\u0643\u0627\u0641\u0623\u0629",
-  "gds.action.trophy": "\u0643\u0623\u0633",
-  "gds.action.crown": "\u062A\u0627\u062C",
-  "gds.action.pause": "\u0625\u064A\u0642\u0627\u0641 \u0645\u0624\u0642\u062A",
-  "gds.action.message": "\u0631\u0633\u0627\u0644\u0629",
-  "gds.action.mail": "\u0628\u0631\u064A\u062F",
-  "gds.action.refresh": "\u062A\u062D\u062F\u064A\u062B",
-  "gds.action.trendingUp": "\u0627\u062A\u062C\u0627\u0647 \u0635\u0627\u0639\u062F",
-  "gds.action.trendingDown": "\u0627\u062A\u062C\u0627\u0647 \u0647\u0627\u0628\u0637",
-  "gds.action.currency": "\u0639\u0645\u0644\u0629",
-  "gds.action.grid": "\u0634\u0628\u0643\u0629",
-  "gds.action.list": "\u0642\u0627\u0626\u0645\u0629",
-  "gds.action.logout": "\u062A\u0633\u062C\u064A\u0644 \u062E\u0631\u0648\u062C",
-  "gds.action.notifications": "\u0625\u0634\u0639\u0627\u0631\u0627\u062A",
-  "gds.action.back": "\u0631\u062C\u0648\u0639",
-  "gds.action.eye": "\u0639\u0631\u0636",
-  "gds.action.eyeOff": "\u0625\u062E\u0641\u0627\u0621",
-  "gds.action.help": "\u0645\u0633\u0627\u0639\u062F\u0629",
-  "gds.action.filter": "\u062A\u0635\u0641\u064A\u0629",
-  "gds.action.sort": "\u0641\u0631\u0632",
-  "gds.action.export": "\u062A\u0635\u062F\u064A\u0631",
-  "gds.action.import": "\u0627\u0633\u062A\u064A\u0631\u0627\u062F",
-  "gds.action.preview": "\u0645\u0639\u0627\u064A\u0646\u0629",
-  "gds.action.clone": "\u0627\u0633\u062A\u0646\u0633\u0627\u062E",
-  "gds.action.restore": "\u0627\u0633\u062A\u0639\u0627\u062F\u0629",
-  "gds.action.toggle": "\u062A\u0628\u062F\u064A\u0644",
-  "gds.action.search": "\u0628\u062D\u062B",
-  "gds.action.submit": "\u0625\u0631\u0633\u0627\u0644",
-  "gds.action.reset": "\u0625\u0639\u0627\u062F\u0629 \u0636\u0628\u0637",
-  "gds.action.login": "\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644",
-  "gds.action.register": "\u062A\u0633\u062C\u064A\u0644",
-  "gds.action.verify": "\u062A\u062D\u0642\u0642",
-  "gds.action.launch": "\u0625\u0637\u0644\u0627\u0642",
-  "gds.action.draft": "\u0645\u0633\u0648\u062F\u0629",
-  "gds.action.refer": "\u0625\u062D\u0627\u0644\u0629",
-  "gds.action.evidence": "\u062F\u0644\u064A\u0644",
-  "gds.feedback.settings": "\u0627\u0644\u0625\u0639\u062F\u0627\u062F\u0627\u062A",
-  "gds.feedback.analytics": "\u062A\u062D\u0644\u064A\u0644\u0627\u062A",
-  "gds.feedback.dashboard": "\u0644\u0648\u062D\u0629 \u0627\u0644\u0642\u064A\u0627\u062F\u0629",
-  "gds.feedback.play": "\u062A\u0634\u063A\u064A\u0644",
-  "gds.feedback.start": "\u0628\u062F\u0621",
-  "gds.feedback.users": "\u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645\u064A\u0646",
-  "gds.feedback.add": "\u0625\u0636\u0627\u0641\u0629",
-  "gds.feedback.edit": "\u062A\u0639\u062F\u064A\u0644",
-  "gds.feedback.delete": "\u062D\u0630\u0641",
-  "gds.feedback.save": "\u062D\u0641\u0638",
-  "gds.feedback.cancel": "\u0625\u0644\u063A\u0627\u0621",
-  "gds.feedback.confirm": "\u062A\u0623\u0643\u064A\u062F",
-  "gds.feedback.close": "\u0625\u063A\u0644\u0627\u0642",
-  "gds.feedback.language": "\u0627\u0644\u0644\u063A\u0629",
-  "gds.feedback.theme": "\u0627\u0644\u0633\u0645\u0629",
-  "gds.feedback.home": "\u0627\u0644\u0631\u0626\u064A\u0633\u064A\u0629",
-  "gds.feedback.inbox": "\u0635\u0646\u062F\u0648\u0642 \u0627\u0644\u0648\u0627\u0631\u062F",
-  "gds.feedback.calendar": "\u0627\u0644\u062A\u0642\u0648\u064A\u0645",
-  "gds.feedback.gallery": "\u0627\u0644\u0645\u0639\u0631\u0636",
-  "gds.feedback.history": "\u0627\u0644\u0633\u062C\u0644",
-  "gds.feedback.profile": "\u0627\u0644\u0645\u0644\u0641 \u0627\u0644\u0634\u062E\u0635\u064A",
-  "gds.feedback.send": "\u0625\u0631\u0633\u0627\u0644",
-  "gds.feedback.reply": "\u0631\u062F",
-  "gds.feedback.forward": "\u0625\u0639\u0627\u062F\u0629 \u062A\u0648\u062C\u064A\u0647",
-  "gds.feedback.attach": "\u0625\u0631\u0641\u0627\u0642",
-  "gds.feedback.upload": "\u0631\u0641\u0639",
-  "gds.feedback.download": "\u062A\u0646\u0632\u064A\u0644",
-  "gds.feedback.print": "\u0637\u0628\u0627\u0639\u0629",
-  "gds.feedback.copy": "\u0646\u0633\u062E",
-  "gds.feedback.duplicate": "\u062A\u0643\u0631\u0627\u0631",
-  "gds.feedback.check": "\u062A\u062D\u062F\u064A\u062F",
-  "gds.feedback.uncheck": "\u0625\u0644\u063A\u0627\u0621 \u0627\u0644\u062A\u062D\u062F\u064A\u062F",
-  "gds.feedback.complete": "\u0627\u0643\u062A\u0645\u0627\u0644",
-  "gds.feedback.clear": "\u0645\u0633\u062D",
-  "gds.feedback.capture": "\u0627\u0644\u062A\u0642\u0627\u0637",
-  "gds.feedback.record": "\u062A\u0633\u062C\u064A\u0644",
-  "gds.feedback.flip": "\u0642\u0644\u0628",
-  "gds.feedback.flash": "\u0641\u0644\u0627\u0634",
-  "gds.feedback.course": "\u062F\u0648\u0631\u0629",
-  "gds.feedback.lesson": "\u062F\u0631\u0633",
-  "gds.feedback.certificate": "\u0634\u0647\u0627\u062F\u0629",
-  "gds.feedback.student": "\u0637\u0627\u0644\u0628",
-  "gds.feedback.class": "\u0641\u0635\u0644",
-  "gds.feedback.grade": "\u062F\u0631\u062C\u0629",
-  "gds.feedback.child": "\u0637\u0641\u0644",
-  "gds.feedback.family": "\u0639\u0627\u0626\u0644\u0629",
-  "gds.feedback.habit": "\u0639\u0627\u062F\u0629",
-  "gds.feedback.goal": "\u0647\u062F\u0641",
-  "gds.feedback.streak": "\u0633\u0644\u0633\u0644\u0629",
-  "gds.feedback.reward": "\u0645\u0643\u0627\u0641\u0623\u0629",
-  "gds.feedback.trophy": "\u0643\u0623\u0633",
-  "gds.feedback.crown": "\u062A\u0627\u062C",
-  "gds.feedback.pause": "\u0625\u064A\u0642\u0627\u0641 \u0645\u0624\u0642\u062A",
-  "gds.feedback.message": "\u0631\u0633\u0627\u0644\u0629",
-  "gds.feedback.mail": "\u0628\u0631\u064A\u062F",
-  "gds.feedback.refresh": "\u062A\u062D\u062F\u064A\u062B",
-  "gds.feedback.trendingUp": "\u0627\u062A\u062C\u0627\u0647 \u0635\u0627\u0639\u062F",
-  "gds.feedback.trendingDown": "\u0627\u062A\u062C\u0627\u0647 \u0647\u0627\u0628\u0637",
-  "gds.feedback.currency": "\u0639\u0645\u0644\u0629",
-  "gds.feedback.grid": "\u0634\u0628\u0643\u0629",
-  "gds.feedback.list": "\u0642\u0627\u0626\u0645\u0629",
-  "gds.feedback.logout": "\u062A\u0633\u062C\u064A\u0644 \u062E\u0631\u0648\u062C",
-  "gds.feedback.notifications": "\u0625\u0634\u0639\u0627\u0631\u0627\u062A",
-  "gds.feedback.back": "\u0631\u062C\u0648\u0639",
-  "gds.feedback.eye": "\u0639\u0631\u0636",
-  "gds.feedback.eyeOff": "\u0625\u062E\u0641\u0627\u0621",
-  "gds.feedback.help": "\u0645\u0633\u0627\u0639\u062F\u0629",
-  "gds.feedback.filter": "\u062A\u0635\u0641\u064A\u0629",
-  "gds.feedback.sort": "\u0641\u0631\u0632",
-  "gds.feedback.exported": "\u062A\u0645 \u0627\u0644\u062A\u0635\u062F\u064A\u0631",
-  "gds.feedback.imported": "\u062A\u0645 \u0627\u0644\u0627\u0633\u062A\u064A\u0631\u0627\u062F",
-  "gds.feedback.previewed": "\u062A\u0645\u062A \u0627\u0644\u0645\u0639\u0627\u064A\u0646\u0629",
-  "gds.feedback.cloned": "\u062A\u0645 \u0627\u0644\u0627\u0633\u062A\u0646\u0633\u0627\u062E",
-  "gds.feedback.restored": "\u062A\u0645\u062A \u0627\u0644\u0627\u0633\u062A\u0639\u0627\u062F\u0629",
-  "gds.feedback.toggled": "\u062A\u0645 \u0627\u0644\u062A\u0628\u062F\u064A\u0644",
-  "gds.feedback.searched": "\u062A\u0645 \u0627\u0644\u0628\u062D\u062B",
-  "gds.feedback.submitted": "\u062A\u0645 \u0627\u0644\u0625\u0631\u0633\u0627\u0644",
-  "gds.feedback.reset": "\u062A\u0645\u062A \u0625\u0639\u0627\u062F\u0629 \u0627\u0644\u0636\u0628\u0637",
-  "gds.feedback.loggedIn": "\u062A\u0645 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u062F\u062E\u0648\u0644",
-  "gds.feedback.registered": "\u062A\u0645 \u0627\u0644\u062A\u0633\u062C\u064A\u0644",
-  "gds.feedback.verified": "\u062A\u0645 \u0627\u0644\u062A\u062D\u0642\u0642",
-  "gds.feedback.launched": "\u062A\u0645 \u0627\u0644\u0625\u0637\u0644\u0627\u0642",
-  "gds.feedback.drafted": "\u062A\u0645 \u0627\u0644\u062D\u0641\u0638 \u0643\u0645\u0633\u0648\u062F\u0629",
-  "gds.feedback.referred": "\u062A\u0645\u062A \u0627\u0644\u0625\u062D\u0627\u0644\u0629",
-  "gds.feedback.error": "\u062D\u062F\u062B \u062E\u0637\u0623 \u0645\u0627",
-  "gds.aria.themeToggle": "\u062A\u0628\u062F\u064A\u0644 \u0646\u0638\u0627\u0645 \u0627\u0644\u0623\u0644\u0648\u0627\u0646",
-  "gds.state.emptyData": "\u0644\u0627 \u062A\u0648\u062C\u062F \u0628\u064A\u0627\u0646\u0627\u062A \u0645\u062A\u0627\u062D\u0629."
-};
+function getGdsMessages(locale) {
+  return gdsLocales[locale] ?? en;
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
+  AccentPanel,
+  AccessRecoveryPanel,
   AccessSummary,
   ArticleShell,
   AuthShell,
   ConfirmDialog,
+  CtaButtonGroup,
   DataToolbar,
+  DocsCodeBlock,
+  DocsPageShell,
+  EditorialHero,
   EmptyState,
+  FeatureBand,
   FilterDrawer,
   FormField,
+  GameBoardTile,
   GdsIcons,
   GdsVocabulary,
   MediaCard,
   MetricCard,
   PageHeader,
+  PlaceholderPanel,
   ProductCard,
   ProgressCard,
+  PublicBrandFooter,
+  PublicNav,
+  PublicProductCard,
   PublicShell,
+  PublicSiteFooter,
   SemanticButton,
+  SimpleDataTable,
   StateBlock,
+  StatsSection,
   StatusBadge,
   ThemeToggle,
   UploadDropzone,
   ar,
   de,
   en,
+  es,
   fr,
+  gdsLocales,
+  getGdsMessages,
   he,
   hu,
   it,
+  resolveAccentPanelStyles,
   ru
 });

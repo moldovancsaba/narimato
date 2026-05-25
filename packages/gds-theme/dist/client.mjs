@@ -1,15 +1,19 @@
 import {
   GdsProvider,
   useGdsTranslation
-} from "./chunk-BP2FDI4M.mjs";
+} from "./chunk-4X6ZUVYF.mjs";
 import {
   extendGdsTheme,
+  gdsDarkPublicTheme,
+  gdsFlatSurfaceTheme,
   gdsTheme,
   withGdsMotion
-} from "./chunk-WV72H3MR.mjs";
+} from "./chunk-4DMUH3AF.mjs";
 export {
   GdsProvider,
   extendGdsTheme,
+  gdsDarkPublicTheme,
+  gdsFlatSurfaceTheme,
   gdsTheme,
   useGdsTranslation,
   withGdsMotion
