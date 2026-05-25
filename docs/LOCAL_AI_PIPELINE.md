@@ -3,7 +3,7 @@
 **Issue:** [#29](https://github.com/moldovancsaba/narimato/issues/29)  
 **SSOT:** [NARIMATO_INTELLIGENCE_SSOT.md](./NARIMATO_INTELLIGENCE_SSOT.md)  
 **Read contract:** [WEBAPP_READ_MODEL_LLD.md](./WEBAPP_READ_MODEL_LLD.md)  
-**Architecture:** [ADR 003](./adr/003-local-ai-dual-runtime.md), [ADR 004](./adr/004-intelligence-product-policy.md)
+**Architecture:** [ADR 003](./adr/003-local-ai-dual-runtime.md), [ADR 004](./adr/004-intelligence-product-policy.md), [ADR 005](./adr/005-play-feedback-training.md) (proposed)
 
 ## Doc hierarchy
 
@@ -36,7 +36,9 @@
 | `REFRESH_PROJECTION` | Rebuild `webappProjection` (no LLM) |
 | `INGEST_SOURCE` | Corpus `Source` → `TopicSpec` draft |
 | `RECONCILE_FEEDBACK` | Operator thumbs reconciliation |
-| `RECONCILE_PLAY_FEEDBACK` | Play results hook (stub; `INTELLIGENCE_PLAY_FEEDBACK_ENABLED=0`) |
+| `RECONCILE_PLAY_FEEDBACK` | Play results → memories/rules/persona (stub; see [PLAY_FEEDBACK_TRAINING_PLAN.md](./PLAY_FEEDBACK_TRAINING_PLAN.md)) |
+
+**Planned (ADR 005):** `DISTILL_PLAY_MEMORIES`, `TRAIN_PERSONA_FROM_PLAY` — batch training jobs.
 
 Registry: `scripts/lib/pipeline-jobs.js` · adapter: `lib/webapp-projection.js`
 
@@ -54,6 +56,10 @@ Template: [INTELLIGENCE_ENV.example](./INTELLIGENCE_ENV.example) (copy keys into
 | `INTELLIGENCE_STATUS_PORT` | 10006 |
 | `INTELLIGENCE_SNAPSHOT_PORT` | 10007 |
 | `INTELLIGENCE_SNAPSHOT_POLL_MS` | 5000 |
+| `INTELLIGENCE_PLAY_FEEDBACK_ENABLED` | `0` — see [PLAY_FEEDBACK_TRAINING_LLD.md](./PLAY_FEEDBACK_TRAINING_LLD.md) |
+| `PLAY_FEEDBACK_MIN_SESSION_CARDS` | `3` |
+| `PLAY_FEEDBACK_RETENTION_DAYS` | `365` |
+| `PLAY_FEEDBACK_RECONCILE_COOLDOWN_H` | `24` |
 
 ## Projection refresh (no LLM) — [#32](https://github.com/moldovancsaba/narimato/issues/32)
 
