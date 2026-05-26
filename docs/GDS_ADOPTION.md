@@ -33,6 +33,8 @@ Replace `<gds-theme-package>` with the folder name under `general-design-system/
 
 After cloning GDS, run `npm run build` in the GDS repo, then `npm install` in Narimato.
 
+**Vercel:** `vercel.json` runs `scripts/vercel-install-gds.sh` before `npm install` to clone and build GDS when the sibling checkout is absent.
+
 ## Import contract (Pages Router)
 
 | Use | Entrypoint |

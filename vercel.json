@@ -1,0 +1,3 @@
+{
+  "installCommand": "bash scripts/vercel-install-gds.sh && npm install"
+}
