@@ -1,12 +1,12 @@
 # GDS adoption — Narimato
 
-`/Users/Shared/Projects/general-design-system` (and [sovereignsquad/general-design-system](https://github.com/sovereignsquad/general-design-system)) is the single source of truth for design, UI, and UX. This file records **Narimato adapter paths, migration state, validation commands, and approved exceptions** only.
+[sovereignsquad/general-design-system](https://github.com/sovereignsquad/general-design-system) is the single source of truth for design, UI, and UX. This file records **Narimato adapter paths, migration state, validation commands, and approved exceptions** only.
 
 | | Narimato | GDS |
 |---|----------|-----|
 | **Repository** | This repo (`narimato`) | [general-design-system](https://github.com/sovereignsquad/general-design-system) |
 | **Runtime packages** | `@doneisbetter/gds-theme`, `@doneisbetter/gds-core`, `@doneisbetter/gds-admin` | Published from GDS SSOT |
-| **Consumed version** | **2.6.1** (see `gds-adoption.json`) | `VERSION` in GDS repo |
+| **Consumed version** | **2.6.1** (see `gds-adoption.json`) | [gds-v2.6.1](https://github.com/sovereignsquad/general-design-system/releases/tag/gds-v2.6.1) |
 
 > When UI behavior or tokens conflict, **GDS wins**. Narimato does not vend mirror packages under `packages/gds-*` or the legacy `@gds/*` scope.
 
@@ -16,24 +16,25 @@
 
 ## Package install
 
-**Target (CI / Vercel):** install from the npm registry once packages are published:
+**Target (when npm publish is live):**
 
 ```bash
 npm install @doneisbetter/gds-theme @doneisbetter/gds-core @doneisbetter/gds-admin
 npm install -D @doneisbetter/gds-eslint-config @doneisbetter/gds-compliance
 ```
 
-**Local development (until registry publish):** this repo links the built SSOT sibling checkout:
+**Until npm publish (CI, Vercel, local):** install from [GitHub release assets](https://github.com/sovereignsquad/general-design-system/releases/tag/gds-v2.6.1) — see `package.json` tarball URLs. Do **not** use sibling `file:` links or clone-and-build install hooks.
 
-```json
-"@doneisbetter/gds-theme": "file:../general-design-system/packages/<gds-theme-package>"
+```bash
+npm install \
+  https://github.com/sovereignsquad/general-design-system/releases/download/gds-v2.6.1/doneisbetter-gds-theme-2.6.1.tgz \
+  https://github.com/sovereignsquad/general-design-system/releases/download/gds-v2.6.1/doneisbetter-gds-core-2.6.1.tgz \
+  https://github.com/sovereignsquad/general-design-system/releases/download/gds-v2.6.1/doneisbetter-gds-admin-2.6.1.tgz
+
+npm install -D \
+  https://github.com/sovereignsquad/general-design-system/releases/download/gds-v2.6.1/doneisbetter-gds-eslint-config-2.6.1.tgz \
+  https://github.com/sovereignsquad/general-design-system/releases/download/gds-v2.6.1/doneisbetter-gds-compliance-2.6.1.tgz
 ```
-
-Replace `<gds-theme-package>` with the folder name under `general-design-system/packages/` (see GDS repo).
-
-After cloning GDS, run `npm run build` in the GDS repo, then `npm install` in Narimato.
-
-**Vercel:** `vercel.json` runs `scripts/vercel-install-gds.sh` before `npm install` to clone and build GDS when the sibling checkout is absent.
 
 ## Import contract (Pages Router)
 
@@ -90,4 +91,5 @@ npm run build
 1. [README](https://github.com/sovereignsquad/general-design-system/blob/main/README.md)
 2. [COMPATIBILITY_AND_RELEASES](https://github.com/sovereignsquad/general-design-system/blob/main/COMPATIBILITY_AND_RELEASES.md)
 3. [ADOPTION_AND_MIGRATION_PLAYBOOK](https://github.com/sovereignsquad/general-design-system/blob/main/ADOPTION_AND_MIGRATION_PLAYBOOK.md)
-4. [GOVERNANCE_AND_ADOPTION](https://github.com/sovereignsquad/general-design-system/blob/main/GOVERNANCE_AND_ADOPTION.md)
+4. [COMPLIANCE_TOOLKIT](https://github.com/sovereignsquad/general-design-system/blob/main/COMPLIANCE_TOOLKIT.md)
+5. [VERIFIED_CONSUMER_INSTALL_PROOF](https://github.com/sovereignsquad/general-design-system/blob/main/VERIFIED_CONSUMER_INSTALL_PROOF.md)

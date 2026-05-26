@@ -30,9 +30,9 @@
     "build:operator": "node scripts/build-operator-ui.js"
   },
   "dependencies": {
-    "@doneisbetter/gds-admin": "file:../general-design-system/packages/gds-admin",
-    "@doneisbetter/gds-core": "file:../general-design-system/packages/gds-core",
-    "@doneisbetter/gds-theme": "file:../general-design-system/packages/gds-theme",
+    "@doneisbetter/gds-admin": "https://github.com/sovereignsquad/general-design-system/releases/download/gds-v2.6.1/doneisbetter-gds-admin-2.6.1.tgz",
+    "@doneisbetter/gds-core": "https://github.com/sovereignsquad/general-design-system/releases/download/gds-v2.6.1/doneisbetter-gds-core-2.6.1.tgz",
+    "@doneisbetter/gds-theme": "https://github.com/sovereignsquad/general-design-system/releases/download/gds-v2.6.1/doneisbetter-gds-theme-2.6.1.tgz",
     "@mantine/core": "^7.17.8",
     "@mantine/hooks": "^7.17.8",
     "@mantine/modals": "^7.17.8",
@@ -47,8 +47,8 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@doneisbetter/gds-compliance": "file:../general-design-system/packages/gds-compliance",
-    "@doneisbetter/gds-eslint-config": "file:../general-design-system/packages/gds-eslint-config",
+    "@doneisbetter/gds-compliance": "https://github.com/sovereignsquad/general-design-system/releases/download/gds-v2.6.1/doneisbetter-gds-compliance-2.6.1.tgz",
+    "@doneisbetter/gds-eslint-config": "https://github.com/sovereignsquad/general-design-system/releases/download/gds-v2.6.1/doneisbetter-gds-eslint-config-2.6.1.tgz",
     "@eslint/eslintrc": "^3.3.1",
     "esbuild": "^0.25.0",
     "eslint": "^9.28.0",

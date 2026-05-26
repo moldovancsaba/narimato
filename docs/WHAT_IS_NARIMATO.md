@@ -31,7 +31,7 @@ Only what lives in **this repository** (the `narimato` directory you cloned or o
 | `pages/`, `components/` | What visitors see: landing page, play, results, legal pages |
 | `components/operator/` | **Local setup** screen on your Mac (`http://127.0.0.1:10006`) — organisations, survey password, cards |
 | `lib/`, `scripts/` | How the app talks to the database, runs jobs, tests |
-| `packages/gds-core`, `packages/gds-theme` | **Copies** of design-system building blocks **used by** Narimato (see below) |
+| `node_modules/@doneisbetter/gds-*` | Design-system packages **consumed by** Narimato from GDS releases (see below) |
 | `docs/` (here) | Narimato’s own documentation |
 | `.env.local` (on your machine, usually **not** in git) | Your private database password and secrets for **Narimato only** |
 
@@ -49,7 +49,7 @@ These are **separate**. Narimato may **use** or **follow** them, but they are no
 
 | Not Narimato | What it is |
 |--------------|------------|
-| **General Design System (GDS)** | Its own project: [general-design-system](https://github.com/sovereignsquad/general-design-system). Design rules and shared UI components. Narimato **imports copies** into `packages/gds-*`; the full GDS repo stays elsewhere. |
+| **General Design System (GDS)** | Its own project: [general-design-system](https://github.com/sovereignsquad/general-design-system). Design rules and shared UI components. Narimato **consumes** `@doneisbetter/gds-*` packages from GDS releases; the full GDS repo stays elsewhere. |
 | **Amanoba** | Another product folder on your disk — not Narimato |
 | **Camera** (or any other app folder) | Another product — not Narimato |
 | **Mantine**, **Next.js**, **MongoDB** | Third-party tools Narimato is **built with** (like electricity in a house — not the house itself) |
@@ -60,7 +60,7 @@ These are **separate**. Narimato may **use** or **follow** them, but they are no
 - **GDS** = shared “look and feel” rulebook + component library (separate git project).
 - **Narimato** = the actual survey app.
 - Narimato **follows** GDS for buttons, colours, and patterns.
-- When designers update GDS, a developer **copies new built files** into Narimato (`npm run gds:sync`) and commits them. GDS does not live inside Narimato as one merged project.
+- When designers release a new GDS version, a developer **bumps the `@doneisbetter/gds-*` dependencies** in Narimato (release tarballs or npm) and commits. GDS does not live inside Narimato as one merged project.
 
 Details for developers: [GDS_ADOPTION.md](./GDS_ADOPTION.md).
 
@@ -84,14 +84,14 @@ Details for developers: [GDS_ADOPTION.md](./GDS_ADOPTION.md).
 ## What Narimato is **not** responsible for
 
 - How Amanoba or Camera work  
-- Changing GDS for all products (that is done in the GDS project; Narimato only updates its **copies** when needed)  
+- Changing GDS for all products (that is done in the GDS project; Narimato only bumps its **package versions** when needed)  
 - Other companies’ websites or apps  
 
 ## If something breaks — quick check
 
 1. **Public site** (narimato.com or `localhost:3000`) — Narimato app + database + deployment.  
 2. **Local setup** (`127.0.0.1:10006`) — Narimato operator tools; must be started on your Mac (`npm run intelligence:guardian` or similar).  
-3. **Wrong colours / buttons** — may need a GDS package refresh in Narimato (`gds:sync`), still **two** projects.  
+3. **Wrong colours / buttons** — may need a GDS package version bump in Narimato, still **two** projects.  
 4. **Another folder** (Amanoba, etc.) — not Narimato; ask whoever owns that product.
 
 ## More detail (technical)
