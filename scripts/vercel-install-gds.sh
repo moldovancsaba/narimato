@@ -13,5 +13,5 @@ fi
 
 echo "Cloning general-design-system into $GDS_DIR"
 git clone --depth 1 https://github.com/sovereignsquad/general-design-system.git "$GDS_DIR"
-(cd "$GDS_DIR" && npm ci && npm run build)
+"$ROOT/scripts/build-gds-packages.sh" "$GDS_DIR"
 echo "GDS build complete"
