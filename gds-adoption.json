@@ -104,6 +104,8 @@
       "@gds/theme",
       "file:./packages/gds-",
       "file:../general-design-system",
+      "releases/download/gds-v",
+      "doneisbetter-gds-",
       "vercel-install-gds",
       "build-gds-packages",
       "GENERAL_DESIGN_SYSTEM",
@@ -122,7 +124,7 @@
       "@gds/admin"
     ]
   },
-  "migrationStatus": "package-first",
+  "migrationStatus": "npm-registry",
   "owner": "narimato",
   "lastReviewedAt": "2026-05-26"
 }
