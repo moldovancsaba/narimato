@@ -11,7 +11,7 @@
 
 | Dependency | Relationship |
 |------------|----------------|
-| [General Design System](https://github.com/sovereignsquad/general-design-system) | Separate project; vendored under `packages/gds-*` — [docs/GDS_ADOPTION.md](./docs/GDS_ADOPTION.md) |
+| [General Design System](https://github.com/sovereignsquad/general-design-system) | Separate project; consumed as `@doneisbetter/gds-*` — [docs/GDS_ADOPTION.md](./docs/GDS_ADOPTION.md) |
 | MongoDB Atlas | Hosted database service |
 | Vercel | Hosting for the public Next.js app |
 | Mantine / Next.js | npm libraries |

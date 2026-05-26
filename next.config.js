@@ -9,10 +9,9 @@ const nextConfig = {
     '@doneisbetter/gds-admin',
   ],
   webpack: (config) => {
-    // Keep module resolution inside node_modules (file: symlinks point outside the app root).
+    // Prefer Narimato's node_modules for GDS peer deps (@mantine/*, @tabler/icons-react).
     config.resolve.symlinks = false;
 
-    // file:../general-design-system links: force peers to Narimato's installed copies.
     const root = __dirname;
     config.resolve.alias = {
       ...config.resolve.alias,

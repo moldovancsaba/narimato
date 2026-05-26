@@ -103,6 +103,9 @@
       "@gds/core",
       "@gds/theme",
       "file:./packages/gds-",
+      "file:../general-design-system",
+      "vercel-install-gds",
+      "build-gds-packages",
       "GENERAL_DESIGN_SYSTEM",
       "gds:sync",
       "npm run gds:sync"
