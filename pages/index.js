@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { Box, List, Paper, PasswordInput, Stack, Text } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { GdsIcons } from '@gds/core';
+import { GdsIcons } from '@doneisbetter/gds-core/client';
 import { NarimatoAccentPanel } from '../components/NarimatoAccentPanel';
 import { NarimatoFormField } from '../components/NarimatoFormField';
 import { NarimatoGdsAlert } from '../components/NarimatoGdsAlert';

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { Checkbox, Group, Image, Loader, Paper, Stack, Table, Text, Title } from '@mantine/core';
-import { EmptyState, StatusBadge } from '@gds/core';
+import { EmptyState, StatusBadge } from '@doneisbetter/gds-core/client';
 import { NarimatoChoiceChip } from '../components/NarimatoChoiceChip';
 import { NarimatoFormField } from '../components/NarimatoFormField';
 import { NarimatoSemanticButton } from '../components/NarimatoSemanticButton';

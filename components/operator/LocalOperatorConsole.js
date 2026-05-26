@@ -13,7 +13,7 @@ import {
   TextInput,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { ConfirmDialog, EmptyState, StatusBadge } from '@gds/core';
+import { ConfirmDialog, EmptyState, StatusBadge } from '@doneisbetter/gds-core/client';
 import { NarimatoGdsAlert } from '../NarimatoGdsAlert';
 import { NarimatoFormField } from '../NarimatoFormField';
 import { NarimatoPageHeader } from '../NarimatoPageHeader';

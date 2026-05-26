@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Paper, Stack, Switch, Text } from '@mantine/core';
 import { NarimatoSemanticButton } from '../NarimatoSemanticButton';
 import { notifications } from '@mantine/notifications';
-import { StatusBadge } from '@gds/core';
+import { StatusBadge } from '@doneisbetter/gds-core/client';
 import { NarimatoFormField } from '../NarimatoFormField';
 import {
   CONSENT,

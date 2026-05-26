@@ -13,7 +13,7 @@ Think of each project as its **own folder** (its own “house”):
 ```text
 Your computer (examples — paths may differ on your Mac)
 
-  ~/Projects/narimato/          ← THIS PROJECT (Narimato)
+  /Users/Shared/Projects/narimato/   ← THIS PROJECT (canonical Narimato repo)
   ~/Projects/amanoba/           ← Different project (not Narimato)
   ~/Projects/camera/            ← Different project (not Narimato)
   ~/…/GENERAL_DESIGN_SYSTEM/    ← Different project (GDS — design rules + UI kit)

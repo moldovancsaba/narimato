@@ -1,5 +1,5 @@
 import { Box, Group, Paper, Stack, Text } from '@mantine/core';
-import { GdsIcons } from '@gds/core';
+import { GdsIcons } from '@doneisbetter/gds-core/client';
 import { gdsAccentPanelStyle } from '../../lib/ui/gdsSurfaces';
 
 function stepIndicatorStyle(done, active) {

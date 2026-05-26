@@ -10,9 +10,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: narimato
+
+      - uses: actions/checkout@v4
+        with:
+          repository: sovereignsquad/general-design-system
+          path: general-design-system
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: npm ci
-      - run: npm run gds:ci-guard
-      - run: npm run build
+
+      - name: Build GDS packages
+        working-directory: general-design-system
+        run: npm ci && npm run build
+
+      - name: Install and verify Narimato
+        working-directory: narimato
+        run: |
+          npm ci
+          npm run gds:ci-guard
+          npm run gds:validate
+          npm run gds:compliance
+          npm run lint
+          npm run build

@@ -1,6 +1,6 @@
 import { AppShell, Burger, Group, NavLink, ScrollArea, Stack, Text } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { GdsIcons } from '@gds/core';
+import { GdsIcons } from '@doneisbetter/gds-core/client';
 import { NarimatoThemeToggle } from '../NarimatoThemeToggle';
 import { LOCAL_TEST_URL, NAV_SECTIONS, OPERATOR_EXTERNAL_LINKS } from './operatorCopy';
 

@@ -120,7 +120,7 @@ NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX # Optional: GA4 measurement ID
 /scripts              # Database management scripts
 /docs                 # Technical documentation
 /components           # NarimatoProviders, PublicShell, play surfaces
-/lib/ui               # narimatoTheme (extends @gds/theme)
+/lib/ui               # narimatoTheme (extends @doneisbetter/gds-theme)
 /styles               # playGame.module.css (Mantine CSS variables only)
 ```
 
@@ -397,7 +397,7 @@ No step may be skipped.
 - **Framework**: Next.js 15.5.3 (Pages Router)
 - **Database**: MongoDB 7.0+ (Atlas only)
 - **Language**: JavaScript (not TypeScript)
-- **Styling**: Mantine 7 + GDS (`@gds/theme`, `@gds/core`) — see `docs/GDS_ADOPTION.md`
+- **Styling**: Mantine 7 + GDS (`@doneisbetter/gds-theme`, `@doneisbetter/gds-core`) — see `docs/GDS_ADOPTION.md`
 - **Validation**: zod
 - **Analytics**: GA4 (production-only)
 

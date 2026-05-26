@@ -1,7 +1,29 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
+
 const nextConfig = {
   reactStrictMode: true,
-  transpilePackages: ['@gds/theme', '@gds/core'],
+  transpilePackages: [
+    '@doneisbetter/gds-theme',
+    '@doneisbetter/gds-core',
+    '@doneisbetter/gds-admin',
+  ],
+  webpack: (config) => {
+    // Keep module resolution inside node_modules (file: symlinks point outside the app root).
+    config.resolve.symlinks = false;
+
+    // file:../general-design-system links: force peers to Narimato's installed copies.
+    const root = __dirname;
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@mantine/core': path.join(root, 'node_modules/@mantine/core'),
+      '@mantine/hooks': path.join(root, 'node_modules/@mantine/hooks'),
+      '@mantine/modals': path.join(root, 'node_modules/@mantine/modals'),
+      '@mantine/notifications': path.join(root, 'node_modules/@mantine/notifications'),
+      '@tabler/icons-react': path.join(root, 'node_modules/@tabler/icons-react'),
+    };
+    return config;
+  },
 };
 
 module.exports = nextConfig;

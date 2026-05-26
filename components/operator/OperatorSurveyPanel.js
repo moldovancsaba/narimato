@@ -13,7 +13,7 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { EmptyState } from '@gds/core';
+import { EmptyState } from '@doneisbetter/gds-core/client';
 import { NarimatoPageHeader } from '../NarimatoPageHeader';
 import { NarimatoSemanticButton } from '../NarimatoSemanticButton';
 import { LOCAL_TEST_URL, PUBLIC_SITE_URL } from './operatorCopy';

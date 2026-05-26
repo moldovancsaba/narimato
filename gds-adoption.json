@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "gdsVersion": "2.6.1",
+  "productArchetype": "hybrid",
+  "supportedEntryPoints": [
+    "@doneisbetter/gds-theme/client",
+    "@doneisbetter/gds-theme/server",
+    "@doneisbetter/gds-core/client",
+    "@doneisbetter/gds-core/server",
+    "@doneisbetter/gds-admin/client",
+    "@doneisbetter/gds-admin/server"
+  ],
+  "requiredContracts": [
+    "GdsProvider",
+    "PublicShell",
+    "PageHeader",
+    "StateBlock",
+    "SemanticButton",
+    "StatusBadge",
+    "EmptyState",
+    "ConfirmDialog"
+  ],
+  "localAdapters": [
+    {
+      "contract": "GdsProvider",
+      "path": "components/NarimatoProviders.js",
+      "status": "active"
+    },
+    {
+      "contract": "Theme",
+      "path": "lib/ui/narimatoTheme.js",
+      "status": "active"
+    },
+    {
+      "contract": "PublicShell",
+      "path": "components/public/PublicShell.js",
+      "status": "active"
+    },
+    {
+      "contract": "PageHeader",
+      "path": "components/NarimatoPageHeader.js",
+      "status": "active"
+    },
+    {
+      "contract": "StateBlock",
+      "path": "components/NarimatoGdsAlert.js",
+      "status": "active"
+    },
+    {
+      "contract": "SemanticButton",
+      "path": "components/NarimatoSemanticButton.js",
+      "status": "active"
+    },
+    {
+      "contract": "AccentPanel",
+      "path": "components/NarimatoAccentPanel.js",
+      "status": "active"
+    },
+    {
+      "contract": "FormField",
+      "path": "components/NarimatoFormField.js",
+      "status": "active"
+    },
+    {
+      "contract": "MetricCard",
+      "path": "components/NarimatoMetricCard.js",
+      "status": "active"
+    }
+  ],
+  "approvedExceptions": [
+    {
+      "surface": "Immersive play UI",
+      "reason": "Full-viewport swipe/vote surfaces use governed GdsIcons but exempt from shell-oriented ci-gds-guard rules.",
+      "owner": "narimato",
+      "reviewDate": "2026-08-01"
+    },
+    {
+      "surface": "NarimatoSemanticButton SSR fallback",
+      "reason": "Prerender uses Mantine Button without color= until client SemanticButton hydrates.",
+      "owner": "narimato",
+      "reviewDate": "2026-08-01"
+    },
+    {
+      "surface": "Play layout CSS module",
+      "reason": "playGame.module.css holds immersive layout tokens outside shell contracts.",
+      "owner": "narimato",
+      "reviewDate": "2026-08-01"
+    },
+    {
+      "surface": "Mantine notifications API",
+      "reason": "notifications.show color prop is Mantine overlay API, not shell markup.",
+      "owner": "narimato",
+      "reviewDate": "2026-08-01"
+    }
+  ],
+  "compliance": {
+    "documentationPaths": [
+      "README.md",
+      "docs/GDS_ADOPTION.md",
+      "WARP.md"
+    ],
+    "staleDocumentationReferences": [
+      "@gds/core",
+      "@gds/theme",
+      "file:./packages/gds-",
+      "GENERAL_DESIGN_SYSTEM",
+      "gds:sync",
+      "npm run gds:sync"
+    ],
+    "protectedSurfacePaths": [
+      "components/public",
+      "components/operator",
+      "components/play/PlayPicker.js",
+      "lib/ui"
+    ],
+    "bannedImports": [
+      "@gds/core",
+      "@gds/theme",
+      "@gds/admin"
+    ]
+  },
+  "migrationStatus": "package-first",
+  "owner": "narimato",
+  "lastReviewedAt": "2026-05-26"
+}

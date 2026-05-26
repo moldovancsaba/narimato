@@ -12,7 +12,7 @@ import {
   Title,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { StatusBadge } from '@gds/core';
+import { StatusBadge } from '@doneisbetter/gds-core/client';
 import { NarimatoGdsAlert } from '../NarimatoGdsAlert';
 import { NarimatoPageHeader } from '../NarimatoPageHeader';
 import { NarimatoSemanticButton } from '../NarimatoSemanticButton';
