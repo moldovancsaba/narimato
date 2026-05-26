@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Collapse, Group, Loader, Paper, Stack, Text, TextInput, Textarea } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { ConfirmDialog, EmptyState } from '@gds/core';
+import { ConfirmDialog, EmptyState } from '@doneisbetter/gds-core/client';
 import { NarimatoChoiceChip } from '../NarimatoChoiceChip';
 import { NarimatoFormField } from '../NarimatoFormField';
 import { NarimatoPageHeader } from '../NarimatoPageHeader';

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { Group, Image, Loader, Paper, SimpleGrid, Stack, Text, Title } from '@mantine/core';
-import { StatusBadge } from '@gds/core';
+import { StatusBadge } from '@doneisbetter/gds-core/client';
 import { NarimatoAccentPanel } from '../components/NarimatoAccentPanel';
 import { NarimatoSemanticButton } from '../components/NarimatoSemanticButton';
 import { PublicShell } from '../components/public/PublicShell';

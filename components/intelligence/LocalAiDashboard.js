@@ -10,7 +10,7 @@ import {
   Text,
   Title,
 } from '@mantine/core';
-import { StatusBadge } from '@gds/core';
+import { StatusBadge } from '@doneisbetter/gds-core/client';
 import { NarimatoGdsAlert } from '../NarimatoGdsAlert';
 import { LocalAiQuickLinks } from './LocalAiQuickLinks';
 import { NarimatoPageHeader } from '../NarimatoPageHeader';

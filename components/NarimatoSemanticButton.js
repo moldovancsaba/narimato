@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@mantine/core';
-import { GdsVocabulary, SemanticButton } from '@gds/core';
+import { GdsVocabulary, SemanticButton } from '@doneisbetter/gds-core/client';
 
 function fallbackLabel(action) {
   const config = GdsVocabulary[action];

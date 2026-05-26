@@ -12,6 +12,46 @@ import {
   PlayDeckPicker,
   PlayComplete,
 } from '../components/play/PlayPicker';
+
+const UNIFIED_PLAY_MODES = new Set([
+  'vote-only',
+  'swipe-only',
+  'onboarding',
+  'swipe-more',
+  'vote-more',
+  'rank-only',
+  'rank-more',
+]);
+
+function toApiMode(mode) {
+  if (mode === 'vote-only') return 'vote_only';
+  if (mode === 'swipe-only') return 'swipe_only';
+  if (mode === 'onboarding') return 'onboarding';
+  if (mode === 'swipe-more') return 'swipe_more';
+  if (mode === 'vote-more') return 'vote_more';
+  if (mode === 'rank-only') return 'rank_only';
+  if (mode === 'rank-more') return 'rank_more';
+  return undefined;
+}
+
+function cardId(value) {
+  return typeof value === 'string' ? value : value?.id;
+}
+
+function normalizePlaySession(data) {
+  if (!data || typeof data !== 'object') return null;
+  return {
+    ...data,
+    playId: data.playId,
+    cards: Array.isArray(data.cards) ? data.cards : [],
+  };
+}
+
+function findPlayCard(cards, id) {
+  if (!id || !Array.isArray(cards)) return null;
+  return cards.find((c) => c.id === id) || null;
+}
+
 export default function Play() {
   const router = useRouter();
   const { org, deck } = router.query;
@@ -34,6 +74,7 @@ export default function Play() {
   // Touch/Pointer swipe handling for swipe mode (50% width threshold)
   const lastVoteAt = useRef(0);
   const voteInFlight = useRef(false);
+  const startPlayGeneration = useRef(0);
   const swipeTouchStartX = useRef(null);
   const pointerStartX = useRef(null);
   const pointerActiveId = useRef(null);
@@ -154,10 +195,9 @@ export default function Play() {
   }, [org, showHidden]);
 
   useEffect(() => {
-    if (org && deck) {
-      startPlay();
-    }
-  }, [org, deck]);
+    if (!router.isReady || !org || !deck) return;
+    startPlay();
+  }, [router.isReady, org, deck, router.query.mode, router.query.playId]);
 
   // FUNCTIONAL: Initialize card sizing and setup resize handlers
   // STRATEGIC: Ensures responsive game interface across all devices
@@ -304,6 +344,11 @@ export default function Play() {
   };
 
   const startPlay = async () => {
+    const generation = ++startPlayGeneration.current;
+    setVotingContext(null);
+    setCurrentCard(null);
+    setPlayComplete(false);
+
     try {
       // Check if this is a child session (playId in URL)
       const { playId, mode } = router.query;
@@ -428,24 +473,27 @@ export default function Play() {
       }
       
       // Normal deck start - check for specific modes
-      let apiEndpoint = '/api/play/start';
-      // Unified dispatcher endpoint
-if (mode === 'vote-only' || mode === 'swipe-only' || mode === 'onboarding' || mode === 'swipe-more' || mode === 'vote-more' || mode === 'rank-only' || mode === 'rank-more') {
-        apiEndpoint = '/api/v1/play/start';
-      }
-      
+      const apiMode = UNIFIED_PLAY_MODES.has(mode) ? toApiMode(mode) : undefined;
+      const apiEndpoint = apiMode ? '/api/v1/play/start' : '/api/play/start';
+
       const res = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          organizationId: org, 
-          deckTag: deck, 
-mode: mode === 'vote-only' ? 'vote_only' : (mode === 'swipe-only' ? 'swipe_only' : (mode === 'onboarding' ? 'onboarding' : (mode === 'swipe-more' ? 'swipe_more' : (mode === 'vote-more' ? 'vote_more' : (mode === 'rank-only' ? 'rank_only' : (mode === 'rank-more' ? 'rank_more' : undefined))))))
+        body: JSON.stringify({
+          organizationId: org,
+          deckTag: deck,
+          ...(apiMode ? { mode: apiMode } : {}),
         })
       });
-      
+
+      if (generation !== startPlayGeneration.current) return;
+
       if (res.ok) {
-        const data = await res.json();
+        const data = normalizePlaySession(await res.json());
+        if (!data?.playId) {
+          notifications.show({ color: 'red', message: 'Invalid play session response' });
+          return;
+        }
         // FUNCTIONAL: Track play session start event
         // STRATEGIC: Captures entry point and mode for funnel analysis (production-only)
         try {
@@ -468,22 +516,30 @@ mode: mode === 'vote-only' ? 'vote_only' : (mode === 'swipe-only' ? 'swipe_only'
         });
         
         setCurrentPlay(data);
-        
+
         // FUNCTIONAL: Handle both swiping and voting states properly
         // STRATEGIC: Resume exactly where the user left off
         if ((mode === 'vote-only' || mode === 'vote-more') && data.comparison) {
-          setVotingContext({ newCard: data.comparison.card1.id, compareWith: data.comparison.card2.id });
+          setVotingContext({
+            newCard: cardId(data.comparison.card1),
+            compareWith: cardId(data.comparison.card2),
+          });
           setCurrentCard(null);
         } else if (data.votingContext) {
           // Session is in voting mode - set up voting context
           console.log('🗳️ Resuming in voting mode:', data.votingContext);
-          setVotingContext(data.votingContext);
+          setVotingContext({
+            newCard: cardId(data.votingContext.newCard),
+            compareWith: cardId(data.votingContext.compareWith),
+          });
           setCurrentCard(null); // No current card in voting mode
         } else if (data.currentCardId) {
           // Session is in swiping mode - set up current card
           console.log('👆 Resuming in swiping mode, card:', data.currentCardId);
-          const currentCard = data.cards.find(c => c.id === data.currentCardId);
-          setCurrentCard(currentCard);
+          setCurrentCard(findPlayCard(data.cards, data.currentCardId));
+          setVotingContext(null);
+        } else if (data.currentCard) {
+          setCurrentCard(data.currentCard);
           setVotingContext(null);
         } else {
           // No current card and no voting - might be completed
@@ -741,7 +797,10 @@ mode: mode === 'vote-only' ? 'vote_only' : (mode === 'swipe-only' ? 'swipe_only'
           await checkHierarchicalStatus();
           return;
         } else if (data.requiresVoting) {
-          setVotingContext(data.votingContext);
+          setVotingContext({
+            newCard: cardId(data.votingContext?.newCard),
+            compareWith: cardId(data.votingContext?.compareWith),
+          });
         } else if (data.nextCardId) {
           // HIERARCHICAL SWIPEMORE or same-family transition
           let nextCard;
@@ -802,7 +861,7 @@ mode: mode === 'vote-only' ? 'vote_only' : (mode === 'swipe-only' ? 'swipe_only'
   };
 
   const handleVote = async (winner) => {
-    if (!votingContext) return;
+    if (!votingContext || !currentPlay?.playId) return;
     const now = Date.now();
     if (now - lastVoteAt.current < 100) return;
     lastVoteAt.current = now;
@@ -860,7 +919,10 @@ const nextData = await nextRes.json();
           setCurrentPlay(prev => ({ ...prev, cards: nextData.cards }));
         }
         setPreviousVotingContext(votingContext);
-        setVotingContext({ newCard: nextData.challenger, compareWith: nextData.opponent });
+        setVotingContext({
+          newCard: cardId(nextData.challenger),
+          compareWith: cardId(nextData.opponent),
+        });
         return;
       }
 
@@ -1045,9 +1107,9 @@ const nextData = await nextRes.json();
   }
 
   // VOTE MODE: Dynamic layout with VS separator
-  if (votingContext && cardConfig) {
-    const cardA = currentPlay.cards.find(c => c.id === votingContext.newCard);
-    const cardB = currentPlay.cards.find(c => c.id === votingContext.compareWith);
+  if (votingContext && cardConfig && currentPlay?.cards) {
+    const cardA = findPlayCard(currentPlay.cards, votingContext.newCard);
+    const cardB = findPlayCard(currentPlay.cards, votingContext.compareWith);
 
     // Defensive guard: if cards are not yet loaded (e.g., after switching families), wait
     if (!cardA || !cardB) {

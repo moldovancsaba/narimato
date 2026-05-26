@@ -7,7 +7,7 @@ import {
   Stack,
   Title,
 } from '@mantine/core';
-import { EmptyState, StatusBadge } from '@gds/core';
+import { EmptyState, StatusBadge } from '@doneisbetter/gds-core/client';
 import { PublicShell } from '../public/PublicShell';
 import { NarimatoPageHeader } from '../NarimatoPageHeader';
 import { NarimatoChoiceChip } from '../NarimatoChoiceChip';

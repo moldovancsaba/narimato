@@ -1,1 +1,1 @@
-export { AccentPanel as NarimatoAccentPanel, resolveAccentPanelStyles } from '@gds/core';
+export { AccentPanel as NarimatoAccentPanel, resolveAccentPanelStyles } from '@doneisbetter/gds-core/server';

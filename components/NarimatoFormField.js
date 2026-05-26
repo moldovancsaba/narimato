@@ -1,1 +1,1 @@
-export { FormField as NarimatoFormField } from '@gds/core/server';
+export { FormField as NarimatoFormField } from '@doneisbetter/gds-core/server';

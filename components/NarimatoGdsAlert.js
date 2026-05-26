@@ -1,4 +1,4 @@
-import { StateBlock } from '@gds/core';
+import { StateBlock } from '@doneisbetter/gds-core/client';
 
 const COLOR_TO_VARIANT = {
   blue: 'info',

@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint . --quiet",
     "intelligence:guardian": "node scripts/guardian.js",
     "intelligence:open": "bash scripts/open-local-ai.sh",
     "intelligence:desktop": "bash scripts/install-desktop-launcher.sh",
@@ -24,16 +24,20 @@
     "intelligence:test-play-feedback": "node scripts/test-play-feedback.js",
     "intelligence:ci-guard": "node scripts/ci-intelligence-guard.js",
     "gds:ci-guard": "node scripts/ci-gds-guard.js",
-    "gds:sync": "bash scripts/gds-sync-packages.sh",
+    "gds:compliance-prep": "node scripts/gds-compliance-prep.js",
+    "gds:validate": "npm run gds:compliance-prep && gds-compliance validate-manifest --manifest ./gds-adoption.json",
+    "gds:compliance": "npm run gds:compliance-prep && gds-compliance check --manifest ./gds-adoption.json",
     "build:operator": "node scripts/build-operator-ui.js"
   },
   "dependencies": {
-    "@gds/core": "file:./packages/gds-core",
-    "@gds/theme": "file:./packages/gds-theme",
+    "@doneisbetter/gds-admin": "file:../general-design-system/packages/gds-admin",
+    "@doneisbetter/gds-core": "file:../general-design-system/packages/gds-core",
+    "@doneisbetter/gds-theme": "file:../general-design-system/packages/gds-theme",
     "@mantine/core": "^7.17.8",
     "@mantine/hooks": "^7.17.8",
     "@mantine/modals": "^7.17.8",
     "@mantine/notifications": "^7.17.8",
+    "@tabler/icons-react": "^3.31.0",
     "dotenv": "^17.2.1",
     "mongoose": "^8.1.0",
     "next": "15.5.9",
@@ -43,8 +47,11 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@doneisbetter/gds-compliance": "file:../general-design-system/packages/gds-compliance",
+    "@doneisbetter/gds-eslint-config": "file:../general-design-system/packages/gds-eslint-config",
+    "@eslint/eslintrc": "^3.3.1",
     "esbuild": "^0.25.0",
-    "eslint": "^8",
+    "eslint": "^9.28.0",
     "eslint-config-next": "15.5.9"
   },
   "overrides": {

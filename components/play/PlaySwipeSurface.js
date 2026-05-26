@@ -1,5 +1,5 @@
 import { Paper, Text, Image, Group, ActionIcon, Box } from '@mantine/core';
-import { GdsIcons, StatusBadge } from '@gds/core';
+import { GdsIcons, StatusBadge } from '@doneisbetter/gds-core/client';
 import classes from '../../styles/playGame.module.css';
 
 export function PlaySwipeSurface({

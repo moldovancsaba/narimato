@@ -1,5 +1,5 @@
 import { Box } from '@mantine/core';
-import { PageHeader } from '@gds/core/server';
+import { PageHeader } from '@doneisbetter/gds-core/server';
 
 /**
  * Narimato adapter for GDS PageHeader (maps subtitle → description).

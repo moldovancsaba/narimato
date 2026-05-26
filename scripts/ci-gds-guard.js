@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** CI guard: Narimato app code must use GDS contracts (2.4.x), not raw Mantine semantics. */
+/** CI guard: Narimato app code must use @doneisbetter/gds-* contracts, not raw Mantine semantics. */
 const fs = require('fs');
 const path = require('path');
 
@@ -16,19 +16,24 @@ const EXEMPT_REL = new Set([
 
 const RULES = [
   {
+    name: 'no-legacy-gds-scope',
+    pattern: /@gds\//,
+    message: 'Use @doneisbetter/gds-* packages only (see gds-adoption.json)',
+  },
+  {
     name: 'no-direct-tabler-icons',
     pattern: /@tabler\/icons-react/,
-    message: 'Import icons from @gds/core (GdsIcons) instead of @tabler/icons-react',
+    message: 'Import icons from @doneisbetter/gds-core (GdsIcons) instead of @tabler/icons-react',
   },
   {
     name: 'no-adhoc-confirm-modal',
     pattern: /modals\.openConfirmModal/,
-    message: 'Use ConfirmDialog from @gds/core for destructive confirmations',
+    message: 'Use ConfirmDialog from @doneisbetter/gds-core for destructive confirmations',
   },
   {
     name: 'no-colored-mantine-badge',
     pattern: /<Badge[^>]*\bcolor=/,
-    message: 'Use StatusBadge from @gds/core for semantic status colors',
+    message: 'Use StatusBadge from @doneisbetter/gds-core for semantic status colors',
   },
   {
     name: 'no-mantine-alert',
@@ -63,7 +68,7 @@ const RULES = [
   {
     name: 'no-confirm-dialog-legacy-labels',
     pattern: /ConfirmDialog[\s\S]{0,400}\b(confirmLabel|cancelLabel)=/,
-    message: 'Use confirmAction/cancelAction (SemanticAction) on ConfirmDialog from @gds/core',
+    message: 'Use confirmAction/cancelAction (SemanticAction) on ConfirmDialog from @doneisbetter/gds-core',
   },
 ];
 

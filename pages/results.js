@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { Grid, Group, Image, Loader, Paper, SimpleGrid, Stack, Text, Title } from '@mantine/core';
-import { StatusBadge } from '@gds/core';
+import { StatusBadge } from '@doneisbetter/gds-core/client';
 import { event } from '../lib/analytics/ga';
 import { NarimatoSemanticButton } from '../components/NarimatoSemanticButton';
 import { PublicShell } from '../components/public/PublicShell';
