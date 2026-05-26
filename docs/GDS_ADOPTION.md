@@ -6,7 +6,7 @@
 |---|----------|-----|
 | **Repository** | This repo (`narimato`) | [general-design-system](https://github.com/sovereignsquad/general-design-system) |
 | **Runtime packages** | `@doneisbetter/gds-theme`, `@doneisbetter/gds-core`, `@doneisbetter/gds-admin` | Published from GDS SSOT |
-| **Consumed version** | **2.6.1** (see `gds-adoption.json`) | [gds-v2.6.1](https://github.com/sovereignsquad/general-design-system/releases/tag/gds-v2.6.1) |
+| **Consumed version** | **2.6.1** (see `gds-adoption.json`) | npm `@doneisbetter/gds-*@2.6.1` |
 
 > When UI behavior or tokens conflict, **GDS wins**. Narimato does not vend mirror packages under `packages/gds-*` or the legacy `@gds/*` scope.
 
@@ -16,25 +16,14 @@
 
 ## Package install
 
-**Target (when npm publish is live):**
+Install from the public npm registry (pinned in `package.json`):
 
 ```bash
-npm install @doneisbetter/gds-theme @doneisbetter/gds-core @doneisbetter/gds-admin
-npm install -D @doneisbetter/gds-eslint-config @doneisbetter/gds-compliance
+npm install @doneisbetter/gds-theme@2.6.1 @doneisbetter/gds-core@2.6.1 @doneisbetter/gds-admin@2.6.1
+npm install -D @doneisbetter/gds-eslint-config@2.6.1 @doneisbetter/gds-compliance@2.6.1
 ```
 
-**Until npm publish (CI, Vercel, local):** install from [GitHub release assets](https://github.com/sovereignsquad/general-design-system/releases/tag/gds-v2.6.1) — see `package.json` tarball URLs. Do **not** use sibling `file:` links or clone-and-build install hooks.
-
-```bash
-npm install \
-  https://github.com/sovereignsquad/general-design-system/releases/download/gds-v2.6.1/doneisbetter-gds-theme-2.6.1.tgz \
-  https://github.com/sovereignsquad/general-design-system/releases/download/gds-v2.6.1/doneisbetter-gds-core-2.6.1.tgz \
-  https://github.com/sovereignsquad/general-design-system/releases/download/gds-v2.6.1/doneisbetter-gds-admin-2.6.1.tgz
-
-npm install -D \
-  https://github.com/sovereignsquad/general-design-system/releases/download/gds-v2.6.1/doneisbetter-gds-eslint-config-2.6.1.tgz \
-  https://github.com/sovereignsquad/general-design-system/releases/download/gds-v2.6.1/doneisbetter-gds-compliance-2.6.1.tgz
-```
+Do **not** use sibling `file:` links, GitHub release tarball URLs, or clone-and-build install hooks for CI/Vercel.
 
 ## Import contract (Pages Router)
 
