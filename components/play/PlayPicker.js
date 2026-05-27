@@ -7,12 +7,9 @@ import {
   Stack,
   Title,
 } from '@mantine/core';
-import { EmptyState, StatusBadge } from '@doneisbetter/gds-core/client';
-import { PublicShell } from '../public/PublicShell';
-import { NarimatoPageHeader } from '../NarimatoPageHeader';
-import { NarimatoChoiceChip } from '../NarimatoChoiceChip';
-import { NarimatoSemanticButton } from '../NarimatoSemanticButton';
+import { ChoiceChip, EmptyState, PageHeader, PublicShell, SemanticButton, StatusBadge } from '@doneisbetter/gds-core/client';
 import { event } from '../../lib/analytics/ga';
+import { getPublicShellProps } from '../../lib/ui/publicChrome';
 
 const MODES = [
   { key: 'swipe-only', label: 'Swipe only' },
@@ -32,22 +29,22 @@ function projectionStatus(freshness) {
 export function PlayOrgPicker({ organizations, loading }) {
   if (loading) {
     return (
-      <PublicShell>
+      <PublicShell {...getPublicShellProps('home')}>
         <Loader />
       </PublicShell>
     );
   }
 
   return (
-    <PublicShell>
+    <PublicShell {...getPublicShellProps('home')}>
       <Stack gap="lg">
-        <NarimatoPageHeader title="Select survey" subtitle="Choose your organisation's survey to continue." />
+        <PageHeader title="Select survey" subtitle="Choose your organisation's survey to continue." />
         {organizations.length === 0 ? (
           <EmptyState
             title="No surveys available"
             description="Enter your survey password on the home page, or contact your organiser."
             action={
-              <NarimatoSemanticButton action="back" component={Link} href="/" />
+              <SemanticButton action="back" component={Link} href="/" />
             }
           />
         ) : (
@@ -55,7 +52,7 @@ export function PlayOrgPicker({ organizations, loading }) {
             {organizations.map((organization) => (
               <Paper key={organization.uuid} withBorder p="md" radius="md">
                 <Title order={4}>{organization.name}</Title>
-                <NarimatoSemanticButton
+                <SemanticButton
                   action="play"
                   component={Link}
                   href={`/play?org=${organization.uuid}`}
@@ -74,9 +71,9 @@ export function PlayDeckPicker({ org, decks, projectionMeta }) {
   const freshness = projectionMeta?.freshness?.status || 'unknown';
 
   return (
-    <PublicShell>
+    <PublicShell {...getPublicShellProps('home')}>
       <Stack gap="lg">
-        <NarimatoPageHeader title="Select deck" subtitle="Pick a deck to start ranking." />
+        <PageHeader title="Select deck" subtitle="Pick a deck to start ranking." />
         {projectionMeta ? (
           <Group gap="xs">
             <StatusBadge status={projectionStatus(freshness)} variant="light">
@@ -92,7 +89,7 @@ export function PlayDeckPicker({ org, decks, projectionMeta }) {
             title="No decks yet"
             description="Your organiser has not published any playable decks. Check back later."
             action={
-              <NarimatoSemanticButton action="back" component={Link} href="/" />
+              <SemanticButton action="back" component={Link} href="/" />
             }
           />
         ) : (
@@ -117,7 +114,7 @@ export function PlayDeckPicker({ org, decks, projectionMeta }) {
                 </Group>
                 <Group gap="xs">
                   {MODES.map((mode) => (
-                    <NarimatoChoiceChip
+                    <ChoiceChip
                       key={mode.key}
                       label={mode.label}
                       href={`/play?org=${org}&deck=${encodeURIComponent(deckInfo.tag)}&mode=${mode.key}`}
@@ -142,20 +139,20 @@ export function PlayDeckPicker({ org, decks, projectionMeta }) {
 
 export function PlayComplete({ org, deck }) {
   return (
-    <PublicShell>
+    <PublicShell {...getPublicShellProps('home')}>
       <Stack align="center" gap="lg" py="xl">
-        <NarimatoPageHeader
+        <PageHeader
           title="Survey complete"
           subtitle={`You finished ranking all cards in ${deck}.`}
         />
         <Group>
-          <NarimatoSemanticButton
+          <SemanticButton
             action="play"
             component={Link}
             href={`/play?org=${org}`}
             variant="light"
           />
-          <NarimatoSemanticButton action="back" component={Link} href="/" variant="default" />
+          <SemanticButton action="back" component={Link} href="/" variant="default" />
         </Group>
       </Stack>
     </PublicShell>

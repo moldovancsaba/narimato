@@ -2,12 +2,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { Checkbox, Group, Image, Loader, Paper, Stack, Table, Text, Title } from '@mantine/core';
-import { EmptyState, StatusBadge } from '@doneisbetter/gds-core/client';
-import { NarimatoChoiceChip } from '../components/NarimatoChoiceChip';
-import { NarimatoFormField } from '../components/NarimatoFormField';
-import { NarimatoSemanticButton } from '../components/NarimatoSemanticButton';
-import { PublicShell } from '../components/public/PublicShell';
-import { NarimatoPageHeader } from '../components/NarimatoPageHeader';
+import { ChoiceChip, EmptyState, FormField, PageHeader, PublicShell, SemanticButton, StatusBadge } from '@doneisbetter/gds-core/client';
+import { getPublicShellProps } from '../lib/ui/publicChrome';
 import { useSurveyGate } from '../lib/hooks/useSurveyGate';
 
 const RANK_MEDALS = ['🥇', '🥈', '🥉'];
@@ -112,16 +108,16 @@ export default function Rankings() {
 
   if (loading) {
     return (
-      <PublicShell containerSize="lg">
+      <PublicShell {...getPublicShellProps('home', { containerSize: 'lg' })}>
         <Loader />
       </PublicShell>
     );
   }
 
   return (
-    <PublicShell containerSize="lg">
+    <PublicShell {...getPublicShellProps('home', { containerSize: 'lg' })}>
       <Stack gap="lg">
-        <NarimatoPageHeader
+        <PageHeader
           title="Global rankings"
           subtitle="ELO ratings across all users"
         />
@@ -132,7 +128,7 @@ export default function Rankings() {
           </Text>
           <Group gap="xs">
             {organizations.map((organization) => (
-              <NarimatoChoiceChip
+              <ChoiceChip
                 key={organization.uuid}
                 label={organization.name}
                 active={org === organization.uuid}
@@ -144,7 +140,7 @@ export default function Rankings() {
 
         {org ? (
           <>
-            <NarimatoFormField label="(admin) Show hidden decks">
+            <FormField label="(admin) Show hidden decks">
               <Checkbox
                 checked={showHidden}
                 onChange={(e) => {
@@ -160,16 +156,16 @@ export default function Rankings() {
                   );
                 }}
               />
-            </NarimatoFormField>
+            </FormField>
 
             <Group gap="xs">
-              <NarimatoChoiceChip
+              <ChoiceChip
                 label={`All decks (${rankings.length})`}
                 active={selectedDeck === 'all'}
                 onClick={() => handleDeckChange('all')}
               />
               {decks.map((deckInfo) => (
-                <NarimatoChoiceChip
+                <ChoiceChip
                   key={deckInfo.tag}
                   label={`${deckInfo.tag} (${deckInfo.count})`}
                   active={selectedDeck === deckInfo.tag}
@@ -182,7 +178,7 @@ export default function Rankings() {
               <EmptyState
                 title="No rankings yet"
                 description="Rankings appear after users play and vote."
-                action={<NarimatoSemanticButton action="play" component={Link} href={`/play?org=${org}`} />}
+                action={<SemanticButton action="play" component={Link} href={`/play?org=${org}`} />}
               />
             ) : (
               <Paper withBorder radius="md">
@@ -235,8 +231,8 @@ export default function Rankings() {
             )}
 
             <Group justify="center">
-              <NarimatoSemanticButton action="play" component={Link} href={`/play?org=${org}`} />
-              <NarimatoSemanticButton
+              <SemanticButton action="play" component={Link} href={`/play?org=${org}`} />
+              <SemanticButton
                 action="edit"
                 component={Link}
                 href={`/cards?org=${org}`}

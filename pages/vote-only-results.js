@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { Stack } from '@mantine/core';
-import { PublicShell } from '../components/public/PublicShell';
-import { NarimatoPageHeader } from '../components/NarimatoPageHeader';
-import { NarimatoSemanticButton } from '../components/NarimatoSemanticButton';
+import { SemanticButton as NarimatoSemanticButton } from '@doneisbetter/gds-core/client';
+import { PageHeader as NarimatoPageHeader, PublicShell } from '@doneisbetter/gds-core/server';
+import { getPublicShellProps } from '../lib/ui/publicChrome';
 
 export async function getServerSideProps({ res }) {
   if (res) {
@@ -13,7 +13,7 @@ export async function getServerSideProps({ res }) {
 
 export default function VoteOnlyResultsRemoved() {
   return (
-    <PublicShell>
+    <PublicShell {...getPublicShellProps('home')}>
       <Stack align="center" gap="md" py="xl">
         <NarimatoPageHeader
           title="Vote-only results unavailable"

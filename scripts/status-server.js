@@ -35,13 +35,12 @@ function operatorSourcesStale(bundleMtimeMs) {
     ENTRY_PATH,
     BUILD_SCRIPT,
     path.join(REPO_ROOT, 'components', 'NarimatoProviders.js'),
-    path.join(REPO_ROOT, 'components', 'NarimatoSemanticButton.js'),
-    path.join(REPO_ROOT, 'components', 'NarimatoMetricCard.js'),
     path.join(REPO_ROOT, 'components', 'NarimatoThemeToggle.js'),
+    path.join(REPO_ROOT, 'components', 'admin', 'AdminShell.js'),
     path.join(REPO_ROOT, 'components', 'operator'),
+    path.join(REPO_ROOT, 'components', 'public', 'PublicShell.js'),
     path.join(REPO_ROOT, 'lib', 'ui', 'narimatoTheme.js'),
-    path.join(REPO_ROOT, 'packages', 'gds-core', 'dist'),
-    path.join(REPO_ROOT, 'packages', 'gds-theme', 'dist'),
+    path.join(REPO_ROOT, 'lib', 'ui', 'publicChrome.js'),
   ];
   return newestMtimeMs(watchPaths) > bundleMtimeMs;
 }

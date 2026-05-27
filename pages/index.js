@@ -1,15 +1,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { Box, List, Paper, PasswordInput, Stack, Text } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
-import { GdsIcons } from '@doneisbetter/gds-core/client';
-import { NarimatoAccentPanel } from '../components/NarimatoAccentPanel';
-import { NarimatoFormField } from '../components/NarimatoFormField';
-import { NarimatoGdsAlert } from '../components/NarimatoGdsAlert';
-import { PublicShell } from '../components/public/PublicShell';
-import { NarimatoPageHeader } from '../components/NarimatoPageHeader';
-import { NarimatoSemanticButton } from '../components/NarimatoSemanticButton';
-import { CONTACT_EMAIL } from '../components/public/PublicFooter';
+import { AccentPanel as NarimatoAccentPanel, FormField as NarimatoFormField, GdsIcons, SemanticButton as NarimatoSemanticButton, StateBlock } from '@doneisbetter/gds-core/client';
+import { PageHeader as NarimatoPageHeader, PublicShell } from '@doneisbetter/gds-core/server';
+import { CONTACT_EMAIL, getPublicShellProps } from '../lib/ui/publicChrome';
+import { showErrorNotification, showSuccessNotification } from '../lib/ui/notifications';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -30,24 +25,24 @@ export default function LandingPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        notifications.show({ color: 'red', message: data.error || 'Invalid survey password' });
+        showErrorNotification(data.error || 'Invalid survey password');
         return;
       }
-      notifications.show({ color: 'green', message: 'Welcome — opening your survey' });
+      showSuccessNotification('Welcome — opening your survey');
       router.push(data.redirectUrl || '/play');
     } catch {
-      notifications.show({ color: 'red', message: 'Could not verify password' });
+      showErrorNotification('Could not verify password');
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <PublicShell>
+    <PublicShell {...getPublicShellProps('home')}>
       <Stack gap="xl">
         {locked ? (
-          <NarimatoGdsAlert
-            color="yellow"
+          <StateBlock
+            variant="info"
             title="Survey password required"
             description="Enter the password your organisation shared with you to access this survey."
           />

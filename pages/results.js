@@ -2,12 +2,11 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { Grid, Group, Image, Loader, Paper, SimpleGrid, Stack, Text, Title } from '@mantine/core';
-import { StatusBadge } from '@doneisbetter/gds-core/client';
+import { SemanticButton as NarimatoSemanticButton, StatusBadge } from '@doneisbetter/gds-core/client';
+import { PageHeader as NarimatoPageHeader, PublicShell } from '@doneisbetter/gds-core/server';
 import { event } from '../lib/analytics/ga';
-import { NarimatoSemanticButton } from '../components/NarimatoSemanticButton';
-import { PublicShell } from '../components/public/PublicShell';
-import { NarimatoPageHeader } from '../components/NarimatoPageHeader';
 import { useSurveyGate } from '../lib/hooks/useSurveyGate';
+import { getPublicShellProps } from '../lib/ui/publicChrome';
 
 function ResultCard({ card, rankLabel, meta }) {
   return (
@@ -321,7 +320,7 @@ export default function Results() {
 
   if (loading) {
     return (
-      <PublicShell containerSize="lg">
+      <PublicShell {...getPublicShellProps('home', { containerSize: 'lg' })}>
         <Loader />
       </PublicShell>
     );
@@ -329,7 +328,7 @@ export default function Results() {
 
   if (resultsError === 'not-found') {
     return (
-      <PublicShell containerSize="lg">
+      <PublicShell {...getPublicShellProps('home', { containerSize: 'lg' })}>
         <Stack gap="md">
           <NarimatoPageHeader title="Results not found" subtitle="Unable to load results for this play session." />
           <NarimatoSemanticButton action="back" component={Link} href="/play" variant="light" />
@@ -340,7 +339,7 @@ export default function Results() {
 
   if (!results) {
     return (
-      <PublicShell containerSize="lg">
+      <PublicShell {...getPublicShellProps('home', { containerSize: 'lg' })}>
         <Loader />
       </PublicShell>
     );
@@ -369,7 +368,7 @@ export default function Results() {
   );
 
   return (
-    <PublicShell containerSize="lg">
+    <PublicShell {...getPublicShellProps('home', { containerSize: 'lg' })}>
       <Stack gap="lg" maw={1100} mx="auto">
         <Stack align="center" gap="xs">
           <NarimatoPageHeader

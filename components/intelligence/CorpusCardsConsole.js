@@ -12,11 +12,7 @@ import {
   Title,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { StatusBadge } from '@doneisbetter/gds-core/client';
-import { NarimatoGdsAlert } from '../NarimatoGdsAlert';
-import { NarimatoPageHeader } from '../NarimatoPageHeader';
-import { NarimatoSemanticButton } from '../NarimatoSemanticButton';
-import { gdsAccentPanel } from '../../lib/ui/gdsSurfaces';
+import { PageHeader, SemanticButton, StateBlock, StatusBadge } from '@doneisbetter/gds-core/client';
 
 export function CorpusCardsConsole() {
   const [organizations, setOrganizations] = useState([]);
@@ -127,13 +123,13 @@ export function CorpusCardsConsole() {
 
   return (
     <Stack gap="lg">
-      <NarimatoPageHeader
+      <PageHeader
         title="Corpus & cards"
         description="Ingest sources on the webapp; generation and HiTL approval run on the local operator console."
       />
 
-      <NarimatoGdsAlert
-        color="blue"
+      <StateBlock
+        variant="info"
         title="Local operator required"
         description="Card mutations and Ollama generation run on the Mac operator console."
         action={
@@ -145,6 +141,7 @@ export function CorpusCardsConsole() {
             <Anchor href="/local-ai">Local AI status</Anchor>
           </>
         }
+        compact
       />
 
       <Select
@@ -162,12 +159,10 @@ export function CorpusCardsConsole() {
         <StatusBadge status="info" variant="outline">
           via {meta?.source || '—'}
         </StatusBadge>
-        <NarimatoSemanticButton variant="secondary" size="sm" onClick={enqueueRefresh} loading={busy}>
-          Refresh projection
-        </NarimatoSemanticButton>
+        <SemanticButton action="refresh" variant="light" size="sm" onClick={enqueueRefresh} loading={busy} />
       </Group>
 
-      <Paper p="md" withBorder style={gdsAccentPanel.default} component="form" onSubmit={addSource}>
+      <Paper p="md" withBorder component="form" onSubmit={addSource}>
         <Title order={4} mb="sm">
           Add corpus source
         </Title>
@@ -179,9 +174,7 @@ export function CorpusCardsConsole() {
             value={content}
             onChange={(e) => setContent(e.target.value)}
           />
-          <NarimatoSemanticButton type="submit" variant="primary" loading={busy}>
-            Ingest source
-          </NarimatoSemanticButton>
+          <SemanticButton type="submit" action="import" loading={busy} />
         </Stack>
       </Paper>
 
@@ -189,7 +182,7 @@ export function CorpusCardsConsole() {
         <Loader />
       ) : (
         <>
-          <Paper p="md" withBorder style={gdsAccentPanel.default}>
+          <Paper p="md" withBorder>
             <Title order={5} mb="xs">
               Sources ({sources.length})
             </Title>
@@ -214,7 +207,7 @@ export function CorpusCardsConsole() {
             )}
           </Paper>
 
-          <Paper p="md" withBorder style={gdsAccentPanel.default}>
+          <Paper p="md" withBorder>
             <Title order={5} mb="xs">
               Pending approval ({pendingCards.length})
             </Title>

@@ -13,12 +13,9 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { EmptyState } from '@doneisbetter/gds-core/client';
-import { NarimatoPageHeader } from '../NarimatoPageHeader';
-import { NarimatoSemanticButton } from '../NarimatoSemanticButton';
+import { AccentPanel, EmptyState, PageHeader, SemanticButton } from '@doneisbetter/gds-core/client';
 import { LOCAL_TEST_URL, PUBLIC_SITE_URL } from './operatorCopy';
 import { operatorApi } from '../../lib/operator/clientApi';
-import { gdsAccentSurface } from '../../lib/ui/gdsSurfaces';
 
 export function OperatorSurveyPanel({ orgId }) {
   const [status, setStatus] = useState(null);
@@ -109,26 +106,21 @@ export function OperatorSurveyPanel({ orgId }) {
 
   return (
     <Stack gap="lg">
-      <NarimatoPageHeader
+      <PageHeader
         title="Share survey"
         subtitle="Give participants a password so they can open the survey on the public website."
       />
 
       {needsSetup ? (
-        <Paper
-          withBorder
-          p="md"
-          radius="md"
-          style={{ backgroundColor: gdsAccentSurface.violet }}
-        >
+        <AccentPanel tone="violet">
           <Stack gap="sm">
             <Text fw={600}>Nothing to share yet</Text>
             <Text size="sm" c="dimmed">
               Set up demo survey cards and create a password in one step. You can replace the demo content later.
             </Text>
-            <NarimatoSemanticButton action="start" loading={busy} onClick={bootstrapSampleSurvey} />
+            <SemanticButton action="start" loading={busy} onClick={bootstrapSampleSurvey} />
           </Stack>
-        </Paper>
+        </AccentPanel>
       ) : null}
 
       <Paper withBorder p="md" radius="md">
@@ -162,9 +154,9 @@ export function OperatorSurveyPanel({ orgId }) {
 
           <Group gap="sm" wrap="wrap">
             {!status?.configured ? (
-              <NarimatoSemanticButton action="add" loading={busy} onClick={() => generatePassword(false)} />
+              <SemanticButton action="add" loading={busy} onClick={() => generatePassword(false)} />
             ) : (
-              <NarimatoSemanticButton
+              <SemanticButton
                 action="duplicate"
                 loading={busy}
                 variant="light"
@@ -185,7 +177,7 @@ export function OperatorSurveyPanel({ orgId }) {
                 <CopyButton value={displayPassword}>
                   {({ copied, copy }) => (
                     <Tooltip label={copied ? 'Copied' : 'Copy'}>
-                      <NarimatoSemanticButton
+                      <SemanticButton
                         action="copy"
                         variant="light"
                         onClick={copy}
@@ -195,7 +187,7 @@ export function OperatorSurveyPanel({ orgId }) {
                   )}
                 </CopyButton>
               </Group>
-              <NarimatoSemanticButton
+              <SemanticButton
                 action="play"
                 variant="subtle"
                 size="sm"
@@ -214,12 +206,7 @@ export function OperatorSurveyPanel({ orgId }) {
         </Stack>
       </Paper>
 
-      <Paper
-        withBorder
-        p="md"
-        radius="md"
-        style={{ backgroundColor: gdsAccentSurface.gray }}
-      >
+      <AccentPanel tone="gray">
         <Stack gap="xs">
           <Text size="sm">
             <Text span fw={600}>
@@ -236,7 +223,7 @@ export function OperatorSurveyPanel({ orgId }) {
             {PUBLIC_SITE_URL}
           </Text>
         </Stack>
-      </Paper>
+      </AccentPanel>
     </Stack>
   );
 }

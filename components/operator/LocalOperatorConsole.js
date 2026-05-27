@@ -13,11 +13,7 @@ import {
   TextInput,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { ConfirmDialog, EmptyState, StatusBadge } from '@doneisbetter/gds-core/client';
-import { NarimatoGdsAlert } from '../NarimatoGdsAlert';
-import { NarimatoFormField } from '../NarimatoFormField';
-import { NarimatoPageHeader } from '../NarimatoPageHeader';
-import { NarimatoSemanticButton } from '../NarimatoSemanticButton';
+import { ConfirmDialog, EmptyState, FormField as NarimatoFormField, PageHeader as NarimatoPageHeader, SemanticButton as NarimatoSemanticButton, StateBlock as NarimatoGdsAlert, StatusBadge } from '@doneisbetter/gds-core/client';
 import { operatorApi } from '../../lib/operator/clientApi';
 
 const REGEN_MODES = [
@@ -161,9 +157,10 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
 
       {simplified ? (
         <NarimatoGdsAlert
-          color="blue"
+          variant="info"
           title="Advanced feature"
           description="This area is for AI-generated content. If you only want to try Narimato, use the Home tab instead."
+          compact
         />
       ) : null}
 
@@ -481,9 +478,7 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
                         body: JSON.stringify({ organizationId: orgId, cardUuid: card.uuid, feedback: 'up' }),
                       });
                     }}
-                  >
-                    👍
-                  </NarimatoSemanticButton>
+                  />
                   <NarimatoSemanticButton
                     action="cancel"
                     size="xs"
@@ -494,9 +489,7 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
                         body: JSON.stringify({ organizationId: orgId, cardUuid: card.uuid, feedback: 'down' }),
                       });
                     }}
-                  >
-                    👎
-                  </NarimatoSemanticButton>
+                  />
                 </Group>
               </Paper>
             ))}
@@ -536,9 +529,7 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
                 notifications.show({ color: 'red', message: err.message });
               }
             }}
-          >
-            Reconcile thumbs-down
-          </NarimatoSemanticButton>
+          />
         </Group>
       </Paper>
 

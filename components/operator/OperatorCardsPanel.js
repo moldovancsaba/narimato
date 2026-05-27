@@ -11,10 +11,7 @@ import {
   Textarea,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { EmptyState } from '@doneisbetter/gds-core/client';
-import { NarimatoFormField } from '../NarimatoFormField';
-import { NarimatoPageHeader } from '../NarimatoPageHeader';
-import { NarimatoSemanticButton } from '../NarimatoSemanticButton';
+import { EmptyState, FormField, PageHeader, SemanticButton } from '@doneisbetter/gds-core/client';
 import { operatorApi } from '../../lib/operator/clientApi';
 
 export function OperatorCardsPanel({ orgId }) {
@@ -73,7 +70,7 @@ export function OperatorCardsPanel({ orgId }) {
 
   return (
     <Stack gap="lg">
-      <NarimatoPageHeader
+      <PageHeader
         title="Survey cards"
         subtitle="Add or review the cards participants swipe and rank. For a quick start, use Home → Set up test survey."
       />
@@ -102,27 +99,27 @@ export function OperatorCardsPanel({ orgId }) {
           }}
         >
           <Stack gap="sm">
-            <NarimatoFormField label="Card title" description="What participants read on the card">
+            <FormField label="Card title" description="What participants read on the card">
               <TextInput
                 value={form.title}
                 onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
                 required
               />
-            </NarimatoFormField>
-            <NarimatoFormField label="Tag (optional)" description="Internal name, e.g. #MyTopic — auto-created from title if empty">
+            </FormField>
+            <FormField label="Tag (optional)" description="Internal name, e.g. #MyTopic — auto-created from title if empty">
               <TextInput
                 value={form.name}
                 onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
                 placeholder="#MyCard"
               />
-            </NarimatoFormField>
-            <NarimatoFormField label="Description">
+            </FormField>
+            <FormField label="Description">
               <Textarea value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
-            </NarimatoFormField>
-            <NarimatoFormField label="Image URL (optional)">
+            </FormField>
+            <FormField label="Image URL (optional)">
               <TextInput value={form.imageUrl} onChange={(e) => setForm((p) => ({ ...p, imageUrl: e.target.value }))} />
-            </NarimatoFormField>
-            <NarimatoFormField label="Deck" description="Which deck this card belongs to">
+            </FormField>
+            <FormField label="Deck" description="Which deck this card belongs to">
               <Select
                 data={parentOptions}
                 value={form.parentTag || ''}
@@ -130,8 +127,8 @@ export function OperatorCardsPanel({ orgId }) {
                 clearable
                 searchable
               />
-            </NarimatoFormField>
-            <NarimatoSemanticButton type="submit" action="add" />
+            </FormField>
+            <SemanticButton type="submit" action="add" />
           </Stack>
         </form>
       </Paper>
