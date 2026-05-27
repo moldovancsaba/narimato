@@ -1,12 +1,12 @@
 import { Anchor, Text } from '@mantine/core';
-import { NarimatoGdsAlert } from './NarimatoGdsAlert';
+import { StateBlock } from '@doneisbetter/gds-core/client';
 
 const OPERATOR_URL = 'http://127.0.0.1:10006';
 
 export function LocalOperatorNotice({ compact = false }) {
   return (
-    <NarimatoGdsAlert
-      color="blue"
+    <StateBlock
+      variant="info"
       title="Local operator console"
       description={
         compact

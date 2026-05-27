@@ -1,11 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Collapse, Group, Loader, Paper, Stack, Text, TextInput, Textarea } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { ConfirmDialog, EmptyState } from '@doneisbetter/gds-core/client';
-import { NarimatoChoiceChip } from '../NarimatoChoiceChip';
-import { NarimatoFormField } from '../NarimatoFormField';
-import { NarimatoPageHeader } from '../NarimatoPageHeader';
-import { NarimatoSemanticButton } from '../NarimatoSemanticButton';
+import { ChoiceChip, ConfirmDialog, EmptyState, FormField, PageHeader, SemanticButton } from '@doneisbetter/gds-core/client';
 import { slugifyOrganisationName } from './operatorCopy';
 import { operatorApi } from '../../lib/operator/clientApi';
 
@@ -44,7 +40,7 @@ export function OperatorOrganizationsPanel({
 
   return (
     <Stack gap="lg">
-      <NarimatoPageHeader
+      <PageHeader
         title="Your organisation"
         subtitle="This is the team or company name shown in your survey setup. Most people only need one organisation."
       />
@@ -92,28 +88,28 @@ export function OperatorOrganizationsPanel({
           }}
         >
           <Stack gap="sm">
-            <NarimatoFormField label="Organisation name">
+            <FormField label="Organisation name">
               <TextInput
                 placeholder="e.g. Acme Research"
                 value={form.name}
                 onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
                 required
               />
-            </NarimatoFormField>
-            <NarimatoFormField label="Description (optional)">
+            </FormField>
+            <FormField label="Description (optional)">
               <Textarea
                 placeholder="Internal note — participants do not see this"
                 value={form.description}
                 onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
               />
-            </NarimatoFormField>
-            <NarimatoChoiceChip
+            </FormField>
+            <ChoiceChip
               label={showAdvanced ? 'Hide advanced options' : 'Advanced options'}
               onClick={() => setShowAdvanced((v) => !v)}
               size="xs"
             />
             <Collapse in={showAdvanced}>
-              <NarimatoFormField
+              <FormField
                 label="Short URL name"
                 description={suggestedSlug ? `Suggested: ${suggestedSlug}` : 'Used internally — lowercase, no spaces'}
               >
@@ -122,9 +118,9 @@ export function OperatorOrganizationsPanel({
                   onChange={(e) => setSlugOverride(e.target.value)}
                   placeholder={suggestedSlug || 'acme-research'}
                 />
-              </NarimatoFormField>
+              </FormField>
             </Collapse>
-            <NarimatoSemanticButton type="submit" action="add" />
+            <SemanticButton type="submit" action="add" />
           </Stack>
         </form>
       </Paper>
@@ -160,18 +156,18 @@ export function OperatorOrganizationsPanel({
                   }}
                 >
                   <Stack gap="sm">
-                    <NarimatoFormField label="Name">
+                    <FormField label="Name">
                       <TextInput value={editForm.name} onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))} required />
-                    </NarimatoFormField>
-                    <NarimatoFormField label="Short URL name">
+                    </FormField>
+                    <FormField label="Short URL name">
                       <TextInput value={editForm.slug} onChange={(e) => setEditForm((p) => ({ ...p, slug: e.target.value }))} required />
-                    </NarimatoFormField>
-                    <NarimatoFormField label="Description">
+                    </FormField>
+                    <FormField label="Description">
                       <Textarea value={editForm.description} onChange={(e) => setEditForm((p) => ({ ...p, description: e.target.value }))} />
-                    </NarimatoFormField>
+                    </FormField>
                     <Group>
-                      <NarimatoSemanticButton type="submit" action="save" />
-                      <NarimatoSemanticButton
+                      <SemanticButton type="submit" action="save" />
+                      <SemanticButton
                         variant="default"
                         type="button"
                         action="cancel"
@@ -195,14 +191,14 @@ export function OperatorOrganizationsPanel({
                   </Group>
                   <Group mt="sm">
                     {orgId !== org.uuid ? (
-                      <NarimatoSemanticButton
+                      <SemanticButton
                         action="check"
                         size="xs"
                         variant="light"
                         onClick={() => onOrgChange?.(org.uuid)}
                       />
                     ) : null}
-                    <NarimatoSemanticButton
+                    <SemanticButton
                       action="edit"
                       size="xs"
                       variant="subtle"
@@ -211,7 +207,7 @@ export function OperatorOrganizationsPanel({
                         setEditForm({ name: org.name, slug: org.slug, description: org.description || '' });
                       }}
                     />
-                    <NarimatoSemanticButton
+                    <SemanticButton
                       action="delete"
                       size="xs"
                       variant="subtle"

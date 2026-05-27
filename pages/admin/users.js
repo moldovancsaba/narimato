@@ -1,13 +1,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Code, Group, Paper, Select, Stack, Text, TextInput, Title } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
-import { NarimatoFormField } from '../../components/NarimatoFormField';
-import { NarimatoGdsAlert } from '../../components/NarimatoGdsAlert';
+import { FormField, PageHeader, SemanticButton, StateBlock } from '@doneisbetter/gds-core/client';
 import { AdminShell } from '../../components/admin/AdminShell';
-import { NarimatoPageHeader } from '../../components/NarimatoPageHeader';
-import { NarimatoSemanticButton } from '../../components/NarimatoSemanticButton';
 import { getSessionUser } from '../../lib/system/userAuth';
+import { showSuccessNotification } from '../../lib/ui/notifications';
 
 export async function getServerSideProps(ctx) {
   const user = getSessionUser(ctx.req);
@@ -62,7 +59,7 @@ export default function AdminUsers() {
       }
       setLastPassword(data.password || '');
       setEmail('');
-      notifications.show({ color: 'green', message: 'User created' });
+      showSuccessNotification('User created');
       const list = await fetch('/api/admin/users');
       if (list.ok) setUsers((await list.json()).users || []);
     } catch {
@@ -85,7 +82,7 @@ export default function AdminUsers() {
         return;
       }
       setLastPassword(data.password || '');
-      notifications.show({ color: 'green', message: 'Password regenerated' });
+      showSuccessNotification('Password regenerated');
     } catch {
       setError('Network error');
     }
@@ -94,20 +91,20 @@ export default function AdminUsers() {
   return (
     <AdminShell title="Admin users">
       <Stack gap="lg" maw={640}>
-        <NarimatoPageHeader title="Admin users" />
+        <PageHeader title="Admin users" />
 
         <Paper withBorder p="md" radius="md">
           <form onSubmit={createUser}>
             <Stack gap="sm">
-              <NarimatoFormField label="Email">
+              <FormField label="Email">
                 <TextInput
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                 />
-              </NarimatoFormField>
-              <NarimatoFormField label="Role">
+              </FormField>
+              <FormField label="Role">
                 <Select
                   value={role}
                   onChange={setRole}
@@ -117,19 +114,20 @@ export default function AdminUsers() {
                     { value: 'editor', label: 'editor' },
                   ]}
                 />
-              </NarimatoFormField>
-              <NarimatoSemanticButton type="submit" action="add" />
+              </FormField>
+              <SemanticButton type="submit" action="add" />
             </Stack>
           </form>
         </Paper>
 
-        {error ? <NarimatoGdsAlert color="red" description={error} /> : null}
+        {error ? <StateBlock variant="error" title="Unable to complete admin action" description={error} compact /> : null}
         {lastPassword ? (
           <Stack gap="xs">
-            <NarimatoGdsAlert
-              color="dark"
+            <StateBlock
+              variant="info"
               title="Generated password"
               description="Copy and store this password securely."
+              compact
             />
             <Code>{lastPassword}</Code>
           </Stack>
@@ -146,7 +144,7 @@ export default function AdminUsers() {
                     {u.role}
                   </Text>
                 </div>
-                <NarimatoSemanticButton
+                <SemanticButton
                   action="refresh"
                   size="sm"
                   variant="light"
@@ -157,7 +155,7 @@ export default function AdminUsers() {
           ))}
         </Stack>
 
-        <NarimatoSemanticButton action="home" component={Link} href="/" variant="default" />
+        <SemanticButton action="home" component={Link} href="/" variant="default" />
       </Stack>
     </AdminShell>
   );

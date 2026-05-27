@@ -14,7 +14,6 @@ const manifest = JSON.parse(
 const gdsExemptPlaySurfaces = [
   'components/play/PlaySwipeSurface.js',
   'components/play/PlayVoteSurface.js',
-  'components/NarimatoSemanticButton.js',
 ];
 
 const eslintConfig = [

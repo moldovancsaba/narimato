@@ -1,6 +1,5 @@
 import { Paper, Select, Stack, Text } from '@mantine/core';
-import { NarimatoGdsAlert } from '../NarimatoGdsAlert';
-import { NarimatoFormField } from '../NarimatoFormField';
+import { FormField, StateBlock } from '@doneisbetter/gds-core/client';
 import { gdsAccentPanelStyle } from '../../lib/ui/gdsSurfaces';
 
 export function OperatorOrgPicker({
@@ -12,8 +11,8 @@ export function OperatorOrgPicker({
 }) {
   if (!organizations?.length) {
     return (
-      <NarimatoGdsAlert
-        color="violet"
+      <StateBlock
+        variant="info"
         title="Create your organisation first"
         description="An organisation is the company or team that runs the survey — for example, your department or client."
         action={
@@ -29,6 +28,7 @@ export function OperatorOrgPicker({
             </Text>
           ) : null
         }
+        compact
       />
     );
   }
@@ -38,14 +38,14 @@ export function OperatorOrgPicker({
   return (
     <Paper withBorder p={compact ? 'sm' : 'md'} radius="md" style={gdsAccentPanelStyle('gray')}>
       <Stack gap="xs">
-        <NarimatoFormField label="Working on" description="All survey setup applies to this organisation">
+        <FormField label="Working on" description="All survey setup applies to this organisation">
           <Select
             data={organizations.map((o) => ({ value: o.uuid, label: o.name }))}
             value={orgId || null}
             onChange={onOrgChange}
             maw={420}
           />
-        </NarimatoFormField>
+        </FormField>
         {active && !compact ? (
           <Text size="xs" c="dimmed">
             Participants will see content from <Text span fw={600}>{active.name}</Text> after they enter the survey password.

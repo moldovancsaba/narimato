@@ -10,12 +10,8 @@ import {
   Text,
   Title,
 } from '@mantine/core';
-import { StatusBadge } from '@doneisbetter/gds-core/client';
-import { NarimatoGdsAlert } from '../NarimatoGdsAlert';
+import { MetricCard, PageHeader, SemanticButton, StateBlock, StatusBadge } from '@doneisbetter/gds-core/client';
 import { LocalAiQuickLinks } from './LocalAiQuickLinks';
-import { NarimatoPageHeader } from '../NarimatoPageHeader';
-import { NarimatoSemanticButton } from '../NarimatoSemanticButton';
-import { gdsAccentPanel } from '../../lib/ui/gdsSurfaces';
 
 export function LocalAiDashboard() {
   const [status, setStatus] = useState(null);
@@ -64,111 +60,94 @@ export function LocalAiDashboard() {
 
   return (
     <Stack gap="lg">
-      <NarimatoPageHeader
+      <PageHeader
         title="Local AI"
         description="Operator console and background workers on your Mac. Vercel only reads projections."
       />
 
       {!reachable && (
-        <NarimatoGdsAlert
-          color="orange"
+        <StateBlock
+          variant="permission"
           title="Local intelligence offline"
           description={`Double-click Open Narimato Local AI on your Desktop, or run npm run intelligence:open. ${status?.error || ''}`}
+          compact
         />
       )}
 
       {reachable && (
-        <NarimatoGdsAlert
-          color={brainReady ? 'green' : 'yellow'}
+        <StateBlock
+          variant={brainReady ? 'success' : 'not-enough-data'}
           title="Status server reachable"
           description={`Ollama ${status.ollama ? 'up' : 'down'} · model ${status.brain?.model || '—'}${status.brain?.modelReady ? '' : ' (model not ready)'}`}
+          compact
         />
       )}
 
       <Group>
-        <NarimatoSemanticButton
+        <SemanticButton
+          action="launch"
           component="a"
           href={operatorUrl}
           target="_blank"
           rel="noreferrer"
-          variant="primary"
-        >
-          Open operator console
-        </NarimatoSemanticButton>
-        <NarimatoSemanticButton variant="secondary" onClick={() => loadStatus()}>
-          Refresh status
-        </NarimatoSemanticButton>
+        />
+        <SemanticButton action="refresh" variant="light" onClick={() => loadStatus()} />
       </Group>
 
       <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="md">
-        <Paper p="md" withBorder style={gdsAccentPanel.default}>
-          <Text size="sm" c="dimmed">
-            Sync worker
-          </Text>
-          <Title order={4}>{status?.workers?.sync?.running ? 'Running' : 'Idle'}</Title>
-          <Anchor href={status?.links?.workers?.syncHealth?.url} size="xs" target="_blank" rel="noreferrer">
-            Health :{ports.SYNC || 10005}
-          </Anchor>
-        </Paper>
-        <Paper p="md" withBorder style={gdsAccentPanel.default}>
-          <Text size="sm" c="dimmed">
-            Snapshot worker
-          </Text>
-          <Title order={4}>
-            {status?.workers?.snapshotWorker?.lastRun ? 'Active' : 'Idle'}
-          </Title>
-          <Anchor
-            href={status?.links?.workers?.snapshotHealth?.url}
-            size="xs"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Health :{ports.SNAPSHOT || 10007}
-          </Anchor>
-        </Paper>
-        <Paper p="md" withBorder style={gdsAccentPanel.default}>
-          <Text size="sm" c="dimmed">
-            Guardian
-          </Text>
-          <Title order={4}>
-            {status?.workers?.guardian?.running ? 'Supervising' : 'Unknown'}
-          </Title>
-          <Text size="xs" c="dimmed">
-            npm run intelligence:install
-          </Text>
-        </Paper>
-        <Paper p="md" withBorder style={gdsAccentPanel.default}>
-          <Text size="sm" c="dimmed">
-            Dirty orgs
-          </Text>
-          <Title order={4}>{status?.dirty?.orgIds?.length ?? 0}</Title>
-        </Paper>
-        <Paper p="md" withBorder style={gdsAccentPanel.default}>
-          <Text size="sm" c="dimmed">
-            Operator bundle
-          </Text>
-          <Group mt="xs">
+        <MetricCard
+          label="Sync worker"
+          value={status?.workers?.sync?.running ? 'Running' : 'Idle'}
+          description={
+            status?.links?.workers?.syncHealth?.url ? (
+              <Anchor href={status.links.workers.syncHealth.url} size="xs" target="_blank" rel="noreferrer">
+                Health :{ports.SYNC || 10005}
+              </Anchor>
+            ) : null
+          }
+        />
+        <MetricCard
+          label="Snapshot worker"
+          value={status?.workers?.snapshotWorker?.lastRun ? 'Active' : 'Idle'}
+          description={
+            status?.links?.workers?.snapshotHealth?.url ? (
+              <Anchor href={status.links.workers.snapshotHealth.url} size="xs" target="_blank" rel="noreferrer">
+                Health :{ports.SNAPSHOT || 10007}
+              </Anchor>
+            ) : null
+          }
+        />
+        <MetricCard
+          label="Guardian"
+          value={status?.workers?.guardian?.running ? 'Supervising' : 'Unknown'}
+          description="npm run intelligence:install"
+        />
+        <MetricCard label="Dirty orgs" value={String(status?.dirty?.orgIds?.length ?? 0)} />
+        <MetricCard
+          label="Operator bundle"
+          value={status?.operatorBundle ? 'Ready' : 'Pending'}
+          description={
             <StatusBadge status={status?.operatorBundle ? 'success' : 'neutral'} variant="light">
               {status?.operatorBundle ? 'Ready' : 'Run build:operator'}
             </StatusBadge>
-          </Group>
-        </Paper>
-        <Paper p="md" withBorder style={gdsAccentPanel.default}>
-          <Text size="sm" c="dimmed">
-            Ollama
-          </Text>
-          <Title order={4}>{status?.ollama ? 'Reachable' : 'Offline'}</Title>
-          {status?.links?.ollama?.url ? (
-            <Anchor href={status.links.ollama.url} size="xs" target="_blank" rel="noreferrer">
-              API
-            </Anchor>
-          ) : null}
-        </Paper>
+          }
+        />
+        <MetricCard
+          label="Ollama"
+          value={status?.ollama ? 'Reachable' : 'Offline'}
+          description={
+            status?.links?.ollama?.url ? (
+              <Anchor href={status.links.ollama.url} size="xs" target="_blank" rel="noreferrer">
+                API
+              </Anchor>
+            ) : null
+          }
+        />
       </SimpleGrid>
 
       <LocalAiQuickLinks links={status?.links} title="All related links" />
 
-      <Paper p="md" withBorder style={gdsAccentPanel.default}>
+      <Paper p="md" withBorder>
         <Title order={5} mb="sm">
           Operator menu (port {ports.STATUS || 10006})
         </Title>

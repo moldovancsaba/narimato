@@ -2,13 +2,13 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { Center, Loader, Stack, Text } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
+import { SemanticButton as NarimatoSemanticButton } from '@doneisbetter/gds-core/client';
+import { PageHeader as NarimatoPageHeader, PublicShell } from '@doneisbetter/gds-core/server';
 import { calculateCardSize } from '../lib/utils/cardSizing';
 import { PlaySwipeSurface } from '../components/play/PlaySwipeSurface';
-import { NarimatoSemanticButton } from '../components/NarimatoSemanticButton';
-import { PublicShell } from '../components/public/PublicShell';
-import { NarimatoPageHeader } from '../components/NarimatoPageHeader';
 import { useSurveyGate } from '../lib/hooks/useSurveyGate';
+import { getPublicShellProps } from '../lib/ui/publicChrome';
+import { showErrorNotification } from '../lib/ui/notifications';
 
 // FUNCTIONAL: Pure SwipeOnly game interface - completely independent from existing play system
 // STRATEGIC: Simple, clean swipe-based ranking without any voting complexity
@@ -55,12 +55,12 @@ export default function SwipeOnly() {
         await getCurrentCard(data.playId);
       } else {
         const error = await res.json();
-        notifications.show({ color: 'red', message: error.error });
+        showErrorNotification(error.error);
         router.push(`/play?org=${org}`);
       }
     } catch (error) {
       console.error('Failed to start SwipeOnly session:', error);
-      notifications.show({ color: 'red', message: 'Failed to start swipe session' });
+      showErrorNotification('Failed to start swipe session');
       router.push(`/play?org=${org}`);
     } finally {
       setLoading(false);
@@ -125,11 +125,11 @@ export default function SwipeOnly() {
         setProgress(data.progress);
       } else {
         const error = await res.json();
-        notifications.show({ color: 'red', message: error.error });
+        showErrorNotification(error.error);
       }
     } catch (error) {
       console.error('Failed to process swipe:', error);
-      notifications.show({ color: 'red', message: 'Failed to process swipe' });
+      showErrorNotification('Failed to process swipe');
     }
   };
 
@@ -173,7 +173,7 @@ export default function SwipeOnly() {
 
   if (completed) {
     return (
-      <PublicShell>
+      <PublicShell {...getPublicShellProps('home')}>
         <Stack align="center" gap="md" py="xl">
           <NarimatoPageHeader title="Swipe complete" subtitle="Redirecting to results…" />
           {session ? (
@@ -190,7 +190,7 @@ export default function SwipeOnly() {
 
   if (!currentCard || !cardConfig) {
     return (
-      <PublicShell>
+      <PublicShell {...getPublicShellProps('home')}>
         <Stack align="center" gap="md" py="xl">
           <NarimatoPageHeader title="No cards available" />
           <NarimatoSemanticButton action="back" component={Link} href={`/play?org=${org}`} variant="light" />

@@ -13,12 +13,8 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { NarimatoMetricCard } from '../NarimatoMetricCard';
-import { NarimatoPageHeader } from '../NarimatoPageHeader';
-import { NarimatoSemanticButton } from '../NarimatoSemanticButton';
+import { AccentPanel, MetricCard, PageHeader, SemanticButton, StateBlock } from '@doneisbetter/gds-core/client';
 import { OperatorSetupSteps } from './OperatorSetupSteps';
-import { NarimatoAccentPanel } from '../NarimatoAccentPanel';
-import { NarimatoGdsAlert } from '../NarimatoGdsAlert';
 import { LocalAiQuickLinks } from '../intelligence/LocalAiQuickLinks';
 import { LOCAL_TEST_URL } from './operatorCopy';
 import { operatorApi } from '../../lib/operator/clientApi';
@@ -102,7 +98,7 @@ export function OperatorDashboard({ orgId, organizations, onSelectTab }) {
       done: hasOrg,
       active: currentStep === 0,
       action: !hasOrg ? (
-        <NarimatoSemanticButton action="add" size="xs" variant="light" onClick={() => onSelectTab('organizations')} />
+        <SemanticButton action="add" size="xs" variant="light" onClick={() => onSelectTab('organizations')} />
       ) : null,
     },
     {
@@ -114,7 +110,7 @@ export function OperatorDashboard({ orgId, organizations, onSelectTab }) {
       done: deckReady && passwordReady,
       active: currentStep === 1,
       action: hasOrg && (!deckReady || !passwordReady) ? (
-        <NarimatoSemanticButton action="start" size="xs" loading={bootstrapBusy} onClick={bootstrapFirstSurvey} />
+        <SemanticButton action="start" size="xs" loading={bootstrapBusy} onClick={bootstrapFirstSurvey} />
       ) : null,
     },
     {
@@ -126,14 +122,14 @@ export function OperatorDashboard({ orgId, organizations, onSelectTab }) {
       done: passwordReady,
       active: currentStep === 2,
       action: passwordReady ? (
-        <NarimatoSemanticButton action="settings" size="xs" variant="light" onClick={() => onSelectTab('survey')} />
+        <SemanticButton action="settings" size="xs" variant="light" onClick={() => onSelectTab('survey')} />
       ) : null,
     },
   ];
 
   return (
     <Stack gap="lg">
-      <NarimatoPageHeader
+      <PageHeader
         title={allReady ? 'Your survey is ready' : 'Set up your first survey'}
         subtitle={
           allReady
@@ -143,17 +139,18 @@ export function OperatorDashboard({ orgId, organizations, onSelectTab }) {
       />
 
       {!hasOrg ? (
-        <NarimatoGdsAlert
-          color="violet"
+        <StateBlock
+          variant="info"
           title="Welcome to Narimato Setup"
           description="Start by creating an organisation — for example, your company name or project title. You can change details later."
+          compact
         />
       ) : null}
 
       <OperatorSetupSteps steps={setupSteps} />
 
       {hasOrg ? (
-        <NarimatoAccentPanel tone={allReady ? 'green' : 'violet'}>
+        <AccentPanel tone={allReady ? 'green' : 'violet'}>
           <Stack gap="md" align={allReady ? 'stretch' : 'flex-start'}>
             <Text fw={600}>{allReady ? 'Try it yourself' : 'Quick setup'}</Text>
             {!allReady ? (
@@ -171,10 +168,10 @@ export function OperatorDashboard({ orgId, organizations, onSelectTab }) {
             )}
             <Group gap="sm" wrap="wrap">
               {!allReady ? (
-                <NarimatoSemanticButton size="md" action="start" loading={bootstrapBusy} onClick={bootstrapFirstSurvey} />
+                <SemanticButton size="md" action="start" loading={bootstrapBusy} onClick={bootstrapFirstSurvey} />
               ) : (
                 <>
-                  <NarimatoSemanticButton
+                  <SemanticButton
                     size="md"
                     action="play"
                     component="a"
@@ -182,7 +179,7 @@ export function OperatorDashboard({ orgId, organizations, onSelectTab }) {
                     target="_blank"
                     rel="noreferrer"
                   />
-                  <NarimatoSemanticButton
+                  <SemanticButton
                     size="md"
                     action="settings"
                     variant="light"
@@ -192,9 +189,9 @@ export function OperatorDashboard({ orgId, organizations, onSelectTab }) {
               )}
             </Group>
           </Stack>
-        </NarimatoAccentPanel>
+        </AccentPanel>
       ) : (
-        <NarimatoSemanticButton size="md" action="add" onClick={() => onSelectTab('organizations')} />
+        <SemanticButton size="md" action="add" onClick={() => onSelectTab('organizations')} />
       )}
 
       {bootstrapPassword || (passwordReady && allReady) ? (
@@ -212,7 +209,7 @@ export function OperatorDashboard({ orgId, organizations, onSelectTab }) {
                 <CopyButton value={bootstrapPassword}>
                   {({ copied, copy }) => (
                     <Tooltip label={copied ? 'Copied' : 'Copy password'}>
-                      <NarimatoSemanticButton
+                      <SemanticButton
                         action="copy"
                         variant="light"
                         onClick={copy}
@@ -236,22 +233,25 @@ export function OperatorDashboard({ orgId, organizations, onSelectTab }) {
 
       {hasOrg ? (
         <SimpleGrid cols={{ base: 1, xs: 2, md: 4 }} spacing="md">
-          <NarimatoMetricCard label="Organisations" value={String(orgCount)} hint="In this setup workspace" />
-          <NarimatoMetricCard
+          <MetricCard label="Organisations" value={String(orgCount)} description="In this setup workspace" />
+          <MetricCard
             label="Playable decks"
             value={deckReady ? String(surveyReadiness?.playableDeckCount ?? 1) : '—'}
-            hint={deckReady ? 'Ready for participants' : 'Run setup to create demo deck'}
+            description={deckReady ? 'Ready for participants' : 'Run setup to create demo deck'}
           />
-          <NarimatoMetricCard
+          <MetricCard
             label="AI assistant"
             value={brainReady ? 'Connected' : 'Offline'}
-            status={brainReady ? 'success' : 'danger'}
-            hint="Local brain / Ollama"
+            trend={{
+              label: brainReady ? 'Ready' : 'Offline',
+              tone: brainReady ? 'positive' : 'negative',
+            }}
+            description="Local brain / Ollama"
           />
-          <NarimatoMetricCard
+          <MetricCard
             label="Pending AI cards"
             value={pendingCount != null ? String(pendingCount) : '—'}
-            hint="Awaiting approval in AI tools"
+            description="Awaiting approval in AI tools"
           />
         </SimpleGrid>
       ) : null}

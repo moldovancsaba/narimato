@@ -1,15 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Paper, Stack, Switch, Text } from '@mantine/core';
-import { NarimatoSemanticButton } from '../NarimatoSemanticButton';
-import { notifications } from '@mantine/notifications';
-import { StatusBadge } from '@doneisbetter/gds-core/client';
-import { NarimatoFormField } from '../NarimatoFormField';
+import { FormField as NarimatoFormField, SemanticButton as NarimatoSemanticButton, StatusBadge } from '@doneisbetter/gds-core/client';
 import {
   CONSENT,
   applyConsent,
   getConsent,
   setConsent,
 } from '../../lib/cookieConsent';
+import { showSuccessNotification } from '../../lib/ui/notifications';
 
 export function CookiePreferencesPanel({ showSavedMessage = true }) {
   const [analytics, setAnalytics] = useState(false);
@@ -28,10 +26,7 @@ export function CookiePreferencesPanel({ showSavedMessage = true }) {
     applyConsent(value);
     setSaved(value);
     if (showSavedMessage) {
-      notifications.show({
-        color: 'green',
-        message: analytics ? 'Analytics cookies enabled' : 'Analytics cookies disabled',
-      });
+      showSuccessNotification(analytics ? 'Analytics cookies enabled' : 'Analytics cookies disabled');
     }
   }
 

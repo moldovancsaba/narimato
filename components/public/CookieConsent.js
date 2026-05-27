@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Paper, Stack, Text, Group, Anchor } from '@mantine/core';
 import Link from 'next/link';
-import { NarimatoSemanticButton } from '../NarimatoSemanticButton';
+import { SemanticButton as NarimatoSemanticButton } from '@doneisbetter/gds-core/client';
 import {
   CONSENT,
   applyConsent,

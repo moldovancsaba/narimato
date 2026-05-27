@@ -11,7 +11,6 @@ const SKIP_PREFIXES = ['packages/'];
 const EXEMPT_REL = new Set([
   'components/play/PlaySwipeSurface.js',
   'components/play/PlayVoteSurface.js',
-  'components/NarimatoSemanticButton.js',
 ]);
 
 const RULES = [
@@ -38,17 +37,17 @@ const RULES = [
   {
     name: 'no-mantine-alert',
     pattern: /<Alert\b/,
-    message: 'Use NarimatoGdsAlert (GDS StateBlock) instead of Mantine Alert',
+    message: 'Use StateBlock from @doneisbetter/gds-core instead of Mantine Alert',
   },
   {
     name: 'no-raw-mantine-button',
     pattern: /<Button\b/,
-    message: 'Use NarimatoSemanticButton or NarimatoChoiceChip — no raw Mantine Button',
+    message: 'Use SemanticButton or ChoiceChip from @doneisbetter/gds-core — no raw Mantine Button',
   },
   {
     name: 'no-button-color-prop',
     pattern: /<Button[^>]*\bcolor=/,
-    message: 'Use NarimatoSemanticButton (GDS SemanticButton) without Mantine color=',
+    message: 'Use SemanticButton from @doneisbetter/gds-core without Mantine color=',
   },
   {
     name: 'no-themeicon-color',
@@ -58,7 +57,7 @@ const RULES = [
   {
     name: 'no-raw-mantine-accent-bg',
     pattern: /bg=["'](?:violet|green|red|orange|yellow|blue|cyan|grape|teal)\./,
-    message: 'Use NarimatoAccentPanel or gdsAccentPanelStyle — never raw Mantine palette bg on shells',
+    message: 'Use AccentPanel or gdsAccentPanelStyle — never raw Mantine palette bg on shells',
   },
   {
     name: 'no-legacy-narimato-shell',

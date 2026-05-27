@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "gdsVersion": "2.6.1",
+  "gdsVersion": "2.6.3",
   "productArchetype": "hybrid",
   "supportedEntryPoints": [
     "@doneisbetter/gds-theme/client",
@@ -37,33 +37,18 @@
       "status": "active"
     },
     {
-      "contract": "PageHeader",
-      "path": "components/NarimatoPageHeader.js",
+      "contract": "PublicChrome",
+      "path": "lib/ui/publicChrome.js",
       "status": "active"
     },
     {
-      "contract": "StateBlock",
-      "path": "components/NarimatoGdsAlert.js",
+      "contract": "OperatorShell",
+      "path": "components/operator/NarimatoOperatorShell.js",
       "status": "active"
     },
     {
-      "contract": "SemanticButton",
-      "path": "components/NarimatoSemanticButton.js",
-      "status": "active"
-    },
-    {
-      "contract": "AccentPanel",
-      "path": "components/NarimatoAccentPanel.js",
-      "status": "active"
-    },
-    {
-      "contract": "FormField",
-      "path": "components/NarimatoFormField.js",
-      "status": "active"
-    },
-    {
-      "contract": "MetricCard",
-      "path": "components/NarimatoMetricCard.js",
+      "contract": "AdminShell",
+      "path": "components/admin/AdminShell.js",
       "status": "active"
     }
   ],
@@ -75,20 +60,8 @@
       "reviewDate": "2026-08-01"
     },
     {
-      "surface": "NarimatoSemanticButton SSR fallback",
-      "reason": "Prerender uses Mantine Button without color= until client SemanticButton hydrates.",
-      "owner": "narimato",
-      "reviewDate": "2026-08-01"
-    },
-    {
       "surface": "Play layout CSS module",
       "reason": "playGame.module.css holds immersive layout tokens outside shell contracts.",
-      "owner": "narimato",
-      "reviewDate": "2026-08-01"
-    },
-    {
-      "surface": "Mantine notifications API",
-      "reason": "notifications.show color prop is Mantine overlay API, not shell markup.",
       "owner": "narimato",
       "reviewDate": "2026-08-01"
     }
@@ -124,7 +97,7 @@
       "@gds/admin"
     ]
   },
-  "migrationStatus": "npm-registry",
+  "migrationStatus": "governed",
   "owner": "narimato",
-  "lastReviewedAt": "2026-05-26"
+  "lastReviewedAt": "2026-05-27"
 }

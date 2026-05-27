@@ -1,12 +1,11 @@
 import Link from 'next/link';
-import { PublicShell } from '../components/public/PublicShell';
-import { NarimatoPageHeader } from '../components/NarimatoPageHeader';
-import { CONTACT_EMAIL } from '../components/public/PublicFooter';
+import { PageHeader as NarimatoPageHeader, PublicShell } from '@doneisbetter/gds-core/server';
 import { Anchor, List, Stack, Text, Title } from '@mantine/core';
+import { CONTACT_EMAIL, getPublicShellProps } from '../lib/ui/publicChrome';
 
 export default function PrivacyPage() {
   return (
-    <PublicShell containerSize="md">
+    <PublicShell {...getPublicShellProps('privacy', { containerSize: 'md' })}>
       <Stack gap="lg">
         <NarimatoPageHeader
           title="Privacy policy"

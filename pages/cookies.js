@@ -1,7 +1,7 @@
 import dynamic from 'next/dynamic';
-import { PublicShell } from '../components/public/PublicShell';
-import { NarimatoPageHeader } from '../components/NarimatoPageHeader';
+import { PageHeader as NarimatoPageHeader, PublicShell } from '@doneisbetter/gds-core/server';
 import { Stack, Text, Title } from '@mantine/core';
+import { getPublicShellProps } from '../lib/ui/publicChrome';
 
 const CookiePreferencesPanel = dynamic(
   () => import('../components/public/CookiePreferencesPanel').then((m) => m.CookiePreferencesPanel),
@@ -10,7 +10,7 @@ const CookiePreferencesPanel = dynamic(
 
 export default function CookiesPage() {
   return (
-    <PublicShell>
+    <PublicShell {...getPublicShellProps('cookies')}>
       <Stack gap="lg">
         <NarimatoPageHeader
           title="Cookie preferences"

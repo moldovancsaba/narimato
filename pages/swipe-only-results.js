@@ -2,12 +2,10 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { Group, Image, Loader, Paper, SimpleGrid, Stack, Text, Title } from '@mantine/core';
-import { StatusBadge } from '@doneisbetter/gds-core/client';
-import { NarimatoAccentPanel } from '../components/NarimatoAccentPanel';
-import { NarimatoSemanticButton } from '../components/NarimatoSemanticButton';
-import { PublicShell } from '../components/public/PublicShell';
-import { NarimatoPageHeader } from '../components/NarimatoPageHeader';
+import { AccentPanel as NarimatoAccentPanel, SemanticButton as NarimatoSemanticButton, StatusBadge } from '@doneisbetter/gds-core/client';
+import { PageHeader as NarimatoPageHeader, PublicShell } from '@doneisbetter/gds-core/server';
 import { useSurveyGate } from '../lib/hooks/useSurveyGate';
+import { getPublicShellProps } from '../lib/ui/publicChrome';
 
 export default function SwipeOnlyResults() {
   const router = useRouter();
@@ -34,7 +32,7 @@ export default function SwipeOnlyResults() {
 
   if (loading) {
     return (
-      <PublicShell containerSize="lg">
+      <PublicShell {...getPublicShellProps('home', { containerSize: 'lg' })}>
         <Loader />
       </PublicShell>
     );
@@ -42,7 +40,7 @@ export default function SwipeOnlyResults() {
 
   if (!results) {
     return (
-      <PublicShell containerSize="lg">
+      <PublicShell {...getPublicShellProps('home', { containerSize: 'lg' })}>
         <Stack gap="md">
           <NarimatoPageHeader title="Results not found" />
           <NarimatoSemanticButton action="back" component={Link} href={`/play?org=${org}`} variant="light" />
@@ -52,7 +50,7 @@ export default function SwipeOnlyResults() {
   }
 
   return (
-    <PublicShell containerSize="lg">
+    <PublicShell {...getPublicShellProps('home', { containerSize: 'lg' })}>
       <Stack gap="lg">
         <NarimatoPageHeader
           title="Swipe results"

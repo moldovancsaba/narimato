@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { PasswordInput, Stack, TextInput } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
-import { NarimatoFormField } from '../../components/NarimatoFormField';
-import { NarimatoAuthShell } from '../../components/NarimatoAuthShell';
-import { NarimatoSemanticButton } from '../../components/NarimatoSemanticButton';
+import { PasswordInput, Stack, Text, TextInput } from '@mantine/core';
+import { AuthShell, FormField, SemanticButton } from '@doneisbetter/gds-core/client';
+import { NarimatoThemeToggle } from '../../components/NarimatoThemeToggle';
+import { showErrorNotification } from '../../lib/ui/notifications';
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -37,38 +36,43 @@ export default function AdminLogin() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        notifications.show({ color: 'red', message: data.error || 'Login failed' });
+        showErrorNotification(data.error || 'Login failed');
         return;
       }
       const next = router.query.next || '/admin/users';
       router.replace(next);
     } catch {
-      notifications.show({ color: 'red', message: 'Network error' });
+      showErrorNotification('Network error');
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <NarimatoAuthShell title="Admin login" subtitle="NARIMATO administration">
+    <AuthShell
+      title="Admin login"
+      description="NARIMATO administration"
+      brand={<Text fw={800}>NARIMATO</Text>}
+      headerActions={<NarimatoThemeToggle size="md" />}
+    >
       <form onSubmit={handleSubmit}>
         <Stack gap="md">
-          <NarimatoFormField label="Email">
+          <FormField label="Email">
             <TextInput
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-          </NarimatoFormField>
-          <NarimatoFormField label="Password">
+          </FormField>
+          <FormField label="Password">
             <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-          </NarimatoFormField>
-          <NarimatoSemanticButton
+          </FormField>
+          <SemanticButton
             type="submit"
             action="login"
             loading={loading}
@@ -77,6 +81,6 @@ export default function AdminLogin() {
           />
         </Stack>
       </form>
-    </NarimatoAuthShell>
+    </AuthShell>
   );
 }
