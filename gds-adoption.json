@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "gdsVersion": "2.6.3",
+  "gdsVersion": "2.6.4",
   "productArchetype": "hybrid",
   "supportedEntryPoints": [
     "@doneisbetter/gds-theme/client",
@@ -57,13 +57,69 @@
       "surface": "Immersive play UI",
       "reason": "Full-viewport swipe/vote surfaces use governed GdsIcons but exempt from shell-oriented ci-gds-guard rules.",
       "owner": "narimato",
-      "reviewDate": "2026-08-01"
+      "reviewDate": "2026-08-01",
+      "category": "product-authored-experience",
+      "scope": [
+        "components/play/PlaySwipeSurface.js",
+        "components/play/PlayVoteSurface.js"
+      ],
+      "allowedImplementation": "Mantine layout primitives for gesture-first play cards.",
+      "mustStillUse": [
+        "@doneisbetter/gds-core/client GdsIcons"
+      ],
+      "mustNotDo": [
+        "Add parallel marketing shells or raw palette accent panels inside play surfaces"
+      ],
+      "exitCondition": "GDS publishes an immersive play runtime contract or Narimato retires swipe game modes.",
+      "status": "approved",
+      "allowImports": ["@mantine/core"]
     },
     {
       "surface": "Play layout CSS module",
       "reason": "playGame.module.css holds immersive layout tokens outside shell contracts.",
       "owner": "narimato",
-      "reviewDate": "2026-08-01"
+      "reviewDate": "2026-08-01",
+      "category": "product-authored-experience",
+      "scope": [
+        "styles/playGame.module.css"
+      ],
+      "allowedImplementation": "Local CSS module for swipe physics, card transforms, and safe-area layout.",
+      "mustStillUse": [
+        "GDS theme tokens via Mantine CSS variables where referenced"
+      ],
+      "mustNotDo": [
+        "Duplicate shell spacing, typography, or marketing accent rules in play CSS"
+      ],
+      "exitCondition": "GDS documents immersive play layout tokens or play modes are removed.",
+      "status": "approved"
+    },
+    {
+      "surface": "Mantine notifications API",
+      "reason": "notifications.show is Mantine overlay API; GDS has no toast contract yet.",
+      "owner": "narimato",
+      "reviewDate": "2026-08-01",
+      "category": "package-coverage-gap",
+      "scope": [
+        "lib/hooks/useSurveyGate.js",
+        "pages/play.js",
+        "components/operator/OperatorCardsPanel.js",
+        "components/operator/OperatorOrganizationsPanel.js",
+        "components/operator/OperatorSurveyPanel.js",
+        "components/operator/LocalOperatorConsole.js",
+        "components/operator/OperatorDashboard.js",
+        "components/intelligence/CorpusCardsConsole.js"
+      ],
+      "allowedImplementation": "Mantine notifications.show for ephemeral toast feedback only.",
+      "mustStillUse": [
+        "StateBlock for persistent inline status"
+      ],
+      "mustNotDo": [
+        "Use notifications for destructive confirmation flows"
+      ],
+      "exitCondition": "GDS ships a toast/notification contract.",
+      "status": "approved",
+      "dependency": "@mantine/notifications",
+      "allowImports": ["@mantine/notifications"]
     }
   ],
   "compliance": {
@@ -94,10 +150,11 @@
     "bannedImports": [
       "@gds/core",
       "@gds/theme",
-      "@gds/admin"
+      "@gds/admin",
+      "@tabler/icons-react"
     ]
   },
   "migrationStatus": "governed",
   "owner": "narimato",
-  "lastReviewedAt": "2026-05-27"
+  "lastReviewedAt": "2026-05-28"
 }

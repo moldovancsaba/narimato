@@ -6,7 +6,7 @@
 |---|----------|-----|
 | **Repository** | This repo (`narimato`) | [general-design-system](https://github.com/sovereignsquad/general-design-system) |
 | **Runtime packages** | `@doneisbetter/gds-theme`, `@doneisbetter/gds-core`, `@doneisbetter/gds-admin` | Published from GDS SSOT |
-| **Consumed version** | **2.6.3** (see `gds-adoption.json`) | npm `@doneisbetter/gds-*@2.6.3` |
+| **Consumed version** | **2.6.4** (see `gds-adoption.json`) | npm `@doneisbetter/gds-*@2.6.4` |
 
 > When UI behavior or tokens conflict, **GDS wins**. Narimato does not vend mirror packages under `packages/gds-*` or the legacy `@gds/*` scope.
 
@@ -19,8 +19,8 @@
 Install from the public npm registry (pinned in `package.json`):
 
 ```bash
-npm install @doneisbetter/gds-theme@2.6.3 @doneisbetter/gds-core@2.6.3 @doneisbetter/gds-admin@2.6.3
-npm install -D @doneisbetter/gds-eslint-config@2.6.3 @doneisbetter/gds-compliance@2.6.3
+npm install @doneisbetter/gds-theme@2.6.4 @doneisbetter/gds-core@2.6.4 @doneisbetter/gds-admin@2.6.4
+npm install -D @doneisbetter/gds-eslint-config@2.6.4 @doneisbetter/gds-compliance@2.6.4
 ```
 
 Do **not** use sibling `file:` links, GitHub release tarball URLs, or clone-and-build install hooks for CI/Vercel.
@@ -60,6 +60,7 @@ Do **not** use sibling `file:` links, GitHub release tarball URLs, or clone-and-
 |---------|--------|
 | `components/play/PlaySwipeSurface.js`, `PlayVoteSurface.js` | Immersive game UI |
 | `styles/playGame.module.css` | Play layout tokens |
+| Mantine `notifications.show` | Ephemeral toast feedback (no GDS toast contract yet) |
 
 Declared in `gds-adoption.json`.
 
