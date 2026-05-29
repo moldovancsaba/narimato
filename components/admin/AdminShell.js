@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { Container, Text } from '@mantine/core';
 import { AppShell } from '@doneisbetter/gds-admin/client';
+import { Text } from '@doneisbetter/gds-core/client';
 
 export function AdminShell({ title = 'Admin', children }) {
   return (
@@ -13,9 +13,7 @@ export function AdminShell({ title = 'Admin', children }) {
         </Text>
       }
     >
-      <Container size="sm" py="md">
-        {children}
-      </Container>
+      {children}
     </AppShell>
   );
 }

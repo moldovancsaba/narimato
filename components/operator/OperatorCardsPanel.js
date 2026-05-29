@@ -10,7 +10,7 @@ import {
   TextInput,
   Textarea,
 } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
+import { showErrorNotification, showSuccessNotification, showWarningNotification, showInfoNotification } from '../../lib/ui/notifications';
 import { EmptyState, FormField, PageHeader, SemanticButton } from '@doneisbetter/gds-core/client';
 import { operatorApi } from '../../lib/operator/clientApi';
 
@@ -91,10 +91,10 @@ export function OperatorCardsPanel({ orgId }) {
                 body: JSON.stringify({ organizationId: orgId, ...form, name: form.name || form.title }),
               });
               setForm({ title: '', name: '', description: '', parentTag: '', imageUrl: '' });
-              notifications.show({ color: 'green', message: 'Card added' });
+              showSuccessNotification('Card added' );
               await load();
             } catch (err) {
-              notifications.show({ color: 'red', message: err.message });
+              showErrorNotification(err.message );
             }
           }}
         >

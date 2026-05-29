@@ -42,7 +42,7 @@ Do **not** use sibling `file:` links, GitHub release tarball URLs, or clone-and-
 | Root provider | `components/NarimatoProviders.js` → `GdsProvider` | Done |
 | Theme | `lib/ui/narimatoTheme.js` | Done |
 | Public shell | `components/public/PublicShell.js` + `lib/ui/publicChrome.js` | Done |
-| Operator shell | `components/operator/NarimatoOperatorShell.js` → `AppShell` | Done |
+| Operator shell | `components/operator/NarimatoOperatorShell.js` → `AppShell` + `SidebarNav` | Done |
 | Admin shell | `components/admin/AdminShell.js` → `AppShell` | Done |
 | Auth shell | direct `AuthShell` imports | Done |
 | Page header | direct `PageHeader` imports | Done |
@@ -60,7 +60,8 @@ Do **not** use sibling `file:` links, GitHub release tarball URLs, or clone-and-
 |---------|--------|
 | `components/play/PlaySwipeSurface.js`, `PlayVoteSurface.js` | Immersive game UI |
 | `styles/playGame.module.css` | Play layout tokens |
-| Mantine `notifications.show` | Ephemeral toast feedback (no GDS toast contract yet) |
+
+Ephemeral feedback uses `lib/ui/notifications` → `showGdsNotification` from `@doneisbetter/gds-theme` (product code must not import Mantine notification APIs directly).
 
 Declared in `gds-adoption.json`.
 

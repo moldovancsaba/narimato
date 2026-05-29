@@ -12,7 +12,7 @@ import {
   Textarea,
   Tooltip,
 } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
+import { showErrorNotification, showSuccessNotification, showWarningNotification, showInfoNotification } from '../../lib/ui/notifications';
 import { AccentPanel, EmptyState, PageHeader, SemanticButton } from '@doneisbetter/gds-core/client';
 import { LOCAL_TEST_URL, PUBLIC_SITE_URL } from './operatorCopy';
 import { operatorApi } from '../../lib/operator/clientApi';
@@ -51,19 +51,15 @@ export function OperatorSurveyPanel({ orgId }) {
       });
       if (data.password) {
         setGeneratedPassword(data.password);
-        notifications.show({
-          color: 'green',
-          message: regenerate ? 'New password created' : 'Password created',
-        });
+        showSuccessNotification(regenerate ? 'New password created' : 'Password created',
+        );
       } else {
-        notifications.show({
-          color: 'yellow',
-          message: 'A password already exists — use “Create new password” if you need a different one',
-        });
+        showWarningNotification('A password already exists — use “Create new password” if you need a different one',
+        );
       }
       await load();
     } catch (err) {
-      notifications.show({ color: 'red', message: err.message });
+      showErrorNotification(err.message );
     } finally {
       setBusy(false);
     }
@@ -78,13 +74,11 @@ export function OperatorSurveyPanel({ orgId }) {
         body: JSON.stringify({ organizationId: orgId }),
       });
       if (data.password) setGeneratedPassword(data.password);
-      notifications.show({
-        color: 'green',
-        message: data.password ? 'Survey and password are ready' : 'Survey content updated',
-      });
+      showSuccessNotification(data.password ? 'Survey and password are ready' : 'Survey content updated',
+      );
       await load();
     } catch (err) {
-      notifications.show({ color: 'red', message: err.message });
+      showErrorNotification(err.message );
     } finally {
       setBusy(false);
     }

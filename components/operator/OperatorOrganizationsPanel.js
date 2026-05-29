@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Collapse, Group, Loader, Paper, Stack, Text, TextInput, Textarea } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
+import { showErrorNotification, showSuccessNotification, showWarningNotification, showInfoNotification } from '../../lib/ui/notifications';
 import { ChoiceChip, ConfirmDialog, EmptyState, FormField, PageHeader, SemanticButton } from '@doneisbetter/gds-core/client';
 import { slugifyOrganisationName } from './operatorCopy';
 import { operatorApi } from '../../lib/operator/clientApi';
@@ -57,7 +57,7 @@ export function OperatorOrganizationsPanel({
             e.preventDefault();
             const slug = (showAdvanced && slugOverride.trim()) || suggestedSlug;
             if (!slug) {
-              notifications.show({ color: 'red', message: 'Please enter a valid organisation name' });
+              showErrorNotification('Please enter a valid organisation name' );
               return;
             }
             try {
@@ -72,18 +72,17 @@ export function OperatorOrganizationsPanel({
               setForm({ name: '', description: '' });
               setSlugOverride('');
               setShowAdvanced(false);
-              notifications.show({
-                color: 'green',
-                title: 'Organisation created',
-                message: 'Next, set up your test survey on the Home tab.',
-              });
+              showSuccessNotification(
+                'Next, set up your test survey on the Home tab.',
+                'Organisation created'
+              );
               await load();
               if (organization?.uuid) {
                 onOrgChange?.(organization.uuid);
                 onCreated?.(organization.uuid);
               }
             } catch (err) {
-              notifications.show({ color: 'red', message: err.message });
+              showErrorNotification(err.message );
             }
           }}
         >
@@ -148,10 +147,10 @@ export function OperatorOrganizationsPanel({
                         body: JSON.stringify({ uuid: org.uuid, ...editForm }),
                       });
                       setEditing(null);
-                      notifications.show({ color: 'green', message: 'Saved' });
+                      showSuccessNotification('Saved' );
                       await load();
                     } catch (err) {
-                      notifications.show({ color: 'red', message: err.message });
+                      showErrorNotification(err.message );
                     }
                   }}
                 >
@@ -231,11 +230,11 @@ export function OperatorOrganizationsPanel({
               method: 'DELETE',
               body: JSON.stringify({ uuid: deleteTarget.uuid }),
             });
-            notifications.show({ color: 'green', message: 'Organisation deleted' });
+            showSuccessNotification('Organisation deleted' );
             setDeleteTarget(null);
             await load();
           } catch (err) {
-            notifications.show({ color: 'red', message: err.message });
+            showErrorNotification(err.message );
           } finally {
             setDeleteLoading(false);
           }

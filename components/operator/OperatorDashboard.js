@@ -12,7 +12,7 @@ import {
   Text,
   Tooltip,
 } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
+import { showErrorNotification, showSuccessNotification, showWarningNotification, showInfoNotification } from '../../lib/ui/notifications';
 import { AccentPanel, MetricCard, PageHeader, SemanticButton, StateBlock } from '@doneisbetter/gds-core/client';
 import { OperatorSetupSteps } from './OperatorSetupSteps';
 import { LocalAiQuickLinks } from '../intelligence/LocalAiQuickLinks';
@@ -65,15 +65,14 @@ export function OperatorDashboard({ orgId, organizations, onSelectTab }) {
         configured: result.surveyConfigured || result.passwordCreated || prev?.configured,
         playableDeckCount: result.playableDeckCount,
       }));
-      notifications.show({
-        color: 'green',
-        title: 'Survey ready',
-        message: result.password
+      showSuccessNotification(
+        result.password
           ? 'Copy the password below and share it with participants.'
           : 'Your sample survey is ready to test.',
-      });
+        'Survey ready'
+      );
     } catch (err) {
-      notifications.show({ color: 'red', message: err.message });
+      showErrorNotification(err.message );
     } finally {
       setBootstrapBusy(false);
     }
