@@ -18,8 +18,5 @@ jobs:
       - name: Install and verify Narimato
         run: |
           npm ci
-          npm run gds:ci-guard
-          npm run gds:validate
-          npm run gds:compliance
-          npm run lint
+          npm run test
           npm run build

@@ -27,20 +27,24 @@
     "gds:compliance-prep": "node scripts/gds-compliance-prep.js",
     "gds:validate": "npm run gds:compliance-prep && gds-compliance validate-manifest --manifest ./gds-adoption.json",
     "gds:compliance": "npm run gds:compliance-prep && gds-compliance check --manifest ./gds-adoption.json",
+    "test": "node scripts/verify-gds.js",
+    "test:full": "npm run test && npm run build",
+    "verify": "npm run test:full",
+    "smoke:production": "node scripts/smoke-production.js",
     "build:operator": "node scripts/build-operator-ui.js"
   },
   "dependencies": {
     "@doneisbetter/gds-admin": "^2.6.5",
     "@doneisbetter/gds-core": "^2.6.5",
     "@doneisbetter/gds-theme": "^2.6.5",
-    "@mantine/core": "^7.17.8",
-    "@mantine/hooks": "^7.17.8",
-    "@mantine/modals": "^7.17.8",
-    "@mantine/notifications": "^7.17.8",
+    "@mantine/core": "8.3.18",
+    "@mantine/hooks": "8.3.18",
+    "@mantine/modals": "8.3.18",
+    "@mantine/notifications": "8.3.18",
     "@tabler/icons-react": "^3.31.0",
     "dotenv": "^17.2.1",
     "mongoose": "^8.1.0",
-    "next": "15.5.9",
+    "next": "15.5.18",
     "react": "^18",
     "react-dom": "^18",
     "uuid": "^9.0.1",
@@ -52,9 +56,13 @@
     "@eslint/eslintrc": "^3.3.1",
     "esbuild": "^0.25.0",
     "eslint": "^9.28.0",
-    "eslint-config-next": "15.5.9"
+    "eslint-config-next": "15.5.18"
   },
   "overrides": {
-    "js-yaml": "4.1.1"
+    "js-yaml": "4.1.1",
+    "@mantine/core": "8.3.18",
+    "@mantine/hooks": "8.3.18",
+    "@mantine/modals": "8.3.18",
+    "@mantine/notifications": "8.3.18"
   }
 }

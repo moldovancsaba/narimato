@@ -34,9 +34,8 @@ export function PlaySwipeSurface({
       size={cardConfig.buttonSize}
       radius="xl"
       variant="filled"
-      color="red"
       aria-label="Dislike card"
-      className={keyboardActive === 'dislike' ? classes.keyboardActive : undefined}
+      className={`${classes.swipeDislike} ${keyboardActive === 'dislike' ? classes.keyboardActive : ''}`.trim()}
       onClick={onSwipeLeft}
     >
       <GdsIcons.TrendingDown size="60%" />
@@ -50,9 +49,8 @@ export function PlaySwipeSurface({
       size={cardConfig.buttonSize}
       radius="xl"
       variant="filled"
-      color="green"
       aria-label="Like card"
-      className={keyboardActive === 'like' ? classes.keyboardActive : undefined}
+      className={`${classes.swipeLike} ${keyboardActive === 'like' ? classes.keyboardActive : ''}`.trim()}
       onClick={onSwipeRight}
     >
       <GdsIcons.TrendingUp size="60%" />
