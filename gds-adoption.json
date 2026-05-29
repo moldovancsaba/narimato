@@ -18,7 +18,13 @@
     "SemanticButton",
     "StatusBadge",
     "EmptyState",
-    "ConfirmDialog"
+    "ConfirmDialog",
+    "AppShell",
+    "AuthShell",
+    "DiscoveryShell",
+    "SidebarNav",
+    "SidebarNavItem",
+    "PublicBrandFooter"
   ],
   "localAdapters": [
     {
@@ -42,13 +48,18 @@
       "status": "active"
     },
     {
-      "contract": "OperatorShell",
+      "contract": "AppShell",
       "path": "components/operator/NarimatoOperatorShell.js",
       "status": "active"
     },
     {
-      "contract": "AdminShell",
+      "contract": "AppShell",
       "path": "components/admin/AdminShell.js",
+      "status": "active"
+    },
+    {
+      "contract": "Notifications",
+      "path": "lib/ui/notifications.js",
       "status": "active"
     }
   ],
@@ -65,7 +76,8 @@
       ],
       "allowedImplementation": "Mantine layout primitives for gesture-first play cards.",
       "mustStillUse": [
-        "@doneisbetter/gds-core/client GdsIcons"
+        "@doneisbetter/gds-core/client GdsIcons",
+        "StatusBadge for in-card level labels"
       ],
       "mustNotDo": [
         "Add parallel marketing shells or raw palette accent panels inside play surfaces"
@@ -92,37 +104,26 @@
       ],
       "exitCondition": "GDS documents immersive play layout tokens or play modes are removed.",
       "status": "approved"
-    },
-    {
-      "surface": "Mantine notifications API",
-      "reason": "notifications.show is Mantine overlay API; GDS has no toast contract yet.",
-      "owner": "narimato",
-      "reviewDate": "2026-08-01",
-      "category": "package-coverage-gap",
-      "scope": [
-        "lib/hooks/useSurveyGate.js",
-        "pages/play.js",
-        "components/operator/OperatorCardsPanel.js",
-        "components/operator/OperatorOrganizationsPanel.js",
-        "components/operator/OperatorSurveyPanel.js",
-        "components/operator/LocalOperatorConsole.js",
-        "components/operator/OperatorDashboard.js",
-        "components/intelligence/CorpusCardsConsole.js"
-      ],
-      "allowedImplementation": "Mantine notifications.show for ephemeral toast feedback only.",
-      "mustStillUse": [
-        "StateBlock for persistent inline status"
-      ],
-      "mustNotDo": [
-        "Use notifications for destructive confirmation flows"
-      ],
-      "exitCondition": "GDS ships a toast/notification contract.",
-      "status": "approved",
-      "dependency": "@mantine/notifications",
-      "allowImports": ["@mantine/notifications"]
     }
   ],
   "compliance": {
+    "strictMode": true,
+    "approvedShellPrimitives": [
+      "PublicShell",
+      "AppShell",
+      "DiscoveryShell",
+      "AuthShell",
+      "PublicBrandFooter"
+    ],
+    "approvedTemporaryExceptions": [
+      "PublicChrome"
+    ],
+    "approvedActionPrimitives": [
+      "SemanticButton",
+      "ActionBar",
+      "ChoiceChip",
+      "ConfirmDialog"
+    ],
     "documentationPaths": [
       "README.md",
       "docs/GDS_ADOPTION.md",
@@ -151,7 +152,8 @@
       "@gds/core",
       "@gds/theme",
       "@gds/admin",
-      "@tabler/icons-react"
+      "@tabler/icons-react",
+      "@mantine/notifications"
     ]
   },
   "migrationStatus": "governed",

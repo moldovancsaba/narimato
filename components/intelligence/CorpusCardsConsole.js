@@ -11,7 +11,7 @@ import {
   TextInput,
   Title,
 } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
+import { showErrorNotification, showSuccessNotification, showWarningNotification, showInfoNotification } from '../../lib/ui/notifications';
 import { PageHeader, SemanticButton, StateBlock, StatusBadge } from '@doneisbetter/gds-core/client';
 
 export function CorpusCardsConsole() {
@@ -48,7 +48,7 @@ export function CorpusCardsConsole() {
       const pending = (cardsData.cards || []).filter((c) => c.approvalStatus === 'pending');
       setPendingCards(pending);
     } catch (err) {
-      notifications.show({ color: 'red', message: err.message });
+      showErrorNotification(err.message );
     } finally {
       setLoading(false);
     }
@@ -82,10 +82,10 @@ export function CorpusCardsConsole() {
       if (!res.ok) throw new Error(data.error || 'Failed to add source');
       setTitle('');
       setContent('');
-      notifications.show({ color: 'green', message: 'Source queued for ingestion' });
+      showSuccessNotification('Source queued for ingestion' );
       await loadOrgData();
     } catch (err) {
-      notifications.show({ color: 'red', message: err.message });
+      showErrorNotification(err.message );
     } finally {
       setBusy(false);
     }
@@ -106,12 +106,10 @@ export function CorpusCardsConsole() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Enqueue failed');
-      notifications.show({
-        color: 'teal',
-        message: 'Projection refresh queued (runs on local Mac)',
-      });
+      showInfoNotification('Projection refresh queued (runs on local Mac)',
+      );
     } catch (err) {
-      notifications.show({ color: 'red', message: err.message });
+      showErrorNotification(err.message );
     } finally {
       setBusy(false);
     }

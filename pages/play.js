@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { Loader, Center } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
+import { showErrorNotification, showSuccessNotification } from '../lib/ui/notifications';
 import { calculateCardSize } from '../lib/utils/cardSizing';
 import { event } from '../lib/analytics/ga';
 import { useSurveyGate } from '../lib/hooks/useSurveyGate';
@@ -467,7 +467,7 @@ export default function Play() {
         
         // If all fails, show error
         console.error('Failed to load child session, redirecting to home');
-        notifications.show({ color: 'red', message: 'Failed to load child session' });
+        showErrorNotification('Failed to load child session' );
         router.push('/');
         return;
       }
@@ -491,7 +491,7 @@ export default function Play() {
       if (res.ok) {
         const data = normalizePlaySession(await res.json());
         if (!data?.playId) {
-          notifications.show({ color: 'red', message: 'Invalid play session response' });
+          showErrorNotification('Invalid play session response' );
           return;
         }
         // FUNCTIONAL: Track play session start event
@@ -551,11 +551,11 @@ export default function Play() {
         setPlayComplete(false);
       } else {
         const error = await res.json();
-        notifications.show({ color: 'red', message: error.error });
+        showErrorNotification(error.error );
       }
     } catch (error) {
       console.error('Failed to start play:', error);
-      notifications.show({ color: 'red', message: 'Failed to start play session' });
+      showErrorNotification('Failed to start play session' );
     }
   };
 
@@ -639,11 +639,10 @@ export default function Play() {
                 const { mode } = router.query;
                 event('play_complete', { playId: currentPlay.playId, mode, hierarchical: true });
               } catch (e) { /* noop */ }
-              notifications.show({
-                color: 'green',
-                title: 'Hierarchical ranking complete',
-                message: `Ranked ${statusData.data.totalItems} items in families.`,
-              });
+              showSuccessNotification(
+                `Ranked ${statusData.data.totalItems} items in families.`,
+                'Hierarchical ranking complete'
+              );
               
               setTimeout(() => {
                 router.push(`/results?playId=${statusData.playId}&org=${org}&deck=${encodeURIComponent(deck)}&hierarchical=true`);
@@ -852,11 +851,11 @@ export default function Play() {
         }
       } else {
         const error = await res.json();
-        notifications.show({ color: 'red', message: error.error });
+        showErrorNotification(error.error );
       }
     } catch (error) {
       console.error('Failed to swipe:', error);
-      notifications.show({ color: 'red', message: 'Failed to swipe card' });
+      showErrorNotification('Failed to swipe card' );
     }
   };
 
@@ -879,7 +878,7 @@ if (mode === 'vote-only' || mode === 'vote-more' || mode === 'rank-only' || mode
         });
         if (!res.ok) {
           const error = await res.json();
-          notifications.show({ color: 'red', message: error.error || 'Vote failed' });
+          showErrorNotification(error.error || 'Vote failed' );
           return;
         }
         // FUNCTIONAL: Track voting behavior for preference analysis
@@ -895,7 +894,7 @@ if (mode === 'vote-only' || mode === 'vote-more' || mode === 'rank-only' || mode
         } catch (e) { /* noop */ }
         const nextRes = await fetch(`/api/v1/play/${currentPlay.playId}/next`);
         if (!nextRes.ok) {
-          notifications.show({ color: 'red', message: 'Failed to get next comparison' });
+          showErrorNotification('Failed to get next comparison' );
           return;
         }
 const nextData = await nextRes.json();
@@ -982,7 +981,7 @@ const nextData = await nextRes.json();
           }
         } else {
           const error = await res.json();
-          notifications.show({ color: 'red', message: error.error });
+          showErrorNotification(error.error );
         }
         return;
       }
@@ -1070,11 +1069,11 @@ const nextData = await nextRes.json();
         }
       } else {
         const error = await res.json();
-        notifications.show({ color: 'red', message: error.error });
+        showErrorNotification(error.error );
       }
     } catch (error) {
       console.error('Failed to vote:', error);
-      notifications.show({ color: 'red', message: 'Failed to vote' });
+      showErrorNotification('Failed to vote' );
     } finally {
       voteInFlight.current = false;
     }

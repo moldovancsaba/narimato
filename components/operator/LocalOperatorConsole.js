@@ -12,7 +12,7 @@ import {
   Textarea,
   TextInput,
 } from '@mantine/core';
-import { notifications } from '@mantine/notifications';
+import { showErrorNotification, showSuccessNotification, showWarningNotification, showInfoNotification } from '../../lib/ui/notifications';
 import { ConfirmDialog, EmptyState, FormField as NarimatoFormField, PageHeader as NarimatoPageHeader, SemanticButton as NarimatoSemanticButton, StateBlock as NarimatoGdsAlert, StatusBadge } from '@doneisbetter/gds-core/client';
 import { operatorApi } from '../../lib/operator/clientApi';
 
@@ -89,7 +89,7 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
         if (!hideOrgManagement) await loadOrgs();
         await loadStatus();
       } catch (err) {
-        notifications.show({ color: 'red', message: err.message || 'Failed to connect to operator API' });
+        showErrorNotification(err.message || 'Failed to connect to operator API' );
       } finally {
         setLoading(false);
       }
@@ -120,14 +120,14 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
         body: JSON.stringify({ organizationId: orgId, cardUuids: [rejectTarget.uuid] }),
       });
       if (r.skipped && !r.rejected) {
-        notifications.show({ color: 'yellow', message: 'Nothing rejected — card is not pending.' });
+        showWarningNotification('Nothing rejected — card is not pending.' );
       } else {
-        notifications.show({ color: 'green', message: 'Card rejected' });
+        showSuccessNotification('Card rejected' );
       }
       setRejectTarget(null);
       await loadPending();
     } catch (err) {
-      notifications.show({ color: 'red', message: err.message });
+      showErrorNotification(err.message );
     } finally {
       setRejectLoading(false);
     }
@@ -237,10 +237,10 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
                     method: 'POST',
                     body: JSON.stringify({ name: orgName, slug: orgSlug }),
                   });
-                  notifications.show({ color: 'green', message: 'Organization created' });
+                  showSuccessNotification('Organization created' );
                   await loadOrgs();
                 } catch (err) {
-                  notifications.show({ color: 'red', message: err.message });
+                  showErrorNotification(err.message );
                 }
               }}
             />
@@ -271,7 +271,7 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
                 setCurrentTopicId(topic.uuid);
                 appendChat('system', `Topic session ${topic.uuid}`);
               } catch (err) {
-                notifications.show({ color: 'red', message: err.message });
+                showErrorNotification(err.message );
               }
             }}
           />
@@ -289,7 +289,7 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
             action="send"
             onClick={async () => {
               if (!currentTopicId) {
-                notifications.show({ color: 'yellow', message: 'Create a topic session first' });
+                showWarningNotification('Create a topic session first' );
                 return;
               }
               try {
@@ -301,7 +301,7 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
                 appendChat('agent', reply);
                 setChatInput('');
               } catch (err) {
-                notifications.show({ color: 'red', message: err.message });
+                showErrorNotification(err.message );
               }
             }}
           />
@@ -343,7 +343,7 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
             action="confirm"
             onClick={async () => {
               if (!currentTopicId) {
-                notifications.show({ color: 'yellow', message: 'Create a topic session first' });
+                showWarningNotification('Create a topic session first' );
                 return;
               }
               try {
@@ -359,9 +359,9 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
                     regenerateTag: regenerateTag || null,
                   }),
                 });
-                notifications.show({ color: 'green', message: 'Topic approved' });
+                showSuccessNotification('Topic approved' );
               } catch (err) {
-                notifications.show({ color: 'red', message: err.message });
+                showErrorNotification(err.message );
               }
             }}
           />
@@ -391,7 +391,7 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
               action="start"
               onClick={async () => {
                 if (!currentTopicId) {
-                  notifications.show({ color: 'yellow', message: 'Approve a topic first' });
+                  showWarningNotification('Approve a topic first' );
                   return;
                 }
                 try {
@@ -404,9 +404,9 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
                     }),
                   });
                   await loadJobs();
-                  notifications.show({ color: 'green', message: 'Job enqueued' });
+                  showSuccessNotification('Job enqueued' );
                 } catch (err) {
-                  notifications.show({ color: 'red', message: err.message });
+                  showErrorNotification(err.message );
                 }
               }}
             />
@@ -419,9 +419,9 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
                     method: 'POST',
                     body: JSON.stringify({ organizationId: orgId }),
                   });
-                  notifications.show({ color: 'green', message: 'Projection refreshed' });
+                  showSuccessNotification('Projection refreshed' );
                 } catch (err) {
-                  notifications.show({ color: 'red', message: err.message });
+                  showErrorNotification(err.message );
                 }
               }}
             />
@@ -454,11 +454,11 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
                           body: JSON.stringify({ organizationId: orgId, cardUuids: [card.uuid] }),
                         });
                         if (r.skipped) {
-                          notifications.show({ color: 'yellow', message: `${r.skipped} skipped — not pending` });
+                          showWarningNotification(`${r.skipped} skipped — not pending`);
                         }
                         await loadPending();
                       } catch (err) {
-                        notifications.show({ color: 'red', message: err.message });
+                        showErrorNotification(err.message );
                       }
                     }}
                   />
@@ -509,7 +509,7 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
                 });
                 await loadPending();
               } catch (err) {
-                notifications.show({ color: 'red', message: err.message });
+                showErrorNotification(err.message );
               }
             }}
           />
@@ -524,9 +524,9 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
                   body: JSON.stringify({ organizationId: orgId, archiveDownvoted: false }),
                 });
                 await loadJobs();
-                notifications.show({ color: 'green', message: 'Reconcile job enqueued' });
+                showSuccessNotification('Reconcile job enqueued' );
               } catch (err) {
-                notifications.show({ color: 'red', message: err.message });
+                showErrorNotification(err.message );
               }
             }}
           />
@@ -563,9 +563,9 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
                     autoApprove: autoApprove === '1',
                   }),
                 });
-                notifications.show({ color: 'green', message: 'Deck setting saved' });
+                showSuccessNotification('Deck setting saved' );
               } catch (err) {
-                notifications.show({ color: 'red', message: err.message });
+                showErrorNotification(err.message );
               }
             }}
           />
@@ -609,9 +609,9 @@ export function LocalOperatorConsole({ apiBase, embedded = false, orgId: orgIdPr
                     parentTag: cardParent || null,
                   }),
                 });
-                notifications.show({ color: 'green', message: 'Card created' });
+                showSuccessNotification('Card created' );
               } catch (err) {
-                notifications.show({ color: 'red', message: err.message });
+                showErrorNotification(err.message );
               }
             }}
           />

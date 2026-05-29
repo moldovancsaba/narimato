@@ -11,6 +11,8 @@ const SKIP_PREFIXES = ['packages/'];
 const EXEMPT_REL = new Set([
   'components/play/PlaySwipeSurface.js',
   'components/play/PlayVoteSurface.js',
+  'components/NarimatoProviders.js',
+  'lib/ui/notifications.js',
 ]);
 
 const RULES = [
@@ -23,6 +25,11 @@ const RULES = [
     name: 'no-direct-tabler-icons',
     pattern: /@tabler\/icons-react/,
     message: 'Import icons from @doneisbetter/gds-core (GdsIcons) instead of @tabler/icons-react',
+  },
+  {
+    name: 'no-direct-mantine-notifications',
+    pattern: /@mantine\/notifications/,
+    message: 'Use lib/ui/notifications (showGdsNotification via @doneisbetter/gds-theme) instead of @mantine/notifications',
   },
   {
     name: 'no-adhoc-confirm-modal',
