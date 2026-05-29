@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "gdsVersion": "2.6.4",
+  "gdsVersion": "2.6.5",
   "productArchetype": "hybrid",
   "supportedEntryPoints": [
     "@doneisbetter/gds-theme/client",
@@ -33,7 +33,7 @@
       "status": "active"
     },
     {
-      "contract": "Theme",
+      "contract": "createPublicBrandTheme",
       "path": "lib/ui/narimatoTheme.js",
       "status": "active"
     },
@@ -84,7 +84,18 @@
       ],
       "exitCondition": "GDS publishes an immersive play runtime contract or Narimato retires swipe game modes.",
       "status": "approved",
-      "allowImports": ["@mantine/core"]
+      "allowImports": ["@mantine/core"],
+      "a11yRequirements": [
+        "Swipe/vote controls expose aria-labels on ActionIcon targets",
+        "Keyboard shortcuts remain visible via playGame.module.css focus states"
+      ],
+      "testingRequirements": [
+        "Manual play smoke on mobile and desktop after play surface changes",
+        "npm run intelligence:test-play-feedback when play input paths change"
+      ],
+      "observabilityRequirements": [
+        "Play analytics events remain emitted from pages/play.js"
+      ]
     },
     {
       "surface": "Play layout CSS module",
@@ -93,9 +104,10 @@
       "reviewDate": "2026-08-01",
       "category": "product-authored-experience",
       "scope": [
-        "styles/playGame.module.css"
+        "components/play/PlaySwipeSurface.js",
+        "components/play/PlayVoteSurface.js"
       ],
-      "allowedImplementation": "Local CSS module for swipe physics, card transforms, and safe-area layout.",
+      "allowedImplementation": "Local CSS module import (playGame.module.css) for swipe physics, card transforms, and safe-area layout.",
       "mustStillUse": [
         "GDS theme tokens via Mantine CSS variables where referenced"
       ],
@@ -103,10 +115,30 @@
         "Duplicate shell spacing, typography, or marketing accent rules in play CSS"
       ],
       "exitCondition": "GDS documents immersive play layout tokens or play modes are removed.",
-      "status": "approved"
+      "status": "approved",
+      "a11yRequirements": [
+        "Preserve reduced-motion friendly transitions where playGame.module.css defines them"
+      ],
+      "testingRequirements": [
+        "Visual check of swipe-only and rank-more play modes after CSS edits"
+      ],
+      "observabilityRequirements": [
+        "No additional telemetry required for layout-only tokens"
+      ]
     }
   ],
   "compliance": {
+    "approvedThemeLanes": [
+      "gdsTheme",
+      "gdsDarkPublicTheme",
+      "gdsFlatSurfaceTheme",
+      "gdsEditorialPublicTheme",
+      "createPublicBrandTheme"
+    ],
+    "themeOwnershipPaths": [
+      "components/NarimatoProviders.js",
+      "lib/ui/narimatoTheme.js"
+    ],
     "strictMode": true,
     "approvedShellPrimitives": [
       "PublicShell",
@@ -140,7 +172,8 @@
       "build-gds-packages",
       "GENERAL_DESIGN_SYSTEM",
       "gds:sync",
-      "npm run gds:sync"
+      "npm run gds:sync",
+      "extendGdsTheme"
     ],
     "protectedSurfacePaths": [
       "components/public",
@@ -158,5 +191,5 @@
   },
   "migrationStatus": "governed",
   "owner": "narimato",
-  "lastReviewedAt": "2026-05-28"
+  "lastReviewedAt": "2026-05-29"
 }
