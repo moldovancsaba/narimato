@@ -20,3 +20,5 @@ jobs:
           npm ci
           npm run test
           npm run build
+          npm run smoke:production
+          npm run smoke:auth

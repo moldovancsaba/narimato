@@ -191,5 +191,11 @@
   },
   "migrationStatus": "governed",
   "owner": "narimato",
-  "lastReviewedAt": "2026-05-29"
+  "lastReviewedAt": "2026-05-29",
+  "consumerRuntime": {
+    "react": "19.2.6",
+    "reactDom": "19.2.6",
+    "mantine": "8.3.18",
+    "next": "15.5.18"
+  }
 }

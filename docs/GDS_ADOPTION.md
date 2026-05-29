@@ -72,7 +72,7 @@ Declared in `gds-adoption.json`.
 | `@doneisbetter/gds-*` | 2.6.5 |
 | Mantine | 8.3.18 (GDS peer `^8.3.0`) |
 | Next.js | 15.5.x |
-| React | 18.x |
+| React | 19.x |
 
 Theme: `createPublicBrandTheme({ editorialSerif: true, flatSurfaces: true, … })` in `lib/ui/narimatoTheme.js` for public chrome (`branded-quiet`).
 
@@ -83,6 +83,7 @@ npm run test              # gds:ci-guard + validate + compliance + lint
 npm run test:full         # test + next build
 npm run verify            # alias for test:full
 npm run smoke:production  # HTTP 200 on public routes (optional)
+npm run smoke:auth        # admin guard redirects + optional session (SMOKE_ADMIN_*)
 ```
 
 CI (`.github/workflows/gds-ci-guard.yml`) runs `npm run test` and `npm run build` on every push/PR.
