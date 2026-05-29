@@ -39,6 +39,13 @@
   transition: transform 180ms ease-out, box-shadow 200ms ease;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .playCard,
+  .keyboardActive {
+    transition: none;
+  }
+}
+
 .playCard:focus-visible {
   outline: 2px solid var(--mantine-color-violet-6);
   outline-offset: 4px;

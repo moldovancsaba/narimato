@@ -31,6 +31,7 @@
     "test:full": "npm run test && npm run build",
     "verify": "npm run test:full",
     "smoke:production": "node scripts/smoke-production.js",
+    "smoke:auth": "node scripts/smoke-auth.js",
     "build:operator": "node scripts/build-operator-ui.js"
   },
   "dependencies": {
@@ -45,9 +46,9 @@
     "dotenv": "^17.2.1",
     "mongoose": "^8.1.0",
     "next": "15.5.18",
-    "react": "^18",
-    "react-dom": "^18",
-    "uuid": "^9.0.1",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "uuid": "^11.1.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -63,6 +64,8 @@
     "@mantine/core": "8.3.18",
     "@mantine/hooks": "8.3.18",
     "@mantine/modals": "8.3.18",
-    "@mantine/notifications": "8.3.18"
+    "@mantine/notifications": "8.3.18",
+    "react": "19.2.6",
+    "react-dom": "19.2.6"
   }
 }

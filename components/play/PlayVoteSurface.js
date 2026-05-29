@@ -20,9 +20,11 @@ function PlayComparisonCard({
       p="lg"
       w="var(--card-size)"
       h="var(--card-size)"
+      role="button"
+      aria-label={`Vote for ${card.title}`}
       onClick={() => onVote(card.id)}
       tabIndex={0}
-      onKeyDown={(e) => e.key === 'Enter' && onVote(card.id)}
+      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onVote(card.id))}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
