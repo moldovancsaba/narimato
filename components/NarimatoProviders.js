@@ -6,7 +6,7 @@ import { GdsProvider } from '@doneisbetter/gds-theme/client';
 import { narimatoTheme } from '../lib/ui/narimatoTheme';
 
 /**
- * Root provider: canonical GdsProvider from @doneisbetter/gds-theme with Narimato theme extension.
+ * Root provider: canonical GdsProvider from @doneisbetter/gds-theme with createPublicBrandTheme.
  */
 export function NarimatoProviders({ children }) {
   return (

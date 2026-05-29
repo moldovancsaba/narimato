@@ -6,7 +6,7 @@
 |---|----------|-----|
 | **Repository** | This repo (`narimato`) | [general-design-system](https://github.com/sovereignsquad/general-design-system) |
 | **Runtime packages** | `@doneisbetter/gds-theme`, `@doneisbetter/gds-core`, `@doneisbetter/gds-admin` | Published from GDS SSOT |
-| **Consumed version** | **2.6.4** (see `gds-adoption.json`) | npm `@doneisbetter/gds-*@2.6.4` |
+| **Consumed version** | **2.6.5** (see `gds-adoption.json`) | npm `@doneisbetter/gds-*@2.6.5` |
 
 > When UI behavior or tokens conflict, **GDS wins**. Narimato does not vend mirror packages under `packages/gds-*` or the legacy `@gds/*` scope.
 
@@ -19,8 +19,8 @@
 Install from the public npm registry (pinned in `package.json`):
 
 ```bash
-npm install @doneisbetter/gds-theme@2.6.4 @doneisbetter/gds-core@2.6.4 @doneisbetter/gds-admin@2.6.4
-npm install -D @doneisbetter/gds-eslint-config@2.6.4 @doneisbetter/gds-compliance@2.6.4
+npm install @doneisbetter/gds-theme@2.6.5 @doneisbetter/gds-core@2.6.5 @doneisbetter/gds-admin@2.6.5
+npm install -D @doneisbetter/gds-eslint-config@2.6.5 @doneisbetter/gds-compliance@2.6.5
 ```
 
 Do **not** use sibling `file:` links, GitHub release tarball URLs, or clone-and-build install hooks for CI/Vercel.
@@ -30,7 +30,7 @@ Do **not** use sibling `file:` links, GitHub release tarball URLs, or clone-and-
 | Use | Entrypoint |
 |-----|------------|
 | Root provider | `@doneisbetter/gds-theme/client` → `GdsProvider` |
-| Theme extension | `@doneisbetter/gds-theme/server` → `extendGdsTheme` |
+| Theme | `@doneisbetter/gds-theme/server` → `createPublicBrandTheme` (`lib/ui/narimatoTheme.js`) |
 | Interactive primitives | `@doneisbetter/gds-core/client` |
 | Structural / re-exports | `@doneisbetter/gds-core/server` |
 | Admin surfaces (future) | `@doneisbetter/gds-admin/client` / `server` |
@@ -40,7 +40,7 @@ Do **not** use sibling `file:` links, GitHub release tarball URLs, or clone-and-
 | Pattern family | Narimato implementation | Status |
 |----------------|-------------------------|--------|
 | Root provider | `components/NarimatoProviders.js` → `GdsProvider` | Done |
-| Theme | `lib/ui/narimatoTheme.js` | Done |
+| Theme | `lib/ui/narimatoTheme.js` → `createPublicBrandTheme` | Done |
 | Public shell | `components/public/PublicShell.js` + `lib/ui/publicChrome.js` | Done |
 | Operator shell | `components/operator/NarimatoOperatorShell.js` → `AppShell` + `SidebarNav` | Done |
 | Admin shell | `components/admin/AdminShell.js` → `AppShell` | Done |
