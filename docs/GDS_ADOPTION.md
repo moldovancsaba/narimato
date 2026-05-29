@@ -65,15 +65,27 @@ Ephemeral feedback uses `lib/ui/notifications` → `showGdsNotification` from `@
 
 Declared in `gds-adoption.json`.
 
+## Runtime alignment (2.6.5)
+
+| Dependency | Version |
+|------------|---------|
+| `@doneisbetter/gds-*` | 2.6.5 |
+| Mantine | 8.3.18 (GDS peer `^8.3.0`) |
+| Next.js | 15.5.x |
+| React | 18.x |
+
+Theme: `createPublicBrandTheme({ editorialSerif: true, flatSurfaces: true, … })` in `lib/ui/narimatoTheme.js` for public chrome (`branded-quiet`).
+
 ## Validation
 
 ```bash
-npm run gds:ci-guard      # Narimato-specific shell rules
-npm run gds:validate      # manifest schema
-npm run gds:compliance    # shared gds-compliance drift checks
-npm run lint              # Next.js + @doneisbetter/gds-eslint-config (errors only)
-npm run build
+npm run test              # gds:ci-guard + validate + compliance + lint
+npm run test:full         # test + next build
+npm run verify            # alias for test:full
+npm run smoke:production  # HTTP 200 on public routes (optional)
 ```
+
+CI (`.github/workflows/gds-ci-guard.yml`) runs `npm run test` and `npm run build` on every push/PR.
 
 ## SSOT reading order
 

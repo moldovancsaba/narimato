@@ -48,6 +48,16 @@
   box-shadow: 0 0 0 3px var(--mantine-color-violet-3);
 }
 
+.swipeDislike {
+  background-color: var(--mantine-color-red-filled);
+  color: var(--mantine-color-white);
+}
+
+.swipeLike {
+  background-color: var(--mantine-color-green-filled);
+  color: var(--mantine-color-white);
+}
+
 .vs {
   font-size: calc(var(--mantine-font-size-xl) * 1.5);
   line-height: 1;

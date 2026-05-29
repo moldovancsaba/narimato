@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { AppShell } from '@doneisbetter/gds-admin/client';
-import { Text } from '@doneisbetter/gds-core/client';
 
 export function AdminShell({ title = 'Admin', children }) {
   return (
@@ -8,9 +7,9 @@ export function AdminShell({ title = 'Admin', children }) {
       logoText={title}
       headerContext="Narimato administration"
       headerActions={
-        <Text component={Link} href="/" size="xs" c="dimmed" style={{ textDecoration: 'none' }}>
+        <Link href="/" style={{ fontSize: 12, color: 'var(--mantine-color-dimmed)', textDecoration: 'none' }}>
           Public site
-        </Text>
+        </Link>
       }
     >
       {children}
