@@ -57,7 +57,7 @@
     "@eslint/eslintrc": "^3.3.1",
     "esbuild": "^0.28.0",
     "eslint": "^9.28.0",
-    "eslint-config-next": "15.5.18"
+    "eslint-config-next": "16.2.7"
   },
   "overrides": {
     "js-yaml": "4.1.1",
