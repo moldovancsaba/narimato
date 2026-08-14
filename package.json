@@ -35,9 +35,9 @@
     "build:operator": "node scripts/build-operator-ui.js"
   },
   "dependencies": {
-    "@doneisbetter/gds-admin": "^2.6.5",
-    "@doneisbetter/gds-core": "^2.6.5",
-    "@doneisbetter/gds-theme": "^2.6.5",
+    "@doneisbetter/gds-admin": "^3.8.0",
+    "@doneisbetter/gds-core": "^3.8.0",
+    "@doneisbetter/gds-theme": "^3.8.0",
     "@mantine/core": "9.2.2",
     "@mantine/hooks": "9.2.2",
     "@mantine/modals": "9.2.2",
@@ -52,8 +52,8 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@doneisbetter/gds-compliance": "^2.6.5",
-    "@doneisbetter/gds-eslint-config": "^2.6.5",
+    "@doneisbetter/gds-compliance": "^3.8.0",
+    "@doneisbetter/gds-eslint-config": "^3.8.0",
     "@eslint/eslintrc": "^3.3.1",
     "esbuild": "^0.28.0",
     "eslint": "^9.28.0",
