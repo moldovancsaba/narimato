@@ -1331,6 +1331,7 @@ export class IcosaRenderer {
     buckets.fill(null);
     const nearBreak = this._nearBreak;
     nearBreak.fill(null);
+    const lockedEdges = new Path2D();
     const px = this._polyX;
     const py = this._polyY;
     const hoverLabel = this.hoverLabel;
@@ -1393,6 +1394,7 @@ export class IcosaRenderer {
 
       const sid = this._styleIndex(e.ownerIndex);
       const style = styles[sid];
+      const isMine = this.myIndex >= 0 && e.ownerIndex === this.myIndex;
       const frac = clamp(e.clicks / thr, 0, 1);
       const huge = sr > Math.min(W, H) * 0.6;
       const tier = clamp(Math.round(frac * (CHARGE_TIERS - 1)), 0, CHARGE_TIERS - 1);
@@ -1461,6 +1463,13 @@ export class IcosaRenderer {
         ctx.fill();
       }
       ctx.globalAlpha = 1;
+      // Locked-to-me cell: red wash = you already mined it; only others can act.
+      if (isMine) {
+        ctx.globalAlpha = lodAlpha * 0.52;
+        ctx.fillStyle = 'rgb(255,38,82)';
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
 
       // Huge cells (deep zoom): energise the interior so the view never goes
       // flat — additive fill, core halo, spokes toward the vertices, reticle.
@@ -1598,6 +1607,11 @@ export class IcosaRenderer {
       edgePath.moveTo(px[0], py[0]);
       for (let k = 1; k < np; k++) edgePath.lineTo(px[k], py[k]);
       edgePath.closePath();
+      if (isMine) {
+        lockedEdges.moveTo(px[0], py[0]);
+        for (let k = 1; k < np; k++) lockedEdges.lineTo(px[k], py[k]);
+        lockedEdges.closePath();
+      }
     }
     this._hoverNp = hoverNp;
 
@@ -1621,6 +1635,10 @@ export class IcosaRenderer {
       ctx.lineWidth = Math.max(0.35, st.coreW * wScale * depthEdgeScale[depthBucket]);
       ctx.stroke(path);
     }
+    // Locked cells get a clear red edge in addition to their owner colour.
+    ctx.strokeStyle = 'rgba(255,38,82,0.98)';
+    ctx.lineWidth = Math.max(1.4, 1.9 * wScale);
+    ctx.stroke(lockedEdges);
 
     // Near-break cells keep a subtle charge pulse via the fill only.
     const pulse = 0.5 + 0.5 * Math.sin(this.t * 7);

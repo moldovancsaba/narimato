@@ -490,8 +490,12 @@ async function join(rawTag) {
   const joinedProgress = refreshMission();
   chooseNavTarget();
   safeCall(ui, 'hideLanding');
-  if (state && Number.isInteger(state.planetIndex) && state.planetIndex > 0) {
-    setTimeout(() => safeCall(ui, 'showLandingBrief', joinedProgress, planetInfoFromState()), 260);
+  if (!joinedProgress.ready) {
+    setTimeout(() => {
+      if (joined && !escaping && !(interlude && interlude.active)) {
+        safeCall(ui, 'showLandingBrief', joinedProgress, planetInfoFromState());
+      }
+    }, 300);
   }
   safeCall(renderer, 'setPoleLabelsVisible', true);
   safeCall(ui, 'setJoinBusy', false);

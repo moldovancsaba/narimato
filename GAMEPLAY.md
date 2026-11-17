@@ -40,9 +40,10 @@ to a different tag creates/restores a different pilot; the browser remembers one
 - At the planet's click threshold — **4 on the first planet**, 8 on later planets — that single
   triangle breaks into four smaller spherical triangles. Children inherit the owner and start charging from 0. Other cells are
   unaffected.
-- **Contest lock:** after your own click on a cell, you cannot click it again until another operator
-  (human or robot) clicks it. A locked click shows `CELL LOCKED // CONTEST REQUIRED` once — no
-  repeated `+2` popups.
+- **Contest lock:** after your own click on a cell, it turns **red** to show it is locked to you
+  and only others can mine it. When another operator (human or robot) clicks it, the red clears and
+  you can mine it again. A locked click shows `CELL LOCKED // CONTEST REQUIRED` once — no repeated
+  `+2` popups.
 - **Navigation:** a gold **NAV** chip shows the best nearby mining target (biome + deposit chance)
   with a pulsing beacon on the planet. Press the chip to fly the camera to it, or ↻ to cycle targets.
 - **Geography:** beneath the triangular grid is a high-detail procedural planet surface — ocean

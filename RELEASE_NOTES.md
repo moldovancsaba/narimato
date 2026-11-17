@@ -1,5 +1,31 @@
 # NARIMATO — Release Notes
 
+## v3.0.7 — “Locked Red & First Briefing” (2026-11-17)
+
+### Fixed
+
+- **The centered landing briefing now appears on the very first planet too**, immediately after
+  joining. Previously it only showed for later planets (planetIndex > 0), so reloading and starting
+  a new game on ICOSA-9 showed no center requirements list.
+- **Cells you mine now turn clearly red** (tint + red edge) to show they are locked to you and only
+  other operators can mine them; the red clears as soon as another player/robot contests the cell.
+- Added versioned asset URLs (`?v=3.0.7`) so a reload cannot run a cached old client.
+
+### Verification
+
+- Fresh first-planet join: centered briefing visible with `3×URANIUM / 5×SILVER / 2×GOLD /
+  1×PALLADIUM` rows; START MINING dismisses.
+- Mining a visible cell shows a red cell + `LOCKED // CONTEST REQUIRED`; a contest from another
+  operator clears the red. 69/69 `node:test` tests.
+
+### Release artifact
+
+- Source tag: `v3.0.7`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.0.7
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.0.6 — “Navigation & Full Planets” (2026-11-17)
 
 ### Added
