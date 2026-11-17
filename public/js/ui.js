@@ -23,6 +23,7 @@
 
 import { renderResultCard } from './result-card.js';
 import { RESOURCE_MARKET, resourceById } from './shared/resources.js';
+import { missionForPlanet, missionProgress } from './shared/mission.js';
 import { BIOMES } from './shared/planet.js';
 
 const CONNECTIONS = new Set(['connected', 'connecting', 'reconnecting', 'offline']);
@@ -37,29 +38,7 @@ const TOAST_GLYPH = { info: '▸', good: '+', bad: '×', warn: '!' };
 const TOAST_MS = { info: 3200, good: 3200, bad: 4200, warn: 3800 };
 const MAX_PLAYER_ROWS = 14;
 
-const DEFAULT_MISSION = Object.freeze({
-  ready: false,
-  objectives: [
-    {
-      id: 'fuel-rods',
-      name: 'FUEL RODS',
-      items: [{ resourceId: 'uranium', name: 'URANIUM', glyph: 'U', color: '#7dff5c', need: 3, have: 0 }],
-    },
-    {
-      id: 'hull-plates',
-      name: 'HULL PLATES',
-      items: [
-        { resourceId: 'silver', name: 'SILVER', glyph: 'Ag', color: '#c9d6e5', need: 5, have: 0 },
-        { resourceId: 'gold', name: 'GOLD', glyph: 'Au', color: '#ffd166', need: 2, have: 0 },
-      ],
-    },
-    {
-      id: 'warp-core',
-      name: 'WARP CORE',
-      items: [{ resourceId: 'palladium', name: 'PALLADIUM', glyph: 'Pd', color: '#a9c7ff', need: 1, have: 0 }],
-    },
-  ],
-});
+const DEFAULT_MISSION = missionProgress({}, missionForPlanet(0, 0));
 
 const DRAWERS = ['mission', 'operators', 'arcade'];
 
@@ -620,6 +599,52 @@ class UI {
   updateMission(progress) {
     this._mission = normalizeMission(progress);
     this._renderMission();
+  }
+
+  /** Render every collected material, including surplus beyond mission needs. */
+  updateCargo(oreCounts) {
+    const list = this._el.cargoList;
+    const totalEl = this._el.cargoTotal;
+    const counts = oreCounts && typeof oreCounts === 'object' ? oreCounts : {};
+    const entries = [];
+    let total = 0;
+    for (const [id, raw] of Object.entries(counts)) {
+      const amount = Math.max(0, Math.trunc(Number(raw) || 0));
+      if (!amount) continue;
+      const resource = resourceById(id);
+      if (!resource) continue;
+      entries.push({ resource, amount });
+      total += amount;
+    }
+    entries.sort((a, b) => b.resource.value - a.resource.value || a.resource.name.localeCompare(b.resource.name));
+    if (totalEl) totalEl.textContent = String(total);
+    if (!list) return;
+    list.textContent = '';
+    if (!entries.length) {
+      const empty = this.doc.createElement('li');
+      empty.className = 'cargo-empty';
+      empty.textContent = 'NO CARGO YET — MINE ANY ORE';
+      list.appendChild(empty);
+      return;
+    }
+    for (const { resource, amount } of entries) {
+      const item = this.doc.createElement('li');
+      item.className = 'cargo-item';
+      item.style.setProperty('--res-color', resource.color);
+      item.title = `${resource.name} — ${amount} in cargo (carried to the next planet)`;
+      const glyph = this.doc.createElement('span');
+      glyph.className = 'cargo-glyph';
+      glyph.textContent = resource.glyph;
+      glyph.setAttribute('aria-hidden', 'true');
+      const name = this.doc.createElement('span');
+      name.textContent = resource.name;
+      const count = this.doc.createElement('span');
+      count.className = 'cargo-count';
+      count.textContent = `×${amount}`;
+      item.append(glyph, name, count);
+      item.setAttribute('aria-label', `${resource.name}: ${amount} in cargo`);
+      list.appendChild(item);
+    }
   }
 
   /** Toggle the mission panel (opens the drawer on compact layouts). */
@@ -2173,6 +2198,8 @@ function resolveElements(doc) {
     btnSkipIntro: byId('btn-skip-intro'),
     btnReplayIntro: byId('btn-replay-intro'),
     missionPanel: byId('mission-panel'),
+    cargoList: byId('cargo-list'),
+    cargoTotal: byId('cargo-total'),
     landingMission: byId('landing-mission'),
     missionStatus: byId('mission-status'),
     joinMissionStatus: byId('join-mission-status'),

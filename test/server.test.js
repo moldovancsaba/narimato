@@ -16,8 +16,26 @@ import { setTimeout as delay } from 'node:timers/promises';
 
 import { startServer, MAX_BODY_BYTES } from '../server.js';
 import { WorldCore } from '../lib/world-core.js';
-import { robotTargetForOnlineHumans } from '../lib/planet-manager.js';
+import { robotTargetForOnlineHumans, randomEscapeDestination } from '../lib/planet-manager.js';
 import { PLANET_VERSION, terrainAt } from '../public/js/shared/planet.js';
+import { missionForPlanet, missionProgress, planetDepth, planetName } from '../public/js/shared/mission.js';
+
+/** Flat ore inventory that exactly satisfies a generated mission. */
+function oreCountsForMission(mission) {
+  const counts = {};
+  for (const objective of mission.objectives) {
+    for (const item of objective.items) counts[item.resourceId] = (counts[item.resourceId] || 0) + item.need;
+  }
+  return counts;
+}
+
+/** Grant a pilot exactly enough ore for its current planet's generated mission. */
+function grantMission(core, token, planetIndex = 0) {
+  const mission = missionForPlanet(planetIndex, core.planetSeed);
+  const pilot = core.findByToken(token);
+  pilot.oreCounts = oreCountsForMission(mission);
+  return mission;
+}
 
 async function makeServer(t, config = {}) {
   const dataDir = await mkdtemp(path.join(os.tmpdir(), 'icosa-http-'));
@@ -170,12 +188,14 @@ async function makeLegacyWorld(dir) {
   const tokens = [a.token, b.token];
   for (let i = 0; i < 8; i += 1) core.click({ token: tokens[i % 2], type: 'click', label: '3' });
   const alpha = core.players.find((player) => player.tag === 'ALPHA');
+  const mission = missionForPlanet(0, core.planetSeed);
+  const missionCounts = oreCountsForMission(mission);
   alpha.score = 500;
   alpha.ores = 2;
   alpha.oreValue = 180;
-  alpha.oreCounts = { uranium: 3, silver: 5, gold: 2, palladium: 1 };
+  alpha.oreCounts = { ...missionCounts };
   await core.flush();
-  return { a, b, clock };
+  return { a, b, clock, mission, missionCounts };
 }
 
 // ---------------------------------------------------------------------- HTTP
@@ -610,7 +630,9 @@ test('HTTP/SSE mining: terrain deposits hidden, mineable cells mine once (5-slot
   const mineableLabel = [...labelTerrain].find(([, terrain]) => terrain.biome.mineable)[0];
   const oceanLabel = [...labelTerrain].find(([, terrain]) => !terrain.biome.mineable)[0];
   assert.ok(mineableLabel && oceanLabel);
-  handle.manager.planetCore(0).getLeafMap().get(mineableLabel).resourceFindClick = 1;
+  const guaranteedCell = handle.manager.planetCore(0).getLeafMap().get(mineableLabel);
+  guaranteedCell.resourceFindClick = 1;
+  const expectedMineResourceId = guaranteedCell.resourceId;
 
   const sse = await openSse(base, a.json.token);
   t.after(async () => {
@@ -632,7 +654,7 @@ test('HTTP/SSE mining: terrain deposits hidden, mineable cells mine once (5-slot
   assert.equal(click.status, 200);
   const resource = click.json.resource;
   assert.ok(resource);
-  assert.ok(Object.keys(labelTerrain.get(mineableLabel).biome.weights).includes(resource.id));
+  assert.equal(resource.id, expectedMineResourceId, 'mined the cell\'s authoritative hidden deposit');
   assert.equal(click.json.points, 10 + resource.value);
   assert.deepEqual(click.json.cell, [mineableLabel, 1, 1, resource.id, 1]);
   world = (await getJson(base, '/api/world')).json;
@@ -704,38 +726,43 @@ test('multi-planet: first-boot migration preserves pilots, resets planet 0 grid 
     const registry = JSON.parse(await readFile(path.join(dataDir, 'planets', 'registry.json'), 'utf8'));
     assert.equal(registry.tokens[legacy.a.token], 0);
 
-    // Escape to planet 1 (depth 3): mission already satisfied.
+    // Escape: the destination is random among the next five planets.
     const escape = await postJson(base1, '/api/action', { token: legacy.a.token, type: 'escape' });
     assert.equal(escape.status, 200);
     assert.equal(escape.json.ok, true);
-    assert.equal(escape.json.planetIndex, 1);
-    assert.equal(escape.json.planetDepth, 3);
-    assert.equal(escape.json.planetLevels, 3);
-    assert.equal(escape.json.planetName, 'ICOSA-10');
+    const dest = escape.json.planetIndex;
+    assert.ok(Number.isInteger(dest) && dest >= 1 && dest <= 5, `destination +1..+5, got ${dest}`);
+    assert.equal(escape.json.planetDepth, planetDepth(dest));
+    assert.equal(escape.json.planetLevels, planetDepth(dest));
+    assert.equal(escape.json.planetName, planetName(dest));
     assert.ok(Array.isArray(escape.json.story.lines) && escape.json.story.lines.length >= 2);
     assert.equal(escape.json.player.id, legacy.a.player.id);
     assert.equal(escape.json.player.tag, 'ALPHA');
     const carried = escape.json.state.players.find((player) => player.id === escape.json.player.id);
     assert.equal(carried.score, 500, 'score is carried between planets');
-    assert.deepEqual(carried.oreCounts, { uranium: 3, silver: 5, gold: 2, palladium: 1 }, 'ore inventory is carried');
+    assert.deepEqual(carried.oreCounts, legacy.missionCounts, 'ore inventory is carried');
     assert.equal(carried.ores, 2);
+    // The destination mission is generated from that planet's own seed.
+    assert.deepEqual(escape.json.mission, missionForPlanet(dest, escape.json.state.planetSeed));
+    assert.equal(escape.json.mission.objectives.length, 3);
 
-    // Routing by token: pilot is on planet 1, the other pilot stays on planet 0.
+    // Routing by token: pilot is on the random destination, the other stays on planet 0.
     const pilotView = (await getJson(base1, `/api/state?token=${legacy.a.token}`)).json.state;
-    assert.equal(pilotView.planetIndex, 1);
-    assert.equal(pilotView.planetDepth, 3);
-    assert.equal(pilotView.planetLevels, 3);
-    assert.equal(pilotView.planetName, 'ICOSA-10');
+    assert.equal(pilotView.planetIndex, dest);
+    assert.equal(pilotView.planetDepth, planetDepth(dest));
+    assert.equal(pilotView.planetLevels, planetDepth(dest));
+    assert.equal(pilotView.planetName, planetName(dest));
     const observerView = (await getJson(base1, `/api/state?token=${legacy.b.token}`)).json.state;
     assert.equal(observerView.planetIndex, 0);
     const pilotWorld = (await getJson(base1, `/api/world?token=${legacy.a.token}`)).json;
-    assert.equal(pilotWorld.state.planetIndex, 1);
+    assert.equal(pilotWorld.state.planetIndex, dest);
     assert.equal(pilotWorld.leaves.length, 20);
     // The old clone is offline on planet 0.
     const planet0View = (await getJson(base1, '/api/state')).json.state;
     assert.equal(planet0View.players.find((player) => player.id === legacy.a.player.id).online, false);
 
     const leakBefore = escape.json.leaves;
+    const destination = dest;
     await server1.close();
 
     // Reboot: planets + registry persist; no second migration/reset.
@@ -749,8 +776,9 @@ test('multi-planet: first-boot migration preserves pilots, resets planet 0 grid 
     const base2 = `http://127.0.0.1:${server2.port}`;
     try {
       const back = (await getJson(base2, `/api/state?token=${legacy.a.token}`)).json.state;
-      assert.equal(back.planetIndex, 1);
-      assert.equal(back.planetDepth, 3);
+      assert.equal(back.planetIndex, destination);
+      assert.equal(back.planetDepth, planetDepth(destination));
+      assert.equal(back.planetName, planetName(destination));
       const worldBack = (await getJson(base2, `/api/world?token=${legacy.a.token}`)).json;
       assert.deepEqual(worldBack.leaves, leakBefore);
       const stillZero = (await getJson(base2, '/api/state')).json.state;
@@ -808,12 +836,15 @@ test('multi-planet: meteor reset + rooms + escape routing', async (t) => {
   assert.ok(afterMeteor.leaves.every((leaf) => leaf[1] === -1), 'grid reset clears ownership');
   assert.equal(afterMeteor.state.players.length, 2, 'players survive the meteor');
 
-  // Grant the mission and escape MINER1 to a separate room (planet 1).
+  // Grant the (new, post-incident) generated mission and escape MINER1.
   const minerPlayer = core0.findByToken(miner.json.token);
-  minerPlayer.oreCounts = { uranium: 3, silver: 5, gold: 2, palladium: 1 };
+  minerPlayer.oreCounts = oreCountsForMission(missionForPlanet(0, core0.planetSeed));
   const escape = await postJson(base, '/api/action', { token: miner.json.token, type: 'escape' });
   assert.equal(escape.status, 200);
-  assert.equal(escape.json.planetIndex, 1);
+  const dest = escape.json.planetIndex;
+  assert.ok(dest >= 1 && dest <= 5, `destination +1..+5, got ${dest}`);
+  assert.equal(escape.json.planetName, planetName(dest));
+  assert.equal(escape.json.planetDepth, planetDepth(dest));
   // Old-room stream for the escaped token was closed by the server.
   await delay(80);
   const minerSse2 = await openSse(base, miner.json.token);
@@ -821,10 +852,10 @@ test('multi-planet: meteor reset + rooms + escape routing', async (t) => {
     await minerSse2.close();
   });
   const snap2 = await minerSse2.waitForEvent('snapshot');
-  assert.equal(snap2.state.planetIndex, 1);
-  assert.equal(snap2.state.planetDepth, 3);
+  assert.equal(snap2.state.planetIndex, dest);
+  assert.equal(snap2.state.planetDepth, planetDepth(dest));
 
-  // A click on planet 1 is only broadcast to planet 1's room.
+  // A click on the destination planet is only broadcast to its room.
   const observerCellsBefore = observerSse.events.filter((event) => event.type === 'cell').length;
   const click = await postJson(base, '/api/action', { token: miner.json.token, type: 'click', label: '1' });
   assert.equal(click.status, 200);
@@ -836,9 +867,9 @@ test('multi-planet: meteor reset + rooms + escape routing', async (t) => {
   const planet0World = (await getJson(base, `/api/world?token=${observer.json.token}`)).json;
   assert.equal(planet0World.state.planetIndex, 0);
   assert.equal(planet0World.leaves.length, 20);
-  const planet1World = (await getJson(base, `/api/world?token=${miner.json.token}`)).json;
-  assert.equal(planet1World.state.planetIndex, 1);
-  assert.equal(planet1World.leaves.find(([label]) => label === '1')[1], 0);
+  const destWorld = (await getJson(base, `/api/world?token=${miner.json.token}`)).json;
+  assert.equal(destWorld.state.planetIndex, dest);
+  assert.equal(destWorld.leaves.find(([label]) => label === '1')[1], 0);
 });
 
 
@@ -907,42 +938,90 @@ test('robot staffing: per-planet targets, immediate displacement/replacement, in
   assert.equal(p0.onlineHumanCount(), 2);
   assert.equal(p0.robotInfos().length, 1, 'human leave -> robot spawned without a gap');
 
-  const grantMission = (core, token) => {
-    const pilot = core.findByToken(token);
-    pilot.oreCounts = { uranium: 3, silver: 5, gold: 2, palladium: 1 };
-  };
-
-  // A escapes to planet 1: planet 0 loses a human (1 -> 2 robots) while planet 1
-  // (1 human) also wants 2 robots — both scenes staff themselves independently.
-  grantMission(p0, a.json.token);
+  // A escapes to a random destination: planet 0 loses a human (1 -> 2 robots)
+  // while the destination (1 human) wants 2 robots — independent scenes.
+  grantMission(p0, a.json.token, 0);
   const escA = await postJson(base, '/api/action', { token: a.json.token, type: 'escape' });
   assert.equal(escA.status, 200);
-  assert.equal(escA.json.planetIndex, 1);
+  const destA = escA.json.planetIndex;
+  assert.ok(destA >= 1 && destA <= 5, `destination +1..+5, got ${destA}`);
   await delayForStaffing();
-  const p1 = manager.planetCore(1);
+  const pDestA = manager.planetCore(destA);
   assert.equal(p0.onlineHumanCount(), 1);
   assert.equal(p0.robotInfos().length, 2, 'planet 0 re-staffed to 2 robots for 1 human');
-  assert.equal(p1.onlineHumanCount(), 1);
-  assert.equal(p1.robotInfos().length, 2, 'planet 1 independently staffed to 2 robots for its 1 human');
+  assert.equal(pDestA.onlineHumanCount(), 1);
+  assert.equal(pDestA.robotInfos().length, 2, 'destination independently staffed to 2 robots for its 1 human');
   assert.equal(
-    p0.robotInfos().some((robot) => p1.robotInfos().some((other) => other.playerId === robot.playerId)),
+    p0.robotInfos().some((robot) => pDestA.robotInfos().some((other) => other.playerId === robot.playerId)),
     false,
     'planets have separate robot scenes',
   );
 
-  // B escapes too: planet 0 becomes empty (1 ambient robot), planet 1 has 2 humans (1 robot).
-  grantMission(p0, b.json.token);
+  // B escapes too; planet 0 becomes empty (1 ambient robot); destination staffing
+  // depends on whether B landed on the same or another planet.
+  grantMission(p0, b.json.token, 0);
   const escB = await postJson(base, '/api/action', { token: b.json.token, type: 'escape' });
   assert.equal(escB.status, 200);
+  const destB = escB.json.planetIndex;
+  assert.ok(destB >= 1 && destB <= 5);
   await delayForStaffing();
   assert.equal(p0.onlineHumanCount(), 0);
   assert.equal(p0.robotInfos().length, 1, 'empty planet keeps exactly 1 ambient robot');
-  assert.equal(p1.onlineHumanCount(), 2);
-  assert.equal(p1.robotInfos().length, 1, '2 humans on planet 1 -> 1 robot (excess displaced)');
+  if (destB === destA) {
+    assert.equal(pDestA.onlineHumanCount(), 2);
+    assert.equal(pDestA.robotInfos().length, 1, '2 humans on the destination -> 1 robot (excess displaced)');
+  } else {
+    const pDestB = manager.planetCore(destB);
+    assert.equal(pDestA.onlineHumanCount(), 1);
+    assert.equal(pDestA.robotInfos().length, 2);
+    assert.equal(pDestB.onlineHumanCount(), 1);
+    assert.equal(pDestB.robotInfos().length, 2);
+  }
 
   // Robots are not counted as humans anywhere (wire players have no bot flag).
   assert.equal(p0.onlineHumanCount() + p0.robotInfos().length <= p0.players.length, true);
   const state0 = (await getJson(base, '/api/state')).json.state;
   assert.equal(state0.planetIndex, 0);
   assert.equal(state0.players.some((player) => Object.prototype.hasOwnProperty.call(player, 'bot')), false);
+});
+
+// ------------------------------------------- procedural missions/destinations
+
+test('missions: escape destination is random among the next five planets (+1..+5)', () => {
+  assert.equal(randomEscapeDestination(0, () => 0), 1);
+  assert.equal(randomEscapeDestination(0, () => 0.1999), 1);
+  assert.equal(randomEscapeDestination(0, () => 0.2), 2);
+  assert.equal(randomEscapeDestination(0, () => 0.4), 3);
+  assert.equal(randomEscapeDestination(0, () => 0.6), 4);
+  assert.equal(randomEscapeDestination(0, () => 0.8), 5);
+  assert.equal(randomEscapeDestination(0, () => 0.999999), 5);
+  assert.equal(randomEscapeDestination(7, () => 0), 8);
+  assert.equal(randomEscapeDestination(7, () => 0.999999), 12);
+  for (const index of [0, 1, 5, 20]) {
+    for (let i = 0; i < 20; i += 1) {
+      const next = randomEscapeDestination(index, () => i / 20);
+      assert.ok(next >= index + 1 && next <= index + 5, 'never backwards, at most +5');
+    }
+  }
+});
+
+test('missions: server-side missions follow each planet\'s seed and are completable', async (t) => {
+  const { base, handle } = await makeServer(t, { bots: 0, depositChance: 0, clickCooldownMs: 0, planetSeed: 424242 });
+  const a = await postJson(base, '/api/join', { tag: 'MISSION1' });
+  assert.equal(a.status, 200);
+  const core0 = handle.manager.planetCore(0);
+  const mission0 = missionForPlanet(0, core0.planetSeed);
+  const state0 = (await getJson(base, '/api/state')).json.state;
+  assert.equal(state0.planetSeed, core0.planetSeed);
+  assert.equal(mission0.objectives.length, 3);
+  const grant = await postJson(base, '/api/action', { token: a.json.token, type: 'click', label: '1' });
+  assert.equal(grant.status, 200);
+  const counts = oreCountsForMission(mission0);
+  core0.findByToken(a.json.token).oreCounts = counts;
+  assert.equal(missionProgress(counts, mission0).ready, true);
+  const escape = await postJson(base, '/api/action', { token: a.json.token, type: 'escape' });
+  assert.equal(escape.status, 200);
+  assert.equal(escape.json.mission.planetIndex, escape.json.planetIndex);
+  const destCore = handle.manager.planetCore(escape.json.planetIndex);
+  assert.deepEqual(escape.json.mission, missionForPlanet(escape.json.planetIndex, destCore.planetSeed));
 });

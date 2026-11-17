@@ -1,5 +1,36 @@
 # NARIMATO — Release Notes
 
+## v3.7.0 — “Variable Frontier” (2026-11-18)
+
+### Added / changed
+
+- **Procedural refit missions.** Every planet's requirements are generated from its seed:
+  planet 0 is a minimal 3-unit mission (one material in each of Fuel/Hull/Warp), and each deeper
+  planet adds a random cumulative **0–3 units**, mixing fuel/hull/warp materials from category pools.
+  No fixed 11-unit recipe, no hardcoded per-planet counts. Different seeds produce different
+  materials and totals.
+- **Full cargo inventory.** A new `CARGO // ALL MATERIALS` panel lists every ore collected, including
+  surplus beyond the refit requirements — the player sees gold/etc. even while waiting for another
+  material, and everything is carried to the next planet.
+- **Random destinations among five future planets.** Escaping now picks `index + 1 … index + 5`
+  randomly (never backwards); each destination gets its own generated mission and scene.
+- Server re-derives missions from `planetSeed` and guarantees deposits after seed-changing incidents;
+  legacy worlds get a one-time mission top-up on load.
+
+### Verification
+
+- 76/76 `node --test` tests: procedural determinism/variation, 0–3 growth, no duplicate resources,
+  exactly 5 random destination offsets, seed-derived server missions, carried cargo.
+- Browser check: planet 0 shows 3 required units; cargo panel shows surplus materials.
+
+### Release artifact
+
+- Source tag: `v3.7.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.7.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.6.0 — “Load Management” (2026-11-17)
 
 ### Changed

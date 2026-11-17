@@ -330,7 +330,7 @@ intro = createIntro({
     if (!joined) {
       safeCall(ui, 'showLanding');
       safeCall(ui, 'setConnection', 'connected');
-      safeCall(ui, 'updateMission', missionProgress({}));
+      safeCall(ui, 'updateMission', missionProgress({}, missionForPlanet(0, 0)));
       refreshPublicState();
       safeCall(ui, 'toast', skipped
         ? 'INTRO SKIPPED // WELCOME TO ICOSA-9'
@@ -809,11 +809,13 @@ function myStatePlayer() {
 function planetInfoFromState() {
   const next = state || {};
   const index = Number.isInteger(next.planetIndex) ? next.planetIndex : 0;
+  const seed = Number.isInteger(next.planetSeed) ? next.planetSeed >>> 0 : 0;
   return {
     planetIndex: index,
+    planetSeed: seed,
     planetDepth: Number.isInteger(next.planetDepth) ? next.planetDepth : planetDepth(index),
     planetName: typeof next.planetName === 'string' && next.planetName ? next.planetName : planetName(index),
-    mission: missionForPlanet(index),
+    mission: missionForPlanet(index, seed),
   };
 }
 
@@ -823,6 +825,7 @@ function refreshMission() {
   const planet = planetInfoFromState();
   const progress = missionProgress(counts, planet.mission);
   safeCall(ui, 'updateMission', progress);
+  safeCall(ui, 'updateCargo', counts);
   safeCall(ui, 'setPlanet', {
     planetIndex: planet.planetIndex,
     planetDepth: planet.planetDepth,

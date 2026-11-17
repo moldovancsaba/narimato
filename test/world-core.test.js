@@ -30,6 +30,15 @@ import {
 import { buildMesh, childTriangles } from '../public/js/shared/geometry.js';
 import { robotTargetForOnlineHumans } from '../lib/planet-manager.js';
 import { missionForPlanet, missionProgress, planetDepth, planetName } from '../public/js/shared/mission.js';
+
+/** Flat ore inventory that exactly satisfies a generated mission. */
+function oreCountsForMission(mission) {
+  const counts = {};
+  for (const objective of mission.objectives) {
+    for (const item of objective.items) counts[item.resourceId] = (counts[item.resourceId] || 0) + item.need;
+  }
+  return counts;
+}
 import { resourceById, rollDeposit, rollResource, RESOURCE_MARKET } from '../public/js/shared/resources.js';
 import { PLANET_VERSION, terrainAt, weightedResourceForBiome, BIOMES } from '../public/js/shared/planet.js';
 
@@ -1508,16 +1517,19 @@ test('planets: adoptPlayer, resetGrid, hiddenDepositCount and meteor transition'
 // ------------------------------------------- carry inventory + discovery click
 
 test('escape carry: adoptPlayer preserves the whole ore inventory (usable for the next mission)', async (t) => {
-  const { core } = await makeCore(t, { config: { bots: 0, depositChance: 0 } });
+  const config = { bots: 0, depositChance: 0, planetSeed: 424242 };
+  const { core } = await makeCore(t, { config });
   const a = core.join({ tag: 'PILOT' });
   const pilot = core.findByToken(a.token);
+  const destinationMission = missionForPlanet(1, config.planetSeed);
+  const missionCounts = oreCountsForMission(destinationMission);
   pilot.score = 900;
   pilot.ores = 18;
   pilot.oreValue = 3720;
-  pilot.oreCounts = { uranium: 5, silver: 8, gold: 3, palladium: 2 };
+  pilot.oreCounts = { ...missionCounts };
   core.setOnline(pilot.id, false); // ghost on the old planet keeps its inventory
 
-  const next = await makeCore(t, { config: { bots: 0, depositChance: 0 } });
+  const next = await makeCore(t, { config });
   const adopted = next.core.adoptPlayer({
     tag: pilot.tag,
     token: pilot.token,
@@ -1533,16 +1545,16 @@ test('escape carry: adoptPlayer preserves the whole ore inventory (usable for th
   assert.equal(carried.id, pilot.id);
   assert.equal(carried.tag, 'PILOT');
   assert.equal(carried.score, 900);
-  assert.deepEqual(carried.oreCounts, { uranium: 5, silver: 8, gold: 3, palladium: 2 }, 'all ore carried');
+  assert.deepEqual(carried.oreCounts, missionCounts, 'all ore carried');
   assert.equal(carried.ores, 18);
   assert.equal(carried.oreValue, 3720);
   // The carried inventory already satisfies the NEXT planet's refit mission.
   assert.equal(planetDepth(1), 3);
   assert.equal(planetName(1), 'ICOSA-10');
-  assert.equal(missionProgress(carried.oreCounts, missionForPlanet(1)).ready, true, 'carried ore usable immediately');
+  assert.equal(missionProgress(carried.oreCounts, destinationMission).ready, true, 'carried ore usable immediately');
   // The old planet's ghost keeps its own copy.
   const ghost = core.getState().players[0];
-  assert.deepEqual(ghost.oreCounts, { uranium: 5, silver: 8, gold: 3, palladium: 2 });
+  assert.deepEqual(ghost.oreCounts, missionCounts);
   assert.equal(ghost.online, false);
 });
 

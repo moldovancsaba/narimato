@@ -113,7 +113,10 @@ the second level.
   the meteor overlay announces `METEOR IMPACT // NEW RESOURCES AVAILABLE`, and mining continues.
 - **Carried ore:** your full ore inventory (all materials, ore counts and total ore value) travels
   with you when you escape. It is available immediately on the next planet and counts toward that
-  planet's refit, so stockpiling can pay off.
+  planet's refit, so stockpiling can pay off. The **CARGO // ALL MATERIALS** panel shows everything
+  you have collected, including ore beyond the current requirements.
+- **Random destinations:** an escape burn targets one of the next **five** planets at random, never
+  backwards. Each destination has its own procedurally generated mission and multiplayer scene.
 - **Interplanetary transit:** after ESCAPE, the ship burns out of orbit, a random story event hits,
   the hull takes damage with screen shake, and you land on the next planet. The cinematic is fully
   procedural (CSS/Canvas, no assets). On touchdown, a centered **landing briefing** lists every ore

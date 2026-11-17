@@ -105,8 +105,13 @@ resets its crust and releases new resources. The game never ends.
   to mine; tap the chip to fly the camera there or ↻ to cycle targets.
 - **Red locked cells** — a cell you just mined turns red until another operator contests it; then
   it clears and you can mine again.
-- **Carried inventory** — all ore you collect travels with you to the next planet and counts toward
-  its refit immediately; nothing is wiped on escape.
+- **Procedural refit missions** — every planet generates its own requirements from its seed. Planet 1
+  starts minimal (3 units); each deeper planet grows the refit by 0–3 units and mixes in different
+  materials, so no two planets ask for the same cargo.
+- **Full cargo inventory** — the HUD shows every collected material, including surplus beyond the
+  current refit needs. Everything travels with you to the next planet.
+- **Random destinations** — an escape sends you to one of the next **five** planets chosen at random,
+  never backwards, each with its own mission and scene.
 - **Random discovery clicks** — each hidden deposit is found on a random successful click (first,
   middle or the break/last click), not always on the very first click.
 - **First-planet briefing** — the centered "collect to leave" list now appears on the very first
@@ -127,6 +132,7 @@ resets its crust and releases new resources. The game never ends.
 | ![Interplanetary story interlude](media/interlude.jpg) | ![Escape-ready refit](media/escape-ready.jpg) |
 | ![Narration subtitles in the cockpit intro](media/narration.jpg) | ![NARIMATO Field Manual](media/manual.jpg) |
 | ![Nuclear war incident](media/incident-nuclear.jpg) | ![Alien invasion incident](media/incident-alien.jpg) |
+| ![Procedural refit and full cargo](media/cargo.jpg) | ![Navigation waypoint on the planet](media/navigation.jpg) |
 | ![Detailed procedural planet geography behind the grid](media/geography.jpg) | ![Navigation waypoint on the planet](media/navigation.jpg) | ![Red locked cell after mining](media/red-locked.jpg) |
 | ![Centered TRY TO FLY AWAY escape CTA](media/escape-cta.jpg) | ![New-planet landing briefing](media/landing-brief.jpg) |
 | ![Escape CTA on mobile](media/escape-cta-mobile.jpg) | ![Landing briefing on mobile](media/landing-brief-mobile.jpg) |
@@ -163,5 +169,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.6.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.7.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.
