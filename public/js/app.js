@@ -43,6 +43,7 @@ let eventSource = null;
 let reconnectTimer = null;
 let reconnectAttempts = 0;
 let hoveredLabel = null;
+let navLabel = null;
 let lastClickSentAt = 0;
 let lastLockToastAt = 0;
 const finalDepthNotified = new Set();
@@ -352,6 +353,12 @@ function boot() {
   if (escapeBtn) escapeBtn.addEventListener('click', () => requestEscape());
   const escapeCenterBtn = document.getElementById('btn-escape-center');
   if (escapeCenterBtn) escapeCenterBtn.addEventListener('click', () => requestEscape());
+  const navFocusBtn = document.getElementById('btn-nav-focus');
+  if (navFocusBtn) navFocusBtn.addEventListener('click', () => {
+    if (navLabel) focusFace(navLabel);
+  });
+  const navNextBtn = document.getElementById('btn-nav-next');
+  if (navNextBtn) navNextBtn.addEventListener('click', () => chooseNavTarget({ cycle: true }));
   const abandonBtn = document.getElementById('btn-abandon');
   if (abandonBtn) abandonBtn.addEventListener('click', () => abandonRun());
   const newPilotBtn = document.getElementById('btn-new-pilot');
@@ -481,6 +488,7 @@ async function join(rawTag) {
 
   applySnapshot(data.state, data.leaves);
   const joinedProgress = refreshMission();
+  chooseNavTarget();
   safeCall(ui, 'hideLanding');
   if (state && Number.isInteger(state.planetIndex) && state.planetIndex > 0) {
     setTimeout(() => safeCall(ui, 'showLandingBrief', joinedProgress, planetInfoFromState()), 260);
@@ -613,6 +621,7 @@ function applySnapshot(nextState, leaves) {
   renderer.setFaces(leafList);
   applyState(nextState);
   refreshMission();
+  refreshNavTarget();
   renderer.setHover(null);
   hoveredLabel = null;
   safeCall(ui, 'setHoverFace', null);
@@ -842,6 +851,7 @@ function applyEscapeResult(data) {
   safeCall(ui, 'toast', `LANDED ON ${to.planetName} // LEVELS ${to.planetDepth} // ${to.mission.name}`, 'good');
   safeAudio('join');
   const progress = refreshMission();
+  chooseNavTarget();
   lastInteraction = now();
   // Put the new planet's required refit front and center.
   setTimeout(() => {
@@ -898,6 +908,9 @@ async function abandonRun() {
   safeCall(ui, 'setEscapeReady', false);
   safeCall(ui, 'hideEscapeCta');
   safeCall(ui, 'hideLandingBrief');
+  navLabel = null;
+  safeCall(renderer, 'setWaypoint', null);
+  safeCall(ui, 'hideNavTarget');
   safeCall(ui, 'setConnection', 'connected');
   safeCall(renderer, 'setPlayers', [], null);
   cancelCameraInertia();
@@ -946,6 +959,69 @@ function handleMeteorEvent(msg) {
     updateZoomUi();
     safeCall(ui, 'toast', 'PLANET RESEEDED // NEW DEPOSITS DETECTED', 'good');
   }, 2400);
+}
+
+/**
+ * Pick the best nearby place to mine: mineable land (geological deposit chance),
+ * not my locked cell, not a depleted lowest-level cell. Higher chance wins;
+ * cells in front of the camera get a small bonus. NAV opens/focuses this cell.
+ */
+function chooseNavTarget({ cycle = false } = {}) {
+  if (!joined || !state || !leafList.length) {
+    navLabel = null;
+    safeCall(renderer, 'setWaypoint', null);
+    safeCall(ui, 'hideNavTarget');
+    return null;
+  }
+  const candidates = [];
+  const maxD = maxDepth();
+  for (const node of leafList) {
+    if (!node) continue;
+    if (node.depth >= maxD && node.resourceId) continue; // emptied max-level cell
+    if (node.ownerIndex === myIndex && node.lastClickIndex === myIndex) continue; // locked to me
+    const terrain = world.terrainFor(node);
+    if (!terrain || !terrain.biome || !terrain.biome.mineable) continue;
+    const p = camera.project(node.centroid);
+    if (!p) continue;
+    const dx = (p.x - camera.width / 2) / Math.max(1, camera.width * 0.5);
+    const dy = (p.y - camera.height / 2) / Math.max(1, camera.height * 0.5);
+    const off = Math.min(1.6, Math.hypot(dx, dy));
+    const front = p.z > 0 ? 1 : 0;
+    const chance = Number(terrain.biome.depositChance) || 0;
+    const score = chance * 2.4 + front * 0.32 - off * 0.5 + (node.clicks > 0 ? 0.08 : 0);
+    candidates.push({ node, terrain, chance, score });
+  }
+  if (!candidates.length) {
+    navLabel = null;
+    safeCall(renderer, 'setWaypoint', null);
+    safeCall(ui, 'hideNavTarget');
+    return null;
+  }
+  candidates.sort((a, b) => b.score - a.score);
+  let pick = candidates[0];
+  if (cycle && navLabel) {
+    const current = candidates.findIndex((c) => c.node.label === navLabel);
+    if (current >= 0) pick = candidates[(current + 1) % candidates.length];
+  }
+  navLabel = pick.node.label;
+  safeCall(renderer, 'setWaypoint', navLabel);
+  safeCall(ui, 'setNavTarget', {
+    label: navLabel,
+    biomeName: pick.terrain.biome.name,
+    chance: pick.chance,
+  });
+  return pick;
+}
+
+function refreshNavTarget() {
+  if (!joined) {
+    navLabel = null;
+    safeCall(renderer, 'setWaypoint', null);
+    safeCall(ui, 'hideNavTarget');
+    return;
+  }
+  if (!navLabel || !world.get(navLabel)) chooseNavTarget();
+  else safeCall(renderer, 'setWaypoint', navLabel);
 }
 
 function startIntroReplay() {
@@ -1090,6 +1166,7 @@ function attemptClick(label) {
         const children = world.applyBreak(cell ? cell[0] : label, data.children);
         if (children) {
           refreshLeafList();
+          refreshNavTarget();
           renderer.replaceFace(label, children);
           for (const child of children) renderer.pulse(child.label, { color: '#d7ff00', kind: 'break', text: '' });
           safeAudio('breakShatter');
@@ -1315,7 +1392,7 @@ function updateCameraInertia(dt) {
   if (dt <= 0) return;
   const dtSec = dt / 1000;
   if (zoomTarget !== null) {
-    const k = 1 - Math.exp(-10 * dtSec);
+    const k = 1 - Math.exp(-8 * dtSec);
     camera.zoom += (zoomTarget - camera.zoom) * k;
     if (Math.abs(Math.log(zoomTarget / Math.max(1e-9, camera.zoom))) < 0.0007) {
       camera.zoom = zoomTarget;
@@ -1327,10 +1404,10 @@ function updateCameraInertia(dt) {
   if (Math.abs(spinVel.x) > 0.0004 || Math.abs(spinVel.y) > 0.0004) {
     // camera.rotate(dx,dy) = +dx*0.006 rad yaw, +dy*0.006 rad pitch.
     camera.rotate((spinVel.x / 0.006) * dtSec, (spinVel.y / 0.006) * dtSec);
-    const decay = Math.exp(-3.1 * dtSec);
+    const decay = Math.exp(-2.15 * dtSec);
     spinVel.x *= decay;
     spinVel.y *= decay;
-    if (Math.abs(spinVel.x) < 0.0005 && Math.abs(spinVel.y) < 0.0005) {
+    if (Math.abs(spinVel.x) < 0.0003 && Math.abs(spinVel.y) < 0.0003) {
       spinVel.x = 0;
       spinVel.y = 0;
       hoverNeedsRefresh = true;
@@ -1465,6 +1542,9 @@ function bindCanvasInput() {
           spinVel.x = 0;
           spinVel.y = 0;
         } else {
+          // A little more glide than before: carry the release momentum.
+          spinVel.x = clamp(spinVel.x * 1.28, -9, 9);
+          spinVel.y = clamp(spinVel.y * 1.28, -5.5, 5.5);
           canvas.style.cursor = 'grab';
           hoverNeedsRefresh = true;
         }
@@ -1748,6 +1828,8 @@ window.__ICOSA__ = {
     return interlude ? interlude.state() : null;
   },
   cameraInertia: () => ({ spin: { ...spinVel }, zoomTarget }),
+  navTarget: () => (navLabel ? faceInfo(navLabel) : null),
+  nextNavTarget: () => chooseNavTarget({ cycle: true }),
   meteor: (message) => handleMeteorEvent({ message }),
   abandon: () => abandonRun(),
   newPilot: () => startNewPilot(),

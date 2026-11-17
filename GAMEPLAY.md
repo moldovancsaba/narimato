@@ -43,6 +43,8 @@ to a different tag creates/restores a different pilot; the browser remembers one
 - **Contest lock:** after your own click on a cell, you cannot click it again until another operator
   (human or robot) clicks it. A locked click shows `CELL LOCKED // CONTEST REQUIRED` once — no
   repeated `+2` popups.
+- **Navigation:** a gold **NAV** chip shows the best nearby mining target (biome + deposit chance)
+  with a pulsing beacon on the planet. Press the chip to fly the camera to it, or ↻ to cycle targets.
 - **Geography:** beneath the triangular grid is a high-detail procedural planet surface — ocean
   depth, coastlines, green lowlands, dry basins, mountain rock and polar ice. Cell edges and owner
   tints sit on top, so you always see the real geography behind your territory.
@@ -109,7 +111,7 @@ the second level.
   the hull takes damage with screen shake, and you land on the next planet. The cinematic is fully
   procedural (CSS/Canvas, no assets). On touchdown, a centered **landing briefing** lists every ore
   required to leave the new planet and your collected/required counts; press START MINING to dismiss.
-- **Camera feel:** drag to spin and release — the planet keeps turning and eases to a stop
+- **Camera feel:** drag to spin and release — the planet keeps turning longer and eases to a stop
   (inertial pan). Wheel/pinch zoom glides into its target instead of snapping, so fine control at
   deep zoom is easier. Clicking/tapping still works immediately at any time.
 
@@ -125,7 +127,10 @@ the second level.
 
 - Players are matched per planet. Robots are always present: one robot per loaded planet, with a
   new creative callsign/colour each spawn, playing for a random time, then leaving and respawning.
-- The robot deliberately contests charged human cells so solo play cannot speed-run the lock.
+- Each active planet keeps **3 players online**: if one human is present, 2 robots join; two humans
+  get 1 robot; three or more humans run bot-free. Replacements spawn immediately when someone
+  leaves, and an excess robot steps aside when a new human arrives.
+- The robots deliberately contest charged human cells so solo play cannot speed-run the lock.
 - The arcade leaderboard is per planet, all-time for that scene; planet carries your score forward
   to the next scene.
 

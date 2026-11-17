@@ -6158,3 +6158,88 @@ body.is-drawer-open .landing-brief-card {
     animation: none !important;
   }
 }
+
+/* Navigation target chip */
+.nav-chip {
+  pointer-events: auto;
+  position: fixed;
+  left: 50%;
+  top: 62px;
+  transform: translateX(-50%);
+  z-index: 22;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  max-width: min(92vw, 440px);
+  border: 1px solid rgba(215, 255, 0, 0.42);
+  background: rgba(3, 1, 12, 0.82);
+  box-shadow: 0 0 22px rgba(215, 255, 0, 0.12);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+.nav-chip[hidden] { display: none; }
+.nav-kicker {
+  display: flex;
+  align-items: center;
+  padding: 0 9px;
+  border-right: 1px solid rgba(215, 255, 0, 0.28);
+  color: var(--acid, #d4ff3f);
+  font: 700 9px/1 var(--font-mono, monospace);
+  letter-spacing: 0.18em;
+}
+.nav-target {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+  min-height: 34px;
+  padding: 4px 10px;
+  border: 0;
+  background: transparent;
+  color: #ecfbff;
+  cursor: pointer;
+  text-align: left;
+}
+.nav-target:hover,
+.nav-target:focus-visible { background: rgba(215, 255, 0, 0.09); }
+.nav-target-label {
+  max-width: 16ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 700 11px/1.2 var(--font-mono, monospace);
+  letter-spacing: 0.06em;
+}
+.nav-target-meta {
+  color: rgba(170, 210, 225, 0.8);
+  font: 500 9px/1.2 var(--font-mono, monospace);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+.nav-next {
+  min-width: 34px;
+  min-height: 34px;
+  border: 0;
+  border-left: 1px solid rgba(215, 255, 0, 0.25);
+  background: transparent;
+  color: var(--acid, #d4ff3f);
+  font: 700 16px/1 var(--font-mono, monospace);
+  cursor: pointer;
+}
+.nav-next:hover, .nav-next:focus-visible { background: rgba(215, 255, 0, 0.1); }
+body.is-intro .nav-chip,
+body.interlude-active .nav-chip,
+body.is-report .nav-chip,
+body.is-meteor .nav-chip,
+body.is-escape-cta .nav-chip {
+  display: none;
+}
+@media (max-width: 640px) {
+  .nav-chip {
+    top: 58px;
+    max-width: calc(100vw - 16px);
+  }
+  .nav-target { min-height: 38px; padding: 4px 8px; }
+  .nav-next { min-width: 38px; min-height: 38px; }
+  .nav-target-meta { display: none; }
+}

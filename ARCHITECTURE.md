@@ -79,8 +79,9 @@ Node server.js
   `DATA_DIR/planets/registry.json`.
 - Each planet is an isolated **scene/room**: players, robots, leaderboard, grid, resources and SSE
   broadcasts are per-planet. Players on different planets never see each other's clicks or state.
-- Every loaded planet runs its own robot operator (creative callsign, random colour, joins/leaves,
-  contests human cells and mines).
+- Every loaded planet runs its own robot staffing: target total online = 3 with humans
+  (1 human→2 robots, 2→1, 3+→0; 0 humans→1 ambient robot). Robots spawn immediately when needed,
+  leave when displaced, and run the same contest/explore click policy. Multiple robots per planet.
 - Contest lock: the owner of a cell cannot charge it again after their own click until someone else
   clicks it. The client learns this from the 5th leaf slot (`lastClickIndex`) and suppresses
   pointless optimistic `+2` pulses; the server remains authoritative.

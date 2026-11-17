@@ -756,8 +756,33 @@ class UI {
     return this._planet;
   }
 
-  /**
-   * Show/hide the ESCAPE burn button when the escape mission is complete.
+  /** Show/update the navigation target chip. */
+  setNavTarget(info) {
+    const src = info && typeof info === 'object' ? info : {};
+    if (!src.label) {
+      this.hideNavTarget();
+      return;
+    }
+    const chip = this._el.navChip;
+    if (!chip) return;
+    chip.hidden = false;
+    chip.classList.add('is-active');
+    this._setText(this._el.navTargetLabel, String(src.label));
+    const biome = typeof src.biomeName === 'string' ? src.biomeName : '';
+    const chance = Number.isFinite(src.chance) ? Math.round(src.chance * 100) : null;
+    const meta = [biome, chance != null ? `${chance}% ORE` : ''].filter(Boolean).join(' · ');
+    this._setText(this._el.navTargetMeta, meta || 'NAVIGATION TARGET');
+  }
+
+  hideNavTarget() {
+    const chip = this._el.navChip;
+    if (chip) {
+      chip.hidden = true;
+      chip.classList.remove('is-active');
+    }
+  }
+
+  /** Show/hide the ESCAPE burn button when the escape mission is complete.
    * @param {boolean} ready
    * @param {string} [missionName]
    */
@@ -2025,6 +2050,11 @@ function resolveElements(doc) {
     planetBadge: byId('planet-badge'),
     planetBadgeName: byId('planet-badge-name'),
     planetBadgeDepth: byId('planet-badge-depth'),
+    navChip: byId('nav-chip'),
+    navTargetLabel: byId('nav-target-label'),
+    navTargetMeta: byId('nav-target-meta'),
+    btnNavFocus: byId('btn-nav-focus'),
+    btnNavNext: byId('btn-nav-next'),
     btnEscape: byId('btn-escape'),
     escapeCta: byId('escape-cta'),
     escapeCtaTitle: byId('escape-cta-title'),

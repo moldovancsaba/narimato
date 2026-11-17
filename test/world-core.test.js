@@ -28,6 +28,7 @@ import {
   DEFAULT_CONFIG,
 } from '../lib/world-core.js';
 import { buildMesh, childTriangles } from '../public/js/shared/geometry.js';
+import { robotTargetForOnlineHumans } from '../lib/planet-manager.js';
 import { resourceById, rollDeposit, rollResource, RESOURCE_MARKET } from '../public/js/shared/resources.js';
 import { PLANET_VERSION, terrainAt, weightedResourceForBiome, BIOMES } from '../public/js/shared/planet.js';
 
@@ -902,64 +903,90 @@ test('player colours: persisted colours survive reload verbatim, new players sta
 
 // --------------------------------------------------------------------- robot
 
-test('robot: spawns after a gap, plays as a real player, leaves and respawns with a new name', async (t) => {
+test('robot staffing rule: humans 1->2 robots, 2->1, 3+->0, 0->1 ambient', async (t) => {
+  assert.equal(robotTargetForOnlineHumans(0), 1);
+  assert.equal(robotTargetForOnlineHumans(1), 2);
+  assert.equal(robotTargetForOnlineHumans(2), 1);
+  assert.equal(robotTargetForOnlineHumans(3), 0);
+  assert.equal(robotTargetForOnlineHumans(9), 0);
+
   const { core, clock } = await makeCore(t, {
     rng: mulberry32(0xb07),
-    config: {
-      bots: 1,
-      botGapMinMs: 100,
-      botGapMaxMs: 100,
-      botMinMs: 400,
-      botMaxMs: 400,
-      botClickMinMs: 50,
-      botClickMaxMs: 50,
-      clickCooldownMs: 0,
-    },
+    config: { bots: 1, botMinMs: 10_000, botMaxMs: 10_000, botClickMinMs: 50, botClickMaxMs: 50, clickCooldownMs: 0 },
   });
-  const human = core.join({ tag: 'HUMAN' });
-  assert.equal(click(core, human.token, '1').ok, true);
+  const applyRule = () => {
+    core.setRobotTarget(robotTargetForOnlineHumans(core.onlineHumanCount()));
+    core.tick(clock.now());
+  };
 
-  clock.advance(1);
+  // Empty planet: one ambient robot, spawned immediately on the first tick.
+  applyRule();
+  assert.equal(core.robotInfos().length, 1, 'humans=0 -> 1 ambient robot');
+  assert.equal(core.onlineHumanCount(), 0, 'robots are not humans');
+
+  const h1 = core.join({ tag: 'HUMAN1' });
+  assert.equal(core.onlineHumanCount(), 1);
+  applyRule();
+  assert.equal(core.robotInfos().length, 2, 'humans=1 -> 2 robots');
+  assert.equal(core.robotInfos().length + core.onlineHumanCount(), 3, 'scene keeps >=3 online players');
+
+  const h2 = core.join({ tag: 'HUMAN2' });
+  applyRule();
+  assert.equal(core.robotInfos().length, 1, 'humans=2 -> 1 robot (excess displaced immediately)');
+
+  const h3 = core.join({ tag: 'HUMAN3' });
+  applyRule();
+  assert.equal(core.robotInfos().length, 0, 'humans>=3 -> 0 robots');
+  assert.equal(core.onlineHumanCount(), 3);
+
+  // Humans leaving spawn replacements IMMEDIATELY (no gap).
+  core.setOnline(h3.player.id, false);
+  core.setOnline(h2.player.id, false);
+  applyRule();
+  assert.equal(core.onlineHumanCount(), 1);
+  assert.equal(core.robotInfos().length, 2, 'human drop below 3 -> 2 robots instantly');
+  assert.equal(new Set(core.getState().players.map((player) => player.id)).size, core.getState().players.length, 'all robot players join as real players');
+
+  // BOTS=0 still disables robots entirely (manager would pass target 0).
+  const { core: disabled } = await makeCore(t, { config: { bots: 0 } });
+  disabled.join({ tag: 'HUMAN' });
+  disabled.setRobotTarget(2);
+  disabled.tick(0);
+  assert.equal(disabled.robotInfos().length, 0);
+});
+
+test('robot staffing: multiple robots act independently, lifetimes replace immediately', async (t) => {
+  const { core, clock } = await makeCore(t, {
+    rng: mulberry32(0x51aff),
+    config: { bots: 1, botMinMs: 400, botMaxMs: 400, botClickMinMs: 50, botClickMaxMs: 50, clickCooldownMs: 0 },
+  });
+  core.setRobotTarget(2);
   core.tick(clock.now());
-  assert.equal(core.getState().players.length, 1, 'robot waits for the spawn gap');
+  const first = core.robotInfos();
+  assert.equal(first.length, 2);
+  assert.equal(new Set(first.map((robot) => robot.playerId)).size, 2);
 
-  clock.advance(100);
-  const spawnEvents = core.tick(clock.now());
-  let state = core.getState();
-  assert.equal(state.players.length, 2, 'robot joined as a normal player');
-  const robot = state.players[1];
-  assert.equal(robot.online, true);
-  assert.match(robot.tag, /^[A-Z0-9_-]{2,12}$/);
-  assert.notEqual(robot.tag, 'HUMAN');
-  assertVisibleColor(robot.color);
-  assert.equal(core.robotInfo().tag, robot.tag);
-  assert.ok(spawnEvents.some((event) => event.type === 'toast' && /LINKED/.test(event.message)));
-
-  // It clicks random active leaves on its cadence (and can contest humans).
-  const clicksBefore = core.getState().totalClicks;
-  clock.advance(200);
+  // Both robots click on their own cadence.
+  clock.advance(220);
   core.tick(clock.now());
-  state = core.getState();
-  assert.ok(state.totalClicks > clicksBefore, 'robot clicks cells over time');
-  assert.ok(state.players[1].clicks > 0);
-  assert.ok(state.players[1].score > 0);
+  const robotStates = core.getState().players.filter((player) => first.some((robot) => robot.playerId === player.id));
+  assert.ok(robotStates.length === 2);
+  for (const robot of robotStates) assert.ok(robot.clicks > 0, `robot ${robot.tag} clicks independently`);
 
-  // It leaves after its random lifetime (new robot waits for the gap).
-  clock.advance(200);
-  const leaveEvents = core.tick(clock.now());
-  state = core.getState();
-  assert.equal(state.players[1].online, false, 'robot went offline');
-  assert.equal(core.robotInfo(), null);
-  assert.ok(leaveEvents.some((event) => event.type === 'toast' && /LEFT/.test(event.message)));
-
-  clock.advance(100);
-  core.tick(clock.now());
-  state = core.getState();
-  assert.equal(state.players.length, 3, 'a new robot spawned after the gap');
-  const robot2 = state.players[2];
-  assert.equal(robot2.online, true);
-  assert.notEqual(robot2.tag, robot.tag, 'each robot gets a brand-new callsign');
-  assertVisibleColor(robot2.color);
+  // Lifetime expiry: both leave and replacements spawn in the SAME tick (no gap).
+  const nextLeave = 400;
+  clock.advance(Math.max(1, nextLeave));
+  const events = core.tick(clock.now());
+  const second = core.robotInfos();
+  assert.equal(second.length, 2, 'replacements are immediate');
+  assert.equal(
+    core.getState().players.filter((player) => first.some((robot) => robot.playerId === player.id)).every((player) => !player.online),
+    true,
+    'old robots went offline',
+  );
+  assert.notEqual(second[0].playerId, first[0].playerId);
+  assert.equal(events.some((event) => event.type === 'toast' && /LEFT/.test(event.message)), true);
+  assert.equal(events.some((event) => event.type === 'toast' && /LINKED/.test(event.message)), true);
 });
 
 test('robot: contests (steals) human-owned cells so solo play cannot speed-run', async (t) => {
@@ -970,9 +997,7 @@ test('robot: contests (steals) human-owned cells so solo play cannot speed-run',
   });
   const human = core.join({ tag: 'HUMAN' });
   assert.equal(click(core, human.token, '1').ok, true); // human owns cell 1, locked
-  core.tick(clock.now()); // schedule the spawn gap
-  clock.advance(11);
-  core.tick(clock.now()); // spawn
+  core.tick(clock.now()); // spawn immediately (no gap)
   clock.advance(11);
   core.tick(clock.now()); // first robot click
   const state = core.getState();

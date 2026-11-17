@@ -83,8 +83,12 @@ resets its crust and releases new resources. The game never ends.
 - **Meteor reset** — exhausted planets are reseeded with fresh resources.
 - **Responsive command deck** — deliberately different desktop, tablet, mobile portrait and
   landscape phone layouts; mobile is planet-first with drawers/dock/target sheet.
-- **Inertial camera** — drag-spin the planet and release: it coasts with an ease-out curve and
-  slows to a stop; wheel/pinch zoom eases into its target instead of snapping.
+- **Inertial camera** — drag-spin the planet and release: it coasts longer with an ease-out curve
+  and slowly comes to rest; wheel/pinch zoom eases into its target instead of snapping.
+- **Navigation target** — a gold **NAV** beacon and chip point to the best nearby geological cell
+  to mine; tap the chip to fly the camera there or ↻ to cycle targets.
+- **Dynamic staffing** — every active planet keeps **3 players online**: 1 human + 2 robots,
+  2 humans + 1 robot, or 3+ humans and no robots; replacements spawn immediately.
 - **Landing briefing** — touching down on a new planet opens a centered card listing exactly which
   ores are needed to leave, with collected/required counts.
 - **Reports & sharing** — 1200×630 session card, shareable URL, all stats persisted.
@@ -97,7 +101,8 @@ resets its crust and releases new resources. The game never ends.
 | ![Landing mission briefing](media/landing.jpg) | ![Desktop HUD with escape mission](media/mission.jpg) |
 | ![Mobile planet-first HUD](media/mobile.jpg) | ![Mobile mission drawer](media/mobile-mission.jpg) |
 | ![Interplanetary story interlude](media/interlude.jpg) | ![Escape-ready refit](media/escape-ready.jpg) |
-| ![Detailed procedural planet geography behind the grid](media/geography.jpg) | ![Centered TRY TO FLY AWAY escape CTA](media/escape-cta.jpg) |
+| ![Detailed procedural planet geography behind the grid](media/geography.jpg) | ![Navigation waypoint on the planet](media/navigation.jpg) |
+| ![Centered TRY TO FLY AWAY escape CTA](media/escape-cta.jpg) | ![New-planet landing briefing](media/landing-brief.jpg) |
 | ![Escape CTA on mobile](media/escape-cta-mobile.jpg) | ![Landing briefing on mobile](media/landing-brief-mobile.jpg) |
 
 ## Development
@@ -132,5 +137,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.0.5** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.0.6** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.

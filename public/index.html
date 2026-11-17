@@ -152,6 +152,15 @@
 
     <!-- ============================= HUD ============================= -->
     <section id="hud" class="hud" aria-label="World telemetry" aria-hidden="true">
+      <div id="nav-chip" class="nav-chip" hidden>
+        <span class="nav-kicker">NAV</span>
+        <button id="btn-nav-focus" class="nav-target" type="button" title="Fly the camera to the navigation target">
+          <span id="nav-target-label" class="nav-target-label">TARGET</span>
+          <span id="nav-target-meta" class="nav-target-meta">MOUNTAIN · 44%</span>
+        </button>
+        <button id="btn-nav-next" class="nav-next" type="button" title="Choose another navigation target" aria-label="Choose another navigation target">↻</button>
+      </div>
+
       <div class="hud-top">
         <div class="hud-cluster hud-brand">
           <div class="brand-mark">
@@ -488,7 +497,7 @@
       </div>
 
       <footer class="landing-foot" aria-hidden="true">
-        <span>v3.0.5 // THE WAY BACK</span>
+        <span>v3.0.6 // THE WAY BACK</span>
         <span class="landing-foot-sep">✶</span>
         <span>WORLD PERSISTS ACROSS RESTARTS</span>
         <span class="landing-foot-sep">✶</span>

@@ -1,5 +1,34 @@
 # NARIMATO — Release Notes
 
+## v3.0.6 — “Navigation & Full Planets” (2026-11-17)
+
+### Added
+
+- **Navigation target / beacon:** the HUD shows a gold **NAV** chip with the best nearby mining
+  target (cell label, biome, geological ore chance). A pulsing gold beacon marks it on the planet;
+  press the chip to fly the camera to it, ↻ to cycle targets.
+- **Dynamic per-planet staffing:** every active planet keeps at least **3 online players**:
+  1 human → 2 robots, 2 humans → 1 robot, 3+ humans → no robots (0 humans → 1 ambient robot).
+  New humans displace excess robots; departures are replaced **immediately** (no spawn gap),
+  including after an escape re-staffs the old and new planet.
+- **More inertial glide:** released drag momentum carries longer and decays more slowly; zoom
+  easing is slightly smoother too.
+
+### Verification
+
+- Navigation target desktop/mobile: chip + waypoint, focus and cycle buttons; zero console errors.
+- Manual staffing: empty planet → ambient robot; 1 human → 3 online; new humans reduce bots;
+  robot/human departures replaced immediately. Server tests cover per-planet independence.
+- 69/69 `node:test` tests.
+
+### Release artifact
+
+- Source tag: `v3.0.6`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.0.6
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.0.5 — “The Planet Beneath” (2026-11-17)
 
 ### Added

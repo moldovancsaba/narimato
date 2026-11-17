@@ -16,6 +16,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 
 import { startServer, MAX_BODY_BYTES } from '../server.js';
 import { WorldCore } from '../lib/world-core.js';
+import { robotTargetForOnlineHumans } from '../lib/planet-manager.js';
 import { PLANET_VERSION, terrainAt } from '../public/js/shared/planet.js';
 
 async function makeServer(t, config = {}) {
@@ -858,4 +859,85 @@ test('planet levels: first planet breaks exactly once (20 → 80) and stops', as
   const world2 = (await getJson(base, '/api/world')).json;
   assert.equal(world2.leaves.length, 23, 'D1 children do not break on the 2-level first planet');
   assert.equal(world2.state.maxDepthReached, 1);
+});
+
+// ------------------------------------------------------- dynamic robot staffing
+
+test('robot staffing: per-planet targets, immediate displacement/replacement, independence', async (t) => {
+  assert.equal(robotTargetForOnlineHumans(0), 1);
+  assert.equal(robotTargetForOnlineHumans(1), 2);
+  assert.equal(robotTargetForOnlineHumans(2), 1);
+  assert.equal(robotTargetForOnlineHumans(3), 0);
+  assert.equal(robotTargetForOnlineHumans(4), 0);
+
+  const { base, handle } = await makeServer(t, {
+    bots: 1,
+    depositChance: 0,
+    clickCooldownMs: 0,
+    planetSeed: 424242,
+  });
+  const manager = handle.manager;
+  const delayForStaffing = () => delay(250);
+
+  const a = await postJson(base, '/api/join', { tag: 'HUMAN_A' });
+  const b = await postJson(base, '/api/join', { tag: 'HUMAN_B' });
+  assert.equal(a.status, 200);
+  assert.equal(b.status, 200);
+  await delayForStaffing();
+  const p0 = manager.planetCore(0);
+  assert.equal(p0.onlineHumanCount(), 2);
+  assert.equal(p0.robotInfos().length, 1, '2 humans -> 1 robot');
+
+  // A third human displaces the robot immediately.
+  const c = await postJson(base, '/api/join', { tag: 'HUMAN_C' });
+  assert.equal(c.status, 200);
+  await delayForStaffing();
+  assert.equal(p0.onlineHumanCount(), 3);
+  assert.equal(p0.robotInfos().length, 0, '3+ humans -> 0 robots');
+
+  // A human leaving drops the scene below 3 -> replacement robot IMMEDIATELY.
+  const cSse = await openSse(base, c.json.token);
+  await cSse.close();
+  await delayForStaffing();
+  assert.equal(p0.onlineHumanCount(), 2);
+  assert.equal(p0.robotInfos().length, 1, 'human leave -> robot spawned without a gap');
+
+  const grantMission = (core, token) => {
+    const pilot = core.findByToken(token);
+    pilot.oreCounts = { uranium: 3, silver: 5, gold: 2, palladium: 1 };
+  };
+
+  // A escapes to planet 1: planet 0 loses a human (1 -> 2 robots) while planet 1
+  // (1 human) also wants 2 robots — both scenes staff themselves independently.
+  grantMission(p0, a.json.token);
+  const escA = await postJson(base, '/api/action', { token: a.json.token, type: 'escape' });
+  assert.equal(escA.status, 200);
+  assert.equal(escA.json.planetIndex, 1);
+  await delayForStaffing();
+  const p1 = manager.planetCore(1);
+  assert.equal(p0.onlineHumanCount(), 1);
+  assert.equal(p0.robotInfos().length, 2, 'planet 0 re-staffed to 2 robots for 1 human');
+  assert.equal(p1.onlineHumanCount(), 1);
+  assert.equal(p1.robotInfos().length, 2, 'planet 1 independently staffed to 2 robots for its 1 human');
+  assert.equal(
+    p0.robotInfos().some((robot) => p1.robotInfos().some((other) => other.playerId === robot.playerId)),
+    false,
+    'planets have separate robot scenes',
+  );
+
+  // B escapes too: planet 0 becomes empty (1 ambient robot), planet 1 has 2 humans (1 robot).
+  grantMission(p0, b.json.token);
+  const escB = await postJson(base, '/api/action', { token: b.json.token, type: 'escape' });
+  assert.equal(escB.status, 200);
+  await delayForStaffing();
+  assert.equal(p0.onlineHumanCount(), 0);
+  assert.equal(p0.robotInfos().length, 1, 'empty planet keeps exactly 1 ambient robot');
+  assert.equal(p1.onlineHumanCount(), 2);
+  assert.equal(p1.robotInfos().length, 1, '2 humans on planet 1 -> 1 robot (excess displaced)');
+
+  // Robots are not counted as humans anywhere (wire players have no bot flag).
+  assert.equal(p0.onlineHumanCount() + p0.robotInfos().length <= p0.players.length, true);
+  const state0 = (await getJson(base, '/api/state')).json.state;
+  assert.equal(state0.planetIndex, 0);
+  assert.equal(state0.players.some((player) => Object.prototype.hasOwnProperty.call(player, 'bot')), false);
 });

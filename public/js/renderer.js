@@ -163,6 +163,7 @@ export class IcosaRenderer {
     this._surfaceCanvas = null;
     this._surfaceCtx = null;
     this.hoverLabel = null;
+    this.waypointLabel = null;
     this.pulses = [];
     // label -> animation time of the last pulse, used for click-only ids.
     this._pulseLabels = new Map();
@@ -523,6 +524,11 @@ export class IcosaRenderer {
     this.labelsVisible = !!visible;
   }
 
+  /** Mark a cell as the navigation target (gold pulsing beacon). */
+  setWaypoint(label) {
+    this.waypointLabel = typeof label === 'string' && label ? label : null;
+  }
+
   /**
    * Click / break juice on one cell.
    * @param {string} label
@@ -683,6 +689,7 @@ export class IcosaRenderer {
     if (hasCamera) {
       this._drawLabels(ctx, camera);
       this._drawChargeArcs(ctx);
+      this._drawWaypoint(ctx, camera);
     }
 
     if (hasCamera) this._drawPulses(ctx, camera, rm);
@@ -1061,6 +1068,53 @@ export class IcosaRenderer {
   /* ================================================================ *
    * Sphere
    * ================================================================ */
+
+  /** Draw the navigation target beacon above the grid. */
+  _drawWaypoint(ctx, camera) {
+    if (!this.waypointLabel) return;
+    const entry = this.byLabel.get(this.waypointLabel);
+    if (!entry) return;
+    const p = camera.project(entry.centroid);
+    if (!p || p.z <= 0.01) return;
+    const sr = clamp((entry.sr || 18) * 0.3, 13, 42);
+    const pulse = 0.5 + 0.5 * Math.sin(this.t * 3.4);
+    const r = sr + 8 + pulse * 10;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = `rgba(215,255,0,${0.32 + 0.35 * pulse})`;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r, 0, TAU);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(215,255,0,0.22)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r + 10 + pulse * 6, 0, TAU);
+    ctx.stroke();
+    ctx.fillStyle = `rgba(215,255,0,${0.72 + 0.2 * pulse})`;
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y - r - 18);
+    ctx.lineTo(p.x + 6, p.y - r - 10);
+    ctx.lineTo(p.x, p.y - r - 3);
+    ctx.lineTo(p.x - 6, p.y - r - 10);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    const name = entry.terrain && entry.terrain.biome ? entry.terrain.biome.name : '';
+    ctx.save();
+    ctx.textAlign = 'left';
+    ctx.font = `700 10px ${FONT_STACK}`;
+    try { ctx.letterSpacing = '0.08em'; } catch (_) { /* ignore */ }
+    const text = `NAV ${this.waypointLabel}${name ? ' // ' + name : ''}`;
+    const tx = Math.min(this.width - 8, Math.max(8, p.x + r + 12));
+    const ty = Math.min(this.height - 12, Math.max(16, p.y - r - 8));
+    ctx.shadowColor = 'rgba(0,0,0,0.9)';
+    ctx.shadowBlur = 4;
+    ctx.fillStyle = 'rgba(215,255,0,0.92)';
+    ctx.fillText(text, tx, ty);
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  }
 
   /** Draw the cached high-res geography mesh behind the game grid. */
   _drawSurface(ctx, camera, cx, cy, R, W, H) {
