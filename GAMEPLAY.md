@@ -140,7 +140,9 @@ status bar, and both remember your choice.
   **one sentence at a time**, with a short breath pause between sentences; CC follows the same
   sentence units.
 - **CC** shows the same lines as subtitles. They appear immediately even if the browser blocks
-  autoplay until your first tap/click.
+  autoplay until your first tap/click. Speech clips are prefetched in the background (first line of
+  each cue at idle, then the next sentence while the current one plays) so a slow connection does
+  not leave a gap between sentences.
 - **?** opens the **Field Manual**: the story, mining and contest rules, planets/escape, navigation,
   controls and audio. Each section has a **▶ PLAY** button. Under **NARRATOR** you can switch
   between **GEORGE** (open-source Kokoro, default), British **DANIEL** and US **SAMANTHA**; the

@@ -1,5 +1,32 @@
 # NARIMATO — Release Notes
 
+## v3.6.0 — “Load Management” (2026-11-17)
+
+### Changed
+
+- **Narration startup/transition latency reduced.** Only the first sentence of each cue is
+  prefetched at idle (28 requests, max 3 concurrent) instead of eagerly loading the whole
+  story/intro metadata set; the next sentence is warmed while the current clip plays. Boot audio
+  requests dropped from 65 to 28.
+- **Sentence gap reduced** from 340 ms to 220 ms while keeping the slower 0.94× delivery.
+- **Voice assets are versioned and cached immutably** (`?v=3.6.0`,
+  `Cache-Control: public, max-age=31536000, immutable`), so repeat playback and reloads do not
+  re-download clips.
+- Audio metadata bug fixed so real clip durations (rather than only estimates) feed story holds.
+
+### Verification
+
+- Playwright load check: 28 audio resources at idle, 45 total; manual story plays sentence-by-
+  sentence; no console errors; 74/74 tests.
+
+### Release artifact
+
+- Source tag: `v3.6.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.6.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.5.0 — “Open Voice” (2026-11-17)
 
 ### Added

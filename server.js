@@ -538,10 +538,16 @@ export class InfiniteServerApp {
 
     const ext = path.extname(resolved).toLowerCase();
     const mime = MIME_TYPES[ext] || 'application/octet-stream';
+    const cacheControl =
+      ext === '.m4a'
+        ? 'public, max-age=31536000, immutable'
+        : NO_STORE_EXTENSIONS.has(ext)
+          ? 'no-store'
+          : 'public, max-age=3600';
     res.writeHead(200, {
       'Content-Type': mime,
       'Content-Length': stat.size,
-      'Cache-Control': NO_STORE_EXTENSIONS.has(ext) ? 'no-store' : 'public, max-age=3600',
+      'Cache-Control': cacheControl,
       'X-Content-Type-Options': 'nosniff',
     });
     if (method === 'HEAD') {

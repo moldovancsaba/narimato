@@ -75,7 +75,10 @@ Node server.js
   pause between sentences. Profiles (`george` via Kokoro-82M, plus `daniel`, `samantha`) are
   selectable and persisted. Dynamic
   server story ids map to prerecorded story clips; the transit hold sums the sentence durations.
-  Subtitles show one sentence at a time and work even when voice autoplay is blocked. Open-source
+  Subtitles show one sentence at a time and work even when voice autoplay is blocked. A small
+  limited-concurrency warmup prefetches the first sentence of each cue at idle and warms the next
+  sentence during playback; audio URLs carry an asset version and are served with immutable,
+  long-lived cache headers. Open-source
   replacement options are documented in [VOICE.md](VOICE.md).
 - **`shared/`** — pure modules used by both sides:
   - `geometry.js` — icosahedron, hierarchical labels, child triangles, slerp, camera/picking.

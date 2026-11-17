@@ -14,8 +14,9 @@ const VOICE_KEY = 'icosa.voice';
 const SUBTITLE_KEY = 'icosa.subtitles';
 const PROFILE_KEY = 'icosa.voiceProfile';
 const DEFAULT_PROFILE = 'george';
-const SEGMENT_GAP_MS = 340;
+const SEGMENT_GAP_MS = 220;
 const PLAYBACK_RATE = 0.94; // slower, deliberate delivery
+const AUDIO_VERSION = '3.6.0';
 const FALLBACK_MS = 2100;
 
 function readBool(key, fallback) {
@@ -93,11 +94,49 @@ export function createNarrator() {
     return `${cueId}__s${index + 1}`;
   }
 
+  function audioUrl(cueId, index, profile = voiceProfile) {
+    return `/audio/voice/${profile}/${fileId(cueId, index)}.m4a?v=${AUDIO_VERSION}`;
+  }
+
+  // Limited-concurrency warmup: fetch the first sentence of each cue and the
+  // next sentence while one is playing. Keeps first-word latency low without
+  // downloading all 85 clips at boot.
+  const warmQueue = [];
+  const warmed = new Set();
+  let warmActive = 0;
+  function pumpWarm() {
+    if (typeof fetch !== 'function') return;
+    while (warmActive < 3 && warmQueue.length) {
+      const url = warmQueue.shift();
+      if (!url || warmed.has(url)) continue;
+      warmed.add(url);
+      warmActive += 1;
+      fetch(url, { cache: 'force-cache' })
+        .catch(() => {})
+        .finally(() => {
+          warmActive -= 1;
+          pumpWarm();
+        });
+    }
+  }
+  function warmAudio(url) {
+    if (!url || warmed.has(url) || warmQueue.includes(url)) return;
+    warmQueue.push(url);
+    pumpWarm();
+  }
+  function scheduleIdle(fn) {
+    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(fn, { timeout: 1800 });
+    } else {
+      setTimeout(fn, 900);
+    }
+  }
+
   function getAudio(cueId, index, profile = voiceProfile) {
     const id = fileId(cueId, index);
     const cacheKey = `${profile}:${id}`;
     if (audio.has(cacheKey)) return audio.get(cacheKey);
-    const a = new Audio(`/audio/voice/${profile}/${id}.m4a`);
+    const a = new Audio(audioUrl(cueId, index, profile));
     a.preload = 'metadata';
     a.volume = 0.88;
     a.playbackRate = PLAYBACK_RATE;
@@ -232,6 +271,7 @@ export function createNarrator() {
             pending = { ...sequence };
           });
         }
+        warmAudio(audioUrl(cueId, sequence.index + 1, profile));
         a.onended = () => {
           currentAudio = null;
           currentAudioId = null;
@@ -301,6 +341,7 @@ export function createNarrator() {
       : Array.isArray(story.lines) && story.lines.length
         ? story.lines.map((line) => String(line).trim()).filter(Boolean)
         : ['An unknown signal washes over the ship.'];
+    for (let i = 0; i < segments.length; i += 1) warmAudio(audioUrl(cueId, i, voiceProfile));
     return startSequence(cueId, segments, speaker);
   }
 
@@ -326,10 +367,13 @@ export function createNarrator() {
 
   function preloadProfile(profile) {
     if (typeof Audio === 'undefined') return;
-    for (const id of Object.keys(NARRATION)) {
-      if (!id.startsWith('story-') && !id.startsWith('intro-')) continue;
-      const cue = NARRATION[id];
-      for (let i = 0; i < narrationSegments(cue).length; i += 1) getAudio(id, i, profile);
+    // Only the first sentence of each cue is warmed at boot. Later sentences
+    // and full story packs are fetched as needed / when the transit starts, so
+    // the scene does not compete with ~60 audio requests.
+    for (const [id, cue] of Object.entries(NARRATION)) {
+      const segments = narrationSegments(cue);
+      if (!segments.length) continue;
+      warmAudio(audioUrl(id, 0, profile));
     }
   }
 
@@ -340,7 +384,7 @@ export function createNarrator() {
     voiceProfile = profile.id;
     writeProfile(voiceProfile);
     syncProfileButtons();
-    preloadProfile(voiceProfile);
+    scheduleIdle(() => preloadProfile(voiceProfile));
   }
 
   function voiceProfileLabel() {
@@ -393,8 +437,8 @@ export function createNarrator() {
       window.addEventListener('pointerdown', onGesture, { capture: true, passive: true });
       window.addEventListener('keydown', onGesture, { capture: true });
     }
-    // Warm story/intro metadata so transit holds use the real clip lengths.
-    preloadProfile(voiceProfile);
+    // Warm metadata and first lines after the scene settles, not during boot.
+    scheduleIdle(() => preloadProfile(voiceProfile));
   }
 
   if (doc) {

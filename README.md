@@ -94,6 +94,9 @@ resets its crust and releases new resources. The game never ends.
 - **Three narrator voices** — open-source **GEORGE** (Kokoro-82M, default), British **DANIEL** or US
   **SAMANTHA**, selectable in the Field Manual. See [VOICE.md](VOICE.md) for the voice pipeline and
   open-source TTS options (Kokoro, Piper).
+- **Narration load management** — first sentences are idle-prefetched with limited concurrency,
+  the next sentence is warmed while the current one plays, and voice assets are versioned and
+  cached immutably, so sentence transitions do not stall on the network.
 - **Field Manual** — an in-game guide to the story, mining, contest lock, planets, navigation and
   controls, with a PLAY button on each section.
 - **Contextual tips** — one-time narrated hints for first mining, red locked cells, ore discovery,
@@ -160,5 +163,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.5.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.6.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.
