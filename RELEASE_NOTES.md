@@ -1,5 +1,41 @@
 # NARIMATO — Release Notes
 
+## v3.0.1 — “First Planet: 2 Levels” (2026-11-17)
+
+### Fixed
+
+- **The first planet is now truly 2 levels deep: 20 base triangles + one 80-triangle generation
+  (100 cells).** Previously the level count was passed as a break-depth cap, allowing a third
+  generation (320 cells) and leaving old deep cells around. `maxDepth` is now `levels - 1`; a child
+  on the first planet cannot break again.
+- **The live first planet is rebuilt to that 2-level layout on load** if its tree is deeper than the
+  cap. Pilots, scores, ores and inventories are preserved; ownership/clicks on the invalid deep
+  grid are reset as part of the tutorial-planet rebuild.
+- **The tutorial planet breaks at 4 clicks** (later planets stay at 8) so a solo pilot plus the
+  always-on robot can learn the claim/contest/break loop quickly.
+- **Every fresh/reset planet is guaranteed enough hidden refit ore** for its mission: on planet 1
+  the server ensures at least 3 uranium, 5 silver, 2 gold and 1 palladium deposit exist on mineable
+  cells before play. This prevents an unlucky planet from being impossible to escape.
+- Planet badge now says `LEVELS n` (e.g. `ICOSA-9 · LEVELS 2`), and the landing/HUD copy explains
+  the 20+80 layout and the 4-click tutorial threshold.
+
+### Migration
+
+- Restarting with v3.0.1 loads planet 0, detects any cells deeper than its level cap, rebuilds the
+  grid to the fresh 2-level tutorial planet (guaranteed mission deposits), and writes it back.
+  Players/scores/tokens/ore counts are unchanged. Later boots do not reset it again; planet 0 will
+  grow from 20 to at most 100 cells as pilots break it.
+
+### Verification
+
+- 67/67 `node:test` tests, including a new first-planet break-depth test: 20 leaves → 23 after one
+  cell breaks, and D1 children do not break again on planet 1; refit-ore guarantee and multi-planet
+  escape/meteor tests remain green.
+- Manual spare-port check: state `planetLevels 2`, `maxDepth 1`, `threshold 4`, 20 leaves, hidden
+  deposits exactly cover the 11 required ores.
+
+---
+
 ## v3.0.0 — “The Way Back” (2026-11-17)
 
 First public release of **NARIMATO**, the infinite planet-escape mining game.

@@ -28,7 +28,7 @@ can keep your callsign or enter a new game tag.
 - **ESCAPE MISSION** panel shows the current refit requirements (planet 1: 3 Uranium, 5 Silver,
   2 Gold, 1 Palladium).
 - **REPLAY INTRO** reopens the cockpit cine.
-- **Planet badge** shows the current world and depth (e.g. `ICOSA-9 · DEPTH 2`).
+- **Planet badge** shows the current world and levels (e.g. `ICOSA-9 · LEVELS 2`).
 
 Each callsign is a persistent identity: its own colour, score, planet and ore inventory. Switching
 to a different tag creates/restores a different pilot; the browser remembers one token per tag.
@@ -37,8 +37,8 @@ to a different tag creates/restores a different pilot; the browser remembers one
 
 - Click/tap a triangle: unclaimed → **claim**, rival-owned → **steal**, yours → **reinforce**.
   Every click adds charge to that cell.
-- At the planet's click threshold (default **8**) that single triangle breaks into four smaller
-  spherical triangles. Children inherit the owner and start charging from 0. Other cells are
+- At the planet's click threshold — **4 on the first planet**, 8 on later planets — that single
+  triangle breaks into four smaller spherical triangles. Children inherit the owner and start charging from 0. Other cells are
   unaffected.
 - **Contest lock:** after your own click on a cell, you cannot click it again until another operator
   (human or robot) clicks it. A locked click shows `CELL LOCKED // CONTEST REQUIRED` once — no
@@ -85,11 +85,15 @@ the current planet**; boarding the next planet starts a fresh ore run (score car
 
 ## Planets, depth and progression
 
-| Planet | Name | Mining depth | Notes |
-|---|---|---|---|
-| 1 | ICOSA-9 | **2** | 20 base faces, up to 320 cells |
-| 2 | ICOSA-10 | **3** | depth 3, deeper grid, bigger refit |
-| 3+ | ICOSA-11… | 4 … 8 (cap) | increasingly deep/rich, infinite sequence |
+| Planet | Name | Levels | Cells when fully broken | Notes |
+|---|---|---|---|---|
+| 1 | ICOSA-9 | **2** | 20 + 80 = **100** | tutorial planet, guaranteed refit ore, breaks at 4 clicks |
+| 2 | ICOSA-10 | **3** | 20 + 80 + 320 = **420** | deeper grid, bigger refit, breaks at 8 |
+| 3+ | ICOSA-11… | 4 … 8 (cap) | progressively larger | increasingly deep/rich, infinite sequence |
+
+A planet's "levels" count includes the base 20 faces: level 1 = 20, level 2 = the first 80 children,
+and so on. The first planet therefore breaks **one generation** and stops: it cannot go deeper than
+the second level.
 
 - Each planet is its own **multiplayer scene**: its own players, robot(s), leaderboard, grid and
   resource deposits. You only see/fight people on your planet.

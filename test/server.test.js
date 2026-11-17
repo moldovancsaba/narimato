@@ -204,6 +204,7 @@ test('HTTP: join, click flow, state/world/leaderboard/health, static safety and 
     'maxDepthReached',
     'planetDepth',
     'planetIndex',
+    'planetLevels',
     'planetName',
     'planetSeed',
     'players',
@@ -215,10 +216,11 @@ test('HTTP: join, click flow, state/world/leaderboard/health, static safety and 
     'totalClicks',
   ]);
   assert.equal(state.faces, 20);
-  assert.equal(state.threshold, 8);
-  assert.equal(state.maxDepth, 2, 'planet 0 is depth 2');
+  assert.equal(state.threshold, 4, 'planet 0 is the tutorial: breaks at 4');
+  assert.equal(state.maxDepth, 1, 'planet 0 has 2 levels (20 + 80): one break generation');
   assert.equal(state.planetIndex, 0);
   assert.equal(state.planetDepth, 2);
+  assert.equal(state.planetLevels, 2);
   assert.equal(state.planetName, 'ICOSA-9');
   assert.equal('leaves' in res.json, false, '/api/state must not ship leaves');
   assert.equal('phase' in state, false);
@@ -386,49 +388,49 @@ test('SSE + break: snapshot/cell/break/state frames, isolated split, no round ev
 
   const snapshot = await sse.waitForEvent('snapshot');
   assert.equal(snapshot.state.faces, 20);
-  assert.equal(snapshot.state.threshold, 8);
-  assert.equal(snapshot.state.maxDepth, 2);
+  assert.equal(snapshot.state.threshold, 4, 'first planet is the tutorial');
+  assert.equal(snapshot.state.maxDepth, 1, 'first planet is 2 levels (20+80)');
   assert.equal(snapshot.state.players.length, 2);
   assert.equal(snapshot.leaves.length, 20);
   assert.deepEqual(snapshot.leaves[0], ['1', -1, 0, null, -1]);
 
-  // The own-cell lock forces an alternating contest: B and A swap the cell
-  // until it breaks on the 8th click (A lands it).
+  // The own-cell lock forces an alternating contest; the tutorial planet
+  // breaks after 4 clicks, with the break landing on click 4.
   const aId = aJoin.json.player.id;
   const clickTokens = [bToken, aToken];
   const clicks = [];
-  for (let i = 0; i < 8; i += 1) {
+  for (let i = 0; i < 4; i += 1) {
     const res = await postJson(base, '/api/action', { token: clickTokens[i % 2], type: 'click', label: '7' });
     assert.equal(res.status, 200, `click ${i + 1} should succeed (${clicks[i - 1]?.error || 'ok'})`);
     clicks.push(res.json);
-    assert.equal(res.json.broke, i === 7, `break only on the 8th click (click ${i + 1})`);
+    assert.equal(res.json.broke, i === 3, `break only on the 4th click (click ${i + 1})`);
     await delay(10);
   }
   assert.equal(clicks[0].kind, 'claim');
   assert.equal(clicks[0].points, 10);
-  for (let i = 1; i < 7; i += 1) {
+  for (let i = 1; i < 3; i += 1) {
     assert.equal(clicks[i].kind, 'steal');
     assert.equal(clicks[i].points, 15);
   }
-  assert.equal(clicks[7].kind, 'steal');
-  assert.equal(clicks[7].points, 15 + 50);
-  assert.deepEqual(clicks[7].cell, ['7', 0, 8, null, 0]);
+  assert.equal(clicks[3].kind, 'steal');
+  assert.equal(clicks[3].points, 15 + 50);
+  assert.deepEqual(clicks[3].cell, ['7', 0, 4, null, 0]);
   assert.deepEqual(
-    clicks[7].children.map(([label]) => label),
+    clicks[3].children.map(([label]) => label),
     ['7.1', '7.2', '7.3', '7.4'],
   );
 
   // SSE: exactly the click cell frames + one break frame, no round/timer frames.
   const cellFrames = () =>
-    sse.events.filter((event) => event.type === 'cell').slice(0, 8);
-  await waitFor(() => (sse.events.filter((event) => event.type === 'cell').length >= 8 ? true : null), {
+    sse.events.filter((event) => event.type === 'cell').slice(0, 4);
+  await waitFor(() => (sse.events.filter((event) => event.type === 'cell').length >= 4 ? true : null), {
     timeout: 3000,
   });
   const cells = cellFrames();
-  assert.deepEqual(cells.map((event) => event.kind), ['claim', 'steal', 'steal', 'steal', 'steal', 'steal', 'steal', 'steal']);
-  assert.equal(cells[7].broke, true);
-  assert.equal(cells[7].playerId, aId);
-  assert.equal(cells[7].points, 15);
+  assert.deepEqual(cells.map((event) => event.kind), ['claim', 'steal', 'steal', 'steal']);
+  assert.equal(cells[3].broke, true);
+  assert.equal(cells[3].playerId, aId);
+  assert.equal(cells[3].points, 15);
 
   const breakFrame = await sse.waitForEvent('break', () => true, { timeout: 3000 });
   assert.equal(breakFrame.label, '7');
@@ -456,15 +458,15 @@ test('SSE + break: snapshot/cell/break/state frames, isolated split, no round ev
   assert.equal(seenTypes.has('surge'), false);
 
   // Periodic state frame reflects the break within ~1s.
-  const stateFrame = await sse.waitForEvent('state', (event) => event.state.totalClicks >= 8, {
+  const stateFrame = await sse.waitForEvent('state', (event) => event.state.totalClicks >= 4, {
     timeout: 2500,
   });
   assert.equal(stateFrame.state.faces, 23);
   assert.equal(stateFrame.state.totalBreaks, 1);
   assert.equal(stateFrame.state.maxDepthReached, 1);
   assert.equal(stateFrame.state.players[0].breaks, 1);
-  assert.equal(stateFrame.state.players[0].score, 110);
-  assert.equal(stateFrame.state.players[1].score, 55);
+  assert.equal(stateFrame.state.players[0].score, 80);
+  assert.equal(stateFrame.state.players[1].score, 25);
 
   // World: exactly 4 children replaced one leaf; every other base cell untouched.
   const world = (await getJson(base, '/api/world')).json;
@@ -483,7 +485,7 @@ test('SSE + break: snapshot/cell/break/state frames, isolated split, no round ev
   const health = (await getJson(base, '/api/health')).json;
   assert.equal(health.faces, 23);
   assert.equal(health.maxDepthReached, 1);
-  assert.equal(health.totalClicks, 8);
+  assert.equal(health.totalClicks, 4);
   assert.equal(health.playersOnline, 2);
 
   // Cross-player clicks: B contests A's inherited child (owner switch + stats).
@@ -493,12 +495,12 @@ test('SSE + break: snapshot/cell/break/state frames, isolated split, no round ev
   assert.equal(steal.json.points, 15);
   assert.deepEqual(steal.json.cell, ['7.2', 1, 1, null, 1]);
   const afterSteal = (await getJson(base, '/api/state')).json.state;
-  assert.equal(afterSteal.players[1].score, 70);
+  assert.equal(afterSteal.players[1].score, 40);
   assert.equal(afterSteal.players[1].facesHeld, 1);
   assert.equal(afterSteal.players[0].facesHeld, 3);
   const leaderboard = (await getJson(base, '/api/leaderboard')).json.leaderboard;
   assert.equal(leaderboard[0].tag, 'ALPHA');
-  assert.equal(leaderboard[0].score, 110);
+  assert.equal(leaderboard[0].score, 80);
   assert.equal(leaderboard[0].breaks, 1);
 });
 
@@ -515,9 +517,9 @@ test('persistence: world, players, tokens and arcade survive a server restart', 
   const firstBase = `http://127.0.0.1:${first.port}`;
   const a = await postJson(firstBase, '/api/join', { tag: 'ALPHA' });
   const b = await postJson(firstBase, '/api/join', { tag: 'BETA' });
-  // Alternating contest (own-cell lock) breaks cell 15 on A's 8th click.
+  // Alternating contest (own-cell lock) breaks cell 15 on the tutorial 4th click.
   const contestTokens = [b.json.token, a.json.token];
-  for (let i = 0; i < 8; i += 1) {
+  for (let i = 0; i < 4; i += 1) {
     const res = await postJson(firstBase, '/api/action', { token: contestTokens[i % 2], type: 'click', label: '15' });
     assert.equal(res.status, 200);
     await delay(8);
@@ -526,7 +528,7 @@ test('persistence: world, players, tokens and arcade survive a server restart', 
   const beforeWorld = (await getJson(firstBase, '/api/world')).json;
   const beforeBoard = (await getJson(firstBase, '/api/leaderboard')).json.leaderboard;
   assert.equal(beforeWorld.state.faces, 23);
-  assert.equal(beforeWorld.state.totalClicks, 9);
+  assert.equal(beforeWorld.state.totalClicks, 5);
   await first.close();
 
   // Reboot on the same DATA_DIR.
@@ -536,15 +538,15 @@ test('persistence: world, players, tokens and arcade survive a server restart', 
     const afterWorld = (await getJson(secondBase, '/api/world')).json;
     assert.deepEqual(afterWorld.leaves, beforeWorld.leaves, 'the whole adaptive tree is restored');
     assert.equal(afterWorld.state.faces, 23);
-    assert.equal(afterWorld.state.totalClicks, 9);
+    assert.equal(afterWorld.state.totalClicks, 5);
     assert.equal(afterWorld.state.totalBreaks, 1);
     assert.equal(afterWorld.state.maxDepthReached, 1);
     assert.equal(afterWorld.state.players.length, 2);
     assert.equal(afterWorld.state.players[0].tag, 'ALPHA');
     assert.equal(afterWorld.state.players[1].tag, 'BETA');
     assert.equal(afterWorld.state.players[0].breaks, 1, 'A landed the breaking click');
-    assert.equal(afterWorld.state.players[0].score, 120); // 110 contest + 10 for cell "1"
-    assert.equal(afterWorld.state.players[1].score, 55);
+    assert.equal(afterWorld.state.players[0].score, 90); // 80 contest + 10 for cell "1"
+    assert.equal(afterWorld.state.players[1].score, 25);
     assert.deepEqual((await getJson(secondBase, '/api/leaderboard')).json.leaderboard, beforeBoard);
 
     // The persisted token reconnects to the same persistent player index.
@@ -683,8 +685,8 @@ test('multi-planet: first-boot migration preserves pilots, resets planet 0 grid 
     assert.equal(state.planetIndex, 0);
     assert.equal(state.planetDepth, 2);
     assert.equal(state.planetName, 'ICOSA-9');
-    assert.equal(state.maxDepth, 2);
-    assert.equal(state.faces, 20, 'migration resets the old deep tree to a fresh depth-2 grid');
+    assert.equal(state.maxDepth, 1, 'first planet = 2 levels = 20+80');
+    assert.equal(state.faces, 20, 'migration resets the old deep tree to a fresh 2-level grid');
     assert.equal(state.maxDepthReached, 0);
     assert.equal(state.players.length, 2, 'pilots are preserved');
     const alphaState = state.players.find((player) => player.tag === 'ALPHA');
@@ -706,6 +708,7 @@ test('multi-planet: first-boot migration preserves pilots, resets planet 0 grid 
     assert.equal(escape.json.ok, true);
     assert.equal(escape.json.planetIndex, 1);
     assert.equal(escape.json.planetDepth, 3);
+    assert.equal(escape.json.planetLevels, 3);
     assert.equal(escape.json.planetName, 'ICOSA-10');
     assert.ok(Array.isArray(escape.json.story.lines) && escape.json.story.lines.length >= 2);
     assert.equal(escape.json.player.id, legacy.a.player.id);
@@ -719,6 +722,7 @@ test('multi-planet: first-boot migration preserves pilots, resets planet 0 grid 
     const pilotView = (await getJson(base1, `/api/state?token=${legacy.a.token}`)).json.state;
     assert.equal(pilotView.planetIndex, 1);
     assert.equal(pilotView.planetDepth, 3);
+    assert.equal(pilotView.planetLevels, 3);
     assert.equal(pilotView.planetName, 'ICOSA-10');
     const observerView = (await getJson(base1, `/api/state?token=${legacy.b.token}`)).json.state;
     assert.equal(observerView.planetIndex, 0);
@@ -829,4 +833,29 @@ test('multi-planet: meteor reset + rooms + escape routing', async (t) => {
   const planet1World = (await getJson(base, `/api/world?token=${miner.json.token}`)).json;
   assert.equal(planet1World.state.planetIndex, 1);
   assert.equal(planet1World.leaves.find(([label]) => label === '1')[1], 0);
+});
+
+
+test('planet levels: first planet breaks exactly once (20 → 80) and stops', async (t) => {
+  const { base } = await makeServer(t, { clickCooldownMs: 0, saveDebounceMs: 10 });
+  const a = await postJson(base, '/api/join', { tag: 'BREAKA' });
+  const b = await postJson(base, '/api/join', { tag: 'BREAKB' });
+  const tokens = [a.json.token, b.json.token];
+  // Alternate operators to satisfy the contest lock and break cell 1.
+  for (let i = 0; i < 4; i += 1) {
+    const res = await postJson(base, '/api/action', { token: tokens[i % 2], type: 'click', label: '1' });
+    assert.equal(res.status, 200, `click ${i}`);
+  }
+  const world = (await getJson(base, '/api/world')).json;
+  assert.equal(world.leaves.length, 23, 'one base cell broke into four: 20 + 3 = 23 leaves');
+  assert.equal(world.leaves.filter((l) => l[0].startsWith('1.')).length, 4);
+  // First planet is only 2 levels deep: children (D1) must not break again.
+  const child = world.leaves.find((l) => l[0] === '1.1');
+  for (let i = 0; i < 4; i += 1) {
+    const res = await postJson(base, '/api/action', { token: tokens[i % 2], type: 'click', label: child[0] });
+    assert.equal(res.status, 200, `child click ${i}`);
+  }
+  const world2 = (await getJson(base, '/api/world')).json;
+  assert.equal(world2.leaves.length, 23, 'D1 children do not break on the 2-level first planet');
+  assert.equal(world2.state.maxDepthReached, 1);
 });

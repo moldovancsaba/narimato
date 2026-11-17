@@ -736,19 +736,19 @@ class UI {
   setPlanet(info) {
     const src = info && typeof info === 'object' ? info : {};
     const index = Math.max(0, int(src.planetIndex, this._planet.planetIndex));
-    const depth = Math.max(0, int(src.planetDepth, Math.min(8, 2 + index)));
+    const depth = Math.max(0, int(src.planetLevels, int(src.planetDepth, Math.min(8, 2 + index))));
     const name = typeof src.planetName === 'string' && src.planetName.trim()
       ? src.planetName.trim().toUpperCase()
       : `ICOSA-${9 + index}`;
     this._planet = { planetIndex: index, planetDepth: depth, planetName: name };
     this._setText(this._el.planetBadgeName, name);
-    this._setText(this._el.planetBadgeDepth, `DEPTH ${depth}`);
+    this._setText(this._el.planetBadgeDepth, `LEVELS ${depth}`);
     const badge = this._el.planetBadge;
     if (badge) {
       badge.dataset.planet = String(index);
       badge.dataset.depth = String(depth);
-      badge.title = `${name} // planet ${index} // depth ${depth}`;
-      badge.setAttribute('aria-label', `${name}, planet ${index + 1}, depth ${depth}`);
+      badge.title = `${name} // planet ${index} // levels ${depth}`;
+      badge.setAttribute('aria-label', `${name}, planet ${index + 1}, levels ${depth}`);
     }
     return this._planet;
   }

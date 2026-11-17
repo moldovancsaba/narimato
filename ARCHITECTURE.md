@@ -176,7 +176,9 @@ its base leaves (players/scores/inventories preserved), and the manager broadcas
   (mountains), latitude/elevation temperature, moisture noise → 10 biomes; no textures or
   heightmaps. Client and server run the same `terrainAt()`.
 - **Deposits:** geological weights per biome; ocean/deep ocean never mineable from the surface.
-- **Depth/progression:** `planetDepth(i) = min(2+i, 8)`; first planet 2, second 3.
+- **Depth/progression:** `planetDepth(i) = min(2+i, 8)` is the number of visible levels (first = 2,
+  second = 3). The configured break cap is `levels - 1`, so planet 1 is base 20 + one 80-cell child
+  generation and planet 2 adds the next 320-cell generation.
 - **Mission:** per-planet requirements scale with index; progress derived from persistent
   `oreCounts`; escape validates identically server/client.
 - **Camera:** depth-adaptive zoom steps, 0.45/zoom pan alignment, focus animations, intro dolly.
@@ -199,7 +201,7 @@ Three deliberate layouts, not just scaling:
 - Hidden resources are server-only; no secret deposit data is transmitted.
 - JSON bodies capped at 16 KiB; static paths sanitized (no traversal/backslash/NUL); no-store HTML
   and JS; no external assets.
-- Hard depth ceiling 32; planet depth cap 8; bot counts limited; per-planet saves.
+- Hard depth ceiling 32; planet level cap 8 (break cap 7); bot counts limited; per-planet saves.
 - Server is authoritative for scoring, ownership, locks, mining, escape and meteor.
 
 ## Configuration
@@ -236,8 +238,9 @@ DATA_DIR=/var/lib/narimato PORT=4173 node server.js
 
 - Planet 0 lives at `DATA_DIR/world.json`; later planets under `DATA_DIR/planets/pN/`.
 - First boot after an older single-world version migrates planet 0: players/scores/ores/tokens are
-  preserved, but the grid is reset to the new depth-2 planet (this is intentional: planet 1 is a
-  2-level world).
+  preserved, but the grid is reset to the new 2-level planet (20 + 80). Existing worlds whose tree
+  is deeper than the configured level cap are also rebuilt on load. Fresh/reset planets guarantee
+  enough hidden deposits of each refit ore to make the mission completable.
 - Back up `DATA_DIR` before upgrades. Static assets are served no-store by the game server.
 - Any reverse proxy/tunnel can front the HTTP port; SSE needs buffering disabled
   (`X-Accel-Buffering: no` is already sent).

@@ -43,13 +43,16 @@ Open **http://localhost:4173** (LAN URL is printed on boot).
    steerable descent, planet reveal. Skippable and replayable; it also acts as the loading screen.
 2. **Tag in** — pick a callsign on the main screen. Each callsign is its own persistent identity
    with its own colour, score and planet progress.
-3. **Mine** — charge triangles; every 8 clicks a triangle individually breaks into four smaller
-   spherical children. Hidden ore veins are mined on the first successful click and marked forever.
+3. **Mine** — charge triangles; a triangle individually breaks into four smaller spherical
+   children at **4 clicks on the first planet** (8 on later planets). Hidden ore veins are mined on
+   the first successful click and marked forever.
 4. **Rebuild the drive** — the escape mission asks for specific ores; the HUD tracks every find.
 5. **Escape** — when the refit is complete, burn for orbit. A random deep-space event (storm,
    pirates, wormhole tremor…) damages the ship and forces a landing on the **next planet**.
-6. **Repeat forever** — planet 1 is 2 levels deep, planet 2 is 3 levels deep, increasing toward 8.
-   Each planet is its own multiplayer scene with its own players, robots, leaderboard and grid.
+6. **Repeat forever** — planet 1 has **2 levels = 20 + 80 triangles**, planet 2 has **3 levels =
+   20 + 80 + 320**, and so on up to the level cap. The first planet is a short tutorial with
+   guaranteed refit ore; later planets are larger. Each planet is its own multiplayer scene with
+   its own players, robots, leaderboard and grid.
 
 Each planet has finite hidden deposits. When the planet is fully mined out, a **meteor impact**
 resets its crust and releases new resources. The game never ends.
@@ -122,5 +125,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.0.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.0.1** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.
