@@ -1,5 +1,32 @@
 # NARIMATO — Release Notes
 
+## v3.8.0 — “Borrowed Worlds” (2026-11-18)
+
+### Added / changed
+
+- **Cultural planet-name catalog.** Planet names now come from a curated list spanning
+  *The Hitchhiker's Guide to the Galaxy* (MAGRATHEA, VOGSPHERE, BETELGEUSE FIVE, DAMOGRAN,
+  GOLGAFRINCHAM…), Star Wars (TATOOINE, HOTH, CORUSCANT…), Marvel (ASGARD, XANDAR…), DC
+  (KRYPTON, OA, APOKOLIPS…), Dune (ARRAKIS, CALADAN…), Doctor Who, Star Trek, Alien, Avatar,
+  Foundation, Transformers, myth and more.
+- **Source attribution in-game:** planet badge tooltip/ARIA and the landing briefing show the
+  name's source (e.g. `MAGRATHEA // HITCHHIKER'S GUIDE`). Names cycle with a suffix after the
+  catalog is exhausted.
+- Intro copy, landing defaults and server state now carry the dynamic planet name and source.
+
+### Verification
+
+- 76/76 `node --test` tests; browser check shows MAGRATHEA / HITCHHIKER'S GUIDE on the first
+  landing with generated 3-unit requirements.
+
+### Release artifact
+
+- Source tag: `v3.8.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.8.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.7.0 — “Variable Frontier” (2026-11-18)
 
 ### Added / changed

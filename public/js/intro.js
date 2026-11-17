@@ -21,14 +21,14 @@ const PHASE_COPY = {
     sub: 'HULL STRESS CRITICAL // UNKNOWN SYSTEM',
   },
   drift: {
-    label: 'GRAVITY WELL // ICOSA-9',
+    label: 'GRAVITY WELL',
     main: 'GRAVITY LOCK',
     sub: 'THRUSTERS UNRESPONSIVE // WASD / ARROWS / DRAG TO STEER',
   },
   descent: {
     label: 'ATMOSPHERIC CAPTURE',
     main: 'PLANETARY CAPTURE',
-    sub: 'FALLING INTO ICOSA-9 // COCKPIT FRAME FAILING',
+    sub: 'FALLING INTO THE GRAVITY WELL // COCKPIT FRAME FAILING',
   },
   complete: {
     label: 'SURFACE CONTACT',
@@ -52,6 +52,7 @@ export function createIntro({
   onComplete,
   onStart,
   onPhase,
+  planetName,
 } = {}) {
   const params = typeof window !== 'undefined'
     ? new URLSearchParams(window.location.search)
@@ -264,7 +265,10 @@ export function createIntro({
 
   function goPhase(next) {
     phase = next;
-    const copy = PHASE_COPY[next];
+    const copy = { ...PHASE_COPY[next] };
+    const planet = typeof planetName === 'string' && planetName.trim() ? planetName.trim().toUpperCase() : 'UNKNOWN WORLD';
+    if (next === 'drift') copy.label = `GRAVITY WELL // ${planet}`;
+    if (next === 'descent') copy.sub = `FALLING INTO ${planet} // COCKPIT FRAME FAILING`;
     if (copy) setStatus(copy.main, copy.sub, copy.label);
     if (ui && typeof ui.setIntroPhase === 'function') safeCall(ui, 'setIntroPhase', next);
     if (next === 'wormhole') safeAudio('introWhoosh');

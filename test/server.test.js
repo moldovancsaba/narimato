@@ -228,6 +228,7 @@ test('HTTP: join, click flow, state/world/leaderboard/health, static safety and 
     'planetLevels',
     'planetName',
     'planetSeed',
+    'planetSource',
     'players',
     'resources',
     'serverTime',
@@ -242,7 +243,7 @@ test('HTTP: join, click flow, state/world/leaderboard/health, static safety and 
   assert.equal(state.planetIndex, 0);
   assert.equal(state.planetDepth, 2);
   assert.equal(state.planetLevels, 2);
-  assert.equal(state.planetName, 'ICOSA-9');
+  assert.equal(state.planetName, planetName(0));
   assert.equal('leaves' in res.json, false, '/api/state must not ship leaves');
   assert.equal('phase' in state, false);
   assert.equal('roundNumber' in state, false);
@@ -708,7 +709,7 @@ test('multi-planet: first-boot migration preserves pilots, resets planet 0 grid 
     const state = (await getJson(base1, '/api/state')).json.state;
     assert.equal(state.planetIndex, 0);
     assert.equal(state.planetDepth, 2);
-    assert.equal(state.planetName, 'ICOSA-9');
+    assert.equal(state.planetName, planetName(0));
     assert.equal(state.maxDepth, 1, 'first planet = 2 levels = 20+80');
     assert.equal(state.faces, 20, 'migration resets the old deep tree to a fresh 2-level grid');
     assert.equal(state.maxDepthReached, 0);

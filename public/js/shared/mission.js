@@ -1,7 +1,7 @@
 /**
  * NARIMATO — escape mission.
  *
- * The pilot is stranded in ICOSA-9's gravity well: fuel and thrusters are
+ * The pilot is stranded in the first world's gravity well: fuel and thrusters are
  * empty. Mining the listed ores rebuilds the drive. Progress is derived from a
  * pilot's persistent per-resource inventory (`oreCounts` from the server), so
  * it survives reloads. No gameplay is blocked while incomplete — the mission is
@@ -19,9 +19,94 @@ export function planetDepth(index) {
   return Math.min(2 + i, MAX_PLANET_DEPTH);
 }
 
-export function planetName(index) {
+/** Cultural planet-name catalog: each world references a different universe. */
+export const PLANET_CATALOG = Object.freeze([
+  { name: 'MAGRATHEA', source: "HITCHHIKER'S GUIDE" },
+  { name: 'TATOOINE', source: 'STAR WARS' },
+  { name: 'ASGARD', source: 'MARVEL' },
+  { name: 'KRYPTON', source: 'DC' },
+  { name: 'ARRAKIS', source: 'DUNE' },
+  { name: 'VOGSPHERE', source: "HITCHHIKER'S GUIDE" },
+  { name: 'CORUSCANT', source: 'STAR WARS' },
+  { name: 'XANDAR', source: 'MARVEL' },
+  { name: 'OA', source: 'DC' },
+  { name: 'CALADAN', source: 'DUNE' },
+  { name: 'BETELGEUSE FIVE', source: "HITCHHIKER'S GUIDE" },
+  { name: 'HOTH', source: 'STAR WARS' },
+  { name: 'VORMIR', source: 'MARVEL' },
+  { name: 'APOKOLIPS', source: 'DC' },
+  { name: 'GALLIFREY', source: 'DOCTOR WHO' },
+  { name: 'DAGOBAH', source: 'STAR WARS' },
+  { name: 'SAKAAR', source: 'MARVEL' },
+  { name: 'MOGO', source: 'DC' },
+  { name: 'TRANTOR', source: 'FOUNDATION' },
+  { name: 'KRIKKIT', source: "HITCHHIKER'S GUIDE" },
+  { name: 'NABOO', source: 'STAR WARS' },
+  { name: 'KNOWHERE', source: 'MARVEL' },
+  { name: 'THANAGAR', source: 'DC' },
+  { name: 'SOLARIS', source: 'SOLARIS' },
+  { name: 'DAMOGRAN', source: "HITCHHIKER'S GUIDE" },
+  { name: 'MUSTAFAR', source: 'STAR WARS' },
+  { name: 'NIDAVELLIR', source: 'MARVEL' },
+  { name: 'RANN', source: 'DC' },
+  { name: 'PANDORA', source: 'AVATAR' },
+  { name: 'GOLGAFRINCHAM', source: "HITCHHIKER'S GUIDE" },
+  { name: 'BESPIN', source: 'STAR WARS' },
+  { name: 'TITAN', source: 'MARVEL' },
+  { name: 'COLU', source: 'DC' },
+  { name: 'LV-426', source: 'ALIEN' },
+  { name: 'URSA MINOR BETA', source: "HITCHHIKER'S GUIDE" },
+  { name: 'ENDOR', source: 'STAR WARS' },
+  { name: 'EGO', source: 'MARVEL' },
+  { name: 'DAXAM', source: 'DC' },
+  { name: 'CYBERTRON', source: 'TRANSFORMERS' },
+  { name: 'ALDERAAN', source: 'STAR WARS' },
+  { name: 'CONTRAXIA', source: 'MARVEL' },
+  { name: 'CZARNIA', source: 'DC' },
+  { name: 'VULCAN', source: 'STAR TREK' },
+  { name: 'KAMINO', source: 'STAR WARS' },
+  { name: 'MORAG', source: 'MARVEL' },
+  { name: 'NEW GENESIS', source: 'DC' },
+  { name: 'ROMULUS', source: 'STAR TREK' },
+  { name: 'YAVIN 4', source: 'STAR WARS' },
+  { name: 'QO\'NOS', source: 'STAR TREK' },
+  { name: 'GEONOSIS', source: 'STAR WARS' },
+  { name: 'KREE-LAR', source: 'MARVEL' },
+  { name: 'BAJOR', source: 'STAR TREK' },
+  { name: 'CARDASSIA', source: 'STAR TREK' },
+  { name: 'KASHYYYK', source: 'STAR WARS' },
+  { name: 'MON CALA', source: 'STAR WARS' },
+  { name: 'SKARO', source: 'DOCTOR WHO' },
+  { name: 'ETERNIA', source: 'MASTERS OF THE UNIVERSE' },
+  { name: 'ALTAIR IV', source: 'FORBIDDEN PLANET' },
+  { name: 'GIDEI PRIME', source: 'DUNE' },
+  { name: 'TERMINUS', source: 'FOUNDATION' },
+  { name: 'GETHSEMANI', source: 'DUNE' },
+  { name: 'POLYPHEMUS', source: 'AVATAR' },
+  { name: 'MIDGARD', source: 'NORSE MYTH' },
+  { name: 'OLYMPUS', source: 'GREEK MYTH' },
+  { name: 'SHANGRI-LA', source: 'LOST HORIZON' },
+  { name: 'ZION', source: 'THE MATRIX' },
+  { name: 'MARS', source: 'OUR SOLAR SYSTEM' },
+  { name: 'EUROPA', source: 'OUR SOLAR SYSTEM' },
+]);
+
+function catalogEntry(index) {
   const i = Math.max(0, Math.trunc(Number(index) || 0));
-  return `ICOSA-${9 + i}`;
+  const entry = PLANET_CATALOG[i % PLANET_CATALOG.length];
+  const cycle = Math.floor(i / PLANET_CATALOG.length);
+  return {
+    name: cycle > 0 ? `${entry.name} ${cycle + 1}` : entry.name,
+    source: entry.source,
+  };
+}
+
+export function planetName(index) {
+  return catalogEntry(index).name;
+}
+
+export function planetSource(index) {
+  return catalogEntry(index).source;
 }
 
 /** Deterministic per-planet/per-seed mission RNG (mulberry32 over a mixed seed). */
@@ -104,7 +189,7 @@ function deepFreeze(value) {
 
 function missionBriefing(index) {
   if (index === 0) {
-    return "The wormhole dropped you into ICOSA-9's gravity well with empty tanks. Mine the required ores to rebuild the drive and break orbit.";
+    return `The wormhole dropped you into ${planetName(0)}'s gravity well with empty tanks. Mine the required ores to rebuild the drive and break orbit.`;
   }
   return `The jump left ${planetName(index)}'s surface scarred and your drive half-dead. Mine the local ores to refit and break orbit again.`;
 }

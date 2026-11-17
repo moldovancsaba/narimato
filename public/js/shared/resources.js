@@ -1,7 +1,7 @@
 /**
  * NARIMATO — INFINITE GRID resource market.
  *
- * Story: humanity's seed ship has reached ICOSA-9, a rogue world whose crust is
+ * Story: humanity's seed ship has reached the rogue world MAGRATHEA, whose crust is
  * a geodesic lattice. Hidden inside its triangles are ore veins — some mundane
  * (silver, gold), some radioactive (uranium, palladium), some impossible
  * (Myrthil, Adamantium, Voidglass). A cell's deposit is random and hidden until

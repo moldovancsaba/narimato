@@ -3,7 +3,7 @@
 ## The story
 
 You are a pilot. A wormhole accident throws your ship to the far side of the universe. The game
-begins as you exit the wormhole — inside the cockpit, planet **ICOSA-9** far ahead. You can steer,
+begins as you exit the wormhole — inside the cockpit, planet **MAGRATHEA** far ahead. You can steer,
 but the planet's gravity has you. The cockpit fails, the camera falls, and you land with **fuel
 empty and thrusters offline**. To find the way back you must mine the crust, rebuild the warp drive,
 and burn for orbit.
@@ -28,7 +28,7 @@ can keep your callsign or enter a new game tag.
 - **ESCAPE MISSION** panel shows the current refit requirements (planet 1: 3 Uranium, 5 Silver,
   2 Gold, 1 Palladium).
 - **REPLAY INTRO** reopens the cockpit cine.
-- **Planet badge** shows the current world and levels (e.g. `ICOSA-9 · LEVELS 2`).
+- **Planet badge** shows the current world and levels (e.g. `MAGRATHEA · LEVELS 2`).
 
 Each callsign is a persistent identity: its own colour, score, planet and ore inventory. Switching
 to a different tag creates/restores a different pilot; the browser remembers one token per tag.
@@ -96,9 +96,9 @@ the current planet**; boarding the next planet starts a fresh ore run (score car
 
 | Planet | Name | Levels | Cells when fully broken | Notes |
 |---|---|---|---|---|
-| 1 | ICOSA-9 | **2** | 20 + 80 = **100** | tutorial planet, guaranteed refit ore, breaks at 4 clicks |
-| 2 | ICOSA-10 | **3** | 20 + 80 + 320 = **420** | deeper grid, bigger refit, breaks at 8 |
-| 3+ | ICOSA-11… | 4 … 8 (cap) | progressively larger | increasingly deep/rich, infinite sequence |
+| 1 | MAGRATHEA | **2** | 20 + 80 = **100** | tutorial planet, guaranteed refit ore, breaks at 4 clicks |
+| 2 | TATOOINE | **3** | 20 + 80 + 320 = **420** | deeper grid, bigger refit, breaks at 8 |
+| 3+ | ASGARD, KRYPTON… | 4 … 8 (cap) | progressively larger | increasingly deep/rich, infinite sequence |
 
 A planet's "levels" count includes the base 20 faces: level 1 = 20, level 2 = the first 80 children,
 and so on. The first planet therefore breaks **one generation** and stops: it cannot go deeper than
@@ -152,6 +152,15 @@ status bar, and both remember your choice.
   choice is remembered.
 - First-time hints are one-time and can be replayed from the manual. Story interplanetary narration
   extends the transit screen so the story is not cut off.
+
+## Planet names
+
+Every planet is a cultural reference — planet names are drawn from a curated
+catalog spanning *The Hitchhiker's Guide to the Galaxy*, Star Wars, Marvel, DC,
+Dune, Doctor Who, Star Trek, Alien, Avatar, Foundation, Transformers, classic
+myth and more. The **landing briefing** and planet badge show the name and its
+source (e.g. `MAGRATHEA // HITCHHIKER'S GUIDE`). Names cycle with a suffix after
+the catalog is exhausted, so the infinite frontier never runs dry.
 
 ## Multiplayer
 

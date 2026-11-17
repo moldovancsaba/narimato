@@ -1550,7 +1550,7 @@ test('escape carry: adoptPlayer preserves the whole ore inventory (usable for th
   assert.equal(carried.oreValue, 3720);
   // The carried inventory already satisfies the NEXT planet's refit mission.
   assert.equal(planetDepth(1), 3);
-  assert.equal(planetName(1), 'ICOSA-10');
+  assert.equal(planetName(1), 'TATOOINE');
   assert.equal(missionProgress(carried.oreCounts, destinationMission).ready, true, 'carried ore usable immediately');
   // The old planet's ghost keeps its own copy.
   const ghost = core.getState().players[0];

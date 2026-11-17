@@ -23,7 +23,7 @@
 
 import { renderResultCard } from './result-card.js';
 import { RESOURCE_MARKET, resourceById } from './shared/resources.js';
-import { missionForPlanet, missionProgress } from './shared/mission.js';
+import { missionForPlanet, missionProgress, planetName, planetSource } from './shared/mission.js';
 import { BIOMES } from './shared/planet.js';
 
 const CONNECTIONS = new Set(['connected', 'connecting', 'reconnecting', 'offline']);
@@ -132,7 +132,7 @@ class UI {
     this._drawerName = null;
     this._introActive = false;
     this._escapeCtaDismissed = false;
-    this._planet = { planetIndex: 0, planetDepth: 2, planetName: 'ICOSA-9' };
+    this._planet = { planetIndex: 0, planetDepth: 2, planetName: planetName(0), planetSource: planetSource(0) };
     this._escapeReady = false;
     this._interludeActive = false;
     this._meteorActive = false;
@@ -767,16 +767,19 @@ class UI {
     const depth = Math.max(0, int(src.planetLevels, int(src.planetDepth, Math.min(8, 2 + index))));
     const name = typeof src.planetName === 'string' && src.planetName.trim()
       ? src.planetName.trim().toUpperCase()
-      : `ICOSA-${9 + index}`;
-    this._planet = { planetIndex: index, planetDepth: depth, planetName: name };
+      : planetName(index);
+    const source = typeof src.planetSource === 'string' && src.planetSource.trim()
+      ? src.planetSource.trim().toUpperCase()
+      : planetSource(index);
+    this._planet = { planetIndex: index, planetDepth: depth, planetName: name, planetSource: source };
     this._setText(this._el.planetBadgeName, name);
     this._setText(this._el.planetBadgeDepth, `LEVELS ${depth}`);
     const badge = this._el.planetBadge;
     if (badge) {
       badge.dataset.planet = String(index);
       badge.dataset.depth = String(depth);
-      badge.title = `${name} // planet ${index} // levels ${depth}`;
-      badge.setAttribute('aria-label', `${name}, planet ${index + 1}, levels ${depth}`);
+      badge.title = `${name} // ${source} // planet ${index} // levels ${depth}`;
+      badge.setAttribute('aria-label', `${name} from ${source}, planet ${index + 1}, levels ${depth}`);
     }
     return this._planet;
   }
@@ -947,6 +950,8 @@ class UI {
       ? planet.planetName.toUpperCase()
       : 'NEW PLANET';
     const levels = Math.max(0, int(planet && planet.planetDepth, 2 + int(planet && planet.planetIndex, 0)));
+    const source = planet && typeof planet.planetSource === 'string' ? planet.planetSource.trim().toUpperCase() : '';
+    this._setText(this._el.landingBriefKicker, source ? `SURFACE CONTACT // ${source}` : 'SURFACE CONTACT // NEW WORLD');
     this._setText(this._el.landingBriefTitle, name);
     this._setText(this._el.landingBriefSub, `LEVELS ${levels} // COLLECT THE REFIT TO LEAVE`);
     list.textContent = '';
@@ -2201,6 +2206,7 @@ function resolveElements(doc) {
     cargoList: byId('cargo-list'),
     cargoTotal: byId('cargo-total'),
     landingMission: byId('landing-mission'),
+    landingBriefKicker: byId('landing-brief-kicker'),
     missionStatus: byId('mission-status'),
     joinMissionStatus: byId('join-mission-status'),
     missionBadge: byId('mission-badge'),

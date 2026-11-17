@@ -25,7 +25,7 @@ function spherePoint(lat, lon) {
 
 test('planet: deterministic low-data terrain from one seed', () => {
   assert.equal(seedFrom(SEED), seedFrom(SEED));
-  assert.notEqual(seedFrom('ICOSA-9'), seedFrom('ICOSA-10'));
+  assert.notEqual(seedFrom('MAGRATHEA'), seedFrom('TATOOINE'));
   assert.equal(PLANET_VERSION, 2);
   assert.ok(SEA_LEVEL > 0 && SEA_LEVEL < 0.3);
 

@@ -3,7 +3,7 @@
 ![CI](https://github.com/moldovancsaba/narimato/actions/workflows/ci.yml/badge.svg)
 
 > **YEAR 2189. A wormhole throws your damaged ship to the far side of the universe.**
-> You wake inside the cockpit above **ICOSA-9**, gravity-locked with empty tanks.
+> You wake inside the cockpit above **MAGRATHEA**, gravity-locked with empty tanks.
 > Mine the crust, rebuild the drive, escape — and find the way home. Every escape throws you
 > through a new story onto a new, deeper planet with its own multiplayer battlefield.
 
@@ -112,6 +112,10 @@ resets its crust and releases new resources. The game never ends.
   current refit needs. Everything travels with you to the next planet.
 - **Random destinations** — an escape sends you to one of the next **five** planets chosen at random,
   never backwards, each with its own mission and scene.
+- **A galaxy of borrowed worlds** — planet names are drawn from a curated cultural catalog
+  (*Hitchhiker's Guide*, Star Wars, Marvel, DC, Dune, Doctor Who, Star Trek, Alien, Avatar,
+  Foundation, Transformers, classic myth and more) with the source shown in the landing briefing
+  and planet tooltip.
 - **Random discovery clicks** — each hidden deposit is found on a random successful click (first,
   middle or the break/last click), not always on the very first click.
 - **First-planet briefing** — the centered "collect to leave" list now appears on the very first
@@ -169,5 +173,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.7.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.8.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.

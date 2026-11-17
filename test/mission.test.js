@@ -153,6 +153,6 @@ test('planets: first planet is depth 2, second is depth 3, infinite progression 
   assert.equal(planetDepth(1), 3);
   assert.equal(planetDepth(2), 4);
   assert.equal(planetDepth(50), 8);
-  assert.equal(planetName(0), 'ICOSA-9');
-  assert.equal(planetName(1), 'ICOSA-10');
+  assert.equal(planetName(0), 'MAGRATHEA');
+  assert.equal(planetName(1), 'TATOOINE');
 });

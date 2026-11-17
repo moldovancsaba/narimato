@@ -14,7 +14,7 @@ import { UI } from './ui.js';
 import { ArcadeAudio } from './audio.js';
 import { downloadResultCard, buildShareText, renderResultCard } from './result-card.js';
 import { resourceById } from './shared/resources.js';
-import { missionProgress, ESCAPE_MISSION, missionForPlanet, planetDepth, planetName } from './shared/mission.js';
+import { missionProgress, missionForPlanet, planetDepth, planetName, planetSource } from './shared/mission.js';
 import { createIntro } from './intro.js';
 import { createInterlude } from './interlude.js';
 import { createNarrator } from './narrator.js';
@@ -321,6 +321,7 @@ intro = createIntro({
     safeCall(ui, 'hideReport');
     renderer.setHover(null);
   },
+  planetName: planetName(0),
   onPhase: (phase) => {
     narrator.playCue(`intro-${phase}`, { speaker: 'NARRATOR', interrupt: true });
   },
@@ -333,7 +334,7 @@ intro = createIntro({
       safeCall(ui, 'updateMission', missionProgress({}, missionForPlanet(0, 0)));
       refreshPublicState();
       safeCall(ui, 'toast', skipped
-        ? 'INTRO SKIPPED // WELCOME TO ICOSA-9'
+        ? `INTRO SKIPPED // WELCOME TO ${planetName(0)}`
         : 'FUEL EMPTY // GRAVITY CAPTURE // MINE REQUIRED ORES TO ESCAPE', 'info');
       if (pendingAutoJoin) {
         const tag = pendingAutoJoin;
@@ -815,6 +816,7 @@ function planetInfoFromState() {
     planetSeed: seed,
     planetDepth: Number.isInteger(next.planetDepth) ? next.planetDepth : planetDepth(index),
     planetName: typeof next.planetName === 'string' && next.planetName ? next.planetName : planetName(index),
+    planetSource: typeof next.planetSource === 'string' && next.planetSource ? next.planetSource : planetSource(index),
     mission: missionForPlanet(index, seed),
   };
 }
@@ -830,6 +832,7 @@ function refreshMission() {
     planetIndex: planet.planetIndex,
     planetDepth: planet.planetDepth,
     planetName: planet.planetName,
+    planetSource: planet.planetSource,
   });
   safeCall(ui, 'setEscapeReady', progress.ready && !(interlude && interlude.active), planet.mission.name);
   if (progress.ready && player && !missionReadyNotified.has(`${planet.planetIndex}:${player.id}`)) {

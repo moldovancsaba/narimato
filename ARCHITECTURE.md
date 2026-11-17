@@ -166,7 +166,7 @@ changes and 1 MiB backpressure protection.
 `missionProgress(player.oreCounts, missionForPlanet(planetIndex)).ready`. On success:
 
 ```json
-{ "ok": true, "planetIndex": 1, "planetDepth": 3, "planetName": "ICOSA-10",
+{ "ok": true, "planetIndex": 1, "planetDepth": 3, "planetName": "TATOOINE",
   "story": {"id":"space-storm","title":"SPACE STORM","tone":"danger","lines":["..."]},
   "token": "...", "player": {"id":"...","tag":"...","color":"#..."},
   "state": {...}, "leaves": [...] }
