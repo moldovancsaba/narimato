@@ -6,6 +6,23 @@
  * the same strings. Voice and subtitles are independent toggles.
  */
 
+/** Split narration text into display/audio sentences (one idea at a time). */
+export function splitNarrationSentences(text) {
+  return String(text || '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(/(?<=[.!?])\s+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+/** The sentence units for a cue: story lines where available, otherwise split text. */
+export function narrationSegments(cue) {
+  if (!cue) return [];
+  if (Array.isArray(cue.lines) && cue.lines.length) return cue.lines.map((line) => String(line).trim()).filter(Boolean);
+  return splitNarrationSentences(cue.text);
+}
+
 export const NARRATION = Object.freeze({
   'intro-wormhole': {
     text: 'Wormhole exit. Unknown system. Hull stress critical.',

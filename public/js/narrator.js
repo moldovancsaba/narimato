@@ -1,16 +1,20 @@
 /**
  * NARIMATO — prerecorded narration + subtitles.
  *
- * Voice and subtitles are independent, persisted toggles (streaming-player UX).
- * Audio files live in public/audio/voice/*.m4a and are generated from
- * narrative-data.js; no runtime TTS is required. Dynamic story text comes from
- * the server but maps to prerecorded story clips by story id.
+ * Narration is split into sentence-sized clips and played one sentence at a
+ * time with a short breath pause between them. Voice and subtitles are
+ * independent, persisted toggles (streaming-player UX). Audio files live in
+ * public/audio/voice/<cue>__s<n>.m4a and are generated from narrative-data.js;
+ * no runtime TTS is required. Dynamic story text maps to story clips by id.
  */
 
-import { NARRATION } from './narrative-data.js';
+import { NARRATION, narrationSegments } from './narrative-data.js';
 
 const VOICE_KEY = 'icosa.voice';
 const SUBTITLE_KEY = 'icosa.subtitles';
+const SEGMENT_GAP_MS = 340;
+const PLAYBACK_RATE = 0.94; // slower, deliberate delivery
+const FALLBACK_MS = 2100;
 
 function readBool(key, fallback) {
   try {
@@ -30,20 +34,19 @@ function writeBool(key, value) {
   }
 }
 
-const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
-
 export function createNarrator() {
   const doc = typeof document !== 'undefined' ? document : null;
   const els = {};
   let voiceEnabled = readBool(VOICE_KEY, true);
   let subtitlesEnabled = readBool(SUBTITLE_KEY, true);
   let unlocked = false;
-  let pending = null;
-  let current = null;
-  let currentLines = null;
-  let currentSpeaker = 'NARIMATO';
+  let sequence = null; // { cueId, segments, speaker, index }
+  let pending = null; // a sequence waiting for the first user gesture
+  let currentAudio = null;
+  let currentAudioId = null;
+  let gapTimer = 0;
   let hideTimer = 0;
-  const lineTimers = [];
+  let lastSegmentText = '';
   const audio = new Map();
   const durations = new Map();
 
@@ -66,17 +69,27 @@ export function createNarrator() {
     }
   }
 
-  function getAudio(id) {
+  function fileId(cueId, index) {
+    return `${cueId}__s${index + 1}`;
+  }
+
+  function getAudio(cueId, index) {
+    const id = fileId(cueId, index);
     if (audio.has(id)) return audio.get(id);
     const a = new Audio(`/audio/voice/${id}.m4a`);
     a.preload = 'metadata';
-    a.volume = 0.86;
+    a.volume = 0.88;
+    a.playbackRate = PLAYBACK_RATE;
+    try {
+      a.preservesPitch = true;
+    } catch {
+      /* older browser */
+    }
     a.addEventListener('loadedmetadata', () => {
       if (Number.isFinite(a.duration) && a.duration > 0) durations.set(id, Math.round(a.duration * 1000));
     });
     a.addEventListener('error', () => {
-      // Missing asset/codec: keep subtitles working rather than failing hard.
-      durations.set(id, durations.get(id) || estimate(NARRATION[id] ? NARRATION[id].text : ''));
+      if (!durations.has(id)) durations.set(id, FALLBACK_MS);
     });
     audio.set(id, a);
     return a;
@@ -84,13 +97,30 @@ export function createNarrator() {
 
   function estimate(text) {
     const words = String(text || '').trim().split(/\s+/).filter(Boolean).length;
-    return Math.max(1800, Math.round((words / 2.65 + 0.9) * 1000));
+    // 152 wpm generator + breath pause; err on the longer side for holds.
+    return Math.max(FALLBACK_MS, Math.round((words / 2.45 + 0.65) * 1000));
+  }
+
+  function segmentDuration(cueId, index, text) {
+    const raw = durations.get(fileId(cueId, index));
+    return raw ? Math.round(raw / PLAYBACK_RATE) : estimate(text);
+  }
+
+  function totalDuration(cueId, segments) {
+    if (!Array.isArray(segments) || !segments.length) return 0;
+    let total = 0;
+    for (let i = 0; i < segments.length; i += 1) {
+      total += segmentDuration(cueId, i, segments[i]);
+      if (i > 0) total += SEGMENT_GAP_MS;
+    }
+    return total;
   }
 
   function clearTimers() {
+    if (gapTimer) clearTimeout(gapTimer);
+    gapTimer = 0;
     if (hideTimer) clearTimeout(hideTimer);
     hideTimer = 0;
-    while (lineTimers.length) clearTimeout(lineTimers.pop());
   }
 
   function showBar(speaker, text) {
@@ -103,7 +133,7 @@ export function createNarrator() {
     wrap.hidden = false;
     if (speakerEl) speakerEl.textContent = String(speaker || 'NARIMATO').toUpperCase();
     textEl.textContent = String(text || '');
-    currentSpeaker = speaker || 'NARIMATO';
+    lastSegmentText = String(text || '');
   }
 
   function hideSubtitles() {
@@ -112,131 +142,152 @@ export function createNarrator() {
       wrap.classList.add('is-hidden');
       wrap.hidden = true;
     }
-    currentLines = null;
+    lastSegmentText = '';
   }
 
-  function showSingle(text, durationMs) {
-    clearTimers();
-    currentLines = null;
-    showBar(currentSpeaker, text);
-    if (!subtitlesEnabled) return;
-    hideTimer = setTimeout(hideSubtitles, Math.max(1200, durationMs + 500));
-  }
-
-  function scheduleLines(lines, durationMs) {
-    clearTimers();
-    if (!subtitlesEnabled) return;
-    const list = Array.isArray(lines) && lines.length ? lines : ['NARIMATO'];
-    currentLines = list;
-    const weights = list.map((line) => Math.max(10, String(line).length));
-    const total = weights.reduce((a, b) => a + b, 0);
-    showBar(currentSpeaker, list[0]);
-    let at = 0;
-    for (let i = 0; i < list.length; i += 1) {
-      const delay = Math.round((at / total) * durationMs);
-      const step = Math.round((weights[i] / total) * durationMs);
-      if (i > 0) {
-        lineTimers.push(setTimeout(() => showBar(currentSpeaker, list[i]), delay));
-      }
-      at += weights[i];
-      if (i === list.length - 1) {
-        lineTimers.push(setTimeout(hideSubtitles, delay + step + 600));
-      }
-    }
-  }
-
-  function stopAudio() {
-    if (!current) return;
-    const a = audio.get(current);
-    if (a) {
+  function pauseAudio() {
+    if (currentAudio) {
       try {
-        a.pause();
-        a.currentTime = 0;
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
       } catch {
         /* ignore */
       }
     }
-    current = null;
+    currentAudio = null;
+    currentAudioId = null;
   }
 
-  function playAudio(id) {
-    const cue = NARRATION[id];
-    if (!cue) return false;
-    stopAudio();
-    const a = getAudio(id);
-    current = id;
-    try {
-      a.currentTime = 0;
-      const p = a.play();
-      if (p && typeof p.catch === 'function') {
-        p.catch(() => {
-          // Autoplay was blocked: keep the cue pending until a real gesture.
-          unlocked = false;
-          pending = id;
-        });
-      }
-      return true;
-    } catch {
-      pending = id;
-      return false;
+  function stopSequence({ hide = true } = {}) {
+    clearTimers();
+    pauseAudio();
+    sequence = null;
+    pending = null;
+    if (hide) hideSubtitles();
+  }
+
+  function scheduleAdvance(ms) {
+    if (gapTimer) clearTimeout(gapTimer);
+    gapTimer = setTimeout(() => {
+      gapTimer = 0;
+      advance();
+    }, Math.max(120, ms));
+  }
+
+  function finishSequence() {
+    sequence = null;
+    clearTimers();
+    gapTimer = setTimeout(() => {
+      gapTimer = 0;
+      hideSubtitles();
+    }, 650);
+  }
+
+  function runCurrent() {
+    if (!sequence) return;
+    const { cueId, segments, speaker } = sequence;
+    if (sequence.index >= segments.length) {
+      finishSequence();
+      return;
     }
+    const text = segments[sequence.index];
+    if (subtitlesEnabled) showBar(speaker, text);
+    if (voiceEnabled && !unlocked) {
+      pending = { ...sequence };
+      return;
+    }
+    if (voiceEnabled) {
+      pauseAudio();
+      const a = getAudio(cueId, sequence.index);
+      currentAudio = a;
+      currentAudioId = fileId(cueId, sequence.index);
+      try {
+        a.currentTime = 0;
+        const p = a.play();
+        if (p && typeof p.catch === 'function') {
+          p.catch(() => {
+            // Browser refused audio before/without a gesture: wait for unlock.
+            unlocked = false;
+            pending = { ...sequence };
+          });
+        }
+        a.onended = () => {
+          currentAudio = null;
+          currentAudioId = null;
+          if (!sequence) return;
+          scheduleAdvance(SEGMENT_GAP_MS);
+        };
+      } catch {
+        pending = { ...sequence };
+        return;
+      }
+      // If the clip never starts (autoplay block), leave it pending; subtitles
+      // remain readable until the next gesture.
+      return;
+    }
+    // No voice: subtitles still advance one sentence at a time.
+    scheduleAdvance(segmentDuration(cueId, sequence.index, text) + SEGMENT_GAP_MS);
+  }
+
+  function advance() {
+    if (!sequence) return;
+    sequence.index += 1;
+    runCurrent();
   }
 
   function unlock() {
     if (unlocked) return;
     unlocked = true;
     if (pending) {
-      const id = pending;
+      sequence = pending;
       pending = null;
-      if (voiceEnabled) playAudio(id);
+      runCurrent();
+      return;
     }
+    if (sequence && !currentAudio && voiceEnabled) runCurrent();
   }
 
-  /** Play a fixed narration cue (intro/tip/help) with optional subtitles. */
+  function startSequence(cueId, segments, speaker) {
+    if (!Array.isArray(segments) || !segments.length) return 0;
+    stopSequence();
+    sequence = { cueId, segments: segments.slice(), speaker, index: 0 };
+    if (voiceEnabled && !unlocked) {
+      showBar(speaker, sequence.segments[0]);
+      pending = { ...sequence };
+      return totalDuration(cueId, segments);
+    }
+    runCurrent();
+    return totalDuration(cueId, segments);
+  }
+
+  /** Play a fixed narration cue (intro/tip/help) sentence by sentence. */
   function playCue(id, { speaker = 'NARIMATO', interrupt = true } = {}) {
     const cue = NARRATION[id];
     if (!cue) return 0;
-    if (interrupt) stopAudio();
-    currentSpeaker = speaker;
-    const duration = durations.get(id) || estimate(cue.text);
-    if (subtitlesEnabled) {
-      if (Array.isArray(cue.lines) && cue.lines.length) scheduleLines(cue.lines, duration);
-      else showSingle(cue.text, duration);
-    }
-    if (voiceEnabled) {
-      if (!unlocked) {
-        pending = id;
-      } else {
-        playAudio(id);
-      }
-    }
-    return duration;
+    const segments = narrationSegments(cue);
+    if (!segments.length) return 0;
+    if (interrupt) stopSequence({ hide: false });
+    return startSequence(id, segments, speaker);
   }
 
-  /** Play the random interplanetary story. Returns duration (ms). */
+  /** Play the random interplanetary story sentence by sentence. Returns total ms. */
   function playStory(story, { speaker = 'SHIP LOG' } = {}) {
     if (!story) return 0;
-    const id = `story-${story.id}`;
-    const cue = NARRATION[id];
-    const lines = Array.isArray(story.lines) && story.lines.length
-      ? story.lines
-      : cue && Array.isArray(cue.lines) && cue.lines.length
-        ? cue.lines
-        : [cue ? cue.text : 'An unknown signal washes over the ship.'];
-    currentSpeaker = speaker;
-    stopAudio();
-    const duration = durations.get(id) || estimate((cue && cue.text) || lines.join(' '));
-    if (subtitlesEnabled) scheduleLines(lines, duration);
-    if (voiceEnabled) {
-      if (!unlocked) pending = id;
-      else playAudio(id);
-    }
-    return duration;
+    const cueId = `story-${story.id}`;
+    const cue = NARRATION[cueId];
+    const segments = cue
+      ? narrationSegments(cue)
+      : Array.isArray(story.lines) && story.lines.length
+        ? story.lines.map((line) => String(line).trim()).filter(Boolean)
+        : ['An unknown signal washes over the ship.'];
+    return startSequence(cueId, segments, speaker);
   }
 
   function storyDuration(id) {
     if (id == null) return 0;
-    return durations.get(`story-${id}`) || estimate((NARRATION[`story-${id}`] || {}).text || '');
+    const cueId = `story-${id}`;
+    const cue = NARRATION[cueId];
+    return cue ? totalDuration(cueId, narrationSegments(cue)) : 0;
   }
 
   function setVoiceEnabled(value) {
@@ -244,14 +295,10 @@ export function createNarrator() {
     writeBool(VOICE_KEY, voiceEnabled);
     if (!voiceEnabled) {
       pending = null;
-      stopAudio();
+      pauseAudio();
+      // Keep the current sentence subtitle visible, but stop further playback.
     } else {
       unlock();
-      if (pending) {
-        const id = pending;
-        pending = null;
-        playAudio(id);
-      }
     }
     syncControls();
   }
@@ -260,9 +307,10 @@ export function createNarrator() {
     subtitlesEnabled = !!value;
     writeBool(SUBTITLE_KEY, subtitlesEnabled);
     if (!subtitlesEnabled) hideSubtitles();
-    else if (currentLines) {
-      // Re-show the script from its current beginning (subtitles are a transcript).
-      scheduleLines(currentLines, 4000);
+    else if (sequence && sequence.index < sequence.segments.length) {
+      showBar(sequence.speaker, sequence.segments[sequence.index]);
+    } else if (lastSegmentText) {
+      showBar(sequence ? sequence.speaker : 'NARIMATO', lastSegmentText);
     }
     syncControls();
   }
@@ -281,10 +329,12 @@ export function createNarrator() {
       window.addEventListener('pointerdown', onGesture, { capture: true, passive: true });
       window.addEventListener('keydown', onGesture, { capture: true });
     }
-    // Warm metadata for story duration and instant playback.
+    // Warm story/intro metadata so transit holds use the real clip lengths.
     if (typeof Audio !== 'undefined') {
       for (const id of Object.keys(NARRATION)) {
-        if (id.startsWith('story-') || id.startsWith('intro-')) getAudio(id);
+        if (!id.startsWith('story-') && !id.startsWith('intro-')) continue;
+        const cue = NARRATION[id];
+        for (let i = 0; i < narrationSegments(cue).length; i += 1) getAudio(id, i);
       }
     }
   }
@@ -305,7 +355,7 @@ export function createNarrator() {
       return unlocked;
     },
     get speaking() {
-      return !!current;
+      return !!sequence && !!currentAudio;
     },
     playCue,
     playStory,
@@ -314,17 +364,16 @@ export function createNarrator() {
     setSubtitlesEnabled,
     unlock,
     stop() {
-      pending = null;
-      stopAudio();
-      clearTimers();
-      hideSubtitles();
+      stopSequence();
     },
     state: () => ({
       voiceEnabled,
       subtitlesEnabled,
       unlocked,
-      speaking: !!current,
-      subtitle: els['subtitle-text'] ? els['subtitle-text'].textContent : '',
+      speaking: !!sequence && !!currentAudio,
+      segment: sequence ? sequence.index + 1 : 0,
+      totalSegments: sequence ? sequence.segments.length : 0,
+      subtitle: els['subtitle-text'] && !els['narrative-subtitles'].hidden ? els['subtitle-text'].textContent : '',
     }),
   };
 }

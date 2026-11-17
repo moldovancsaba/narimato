@@ -1,5 +1,29 @@
 # NARIMATO — Release Notes
 
+## v3.3.0 — “One Line at a Time” (2026-11-17)
+
+### Changed
+
+- **Narration is slower and sentence-by-sentence.** Every cue is now split into sentence-sized
+  prerecorded clips (85 clips total), generated at 152 wpm and played at 0.94× with a 340 ms pause
+  between sentences. Subtitles show the same single sentence, so voice and CC stay in sync.
+- The interplanetary story hold now sums the actual sentence clips, so the transit stays up long
+  enough to hear every line — never a cut-off story.
+- Intro, contextual tips and Field Manual sections all use the same one-sentence pacing.
+
+### Verification
+
+- Manual story cue: segment 1/3, then 2/3 after the first clip; subtitles change one sentence at a
+  time; voice and CC remain independent; 74/74 `node:test` tests.
+
+### Release artifact
+
+- Source tag: `v3.3.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.3.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.2.0 — “Catastrophe Protocol” (2026-11-17)
 
 ### Added

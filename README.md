@@ -87,9 +87,10 @@ resets its crust and releases new resources. The game never ends.
   landscape phone layouts; mobile is planet-first with drawers/dock/target sheet.
 - **Inertial camera** — drag-spin the planet and release: it coasts longer with an ease-out curve
   and slowly comes to rest; wheel/pinch zoom eases into its target instead of snapping.
-- **Narration & subtitles** — prerecorded voice-over for the story, tips, Field Manual and every
-  interplanetary story, with independently toggled **VOICE** and **CC** controls that remember your
-  choice. Subtitles work even when autoplay blocks the first audio line.
+- **Narration & subtitles** — slow, deliberate prerecorded voice-over delivered **one sentence at
+  a time**, with a short pause between lines, for the story, tips, Field Manual and every
+  interplanetary story. **VOICE** and **CC** toggle independently and remember your choice;
+  subtitles work even when autoplay blocks the first audio line.
 - **Field Manual** — an in-game guide to the story, mining, contest lock, planets, navigation and
   controls, with a PLAY button on each section.
 - **Contextual tips** — one-time narrated hints for first mining, red locked cells, ore discovery,
@@ -156,5 +157,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.2.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.3.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.

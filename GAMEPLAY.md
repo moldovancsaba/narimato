@@ -136,7 +136,9 @@ NARIMATO behaves like a streaming player: **VOICE** and **CC** are independent t
 status bar, and both remember your choice.
 
 - **VOICE** plays prerecorded narration: the cockpit story, context tips, Field Manual sections and
-  the random interplanetary story after every escape.
+  the random interplanetary story after every escape. Narration is deliberately slow and plays
+  **one sentence at a time**, with a short breath pause between sentences; CC follows the same
+  sentence units.
 - **CC** shows the same lines as subtitles. They appear immediately even if the browser blocks
   autoplay until your first tap/click.
 - **?** opens the **Field Manual**: the story, mining and contest rules, planets/escape, navigation,
