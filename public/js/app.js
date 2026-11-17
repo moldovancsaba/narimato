@@ -402,6 +402,7 @@ async function refreshPublicState() {
     safeCall(ui, 'setConnection', 'connected');
     if (data.state.planetSeed != null && world.planetSeed !== (Number(data.state.planetSeed) >>> 0)) {
       world.setPlanetSeed(data.state.planetSeed);
+      safeCall(renderer, 'setPlanetSurface', data.state.planetSeed);
       refreshLeafList();
       renderer.setFaces(leafList);
     }
@@ -603,7 +604,10 @@ function handleEvent(msg) {
 
 function applySnapshot(nextState, leaves) {
   if (!nextState) return;
-  if (nextState.planetSeed != null) world.setPlanetSeed(nextState.planetSeed);
+  if (nextState.planetSeed != null) {
+    world.setPlanetSeed(nextState.planetSeed);
+    safeCall(renderer, 'setPlanetSurface', nextState.planetSeed);
+  }
   world.loadLeaves(leaves);
   refreshLeafList();
   renderer.setFaces(leafList);
@@ -619,6 +623,7 @@ function applyState(next) {
   state = next;
   if (next.planetSeed != null && world.planetSeed !== (Number(next.planetSeed) >>> 0)) {
     world.setPlanetSeed(next.planetSeed);
+    safeCall(renderer, 'setPlanetSurface', next.planetSeed);
     refreshLeafList();
     renderer.setFaces(leafList);
   }

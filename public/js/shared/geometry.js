@@ -294,8 +294,8 @@ function subdivideLabeled(a, b, c, level, path, out) {
  * path, label, depth, parentId }] }.
  */
 export function buildMesh(level) {
-  if (!Number.isInteger(level) || level < 0 || level > 3) {
-    throw new RangeError(`mesh level must be an integer 0..3, got ${level}`);
+  if (!Number.isInteger(level) || level < 0 || level > 4) {
+    throw new RangeError(`mesh level must be an integer 0..4, got ${level}`);
   }
   const cached = meshCache.get(level);
   if (cached) return cached;

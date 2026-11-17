@@ -52,7 +52,7 @@ import {
   getMesh,
 } from './shared/geometry.js';
 import { resourceById } from './shared/resources.js';
-import { BIOMES } from './shared/planet.js';
+import { BIOMES, terrainAt, SEA_LEVEL } from './shared/planet.js';
 
 const TAU = Math.PI * 2;
 const HALF_PI = Math.PI / 2;
@@ -158,6 +158,10 @@ export class IcosaRenderer {
     // rendered for interactive/pulsed faces.
     this.labelsVisible = false;
     this.poleLabelsVisible = false;
+    this.surface = null;
+    this.surfaceSeed = null;
+    this._surfaceCanvas = null;
+    this._surfaceCtx = null;
     this.hoverLabel = null;
     this.pulses = [];
     // label -> animation time of the last pulse, used for click-only ids.
@@ -267,6 +271,77 @@ export class IcosaRenderer {
    * boundary tessellation is only computed once per label.
    * @param {Array<{label:string,a:object,b:object,c:object,ownerIndex:number,clicks:number,depth:number}>} faces
    */
+  /**
+   * Build the dense procedural geography surface for a planet seed.
+   * Uses a high-res icosphere mesh coloured once, then drawn behind the game
+   * cells every frame. No per-frame noise work.
+   */
+  setPlanetSurface(seed) {
+    const next = Number(seed) >>> 0;
+    if (this.surfaceSeed === next && this.surface) return;
+    this.surfaceSeed = next;
+    const level = (this.width || 0) < 760 ? 2 : 3;
+    const mesh = getMesh(level);
+    const snow = { r: 232, g: 244, b: 255 };
+    const sand = { r: 186, g: 168, b: 118 };
+    const rock = { r: 112, g: 110, b: 104 };
+    const deep = { r: 2, g: 10, b: 28 };
+    const shallow = { r: 18, g: 92, b: 132 };
+    const buckets = new Map();
+    const faces = mesh.faces.map((face) => {
+      const terrain = terrainAt(next, face.centroid);
+      const elevation = terrain.elevation;
+      const temperature = terrain.temperature;
+      const moisture = terrain.moisture;
+      const isOcean = !terrain.biome.mineable;
+      let rgb;
+      if (isOcean) {
+        const depth = clamp((SEA_LEVEL - elevation) / 0.4, 0, 1);
+        rgb = mixRgb(shallow, deep, Math.pow(depth, 0.78));
+      } else {
+        // Continuous climate/elevation ramp: coast sand → lowland green →
+        // highland rock → snow, with dry basins shifting toward ochre.
+        const alt = clamp((elevation - SEA_LEVEL) / 0.55, 0, 1);
+        const dry = clamp((0.46 - moisture) / 0.34, 0, 1) * clamp((temperature - 0.38) / 0.4, 0, 1);
+        const wetGreen = { r: 38, g: 92, b: 58 };
+        const forest = { r: 28, g: 72, b: 48 };
+        const ochre = { r: 148, g: 128, b: 78 };
+        rgb = mixRgb(mixRgb(forest, wetGreen, clamp(moisture, 0, 1)), ochre, dry * 0.78);
+        rgb = mixRgb(rgb, rock, alt * 0.7);
+        const coastal = 1 - clamp((elevation - SEA_LEVEL) / 0.035, 0, 1);
+        rgb = mixRgb(rgb, sand, coastal * 0.65);
+        const cold = clamp((0.24 - temperature) / 0.24, 0, 1);
+        const snowLine = clamp((elevation - 0.48) / 0.26, 0, 1);
+        const snowAmt = clamp(Math.max(snowLine, cold * 0.9), 0, 1);
+        rgb = mixRgb(rgb, snow, snowAmt * 0.88);
+      }
+      // Quantize colour into ~a few hundred buckets; the frame loop groups
+      // triangles into one Path2D per colour so 5k facets cost ~100 fills, not 5k.
+      const qr = rgb.r & 0xf0;
+      const qg = rgb.g & 0xf0;
+      const qb = rgb.b & 0xf0;
+      const key = (qr << 8) | (qg << 4) | qb;
+      let bucket = buckets.get(key);
+      if (!bucket) {
+        bucket = {
+          index: buckets.size,
+          fill: `rgb(${qr},${qg},${qb})`,
+        };
+        buckets.set(key, bucket);
+      }
+      return {
+        a: face.a,
+        b: face.b,
+        c: face.c,
+        centroid: face.centroid,
+        bucket: bucket.index,
+        isOcean,
+        elevation,
+      };
+    });
+    this.surface = { seed: next, level, faces, buckets: [...buckets.values()] };
+  }
+
   setFaces(faces) {
     const input = Array.isArray(faces) ? faces : [];
     const nextFaces = [];
@@ -987,6 +1062,105 @@ export class IcosaRenderer {
    * Sphere
    * ================================================================ */
 
+  /** Draw the cached high-res geography mesh behind the game grid. */
+  _drawSurface(ctx, camera, cx, cy, R, W, H) {
+    const surface = this.surface;
+    if (!surface) return;
+    const Kx = this._Kx;
+    const Ky = this._Ky;
+    const Kz = this._Kz;
+    const tmp = this._tmpV;
+    // Render the geography mesh into a lower-res offscreen globe, then upscale
+    // with smoothing. This both hides low-poly facets and keeps path-fill cost
+    // bounded at deep zoom.
+    const offSize = Math.round(clamp(R * 1.5, 380, 768));
+    if (!this._surfaceCanvas || this._surfaceCanvas.width !== offSize) {
+      this._surfaceCanvas = document.createElement('canvas');
+      this._surfaceCanvas.width = offSize;
+      this._surfaceCanvas.height = offSize;
+      this._surfaceCtx = this._surfaceCanvas.getContext('2d');
+    }
+    const sctx = this._surfaceCtx;
+    const scale = offSize / Math.min(W, H);
+    sctx.save();
+    sctx.setTransform(1, 0, 0, 1, 0, 0);
+    sctx.clearRect(0, 0, offSize, offSize);
+    sctx.setTransform(scale, 0, 0, scale, offSize / 2 - cx * scale, offSize / 2 - cy * scale);
+    sctx.beginPath();
+    sctx.arc(cx, cy, Math.max(1, R), 0, TAU);
+    sctx.clip();
+    sctx.fillStyle = 'rgb(6,28,52)';
+    sctx.fillRect(cx - R, cy - R, R * 2, R * 2);
+    // Group facets into one Path2D per quantized geography colour.
+    const nBuckets = surface.buckets.length;
+    const paths = this._surfacePaths && this._surfacePaths.length === nBuckets
+      ? this._surfacePaths
+      : (this._surfacePaths = new Array(nBuckets));
+    for (let i = 0; i < nBuckets; i += 1) paths[i] = null;
+    for (const f of surface.faces) {
+      const c = f.centroid;
+      if (c.x * Kx + c.y * Ky + c.z * Kz <= 0.015) continue;
+      tmp.x = f.a.x; tmp.y = f.a.y; tmp.z = f.a.z;
+      const pa = camera.project(tmp);
+      tmp.x = f.b.x; tmp.y = f.b.y; tmp.z = f.b.z;
+      const pb = camera.project(tmp);
+      tmp.x = f.c.x; tmp.y = f.c.y; tmp.z = f.c.z;
+      const pc = camera.project(tmp);
+      if (pa.z <= 0 || pb.z <= 0 || pc.z <= 0) continue;
+      const minX = Math.min(pa.x, pb.x, pc.x);
+      const maxX = Math.max(pa.x, pb.x, pc.x);
+      const minY = Math.min(pa.y, pb.y, pc.y);
+      const maxY = Math.max(pa.y, pb.y, pc.y);
+      if (maxX < -2 || minX > W + 2 || maxY < -2 || minY > H + 2) continue;
+      let path = paths[f.bucket];
+      if (!path) path = paths[f.bucket] = new Path2D();
+      path.moveTo(pa.x, pa.y);
+      path.lineTo(pb.x, pb.y);
+      path.lineTo(pc.x, pc.y);
+      path.closePath();
+    }
+    // A slight global blur of the surface would soften facet edges, but plain
+    // grouped fills keep 60fps; the atmosphere/shading pass hides hard seams.
+    for (let i = 0; i < nBuckets; i += 1) {
+      const path = paths[i];
+      if (!path) continue;
+      const fill = surface.buckets[i].fill;
+      sctx.fillStyle = fill;
+      sctx.fill(path);
+      // Same-colour hairline closes antialiased cracks between buckets.
+      sctx.strokeStyle = fill;
+      sctx.lineWidth = 0.8;
+      sctx.stroke(path);
+    }
+    sctx.restore();
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, Math.max(1, R), 0, TAU);
+    ctx.clip();
+    ctx.imageSmoothingEnabled = true;
+    ctx.filter = 'blur(1.1px)';
+    ctx.drawImage(this._surfaceCanvas, 0, 0, offSize, offSize, cx - R, cy - R, R * 2, R * 2);
+    ctx.filter = 'none';
+    // Soft directional shading + rim to make the sphere read as a world.
+    const shade = ctx.createRadialGradient(cx - R * 0.34, cy - R * 0.4, R * 0.12, cx, cy, R * 1.02);
+    shade.addColorStop(0, 'rgba(195,235,255,0.16)');
+    shade.addColorStop(0.45, 'rgba(0,0,0,0)');
+    shade.addColorStop(0.82, 'rgba(2,6,20,0.18)');
+    shade.addColorStop(1, 'rgba(1,3,12,0.52)');
+    ctx.fillStyle = shade;
+    ctx.fillRect(cx - R, cy - R, R * 2, R * 2);
+    // A faint atmosphere rim over the ocean edge.
+    const rim = ctx.createRadialGradient(cx, cy, R * 0.9, cx, cy, R * 1.005);
+    rim.addColorStop(0, 'rgba(70,190,255,0)');
+    rim.addColorStop(0.82, 'rgba(80,210,255,0.13)');
+    rim.addColorStop(1, 'rgba(120,240,255,0.28)');
+    ctx.fillStyle = rim;
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, TAU);
+    ctx.fill();
+    ctx.restore();
+  }
+
   _drawSphere(ctx, camera, cx, cy, R, rm, glassFade) {
     const W = this.width;
     const H = this.height;
@@ -1071,6 +1245,11 @@ export class IcosaRenderer {
           ctx.restore();
         }
       }
+    }
+
+    // --- Detailed procedural geography underlay. -------------------
+    if (this.surface && this.surface.faces.length) {
+      this._drawSurface(ctx, camera, cx, cy, R, W, H);
     }
 
     // --- Cull + project front candidates. ---------------------------
@@ -1171,8 +1350,21 @@ export class IcosaRenderer {
       ctx.closePath();
 
       const terrain = e.terrain;
+      const detailedSurface = !!(this.surface && this.surface.faces.length);
       ctx.globalAlpha = lodAlpha;
-      if (terrain) {
+      if (terrain && detailedSurface) {
+        // Geography is already painted by the high-res surface. Keep only a
+        // light ownership tint so the terrain reads through the grid.
+        if (e.ownerIndex >= 0) {
+          const owned = style.overlayC[fillIdx];
+          if (owned) {
+            ctx.globalAlpha = lodAlpha * 0.5;
+            ctx.fillStyle = owned;
+            ctx.fill();
+          }
+        }
+        ctx.globalAlpha = lodAlpha;
+      } else if (terrain) {
         // Low-poly biome underlay: strong on unclaimed cells, translucent under
         // the player-colour claim tint so ownership stays readable.
         const owned = e.ownerIndex >= 0;

@@ -1,5 +1,33 @@
 # NARIMATO — Release Notes
 
+## v3.0.5 — “The Planet Beneath” (2026-11-17)
+
+### Added
+
+- **Detailed procedural geography behind the grid:** a high-resolution terrain surface now renders
+  beneath the gameplay cells — deep/shallow oceans, coastlines, green lowlands, dry ochre basins,
+  mountain rock and polar ice, all from the same planet seed with no textures.
+- Continuous elevation/climate colour ramp replaces flat per-biome triangle patches; the surface is
+  rendered through a smoothed offscreen globe so the low-poly geometry reads as a planet rather
+  than flat colour plates.
+- Cell fills became mostly transparent (owner tint only), so geography is visible through the
+  triangular grid while ownership edges and charge rings stay crisp.
+- Desktop uses a 1280-facet geography mesh, mobile a lighter 320-facet mesh for performance.
+
+### Verification
+
+- Desktop/mobile screenshots show oceans, landmasses, mountains and ice behind the cells; zero
+  console errors; all previous camera, mining, mission and landing flows intact.
+- 67/67 `node:test` tests.
+
+### Release artifact
+
+- Source tag: `v3.0.5`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.0.5
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.0.4 — “Momentum & Landing Briefing” (2026-11-17)
 
 ### Added

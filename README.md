@@ -73,8 +73,9 @@ resets its crust and releases new resources. The game never ends.
   labels (`11.4`, `9.2.1.1`), individual per-cell breaking, infinite zoom.
 - **Authoritative multiplayer** — Node server, SSE rooms per planet, robots on every planet,
   per-cell contest locks, atomic persistence, graceful restart recovery.
-- **10 low-data biomes** — oceans, coasts, hills, mountains, peaks and both polar ice caps are
-  generated from one 32-bit seed; no textures/heightmaps. Resources follow geology.
+- **Detailed procedural geography** — a high-detail seeded terrain layer (continents, oceans,
+  coasts, mountains, polar ice) renders behind the gameplay cells, so you see the planet surface
+  through the grid. One 32-bit seed, no textures/heightmaps; resources follow the same geology.
 - **10 minerals** — silver → neutronium, hidden deposits, underwater deposits inaccessible.
 - **Escape progression** — per-planet levels and scaled refit missions, a centered
   **TRY TO FLY AWAY** call-to-action when the drive is ready, random interplanetary story
@@ -96,7 +97,7 @@ resets its crust and releases new resources. The game never ends.
 | ![Landing mission briefing](media/landing.jpg) | ![Desktop HUD with escape mission](media/mission.jpg) |
 | ![Mobile planet-first HUD](media/mobile.jpg) | ![Mobile mission drawer](media/mobile-mission.jpg) |
 | ![Interplanetary story interlude](media/interlude.jpg) | ![Escape-ready refit](media/escape-ready.jpg) |
-| ![Centered TRY TO FLY AWAY escape CTA](media/escape-cta.jpg) | ![New-planet landing briefing](media/landing-brief.jpg) |
+| ![Detailed procedural planet geography behind the grid](media/geography.jpg) | ![Centered TRY TO FLY AWAY escape CTA](media/escape-cta.jpg) |
 | ![Escape CTA on mobile](media/escape-cta-mobile.jpg) | ![Landing briefing on mobile](media/landing-brief-mobile.jpg) |
 
 ## Development
@@ -131,5 +132,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.0.4** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.0.5** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.

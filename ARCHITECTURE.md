@@ -171,7 +171,9 @@ its base leaves (players/scores/inventories preserved), and the manager broadcas
 - **Labels:** base 1–20; children 1–4 in the parent's gnomonic tangent chart, 1 = largest x+y,
   then clockwise, 4 = centre. Stable forever; digits always 1–4.
 - **Picking:** ray–sphere intersection + spherical containment (not flat chord triangles).
-- **Rendering:** arcs slerp-tessellated, mixed-depth culling/LOD, thin owner edges, biome underlay.
+- **Rendering:** arcs slerp-tessellated, mixed-depth culling/LOD, thin owner edges, and a cached
+  high-resolution procedural geography mesh (continents/oceans/mountains/ice) drawn to an offscreen
+  globe and composited beneath translucent ownership cells.
 - **Planet surface:** one 32-bit seed → domain-warped 3D value-noise fBm (continents), ridged noise
   (mountains), latitude/elevation temperature, moisture noise → 10 biomes; no textures or
   heightmaps. Client and server run the same `terrainAt()`.

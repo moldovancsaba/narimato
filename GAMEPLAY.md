@@ -43,6 +43,9 @@ to a different tag creates/restores a different pilot; the browser remembers one
 - **Contest lock:** after your own click on a cell, you cannot click it again until another operator
   (human or robot) clicks it. A locked click shows `CELL LOCKED // CONTEST REQUIRED` once — no
   repeated `+2` popups.
+- **Geography:** beneath the triangular grid is a high-detail procedural planet surface — ocean
+  depth, coastlines, green lowlands, dry basins, mountain rock and polar ice. Cell edges and owner
+  tints sit on top, so you always see the real geography behind your territory.
 - **Hidden ore:** every mineable cell may hide a deposit. The first successful click mines it
   instantly for credits, adds to your score, marks the cell with the ore glyph, and updates the
   mission. Hidden deposits are never included in client data.
