@@ -13,7 +13,7 @@ import { NARRATION, VOICE_PROFILES, narrationSegments } from './narrative-data.j
 const VOICE_KEY = 'icosa.voice';
 const SUBTITLE_KEY = 'icosa.subtitles';
 const PROFILE_KEY = 'icosa.voiceProfile';
-const DEFAULT_PROFILE = 'daniel';
+const DEFAULT_PROFILE = 'george';
 const SEGMENT_GAP_MS = 340;
 const PLAYBACK_RATE = 0.94; // slower, deliberate delivery
 const FALLBACK_MS = 2100;

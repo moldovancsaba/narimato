@@ -6,46 +6,61 @@ sync and narration can pause between sentences.
 
 ## Included profiles
 
-| Profile | Voice | Accent | Notes |
-|---|---|---|---|
-| `daniel` (default) | Daniel | UK English | British male narrator |
-| `samantha` | Samantha | US English | US female narrator |
+| Profile | Voice | Accent | Engine | License |
+|---|---|---|---|---|
+| `george` (default) | George | UK English | **Kokoro-82M** | Apache 2.0 model weights |
+| `daniel` | Daniel | UK English | macOS `say` | system voice |
+| `samantha` | Samantha | US English | macOS `say` | system voice |
 
 Switch profiles in **Field Manual → NARRATOR**. The choice is persisted in
-`localStorage` (`icosa.voiceProfile`). Both profiles are rendered from
-`public/js/narrative-data.js` by `scripts/generate-voice.mjs`.
+`localStorage` (`icosa.voiceProfile`). All profiles are rendered from
+`public/js/narrative-data.js` by `scripts/generate-voice.mjs`, using the same
+sentence file naming.
 
-The current clips are generated with macOS `say` + `afconvert`:
+**GEORGE is generated with the open-source [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M)
+model (Apache 2.0), voice `bm_george`.** Thanks to hexgrad and the Kokoro
+contributors. Kokoro's training data is permissively licensed; see the model
+card for its full attribution list.
+
+## Generation
+
+### Kokoro (GEORGE)
+
+```sh
+python3 -m venv /tmp/kokoro-tts
+/tmp/kokoro-tts/bin/pip install kokoro soundfile
+KOKORO_PYTHON=/tmp/kokoro-tts/bin/python node scripts/generate-voice.mjs
+```
+
+`scripts/kokoro-synth.py` renders all sentence WAVs in one process; the Node
+generator encodes them to the browser contract:
+
+```
+public/audio/voice/<profile>/<cue>__s<n>.m4a
+# e.g. public/audio/voice/george/intro-wormhole__s1.m4a
+```
+
+### macOS profiles (DANIEL / SAMANTHA)
+
+The same generator uses `say` + `afconvert`; no extra Python needed:
 
 ```sh
 node scripts/generate-voice.mjs
 ```
 
-Output layout:
+If Kokoro is not installed, set `KOKORO_PYTHON` or temporarily remove the
+`george` entry from `VOICE_PROFILES` when regenerating the macOS voices.
 
-```
-public/audio/voice/<profile>/<cue>__s<n>.m4a
-```
+## Other open-source voice generators
 
-## Open-source voice generators
-
-If you want to replace/augment the macOS voices with open-source TTS:
-
-- **[Kokoro-82M](https://github.com/hexgrad/kokoro)** — Apache 2.0 weights,
-  82M parameters, 54 voices, CPU-friendly. Best quality-per-size for English
-  narration and the easiest open-source upgrade. `pip install kokoro soundfile`.
-- **[Piper](https://github.com/rhasspy/piper)** — very fast offline neural TTS;
-  the maintained `piper1-gpl` engine is GPL-3.0 and each voice model carries its
-  own license (check the individual voice card). Good for low-CPU/offline builds.
-- **Coqui XTTS v2 / F5-TTS / Bark** — expressive, but check licenses: XTTS v2
+- **[Kokoro-82M](https://github.com/hexgrad/kokoro)** — already used here.
+  Apache 2.0, 82M parameters, 54 voices, CPU-friendly; best quality-per-size for
+  English narration.
+- **[Piper](https://github.com/rhasspy/piper)** — extremely fast offline neural
+  TTS. The maintained `piper1-gpl` engine is GPL-3.0 and each voice model has its
+  own dataset license; check the voice card before shipping generated audio.
+- **Coqui XTTS v2 / F5-TTS / Bark** — expressive, but license caveats: XTTS v2
   weights are non-commercial, and voice cloning has separate consent concerns.
 
-For a new engine, keep the sentence file naming contract and call it once per
-sentence in `scripts/generate-voice.mjs`:
-
-```
-public/audio/voice/<profile>/<cue>__s<n>.m4a   # e.g. daniel/intro-wormhole__s1.m4a
-```
-
-Do not commit a cloned celebrity/third-party voice without permission; the
-two included profiles are generic system voices.
+Do not clone a celebrity or third-party voice without permission. The included
+voices are generic synthesized narrators.

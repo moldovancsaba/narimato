@@ -25,8 +25,9 @@ export function narrationSegments(cue) {
 
 /** Selectable narrator voice packs (rendered into public/audio/voice/<id>/). */
 export const VOICE_PROFILES = Object.freeze([
-  { id: 'daniel', label: 'DANIEL', region: 'UK', voice: 'Daniel', rate: 150 },
-  { id: 'samantha', label: 'SAMANTHA', region: 'US', voice: 'Samantha', rate: 152 },
+  { id: 'george', label: 'GEORGE', region: 'UK', engine: 'kokoro', voice: 'bm_george', lang: 'b' },
+  { id: 'daniel', label: 'DANIEL', region: 'UK', engine: 'say', voice: 'Daniel', rate: 150 },
+  { id: 'samantha', label: 'SAMANTHA', region: 'US', engine: 'say', voice: 'Samantha', rate: 152 },
 ]);
 
 export const NARRATION = Object.freeze({

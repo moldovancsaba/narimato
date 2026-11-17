@@ -1,5 +1,32 @@
 # NARIMATO — Release Notes
 
+## v3.5.0 — “Open Voice” (2026-11-17)
+
+### Added
+
+- **GEORGE** — a new open-source narrator generated locally with **Kokoro-82M**
+  (Apache 2.0, voice `bm_george`). It is the new default profile and has a full
+  sentence-synced pack (85 clips).
+- **Third selectable profile** in Field Manual → NARRATOR: GEORGE · OPEN · UK,
+  DANIEL · UK, SAMANTHA · US. Selection persists per browser.
+- **VOICE.md** now documents the real Kokoro generation pipeline
+  (`scripts/kokoro-synth.py` + `KOKORO_PYTHON`), licensing and the Piper /
+  Coqui-XTTS alternatives.
+- Audio asset tree is now `public/audio/voice/<profile>/` (255 sentence clips).
+
+### Verification
+
+- Kokoro model installed and rendered locally; George profile loads and plays
+  from `/audio/voice/george/...`, default selected, switching works, 74/74 tests.
+
+### Release artifact
+
+- Source tag: `v3.5.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.5.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.4.0 — “Voice Lab” (2026-11-17)
 
 ### Added
