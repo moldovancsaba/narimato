@@ -165,11 +165,13 @@ changes and 1 MiB backpressure protection.
   "state": {...}, "leaves": [...] }
 ```
 
-### Meteor reset
+### Exhausted-planet incidents
 
-When the last hidden deposit on a planet is mined, the core re-seeds the crust, resets the grid to
-its base leaves (players/scores/inventories preserved), and the manager broadcasts
-`{type:"meteor", planetIndex, message}` followed by a fresh `snapshot` to that planet room only.
+When the last hidden deposit on a planet is mined, the core picks a random incident
+(`meteor`/`nuclear`/`solar`/`alien`), re-seeds the crust, resets the grid to its base leaves
+(players/scores/inventories preserved), and the manager broadcasts
+`{type:"incident", kind, title, tone, message, planetIndex}` followed by a fresh `snapshot` to that
+planet room only. The client renders a different full-screen effect per kind.
 
 ## Algorithms
 

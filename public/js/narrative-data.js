@@ -40,6 +40,9 @@ export const NARRATION = Object.freeze({
   'tip-meteor': {
     text: 'The crust is exhausted. Meteor impact. New deposits are forming.',
   },
+  'tip-incident': {
+    text: 'The planet is exhausted. Catastrophe is reshaping the crust. New deposits are forming. Move to safer ground.',
+  },
   'tip-carried': {
     text: 'Your ore travels with you. Everything you carry can be used for the next refit.',
   },

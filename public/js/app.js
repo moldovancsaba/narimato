@@ -658,8 +658,11 @@ function handleEvent(msg) {
     case 'resource':
       handleResourceEvent(msg);
       break;
-    case 'meteor':
-      handleMeteorEvent(msg);
+    case 'incident':
+      handleIncidentEvent(msg);
+      break;
+    case 'meteor': // backward compatibility for older streams
+      handleIncidentEvent(msg);
       break;
     case 'toast':
       safeCall(ui, 'toast', msg.message || '', msg.kind || 'info');
@@ -1010,12 +1013,14 @@ function startNewPilot() {
   safeCall(ui, 'toast', 'NEW PILOT // ENTER A NEW GAME TAG TO START FROM PLANET 1', 'good');
 }
 
-function handleMeteorEvent(msg) {
+function handleIncidentEvent(msg) {
   if (!msg) return;
-  const message = msg.message || 'METEOR IMPACT // NEW RESOURCES AVAILABLE';
+  const kind = ['meteor', 'nuclear', 'solar', 'alien'].includes(msg.kind) ? msg.kind : 'meteor';
+  const title = msg.title || kind.toUpperCase();
+  const message = msg.message || 'PLANET EXHAUSTED // NEW RESOURCES AVAILABLE';
   safeCall(ui, 'toast', message, 'warn');
-  if (interlude && !interlude.active) interlude.meteor(message);
-  maybeTip('tip-meteor', { delay: 1800, speaker: 'SHIP AI' });
+  if (interlude && !interlude.active) interlude.incident(kind, title, message);
+  maybeTip(kind === 'meteor' ? 'tip-meteor' : 'tip-incident', { delay: 1800, speaker: 'SHIP AI' });
   setTimeout(async () => {
     await reloadWorld();
     refreshMission();
@@ -1898,7 +1903,8 @@ window.__ICOSA__ = {
   cameraInertia: () => ({ spin: { ...spinVel }, zoomTarget }),
   navTarget: () => (navLabel ? faceInfo(navLabel) : null),
   nextNavTarget: () => chooseNavTarget({ cycle: true }),
-  meteor: (message) => handleMeteorEvent({ message }),
+  meteor: (message) => handleIncidentEvent({ kind: 'meteor', title: 'METEOR IMPACT', message }),
+  incident: (kind, title, message) => handleIncidentEvent({ kind, title, message }),
   abandon: () => abandonRun(),
   newPilot: () => startNewPilot(),
   world,

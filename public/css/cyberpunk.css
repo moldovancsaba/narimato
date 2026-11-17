@@ -6386,3 +6386,17 @@ body.is-report .narrative-subtitles { display: none; }
   .subtitle-speaker { font-size: 8px; }
   .subtitle-text { font-size: 12px; }
 }
+
+/* Incident variants (planet exhausted events) */
+.meteor-overlay.incident-nuclear {
+  background: radial-gradient(ellipse 58% 44% at 50% 56%, rgba(255, 116, 26, 0.32), rgba(255, 40, 40, 0.12) 42%, transparent 74%);
+}
+.meteor-overlay.incident-nuclear #meteor-title { color: #ffd08a; text-shadow: 0 0 26px rgba(255, 92, 25, 0.8); }
+.meteor-overlay.incident-solar {
+  background: radial-gradient(ellipse 62% 50% at 50% 45%, rgba(255, 244, 180, 0.4), rgba(255, 176, 48, 0.16) 45%, transparent 78%);
+}
+.meteor-overlay.incident-solar #meteor-title { color: #fff2b0; text-shadow: 0 0 32px rgba(255, 214, 92, 0.9); }
+.meteor-overlay.incident-alien {
+  background: radial-gradient(ellipse 60% 52% at 50% 44%, rgba(120, 255, 170, 0.24), rgba(160, 64, 255, 0.12) 46%, transparent 78%);
+}
+.meteor-overlay.incident-alien #meteor-title { color: #a9ffcf; text-shadow: 0 0 26px rgba(90, 255, 170, 0.8); }

@@ -1,5 +1,31 @@
 # NARIMATO — Release Notes
 
+## v3.2.0 — “Catastrophe Protocol” (2026-11-17)
+
+### Added
+
+- **Four random end-of-planet incidents** when the last hidden ore is mined:
+  - **METEOR IMPACT** — orange fireball, shockwave, debris.
+  - **NUCLEAR WAR** — white flash, layered red/orange shockwaves, rising fire columns.
+  - **SOLAR FLARE** — white-gold whiteout, expanding halo and lens-streak rays.
+  - **ALIEN INVASION** — green/violet orbital beams, scanning saucer rings and glitch tint.
+- Each incident has its own SSE event kind/title/tone, screen shake, narration line and overlay
+  colour, then reseeds the crust with fresh resources. Players/scores/inventories survive.
+- New `tip-incident` narration cue.
+
+### Verification
+
+- All four effects exercised via QA overlay: correct titles/colour classes, auto-hide, no console
+  errors; 74/74 `node:test` tests (incident kind validation added).
+
+### Release artifact
+
+- Source tag: `v3.2.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.2.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.1.0 — “Voice of the Frontier” (2026-11-17)
 
 ### Added

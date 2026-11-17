@@ -41,6 +41,8 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
   let meteorActive = false;
   let meteorStart = 0;
   let meteorMessage = '';
+  let meteorTitle = 'METEOR IMPACT';
+  let incidentKind = 'meteor';
   let meteorRaf = 0;
 
   function collect() {
@@ -283,28 +285,98 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
     const h = window.innerHeight;
     const cx = w / 2;
     const cy = h / 2;
+    const t = elapsed / 1000;
+    const k = clamp01(elapsed / 2100);
     meteorCtx.clearRect(0, 0, w, h);
     if (!prefersReducedMotion()) {
       meteorCtx.save();
       meteorCtx.globalCompositeOperation = 'lighter';
-      const ring = clamp01(elapsed / 1800);
-      meteorCtx.strokeStyle = `rgba(255, 190, 90, ${0.5 * (1 - ring)})`;
-      meteorCtx.lineWidth = 4 + 8 * (1 - ring);
-      meteorCtx.beginPath();
-      meteorCtx.arc(cx, cy, 30 + ring * Math.max(w, h) * 0.6, 0, Math.PI * 2);
-      meteorCtx.stroke();
-      for (let i = 0; i < 26; i += 1) {
-        const a = (i / 26) * Math.PI * 2;
-        const r = 60 + ring * 260 + (i % 5) * 20;
-        meteorCtx.strokeStyle = `rgba(255, 150, 60, ${0.18 * (1 - ring)})`;
+      if (incidentKind === 'nuclear') {
+        // White flash → layered shockwaves → rising fire columns.
+        if (t < 0.2) {
+          meteorCtx.fillStyle = `rgba(255,255,240,${(0.85 * (1 - t / 0.2)).toFixed(3)})`;
+          meteorCtx.fillRect(0, 0, w, h);
+        }
+        for (let i = 0; i < 4; i += 1) {
+          const rr = 40 + (k * 0.9 + i * 0.08) * Math.max(w, h) * 0.65;
+          meteorCtx.strokeStyle = `rgba(255,${140 - i * 20},${45 - i * 8},${0.38 * (1 - k)})`;
+          meteorCtx.lineWidth = 8 - i * 1.5;
+          meteorCtx.beginPath();
+          meteorCtx.arc(cx, cy, Math.max(1, rr), 0, Math.PI * 2);
+          meteorCtx.stroke();
+        }
+        for (let i = 0; i < 7; i += 1) {
+          const x = cx + (i - 3) * 62 + Math.sin(t * 2 + i) * 7;
+          const rise = Math.min(1, t / 1.8) * (160 + (i % 3) * 80);
+          const grad = meteorCtx.createLinearGradient(x, cy, x, cy - rise);
+          grad.addColorStop(0, 'rgba(255,210,110,0.4)');
+          grad.addColorStop(0.55, 'rgba(255,80,35,0.22)');
+          grad.addColorStop(1, 'rgba(90,20,10,0)');
+          meteorCtx.fillStyle = grad;
+          meteorCtx.fillRect(x - 22, cy - rise, 44, rise);
+        }
+      } else if (incidentKind === 'solar') {
+        // White-gold flare, expanding halo, lens streaks.
+        if (t < 0.35) {
+          meteorCtx.fillStyle = `rgba(255,248,210,${(0.8 * (1 - t / 0.35)).toFixed(3)})`;
+          meteorCtx.fillRect(0, 0, w, h);
+        }
+        const halo = meteorCtx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h) * (0.4 + k * 0.5));
+        halo.addColorStop(0, `rgba(255,236,150,${0.5 * (1 - k)})`);
+        halo.addColorStop(0.3, `rgba(255,170,60,${0.22 * (1 - k)})`);
+        halo.addColorStop(1, 'rgba(255,100,20,0)');
+        meteorCtx.fillStyle = halo;
+        meteorCtx.fillRect(0, 0, w, h);
+        for (let i = 0; i < 9; i += 1) {
+          const ang = (i / 9) * Math.PI * 2 + Math.sin(t * 0.6 + i) * 0.04;
+          const r0 = 60 + (i % 3) * 30;
+          const r1 = 80 + (k * 0.9 + i * 0.03) * Math.max(w, h) * 0.55;
+          meteorCtx.strokeStyle = `rgba(255,${225 - (i % 3) * 20},120,${0.2 * (1 - k)})`;
+          meteorCtx.lineWidth = 2 + (i % 3);
+          meteorCtx.beginPath();
+          meteorCtx.moveTo(cx + Math.cos(ang) * r0, cy + Math.sin(ang) * r0);
+          meteorCtx.lineTo(cx + Math.cos(ang) * r1, cy + Math.sin(ang) * r1);
+          meteorCtx.stroke();
+        }
+      } else if (incidentKind === 'alien') {
+        // Green/violet orbital beams and scanning saucer rings.
+        for (let i = 0; i < 4; i += 1) {
+          const x = cx + (i - 1.5) * Math.min(w, h) * 0.22;
+          const grad = meteorCtx.createLinearGradient(x, 0, x, h);
+          grad.addColorStop(0, `rgba(165,255,150,${0.22 * (1 - k)})`);
+          grad.addColorStop(0.6, `rgba(90,255,170,${0.12 * (1 - k)})`);
+          grad.addColorStop(1, 'rgba(80,255,160,0)');
+          meteorCtx.fillStyle = grad;
+          meteorCtx.fillRect(x - 26, 0, 52, h);
+        }
+        for (let i = 0; i < 5; i += 1) {
+          const rr = 30 + k * Math.max(w, h) * (0.45 + i * 0.05);
+          meteorCtx.strokeStyle = `rgba(${150 + i * 18},255,190,${0.28 * (1 - k)})`;
+          meteorCtx.lineWidth = 2;
+          meteorCtx.beginPath();
+          meteorCtx.ellipse(cx, cy + Math.sin(t * 1.4 + i) * 18, rr, rr * 0.32, 0, 0, Math.PI * 2);
+          meteorCtx.stroke();
+        }
+      } else {
+        // Meteor: the original orange impact shock.
+        meteorCtx.strokeStyle = `rgba(255, 190, 90, ${0.5 * (1 - k)})`;
+        meteorCtx.lineWidth = 4 + 8 * (1 - k);
         meteorCtx.beginPath();
-        meteorCtx.moveTo(cx + Math.cos(a) * r * 0.3, cy + Math.sin(a) * r * 0.3);
-        meteorCtx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+        meteorCtx.arc(cx, cy, 30 + k * Math.max(w, h) * 0.6, 0, Math.PI * 2);
         meteorCtx.stroke();
+        for (let i = 0; i < 26; i += 1) {
+          const a = (i / 26) * Math.PI * 2;
+          const r = 60 + k * 260 + (i % 5) * 20;
+          meteorCtx.strokeStyle = `rgba(255, 150, 60, ${0.18 * (1 - k)})`;
+          meteorCtx.beginPath();
+          meteorCtx.moveTo(cx + Math.cos(a) * r * 0.3, cy + Math.sin(a) * r * 0.3);
+          meteorCtx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
+          meteorCtx.stroke();
+        }
       }
       meteorCtx.restore();
     }
-    if (elapsed > 2000) {
+    if (elapsed > 2400) {
       meteorActive = false;
       setMeteor(false);
       if (meteorCtx && meteorCanvas) meteorCtx.clearRect(0, 0, w, h);
@@ -313,8 +385,10 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
     meteorRaf = requestAnimationFrame(drawMeteor);
   }
 
-  function meteor(message = 'METEOR IMPACT // PLANET RESET') {
+  function incident(kind = 'meteor', title = 'INCIDENT', message = 'PLANET RESET') {
     collect();
+    incidentKind = ['meteor', 'nuclear', 'solar', 'alien'].includes(kind) ? kind : 'meteor';
+    meteorTitle = String(title || incidentKind.toUpperCase());
     meteorActive = true;
     meteorStart = performance.now();
     meteorMessage = message;
@@ -325,27 +399,34 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
       meteorCtx = fx.getContext('2d');
     }
     if (overlay) {
+      overlay.className = `meteor-overlay incident-${incidentKind}`;
       overlay.hidden = false;
-      overlay.classList.remove('is-hidden');
       overlay.classList.add('is-active');
       overlay.setAttribute('aria-hidden', 'false');
     }
-    if (document.body) document.body.classList.add('is-meteor', 'is-shaking');
-    setText('meteor-title', 'METEOR IMPACT');
-    setText('meteor-sub', message);
+    if (document.body) {
+      document.body.className = document.body.className.replace(/\bincident-\w+/g, '').trim();
+      document.body.classList.add('is-meteor', 'is-shaking', `incident-${incidentKind}`);
+    }
+    setText('meteor-title', meteorTitle);
+    setText('meteor-sub', meteorMessage);
     resizeCanvas(meteorCanvas, meteorCtx);
     cancelAnimationFrame(meteorRaf);
     meteorRaf = requestAnimationFrame(drawMeteor);
     setTimeout(() => {
       if (document.body) document.body.classList.remove('is-shaking');
-    }, 1200);
+    }, 1300);
     setTimeout(() => {
       meteorActive = false;
       setMeteor(false);
       if (meteorCtx && meteorCanvas) meteorCtx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-    }, 2300);
+    }, 2600);
     safeAudio('introAlarm');
     return meteorMessage;
+  }
+
+  function meteor(message = 'METEOR IMPACT // PLANET RESET') {
+    return incident('meteor', 'METEOR IMPACT', message);
   }
 
   function resize() {
@@ -365,6 +446,7 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
     state: () => ({ active, phase: active ? currentPhase().id : 'idle', story: story ? story.id : null }),
     startEscape,
     meteor,
+    incident,
     finish,
     resize,
   };

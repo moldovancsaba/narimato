@@ -106,8 +106,10 @@ the second level.
 
 - Each planet is its own **multiplayer scene**: its own players, robot(s), leaderboard, grid and
   resource deposits. You only see/fight people on your planet.
-- **Meteor reset:** when the last hidden deposit on a planet is mined, a meteor impact resets the
-  crust and reseeds it with new resources. Players/scores/inventories survive. The screen shakes,
+- **Planetary incidents:** when the last hidden deposit is mined, the exhausted planet ends in a
+  random catastrophe — **Meteor Impact**, **Nuclear War**, **Solar Flare** or **Alien Invasion**.
+  Each has a distinct full-screen visual effect, narration and shake, then resets/reseeds the crust
+  with new resources. Players, scores and inventories survive. The screen shakes,
   the meteor overlay announces `METEOR IMPACT // NEW RESOURCES AVAILABLE`, and mining continues.
 - **Carried ore:** your full ore inventory (all materials, ore counts and total ore value) travels
   with you when you escape. It is available immediately on the next planet and counts toward that

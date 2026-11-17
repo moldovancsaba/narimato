@@ -780,7 +780,7 @@ test('multi-planet: meteor reset + rooms + escape routing', async (t) => {
   await observerSse.waitForEvent('snapshot');
 
   // No meteor at boot.
-  assert.equal(minerSse.events.some((event) => event.type === 'meteor'), false);
+  assert.equal(minerSse.events.some((event) => event.type === 'incident' || event.type === 'meteor'), false);
 
   // Mine every hidden deposit on planet 0 (hidden labels via the server handle).
   const core0 = handle.manager.planetCore(0);
@@ -797,10 +797,11 @@ test('multi-planet: meteor reset + rooms + escape routing', async (t) => {
     const res = await postJson(base, '/api/action', { token: miner.json.token, type: 'click', label });
     assert.equal(res.status, 200, `click ${label}`);
   }
-  const meteorMiner = await minerSse.waitForEvent('meteor', () => true, { timeout: 3000 });
+  const meteorMiner = await minerSse.waitForEvent('incident', (event) => event.type === 'incident', { timeout: 3000 });
   assert.equal(meteorMiner.planetIndex, 0);
-  assert.match(meteorMiner.message, /METEOR IMPACT/);
-  await observerSse.waitForEvent('meteor', () => true, { timeout: 3000 });
+  assert.ok(['meteor', 'nuclear', 'solar', 'alien'].includes(meteorMiner.kind));
+  assert.match(meteorMiner.message, /NEW RESOURCES|NEW DEPOSITS|RESEEDED/);
+  await observerSse.waitForEvent('incident', (event) => event.type === 'incident', { timeout: 3000 });
   const afterMeteor = (await getJson(base, '/api/world')).json;
   assert.notEqual(afterMeteor.state.planetSeed, seedBefore, 'meteor resamples the planet');
   assert.equal(afterMeteor.leaves.length, 20);

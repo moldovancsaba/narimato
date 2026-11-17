@@ -80,7 +80,9 @@ resets its crust and releases new resources. The game never ends.
 - **Escape progression** — per-planet levels and scaled refit missions, a centered
   **TRY TO FLY AWAY** call-to-action when the drive is ready, random interplanetary story
   cinematics, screen shake/damage, separate multiplayer scene for every planet.
-- **Meteor reset** — exhausted planets are reseeded with fresh resources.
+- **Planetary incidents** — exhausted planets now end with one of four random catastrophes:
+  **Meteor Impact**, **Nuclear War**, **Solar Flare** or **Alien Invasion**, each with its own
+  full-screen effect, narration and reseeded crust, then fresh resources.
 - **Responsive command deck** — deliberately different desktop, tablet, mobile portrait and
   landscape phone layouts; mobile is planet-first with drawers/dock/target sheet.
 - **Inertial camera** — drag-spin the planet and release: it coasts longer with an ease-out curve
@@ -117,6 +119,7 @@ resets its crust and releases new resources. The game never ends.
 | ![Mobile planet-first HUD](media/mobile.jpg) | ![Mobile mission drawer](media/mobile-mission.jpg) |
 | ![Interplanetary story interlude](media/interlude.jpg) | ![Escape-ready refit](media/escape-ready.jpg) |
 | ![Narration subtitles in the cockpit intro](media/narration.jpg) | ![NARIMATO Field Manual](media/manual.jpg) |
+| ![Nuclear war incident](media/incident-nuclear.jpg) | ![Alien invasion incident](media/incident-alien.jpg) |
 | ![Detailed procedural planet geography behind the grid](media/geography.jpg) | ![Navigation waypoint on the planet](media/navigation.jpg) | ![Red locked cell after mining](media/red-locked.jpg) |
 | ![Centered TRY TO FLY AWAY escape CTA](media/escape-cta.jpg) | ![New-planet landing briefing](media/landing-brief.jpg) |
 | ![Escape CTA on mobile](media/escape-cta-mobile.jpg) | ![Landing briefing on mobile](media/landing-brief-mobile.jpg) |
@@ -153,5 +156,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.1.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.2.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.
