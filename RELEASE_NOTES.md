@@ -34,6 +34,12 @@
 - Manual spare-port check: state `planetLevels 2`, `maxDepth 1`, `threshold 4`, 20 leaves, hidden
   deposits exactly cover the 11 required ores.
 
+### Release artifact
+
+- Source tag: `v3.0.1`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.0.1
+- Archives + `SHA256SUMS` attached to the release.
+
 ---
 
 ## v3.0.0 — “The Way Back” (2026-11-17)
