@@ -15,6 +15,9 @@ then shard. No distributed system should be built before the first metrics exist
 **Goal:** no unreadable/blocked UI at the supported viewport matrix; first-five-seconds
 clarity.
 
+**Status (v3.8.1):** A0 harness committed; A1 and A2 shipped and audit-clean.
+A3/A4 remain.
+
 ### A0. Audit harness (0.5 day)
 
 - Commit `scripts/audit-ui.mjs` (Playwright) running the nine-viewport matrix.

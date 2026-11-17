@@ -6494,3 +6494,74 @@ body.is-report .narrative-subtitles { display: none; }
   font: 500 9px/1.5 var(--font-mono, monospace);
   letter-spacing: 0.08em;
 }
+
+/* A1 — top HUD geometry: identity belongs to the brand, actions stay compact */
+.hud-brand .planet-badge {
+  margin-top: 2px;
+  align-self: flex-start;
+}
+.status-cluster {
+  gap: 6px;
+}
+.status-cluster .icon-btn {
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  padding: 0;
+  justify-content: center;
+}
+.status-cluster .icon-btn-label {
+  display: none;
+}
+.status-cluster .conn-badge {
+  padding: 0 9px;
+}
+@media (max-width: 760px) {
+  .hud-brand .planet-badge {
+    height: 28px;
+    padding: 0 8px;
+    font-size: 8px;
+    gap: 5px;
+  }
+  .hud-brand .planet-depth { font-size: 7px; }
+  .status-cluster .icon-btn {
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+  }
+  .status-cluster .conn-badge { padding: 0 8px; }
+}
+@media (min-width: 641px) {
+  .nav-chip { top: 110px; }
+}
+
+/* A2 — safe subtitle zones and scroll-safe dramatic overlays */
+.landing-brief-card,
+.escape-cta-card {
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+body.has-target .narrative-subtitles {
+  bottom: calc(200px + var(--safe-bottom, 0px));
+}
+body.is-manual .manual-card {
+  padding-bottom: 150px;
+}
+@media (max-width: 760px) {
+  .nav-chip { top: 92px; }
+  body.intro-active .narrative-subtitles {
+    bottom: calc(200px + var(--safe-bottom, 0px));
+  }
+}
+@media (max-height: 520px) {
+  body.intro-active .intro-steer { display: none !important; }
+  body.intro-active .narrative-subtitles {
+    bottom: calc(84px + var(--safe-bottom, 0px));
+  }
+  .landing-brief-card,
+  .escape-cta-card {
+    max-height: calc(100vh - 20px);
+  }
+}

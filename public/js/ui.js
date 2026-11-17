@@ -1632,9 +1632,11 @@ class UI {
     const hover = this._hoverInfo;
     if (!hover) {
       if (!panel.hidden) panel.hidden = true;
+      if (this.doc && this.doc.body) this.doc.body.classList.remove('has-target');
       return;
     }
     if (panel.hidden) panel.hidden = false;
+    if (this.doc && this.doc.body) this.doc.body.classList.add('has-target');
 
     const label = String(hover.label || '');
     const depth = Math.max(0, int(hover.depth, Math.max(0, label.split('.').length - 1)));

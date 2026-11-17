@@ -1,5 +1,37 @@
 # NARIMATO — Release Notes
 
+## v3.8.1 — “HUD Safety” (2026-11-18)
+
+### Fixed
+
+- **Score no longer covered** by the planet badge/NAV/action row. Planet identity moved into the
+  brand block; status actions are icon-only; NAV chip moved below the score. Score overlap is 0 at
+  all audited viewports.
+- **Landing briefing and escape CTA are viewport-capped and scrollable**, so their primary actions
+  are reachable on 792×302 and other short screens.
+- **Subtitle safe zones:** target inspector, Field Manual and intro touch steering no longer get
+  covered by captions. On very short intro screens the touch pads are hidden in favour of drag.
+- Mobile NAV position adjusted below the new identity row.
+
+### Added
+
+- **A0 UI audit harness** (`npm run audit:ui`, Playwright optional via `PLAYWRIGHT_MODULE`):
+  nine viewports, score-overlap, target/subtitle, intro/steer, overflow and console assertions.
+- `UX_AUDIT.md` and `DELIVERY_PLAN.md` committed with remediation status.
+
+### Verification
+
+- `npm run audit:ui` — all nine viewports clean; 76/76 `node --test` tests.
+- Production remains the authoritative v3.8.0 world; this release is client UI only.
+
+### Release artifact
+
+- Source tag: `v3.8.1`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.8.1
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.8.0 — “Borrowed Worlds” (2026-11-18)
 
 ### Added / changed

@@ -8,6 +8,29 @@ manual → escape CTA → report flow.
 > **Elephant** = big, unmissable breakage that blocks reading/playing.
 > **Goldfish** = what a new player fails to understand in the first five seconds.
 
+## Remediation status — v3.8.1
+
+A0–A2 from the delivery plan are now implemented and verified with
+`scripts/audit-ui.mjs` (all nine viewports clean):
+
+- **E1 fixed:** planet identity moved out of the action cluster into the brand;
+  secondary actions are icon-only. Score/nav/badge intersections are 0 at all
+  audited widths, and NAV now sits below the score.
+- **E2 fixed:** landing briefing card is viewport-capped and scrollable; START
+  MINING is reachable at 792×302.
+- **E3 fixed:** escape CTA card is viewport-capped and scrollable.
+- **E4 fixed:** `body.has-target` raises the subtitle safe zone above the target
+  inspector (0 px overlap across the matrix).
+- **E5 fixed:** intro captions move clear of steering on portrait and the steer
+  pads are hidden on very short viewports; caption/steer overlap is 0.
+- **E6 fixed:** Field Manual reserves bottom space for captions.
+- **E7/E8 partially addressed:** compact icon row and moved planet identity reduce
+  crowding; short landing join still needs the A3 hierarchy pass.
+- Remaining: labelled touch controls, 44 px targets, first-five-second voice hint,
+  real-device/accessibility pass (A3/A4).
+
+![HUD after A1 fix](media/audit/hud-fixed.jpg)
+
 ## Summary
 
 The game is functional and console-clean, but the **top HUD is not layout-safe at any
