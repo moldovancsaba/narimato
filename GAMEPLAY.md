@@ -1,0 +1,154 @@
+# NARIMATO — Gameplay Guide
+
+## The story
+
+You are a pilot. A wormhole accident throws your ship to the far side of the universe. The game
+begins as you exit the wormhole — inside the cockpit, planet **ICOSA-9** far ahead. You can steer,
+but the planet's gravity has you. The cockpit fails, the camera falls, and you land with **fuel
+empty and thrusters offline**. To find the way back you must mine the crust, rebuild the warp drive,
+and burn for orbit.
+
+Every escape throws you through a random deep-space event — storms, pirates, wormhole tremors,
+derelict beacons — and damages the ship again. Each new planet is deeper, richer and more contested.
+The way home is never the same twice.
+
+## Launch sequence
+
+Every page load plays the cockpit intro (about 9 seconds). It is skippable at any time with
+**SKIP INTRO** or `Escape`; **⟲ REPLAY INTRO** is always available. The intro also preloads the
+world and acts as the loading screen. `?intro=0` suppresses it (QA/share links).
+
+After the intro you always land on the **main/tag screen**, even if you have a saved pilot, so you
+can keep your callsign or enter a new game tag.
+
+## Main screen
+
+- **Enter tag** (2–12 characters: `A–Z`, `0–9`, `_`, `-`) and **JACK IN**.
+- **NEW PILOT** clears this browser's saved pilot/tokens and lets you start over with a new tag.
+- **ESCAPE MISSION** panel shows the current refit requirements (planet 1: 3 Uranium, 5 Silver,
+  2 Gold, 1 Palladium).
+- **REPLAY INTRO** reopens the cockpit cine.
+- **Planet badge** shows the current world and depth (e.g. `ICOSA-9 · DEPTH 2`).
+
+Each callsign is a persistent identity: its own colour, score, planet and ore inventory. Switching
+to a different tag creates/restores a different pilot; the browser remembers one token per tag.
+
+## Mining
+
+- Click/tap a triangle: unclaimed → **claim**, rival-owned → **steal**, yours → **reinforce**.
+  Every click adds charge to that cell.
+- At the planet's click threshold (default **8**) that single triangle breaks into four smaller
+  spherical triangles. Children inherit the owner and start charging from 0. Other cells are
+  unaffected.
+- **Contest lock:** after your own click on a cell, you cannot click it again until another operator
+  (human or robot) clicks it. A locked click shows `CELL LOCKED // CONTEST REQUIRED` once — no
+  repeated `+2` popups.
+- **Hidden ore:** every mineable cell may hide a deposit. The first successful click mines it
+  instantly for credits, adds to your score, marks the cell with the ore glyph, and updates the
+  mission. Hidden deposits are never included in client data.
+- **Ocean rule:** ocean/deep-ocean cells cannot be mined from the surface. The inspector shows
+  `SUBMERGED // NO SURFACE DEPOSITS`. Coast cells can hold shallow placer deposits.
+
+## Ores and prices
+
+| Ore | Glyph | Credits |
+|---|---|---:|
+| Silver | Ag | 90 |
+| Gold | Au | 180 |
+| Uranium | U | 420 |
+| Palladium | Pd | 700 |
+| Iridium | Ir | 950 |
+| Voidglass | Vg | 1,200 |
+| Myrthil | My | 1,600 |
+| Aetherium | Ae | 2,200 |
+| Adamantium | Ad | 3,200 |
+| Neutronium | Nt | 5,000 |
+
+Resources follow geology: mountains/peaks favour iridium, myrthil, adamantium and neutronium;
+coasts hold placers; deserts voidglass/aetherium; ice iridium/aetherium.
+
+## Escape mission
+
+Each planet requires a refit. Planet 1:
+
+| Objective | Requirement |
+|---|---|
+| FUEL RODS | 3 × Uranium |
+| HULL PLATES | 5 × Silver + 2 × Gold |
+| WARP CORE | 1 × Palladium |
+
+The landing briefing and `ESCAPE // SYSTEMS` HUD show progress live. When all three are complete,
+the mission panel glows and **ESCAPE // BURN FOR ORBIT** appears. Click it to leave.
+
+Later planets require more of the same ores. Requirements are derived from your **ore inventory for
+the current planet**; boarding the next planet starts a fresh ore run (score carries).
+
+## Planets, depth and progression
+
+| Planet | Name | Mining depth | Notes |
+|---|---|---|---|
+| 1 | ICOSA-9 | **2** | 20 base faces, up to 320 cells |
+| 2 | ICOSA-10 | **3** | depth 3, deeper grid, bigger refit |
+| 3+ | ICOSA-11… | 4 … 8 (cap) | increasingly deep/rich, infinite sequence |
+
+- Each planet is its own **multiplayer scene**: its own players, robot(s), leaderboard, grid and
+  resource deposits. You only see/fight people on your planet.
+- **Meteor reset:** when the last hidden deposit on a planet is mined, a meteor impact resets the
+  crust and reseeds it with new resources. Players/scores/inventories survive. The screen shakes,
+  the meteor overlay announces `METEOR IMPACT // NEW RESOURCES AVAILABLE`, and mining continues.
+- **Interplanetary transit:** after ESCAPE, the ship burns out of orbit, a random story event hits,
+  the hull takes damage with screen shake, and you land on the next planet. The cinematic is fully
+  procedural (CSS/Canvas, no assets).
+
+## Leaving / starting over
+
+- **ABANDON** (desktop status bar, or the mobile dock) → confirmation dialog → returns to the
+  main/tag screen. Your pilot and planet progress are saved; you can resume with the same tag.
+- **NEW PILOT** on the main screen clears this browser's saved pilot tokens so you can enter a new
+  tag and start a new mission from planet 1.
+- If you simply close the page, your pilot survives server-side and can rejoin later.
+
+## Multiplayer
+
+- Players are matched per planet. Robots are always present: one robot per loaded planet, with a
+  new creative callsign/colour each spawn, playing for a random time, then leaving and respawning.
+- The robot deliberately contests charged human cells so solo play cannot speed-run the lock.
+- The arcade leaderboard is per planet, all-time for that scene; planet carries your score forward
+  to the next scene.
+
+## Reports and sharing
+
+**REPORT** summarizes rank, total score, session gains, clicks, breaks, claims, steals, faces held,
+depth, ores mined, ore value and richest find. Download a 1200×630 PNG or share a self-contained
+URL. Reports include the current planet and arcade context.
+
+## Controls & accessibility
+
+| Input | Action |
+|---|---|
+| Click/tap triangle | claim / steal / reinforce + charge |
+| Drag | rotate |
+| Wheel / pinch | zoom |
+| Double-click | focus/drill |
+| `L` | all face ids (debug) |
+| WASD / arrows / touch pads | steer during intro |
+| `Escape` | skip intro / close dialogs |
+| `R` | reset camera |
+
+- Intro and interlude respect `prefers-reduced-motion`.
+- Mobile/tablet layouts use larger touch targets, safe-area insets, drawers and a tap target sheet.
+- Face ids are shown only on hover/tap and briefly after a click (`L` toggles all).
+
+## Tips
+
+- Break cells where other players/robots are active; contested cells unlock your own.
+- Coastal and mountain cells are the best early ore bets; avoid deep ocean.
+- Fill FUEL first — uranium appears in hills/mountains and is worth more score.
+- The mission counts every future find; existing inventories persist forever.
+- If a planet becomes mined out, the meteor reset is a chance to claim fresh, unowned ground.
+
+## Live build
+
+- https://treasurer-record-flooring-mounting.trycloudflare.com
+- Local: `npm start` → http://localhost:4173
+- LAN URL printed on boot.

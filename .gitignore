@@ -1,0 +1,11 @@
+# Runtime state — never commit live worlds, players or tokens
+data/*
+!data/.gitkeep
+dist/
+node_modules/
+coverage/
+*.log
+.DS_Store
+.env
+.env.*
+/tmp/

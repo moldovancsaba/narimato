@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#05010f" />
+    <meta name="color-scheme" content="dark" />
+    <meta
+      name="description"
+      content="NARIMATO — The Way Back. A persistent multiplayer planetary mining game: wormhole cinematic, hidden ore, escape missions and infinite deeper planets on a spherical icosahedron."
+    />
+    <title>NARIMATO — The Way Back</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2305010f'/%3E%3Cpath d='M16 3 28 10v12L16 29 4 22V10z' fill='none' stroke='%2300f0ff' stroke-width='2'/%3E%3Cpath d='M16 3v26M4 10l24 12M28 10L4 22' stroke='%23ff2bd6' stroke-width='1' opacity='.6'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="/css/cyberpunk.css" />
+  </head>
+  <body class="game is-landing">
+    <!-- Persistent geodesic arena: fixed behind every layer. -->
+    <canvas
+      id="arena-canvas"
+      aria-label="Infinite geodesic grid on a sphere. Drag to rotate, scroll to zoom, click a cell to claim or charge it."
+    ></canvas>
+
+    <!-- Ambient FX layers (decorative). -->
+    <div class="fx fx-aurora" aria-hidden="true"></div>
+    <div class="fx fx-grid" aria-hidden="true"></div>
+    <div class="fx fx-scanlines" aria-hidden="true"></div>
+    <div class="fx fx-noise" aria-hidden="true"></div>
+    <div class="fx fx-vignette" aria-hidden="true"></div>
+
+    <!-- =========================== INTRO =========================== -->
+    <section id="intro-overlay" class="intro-overlay is-hidden" aria-label="Wormhole cockpit intro" aria-hidden="true">
+      <canvas id="intro-fx" class="intro-fx" aria-hidden="true"></canvas>
+
+      <div class="intro-cockpit" aria-hidden="true">
+        <div class="intro-canopy"></div>
+        <div class="intro-strut intro-strut--left"></div>
+        <div class="intro-strut intro-strut--right"></div>
+        <div class="intro-strut intro-strut--top"></div>
+        <div class="intro-dash"></div>
+        <div class="intro-reticle"></div>
+        <div class="intro-telemetry intro-telemetry--left">
+          <span class="intro-tele-line"><i>VEL</i><b>0.42c</b></span>
+          <span class="intro-tele-line"><i>THRUST</i><b>00%</b></span>
+        </div>
+        <div class="intro-telemetry intro-telemetry--right">
+          <span class="intro-tele-line"><i>GRAV</i><b>LOCK</b></span>
+          <span class="intro-tele-line"><i>FUEL</i><b>EMPTY</b></span>
+        </div>
+      </div>
+
+      <div class="intro-content">
+        <p id="intro-phase" class="intro-phase">PHASE 01 // WORMHOLE EXIT</p>
+        <h2 id="intro-status" class="intro-status">WORMHOLE BREACH</h2>
+        <p id="intro-sub" class="intro-sub">FUEL EMPTY // GRAVITY CAPTURE // MINE TO ESCAPE</p>
+        <div class="intro-bar" role="progressbar" aria-label="Intro progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <i id="intro-bar"></i>
+        </div>
+        <p id="intro-alarm" class="intro-alarm">⚠ GRAVITY LOCK — THRUSTERS OFFLINE</p>
+      </div>
+
+      <button id="btn-skip-intro" class="btn btn--primary intro-skip" type="button">SKIP INTRO ▸</button>
+
+      <div id="intro-steer" class="intro-steer" aria-label="Touch steering">
+        <button id="steer-up" class="steer-pad" type="button" aria-label="Thrust up">▲</button>
+        <button id="steer-left" class="steer-pad" type="button" aria-label="Thrust left">◀</button>
+        <button id="steer-right" class="steer-pad" type="button" aria-label="Thrust right">▶</button>
+        <button id="steer-down" class="steer-pad" type="button" aria-label="Thrust down">▼</button>
+      </div>
+      <p class="intro-steer-hint">WASD / ARROWS TO STEER · TOUCH PADS ON MOBILE · GRAVITY DOMINATES</p>
+    </section>
+
+    <!-- ======================= INTERPLANETARY INTERLUDE ======================= -->
+    <section id="interlude-overlay" class="interlude-overlay is-hidden" aria-label="Interplanetary flight" aria-hidden="true">
+      <canvas id="interlude-fx" class="interlude-fx" aria-hidden="true"></canvas>
+      <div class="interlude-cockpit" aria-hidden="true">
+        <div class="interlude-ship">
+          <span class="ship-hull"></span>
+          <span class="ship-trail"></span>
+        </div>
+        <div class="interlude-storm"><i></i><i></i><i></i></div>
+        <div class="interlude-damage"><i></i><i></i><i></i></div>
+        <div class="interlude-reticle"></div>
+      </div>
+      <div class="interlude-content">
+        <p class="interlude-kicker">INTERPLANETARY TRANSIT</p>
+        <p id="interlude-planet" class="interlude-planet">TRANSIT // ICOSA-10</p>
+        <p id="interlude-status" class="interlude-status">DEPARTURE BURN</p>
+        <h2 id="interlude-title" class="interlude-title">GRAVITY SLINGSHOT</h2>
+        <p id="interlude-sub" class="interlude-sub">LEAVING ICOSA-9</p>
+        <div id="interlude-story" class="interlude-story">
+          <p>The drive catches. The crust falls away.</p>
+          <p>Somewhere ahead, another impossible world is waiting.</p>
+        </div>
+        <div class="interlude-bar" role="progressbar" aria-label="Transit progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <i id="interlude-bar"></i>
+        </div>
+        <button id="btn-interlude-continue" class="btn btn--primary interlude-continue" type="button" hidden>CONTINUE ▸</button>
+      </div>
+    </section>
+
+    <!-- ============================ METEOR IMPACT ============================ -->
+    <section id="meteor-overlay" class="meteor-overlay is-hidden" aria-label="Meteor impact" aria-hidden="true">
+      <canvas id="meteor-fx" class="meteor-fx" aria-hidden="true"></canvas>
+      <div class="meteor-shockwave" aria-hidden="true"></div>
+      <div class="meteor-content">
+        <p class="meteor-kicker">PLANETARY EVENT // SURFACE IMPACT</p>
+        <h2 id="meteor-title" class="meteor-title">METEOR IMPACT</h2>
+        <p id="meteor-sub" class="meteor-sub">NEW RESOURCES AVAILABLE</p>
+      </div>
+    </section>
+
+    <!-- Always-on status controls. -->
+    <div class="status-cluster">
+      <div id="planet-badge" class="planet-badge" title="Current planet" role="status" aria-live="polite">
+        <span class="planet-dot" aria-hidden="true"></span>
+        <span id="planet-badge-name" class="planet-name">ICOSA-9</span>
+        <span class="planet-sep" aria-hidden="true">·</span>
+        <span id="planet-badge-depth" class="planet-depth">DEPTH 2</span>
+      </div>
+      <button id="btn-abandon" class="icon-btn abandon-btn" type="button" title="Abandon run and return to main menu" aria-label="Abandon run and return to main menu">
+        <span class="abandon-glyph" aria-hidden="true">⏻</span>
+        <span class="icon-btn-label">ABANDON</span>
+      </button>
+      <button id="btn-replay-intro" class="icon-btn replay-btn" type="button" title="Replay the cockpit intro" aria-label="Replay intro">
+        <span class="replay-glyph" aria-hidden="true">⟲</span>
+        <span class="icon-btn-label">REPLAY INTRO</span>
+      </button>
+      <div id="connection-badge" class="conn-badge" data-status="connecting" role="status" aria-live="polite">
+        <span class="conn-dot" aria-hidden="true"></span>
+        <span class="conn-text">LINKING</span>
+      </div>
+      <button
+        id="btn-sound"
+        class="icon-btn sound-btn"
+        type="button"
+        aria-pressed="false"
+        aria-label="Mute arcade audio"
+        title="Toggle audio"
+      >
+        <svg class="sound-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path class="spk" d="M4 9.5h3.2L12 5.6v12.8L7.2 14.5H4z" />
+          <path class="wave wave-1" d="M15.2 8.6a4.6 4.6 0 0 1 0 6.8" />
+          <path class="wave wave-2" d="M17.6 6.2a8 8 0 0 1 0 11.6" />
+          <path class="slash" d="M15.4 9.2l4.8 5.6M20.2 9.2l-4.8 5.6" />
+        </svg>
+        <span class="icon-btn-label">AUDIO</span>
+      </button>
+    </div>
+
+    <!-- ============================= HUD ============================= -->
+    <section id="hud" class="hud" aria-label="World telemetry" aria-hidden="true">
+      <div class="hud-top">
+        <div class="hud-cluster hud-brand">
+          <div class="brand-mark">
+            <svg class="brand-hex" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M12 2.4 21 7.5v9L12 21.6 3 16.5v-9z" />
+              <path d="M12 2.4v19.2M3 7.5l18 9M21 7.5l-18 9" class="brand-hex-inner" />
+            </svg>
+            <span class="brand-word">NARIMATO</span>
+          </div>
+          <div class="hud-chips">
+            <span class="chip chip--infinite">INFINITE GRID</span>
+            <span id="hud-world" class="chip chip--world">WORLD D0 · 20 FACES</span>
+            <span id="hud-find" class="chip chip--find" hidden>
+              <span id="hud-find-glyph" class="find-glyph" aria-hidden="true">Ag</span>
+              <span id="hud-find-name" class="find-name">SILVER</span>
+              <span id="hud-find-value" class="find-value">+90 CR</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="hud-center hud-score">
+          <div class="score-label">YOUR SCORE</div>
+          <div id="hud-score" class="score-value">0</div>
+          <div id="hud-faces" class="hud-faces">FACES 0</div>
+          <div class="hud-mini">
+            <span>CLICKS <b id="hud-clicks">0</b></span>
+            <span>BREAKS <b id="hud-breaks">0</b></span>
+          </div>
+        </div>
+
+        <div class="hud-cluster hud-right">
+          <div id="hud-zoom" class="zoom-indicator" data-zoom="1">
+            <div class="zoom-head">
+              <span class="zoom-label">ZOOM</span>
+              <span id="hud-zoom-value" class="zoom-value">×1.0</span>
+            </div>
+            <div class="zoom-bar" aria-hidden="true"><i id="hud-zoom-fill"></i></div>
+            <div id="hud-zoom-depth" class="zoom-depth">FOCUS D0</div>
+          </div>
+          <nav id="mobile-dock" class="mobile-dock" aria-label="HUD actions">
+            <button id="btn-mission" class="dock-btn" type="button" aria-controls="mission-panel" aria-expanded="false">
+              <span class="dock-icon" aria-hidden="true">◈</span>
+              <span class="dock-label">MISSION</span>
+              <span id="mission-badge" class="dock-badge" hidden>0/3</span>
+            </button>
+            <button id="btn-operators" class="dock-btn" type="button" aria-controls="players-panel" aria-expanded="false">
+              <span class="dock-icon" aria-hidden="true">◉</span>
+              <span class="dock-label">OPERATORS</span>
+            </button>
+            <button id="btn-arcade" class="dock-btn" type="button" aria-controls="arcade-panel" aria-expanded="false">
+              <span class="dock-icon" aria-hidden="true">▲</span>
+              <span class="dock-label">ARCADE</span>
+            </button>
+            <button id="btn-dock-abandon" class="dock-btn dock-btn--abandon" type="button" aria-label="Abandon run and return to main menu">
+              <span class="dock-icon" aria-hidden="true">⏻</span>
+              <span class="dock-label">ABANDON</span>
+            </button>
+            <button id="btn-report" class="dock-btn dock-btn--report" type="button">
+              <span class="dock-icon" aria-hidden="true">▤</span>
+              <span class="dock-label">REPORT</span>
+            </button>
+          </nav>
+        </div>
+      </div>
+
+      <div id="drawer-scrim" class="drawer-scrim" hidden aria-hidden="true"></div>
+
+      <div class="hud-side hud-side--left">
+      <!-- Escape mission -->
+      <aside id="mission-panel" class="panel mission-panel" aria-label="Escape mission objectives">
+        <div class="panel-head">
+          <h2 class="panel-title">ESCAPE // SYSTEMS</h2>
+          <span id="mission-status" class="mission-status">ESCAPE PROTOCOL</span>
+          <button class="panel-toggle drawer-close" type="button" data-drawer-close aria-label="Close mission panel" title="Close">✕</button>
+        </div>
+        <div class="mission-wrap">
+          <ul class="mission-list" data-mission="hud"></ul>
+        </div>
+        <div class="mission-foot">
+          <button id="btn-escape" class="btn btn--escape" type="button" hidden>
+            <span class="btn-label">ESCAPE // BURN FOR ORBIT</span>
+            <span class="btn-glyph" aria-hidden="true">▸</span>
+          </button>
+          <p class="panel-foot">MINE TO REBUILD THE DRIVE</p>
+        </div>
+      </aside>
+
+      <!-- Online operators -->
+      <aside id="players-panel" class="panel players-panel" aria-label="Operators in the world">
+        <div class="panel-head">
+          <h2 class="panel-title">OPERATORS</h2>
+          <span class="panel-meta" id="players-count">0</span>
+          <button
+            class="panel-toggle"
+            type="button"
+            aria-expanded="true"
+            aria-controls="players-list"
+            aria-label="Collapse operators panel"
+            title="Collapse"
+          >
+            <span class="panel-toggle-glyph" aria-hidden="true"></span>
+          </button>
+          <button class="panel-toggle drawer-close" type="button" data-drawer-close aria-label="Close operators panel" title="Close">✕</button>
+        </div>
+        <div class="players-head" aria-hidden="true">
+          <span class="col-operator">OPERATOR</span>
+          <span class="col-faces">FACES</span>
+          <span class="col-score">SCORE</span>
+        </div>
+        <ul id="players-list" class="players-list"></ul>
+        <p class="panel-empty" id="players-empty">AWAITING OPERATORS<span class="ellipsis">…</span></p>
+      </aside>
+      </div>
+
+      <!-- All-time arcade -->
+      <div class="hud-side hud-side--right">
+      <aside id="arcade-panel" class="panel arcade-panel" aria-label="All-time arcade top ten">
+        <div class="panel-head">
+          <h2 class="panel-title">ARCADE // TOP 10</h2>
+          <button
+            class="panel-toggle"
+            type="button"
+            aria-expanded="true"
+            aria-controls="arcade-panel-list"
+            aria-label="Collapse arcade panel"
+            title="Collapse"
+          >
+            <span class="panel-toggle-glyph" aria-hidden="true"></span>
+          </button>
+          <button class="panel-toggle drawer-close" type="button" data-drawer-close aria-label="Close arcade panel" title="Close">✕</button>
+        </div>
+        <ol id="arcade-panel-list" class="arcade-list" data-limit="10"></ol>
+      </aside>
+      </div>
+
+      <!-- Hovered cell inspector -->
+      <aside id="hud-target" class="panel target-panel" aria-live="polite" aria-label="Hovered cell" hidden>
+        <div class="target-top">
+          <span class="target-kicker">TARGET CELL</span>
+          <span id="target-label" class="target-label">1</span>
+          <span id="target-depth" class="target-depth">D0</span>
+          <span id="target-owner" class="target-owner"><i class="target-swatch" aria-hidden="true"></i><b>UNCLAIMED</b></span>
+        </div>
+        <div id="target-terrain" class="target-terrain" hidden>
+          <span class="terrain-label">TERRAIN</span>
+          <span class="terrain-dot" aria-hidden="true"></span>
+          <span id="target-terrain-name" class="terrain-name">MOUNTAIN</span>
+          <span id="target-terrain-elev" class="terrain-elev">ELEV +0.42</span>
+        </div>
+        <div id="target-status" class="target-status" hidden>
+          <span id="target-status-text" class="target-status-text">LOCKED // CONTEST REQUIRED</span>
+        </div>
+        <div class="charge-row">
+          <span class="charge-label">CHARGE</span>
+          <div
+            class="charge-bar"
+            role="progressbar"
+            aria-label="Cell charge"
+            aria-valuemin="0"
+            aria-valuemax="8"
+            aria-valuenow="0"
+            id="target-charge-bar"
+          >
+            <i id="target-charge-fill"></i>
+          </div>
+          <span id="target-charge" class="charge-value">0 / 8</span>
+        </div>
+        <button id="btn-target-close" class="panel-toggle target-close" type="button" aria-label="Close cell inspector" title="Close">✕</button>
+        <p id="target-meta" class="target-meta">CLICK TO CLAIM // 8 CLICKS TO BREAK</p>
+      </aside>
+
+      <div id="hud-hint" class="hint-bar" role="status" aria-live="polite">
+        CLICK // CLAIM + CHARGE · CONTEST REQUIRED · DBL-CLICK // FOCUS · SCROLL // ZOOM
+      </div>
+    </section>
+
+    <!-- ========================== LANDING =========================== -->
+    <section id="join-overlay" class="overlay join-overlay" aria-labelledby="join-title">
+      <div class="join-scrim" aria-hidden="true"></div>
+
+      <div class="join-grid">
+        <div class="hero">
+          <p class="hero-kicker">
+            <span class="hero-kicker-dot" aria-hidden="true"></span> PERSISTENT GEODESIC WORLD // ALWAYS LIVE
+          </p>
+          <h1 id="join-title" class="glitch-title" data-text="NARIMATO">
+            NARIMATO
+          </h1>
+          <p class="hero-sub">THE WAY BACK // INFINITE GRID</p>
+          <p class="hero-blurb">
+            ONE SPHERE. INFINITE CELLS.<br />
+            CHARGE A FACE UNTIL IT BREAKS — IT SPLITS INTO FOUR AND THE GRID GROWS FOREVER.
+          </p>
+
+          <section class="story-block" aria-labelledby="story-title">
+            <p class="story-kicker">YEAR 2189 // LOST BEYOND THE WORMHOLE</p>
+            <h2 id="story-title" class="story-title">THE WAY BACK</h2>
+            <p class="story-copy">
+              A WORMHOLE ACCIDENT THREW YOUR SHIP TO THE FAR SIDE OF THE UNIVERSE.
+              YOU ARE GRAVITY-LOCKED ABOVE ICOSA-9 WITH EMPTY TANKS.
+              MINE THE HIDDEN ORE, REBUILD THE DRIVE, AND BURN FOR ORBIT.
+              EVERY ESCAPE THROWS YOU DEEPER INTO THE STORM — AND ONE PLANET CLOSER TO HOME.
+            </p>
+            <p class="story-tag">MINE <span aria-hidden="true">//</span> REBUILD <span aria-hidden="true">//</span> ESCAPE <span aria-hidden="true">//</span> FIND THE WAY BACK</p>
+            <div id="biome-legend" class="biome-legend" aria-label="Biome legend"></div>
+          </section>
+
+          <form id="join-form" class="join-form" novalidate>
+            <label class="field-label" for="tag-input">
+              <span class="field-label-index" aria-hidden="true">01</span> OPERATOR TAG
+            </label>
+            <div class="tag-row">
+              <span class="tag-prompt" aria-hidden="true">&gt;</span>
+              <input
+                id="tag-input"
+                class="tag-input"
+                name="tag"
+                type="text"
+                inputmode="text"
+                autocomplete="off"
+                autocapitalize="characters"
+                autocorrect="off"
+                spellcheck="false"
+                maxlength="12"
+                placeholder="ENTER TAG"
+                pattern="[A-Za-z0-9_\-]{2,12}"
+                aria-describedby="tag-rules join-error"
+                autofocus
+              />
+              <button id="btn-join" class="btn btn--primary btn--join" type="submit">
+                <span class="btn-label">JACK IN</span>
+                <span class="btn-glyph" aria-hidden="true">▸</span>
+              </button>
+            </div>
+            <p id="tag-rules" class="field-hint">2–12 CHARS · A–Z 0–9 _ -</p>
+            <p id="join-error" class="field-error" role="alert"></p>
+          </form>
+
+          <div class="live-line">
+            <span class="live-dot" aria-hidden="true"></span>
+            <span id="live-count" aria-live="polite">00 OPERATORS ONLINE</span>
+            <button id="btn-new-pilot" class="btn btn--ghost btn--new-pilot" type="button" title="Clear this browser's saved pilot and start a new mission">
+              NEW PILOT
+            </button>
+          </div>
+
+          <div id="world-stats" class="world-stats" aria-label="Persistent world statistics">
+            <div class="world-stat">
+              <span class="world-stat-label">GRID FACES</span>
+              <span class="world-stat-value" id="world-faces">20</span>
+            </div>
+            <div class="world-stat">
+              <span class="world-stat-label">MAX DEPTH</span>
+              <span class="world-stat-value" id="world-depth">D0</span>
+            </div>
+            <div class="world-stat">
+              <span class="world-stat-label">TOTAL CLICKS</span>
+              <span class="world-stat-value" id="world-clicks">0</span>
+            </div>
+            <div class="world-stat">
+              <span class="world-stat-label">BREAKS</span>
+              <span class="world-stat-value" id="world-breaks">0</span>
+            </div>
+          </div>
+          <p id="world-rule" class="world-rule">BREAK AT 08 CLICKS // CONTEST LOCK // DEPTH CAP 24</p>
+
+          <div class="controls-legend" aria-label="Controls legend">
+            <span class="legend-item"><b>CLICK</b><i>//</i><span>CLAIM + CHARGE</span></span>
+            <span class="legend-item"><b>DBL-CLICK</b><i>//</i><span>FOCUS</span></span>
+            <span class="legend-item"><b>SCROLL</b><i>//</i><span>ZOOM</span></span>
+            <span class="legend-item"><b>L</b><i>//</i><span>IDS</span></span>
+          </div>
+        </div>
+
+        <div class="landing-side">
+          <aside id="landing-mission" class="panel landing-mission" aria-label="Escape mission briefing">
+            <div class="panel-head">
+              <h2 class="panel-title">ESCAPE MISSION</h2>
+              <span id="join-mission-status" class="mission-status">3 SYSTEMS OFFLINE</span>
+            </div>
+            <div class="mission-wrap">
+              <ul class="mission-list" data-mission="landing"></ul>
+            </div>
+            <p class="panel-foot">MINE THE ORE · REBUILD THE DRIVE · BREAK ORBIT</p>
+          </aside>
+
+          <aside class="panel market-panel" aria-label="Resource market">
+            <div class="panel-head">
+              <h2 class="panel-title">RESOURCE MARKET</h2>
+              <span class="panel-meta">CR / UNIT</span>
+            </div>
+            <div class="market-wrap">
+              <ol id="resource-market" class="market-list" aria-label="Ore resources and market prices"></ol>
+            </div>
+            <p class="panel-foot">HIDDEN IN THE CRUST · MINE TO DISCOVER</p>
+          </aside>
+
+          <aside class="panel landing-arcade" aria-label="All-time arcade hall of fame">
+            <div class="panel-head">
+              <h2 class="panel-title">ARCADE // HALL OF FAME</h2>
+              <span class="panel-meta">TOP 10</span>
+            </div>
+            <div id="join-arcade" class="arcade-wrap">
+              <ol class="arcade-list" data-limit="10"></ol>
+            </div>
+            <p class="panel-foot">EVERY CLICK IS FOREVER.</p>
+          </aside>
+        </div>
+      </div>
+
+      <footer class="landing-foot" aria-hidden="true">
+        <span>v3.0.0 // THE WAY BACK</span>
+        <span class="landing-foot-sep">✶</span>
+        <span>WORLD PERSISTS ACROSS RESTARTS</span>
+        <span class="landing-foot-sep">✶</span>
+        <span>ZERO DEPENDENCIES · FULLY OFFLINE</span>
+      </footer>
+    </section>
+
+    <!-- ========================== SESSION REPORT ==================== -->
+    <section
+      id="report-overlay"
+      class="overlay report-overlay is-hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="report-title"
+      aria-hidden="true"
+      tabindex="-1"
+    >
+      <div class="report-scrim" aria-hidden="true"></div>
+      <div class="panel report-panel">
+        <button class="report-x" type="button" data-close-report aria-label="Close session report">
+          <span aria-hidden="true">✕</span>
+        </button>
+
+        <header class="report-head">
+          <div class="report-heading">
+            <p class="report-kicker">SESSION REPORT // INFINITE GRID</p>
+            <h2 id="report-title" class="report-title">SESSION REPORT</h2>
+          </div>
+          <div class="report-tagwrap">
+            <span class="rank-label">OPERATOR</span>
+            <div id="report-tag" class="report-tag">PLAYER</div>
+          </div>
+        </header>
+
+        <div class="report-hero">
+          <div class="rank-block">
+            <span class="rank-label">RANK</span>
+            <div id="report-rank" class="report-rank"><span class="rank-hash">#</span>1</div>
+          </div>
+          <div class="score-block">
+            <span class="rank-label">TOTAL SCORE</span>
+            <div id="report-score" class="report-score">0</div>
+          </div>
+          <div class="session-block">
+            <span class="rank-label">THIS SESSION</span>
+            <div id="report-session" class="report-session">+0</div>
+          </div>
+        </div>
+
+        <div id="report-stats" class="report-stats" aria-label="Session statistics"></div>
+
+        <div id="report-best-find" class="report-best-find" hidden>
+          <span class="best-find-label">RICHEST FIND</span>
+          <span id="report-best-find-glyph" class="best-find-glyph" aria-hidden="true">Ag</span>
+          <span id="report-best-find-name" class="best-find-name">SILVER</span>
+          <span id="report-best-find-value" class="best-find-value">+90 CR</span>
+        </div>
+
+        <div class="report-cols">
+          <div class="report-arcade-col">
+            <h3 class="panel-title">ARCADE // TOP 10</h3>
+            <div id="report-arcade" class="report-arcade">
+              <ol class="arcade-list" data-limit="10"></ol>
+            </div>
+          </div>
+          <div class="report-card-col">
+            <h3 class="panel-title">SESSION CARD</h3>
+            <canvas
+              id="report-card-preview"
+              class="report-card-preview"
+              width="1200"
+              height="630"
+              aria-label="Shareable session card preview"
+            ></canvas>
+            <div class="share-row">
+              <span class="share-label">LINK</span>
+              <a id="report-share-url" class="report-share-url" href="#" target="_blank" rel="noopener"></a>
+            </div>
+          </div>
+        </div>
+
+        <footer class="report-actions">
+          <button id="btn-report-close" class="btn btn--primary" type="button">
+            <span class="btn-label">BACK TO GRID</span>
+            <span class="btn-glyph" aria-hidden="true">▸</span>
+          </button>
+          <button id="btn-report-download" class="btn" type="button">DOWNLOAD PNG</button>
+          <button id="btn-report-share" class="btn btn--cyan" type="button">SHARE</button>
+        </footer>
+      </div>
+    </section>
+
+    <!-- ========================= CONFIRMATION ========================= -->
+    <section id="confirm-overlay" class="confirm-overlay is-hidden" role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-hidden="true" tabindex="-1">
+      <div class="confirm-scrim" data-confirm-cancel></div>
+      <div class="panel confirm-panel">
+        <p class="confirm-kicker">COMMAND CONFIRMATION // MANUAL OVERRIDE</p>
+        <h2 id="confirm-title" class="confirm-title">ABANDON RUN?</h2>
+        <p id="confirm-message" class="confirm-message">Return to the main screen? Your pilot identity and planet progress are saved; you can resume with the same tag or enter a new one.</p>
+        <div class="confirm-actions">
+          <button id="btn-confirm-cancel" class="btn btn--ghost" type="button">KEEP PLAYING</button>
+          <button id="btn-confirm-yes" class="btn btn--primary" type="button">RETURN TO MAIN</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Toasts -->
+    <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="false"></div>
+
+    <noscript>
+      <div class="noscript-warning">
+        NARIMATO needs JavaScript and Canvas 2D to render the infinite geodesic grid.
+      </div>
+    </noscript>
+
+    <script type="module" src="/js/app.js"></script>
+  </body>
+</html>

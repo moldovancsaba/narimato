@@ -1,0 +1,16 @@
+{
+  "name": "narimato",
+  "version": "3.0.0",
+  "private": false,
+  "type": "module",
+  "description": "NARIMATO \u2014 the way back: persistent multiplayer mining, planet escape and deep-space progression on a spherical icosahedron",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node --test test/"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
