@@ -152,6 +152,7 @@ class UI {
     this._mission = null;
     this._drawerName = null;
     this._introActive = false;
+    this._escapeCtaDismissed = false;
     this._planet = { planetIndex: 0, planetDepth: 2, planetName: 'ICOSA-9' };
     this._escapeReady = false;
     this._interludeActive = false;
@@ -688,6 +689,7 @@ class UI {
     if (this._introActive) {
       this.closeDrawers();
       this.hideReport();
+      this.hideEscapeCta();
       this.setIntroProgress(0);
     }
   }
@@ -759,17 +761,67 @@ class UI {
    * @param {string} [missionName]
    */
   setEscapeReady(ready, missionName) {
+    const wasReady = this._escapeReady;
     this._escapeReady = !!ready;
-    const btn = this._el.btnEscape;
-    if (btn) {
+    const name = typeof missionName === 'string' && missionName.trim() ? missionName.trim() : 'ESCAPE';
+    for (const btn of [this._el.btnEscape, this._el.btnEscapeCenter]) {
+      if (!btn) continue;
       btn.hidden = !this._escapeReady;
+      btn.setAttribute('aria-label', `${name} ready — try to fly away and escape`);
       const label = btn.querySelector('.btn-label');
-      if (label) label.textContent = 'ESCAPE // BURN FOR ORBIT';
-      const name = typeof missionName === 'string' && missionName.trim() ? missionName.trim() : 'ESCAPE';
-      btn.setAttribute('aria-label', `${name} ready — escape and burn for orbit`);
+      if (label) label.textContent = btn === this._el.btnEscapeCenter ? 'TRY TO FLY AWAY' : 'ESCAPE // BURN FOR ORBIT';
     }
     if (this._el.missionPanel) this._el.missionPanel.classList.toggle('is-escape-ready', this._escapeReady);
     if (this._el.btnMission) this._el.btnMission.classList.toggle('is-escape-ready', this._escapeReady);
+    if (!this._escapeReady) {
+      this.hideEscapeCta();
+      this._escapeCtaDismissed = false;
+    } else if (!this._interludeActive && (!wasReady || !this._escapeCtaDismissed)) {
+      // Pop the center CTA as soon as the refit completes (or when re-ready).
+      this._escapeCtaDismissed = false;
+      this.showEscapeCta(name);
+    }
+  }
+
+  /** Show the centered "try to fly away" escape call-to-action. */
+  showEscapeCta(missionName = 'ESCAPE') {
+    if (!this._escapeReady) return;
+    const cta = this._el.escapeCta;
+    if (!cta) return;
+    const title = this._el.escapeCtaTitle;
+    const sub = this._el.escapeCtaSub;
+    if (title) title.textContent = 'READY TO LEAVE';
+    if (sub) sub.textContent = `${String(missionName).toUpperCase()} COMPLETE // TRY TO FLY AWAY AND ESCAPE`;
+    cta.hidden = false;
+    cta.classList.remove('is-hidden');
+    cta.classList.add('is-active');
+    cta.setAttribute('aria-hidden', 'false');
+    if (this.doc && this.doc.body) this.doc.body.classList.add('is-escape-cta');
+    if (this._el.btnEscapeCenter) {
+      this._el.btnEscapeCenter.hidden = false;
+      try {
+        this._el.btnEscapeCenter.focus({ preventScroll: true });
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  /** Hide the centered escape CTA (either dismissed or after escape starts). */
+  hideEscapeCta() {
+    const cta = this._el.escapeCta;
+    if (cta) {
+      cta.classList.add('is-hidden');
+      cta.classList.remove('is-active');
+      cta.hidden = true;
+      cta.setAttribute('aria-hidden', 'true');
+    }
+    if (this.doc && this.doc.body) this.doc.body.classList.remove('is-escape-cta');
+  }
+
+  dismissEscapeCta() {
+    this._escapeCtaDismissed = true;
+    this.hideEscapeCta();
   }
 
   /**
@@ -796,6 +848,7 @@ class UI {
       this.hideReport();
       this.setInterludeProgress(0);
       if (this._el.btnEscape) this._el.btnEscape.hidden = true;
+      this.hideEscapeCta();
     } else if (this._escapeReady && this._el.btnEscape) {
       this._el.btnEscape.hidden = false;
     }
@@ -1888,6 +1941,11 @@ function resolveElements(doc) {
     planetBadgeName: byId('planet-badge-name'),
     planetBadgeDepth: byId('planet-badge-depth'),
     btnEscape: byId('btn-escape'),
+    escapeCta: byId('escape-cta'),
+    escapeCtaTitle: byId('escape-cta-title'),
+    escapeCtaSub: byId('escape-cta-sub'),
+    btnEscapeCenter: byId('btn-escape-center'),
+    btnEscapeDismiss: byId('btn-escape-dismiss'),
     interludeOverlay: byId('interlude-overlay'),
     interludeFx: byId('interlude-fx'),
     interludeStatus: byId('interlude-status'),

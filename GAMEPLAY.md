@@ -78,7 +78,9 @@ Each planet requires a refit. Planet 1:
 | WARP CORE | 1 × Palladium |
 
 The landing briefing and `ESCAPE // SYSTEMS` HUD show progress live. When all three are complete,
-the mission panel glows and **ESCAPE // BURN FOR ORBIT** appears. Click it to leave.
+the mission panel glows and a large centered **READY TO LEAVE** card appears with a pulsing
+**TRY TO FLY AWAY** button. Press it to burn for orbit and start the interplanetary story; choose
+KEEP MINING to dismiss the card and keep playing (the mission-panel escape button remains).
 
 Later planets require more of the same ores. Requirements are derived from your **ore inventory for
 the current planet**; boarding the next planet starts a fresh ore run (score carries).

@@ -76,8 +76,9 @@ resets its crust and releases new resources. The game never ends.
 - **10 low-data biomes** — oceans, coasts, hills, mountains, peaks and both polar ice caps are
   generated from one 32-bit seed; no textures/heightmaps. Resources follow geology.
 - **10 minerals** — silver → neutronium, hidden deposits, underwater deposits inaccessible.
-- **Escape progression** — per-planet depth and scaled refit missions, random interplanetary
-  story cinematics, screen shake/damage, separate multiplayer scene for every planet.
+- **Escape progression** — per-planet levels and scaled refit missions, a centered
+  **TRY TO FLY AWAY** call-to-action when the drive is ready, random interplanetary story
+  cinematics, screen shake/damage, separate multiplayer scene for every planet.
 - **Meteor reset** — exhausted planets are reseeded with fresh resources.
 - **Responsive command deck** — deliberately different desktop, tablet, mobile portrait and
   landscape phone layouts; mobile is planet-first with drawers/dock/target sheet.
@@ -91,7 +92,8 @@ resets its crust and releases new resources. The game never ends.
 | ![Landing mission briefing](media/landing.png) | ![Desktop HUD with escape mission](media/mission.png) |
 | ![Mobile planet-first HUD](media/mobile.png) | ![Mobile mission drawer](media/mobile-mission.png) |
 | ![Interplanetary story interlude](media/interlude.png) | ![Escape-ready refit](media/escape-ready.png) |
-| ![Abandon-run confirmation](media/confirm.png) | ![Procedural planet biomes](media/terrain.png) |
+| ![Centered TRY TO FLY AWAY escape CTA](media/escape-cta.png) | ![Abandon-run confirmation](media/confirm.png) |
+| ![Escape CTA on mobile](media/escape-cta-mobile.png) | ![Procedural planet biomes](media/terrain.png) |
 
 ## Development
 
@@ -125,5 +127,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.0.2** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.0.3** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.

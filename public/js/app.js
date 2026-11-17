@@ -347,6 +347,8 @@ function boot() {
   if (replayBtn) replayBtn.addEventListener('click', () => startIntroReplay());
   const escapeBtn = document.getElementById('btn-escape');
   if (escapeBtn) escapeBtn.addEventListener('click', () => requestEscape());
+  const escapeCenterBtn = document.getElementById('btn-escape-center');
+  if (escapeCenterBtn) escapeCenterBtn.addEventListener('click', () => requestEscape());
   const abandonBtn = document.getElementById('btn-abandon');
   if (abandonBtn) abandonBtn.addEventListener('click', () => abandonRun());
   const newPilotBtn = document.getElementById('btn-new-pilot');
@@ -762,6 +764,7 @@ async function requestEscape() {
     return;
   }
   escaping = true;
+  safeCall(ui, 'hideEscapeCta');
   safeCall(ui, 'setJoinBusy', true);
   const { res, data, error } = await postJSON('/api/action', { token: authToken, type: 'escape' });
   if (error || !res || !res.ok || !data || !data.ok) {
@@ -874,6 +877,7 @@ async function abandonRun() {
   resetSession();
   safeCall(ui, 'hideReport');
   safeCall(ui, 'setEscapeReady', false);
+  safeCall(ui, 'hideEscapeCta');
   safeCall(ui, 'setConnection', 'connected');
   safeCall(renderer, 'setPlayers', [], null);
   camera.reset();

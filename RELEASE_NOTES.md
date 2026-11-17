@@ -1,5 +1,30 @@
 # NARIMATO — Release Notes
 
+## v3.0.3 — “The Button in the Middle” (2026-11-17)
+
+### Added
+
+- When the escape refit completes, a large centered **READY TO LEAVE** card now appears with a
+  pulsing **TRY TO FLY AWAY** button — impossible to miss on desktop or mobile.
+- The card includes a **KEEP MINING** dismiss action and respects intro/interlude/report/drawer
+  states; the original mission-panel escape button remains available after dismissal.
+- The centered CTA automatically hides when the interlude starts and reappears when the mission
+  becomes ready again.
+
+### Verification
+
+- Desktop 1440×900 and mobile 390×844: centered, in-viewport, 64px/58px button, zero console errors;
+  pressing it starts the escape interlude and hides the CTA.
+- 67/67 `node:test` tests.
+
+### Release artifact
+
+- Source tag: `v3.0.3`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.0.3
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.0.2 — “Tutorial Ore & Meteor Recovery” (2026-11-17)
 
 ### Fixed
