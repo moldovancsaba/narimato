@@ -1,5 +1,33 @@
 # NARIMATO — Release Notes
 
+## v3.0.2 — “Tutorial Ore & Meteor Recovery” (2026-11-17)
+
+### Fixed
+
+- Fixed meteor arming after the guaranteed refit deposits are added to a fresh planet: when the
+  last hidden deposit is mined the planet now correctly reseeds instead of going barren.
+- On boot, a depleted planet (no hidden deposits but prior clicks) is automatically reseeded with
+  the correct mission ore, repairing worlds saved before this fix.
+- The first planet reset now guarantees exactly the mission-required hidden ore: planet 1 has
+  **3 uranium, 5 silver, 2 gold, 1 palladium** on mineable cells, with 20 base leaves and a max
+  break depth of 1 (20 + 80 cells).
+- The first planet breaks at **4 clicks** and its children cannot break again, so it teaches the
+  loop and tops out at the intended second level.
+
+### Verification
+
+- 67/67 `node:test` tests.
+- Live first boot checked: `planetLevels 2`, `maxDepth 1`, `threshold 4`, 20 leaves,
+  hidden deposits exactly cover the 11 required ores.
+
+### Release artifact
+
+- Source tag: `v3.0.2`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.0.2
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.0.1 — “First Planet: 2 Levels” (2026-11-17)
 
 ### Fixed
