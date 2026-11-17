@@ -49,9 +49,10 @@ to a different tag creates/restores a different pilot; the browser remembers one
 - **Geography:** beneath the triangular grid is a high-detail procedural planet surface — ocean
   depth, coastlines, green lowlands, dry basins, mountain rock and polar ice. Cell edges and owner
   tints sit on top, so you always see the real geography behind your territory.
-- **Hidden ore:** every mineable cell may hide a deposit. The first successful click mines it
-  instantly for credits, adds to your score, marks the cell with the ore glyph, and updates the
-  mission. Hidden deposits are never included in client data.
+- **Hidden ore:** every mineable cell may hide a deposit. It is discovered on a **random successful
+  click for that cell** — sometimes the first, sometimes a middle click, sometimes the last/breaking
+  click. Discovery adds credits to your score, marks the cell, and updates the mission. Hidden
+  deposits and their discovery click are never included in client data.
 - **Ocean rule:** ocean/deep-ocean cells cannot be mined from the surface. The inspector shows
   `SUBMERGED // NO SURFACE DEPOSITS`. Coast cells can hold shallow placer deposits.
 
@@ -108,6 +109,9 @@ the second level.
 - **Meteor reset:** when the last hidden deposit on a planet is mined, a meteor impact resets the
   crust and reseeds it with new resources. Players/scores/inventories survive. The screen shakes,
   the meteor overlay announces `METEOR IMPACT // NEW RESOURCES AVAILABLE`, and mining continues.
+- **Carried ore:** your full ore inventory (all materials, ore counts and total ore value) travels
+  with you when you escape. It is available immediately on the next planet and counts toward that
+  planet's refit, so stockpiling can pay off.
 - **Interplanetary transit:** after ESCAPE, the ship burns out of orbit, a random story event hits,
   the hull takes damage with screen shake, and you land on the next planet. The cinematic is fully
   procedural (CSS/Canvas, no assets). On touchdown, a centered **landing briefing** lists every ore

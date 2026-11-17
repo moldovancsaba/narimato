@@ -29,6 +29,7 @@ import {
 } from '../lib/world-core.js';
 import { buildMesh, childTriangles } from '../public/js/shared/geometry.js';
 import { robotTargetForOnlineHumans } from '../lib/planet-manager.js';
+import { missionForPlanet, missionProgress, planetDepth, planetName } from '../public/js/shared/mission.js';
 import { resourceById, rollDeposit, rollResource, RESOURCE_MARKET } from '../public/js/shared/resources.js';
 import { PLANET_VERSION, terrainAt, weightedResourceForBiome, BIOMES } from '../public/js/shared/planet.js';
 
@@ -100,6 +101,14 @@ const playerIndex = (core, id) => core.getState().players.findIndex((player) => 
 const terrainFor = (core, label) => terrainAt(core.planetSeed, core.getLeafMap().get(label).centroid);
 const mineableLabels = (core) => core.getLeaves().map(([label]) => label).filter((label) => terrainFor(core, label).biome.mineable);
 const oceanLabels = (core) => core.getLeaves().map(([label]) => label).filter((label) => !terrainFor(core, label).biome.mineable);
+
+/** Deterministic tests: force hidden deposits to be mined on the first click. */
+function forceFirstClickDeposits(core, labels = null) {
+  const cells = labels ? labels.map((label) => core.getLeafMap().get(label)) : [...core.getLeafMap().values()];
+  for (const cell of cells) {
+    if (cell && cell.resourceId && !cell.resourceFound) cell.resourceFindClick = 1;
+  }
+}
 function pickLabel(core, predicate) {
   for (const [label] of core.getLeaves()) {
     if (predicate(terrainFor(core, label), label)) return label;
@@ -1057,6 +1066,7 @@ test('mining: first successful click mines once, resource follows biome weights'
   const hidden = core.getLeafMap().get(label).resourceId;
   assert.ok(hidden);
   assert.ok(Object.keys(terrain.biome.weights).includes(hidden), `${hidden} must be in ${terrain.biome.id} weights`);
+  forceFirstClickDeposits(core, [label]);
   let res = core.click({ token: a.token, label });
   assert.equal(res.ok, true);
   const resource = res.resource;
@@ -1101,6 +1111,7 @@ test('mining: rejected clicks (cooldown / own-cell lock) never mine', async (t) 
   const a = core.join({ tag: 'ALPHA' });
   const first = mineableLabels(core)[0];
   const second = mineableLabels(core)[1];
+  forceFirstClickDeposits(core, [first, second]);
   assert.equal(core.click({ token: a.token, label: first }).ok, true);
   const oresAfterFirst = core.getState().players[0].ores;
   assert.equal(core.click({ token: a.token, label: second }).error, 'COOLDOWN');
@@ -1167,6 +1178,7 @@ test('mining: discovered deposits + player ores persist across reload (backward 
   const core = new WorldCore({ dataDir, config, now: clock.now, autoSave: false, quiet: true });
   const a = core.join({ tag: 'ALPHA' });
   const label = mineableLabels(core)[0];
+  forceFirstClickDeposits(core, [label]);
   const mined = core.click({ token: a.token, label });
   assert.ok(mined.resource);
   const value = mined.resource.value;
@@ -1229,9 +1241,8 @@ test('mining: robot mines through the normal click path', async (t) => {
       botClickMaxMs: 50,
     },
   });
-  core.tick(clock.now()); // schedule spawn gap
-  clock.advance(11);
-  core.tick(clock.now()); // spawn
+  forceFirstClickDeposits(core);
+  core.tick(clock.now()); // spawn immediately
   clock.advance(1000);
   core.tick(clock.now()); // several robot clicks
   const robot = core.getState().players.find((player) => player.online);
@@ -1248,6 +1259,7 @@ test('migration: legacy world without planetSeed re-rolls hidden deposits, keeps
   const seed = new WorldCore({ dataDir, config: seedConfig, now: clock.now, autoSave: false, quiet: true });
   const a = seed.join({ tag: 'ALPHA' });
   const foundLabel = mineableLabels(seed)[0];
+  forceFirstClickDeposits(seed, [foundLabel]);
   const foundResource = seed.click({ token: a.token, label: foundLabel }).resource;
   const foundValue = foundResource.value;
   const score = seed.getState().players[0].score;
@@ -1365,6 +1377,7 @@ test('inventory: oreCounts tracks each resource id, persists, migrates and sanit
     }
   }
   assert.ok(first && second, 'two distinct resource types available on this planet');
+  forceFirstClickDeposits(core, [first.label, second.label]);
   const r1 = core.click({ token: a.token, label: first.label });
   const r2 = core.click({ token: a.token, label: second.label });
   assert.equal(r1.resource.id, first.id);
@@ -1437,6 +1450,9 @@ test('planets: adoptPlayer, resetGrid, hiddenDepositCount and meteor transition'
     token: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
     color: '#123456',
     score: 777,
+    ores: 6,
+    oreValue: 1230,
+    oreCounts: { uranium: 2, silver: 4 },
     id: 'p_carried',
   });
   assert.equal(adopted.ok, true);
@@ -1444,8 +1460,9 @@ test('planets: adoptPlayer, resetGrid, hiddenDepositCount and meteor transition'
   assert.equal(adopted.token, 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee');
   const carried = core.getState().players.find((player) => player.id === 'p_carried');
   assert.equal(carried.score, 777, 'carried score');
-  assert.deepEqual(carried.oreCounts, {}, 'ore run resets');
-  assert.equal(carried.ores, 0);
+  assert.deepEqual(carried.oreCounts, { uranium: 2, silver: 4 }, 'ore inventory is carried, not reset');
+  assert.equal(carried.ores, 6);
+  assert.equal(carried.oreValue, 1230);
   assert.equal(carried.online, true);
   const conflicted = core.adoptPlayer({ tag: 'PILOT', color: '#654321', score: 5 });
   assert.match(conflicted.player.tag, /^PILOT_2$/, 'tag conflicts get a suffix');
@@ -1467,6 +1484,7 @@ test('planets: adoptPlayer, resetGrid, hiddenDepositCount and meteor transition'
   assert.equal(core.hiddenDepositCount() > 0, true, 'fresh grid rolls fresh hidden deposits');
 
   // Mine every hidden deposit, then maybeMeteor fires once and resets.
+  forceFirstClickDeposits(core);
   const token = pilot.token;
   for (let guard = 0; guard < 100 && core.hiddenDepositCount() > 0; guard += 1) {
     const cell = [...core.getLeafMap().values()].find((entry) => entry.resourceId && !entry.resourceFound);
@@ -1483,4 +1501,155 @@ test('planets: adoptPlayer, resetGrid, hiddenDepositCount and meteor transition'
   assert.equal(core.players.length, 2, 'players survive the meteor');
   assert.equal(core.maybeMeteor(), null, 'no second meteor until new deposits are mined');
   assert.ok(core.hiddenDepositCount() > 0, 'new deposits armed on the reset grid');
+});
+
+// ------------------------------------------- carry inventory + discovery click
+
+test('escape carry: adoptPlayer preserves the whole ore inventory (usable for the next mission)', async (t) => {
+  const { core } = await makeCore(t, { config: { bots: 0, depositChance: 0 } });
+  const a = core.join({ tag: 'PILOT' });
+  const pilot = core.findByToken(a.token);
+  pilot.score = 900;
+  pilot.ores = 18;
+  pilot.oreValue = 3720;
+  pilot.oreCounts = { uranium: 5, silver: 8, gold: 3, palladium: 2 };
+  core.setOnline(pilot.id, false); // ghost on the old planet keeps its inventory
+
+  const next = await makeCore(t, { config: { bots: 0, depositChance: 0 } });
+  const adopted = next.core.adoptPlayer({
+    tag: pilot.tag,
+    token: pilot.token,
+    color: pilot.color,
+    score: pilot.score,
+    ores: pilot.ores,
+    oreValue: pilot.oreValue,
+    oreCounts: pilot.oreCounts,
+    id: pilot.id,
+  });
+  assert.equal(adopted.ok, true);
+  const carried = next.core.getState().players[0];
+  assert.equal(carried.id, pilot.id);
+  assert.equal(carried.tag, 'PILOT');
+  assert.equal(carried.score, 900);
+  assert.deepEqual(carried.oreCounts, { uranium: 5, silver: 8, gold: 3, palladium: 2 }, 'all ore carried');
+  assert.equal(carried.ores, 18);
+  assert.equal(carried.oreValue, 3720);
+  // The carried inventory already satisfies the NEXT planet's refit mission.
+  assert.equal(planetDepth(1), 3);
+  assert.equal(planetName(1), 'ICOSA-10');
+  assert.equal(missionProgress(carried.oreCounts, missionForPlanet(1)).ready, true, 'carried ore usable immediately');
+  // The old planet's ghost keeps its own copy.
+  const ghost = core.getState().players[0];
+  assert.deepEqual(ghost.oreCounts, { uranium: 5, silver: 8, gold: 3, palladium: 2 });
+  assert.equal(ghost.online, false);
+});
+
+test('discovery timing: random resourceFindClick in [1..breakClicks], hidden and per-cell', async (t) => {
+  const { core } = await makeCore(t, { rng: mulberry32(0xd15c), config: { bots: 0, depositChance: 1, planetSeed: 424242 } });
+  const hiddenCells = [...core.getLeafMap().values()].filter((cell) => cell.resourceId && !cell.resourceFound);
+  assert.ok(hiddenCells.length > 3);
+  const findClicks = new Set();
+  for (const cell of hiddenCells) {
+    assert.ok(Number.isInteger(cell.resourceFindClick), 'every deposit has a discovery click');
+    assert.ok(cell.resourceFindClick >= 1 && cell.resourceFindClick <= core.config.breakClicks, 'findClick within threshold');
+    findClicks.add(cell.resourceFindClick);
+  }
+  assert.ok(findClicks.size > 1, 'discovery click is random per cell, not always the first click');
+  assert.ok(Math.max(...findClicks) > 1, 'some deposits need more than one click');
+  // Never leaks on the wire (Leaf stays a 5-tuple without findClick).
+  const wire = JSON.stringify({ leaves: core.getLeaves(), state: core.getState() });
+  assert.equal(wire.includes('resourceFindClick'), false, 'discovery click is server-only');
+  for (const leaf of core.getLeaves()) assert.equal(leaf.length, 5);
+});
+
+test('discovery timing: a deposit can require middle clicks; rejected clicks never advance it', async (t) => {
+  const { core, clock } = await makeCore(t, { config: { bots: 0, depositChance: 1, planetSeed: 424242, clickCooldownMs: 40 } });
+  const a = core.join({ tag: 'ALPHA' });
+  const b = core.join({ tag: 'BETA' });
+  const label = mineableLabels(core)[0];
+  const cell = core.getLeafMap().get(label);
+  const resourceId = cell.resourceId;
+  cell.resourceFindClick = 4; // middle click for threshold 8
+
+  assert.equal(core.click({ token: a.token, label }).resource, undefined); // click 1
+  assert.equal(core.click({ token: a.token, label }).error, 'COOLDOWN'); // rejected: no click advance
+  assert.equal(core.getLeafMap().get(label).clicks, 1, 'rejected click did not advance charge');
+  clock.advance(41);
+  assert.equal(core.click({ token: b.token, label }).resource, undefined); // click 2
+  // Own-cell lock rejection must not advance charge either.
+  clock.advance(41);
+  assert.equal(core.click({ token: b.token, label }).error, 'OWN_CELL_LOCKED');
+  assert.equal(core.getLeafMap().get(label).clicks, 2);
+  clock.advance(41);
+  assert.equal(core.click({ token: a.token, label }).resource, undefined); // click 3
+  clock.advance(41);
+  const mined = core.click({ token: b.token, label }); // click 4 -> discovery
+  assert.equal(mined.ok, true);
+  assert.equal(mined.resource.id, resourceId, 'deposit mined on the 4th successful click');
+  assert.equal(mined.broke, false);
+  const owner = core.getState().players.find((player) => player.id === b.player.id);
+  assert.equal(owner.ores, 1);
+});
+
+test('discovery timing: last-click (break) discovery, break children get their own findClick', async (t) => {
+  const { core } = await makeCore(t, { config: { bots: 0, depositChance: 1, planetSeed: 424242 } });
+  const a = core.join({ tag: 'ALPHA' });
+  const b = core.join({ tag: 'BETA' });
+  const label = mineableLabels(core)[0];
+  const cell = core.getLeafMap().get(label);
+  const resourceId = cell.resourceId;
+  cell.resourceFindClick = core.config.breakClicks; // only mined on the breaking click
+  const results = contest(core, a.token, b.token, label, core.config.breakClicks);
+  for (let i = 0; i < results.length - 1; i += 1) {
+    assert.equal(results[i].resource, undefined, `click ${i + 1} before discovery click`);
+  }
+  const breaking = results[results.length - 1];
+  assert.equal(breaking.broke, true);
+  assert.equal(breaking.resource.id, resourceId, 'deposit mined on the last/break click');
+  for (const [childLabel] of breaking.children) {
+    const child = core.getLeafMap().get(childLabel);
+    if (child && child.resourceId) {
+      assert.ok(child.resourceFindClick >= 1 && child.resourceFindClick <= core.config.breakClicks, 'fresh child findClick');
+    }
+  }
+  const miner = core.getState().players.find((player) => player.ores > 0);
+  assert.ok(miner, 'breaker mined the last-click deposit');
+  assert.equal(miner.ores, 1);
+});
+
+test('discovery timing: old deposits without resourceFindClick migrate to a random click and persist', async (t) => {
+  const dataDir = await tempDir(t);
+  const config = { bots: 0, depositChance: 1, planetSeed: 424242, clickCooldownMs: 0, saveDebounceMs: 10 };
+  const clock = makeClock();
+  const core = new WorldCore({ dataDir, config, now: clock.now, autoSave: false, quiet: true });
+  core.join({ tag: 'ALPHA' });
+  await core.flush();
+  const raw = JSON.parse(await readFile(path.join(dataDir, 'world.json'), 'utf8'));
+  const strip = (node) => {
+    delete node.resourceFindClick; // simulate a pre-findClick world
+    if (node.children) node.children.forEach(strip);
+  };
+  raw.tree.forEach(strip);
+  await writeFile(path.join(dataDir, 'world.json'), JSON.stringify(raw), 'utf8');
+
+  const reloaded = await WorldCore.open({ dataDir, config, now: clock.now, autoSave: false, quiet: true, rng: mulberry32(0xabc) });
+  const cells = [...reloaded.getLeafMap().values()].filter((cell) => cell.resourceId);
+  assert.ok(cells.length > 0);
+  const breakClicks = reloaded.config.breakClicks;
+  for (const cell of cells) assert.ok(cell.resourceFindClick >= 1 && cell.resourceFindClick <= breakClicks);
+  await reloaded.flush();
+  const persisted = JSON.parse(await readFile(path.join(dataDir, 'world.json'), 'utf8'));
+  const persistedFind = [];
+  const walk = (node) => {
+    if (node.resourceId) persistedFind.push(node.resourceFindClick);
+    if (node.children) node.children.forEach(walk);
+  };
+  persisted.tree.forEach(walk);
+  assert.ok(persistedFind.length > 0);
+  for (const find of persistedFind) assert.ok(Number.isInteger(find) && find >= 1 && find <= breakClicks);
+  // Guaranteed mission deposits also receive a discovery click.
+  reloaded.resetGrid({ mission: missionForPlanet(0) });
+  const guaranteed = [...reloaded.getLeafMap().values()].filter((cell) => cell.resourceId && !cell.resourceFound);
+  assert.ok(guaranteed.length > 0);
+  for (const cell of guaranteed) assert.ok(cell.resourceFindClick >= 1 && cell.resourceFindClick <= reloaded.config.breakClicks);
 });

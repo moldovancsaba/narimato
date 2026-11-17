@@ -1074,8 +1074,51 @@ export class IcosaRenderer {
     if (!this.waypointLabel) return;
     const entry = this.byLabel.get(this.waypointLabel);
     if (!entry) return;
-    const p = camera.project(entry.centroid);
-    if (!p || p.z <= 0.01) return;
+    let p = camera.project(entry.centroid);
+    if (!p) return;
+    const cx = this.width / 2;
+    const cy = this.height / 2;
+    const offscreen = p.z <= 0.01 || p.x < 24 || p.x > this.width - 24 || p.y < 80 || p.y > this.height - 24;
+    if (offscreen) {
+      // Target is behind the camera or off-screen: put a guide chevron on the
+      // rim pointing toward it instead of losing the wayfinding cue.
+      let dx = p.x - cx;
+      let dy = p.y - cy;
+      if (p.z <= 0.01 && Math.hypot(dx, dy) < 1) {
+        dx = 0;
+        dy = -1;
+      }
+      const len = Math.max(1, Math.hypot(dx, dy));
+      const ux = dx / len;
+      const uy = dy / len;
+      const rim = Math.min(this.width, this.height) * 0.39;
+      const ax = cx + ux * rim;
+      const ay = cy + uy * rim;
+      const pulse = 0.5 + 0.5 * Math.sin(this.t * 3.4);
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = `rgba(215,255,0,${0.34 + 0.3 * pulse})`;
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.arc(ax, ay, 14 + pulse * 4, 0, TAU);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(215,255,0,0.9)';
+      ctx.beginPath();
+      ctx.moveTo(ax + ux * 24, ay + uy * 24);
+      ctx.lineTo(ax + ux * 10 - uy * 7, ay + uy * 10 + ux * 7);
+      ctx.lineTo(ax + ux * 10 + uy * 7, ay + uy * 10 - ux * 7);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+      ctx.save();
+      ctx.font = `700 10px ${FONT_STACK}`;
+      ctx.fillStyle = 'rgba(215,255,0,0.9)';
+      ctx.textAlign = 'center';
+      const label = this.waypointLabel;
+      ctx.fillText(`NAV ${label}`, ax, ay + 30);
+      ctx.restore();
+      return;
+    }
     const sr = clamp((entry.sr || 18) * 0.3, 13, 42);
     const pulse = 0.5 + 0.5 * Math.sin(this.t * 3.4);
     const r = sr + 8 + pulse * 10;

@@ -1,5 +1,34 @@
 # NARIMATO — Release Notes
 
+## v3.0.8 — “Cargo & Random Veins” (2026-11-17)
+
+### Added / changed
+
+- **Ore inventory carries between planets.** All collected materials (`oreCounts`), total ores and
+  ore value now travel with the pilot through escape. Carried ore immediately counts toward the
+  next planet's refit — stockpiling and using rare finds across planets is now part of the loop.
+  The old planet's ghost clone keeps its own copy.
+- **Random deposit discovery.** Each hidden ore vein now has a random discovery click between 1 and
+  the planet's break threshold. It can be found on the first successful click, a middle click, or
+  the final breaking click — never predictable from the client. Deposits still reveal by the break
+  click at the latest; rejected clicks never advance discovery. Server-only, persisted, migrated,
+  never leaked on the wire.
+
+### Verification
+
+- 74/74 `node:test` tests, including carried inventory across escape, immediate next-mission
+  readiness, random first/middle/last discovery, no-wire leak, persistence/migration.
+- Manual: forced discovery on click 3 (clicks 1–2 show no ore), escape carried all 18 ores and
+  their value to the next planet and was immediately usable.
+
+### Release artifact
+
+- Source tag: `v3.0.8`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.0.8
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.0.7 — “Locked Red & First Briefing” (2026-11-17)
 
 ### Fixed

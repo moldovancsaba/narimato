@@ -89,6 +89,10 @@ resets its crust and releases new resources. The game never ends.
   to mine; tap the chip to fly the camera there or ↻ to cycle targets.
 - **Red locked cells** — a cell you just mined turns red until another operator contests it; then
   it clears and you can mine again.
+- **Carried inventory** — all ore you collect travels with you to the next planet and counts toward
+  its refit immediately; nothing is wiped on escape.
+- **Random discovery clicks** — each hidden deposit is found on a random successful click (first,
+  middle or the break/last click), not always on the very first click.
 - **First-planet briefing** — the centered "collect to leave" list now appears on the very first
   planet too, not only after interplanetary landings.
 - **Dynamic staffing** — every active planet keeps **3 players online**: 1 human + 2 robots,
@@ -141,5 +145,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.0.7** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.0.8** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.

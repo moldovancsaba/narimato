@@ -179,6 +179,9 @@ its base leaves (players/scores/inventories preserved), and the manager broadcas
   (mountains), latitude/elevation temperature, moisture noise → 10 biomes; no textures or
   heightmaps. Client and server run the same `terrainAt()`.
 - **Deposits:** geological weights per biome; ocean/deep ocean never mineable from the surface.
+  Each hidden deposit stores a server-only random `resourceFindClick` (1..breakClicks); mining occurs
+  on that successful click at the latest by the break click. The field is persisted but never
+  serialized to the client.
 - **Depth/progression:** `planetDepth(i) = min(2+i, 8)` is the number of visible levels (first = 2,
   second = 3). The configured break cap is `levels - 1`, so planet 1 is base 20 + one 80-cell child
   generation and planet 2 adds the next 320-cell generation.

@@ -582,7 +582,7 @@ test('persistence: world, players, tokens and arcade survive a server restart', 
 // ------------------------------------------------------------- mining layer
 
 test('HTTP/SSE mining: terrain deposits hidden, mineable cells mine once (5-slot leaves)', async (t) => {
-  const { base } = await makeServer(t, { bots: 0, depositChance: 1, planetSeed: 424242 });
+  const { base, handle } = await makeServer(t, { bots: 0, depositChance: 1, planetSeed: 424242 });
   const a = await postJson(base, '/api/join', { tag: 'ALPHA' });
   const b = await postJson(base, '/api/join', { tag: 'BETA' });
   assert.equal(a.status, 200);
@@ -610,6 +610,7 @@ test('HTTP/SSE mining: terrain deposits hidden, mineable cells mine once (5-slot
   const mineableLabel = [...labelTerrain].find(([, terrain]) => terrain.biome.mineable)[0];
   const oceanLabel = [...labelTerrain].find(([, terrain]) => !terrain.biome.mineable)[0];
   assert.ok(mineableLabel && oceanLabel);
+  handle.manager.planetCore(0).getLeafMap().get(mineableLabel).resourceFindClick = 1;
 
   const sse = await openSse(base, a.json.token);
   t.after(async () => {
@@ -716,8 +717,8 @@ test('multi-planet: first-boot migration preserves pilots, resets planet 0 grid 
     assert.equal(escape.json.player.tag, 'ALPHA');
     const carried = escape.json.state.players.find((player) => player.id === escape.json.player.id);
     assert.equal(carried.score, 500, 'score is carried between planets');
-    assert.deepEqual(carried.oreCounts, {}, 'ore run resets on the new planet');
-    assert.equal(carried.ores, 0);
+    assert.deepEqual(carried.oreCounts, { uranium: 3, silver: 5, gold: 2, palladium: 1 }, 'ore inventory is carried');
+    assert.equal(carried.ores, 2);
 
     // Routing by token: pilot is on planet 1, the other pilot stays on planet 0.
     const pilotView = (await getJson(base1, `/api/state?token=${legacy.a.token}`)).json.state;
@@ -786,7 +787,10 @@ test('multi-planet: meteor reset + rooms + escape routing', async (t) => {
   const hidden = [];
   const seedBefore = core0.planetSeed;
   for (const cell of core0.getLeafMap().values()) {
-    if (cell.resourceId && !cell.resourceFound) hidden.push(cell.label);
+    if (cell.resourceId && !cell.resourceFound) {
+      cell.resourceFindClick = 1; // deterministic mining for the meteor test
+      hidden.push(cell.label);
+    }
   }
   assert.ok(hidden.length > 0);
   for (const label of hidden) {
