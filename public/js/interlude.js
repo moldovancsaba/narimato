@@ -34,6 +34,7 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
   let fromInfo = null;
   let toInfo = null;
   let onComplete = null;
+  let holdMs = 0;
   let raf = 0;
   let lastRain = 0;
   let shake = 0;
@@ -221,7 +222,7 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
       }
     }
     draw(now);
-    if (elapsed >= total + 120) {
+    if (elapsed >= total + holdMs + 120) {
       finish();
       return;
     }
@@ -243,7 +244,8 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
     if (typeof callback === 'function') callback();
   }
 
-  function startEscape({ story: nextStory, from, to, planetName, planetDepth }, done) {
+  function startEscape({ story: nextStory, from, to, planetName, planetDepth, holdMs: nextHold = 0 }, done) {
+    holdMs = Math.max(0, Math.min(15000, Math.trunc(Number(nextHold) || 0)));
     collect();
     fromInfo = from || null;
     toInfo = to

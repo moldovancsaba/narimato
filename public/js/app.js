@@ -17,6 +17,8 @@ import { resourceById } from './shared/resources.js';
 import { missionProgress, ESCAPE_MISSION, missionForPlanet, planetDepth, planetName } from './shared/mission.js';
 import { createIntro } from './intro.js';
 import { createInterlude } from './interlude.js';
+import { createNarrator } from './narrator.js';
+import { HELP_SECTIONS } from './narrative-data.js';
 
 const TOKEN_KEY = 'icosa.token';
 const TAG_KEY = 'icosa.tag';
@@ -63,7 +65,9 @@ let hoverNeedsRefresh = false;
 let currentReport = null;
 let intro = null;
 let interlude = null;
+let narrator = null;
 let escaping = false;
+let seenTips = loadSeenTips();
 let pendingAutoJoin = null;
 const missionReadyNotified = new Set();
 
@@ -268,6 +272,38 @@ const ui = new UI({
 });
 
 /* ------------------------------------------------------------------ *
+ * Narration / subtitles / Field Manual
+ * ------------------------------------------------------------------ */
+
+narrator = createNarrator();
+
+function loadSeenTips() {
+  try {
+    const raw = JSON.parse(localStorage.getItem('icosa.tips') || '{}');
+    return raw && typeof raw === 'object' ? raw : {};
+  } catch {
+    return {};
+  }
+}
+
+function maybeTip(id, { delay = 900, speaker = 'TACTICAL' } = {}) {
+  if (!id || seenTips[id] || !joined) return;
+  if (intro && intro.active) return;
+  if (interlude && interlude.active) return;
+  if (ui && ui.isManualOpen) return;
+  seenTips[id] = 1;
+  try {
+    localStorage.setItem('icosa.tips', JSON.stringify(seenTips));
+  } catch {
+    /* private mode */
+  }
+  setTimeout(() => {
+    if (!joined || (intro && intro.active) || (interlude && interlude.active)) return;
+    narrator.playCue(id, { speaker });
+  }, Math.max(0, delay));
+}
+
+/* ------------------------------------------------------------------ *
  * Cinematic intro (cockpit → gravity capture → planet reveal)
  * ------------------------------------------------------------------ */
 
@@ -285,7 +321,11 @@ intro = createIntro({
     safeCall(ui, 'hideReport');
     renderer.setHover(null);
   },
+  onPhase: (phase) => {
+    narrator.playCue(`intro-${phase}`, { speaker: 'NARRATOR', interrupt: true });
+  },
   onComplete: ({ skipped }) => {
+    if (!skipped) narrator.playCue('intro-arrival', { speaker: 'SHIP AI' });
     safeCall(renderer, 'setPoleLabelsVisible', joined);
     if (!joined) {
       safeCall(ui, 'showLanding');
@@ -353,6 +393,21 @@ function boot() {
   if (escapeBtn) escapeBtn.addEventListener('click', () => requestEscape());
   const escapeCenterBtn = document.getElementById('btn-escape-center');
   if (escapeCenterBtn) escapeCenterBtn.addEventListener('click', () => requestEscape());
+  const helpBtn = document.getElementById('btn-help');
+  if (helpBtn) helpBtn.addEventListener('click', () => {
+    safeCall(ui, 'showManual', HELP_SECTIONS);
+    narrator.stop();
+  });
+  const manualSections = document.getElementById('manual-sections');
+  if (manualSections) manualSections.addEventListener('click', (event) => {
+    const btn = event.target && event.target.closest ? event.target.closest('.manual-play') : null;
+    if (!btn || !btn.dataset || !btn.dataset.voice) return;
+    narrator.playCue(btn.dataset.voice, { speaker: 'FIELD MANUAL' });
+  });
+  const briefStartBtn = document.getElementById('btn-landing-brief-start');
+  if (briefStartBtn) briefStartBtn.addEventListener('click', () => {
+    maybeTip(state && state.planetIndex > 0 ? 'tip-newplanet' : 'tip-mining', { delay: 600 });
+  });
   const navFocusBtn = document.getElementById('btn-nav-focus');
   if (navFocusBtn) navFocusBtn.addEventListener('click', () => {
     if (navLabel) focusFace(navLabel);
@@ -728,6 +783,7 @@ function applyDiscoveredResource(label, resource, playerId) {
     }
     safeCall(ui, 'toast', `ORE DISCOVERED // ${resource.name} +${value} CR`, 'good');
     safeAudio('discovery');
+    maybeTip('tip-ore', { delay: 1200 });
     const stat = myStatePlayer();
     if (stat) {
       stat.oreCounts = stat.oreCounts && typeof stat.oreCounts === 'object' ? stat.oreCounts : {};
@@ -774,6 +830,7 @@ function refreshMission() {
     missionReadyNotified.add(`${planet.planetIndex}:${player.id}`);
     safeCall(ui, 'toast', `${planet.planetName} REFIT READY // BURN FOR ORBIT`, 'good');
     safeAudio('discovery');
+    maybeTip('tip-escape', { delay: 1800, speaker: 'SHIP AI' });
   }
   return progress;
 }
@@ -816,6 +873,8 @@ async function requestEscape() {
   connected = false;
   safeCall(ui, 'setConnection', 'transit');
   const from = planetInfoFromState();
+  const storyMs = narrator.playStory(data.story, { speaker: 'SHIP LOG' });
+  const holdMs = (narrator.voiceEnabled || narrator.subtitlesEnabled) ? Math.max(0, storyMs - 5900 + 500) : 0;
   interlude.startEscape(
     {
       story: data.story,
@@ -823,6 +882,7 @@ async function requestEscape() {
       to: { name: data.planetName, depth: data.planetDepth },
       planetName: data.planetName,
       planetDepth: data.planetDepth,
+      holdMs,
     },
     () => applyEscapeResult(data),
   );
@@ -955,6 +1015,7 @@ function handleMeteorEvent(msg) {
   const message = msg.message || 'METEOR IMPACT // NEW RESOURCES AVAILABLE';
   safeCall(ui, 'toast', message, 'warn');
   if (interlude && !interlude.active) interlude.meteor(message);
+  maybeTip('tip-meteor', { delay: 1800, speaker: 'SHIP AI' });
   setTimeout(async () => {
     await reloadWorld();
     refreshMission();
@@ -1094,6 +1155,7 @@ function attemptClick(label) {
   const node = world.get(label);
   if (!node) return;
   if (node.ownerIndex === myIndex && node.lastClickIndex === myIndex) {
+    maybeTip('tip-lock', { delay: 250 });
     const stampLock = now();
     if (stampLock - lastLockToastAt > 1200) {
       lastLockToastAt = stampLock;
@@ -1831,6 +1893,8 @@ window.__ICOSA__ = {
   get interludeState() {
     return interlude ? interlude.state() : null;
   },
+  narrator: () => (narrator ? narrator.state() : null),
+  manual: () => safeCall(ui, 'showManual', HELP_SECTIONS),
   cameraInertia: () => ({ spin: { ...spinVel }, zoomTarget }),
   navTarget: () => (navLabel ? faceInfo(navLabel) : null),
   nextNavTarget: () => chooseNavTarget({ cycle: true }),

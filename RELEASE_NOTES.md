@@ -1,5 +1,36 @@
 # NARIMATO — Release Notes
 
+## v3.1.0 — “Voice of the Frontier” (2026-11-17)
+
+### Added
+
+- **Independent Voice + Subtitles toggles**, streaming-player style. Both persist in the browser
+  and can be toggled any time. Subtitles are shown immediately even when browser autoplay keeps the
+  first audio line waiting for a gesture.
+- **Prerecorded narration** (27 generated clips, bundled locally): cockpit intro phases, one-time
+  contextual tips, every Field Manual section, and all nine interplanetary escape stories. Dynamic
+  server stories map to their prerecorded clip by id; the transit cinematic extends to fit the story.
+- **Field Manual** (`?`): story, mining & charge, contest lock/robots, planets & escape, navigation,
+  controls and audio, with a per-section **▶ PLAY** button.
+- **Contextual tips** for first mining, red locked cells, ore discovery, escape readiness, new
+  planets, meteor resets, carried cargo and navigation.
+- **Interlude hold** extended so long story narration is not cut off by the landing.
+
+### Verification
+
+- Intro subtitles visible before any gesture; first gesture unlocks pending audio; Voice and CC
+  toggle independently and persist; Field Manual opens, sections render and PLAY starts narration;
+  no console errors.
+- 74/74 `node:test` tests (narration is client-side; server suite unaffected).
+
+### Release artifact
+
+- Source tag: `v3.1.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.1.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.0.8 — “Cargo & Random Veins” (2026-11-17)
 
 ### Added / changed

@@ -14,7 +14,7 @@
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2305010f'/%3E%3Cpath d='M16 3 28 10v12L16 29 4 22V10z' fill='none' stroke='%2300f0ff' stroke-width='2'/%3E%3Cpath d='M16 3v26M4 10l24 12M28 10L4 22' stroke='%23ff2bd6' stroke-width='1' opacity='.6'/%3E%3C/svg%3E"
     />
-    <link rel="stylesheet" href="/css/cyberpunk.css?v=3.0.8" />
+    <link rel="stylesheet" href="/css/cyberpunk.css?v=3.1.0" />
   </head>
   <body class="game is-landing">
     <!-- Persistent geodesic arena: fixed behind every layer. -->
@@ -148,7 +148,41 @@
         </svg>
         <span class="icon-btn-label">AUDIO</span>
       </button>
+      <button id="btn-subtitles" class="icon-btn media-btn" type="button" aria-pressed="true" title="Toggle subtitles" aria-label="Toggle subtitles">
+        <span class="media-glyph" aria-hidden="true">CC</span>
+        <span class="icon-btn-label">SUBTITLES</span>
+      </button>
+      <button id="btn-voice" class="icon-btn media-btn" type="button" aria-pressed="true" title="Toggle narration voice" aria-label="Toggle narration voice">
+        <span class="media-glyph" aria-hidden="true">VOX</span>
+        <span class="icon-btn-label">VOICE</span>
+      </button>
+      <button id="btn-help" class="icon-btn media-btn help-btn" type="button" title="Open the Field Manual" aria-label="Open the Field Manual">
+        <span class="media-glyph" aria-hidden="true">?</span>
+        <span class="icon-btn-label">MANUAL</span>
+      </button>
     </div>
+
+    <!-- Streaming-player style subtitles (voice/subtitles are independent toggles). -->
+    <div id="narrative-subtitles" class="narrative-subtitles is-hidden" role="region" aria-live="polite" aria-label="Narration subtitles">
+      <span id="subtitle-speaker" class="subtitle-speaker">NARRATOR</span>
+      <span id="subtitle-text" class="subtitle-text"></span>
+    </div>
+
+    <!-- Field Manual -->
+    <section id="manual-overlay" class="manual-overlay is-hidden" role="dialog" aria-modal="true" aria-labelledby="manual-title" aria-hidden="true">
+      <div class="manual-card">
+        <header class="manual-head">
+          <div>
+            <p class="manual-kicker">NARIMATO // FIELD MANUAL</p>
+            <h2 id="manual-title" class="manual-title">THE WAY BACK</h2>
+          </div>
+          <button id="btn-manual-close" class="manual-close" type="button" aria-label="Close manual" title="Close">✕</button>
+        </header>
+        <p class="manual-intro">Story, mining rules, planets and controls. Press PLAY on any section to hear it. Voice and subtitles can be toggled independently.</p>
+        <div id="manual-sections" class="manual-sections"></div>
+        <p class="manual-foot">VOICE + SUBTITLES REMEMBER YOUR CHOICE</p>
+      </div>
+    </section>
 
     <!-- ============================= HUD ============================= -->
     <section id="hud" class="hud" aria-label="World telemetry" aria-hidden="true">
@@ -497,7 +531,7 @@
       </div>
 
       <footer class="landing-foot" aria-hidden="true">
-        <span>v3.0.8 // THE WAY BACK</span>
+        <span>v3.1.0 // THE WAY BACK</span>
         <span class="landing-foot-sep">✶</span>
         <span>WORLD PERSISTS ACROSS RESTARTS</span>
         <span class="landing-foot-sep">✶</span>
@@ -613,6 +647,6 @@
       </div>
     </noscript>
 
-    <script type="module" src="/js/app.js?v=3.0.8"></script>
+    <script type="module" src="/js/app.js?v=3.1.0"></script>
   </body>
 </html>

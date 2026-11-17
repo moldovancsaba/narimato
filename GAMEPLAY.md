@@ -128,6 +128,20 @@ the second level.
   tag and start a new mission from planet 1.
 - If you simply close the page, your pilot survives server-side and can rejoin later.
 
+## Narration, subtitles and the Field Manual
+
+NARIMATO behaves like a streaming player: **VOICE** and **CC** are independent toggles in the top
+status bar, and both remember your choice.
+
+- **VOICE** plays prerecorded narration: the cockpit story, context tips, Field Manual sections and
+  the random interplanetary story after every escape.
+- **CC** shows the same lines as subtitles. They appear immediately even if the browser blocks
+  autoplay until your first tap/click.
+- **?** opens the **Field Manual**: the story, mining and contest rules, planets/escape, navigation,
+  controls and audio. Each section has a **▶ PLAY** button.
+- First-time hints are one-time and can be replayed from the manual. Story interplanetary narration
+  extends the transit screen so the story is not cut off.
+
 ## Multiplayer
 
 - Players are matched per planet. Robots are always present: one robot per loaded planet, with a

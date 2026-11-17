@@ -782,6 +782,65 @@ class UI {
     }
   }
 
+  /** Open the Field Manual with story/tips/help sections. */
+  showManual(sections) {
+    const wrap = this._el.manualOverlay;
+    const list = this._el.manualSections;
+    if (!wrap || !list) return;
+    list.textContent = '';
+    for (const section of Array.isArray(sections) ? sections : []) {
+      const article = this.doc.createElement('article');
+      article.className = 'manual-section';
+      const head = this.doc.createElement('div');
+      head.className = 'manual-section-head';
+      const title = this.doc.createElement('h3');
+      title.textContent = section.title || 'FIELD NOTES';
+      const play = this.doc.createElement('button');
+      play.className = 'manual-play';
+      play.type = 'button';
+      play.dataset.voice = section.voiceId || '';
+      play.textContent = '▶ PLAY';
+      play.setAttribute('aria-label', `Play narration: ${section.title || 'section'}`);
+      head.appendChild(title);
+      head.appendChild(play);
+      article.appendChild(head);
+      for (const paragraph of section.body || []) {
+        const p = this.doc.createElement('p');
+        p.textContent = paragraph;
+        article.appendChild(p);
+      }
+      list.appendChild(article);
+    }
+    wrap.hidden = false;
+    wrap.classList.remove('is-hidden');
+    wrap.classList.add('is-active');
+    wrap.setAttribute('aria-hidden', 'false');
+    if (this.doc && this.doc.body) this.doc.body.classList.add('is-manual');
+    this.closeDrawers();
+    if (this._el.btnManualClose) {
+      try {
+        this._el.btnManualClose.focus({ preventScroll: true });
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  hideManual() {
+    const wrap = this._el.manualOverlay;
+    if (wrap) {
+      wrap.classList.add('is-hidden');
+      wrap.classList.remove('is-active');
+      wrap.hidden = true;
+      wrap.setAttribute('aria-hidden', 'true');
+    }
+    if (this.doc && this.doc.body) this.doc.body.classList.remove('is-manual');
+  }
+
+  get isManualOpen() {
+    return !!(this._el.manualOverlay && !this._el.manualOverlay.classList.contains('is-hidden'));
+  }
+
   /** Show/hide the ESCAPE burn button when the escape mission is complete.
    * @param {boolean} ready
    * @param {string} [missionName]
@@ -1155,8 +1214,25 @@ class UI {
     if (this._el.btnReport) {
       this._el.btnReport.addEventListener('click', () => this._call('onReport'));
     }
+    if (this._el.btnManualClose) {
+      this._el.btnManualClose.addEventListener('click', () => this.hideManual());
+    }
+    if (this._el.manualOverlay) {
+      this._el.manualOverlay.addEventListener('pointerdown', (event) => {
+        if (event.target === this._el.manualOverlay) this.hideManual();
+      });
+    }
     if (this._el.btnEscapeDismiss) {
       this._el.btnEscapeDismiss.addEventListener('click', () => this.dismissEscapeCta());
+    }
+    if (doc && !this._manualKeyBound) {
+      this._manualKeyBound = true;
+      doc.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && this.isManualOpen) {
+          event.preventDefault();
+          this.hideManual();
+        }
+      });
     }
     if (this._el.btnLandingBriefStart) {
       this._el.btnLandingBriefStart.addEventListener('click', () => this.hideLandingBrief());
@@ -2050,6 +2126,15 @@ function resolveElements(doc) {
     planetBadge: byId('planet-badge'),
     planetBadgeName: byId('planet-badge-name'),
     planetBadgeDepth: byId('planet-badge-depth'),
+    narrativeSubtitles: byId('narrative-subtitles'),
+    subtitleSpeaker: byId('subtitle-speaker'),
+    subtitleText: byId('subtitle-text'),
+    btnSubtitles: byId('btn-subtitles'),
+    btnVoice: byId('btn-voice'),
+    btnHelp: byId('btn-help'),
+    manualOverlay: byId('manual-overlay'),
+    manualSections: byId('manual-sections'),
+    btnManualClose: byId('btn-manual-close'),
     navChip: byId('nav-chip'),
     navTargetLabel: byId('nav-target-label'),
     navTargetMeta: byId('nav-target-meta'),

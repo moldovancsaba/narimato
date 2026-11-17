@@ -53,6 +53,11 @@ const MIME_TYPES = Object.freeze({
   '.md': 'text/markdown; charset=utf-8',
   '.webmanifest': 'application/manifest+json',
   '.woff2': 'font/woff2',
+  '.m4a': 'audio/mp4',
+  '.mp4': 'video/mp4',
+  '.mp3': 'audio/mpeg',
+  '.wav': 'audio/wav',
+  '.ogg': 'audio/ogg',
   '.wasm': 'application/wasm',
 });
 

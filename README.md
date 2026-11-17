@@ -8,7 +8,7 @@
 > through a new story onto a new, deeper planet with its own multiplayer battlefield.
 
 **NARIMATO** is a persistent multiplayer browser game on a spherical icosahedron. No installs,
-no accounts, no build step, no external assets: join with a callsign and start mining.
+no accounts, no build step and no third-party runtime assets: join with a callsign and start mining.
 
 ![Cockpit wormhole intro](media/intro.jpg)
 
@@ -85,6 +85,13 @@ resets its crust and releases new resources. The game never ends.
   landscape phone layouts; mobile is planet-first with drawers/dock/target sheet.
 - **Inertial camera** — drag-spin the planet and release: it coasts longer with an ease-out curve
   and slowly comes to rest; wheel/pinch zoom eases into its target instead of snapping.
+- **Narration & subtitles** — prerecorded voice-over for the story, tips, Field Manual and every
+  interplanetary story, with independently toggled **VOICE** and **CC** controls that remember your
+  choice. Subtitles work even when autoplay blocks the first audio line.
+- **Field Manual** — an in-game guide to the story, mining, contest lock, planets, navigation and
+  controls, with a PLAY button on each section.
+- **Contextual tips** — one-time narrated hints for first mining, red locked cells, ore discovery,
+  escape readiness, new planets and meteor resets.
 - **Navigation target** — a gold **NAV** beacon and chip point to the best nearby geological cell
   to mine; tap the chip to fly the camera there or ↻ to cycle targets.
 - **Red locked cells** — a cell you just mined turns red until another operator contests it; then
@@ -109,6 +116,7 @@ resets its crust and releases new resources. The game never ends.
 | ![Landing mission briefing](media/landing.jpg) | ![Desktop HUD with escape mission](media/mission.jpg) |
 | ![Mobile planet-first HUD](media/mobile.jpg) | ![Mobile mission drawer](media/mobile-mission.jpg) |
 | ![Interplanetary story interlude](media/interlude.jpg) | ![Escape-ready refit](media/escape-ready.jpg) |
+| ![Narration subtitles in the cockpit intro](media/narration.jpg) | ![NARIMATO Field Manual](media/manual.jpg) |
 | ![Detailed procedural planet geography behind the grid](media/geography.jpg) | ![Navigation waypoint on the planet](media/navigation.jpg) | ![Red locked cell after mining](media/red-locked.jpg) |
 | ![Centered TRY TO FLY AWAY escape CTA](media/escape-cta.jpg) | ![New-planet landing briefing](media/landing-brief.jpg) |
 | ![Escape CTA on mobile](media/escape-cta-mobile.jpg) | ![Landing briefing on mobile](media/landing-brief-mobile.jpg) |
@@ -145,5 +153,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.0.8** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.1.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.

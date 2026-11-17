@@ -51,6 +51,7 @@ export function createIntro({
   safeAudio,
   onComplete,
   onStart,
+  onPhase,
 } = {}) {
   const params = typeof window !== 'undefined'
     ? new URLSearchParams(window.location.search)
@@ -269,6 +270,13 @@ export function createIntro({
     if (next === 'wormhole') safeAudio('introWhoosh');
     else if (next === 'drift') safeAudio('introAlarm');
     else if (next === 'descent') safeAudio('introReveal');
+    if (typeof onPhase === 'function') {
+      try {
+        onPhase(next, copy);
+      } catch {
+        /* narration is best-effort */
+      }
+    }
   }
 
   function durations() {

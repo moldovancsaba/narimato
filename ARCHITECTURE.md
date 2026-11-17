@@ -13,7 +13,8 @@
 | Deploy | `node server.js` behind any static/reverse proxy | Cloudflare tunnel used for the live build |
 
 Zero npm dependencies is intentional: the entire game ships as readable source and starts with
-`npm start`.
+`npm start`. Voice-over and screenshot assets are generated locally and committed; there are no
+third-party runtime requests.
 
 ## Runtime topology
 
@@ -67,6 +68,11 @@ Node server.js
 - **`interlude.js`** — escape transit: launch burn → random story event → hull damage/shake →
   emergency landing; also meteor shockwave overlay.
 - **`result-card.js`** — 1200×630 PNG card + share text; **`audio.js`** — synthesized WebAudio SFX.
+- **`narrator.js` + `narrative-data.js`** — prerecorded narration engine and script. Voice/subtitle
+  toggles are independent and persisted; cues map to `public/audio/voice/*.m4a` generated from the
+  script by `scripts/generate-voice.mjs` (macOS `say` + `afconvert`). Dynamic server story ids map
+  to prerecorded story clips; the transit hold extends to the clip duration. Subtitles are
+  transcript-timed and available even when voice autoplay is blocked.
 - **`shared/`** — pure modules used by both sides:
   - `geometry.js` — icosahedron, hierarchical labels, child triangles, slerp, camera/picking.
   - `planet.js` — seed-driven 3D noise terrain, biomes, geological deposit weights.
