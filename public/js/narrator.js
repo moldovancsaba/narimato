@@ -8,10 +8,12 @@
  * no runtime TTS is required. Dynamic story text maps to story clips by id.
  */
 
-import { NARRATION, narrationSegments } from './narrative-data.js';
+import { NARRATION, VOICE_PROFILES, narrationSegments } from './narrative-data.js';
 
 const VOICE_KEY = 'icosa.voice';
 const SUBTITLE_KEY = 'icosa.subtitles';
+const PROFILE_KEY = 'icosa.voiceProfile';
+const DEFAULT_PROFILE = 'daniel';
 const SEGMENT_GAP_MS = 340;
 const PLAYBACK_RATE = 0.94; // slower, deliberate delivery
 const FALLBACK_MS = 2100;
@@ -23,6 +25,23 @@ function readBool(key, fallback) {
     return raw === '1';
   } catch {
     return fallback;
+  }
+}
+
+function readProfile() {
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY);
+    return VOICE_PROFILES.some((profile) => profile.id === raw) ? raw : DEFAULT_PROFILE;
+  } catch {
+    return DEFAULT_PROFILE;
+  }
+}
+
+function writeProfile(value) {
+  try {
+    localStorage.setItem(PROFILE_KEY, value);
+  } catch {
+    /* private mode */
   }
 }
 
@@ -39,6 +58,7 @@ export function createNarrator() {
   const els = {};
   let voiceEnabled = readBool(VOICE_KEY, true);
   let subtitlesEnabled = readBool(SUBTITLE_KEY, true);
+  let voiceProfile = readProfile();
   let unlocked = false;
   let sequence = null; // { cueId, segments, speaker, index }
   let pending = null; // a sequence waiting for the first user gesture
@@ -73,10 +93,11 @@ export function createNarrator() {
     return `${cueId}__s${index + 1}`;
   }
 
-  function getAudio(cueId, index) {
+  function getAudio(cueId, index, profile = voiceProfile) {
     const id = fileId(cueId, index);
-    if (audio.has(id)) return audio.get(id);
-    const a = new Audio(`/audio/voice/${id}.m4a`);
+    const cacheKey = `${profile}:${id}`;
+    if (audio.has(cacheKey)) return audio.get(cacheKey);
+    const a = new Audio(`/audio/voice/${profile}/${id}.m4a`);
     a.preload = 'metadata';
     a.volume = 0.88;
     a.playbackRate = PLAYBACK_RATE;
@@ -89,9 +110,9 @@ export function createNarrator() {
       if (Number.isFinite(a.duration) && a.duration > 0) durations.set(id, Math.round(a.duration * 1000));
     });
     a.addEventListener('error', () => {
-      if (!durations.has(id)) durations.set(id, FALLBACK_MS);
+      if (!durations.has(cacheKey)) durations.set(cacheKey, FALLBACK_MS);
     });
-    audio.set(id, a);
+    audio.set(cacheKey, a);
     return a;
   }
 
@@ -101,16 +122,16 @@ export function createNarrator() {
     return Math.max(FALLBACK_MS, Math.round((words / 2.45 + 0.65) * 1000));
   }
 
-  function segmentDuration(cueId, index, text) {
-    const raw = durations.get(fileId(cueId, index));
+  function segmentDuration(cueId, index, text, profile = voiceProfile) {
+    const raw = durations.get(`${profile}:${fileId(cueId, index)}`);
     return raw ? Math.round(raw / PLAYBACK_RATE) : estimate(text);
   }
 
-  function totalDuration(cueId, segments) {
+  function totalDuration(cueId, segments, profile = voiceProfile) {
     if (!Array.isArray(segments) || !segments.length) return 0;
     let total = 0;
     for (let i = 0; i < segments.length; i += 1) {
-      total += segmentDuration(cueId, i, segments[i]);
+      total += segmentDuration(cueId, i, segments[i], profile);
       if (i > 0) total += SEGMENT_GAP_MS;
     }
     return total;
@@ -185,7 +206,7 @@ export function createNarrator() {
 
   function runCurrent() {
     if (!sequence) return;
-    const { cueId, segments, speaker } = sequence;
+    const { cueId, segments, speaker, profile } = sequence;
     if (sequence.index >= segments.length) {
       finishSequence();
       return;
@@ -198,9 +219,9 @@ export function createNarrator() {
     }
     if (voiceEnabled) {
       pauseAudio();
-      const a = getAudio(cueId, sequence.index);
+      const a = getAudio(cueId, sequence.index, profile);
       currentAudio = a;
-      currentAudioId = fileId(cueId, sequence.index);
+      currentAudioId = `${profile}:${fileId(cueId, sequence.index)}`;
       try {
         a.currentTime = 0;
         const p = a.play();
@@ -226,7 +247,7 @@ export function createNarrator() {
       return;
     }
     // No voice: subtitles still advance one sentence at a time.
-    scheduleAdvance(segmentDuration(cueId, sequence.index, text) + SEGMENT_GAP_MS);
+    scheduleAdvance(segmentDuration(cueId, sequence.index, text, profile) + SEGMENT_GAP_MS);
   }
 
   function advance() {
@@ -250,14 +271,14 @@ export function createNarrator() {
   function startSequence(cueId, segments, speaker) {
     if (!Array.isArray(segments) || !segments.length) return 0;
     stopSequence();
-    sequence = { cueId, segments: segments.slice(), speaker, index: 0 };
+    sequence = { cueId, segments: segments.slice(), speaker, profile: voiceProfile, index: 0 };
     if (voiceEnabled && !unlocked) {
       showBar(speaker, sequence.segments[0]);
       pending = { ...sequence };
-      return totalDuration(cueId, segments);
+      return totalDuration(cueId, segments, voiceProfile);
     }
     runCurrent();
-    return totalDuration(cueId, segments);
+    return totalDuration(cueId, segments, voiceProfile);
   }
 
   /** Play a fixed narration cue (intro/tip/help) sentence by sentence. */
@@ -287,7 +308,44 @@ export function createNarrator() {
     if (id == null) return 0;
     const cueId = `story-${id}`;
     const cue = NARRATION[cueId];
-    return cue ? totalDuration(cueId, narrationSegments(cue)) : 0;
+    return cue ? totalDuration(cueId, narrationSegments(cue), voiceProfile) : 0;
+  }
+
+  function profileBy(id) {
+    return VOICE_PROFILES.find((profile) => profile.id === id) || VOICE_PROFILES[0];
+  }
+
+  function syncProfileButtons() {
+    if (!doc) return;
+    for (const btn of doc.querySelectorAll('[data-voice-profile]')) {
+      const active = btn.getAttribute('data-voice-profile') === voiceProfile;
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    }
+  }
+
+  function preloadProfile(profile) {
+    if (typeof Audio === 'undefined') return;
+    for (const id of Object.keys(NARRATION)) {
+      if (!id.startsWith('story-') && !id.startsWith('intro-')) continue;
+      const cue = NARRATION[id];
+      for (let i = 0; i < narrationSegments(cue).length; i += 1) getAudio(id, i, profile);
+    }
+  }
+
+  function setVoiceProfile(value) {
+    const profile = profileBy(value);
+    if (profile.id === voiceProfile) return;
+    stopSequence();
+    voiceProfile = profile.id;
+    writeProfile(voiceProfile);
+    syncProfileButtons();
+    preloadProfile(voiceProfile);
+  }
+
+  function voiceProfileLabel() {
+    const profile = profileBy(voiceProfile);
+    return `${profile.label} · ${profile.region}`;
   }
 
   function setVoiceEnabled(value) {
@@ -318,6 +376,12 @@ export function createNarrator() {
   function bind() {
     collect();
     syncControls();
+    syncProfileButtons();
+    if (doc) {
+      for (const btn of doc.querySelectorAll('[data-voice-profile]')) {
+        btn.addEventListener('click', () => setVoiceProfile(btn.getAttribute('data-voice-profile')));
+      }
+    }
     if (els['btn-voice']) {
       els['btn-voice'].addEventListener('click', () => setVoiceEnabled(!voiceEnabled));
     }
@@ -330,13 +394,7 @@ export function createNarrator() {
       window.addEventListener('keydown', onGesture, { capture: true });
     }
     // Warm story/intro metadata so transit holds use the real clip lengths.
-    if (typeof Audio !== 'undefined') {
-      for (const id of Object.keys(NARRATION)) {
-        if (!id.startsWith('story-') && !id.startsWith('intro-')) continue;
-        const cue = NARRATION[id];
-        for (let i = 0; i < narrationSegments(cue).length; i += 1) getAudio(id, i);
-      }
-    }
+    preloadProfile(voiceProfile);
   }
 
   if (doc) {
@@ -354,6 +412,10 @@ export function createNarrator() {
     get unlocked() {
       return unlocked;
     },
+    get voiceProfile() {
+      return voiceProfile;
+    },
+    setVoiceProfile,
     get speaking() {
       return !!sequence && !!currentAudio;
     },
@@ -369,6 +431,8 @@ export function createNarrator() {
     state: () => ({
       voiceEnabled,
       subtitlesEnabled,
+      profile: voiceProfile,
+      profileLabel: voiceProfileLabel(),
       unlocked,
       speaking: !!sequence && !!currentAudio,
       segment: sequence ? sequence.index + 1 : 0,

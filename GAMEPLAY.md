@@ -142,7 +142,8 @@ status bar, and both remember your choice.
 - **CC** shows the same lines as subtitles. They appear immediately even if the browser blocks
   autoplay until your first tap/click.
 - **?** opens the **Field Manual**: the story, mining and contest rules, planets/escape, navigation,
-  controls and audio. Each section has a **▶ PLAY** button.
+  controls and audio. Each section has a **▶ PLAY** button. Under **NARRATOR** you can switch
+  between the British **DANIEL** and US **SAMANTHA** voices; the choice is remembered.
 - First-time hints are one-time and can be replayed from the manual. Story interplanetary narration
   extends the transit screen so the story is not cut off.
 

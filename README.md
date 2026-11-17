@@ -91,6 +91,8 @@ resets its crust and releases new resources. The game never ends.
   a time**, with a short pause between lines, for the story, tips, Field Manual and every
   interplanetary story. **VOICE** and **CC** toggle independently and remember your choice;
   subtitles work even when autoplay blocks the first audio line.
+- **Two narrator voices** — British male **DANIEL** (default) or US female **SAMANTHA**, selectable
+  in the Field Manual. See [VOICE.md](VOICE.md) for the open-source TTS upgrade path (Kokoro, Piper).
 - **Field Manual** — an in-game guide to the story, mining, contest lock, planets, navigation and
   controls, with a PLAY button on each section.
 - **Contextual tips** — one-time narrated hints for first mining, red locked cells, ore discovery,
@@ -157,5 +159,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.3.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.4.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.

@@ -1,5 +1,29 @@
 # NARIMATO — Release Notes
 
+## v3.4.0 — “Voice Lab” (2026-11-17)
+
+### Added
+
+- **Two selectable narrator profiles** in Field Manual → **NARRATOR**:
+  - **DANIEL** — British male, now the default.
+  - **SAMANTHA** — US female.
+  The choice persists; both have full sentence-by-sentence packs (170 clips).
+- **VOICE.md** documenting the voice pipeline, file naming contract and open-source upgrade path
+  (**Kokoro-82M** Apache 2.0, **Piper** GPL engine, license caveats for XTTS/F5/Bark).
+
+### Verification
+
+- Profile switch updates active UI, persists to localStorage and loads the matching
+  `/audio/voice/<profile>/...`; story/intro durations are preloaded per profile; 74/74 tests.
+
+### Release artifact
+
+- Source tag: `v3.4.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.4.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.3.0 — “One Line at a Time” (2026-11-17)
 
 ### Changed

@@ -6400,3 +6400,42 @@ body.is-report .narrative-subtitles { display: none; }
   background: radial-gradient(ellipse 60% 52% at 50% 44%, rgba(120, 255, 170, 0.24), rgba(160, 64, 255, 0.12) 46%, transparent 78%);
 }
 .meteor-overlay.incident-alien #meteor-title { color: #a9ffcf; text-shadow: 0 0 26px rgba(90, 255, 170, 0.8); }
+
+/* Narrator voice profile selector (Field Manual) */
+.manual-voices {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0 4px;
+  padding: 9px 10px;
+  border: 1px solid rgba(212, 255, 63, 0.2);
+  background: rgba(212, 255, 63, 0.025);
+  flex-wrap: wrap;
+}
+.manual-voices-label {
+  color: rgba(212, 255, 63, 0.75);
+  font: 700 9px/1.4 var(--font-mono, monospace);
+  letter-spacing: 0.16em;
+  margin-right: 4px;
+}
+.voice-profile {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  min-height: 34px;
+  padding: 5px 11px;
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  background: transparent;
+  color: rgba(200, 230, 245, 0.8);
+  font: 700 10px/1 var(--font-mono, monospace);
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+.voice-profile small { color: rgba(140, 190, 210, 0.65); font-size: 8px; letter-spacing: 0.12em; }
+.voice-profile:hover, .voice-profile:focus-visible { border-color: rgba(0, 240, 255, 0.6); color: #eaffff; }
+.voice-profile.is-active {
+  border-color: var(--acid, #d4ff3f);
+  color: var(--acid, #d4ff3f);
+  box-shadow: inset 0 0 18px rgba(212, 255, 63, 0.08);
+}
+.voice-profile.is-active small { color: rgba(212, 255, 63, 0.7); }

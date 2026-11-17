@@ -23,6 +23,12 @@ export function narrationSegments(cue) {
   return splitNarrationSentences(cue.text);
 }
 
+/** Selectable narrator voice packs (rendered into public/audio/voice/<id>/). */
+export const VOICE_PROFILES = Object.freeze([
+  { id: 'daniel', label: 'DANIEL', region: 'UK', voice: 'Daniel', rate: 150 },
+  { id: 'samantha', label: 'SAMANTHA', region: 'US', voice: 'Samantha', rate: 152 },
+]);
+
 export const NARRATION = Object.freeze({
   'intro-wormhole': {
     text: 'Wormhole exit. Unknown system. Hull stress critical.',
