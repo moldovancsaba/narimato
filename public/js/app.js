@@ -50,6 +50,9 @@ const seenOreKeys = new Set();
 let lastInteraction = performance.now();
 let pollTimer = null;
 let focusAnim = null;
+let spinVel = { x: 0, y: 0 }; // radians/sec after releasing a drag
+let zoomTarget = null; // eased zoom target (null = no movement)
+let zoomUiPending = false;
 let pointerDown = null;
 let pointers = new Map();
 let pinchDist = 0;
@@ -476,8 +479,11 @@ async function join(rawTag) {
   resetSession();
 
   applySnapshot(data.state, data.leaves);
-  refreshMission();
+  const joinedProgress = refreshMission();
   safeCall(ui, 'hideLanding');
+  if (state && Number.isInteger(state.planetIndex) && state.planetIndex > 0) {
+    setTimeout(() => safeCall(ui, 'showLandingBrief', joinedProgress, planetInfoFromState()), 260);
+  }
   safeCall(renderer, 'setPoleLabelsVisible', true);
   safeCall(ui, 'setJoinBusy', false);
   safeCall(ui, 'setSoundMuted', !!audio.isMuted);
@@ -765,6 +771,7 @@ async function requestEscape() {
   }
   escaping = true;
   safeCall(ui, 'hideEscapeCta');
+  safeCall(ui, 'hideLandingBrief');
   safeCall(ui, 'setJoinBusy', true);
   const { res, data, error } = await postJSON('/api/action', { token: authToken, type: 'escape' });
   if (error || !res || !res.ok || !data || !data.ok) {
@@ -820,16 +827,23 @@ function applyEscapeResult(data) {
   escaping = false;
   resetSession();
   applySnapshot(nextState, data.leaves || []);
+  cancelCameraInertia();
   camera.reset();
   updateZoomUi();
   safeCall(ui, 'setJoinBusy', false);
   safeCall(ui, 'setConnection', 'connected');
   connectEvents();
   const to = planetInfoFromState();
-  safeCall(ui, 'toast', `LANDED ON ${to.planetName} // DEPTH ${to.planetDepth} // ${to.mission.name}`, 'good');
+  safeCall(ui, 'toast', `LANDED ON ${to.planetName} // LEVELS ${to.planetDepth} // ${to.mission.name}`, 'good');
   safeAudio('join');
-  refreshMission();
+  const progress = refreshMission();
   lastInteraction = now();
+  // Put the new planet's required refit front and center.
+  setTimeout(() => {
+    if (joined && !escaping && !(interlude && interlude.active)) {
+      safeCall(ui, 'showLandingBrief', progress, to);
+    }
+  }, 260);
 }
 
 async function confirmAction(options) {
@@ -878,8 +892,10 @@ async function abandonRun() {
   safeCall(ui, 'hideReport');
   safeCall(ui, 'setEscapeReady', false);
   safeCall(ui, 'hideEscapeCta');
+  safeCall(ui, 'hideLandingBrief');
   safeCall(ui, 'setConnection', 'connected');
   safeCall(renderer, 'setPlayers', [], null);
+  cancelCameraInertia();
   camera.reset();
   updateZoomUi();
   safeCall(ui, 'showLanding', { leaderboard: (state && state.arcade) || [], liveCount: state ? onlineCount(state) : 0 });
@@ -920,6 +936,7 @@ function handleMeteorEvent(msg) {
   setTimeout(async () => {
     await reloadWorld();
     refreshMission();
+    cancelCameraInertia();
     camera.reset();
     updateZoomUi();
     safeCall(ui, 'toast', 'PLANET RESEEDED // NEW DEPOSITS DETECTED', 'good');
@@ -1275,9 +1292,53 @@ function zoomLevelsPerNotch() {
 function zoomByNotch(direction, magnitude = 1) {
   const levels = zoomLevelsPerNotch() * clamp(magnitude, 0.25, 2.5);
   const factor = 2 ** (direction > 0 ? levels : -levels);
-  camera.zoomBy(factor);
-  updateZoomUi();
+  // Ease toward the new zoom instead of snapping: repeated wheel/pinch
+  // input accumulates a target and the frame loop eases into it.
+  const base = zoomTarget === null ? camera.zoom : zoomTarget;
+  zoomTarget = clamp(base * factor, 0.4, MAX_ZOOM);
+  lastInteraction = now();
   hoverNeedsRefresh = true;
+}
+
+function cancelCameraInertia() {
+  spinVel.x = 0;
+  spinVel.y = 0;
+  zoomTarget = null;
+}
+
+function updateCameraInertia(dt) {
+  if (dt <= 0) return;
+  const dtSec = dt / 1000;
+  if (zoomTarget !== null) {
+    const k = 1 - Math.exp(-10 * dtSec);
+    camera.zoom += (zoomTarget - camera.zoom) * k;
+    if (Math.abs(Math.log(zoomTarget / Math.max(1e-9, camera.zoom))) < 0.0007) {
+      camera.zoom = zoomTarget;
+      zoomTarget = null;
+    }
+    updateZoomUi();
+    hoverNeedsRefresh = true;
+  }
+  if (Math.abs(spinVel.x) > 0.0004 || Math.abs(spinVel.y) > 0.0004) {
+    // camera.rotate(dx,dy) = +dx*0.006 rad yaw, +dy*0.006 rad pitch.
+    camera.rotate((spinVel.x / 0.006) * dtSec, (spinVel.y / 0.006) * dtSec);
+    const decay = Math.exp(-3.1 * dtSec);
+    spinVel.x *= decay;
+    spinVel.y *= decay;
+    if (Math.abs(spinVel.x) < 0.0005 && Math.abs(spinVel.y) < 0.0005) {
+      spinVel.x = 0;
+      spinVel.y = 0;
+      hoverNeedsRefresh = true;
+    }
+    // Keep hovered labels from freezing while the planet coasts.
+    if (!zoomUiPending) {
+      zoomUiPending = true;
+      setTimeout(() => {
+        zoomUiPending = false;
+        hoverNeedsRefresh = true;
+      }, 90);
+    }
+  }
 }
 
 function rotationScale() {
@@ -1321,6 +1382,9 @@ function bindCanvasInput() {
     safeAudio('unlock');
     initSequence();
     cancelFocus();
+    spinVel.x = 0;
+    spinVel.y = 0;
+    zoomTarget = null;
     pointers.set(event.pointerId, localPoint(event));
     lastInteraction = now();
     if (pointers.size === 1) {
@@ -1332,6 +1396,7 @@ function bindCanvasInput() {
         lastY: event.clientY,
         moved: 0,
         time: now(),
+        lastMoveAt: now(),
       };
       canvas.setPointerCapture && canvas.setPointerCapture(event.pointerId);
       setHover(null);
@@ -1349,9 +1414,12 @@ function bindCanvasInput() {
     if (pointers.size >= 2) {
       const pts = [...pointers.values()];
       const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
-      if (pinchDist > 0 && dist > 0) camera.zoomBy(dist / pinchDist);
+      if (pinchDist > 0 && dist > 0) {
+        const base = zoomTarget === null ? camera.zoom : zoomTarget;
+        zoomTarget = clamp(base * (dist / pinchDist), 0.4, MAX_ZOOM);
+      }
       pinchDist = dist;
-      updateZoomUi();
+      hoverNeedsRefresh = true;
       return;
     }
 
@@ -1364,6 +1432,14 @@ function bindCanvasInput() {
       if (pointerDown.moved > 2) {
         const s = rotationScale();
         camera.rotate(dx * s, dy * s);
+        const stamp = now();
+        const elapsed = Math.max(8, stamp - pointerDown.lastMoveAt) / 1000;
+        // Keep the last few movements in rad/s; release uses this for inertia.
+        const targetYaw = (dx * s * 0.006) / elapsed;
+        const targetPitch = (dy * s * 0.006) / elapsed;
+        spinVel.x = spinVel.x * 0.55 + clamp(targetYaw, -7, 7) * 0.45;
+        spinVel.y = spinVel.y * 0.55 + clamp(targetPitch, -4.5, 4.5) * 0.45;
+        pointerDown.lastMoveAt = stamp;
         canvas.style.cursor = 'grabbing';
       }
       return;
@@ -1377,8 +1453,21 @@ function bindCanvasInput() {
       wasDown && !event._cancelled && pointerDown.moved <= 7 && now() - pointerDown.time < 900;
     pointers.delete(event.pointerId);
     if (wasDown) {
+      const dragged = pointerDown.moved > 2;
+      const sinceMove = now() - (pointerDown.lastMoveAt || pointerDown.time);
+      if (dragged) {
+        if (sinceMove > 140) {
+          spinVel.x = 0;
+          spinVel.y = 0;
+        } else {
+          canvas.style.cursor = 'grab';
+          hoverNeedsRefresh = true;
+        }
+      } else {
+        spinVel.x = 0;
+        spinVel.y = 0;
+      }
       pointerDown = null;
-      canvas.style.cursor = 'grab';
       if (clickLike) {
         const rect = canvas.getBoundingClientRect();
         const label = pickAt(event.clientX - rect.left, event.clientY - rect.top);
@@ -1405,6 +1494,9 @@ function bindCanvasInput() {
     pointers.delete(event.pointerId);
     pointerDown = null;
     pinchDist = 0;
+    spinVel.x = 0;
+    spinVel.y = 0;
+    zoomTarget = null;
   });
 
   canvas.addEventListener('pointerleave', () => {
@@ -1417,9 +1509,6 @@ function bindCanvasInput() {
       event.preventDefault();
       cancelFocus();
       zoomByNotch(event.deltaY < 0 ? 1 : -1, Math.abs(event.deltaY) / 100);
-      lastInteraction = now();
-      updateZoomUi();
-      hoverNeedsRefresh = true;
     },
     { passive: false }
   );
@@ -1463,6 +1552,7 @@ function bindKeyboard() {
         break;
       case 'r':
       case 'R':
+        cancelCameraInertia();
         camera.reset();
         updateZoomUi();
         break;
@@ -1486,6 +1576,7 @@ function bindKeyboard() {
 
 function cancelFocus() {
   focusAnim = null;
+  zoomTarget = null;
 }
 
 function focusFace(label) {
@@ -1577,8 +1668,11 @@ function frame(t) {
   }
 
   updateFocus(t);
+  if (!focusAnim && !(interlude && interlude.active)) updateCameraInertia(dt);
 
-  if (!joined && t - lastInteraction > 6000) camera.yaw += dt * 0.00006;
+  if (!joined && !focusAnim && Math.abs(spinVel.x) < 0.0005 && Math.abs(spinVel.y) < 0.0005 && t - lastInteraction > 6000) {
+    camera.yaw += dt * 0.00006;
+  }
 
   if (!focusAnim && t - zoomUiAt > 250) {
     zoomUiAt = t;
@@ -1648,6 +1742,7 @@ window.__ICOSA__ = {
   get interludeState() {
     return interlude ? interlude.state() : null;
   },
+  cameraInertia: () => ({ spin: { ...spinVel }, zoomTarget }),
   meteor: (message) => handleMeteorEvent({ message }),
   abandon: () => abandonRun(),
   newPilot: () => startNewPilot(),

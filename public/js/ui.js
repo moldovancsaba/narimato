@@ -690,6 +690,7 @@ class UI {
       this.closeDrawers();
       this.hideReport();
       this.hideEscapeCta();
+      this.hideLandingBrief();
       this.setIntroProgress(0);
     }
   }
@@ -825,6 +826,83 @@ class UI {
   }
 
   /**
+   * Centered mission briefing after landing on a new planet.
+   * @param {object} progress missionProgress() result
+   * @param {{planetName?:string,planetDepth?:number,planetIndex?:number}} [planet]
+   */
+  showLandingBrief(progress, planet = {}) {
+    const list = this._el.landingBriefList;
+    const wrap = this._el.landingBrief;
+    if (!wrap || !list || !progress || !Array.isArray(progress.objectives)) return;
+    const name = planet && typeof planet.planetName === 'string' && planet.planetName
+      ? planet.planetName.toUpperCase()
+      : 'NEW PLANET';
+    const levels = Math.max(0, int(planet && planet.planetDepth, 2 + int(planet && planet.planetIndex, 0)));
+    this._setText(this._el.landingBriefTitle, name);
+    this._setText(this._el.landingBriefSub, `LEVELS ${levels} // COLLECT THE REFIT TO LEAVE`);
+    list.textContent = '';
+    for (const objective of progress.objectives) {
+      const li = this.doc.createElement('li');
+      li.className = 'landing-brief-objective';
+      const head = this.doc.createElement('div');
+      head.className = 'landing-brief-objective-head';
+      const title = this.doc.createElement('span');
+      title.textContent = objective.name;
+      const state = this.doc.createElement('span');
+      state.className = 'landing-brief-objective-state';
+      state.textContent = objective.done ? 'READY' : 'COLLECT';
+      if (objective.done) state.classList.add('is-done');
+      head.appendChild(title);
+      head.appendChild(state);
+      li.appendChild(head);
+      for (const item of objective.items) {
+        const row = this.doc.createElement('div');
+        row.className = `landing-brief-row${item.done ? ' is-done' : ''}`;
+        row.style.setProperty('--res-color', item.color || '#c9d6e5');
+        const glyph = this.doc.createElement('span');
+        glyph.className = 'landing-brief-glyph';
+        glyph.textContent = item.glyph || '?';
+        const itemName = this.doc.createElement('span');
+        itemName.className = 'landing-brief-name';
+        itemName.textContent = item.name;
+        const count = this.doc.createElement('span');
+        count.className = 'landing-brief-count';
+        count.textContent = `${item.have}/${item.need}`;
+        row.appendChild(glyph);
+        row.appendChild(itemName);
+        row.appendChild(count);
+        li.appendChild(row);
+      }
+      list.appendChild(li);
+    }
+    wrap.hidden = false;
+    wrap.classList.remove('is-hidden');
+    wrap.classList.add('is-active');
+    wrap.setAttribute('aria-hidden', 'false');
+    if (this.doc && this.doc.body) this.doc.body.classList.add('is-landing-brief');
+    this.hideEscapeCta();
+    this.closeDrawers();
+    if (this._el.btnLandingBriefStart) {
+      try {
+        this._el.btnLandingBriefStart.focus({ preventScroll: true });
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  hideLandingBrief() {
+    const wrap = this._el.landingBrief;
+    if (wrap) {
+      wrap.classList.add('is-hidden');
+      wrap.classList.remove('is-active');
+      wrap.hidden = true;
+      wrap.setAttribute('aria-hidden', 'true');
+    }
+    if (this.doc && this.doc.body) this.doc.body.classList.remove('is-landing-brief');
+  }
+
+  /**
    * Show/hide the interplanetary interlude overlay.
    * Lead's interlude.js may manipulate the DOM directly; this keeps body
    * classes, drawers and report state consistent.
@@ -849,6 +927,7 @@ class UI {
       this.setInterludeProgress(0);
       if (this._el.btnEscape) this._el.btnEscape.hidden = true;
       this.hideEscapeCta();
+      this.hideLandingBrief();
     } else if (this._escapeReady && this._el.btnEscape) {
       this._el.btnEscape.hidden = false;
     }
@@ -1050,6 +1129,12 @@ class UI {
 
     if (this._el.btnReport) {
       this._el.btnReport.addEventListener('click', () => this._call('onReport'));
+    }
+    if (this._el.btnEscapeDismiss) {
+      this._el.btnEscapeDismiss.addEventListener('click', () => this.dismissEscapeCta());
+    }
+    if (this._el.btnLandingBriefStart) {
+      this._el.btnLandingBriefStart.addEventListener('click', () => this.hideLandingBrief());
     }
     if (this._el.btnDockAbandon && this._el.btnAbandon) {
       this._el.btnDockAbandon.addEventListener('click', () => this._el.btnAbandon.click());
@@ -1946,6 +2031,11 @@ function resolveElements(doc) {
     escapeCtaSub: byId('escape-cta-sub'),
     btnEscapeCenter: byId('btn-escape-center'),
     btnEscapeDismiss: byId('btn-escape-dismiss'),
+    landingBrief: byId('landing-brief'),
+    landingBriefTitle: byId('landing-brief-title'),
+    landingBriefSub: byId('landing-brief-sub'),
+    landingBriefList: byId('landing-brief-list'),
+    btnLandingBriefStart: byId('btn-landing-brief-start'),
     interludeOverlay: byId('interlude-overlay'),
     interludeFx: byId('interlude-fx'),
     interludeStatus: byId('interlude-status'),

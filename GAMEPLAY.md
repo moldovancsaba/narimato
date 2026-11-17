@@ -104,7 +104,11 @@ the second level.
   the meteor overlay announces `METEOR IMPACT // NEW RESOURCES AVAILABLE`, and mining continues.
 - **Interplanetary transit:** after ESCAPE, the ship burns out of orbit, a random story event hits,
   the hull takes damage with screen shake, and you land on the next planet. The cinematic is fully
-  procedural (CSS/Canvas, no assets).
+  procedural (CSS/Canvas, no assets). On touchdown, a centered **landing briefing** lists every ore
+  required to leave the new planet and your collected/required counts; press START MINING to dismiss.
+- **Camera feel:** drag to spin and release — the planet keeps turning and eases to a stop
+  (inertial pan). Wheel/pinch zoom glides into its target instead of snapping, so fine control at
+  deep zoom is easier. Clicking/tapping still works immediately at any time.
 
 ## Leaving / starting over
 

@@ -1,5 +1,32 @@
 # NARIMATO — Release Notes
 
+## v3.0.4 — “Momentum & Landing Briefing” (2026-11-17)
+
+### Added
+
+- **Inertial planet spin:** after dragging and releasing, the sphere keeps rotating with an
+  exponential ease-out curve and gradually stops instead of snapping to a halt.
+- **Eased zoom:** wheel/pinch zoom now accumulates a target and glides into it over ~0.5–1 s,
+  making deep zoom precise; clicking/tapping remains immediate.
+- **Centered landing briefing:** every touch-down on a new planet now opens a center card showing
+  planet name/levels and **exactly what to collect to leave**, with have/need per ore and
+  START MINING dismiss. Works on desktop and mobile; also shown when resuming on a later planet.
+
+### Verification
+
+- Playwright: desktop/mobile landing briefing centered and dismissible (4 required rows on
+  ICOSA-10); drag inertia measured continuing after release and decaying to zero; wheel zoom eases
+  from 1.0 → 1.117 within 30 ms → 1.410 within 430 ms → settled; zero console errors.
+- 67/67 `node:test` tests.
+
+### Release artifact
+
+- Source tag: `v3.0.4`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.0.4
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.0.3 — “The Button in the Middle” (2026-11-17)
 
 ### Added

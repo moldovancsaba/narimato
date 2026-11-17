@@ -82,6 +82,10 @@ resets its crust and releases new resources. The game never ends.
 - **Meteor reset** — exhausted planets are reseeded with fresh resources.
 - **Responsive command deck** — deliberately different desktop, tablet, mobile portrait and
   landscape phone layouts; mobile is planet-first with drawers/dock/target sheet.
+- **Inertial camera** — drag-spin the planet and release: it coasts with an ease-out curve and
+  slows to a stop; wheel/pinch zoom eases into its target instead of snapping.
+- **Landing briefing** — touching down on a new planet opens a centered card listing exactly which
+  ores are needed to leave, with collected/required counts.
 - **Reports & sharing** — 1200×630 session card, shareable URL, all stats persisted.
 - **Zero runtime dependencies**, all UI/audio/visuals generated in code.
 
@@ -92,8 +96,8 @@ resets its crust and releases new resources. The game never ends.
 | ![Landing mission briefing](media/landing.jpg) | ![Desktop HUD with escape mission](media/mission.jpg) |
 | ![Mobile planet-first HUD](media/mobile.jpg) | ![Mobile mission drawer](media/mobile-mission.jpg) |
 | ![Interplanetary story interlude](media/interlude.jpg) | ![Escape-ready refit](media/escape-ready.jpg) |
-| ![Centered TRY TO FLY AWAY escape CTA](media/escape-cta.jpg) | ![Abandon-run confirmation](media/confirm.jpg) |
-| ![Escape CTA on mobile](media/escape-cta-mobile.jpg) | ![Procedural planet biomes](media/terrain.jpg) |
+| ![Centered TRY TO FLY AWAY escape CTA](media/escape-cta.jpg) | ![New-planet landing briefing](media/landing-brief.jpg) |
+| ![Escape CTA on mobile](media/escape-cta-mobile.jpg) | ![Landing briefing on mobile](media/landing-brief-mobile.jpg) |
 
 ## Development
 
@@ -127,5 +131,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.0.3** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.0.4** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.
