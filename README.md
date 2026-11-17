@@ -10,7 +10,7 @@
 **NARIMATO** is a persistent multiplayer browser game on a spherical icosahedron. No installs,
 no accounts, no build step, no external assets: join with a callsign and start mining.
 
-![Cockpit wormhole intro](media/intro.png)
+![Cockpit wormhole intro](media/intro.jpg)
 
 ## Play
 
@@ -89,11 +89,11 @@ resets its crust and releases new resources. The game never ends.
 
 | | |
 |---|---|
-| ![Landing mission briefing](media/landing.png) | ![Desktop HUD with escape mission](media/mission.png) |
-| ![Mobile planet-first HUD](media/mobile.png) | ![Mobile mission drawer](media/mobile-mission.png) |
-| ![Interplanetary story interlude](media/interlude.png) | ![Escape-ready refit](media/escape-ready.png) |
-| ![Centered TRY TO FLY AWAY escape CTA](media/escape-cta.png) | ![Abandon-run confirmation](media/confirm.png) |
-| ![Escape CTA on mobile](media/escape-cta-mobile.png) | ![Procedural planet biomes](media/terrain.png) |
+| ![Landing mission briefing](media/landing.jpg) | ![Desktop HUD with escape mission](media/mission.jpg) |
+| ![Mobile planet-first HUD](media/mobile.jpg) | ![Mobile mission drawer](media/mobile-mission.jpg) |
+| ![Interplanetary story interlude](media/interlude.jpg) | ![Escape-ready refit](media/escape-ready.jpg) |
+| ![Centered TRY TO FLY AWAY escape CTA](media/escape-cta.jpg) | ![Abandon-run confirmation](media/confirm.jpg) |
+| ![Escape CTA on mobile](media/escape-cta-mobile.jpg) | ![Procedural planet biomes](media/terrain.jpg) |
 
 ## Development
 
