@@ -496,6 +496,14 @@ export class SphereCamera {
     return this._viewAxis || { x: 0, y: 0, z: 1 };
   }
 
+  /** Upright yaw/pitch of the current view centre, used by keyboard travel. */
+  viewEuler() {
+    const k = this.viewAxis();
+    const pitch = Math.asin(clamp(k.y, -1, 1));
+    const yaw = Math.atan2(-k.x, k.z);
+    return { yaw, pitch };
+  }
+
   /** Invert the camera rotation for screen-ray picking. */
   unprojectView(v) {
     return qRotateInverse(this._q, v);

@@ -1,5 +1,33 @@
 # NARIMATO — Release Notes
 
+## v3.16.0 — “Two Hands” (2026-11-18)
+
+### Changed
+
+- **Mouse and cursor navigation are now separate systems:**
+  - **Mouse drag** freely rotates the planet on a quaternion trackball (release inertia retained).
+  - **Arrow keys** travel around the planet in a natural upright orbit with eased acceleration;
+    `Shift` boosts speed. Keyboard travel no longer shares the mouse trackball math, so it cannot
+    tumble/roll the planet unexpectedly.
+- Mouse interaction re-syncs the keyboard orbit from the current view direction; the two modes hand
+  over cleanly.
+- Help text, HUD legend and narration updated; narration cache-busted at `?v=3.16.0`.
+- Depth zoom ladder and cubic-bezier steps from v3.15 retained.
+
+### Verification
+
+- Mouse drag: orientation changes freely; keyboard: upright yaw/pitch travel with no roll; both
+  produce finite projections/picking.
+- **89/89 tests**, Chromium + WebKit UI audits clean, axe clean.
+
+### Release artifact
+
+- Source tag: `v3.16.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.16.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.15.0 — “Zoom Levels” (2026-11-18)
 
 ### Added / changed

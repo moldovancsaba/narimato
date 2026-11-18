@@ -17,7 +17,7 @@ const PROFILE_KEY = 'icosa.voiceProfile';
 const DEFAULT_PROFILE = 'george';
 const SEGMENT_GAP_MS = 220;
 const PLAYBACK_RATE = 0.94; // slower, deliberate delivery
-const AUDIO_VERSION = '3.13.0';
+const AUDIO_VERSION = '3.16.0';
 
 /** Optional edge/CDN base for heavy audio assets. Same-origin by default. */
 function assetBase() {

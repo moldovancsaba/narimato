@@ -107,9 +107,9 @@ resets its crust and releases new resources. The game never ends.
   it clears and you can mine again.
 - **Observable by default** — `GET /api/metrics` exposes privacy-safe HTTP/SSE/planet/event-loop
   metrics, and a tiny client beacon reports Web Vitals/audio-start timing. No tokens or tags.
-- **Reverse-drag navigation** — drag where you want the view to go, with smooth continuous arrow-key
-  steering (Shift boosts, I flips drag mode). Audio resumes after tab interruptions and transient
-  play failures rather than going silent.
+- **Separate mouse and cursor navigation** — mouse drag rotates the planet freely; arrow keys travel
+  around it in an upright, naturally eased orbit. Shift speeds up travel, `I` reverses mouse drag.
+  Audio resumes after tab interruptions and transient play failures rather than going silent.
 - **Limitless trackball rotation** — a quaternion camera replaces the clamped yaw/pitch orbit, so the
   view can roll past both poles and keep going in every direction.
 - **Level zoom ladder** — wheel/pinch steps through cell-depth zoom rungs (D0, D1, D2…) with a fast
@@ -199,5 +199,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.15.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.16.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.

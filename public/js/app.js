@@ -64,6 +64,9 @@ let pointerDown = null;
 let pointers = new Map();
 const navKeys = new Set();
 const navVel = { x: 0, y: 0 };
+let keyboardYaw = 0;
+let keyboardPitch = 0;
+let keyboardSyncNeeded = true;
 let invertDrag = readStoredInvertDrag();
 let pinchDist = 0;
 let lastMouse = null;
@@ -339,6 +342,7 @@ intro = createIntro({
   safeAudio,
   onStart: () => {
     focusAnim = null;
+    keyboardSyncNeeded = true;
     safeCall(renderer, 'setPoleLabelsVisible', false);
     hoveredLabel = null;
     safeCall(ui, 'setHoverFace', null);
@@ -1785,6 +1789,9 @@ function bindCanvasInput() {
 
   canvas.addEventListener('pointerdown', (event) => {
     safeAudio('unlock');
+    keyboardSyncNeeded = true;
+    navVel.x = 0;
+    navVel.y = 0;
     initSequence();
     cancelFocus();
     spinVel.x = 0;
@@ -1930,26 +1937,47 @@ function bindCanvasInput() {
   });
 }
 
+function syncKeyboardEuler() {
+  if (!keyboardSyncNeeded) return;
+  const e = camera.viewEuler ? camera.viewEuler() : { yaw: camera.yaw, pitch: camera.pitch };
+  keyboardYaw = e.yaw;
+  keyboardPitch = e.pitch;
+  keyboardSyncNeeded = false;
+}
+
 function updateKeyboardNavigation(dt) {
   if (!dt || (intro && intro.active) || (interlude && interlude.active)) return;
   const dtSec = dt / 1000;
   const hasInput = navKeys.has('ArrowLeft') || navKeys.has('ArrowRight') || navKeys.has('ArrowUp') || navKeys.has('ArrowDown');
-  const direction = invertDrag ? -1 : 1;
-  const yawInput = (navKeys.has('ArrowRight') ? 1 : 0) - (navKeys.has('ArrowLeft') ? 1 : 0);
-  const pitchInput = (navKeys.has('ArrowDown') ? 1 : 0) - (navKeys.has('ArrowUp') ? 1 : 0);
-  const boost = navKeys.has('Shift') ? 2.1 : 1;
-  const scale = Math.max(0.14, rotationScale() * 2);
-  // camera.rotate() internally multiplies input by 0.006 rad/px, so keyboard
-  // navigation is expressed in screen-pixel velocity and converted by the camera.
-  const targetYaw = hasInput ? direction * yawInput * 280 * scale * boost : 0;
-  const targetPitch = hasInput ? direction * pitchInput * 150 * scale * boost : 0;
-  const ease = 1 - Math.exp(-14 * dtSec);
-  navVel.x += (targetYaw - navVel.x) * ease;
-  navVel.y += (targetPitch - navVel.y) * ease;
-  if (Math.abs(navVel.x) > 0.0001 || Math.abs(navVel.y) > 0.0001) {
-    camera.rotate(navVel.x * dtSec, navVel.y * dtSec);
+  if (hasInput) {
+    syncKeyboardEuler();
+    // Cursor steering is a natural upright orbit: it travels the globe rather
+    // than tumbling it with the mouse trackball.
+    const boost = navKeys.has('Shift') ? 2.1 : 1;
+    const yawInput = (navKeys.has('ArrowRight') ? 1 : 0) - (navKeys.has('ArrowLeft') ? 1 : 0);
+    const pitchInput = (navKeys.has('ArrowUp') ? 1 : 0) - (navKeys.has('ArrowDown') ? 1 : 0);
+    const yawTarget = yawInput * 1.55 * boost;
+    const pitchTarget = pitchInput * 1.05 * boost;
+    const ease = 1 - Math.exp(-16 * dtSec);
+    navVel.x += (yawTarget - navVel.x) * ease;
+    navVel.y += (pitchTarget - navVel.y) * ease;
+    spinVel.x = 0;
+    spinVel.y = 0;
+    lastInteraction = now();
+  } else {
+    const decay = Math.exp(-9 * dtSec);
+    navVel.x *= decay;
+    navVel.y *= decay;
+    if (Math.abs(navVel.x) < 0.0005) navVel.x = 0;
+    if (Math.abs(navVel.y) < 0.0005) navVel.y = 0;
   }
-  if (hasInput) lastInteraction = now();
+  if (!navVel.x && !navVel.y) return;
+  if (keyboardSyncNeeded) syncKeyboardEuler();
+  keyboardYaw += navVel.x * dtSec;
+  keyboardPitch += navVel.y * dtSec;
+  // Set an upright yaw/pitch orientation: keyboard travel carries no roll.
+  camera.yaw = keyboardYaw;
+  camera.pitch = keyboardPitch;
 }
 
 function bindKeyboard() {
@@ -2035,6 +2063,7 @@ function focusFace(label) {
   const node = world.get(label);
   if (!node) return;
   cancelZoom();
+  keyboardSyncNeeded = true;
   const c = node.centroid;
   let targetYaw = Math.atan2(-c.x, c.z);
   const horizontal = Math.hypot(c.x, c.z);
@@ -2205,7 +2234,7 @@ window.__ICOSA__ = {
     context: audio && audio._ctx ? audio._ctx.state : null,
   }),
   manual: () => safeCall(ui, 'showManual', HELP_SECTIONS),
-  cameraInertia: () => ({ spin: { ...spinVel }, zoomTarget, zoomAnim, invertDrag, nav: { ...navVel } }),
+  cameraInertia: () => ({ spin: { ...spinVel }, zoomTarget, zoomAnim, invertDrag, nav: { ...navVel }, keyboard: { yaw: keyboardYaw, pitch: keyboardPitch, synced: !keyboardSyncNeeded } }),
   zoomLevel: () => ({
     level: zoomLevelForZoom(zoomTarget === null ? camera.zoom : zoomTarget),
     maxLevel: maxZoomLevel(),
