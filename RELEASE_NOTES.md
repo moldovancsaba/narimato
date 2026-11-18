@@ -1,5 +1,33 @@
 # NARIMATO — Release Notes
 
+## v3.11.0 — “Accessible Edge” (2026-11-18)
+
+### Added / fixed
+
+- **axe-core WCAG A/AA audit** (`npm run audit:a11y`, optional dev-only) clean in Chromium and
+  WebKit. Fixed resource-market keyboard access and duplicate visible/accessible control labels.
+- **Chaos restart test** (`npm run chaos:test`): live SSE clients are killed with the server,
+  restart on the same data dir, and all pilots/tokens/routing survive and reconnect.
+- **5-minute soak** clean: 40 clients / 20 SSE, HTTP p95 1 ms, 0 errors, 0 dropped SSE.
+- **axe-core WCAG audit** (`npm run audit:a11y`) clean in Chromium and WebKit.
+- **WebKit UI audit** support for the nine-viewport harness.
+
+### Verification
+
+- UI audit clean in **Chromium and WebKit**.
+- axe-core: **0 serious/critical** violations on landing, HUD and Field Manual.
+- Chaos test: 10/10 pilots and all live SSE clients recovered.
+- Full `node --test test/` — **84/84 pass**.
+- CDN-ready `ASSET_BASE_URL` shipped and verified.
+
+### Release artifact
+
+- Source tag: `v3.11.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.11.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.10.0 — “Edge & Load” (2026-11-18)
 
 ### Added

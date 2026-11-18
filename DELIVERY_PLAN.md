@@ -24,9 +24,11 @@ Next: A4 real-device gate, then B1 edge/CDN assets.
   `A11Y_CHECKLIST.md` (not executable headlessly).
 - B1 CDN-ready asset base and edge deployment guide delivered (`EDGE_DEPLOYMENT.md`);
   external CDN activation needs credentials.
-- B3 load/soak harness and local SLO results delivered (`LOAD_TEST.md`). B2 is **not started**
-  because the measured single-node SLOs are healthy; B4 is **not started** because there is
-  no sustained CDN egress/miss signal to justify peer-assisted assets.
+- B3 load/soak/chaos harness delivered (`LOAD_TEST.md`); chaos restart is clean.
+- A4 axe-core WCAG audit is clean in Chromium and WebKit; manual real devices remain listed in
+  `A11Y_CHECKLIST.md`.
+- B2 is **not started** because measured single-node SLOs are healthy; B4 is **not started**
+  because there is no sustained CDN egress/miss signal to justify peer-assisted assets.
 
 ### A0. Audit harness (0.5 day)
 

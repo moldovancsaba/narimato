@@ -1026,3 +1026,24 @@ test('missions: server-side missions follow each planet\'s seed and are completa
   const destCore = handle.manager.planetCore(escape.json.planetIndex);
   assert.deepEqual(escape.json.mission, missionForPlanet(escape.json.planetIndex, destCore.planetSeed));
 });
+
+test('static: ASSET_BASE_URL rewrites the narration asset base meta tag', async (t) => {
+  const dataDir = await mkdtemp(path.join(os.tmpdir(), 'icosa-assetbase-'));
+  const handle = await startServer({
+    port: 0,
+    host: '127.0.0.1',
+    dataDir,
+    quiet: true,
+    config: { bots: 0 },
+    assetBaseUrl: 'https://cdn.example.com/narimato/',
+  });
+  t.after(async () => {
+    await handle.close();
+    await rm(dataDir, { recursive: true, force: true });
+  });
+  const res = await fetch(`http://127.0.0.1:${handle.port}/`);
+  assert.equal(res.status, 200);
+  const html = await res.text();
+  assert.match(html, /<meta name="narimato-asset-base" content="https:\/\/cdn\.example\.com\/narimato" \/>/);
+  await fetch(`http://127.0.0.1:${handle.port}/audio/voice/george/help-story__s1.m4a`);
+});

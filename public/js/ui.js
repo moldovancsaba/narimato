@@ -558,9 +558,9 @@ class UI {
     if (!btn) return;
     btn.classList.toggle('is-muted', this._soundMuted);
     btn.setAttribute('aria-pressed', this._soundMuted ? 'true' : 'false');
-    const label = this._soundMuted ? 'Unmute arcade audio' : 'Mute arcade audio';
+    const label = this._soundMuted ? 'SFX audio: unmute' : 'SFX audio: mute';
     btn.setAttribute('aria-label', label);
-    btn.title = this._soundMuted ? 'Audio muted — click to unmute' : 'Audio on — click to mute';
+    btn.title = this._soundMuted ? 'SFX muted — click to unmute' : 'SFX on — click to mute';
     btn.dataset.muted = this._soundMuted ? 'true' : 'false';
   }
 

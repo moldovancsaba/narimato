@@ -108,7 +108,9 @@ resets its crust and releases new resources. The game never ends.
 - **Observable by default** — `GET /api/metrics` exposes privacy-safe HTTP/SSE/planet/event-loop
   metrics, and a tiny client beacon reports Web Vitals/audio-start timing. No tokens or tags.
 - **CDN-ready assets** — narration URLs can move to an edge cache with `ASSET_BASE_URL`; audio is
-  versioned and immutable. Load/soak harness included; sharding remains gated by measured SLOs.
+  versioned and immutable.
+- **Accessibility + resilience gates** — Chromium/WebKit UI audits, axe-core WCAG checks, 44 px
+  touch targets, and a chaos restart test for live SSE/state survival.
 - **Mobile-first controls** — labelled 44 px media controls, a visible "tap for voice" hint, and a
   two-column short-landscape landing screen that keeps JACK IN on-screen.
 - **Procedural refit missions** — every planet generates its own requirements from its seed. Planet 1
@@ -179,5 +181,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.10.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.11.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.

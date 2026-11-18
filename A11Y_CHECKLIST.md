@@ -20,6 +20,20 @@ Checks:
 
 Latest result: **clean in Chromium and WebKit**.
 
+axe-core WCAG audit (`npm run audit:a11y`, dev-only dependency): latest result
+**0 serious/critical violations** in Chromium and WebKit for landing, HUD and Field Manual.
+
+Additional axe-core WCAG A/AA audit:
+
+```sh
+npm install --no-save axe-core
+PLAYWRIGHT_MODULE=/path/to/playwright AXE_PATH=./node_modules/axe-core/axe.min.js npm run audit:a11y
+```
+
+Latest result: **0 serious/critical violations** on landing, HUD and Field Manual in Chromium and
+WebKit. Fixed in v3.11.0: resource-market keyboard access, duplicate visible/accessible control
+labels, and SFX button naming.
+
 ## Keyboard (delivered)
 
 - Escape closes the Field Manual, landing briefing and escape CTA.

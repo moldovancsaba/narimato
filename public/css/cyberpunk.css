@@ -6589,9 +6589,12 @@ body.is-manual .manual-card {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 7px;
+    font-size: 9px;
     line-height: 1;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.01em;
+  }
+  .status-cluster .media-btn .media-glyph {
+    display: none;
   }
   .status-cluster .conn-badge {
     height: 44px;

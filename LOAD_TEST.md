@@ -20,6 +20,8 @@ Environment: `BASE_URL`, `CLIENTS`, `CLICKS`, `SSE_CLIENTS`, `DURATION_SECONDS`,
 |---|---|
 | 30 clients / 15 SSE / 5 clicks | HTTP p95 **1 ms**, 0 errors, 1,020 SSE events, 0 dropped |
 | 100 clients / 40 SSE / 5 clicks | HTTP p95 **1 ms**, 0 errors, 4,940 SSE events, 0 dropped |
+| **5 min soak** — 40 clients / 20 SSE | HTTP p95 **1 ms**, 0 errors, 0 dropped, 1,490 SSE events |
+| Chaos restart — 10 pilots / 5 live SSE | world/players/tokens survived; all clients reconnected |
 | Event-loop p95 | ~21 ms (monitor resolution is 20 ms; SLO gate <50 ms) |
 | Join latency | 0.8–0.9 ms average |
 | Click latency | 3.8–10.6 ms average |
@@ -44,13 +46,21 @@ a sustained 1–2 h soak with real network conditions is still recommended befor
 
 ## Chaos / rollout checklist
 
-- Kill the process during active SSE: clients reconnect; state is persisted; no lost writes.
+- `npm run chaos:test` kills the process with live SSE, restarts on the same data dir, and
+  verifies pilots/tokens/world survive and reconnect. Latest run: **clean**.
 - Restart while clicks are in flight: join tokens remain valid; snapshot recovers.
 - Network partition: SSE reconnect backoff; `/api/metrics` active/dropped counters.
 - Canary: one process with planet rooms; rollback = single process (current topology).
 - Do not introduce a gateway/worker split until the gate above is crossed.
 
+## Chaos restart result
+
+`npm run chaos:test` (10 clients, live SSE streams, SIGTERM, restart on the same data dir):
+world, 10 players, tokens and routing survived; all 10 SSE clients reconnected; clicks
+continued after restart. **Clean.**
+
 ## B3 status
 
-Harness + local measurements + decision recorded. Full 1–2 h soak and worker-kill chaos
-require a staging deployment and are documented as the next gate, not simulated here.
+Harness, local load measurements, a chaos restart test and a short soak are recorded here.
+The full 1–2 h soak and real staging worker-kill remain the production gate before any shard
+split; no shard split was started.
