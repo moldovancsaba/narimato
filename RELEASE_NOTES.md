@@ -1,5 +1,35 @@
 # NARIMATO — Release Notes
 
+## v3.13.0 — “Steady Hands” (2026-11-18)
+
+### Fixed / changed
+
+- **Relief drops repeat.** If the refit is still missing parts, another emergency ship can arrive
+  after every two-minute stuck window. Server cooldown replaces the old one-per-planet lock; the
+  client restarts the countdown after each drop and resets it whenever needed progress is made.
+- **Reverse-drag navigation.** Drag now steers the view toward where you want to go instead of
+  moving the planet with the cursor. Arrow keys steer continuously and smoothly; hold Shift for a
+  faster pan. `I` toggles reverse drag / move-the-world.
+- **Audio stays alive.** Audio contexts are resumed after tab visibility changes and interruptions,
+  a 15-second watchdog keeps them warm, and a single failed narration clip no longer locks all
+  future voice playback. New narration clips are cache-busted (`?v=3.13.0`).
+- **Ship story UI / rare parts / planet colours** from v3.12 are retained and polished.
+
+### Verification
+
+- Full `node --test test/` — **89/89 pass**.
+- Supply repeat tests cover cooldown, missing placement, first-click mining and event shape.
+- UI audit clean in Chromium + WebKit; axe clean in both engines.
+- 65-second audio-idle check: context running, narration still unlocked.
+
+### Release artifact
+
+- Source tag: `v3.13.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.13.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.12.0 — “The Relief Ship” (2026-11-18)
 
 ### Added
@@ -8,9 +38,12 @@
   on …”), names missing parts in plain language, and includes a relief-ship countdown.
 - **Emergency supply drop.** If no needed refit progress happens for **two minutes**, a relief ship
   crashes onto the planet, scatters the missing ore across nearby triangles and marks them with
-  salvage rings. Deposits are mineable on the first successful click; one drop per pilot per planet.
+  salvage rings. Deposits are mineable on the first successful click; repeatable every two-minute stuck window until the parts are found.
 - **Rare parts in every mission.** Every planet now guarantees at least one rare material, marked
   **RARE** in the refit list.
+- **Reverse-drag and smooth arrow navigation.** Drag now steers the view toward where you want to
+  go rather than moving the planet with the cursor; arrow keys apply continuous eased rotation
+  (Shift boosts) and `I` flips the drag mode.
 - **Planet major colours.** Eight palettes tint surface, atmosphere, HUD identity and landing
   briefing so worlds feel visibly different.
 

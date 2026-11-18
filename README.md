@@ -107,11 +107,15 @@ resets its crust and releases new resources. The game never ends.
   it clears and you can mine again.
 - **Observable by default** — `GET /api/metrics` exposes privacy-safe HTTP/SSE/planet/event-loop
   metrics, and a tiny client beacon reports Web Vitals/audio-start timing. No tokens or tags.
+- **Reverse-drag navigation** — drag where you want the view to go, with smooth continuous arrow-key
+  steering (Shift boosts, I flips drag mode). Audio resumes after tab interruptions and transient
+  play failures rather than going silent.
 - **Captain's Log & humanised ship UI** — the panel tells the pilot a short story, names what is
   still missing in plain language, and shows a relief-ship countdown instead of a bare systems list.
 - **Emergency supply drop** — if you make no refit progress for two minutes, a relief ship crashes
   onto the planet and scatters the missing ore across nearby triangles; those deposits are mineable
-  on the first successful click.
+  on the first successful click. The beacon repeats every two-minute stuck window until the parts
+  are found.
 - **Rare refit parts** — every planet now requires at least one rare material (iridium, voidglass,
   myrthil, aetherium, adamantium or neutronium), marked **RARE** in the refit list.
 - **Planet major colours** — eight palette identities tint the surface, atmosphere, HUD identity and
@@ -191,5 +195,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.12.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.13.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.

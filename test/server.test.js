@@ -1055,7 +1055,7 @@ test('static: ASSET_BASE_URL rewrites the narration asset base meta tag', async 
 
 // ------------------------------------------------------- emergency supply
 
-test('supply: gated by pilot age, places missing mission units as first-click deposits (one per planet)', async (t) => {
+test('supply: gated by pilot age, places missing mission units as first-click deposits (repeatable after the 120s stuck window)', async (t) => {
   const { base, handle } = await makeServer(t, {
     bots: 0,
     depositChance: 1,
@@ -1141,10 +1141,15 @@ test('supply: gated by pilot age, places missing mission units as first-click de
   assert.deepEqual(Object.keys(frame).sort(), ['cells', 'impactLabel', 'message', 'playerId', 'resources', 'type']);
   assert.equal(JSON.stringify(frame).includes(token), false);
 
-  // One drop per player per planet.
+  // Repeatable, but only after another 120-second cooldown.
   res = await postJson(base, '/api/action', { token, type: 'supply' });
   assert.equal(res.status, 409);
-  assert.equal(res.json.error, 'SUPPLY_USED');
+  assert.equal(res.json.error, 'SUPPLY_NOT_READY');
+  assert.ok(res.json.readyInMs > 0);
+  player.supplyDropAt = Date.now() - SUPPLY_MIN_AGE_MS - 1000;
+  res = await postJson(base, '/api/action', { token, type: 'supply' });
+  assert.equal(res.status, 200, 'a stuck pilot gets another drop after the cooldown');
+  assert.ok(res.json.cells.length >= 1);
 });
 
 test('supply: rejected when the refit is already complete, and available again on a new planet', async (t) => {
@@ -1179,8 +1184,12 @@ test('supply: rejected when the refit is already complete, and available again o
   assert.equal(res.json.planetIndex, dest);
   assert.ok(res.json.cells.length >= 1);
   assert.deepEqual(destPlayer.suppliedPlanets, [dest]);
-  // Bookkeeping persists so the drop cannot be farmed by restarting/retrying.
+  // A second drop is possible only after the repeat cooldown.
   const again = await postJson(base, '/api/action', { token, type: 'supply' });
   assert.equal(again.status, 409);
-  assert.equal(again.json.error, 'SUPPLY_USED');
+  assert.equal(again.json.error, 'SUPPLY_NOT_READY');
+  destPlayer.supplyDropAt = Date.now() - SUPPLY_MIN_AGE_MS - 1000;
+  const repeat = await postJson(base, '/api/action', { token, type: 'supply' });
+  assert.equal(repeat.status, 200);
+  assert.ok(repeat.json.cells.length >= 1);
 });

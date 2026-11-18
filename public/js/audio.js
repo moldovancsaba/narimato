@@ -69,11 +69,18 @@ export class ArcadeAudio {
       this._buildGraph();
     }
 
-    if (this._ctx.state === 'suspended') {
+    if (this._ctx.state !== 'running') {
       maybe(() => this._ctx.resume());
     }
     this._unlocked = true;
     return true;
+  }
+
+  /** Resume an interrupted/suspended context after visibility changes. */
+  resume() {
+    if (this._dead || !this._ctx) return false;
+    if (this._ctx.state !== 'running') maybe(() => this._ctx.resume());
+    return this._ctx.state === 'running';
   }
 
   /** Explicit mute/unmute; ramps the master bus so tails do not click. */
@@ -319,6 +326,7 @@ export class ArcadeAudio {
 
   _ready(name, minGapMs) {
     if (!this._ctx || !this._unlocked || this._muted || this._dead) return false;
+    if (this._ctx.state === 'interrupted') maybe(() => this._ctx.resume());
     if (this._ctx.state !== 'running' && this._ctx.state !== 'suspended') return false;
     if (this._ctx.state === 'suspended') maybe(() => this._ctx.resume());
     const t = this._ctx.currentTime;

@@ -61,6 +61,9 @@ let zoomTarget = null; // eased zoom target (null = no movement)
 let zoomUiPending = false;
 let pointerDown = null;
 let pointers = new Map();
+const navKeys = new Set();
+const navVel = { x: 0, y: 0 };
+let invertDrag = readStoredInvertDrag();
 let pinchDist = 0;
 let lastMouse = null;
 let hoverRaf = false;
@@ -109,6 +112,15 @@ function safeCall(obj, method, ...args) {
     console.warn(`[icosa] ${method} failed`, err);
   }
   return undefined;
+}
+
+function readStoredInvertDrag() {
+  try {
+    const raw = localStorage.getItem('icosa.invertDrag');
+    return raw === null ? true : raw === '1';
+  } catch {
+    return true;
+  }
 }
 
 function safeAudio(method, ...args) {
@@ -439,8 +451,22 @@ function boot() {
   window.addEventListener('resize', resize);
   window.addEventListener('orientationchange', resize);
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && !joined) refreshPublicState();
+    if (document.hidden) return;
+    // Browsers suspend/duck audio when a tab is backgrounded or interrupted.
+    safeAudio('unlock');
+    safeAudio('resume');
+    if (narrator) narrator.resume();
+    if (!joined) refreshPublicState();
   });
+  // Keep the audio context warm while the cockpit is active; this is a no-op
+  // when the player has not unlocked audio or has muted it.
+  const audioWatchdog = setInterval(() => {
+    if (document.hidden) return;
+    safeAudio('unlock');
+    safeAudio('resume');
+    if (narrator) narrator.resume();
+  }, 15000);
+  audioWatchdog.unref?.();
 
   bindCanvasInput();
   bindKeyboard();
@@ -941,6 +967,17 @@ function handleSupplyEvent(msg) {
     if (info) safeCall(ui, 'setNavTarget', info);
   }
   safeAudio('discovery');
+  // The relief beacon repeats: if the pilot is still missing parts after this
+  // drop, start another two-minute stuck window. Progress resets the window.
+  setTimeout(() => {
+    if (!joined) return;
+    const progress = refreshMission();
+    if (progress.ready) return;
+    supplyRequestedKey = '';
+    lastDistressProgressKey = '';
+    supplyDeadline = Date.now() + 120000;
+    startDistressTimer();
+  }, 3500);
 }
 
 function captainLogFor(planet, progress) {
@@ -1733,12 +1770,13 @@ function bindCanvasInput() {
       pointerDown.moved += Math.abs(dx) + Math.abs(dy);
       if (pointerDown.moved > 2) {
         const s = rotationScale();
-        camera.rotate(dx * s, dy * s);
+        const direction = invertDrag ? -1 : 1;
+        camera.rotate(direction * dx * s, direction * dy * s);
         const stamp = now();
         const elapsed = Math.max(8, stamp - pointerDown.lastMoveAt) / 1000;
         // Keep the last few movements in rad/s; release uses this for inertia.
-        const targetYaw = (dx * s * 0.006) / elapsed;
-        const targetPitch = (dy * s * 0.006) / elapsed;
+        const targetYaw = (direction * dx * s * 0.006) / elapsed;
+        const targetPitch = (direction * dy * s * 0.006) / elapsed;
         spinVel.x = spinVel.x * 0.55 + clamp(targetYaw, -7, 7) * 0.45;
         spinVel.y = spinVel.y * 0.55 + clamp(targetPitch, -4.5, 4.5) * 0.45;
         pointerDown.lastMoveAt = stamp;
@@ -1825,27 +1863,42 @@ function bindCanvasInput() {
   });
 }
 
+function updateKeyboardNavigation(dt) {
+  if (!dt || (intro && intro.active) || (interlude && interlude.active)) return;
+  const dtSec = dt / 1000;
+  const hasInput = navKeys.has('ArrowLeft') || navKeys.has('ArrowRight') || navKeys.has('ArrowUp') || navKeys.has('ArrowDown');
+  const direction = invertDrag ? -1 : 1;
+  const yawInput = (navKeys.has('ArrowRight') ? 1 : 0) - (navKeys.has('ArrowLeft') ? 1 : 0);
+  const pitchInput = (navKeys.has('ArrowDown') ? 1 : 0) - (navKeys.has('ArrowUp') ? 1 : 0);
+  const boost = navKeys.has('Shift') ? 2.1 : 1;
+  const scale = Math.max(0.14, rotationScale() * 2);
+  // camera.rotate() internally multiplies input by 0.006 rad/px, so keyboard
+  // navigation is expressed in screen-pixel velocity and converted by the camera.
+  const targetYaw = hasInput ? direction * yawInput * 280 * scale * boost : 0;
+  const targetPitch = hasInput ? direction * pitchInput * 150 * scale * boost : 0;
+  const ease = 1 - Math.exp(-14 * dtSec);
+  navVel.x += (targetYaw - navVel.x) * ease;
+  navVel.y += (targetPitch - navVel.y) * ease;
+  if (Math.abs(navVel.x) > 0.0001 || Math.abs(navVel.y) > 0.0001) {
+    camera.rotate(navVel.x * dtSec, navVel.y * dtSec);
+  }
+  if (hasInput) lastInteraction = now();
+}
+
 function bindKeyboard() {
   window.addEventListener('keydown', (event) => {
     const target = event.target;
     if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
-    const s = rotationScale();
     switch (event.key) {
       case 'ArrowLeft':
-        camera.rotate(-30 * s, 0);
-        lastInteraction = now();
-        break;
       case 'ArrowRight':
-        camera.rotate(30 * s, 0);
-        lastInteraction = now();
-        break;
       case 'ArrowUp':
-        camera.rotate(0, -22 * s);
+      case 'ArrowDown':
+        navKeys.add(event.key);
         lastInteraction = now();
         break;
-      case 'ArrowDown':
-        camera.rotate(0, 22 * s);
-        lastInteraction = now();
+      case 'Shift':
+        navKeys.add('Shift');
         break;
       case '+':
       case '=':
@@ -1868,11 +1921,31 @@ function bindKeyboard() {
         safeCall(ui, 'toast', visible ? 'FACE IDS ON' : 'FACE IDS OFF', 'info');
         break;
       }
+      case 'i':
+      case 'I':
+        setInvertDrag(!invertDrag);
+        break;
       default:
         return;
     }
     event.preventDefault();
-  });
+  }, { capture: true });
+  window.addEventListener('keyup', (event) => {
+    navKeys.delete(event.key);
+    if (event.key === 'Shift') navKeys.delete('Shift');
+  }, { capture: true });
+  window.addEventListener('blur', () => navKeys.clear());
+  navKeys.clear();
+}
+
+function setInvertDrag(next) {
+  invertDrag = !!next;
+  try {
+    localStorage.setItem('icosa.invertDrag', invertDrag ? '1' : '0');
+  } catch {
+    /* private mode */
+  }
+  safeCall(ui, 'toast', invertDrag ? 'DRAG: FOLLOW CURSOR — press I to flip' : 'DRAG: MOVE THE WORLD — press I to flip', 'info');
 }
 
 /* ------------------------------------------------------------------ *
@@ -1973,6 +2046,7 @@ function frame(t) {
   }
 
   updateFocus(t);
+  if (!focusAnim && !(interlude && interlude.active)) updateKeyboardNavigation(dt);
   if (!focusAnim && !(interlude && interlude.active)) updateCameraInertia(dt);
 
   if (!joined && !focusAnim && Math.abs(spinVel.x) < 0.0005 && Math.abs(spinVel.y) < 0.0005 && t - lastInteraction > 6000) {
@@ -2050,8 +2124,15 @@ window.__ICOSA__ = {
     return interlude ? interlude.state() : null;
   },
   narrator: () => (narrator ? narrator.state() : null),
+  audioState: () => ({
+    unlocked: !!(audio && audio.isUnlocked),
+    muted: !!(audio && audio.isMuted),
+    context: audio && audio._ctx ? audio._ctx.state : null,
+  }),
   manual: () => safeCall(ui, 'showManual', HELP_SECTIONS),
-  cameraInertia: () => ({ spin: { ...spinVel }, zoomTarget }),
+  cameraInertia: () => ({ spin: { ...spinVel }, zoomTarget, invertDrag, nav: { ...navVel } }),
+  invertDrag: () => invertDrag,
+  setInvertDrag: (value) => setInvertDrag(value),
   navTarget: () => (navLabel ? faceInfo(navLabel) : null),
   nextNavTarget: () => chooseNavTarget({ cycle: true }),
   meteor: (message) => handleIncidentEvent({ kind: 'meteor', title: 'METEOR IMPACT', message }),

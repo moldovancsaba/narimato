@@ -86,7 +86,7 @@ export const NARRATION = Object.freeze({
     text: 'The gold NAV chip picks a strong nearby cell, based on biome and ore chance. Tap the chip to fly the camera there, or tap the arrow to cycle targets. Drag and release to glide around the planet; scroll or pinch to zoom.',
   },
   'help-controls': {
-    text: 'Click or tap a triangle to mine. Drag to rotate and release to glide. Scroll or pinch to zoom. Double-click to focus. L toggles cell ids. The gear toggles voice and subtitles. Your ore is always carried to the next planet.',
+    text: 'Click or tap a triangle to mine. Drag to steer the view; arrow keys steer smoothly, Shift speeds them up, and I flips the drag direction. Scroll or pinch to zoom. Double-click to focus. L toggles cell ids. Your ore travels with you.',
   },
   'story-space-storm': {
     text: 'Space storm. The drive lights and the planet falls away. Ion clouds tear at the hull, every warning light speaks at once. You ride the storm out, battered but alive.',
@@ -213,7 +213,7 @@ export const HELP_SECTIONS = Object.freeze([
     voiceId: 'help-controls',
     title: 'CONTROLS & AUDIO',
     body: [
-      'Click: mine. Drag: rotate (release to glide). Wheel/pinch: zoom. Double-click: focus. L: cell ids.',
+      'Click: mine. Drag: steer the view (release to glide). Wheel/pinch: zoom. Double-click: focus. Arrow keys: smooth steering. I: reverse drag. L: cell ids.',
       'CC toggles subtitles. The voice button toggles narration. Both remember your choice and are independent, like a streaming player.',
     ],
   },

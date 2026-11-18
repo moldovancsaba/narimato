@@ -108,7 +108,7 @@ the second level.
   resource deposits. You only see/fight people on your planet.
 - **Emergency relief:** if the refit makes no progress for two minutes, a relief ship crashes onto
   the planet and scatters the missing ore across nearby triangles. Those deposits are marked with
-  salvage rings and are mineable on the first successful click. Only one drop per pilot per planet.
+  salvage rings and are mineable on the first successful click. If the parts remain missing, another relief ship can arrive after each two-minute window.
 - **Rare parts:** every refit includes at least one rare material; look for the **RARE** marker.
 - **Planet character:** each world has its own major/secondary colour palette that tints the
   surface, atmosphere and HUD identity.

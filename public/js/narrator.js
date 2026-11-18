@@ -17,7 +17,7 @@ const PROFILE_KEY = 'icosa.voiceProfile';
 const DEFAULT_PROFILE = 'george';
 const SEGMENT_GAP_MS = 220;
 const PLAYBACK_RATE = 0.94; // slower, deliberate delivery
-const AUDIO_VERSION = '3.6.0';
+const AUDIO_VERSION = '3.13.0';
 
 /** Optional edge/CDN base for heavy audio assets. Same-origin by default. */
 function assetBase() {
@@ -70,6 +70,7 @@ export function createNarrator() {
   let subtitlesEnabled = readBool(SUBTITLE_KEY, true);
   let voiceProfile = readProfile();
   let unlocked = false;
+  let gestureSeen = false;
   let sequence = null; // { cueId, segments, speaker, index }
   let pending = null; // a sequence waiting for the first user gesture
   let currentAudio = null;
@@ -294,10 +295,15 @@ export function createNarrator() {
         const p = a.play();
         if (p && typeof p.catch === 'function') {
           p.catch(() => {
-            // Browser refused audio before/without a gesture: wait for unlock.
+          // Before any gesture the browser refuses playback: keep the cue pending.
+          // After a real gesture, do NOT relock all future narration on a single
+          // failed clip; leave the sequence ready and let the next cue/gesture
+          // resume it.
+          if (!gestureSeen) {
             unlocked = false;
             pending = { ...sequence };
-          });
+          }
+        });
         }
         warmAudio(audioUrl(cueId, sequence.index + 1, profile));
         a.onended = () => {
@@ -325,7 +331,11 @@ export function createNarrator() {
   }
 
   function unlock() {
-    if (unlocked) return;
+    gestureSeen = true;
+    if (unlocked) {
+      if (voiceEnabled && sequence && !currentAudio) runCurrent();
+      return;
+    }
     unlocked = true;
     if (shownText && subtitlesEnabled) showBar(shownSpeaker, shownText);
     if (pending) {
@@ -421,6 +431,25 @@ export function createNarrator() {
     return `${profile.label} · ${profile.region}`;
   }
 
+  /** Recover a clip paused by tab visibility or an interrupted audio context. */
+  function resume() {
+    if (!voiceEnabled || !sequence) return false;
+    if (currentAudio && currentAudio.paused) {
+      try {
+        const p = currentAudio.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    if (!currentAudio && !gapTimer && sequence.index < sequence.segments.length) {
+      runCurrent();
+      return true;
+    }
+    return false;
+  }
+
   function setVoiceEnabled(value) {
     voiceEnabled = !!value;
     writeBool(VOICE_KEY, voiceEnabled);
@@ -499,6 +528,7 @@ export function createNarrator() {
     setVoiceEnabled,
     setSubtitlesEnabled,
     unlock,
+    resume,
     stop() {
       stopSequence();
     },
