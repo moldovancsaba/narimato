@@ -1,5 +1,32 @@
 # NARIMATO — Release Notes
 
+## v3.14.0 — “Free Rotation” (2026-11-18)
+
+### Changed
+
+- **Limitless camera rotation.** The old yaw/pitch orbit clamped pitch at ±1.35 rad and stopped at
+  the poles. It is replaced by a normalized **quaternion trackball**: drag, release inertia and
+  arrow steering rotate around the camera's local axes, so the view can roll past both poles and
+  continue indefinitely in every direction. Projection, screen-ray picking and renderer culling all
+  use the quaternion orientation, so the planet stays correct after rolling.
+- **Steady navigation:** smooth arrow steering, Shift boost and `I` drag inversion remain.
+- **Relief repeat/audio resilience** from v3.13 are retained.
+
+### Verification
+
+- Geometry tests updated for unbounded pitch, finite projection and picking after rolling through
+  the pole; **89/89** full tests.
+- Browser check: repeated vertical drags move pitch from 0.27 to -8.48 rad, with surface and cell
+  picking still intact; no console errors.
+
+### Release artifact
+
+- Source tag: `v3.14.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.14.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.13.0 — “Steady Hands” (2026-11-18)
 
 ### Fixed / changed

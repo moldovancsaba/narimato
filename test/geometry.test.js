@@ -187,10 +187,16 @@ test('camera projects the north pole above centre and picks fronts only', () => 
   assert.ok(Number.isInteger(after));
   assert.notEqual(before, after);
 
-  // Pitch clamps.
+  // The quaternion trackball has no pitch clamp: it can keep rolling through
+  // both poles, and projection/picking stay finite afterwards.
   camera.pitch = 0;
   camera.rotate(0, 99999);
-  assert.ok(Math.abs(camera.pitch) <= 1.35 + 1e-12);
+  assert.ok(Number.isFinite(camera.pitch));
+  assert.ok(Math.abs(camera.pitch) > 1.35, 'pitch is intentionally unbounded');
+  const pole = camera.project({ x: 0, y: 1, z: 0 });
+  assert.ok(Number.isFinite(pole.x) && Number.isFinite(pole.y));
+  const picked = pickFace(getMesh(2), camera, 600, 400);
+  assert.ok(Number.isInteger(picked));
 });
 
 test('picking the projected pole hits a pole-cap face at level 0', () => {

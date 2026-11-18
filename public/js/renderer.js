@@ -1009,16 +1009,23 @@ export class IcosaRenderer {
 
   _computeCameraFrame(camera, R) {
     const d = Number(camera.distance) || CAMERA_DISTANCE;
-    const yaw = Number(camera.yaw) || 0;
-    const pitch = Number(camera.pitch) || 0;
-    const sy = Math.sin(yaw);
-    const cyw = Math.cos(yaw);
-    const sp = Math.sin(pitch);
-    const cp = Math.cos(pitch);
+    // The quaternion camera can roll, so derive the culling axis from the real
+    // orientation rather than reconstructing it from clamped Euler yaw/pitch.
+    const axis = camera && typeof camera.viewAxis === 'function'
+      ? camera.viewAxis()
+      : (() => {
+          const yaw = Number(camera && camera.yaw) || 0;
+          const pitch = Number(camera && camera.pitch) || 0;
+          return {
+            x: -Math.sin(yaw) * Math.cos(pitch),
+            y: Math.sin(pitch),
+            z: Math.cos(yaw) * Math.cos(pitch),
+          };
+        })();
     this._d = d;
-    this._Kx = -sy * cp;
-    this._Ky = sp;
-    this._Kz = cyw * cp;
+    this._Kx = axis.x;
+    this._Ky = axis.y;
+    this._Kz = axis.z;
 
     const D = Math.hypot(this.width / 2, this.height / 2) + 28;
     let cosA = 0;

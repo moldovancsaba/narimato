@@ -383,6 +383,49 @@ export function getMesh(level) {
  * The client owns one instance; the renderer projects with it and the app
  * pick-tests with it, so visuals and hit-testing are always in sync.
  */
+/* ------------------------------------------------------------------ *
+ * Quaternion camera helpers.
+ *
+ * The old camera stored yaw/pitch and clamped pitch at ±1.35 rad, which made
+ * the view stop at the poles. The orientation is now a unit quaternion; drag
+ * and arrow input rotate around the camera's local axes, so the view keeps
+ * going in every direction (a trackball, not an orbit clamp).
+ * ------------------------------------------------------------------ */
+const qIdentity = () => ({ x: 0, y: 0, z: 0, w: 1 });
+const qMul = (a, b) => ({
+  x: a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y,
+  y: a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x,
+  z: a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w,
+  w: a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z,
+});
+const qFromAxis = (axis, angle) => {
+  const h = angle / 2;
+  const s = Math.sin(h);
+  return { x: axis.x * s, y: axis.y * s, z: axis.z * s, w: Math.cos(h) };
+};
+const qNormalize = (q) => {
+  const len = Math.hypot(q.x, q.y, q.z, q.w) || 1;
+  return { x: q.x / len, y: q.y / len, z: q.z / len, w: q.w / len };
+};
+const qFromYawPitch = (yaw, pitch) => {
+  // Matches the legacy view matrix Rx(pitch) * Ry(yaw).
+  const qy = qFromAxis({ x: 0, y: 1, z: 0 }, yaw || 0);
+  const qx = qFromAxis({ x: 1, y: 0, z: 0 }, pitch || 0);
+  return qNormalize(qMul(qx, qy));
+};
+const qRotate = (q, v) => {
+  // v' = q * v * q^-1, expanded without allocating a quaternion per point.
+  const tx = 2 * (q.y * v.z - q.z * v.y);
+  const ty = 2 * (q.z * v.x - q.x * v.z);
+  const tz = 2 * (q.x * v.y - q.y * v.x);
+  return {
+    x: v.x + q.w * tx + (q.y * tz - q.z * ty),
+    y: v.y + q.w * ty + (q.z * tx - q.x * tz),
+    z: v.z + q.w * tz + (q.x * ty - q.y * tx),
+  };
+};
+const qRotateInverse = (q, v) => qRotate(qNormalize({ x: -q.x, y: -q.y, z: -q.z, w: q.w }), v);
+
 export class SphereCamera {
   constructor(widthOrOpts = 1, heightArg) {
     let width = 1;
@@ -397,8 +440,11 @@ export class SphereCamera {
     this.width = width;
     this.height = height;
     this.distance = CAMERA_DISTANCE;
-    this._trig = { yaw: NaN, pitch: NaN, cy: 1, sy: 0, cp: 1, sp: 0 };
-    this.reset();
+    this._yaw = 0.55;
+    this._pitch = 0.27;
+    this._q = qFromYawPitch(this._yaw, this._pitch);
+    this.zoom = 1;
+    this._viewAxis = qRotateInverse(this._q, { x: 0, y: 0, z: 1 });
   }
 
   setViewport(width, height) {
@@ -407,17 +453,52 @@ export class SphereCamera {
     return this;
   }
 
+  /** Legacy Euler access: setting either property resets a clean yaw/pitch view. */
+  get yaw() { return this._yaw; }
+  set yaw(value) {
+    this._yaw = Number.isFinite(Number(value)) ? Number(value) : 0;
+    this._syncEuler();
+  }
+  get pitch() { return this._pitch; }
+  set pitch(value) {
+    this._pitch = Number.isFinite(Number(value)) ? Number(value) : 0;
+    this._syncEuler();
+  }
+
+  _syncEuler() {
+    this._q = qFromYawPitch(this._yaw, this._pitch);
+    this._viewAxis = qRotateInverse(this._q, { x: 0, y: 0, z: 1 });
+  }
+
   reset() {
-    this.yaw = 0.55;
-    this.pitch = 0.27;
+    this._yaw = 0.55;
+    this._pitch = 0.27;
+    this._syncEuler();
     this.zoom = 1;
     return this;
   }
 
+  /** Quaternion trackball: local-axis rotation continues through both poles. */
   rotate(dxPx, dyPx) {
-    this.yaw += (Number(dxPx) || 0) * 0.006;
-    this.pitch = clamp(this.pitch + (Number(dyPx) || 0) * 0.006, -PITCH_LIMIT, PITCH_LIMIT);
+    const dx = Number(dxPx) || 0;
+    const dy = Number(dyPx) || 0;
+    this._yaw += dx * 0.006;
+    this._pitch += dy * 0.006;
+    const localYaw = qFromAxis({ x: 0, y: 1, z: 0 }, dx * 0.006);
+    const localPitch = qFromAxis({ x: 1, y: 0, z: 0 }, dy * 0.006);
+    this._q = qNormalize(qMul(qMul(this._q, localYaw), localPitch));
+    this._viewAxis = qRotateInverse(this._q, { x: 0, y: 0, z: 1 });
     return this;
+  }
+
+  /** World-space direction from planet centre to the camera (culling axis). */
+  viewAxis() {
+    return this._viewAxis || { x: 0, y: 0, z: 1 };
+  }
+
+  /** Invert the camera rotation for screen-ray picking. */
+  unprojectView(v) {
+    return qRotateInverse(this._q, v);
   }
 
   zoomBy(factor) {
@@ -428,25 +509,10 @@ export class SphereCamera {
 
   /** Project a unit vector to CSS pixels. z > 0 means front hemisphere. */
   project(v) {
-    const trig = this._trig;
-    if (trig.yaw !== this.yaw || trig.pitch !== this.pitch) {
-      trig.yaw = this.yaw;
-      trig.pitch = this.pitch;
-      trig.cy = Math.cos(this.yaw);
-      trig.sy = Math.sin(this.yaw);
-      trig.cp = Math.cos(this.pitch);
-      trig.sp = Math.sin(this.pitch);
-    }
-    const cy = trig.cy;
-    const sy = trig.sy;
-    // Rotate around Y (yaw), then around X (pitch).
-    const x1 = v.x * cy + v.z * sy;
-    const z1 = -v.x * sy + v.z * cy;
-    const cp = trig.cp;
-    const sp = trig.sp;
-    const y2 = v.y * cp - z1 * sp;
-    const z2 = v.y * sp + z1 * cp;
-
+    const pv = qRotate(this._q, v);
+    const x1 = pv.x;
+    const y2 = pv.y;
+    const z2 = pv.z;
     const denom = this.distance - z2;
     const radius = Math.min(this.width, this.height) * SPHERE_SCREEN_FRACTION * this.zoom;
     const scale = (radius * this.distance) / denom;
@@ -499,19 +565,9 @@ export function pickFace(mesh, camera, sx, sy) {
 
   const pv = { x: t * dx, y: t * dy, z: distance + t * dz };
 
-  // Undo the camera rotation: p_view = Rx(pitch) * Ry(yaw) * v_world.
-  const cp = Math.cos(camera.pitch || 0);
-  const sp = Math.sin(camera.pitch || 0);
-  const cy = Math.cos(camera.yaw || 0);
-  const syw = Math.sin(camera.yaw || 0);
-  const x1 = pv.x;
-  const y1 = pv.y * cp + pv.z * sp;
-  const z1 = -pv.y * sp + pv.z * cp;
-  const hit = normalize({
-    x: x1 * cy - z1 * syw,
-    y: y1,
-    z: x1 * syw + z1 * cy,
-  });
+  // Undo the camera orientation (quaternion camera, so this stays correct
+  // even after the view rolls past a pole).
+  const hit = normalize(camera.unprojectView ? camera.unprojectView(pv) : pv);
 
   // The outward-oriented face whose three edge planes all contain the hit wins.
   // Ties at shared edges are broken deterministically by the safest margin.
