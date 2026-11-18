@@ -10,6 +10,7 @@ import {
   missionProgress,
   missionOreList,
   missionForPlanet,
+  earlyRareUnitLimit,
   missionUnitTotal,
   planetDepth,
   planetName,
@@ -110,6 +111,28 @@ test('mission: materials come from the objective category pools, no duplicates, 
       }
       assert.ok(mission.name && mission.tagline && mission.briefing);
       assert.ok(mission.objectives.every((objective) => CATEGORY_OBJECTIVES[objective.id] === objective.name));
+    }
+  }
+});
+
+test('mission: early planets cap rare demand while preserving total units', () => {
+  for (const seed of [0, 1, 7, 42, 424242, 0xdeadbeef]) {
+    for (let index = 0; index <= 3; index += 1) {
+      const mission = missionForPlanet(index, seed);
+      const items = missionItems(mission);
+      const rareUnits = items
+        .filter((item) => isRareResource(item.resourceId))
+        .reduce((sum, item) => sum + item.need, 0);
+      const cap = earlyRareUnitLimit(index);
+      assert.ok(rareUnits >= 1, `planet ${index} still offers a rare part`);
+      assert.ok(rareUnits <= cap, `planet ${index} seed ${seed} rare units ${rareUnits} <= ${cap}`);
+      assert.equal(
+        items.reduce((sum, item) => sum + item.need, 0),
+        missionUnitTotal(index, seed),
+        'rare cap conversion preserves the refit total',
+      );
+      assert.ok(mission.objectives.every((objective) => objective.items.length >= 1), 'no empty objective');
+      assert.equal(new Set(items.map((item) => item.resourceId)).size, items.length, 'no duplicate resources');
     }
   }
 });

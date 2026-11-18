@@ -830,6 +830,34 @@ class UI {
     }
   }
 
+  /** Open/close the one-screen quick guide. */
+  showGuide() {
+    const wrap = this._el.guideOverlay;
+    if (!wrap) return;
+    wrap.hidden = false;
+    wrap.classList.remove('is-hidden');
+    wrap.setAttribute('aria-hidden', 'false');
+    const card = wrap.querySelector('.guide-card');
+    if (card) card.scrollTop = 0;
+    if (this.doc && this.doc.body) this.doc.body.classList.add('is-guide');
+    this.closeDrawers();
+    try { this._el.btnGuideClose?.focus({ preventScroll: true }); } catch { /* ignore */ }
+  }
+
+  hideGuide() {
+    const wrap = this._el.guideOverlay;
+    if (wrap) {
+      wrap.classList.add('is-hidden');
+      wrap.hidden = true;
+      wrap.setAttribute('aria-hidden', 'true');
+    }
+    if (this.doc && this.doc.body) this.doc.body.classList.remove('is-guide');
+  }
+
+  get isGuideOpen() {
+    return !!(this._el.guideOverlay && !this._el.guideOverlay.classList.contains('is-hidden'));
+  }
+
   /** Open the Field Manual with story/tips/help sections. */
   showManual(sections) {
     const wrap = this._el.manualOverlay;
@@ -1267,6 +1295,14 @@ class UI {
     if (this._el.btnManualClose) {
       this._el.btnManualClose.addEventListener('click', () => this.hideManual());
     }
+    if (this._el.btnGuideClose) {
+      this._el.btnGuideClose.addEventListener('click', () => this.hideGuide());
+    }
+    if (this._el.guideOverlay) {
+      this._el.guideOverlay.addEventListener('pointerdown', (event) => {
+        if (event.target === this._el.guideOverlay) this.hideGuide();
+      });
+    }
     if (this._el.manualOverlay) {
       this._el.manualOverlay.addEventListener('pointerdown', (event) => {
         if (event.target === this._el.manualOverlay) this.hideManual();
@@ -1279,6 +1315,11 @@ class UI {
       this._manualKeyBound = true;
       doc.addEventListener('keydown', (event) => {
         if (event.key !== 'Escape') return;
+        if (this.isGuideOpen) {
+          event.preventDefault();
+          this.hideGuide();
+          return;
+        }
         if (this.isManualOpen) {
           event.preventDefault();
           this.hideManual();
@@ -2199,6 +2240,11 @@ function resolveElements(doc) {
     manualOverlay: byId('manual-overlay'),
     manualSections: byId('manual-sections'),
     btnManualClose: byId('btn-manual-close'),
+    guideOverlay: byId('guide-overlay'),
+    btnGuideClose: byId('btn-guide-close'),
+    btnGuideStart: byId('btn-guide-start'),
+    btnGuideManual: byId('btn-guide-manual'),
+    btnGuideShare: byId('btn-guide-share'),
     navChip: byId('nav-chip'),
     navTargetLabel: byId('nav-target-label'),
     navTargetMeta: byId('nav-target-meta'),

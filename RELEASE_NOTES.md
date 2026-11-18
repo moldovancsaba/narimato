@@ -1,5 +1,35 @@
 # NARIMATO — Release Notes
 
+## v3.18.0 — “Read This First” (2026-11-18)
+
+### Added / changed
+
+- **Quick Guide for new pilots.** A one-screen card opens on first landing and is always available
+  behind **GUIDE** or the shareable URL `?guide=1`. It answers:
+  - **What to mine:** the THE WAY HOME panel; RARE markers.
+  - **How to mine:** click/tap a triangle; four clicks break it; deeper cells need eight.
+  - **Where to dig:** hidden ore, gold NAV beacon, cargo panel, zoom levels.
+  - **How to leave:** fill all systems and use TRY TO FLY AWAY.
+- **Copy Guide Link** button for sharing the quick guide with a new pilot.
+- **Gentler early rare budgets:** planets 0–1 require exactly one rare unit, planet 2 up to two,
+  planet 3 up to three; deeper planets keep the full rare challenge. Refit total unit counts and
+  category pools are preserved.
+- **GUIDE.md** quick reference for sharing outside the game.
+
+### Verification
+
+- First-run guide opens after the landing brief; GUIDE reopens it; manual/share actions work.
+- Early rare caps tested across seeds/depths; **90/90 tests**.
+- Chromium + WebKit UI audits clean, axe clean.
+
+### Release artifact
+
+- Source tag: `v3.18.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.18.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.17.0 — “What Happened Here” (2026-11-18)
 
 ### Added / changed

@@ -116,6 +116,9 @@ resets its crust and releases new resources. The game never ends.
   view can roll past both poles and keep going in every direction.
 - **Level zoom ladder** — wheel/pinch steps through cell-depth zoom rungs (D0, D1, D2…) with a fast
   cubic-bezier settle. Clicking/fracturing a cell automatically moves the camera to that action level.
+- **Quick Guide** — a first-run, shareable one-screen card explains what to mine, how to
+  mine, where to dig and how to leave; press **GUIDE** or open `?guide=1`.
+- **Gentle early rare budgets** — early planets demand one rare unit, then ramp up with depth.
 - **Captain's Log & humanised ship UI** — the panel tells the pilot a short story, names what is
   still missing in plain language, and shows a relief-ship countdown instead of a bare systems list.
 - **Emergency supply drop** — if you make no refit progress for two minutes, a relief ship crashes
@@ -201,5 +204,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.17.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.18.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.

@@ -87,6 +87,7 @@ let supplyRequestedKey = '';
 let lastSupplyEventKey = '';
 let lastDistressProgressKey = '';
 let captainLogHoldUntil = 0;
+let firstGuideTimer = 0;
 let pendingAutoJoin = null;
 const missionReadyNotified = new Set();
 
@@ -117,6 +118,32 @@ function safeCall(obj, method, ...args) {
     console.warn(`[icosa] ${method} failed`, err);
   }
   return undefined;
+}
+
+function scheduleFirstGuide(delayMs = 700) {
+  try {
+    if (localStorage.getItem('icosa.guideSeen') === '1') return;
+  } catch {
+    /* private mode */
+  }
+  clearTimeout(firstGuideTimer);
+  firstGuideTimer = setTimeout(() => {
+    try {
+      if (localStorage.getItem('icosa.guideSeen') === '1') return;
+    } catch {
+      /* private mode */
+    }
+    const brief = document.getElementById('landing-brief');
+    if (brief && !brief.hidden) return;
+    if (!joined) return;
+    narrator.stop();
+    safeCall(ui, 'showGuide');
+    try {
+      localStorage.setItem('icosa.guideSeen', '1');
+    } catch {
+      /* private mode */
+    }
+  }, Math.max(0, delayMs));
 }
 
 function readStoredInvertDrag() {
@@ -424,11 +451,42 @@ function boot() {
   if (escapeBtn) escapeBtn.addEventListener('click', () => requestEscape());
   const escapeCenterBtn = document.getElementById('btn-escape-center');
   if (escapeCenterBtn) escapeCenterBtn.addEventListener('click', () => requestEscape());
-  const helpBtn = document.getElementById('btn-help');
-  if (helpBtn) helpBtn.addEventListener('click', () => {
-    safeCall(ui, 'showManual', HELP_SECTIONS);
+  function openGuide() {
     narrator.stop();
+    safeCall(ui, 'showGuide');
+    try { localStorage.setItem('icosa.guideSeen', '1'); } catch { /* private mode */ }
+  }
+  const helpBtn = document.getElementById('btn-help');
+  if (helpBtn) helpBtn.addEventListener('click', () => openGuide());
+  const guideStartBtn = document.getElementById('btn-guide-start');
+  if (guideStartBtn) guideStartBtn.addEventListener('click', () => safeCall(ui, 'hideGuide'));
+  const guideCloseBtn = document.getElementById('btn-guide-close');
+  if (guideCloseBtn) guideCloseBtn.addEventListener('click', () => safeCall(ui, 'hideGuide'));
+  const guideManualBtn = document.getElementById('btn-guide-manual');
+  if (guideManualBtn) guideManualBtn.addEventListener('click', () => {
+    safeCall(ui, 'hideGuide');
+    safeCall(ui, 'showManual', HELP_SECTIONS);
   });
+  const guideShareBtn = document.getElementById('btn-guide-share');
+  if (guideShareBtn) guideShareBtn.addEventListener('click', async () => {
+    const link = `${location.origin}${location.pathname}?guide=1`;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(link);
+      } else {
+        const area = document.createElement('textarea');
+        area.value = link;
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand('copy');
+        area.remove();
+      }
+      safeCall(ui, 'toast', 'GUIDE LINK COPIED // SEND IT TO A NEW PILOT', 'good');
+    } catch {
+      safeCall(ui, 'toast', link, 'info');
+    }
+  });
+  if (params.get('guide') === '1') setTimeout(openGuide, 500);
   const manualSections = document.getElementById('manual-sections');
   if (manualSections) manualSections.addEventListener('click', (event) => {
     const btn = event.target && event.target.closest ? event.target.closest('.manual-play') : null;
@@ -438,6 +496,7 @@ function boot() {
   const briefStartBtn = document.getElementById('btn-landing-brief-start');
   if (briefStartBtn) briefStartBtn.addEventListener('click', () => {
     maybeTip(state && state.planetIndex > 0 ? 'tip-newplanet' : 'tip-mining', { delay: 600 });
+    scheduleFirstGuide(900);
   });
   const navFocusBtn = document.getElementById('btn-nav-focus');
   if (navFocusBtn) navFocusBtn.addEventListener('click', () => {
@@ -603,6 +662,7 @@ async function join(rawTag) {
   safeCall(ui, 'setSoundMuted', !!audio.isMuted);
   safeAudio('join');
   connectEvents();
+  scheduleFirstGuide(2200);
 
   safeCall(ui, 'toast', "RADIO CHECK // YOU'RE NOT ALONE OUT HERE", 'good');
 }
@@ -2245,6 +2305,7 @@ window.__ICOSA__ = {
     context: audio && audio._ctx ? audio._ctx.state : null,
   }),
   manual: () => safeCall(ui, 'showManual', HELP_SECTIONS),
+  guide: () => safeCall(ui, 'showGuide'),
   cameraInertia: () => ({ spin: { ...spinVel }, zoomTarget, zoomAnim, invertDrag, nav: { ...navVel }, keyboard: { yaw: keyboardYaw, pitch: keyboardPitch, synced: !keyboardSyncNeeded } }),
   zoomLevel: () => ({
     level: zoomLevelForZoom(zoomTarget === null ? camera.zoom : zoomTarget),

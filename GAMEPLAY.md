@@ -110,6 +110,11 @@ the second level.
   the planet and scatters the missing ore across nearby triangles. Those deposits are marked with
   salvage rings and are mineable on the first successful click. If the parts remain missing, another relief ship can arrive after each two-minute window.
 - **Rare parts:** every refit includes at least one rare material; look for the **RARE** marker.
+  Early planets are deliberately gentle: planets 1–2 need exactly one rare unit, planet 3 up to
+  two, planet 4 up to three, then the deeper worlds ramp up.
+- **Quick Guide:** the first landing offers a one-screen answer to **what to mine**, **how to
+  mine**, **where to dig** and **how to leave**; the same card is behind **GUIDE** and at
+  `?guide=1` for sharing.
 - **Planet character:** each world has its own major/secondary colour palette that tints the
   surface, atmosphere and HUD identity.
 - **Planetary incidents:** when the last hidden deposit is mined, the exhausted planet ends in a

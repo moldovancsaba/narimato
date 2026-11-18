@@ -154,6 +154,18 @@ export function isRareResource(resourceId) {
   return RARE_SET.has(String(resourceId));
 }
 
+/**
+ * How many rare units an early refit may demand. Tutorial/early worlds should
+ * be reachable without a long rare hunt; deeper planets earn the rarer parts.
+ */
+export function earlyRareUnitLimit(index) {
+  const i = Math.max(0, Math.trunc(Number(index) || 0));
+  if (i <= 1) return 1;
+  if (i === 2) return 2;
+  if (i === 3) return 3;
+  return Infinity;
+}
+
 const MISSION_CATEGORIES = Object.freeze([
   Object.freeze({
     id: 'fuel',
@@ -228,11 +240,18 @@ export function missionForPlanet(index, planetSeed = 0) {
   const rng = makeRng(missionSeed(seed, i, 0x9e3779b1));
 
   const used = new Set();
+  const rareLimit = earlyRareUnitLimit(i);
   const objectives = MISSION_CATEGORIES.map((category) => {
     let choices = category.pool.filter((id) => !used.has(id));
     if (i === 0) {
       // Planet 0 is the minimal tutorial refit: exactly 3 units with exactly
       // one rare material, always the WARP CORE.
+      const rareOnly = category.id === 'warp';
+      choices = choices.filter((id) => isRareResource(id) === rareOnly);
+      if (!choices.length) choices = category.pool.filter((id) => isRareResource(id) === rareOnly && !used.has(id));
+    } else if (i <= 2) {
+      // Early worlds keep the rare hunt gentle: one rare part in the WARP CORE,
+      // common material in fuel and hull.
       const rareOnly = category.id === 'warp';
       choices = choices.filter((id) => isRareResource(id) === rareOnly);
       if (!choices.length) choices = category.pool.filter((id) => isRareResource(id) === rareOnly && !used.has(id));
@@ -247,6 +266,11 @@ export function missionForPlanet(index, planetSeed = 0) {
     };
   });
 
+  let rareUnits = objectives
+    .flatMap((objective) => objective.items)
+    .filter((item) => isRareResource(item.resourceId))
+    .reduce((sum, item) => sum + item.need, 0);
+
   let remaining = Math.max(0, total - INITIAL_MISSION_UNITS);
   let guard = 0;
   while (remaining > 0 && guard < 10_000) {
@@ -255,15 +279,35 @@ export function missionForPlanet(index, planetSeed = 0) {
     const objective = objectives[objectiveIndex];
     const category = MISSION_CATEGORIES[objectiveIndex];
     const extraChoices = category.pool.filter((id) => !used.has(id));
+    const rareChoices = extraChoices.filter((id) => isRareResource(id) && rareUnits < rareLimit);
+    const commonChoices = extraChoices.filter((id) => !isRareResource(id));
     // Sometimes add a whole new resource type, otherwise charge an existing one.
-    const addType = extraChoices.length > 0 && rng() < 0.35;
-    if (addType) {
-      const resourceId = extraChoices[Math.floor(rng() * extraChoices.length)];
+    const canAddType = extraChoices.length > 0;
+    const addType = canAddType && rng() < 0.35;
+    const typePool = rareChoices.length && rng() < 0.3 ? rareChoices : commonChoices;
+    if (addType && typePool.length) {
+      const resourceId = typePool[Math.floor(rng() * typePool.length)];
       used.add(resourceId);
       objective.items.push({ resourceId, need: 1 });
+      if (isRareResource(resourceId)) rareUnits += 1;
     } else {
-      const item = objective.items[Math.floor(rng() * objective.items.length)];
+      let item = objective.items[Math.floor(rng() * objective.items.length)];
+      if (isRareResource(item.resourceId) && rareUnits >= rareLimit) {
+        item = objective.items.find((entry) => !isRareResource(entry.resourceId));
+        if (!item) {
+          const commonId = category.pool.find((id) => !isRareResource(id) && !used.has(id)) ||
+            ['silver', 'gold', 'uranium', 'palladium'].find((id) => !used.has(id));
+          if (commonId) {
+            used.add(commonId);
+            objective.items.push({ resourceId: commonId, need: 1 });
+            remaining -= 1;
+            continue;
+          }
+          item = objective.items[0];
+        }
+      }
       item.need += 1;
+      if (isRareResource(item.resourceId)) rareUnits += 1;
     }
     remaining -= 1;
   }
