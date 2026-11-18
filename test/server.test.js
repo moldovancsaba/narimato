@@ -1153,6 +1153,52 @@ test('supply: gated by pilot age, places missing mission units as first-click de
   assert.ok(res.json.cells.length >= 1);
 });
 
+test('supply: broadcast reaches every human client in the planet room', async (t) => {
+  const { base, handle } = await makeServer(t, {
+    bots: 0,
+    depositChance: 1,
+    clickCooldownMs: 0,
+    planetSeed: 424242,
+  });
+  const joinA = await postJson(base, '/api/join', { tag: 'SUPPLYA' });
+  const joinB = await postJson(base, '/api/join', { tag: 'SUPPLYB' });
+  assert.equal(joinA.status, 200);
+  assert.equal(joinB.status, 200);
+  const tokenA = joinA.json.token;
+  const tokenB = joinB.json.token;
+  const core0 = handle.manager.planetCore(0);
+  const playerA = core0.findByToken(tokenA);
+  playerA.createdAt = Date.now() - SUPPLY_MIN_AGE_MS - 10_000;
+
+  const sseA = await openSse(base, tokenA);
+  const sseB = await openSse(base, tokenB);
+  t.after(async () => {
+    await sseA.close();
+    await sseB.close();
+  });
+  await Promise.all([sseA.waitForEvent('snapshot'), sseB.waitForEvent('snapshot')]);
+
+  const res = await postJson(base, '/api/action', { token: tokenA, type: 'supply' });
+  assert.equal(res.status, 200);
+  assert.ok(res.json.cells.length >= 1);
+
+  const [frameA, frameB] = await Promise.all([
+    sseA.waitForEvent('supply', () => true, { timeout: 3000 }),
+    sseB.waitForEvent('supply', () => true, { timeout: 3000 }),
+  ]);
+  assert.deepEqual(frameA.cells, res.json.cells);
+  assert.deepEqual(frameB.cells, res.json.cells);
+  assert.equal(frameA.impactLabel, frameB.impactLabel);
+  assert.equal(JSON.stringify(frameB).includes(tokenA), false);
+  assert.equal(JSON.stringify(frameB).includes(tokenB), false);
+
+  // Every human can harvest the shared drop, not just the pilot who called it.
+  const supplied = res.json.cells[0];
+  const mineB = await postJson(base, '/api/action', { token: tokenB, type: 'click', label: supplied.label });
+  assert.equal(mineB.status, 200);
+  assert.equal(mineB.json.resource.id, supplied.resourceId);
+});
+
 test('supply: rejected when the refit is already complete, and available again on a new planet', async (t) => {
   const { base, handle } = await makeServer(t, {
     bots: 0,

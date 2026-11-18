@@ -1,5 +1,31 @@
 # NARIMATO — Release Notes
 
+## v3.19.0 — “Everyone Digs” (2026-11-18)
+
+### Changed
+
+- **Emergency supply drops are now planet-wide events.** The server already broadcasts to the
+  planet room; every human client now treats the drop as a shared race:
+  - all pilots receive the same marked cells;
+  - any pilot can mine the supplied deposits;
+  - every view turns smoothly toward the impact point (`impactLabel`);
+  - the crash overlay, markers, Captain’s Log and beacon all appear for everyone.
+- Added a server test with two humans in the same planet room: both receive the same supply cells,
+  and the pilot who did not call the drop can mine a supplied cell.
+- Added a client test that a supply event rotates the camera toward the impact.
+
+### Verification
+
+- **91/91 tests**, Chromium + WebKit UI audits clean, axe clean.
+
+### Release artifact
+
+- Source tag: `v3.19.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.19.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.18.0 — “Read This First” (2026-11-18)
 
 ### Added / changed

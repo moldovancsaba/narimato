@@ -123,8 +123,9 @@ resets its crust and releases new resources. The game never ends.
   still missing in plain language, and shows a relief-ship countdown instead of a bare systems list.
 - **Emergency supply drop** — if you make no refit progress for two minutes, a relief ship crashes
   onto the planet and scatters the missing ore across nearby triangles; those deposits are mineable
-  on the first successful click. The beacon repeats every two-minute stuck window until the parts
-  are found.
+  on the first successful click. Every human on the planet gets the marked cells and the camera
+  turns toward the impact, so the salvage race starts together. The beacon repeats every two-minute
+  stuck window until the parts are found.
 - **Rare refit parts** — every planet now requires at least one rare material (iridium, voidglass,
   myrthil, aetherium, adamantium or neutronium), marked **RARE** in the refit list.
 - **Planet major colours** — eight palette identities tint the surface, atmosphere, HUD identity and
@@ -204,5 +205,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.18.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.19.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.

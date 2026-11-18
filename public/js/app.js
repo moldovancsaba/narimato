@@ -1017,6 +1017,31 @@ async function requestEmergencySupply() {
   if (Array.isArray(data.cells)) handleSupplyEvent({ ...data, message: data.message, cells: data.cells, impactLabel: data.impactLabel });
 }
 
+function turnViewToSupply(label) {
+  const node = world.get(label);
+  if (!node) return false;
+  const c = node.centroid;
+  let targetYaw = Math.atan2(-c.x, c.z);
+  const horizontal = Math.hypot(c.x, c.z);
+  const targetPitch = Math.atan2(c.y, horizontal);
+  let dYaw = targetYaw - camera.yaw;
+  while (dYaw > Math.PI) dYaw -= Math.PI * 2;
+  while (dYaw < -Math.PI) dYaw += Math.PI * 2;
+  focusAnim = {
+    start: now(),
+    duration: 560,
+    fromYaw: camera.yaw,
+    toYaw: camera.yaw + dYaw,
+    fromPitch: camera.pitch,
+    toPitch: targetPitch,
+    fromZoom: camera.zoom,
+    toZoom: camera.zoom,
+  };
+  keyboardSyncNeeded = true;
+  lastInteraction = now();
+  return true;
+}
+
 function handleSupplyEvent(msg) {
   if (!msg) return;
   const cells = Array.isArray(msg.cells) ? msg.cells : [];
@@ -1036,6 +1061,12 @@ function handleSupplyEvent(msg) {
     const info = faceInfo(label);
     if (info) safeCall(ui, 'setNavTarget', info);
   }
+  // Every human on the planet turns toward the impact so the salvage race is
+  // immediate, not a hunt for a tiny marker.
+  setTimeout(() => {
+    if (!joined || (interlude && interlude.active)) return;
+    if (label) turnViewToSupply(label);
+  }, 260);
   safeAudio('discovery');
   // The relief beacon repeats: if the pilot is still missing parts after this
   // drop, start another two-minute stuck window. Progress resets the window.
