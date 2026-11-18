@@ -10,6 +10,8 @@
  * intro.update(now, dt) from the render loop; intro.skip() / intro.replay().
  */
 
+import { drawTetraShip } from './shared/tetra-ship.js';
+
 const INTRO_SEEN_KEY = 'icosa.introSeen';
 const INTRO_START = { yaw: 1.18, pitch: 0.34, zoom: 0.16 };
 const INTRO_END = { yaw: 0.55, pitch: 0.27, zoom: 1 };
@@ -260,6 +262,26 @@ export function createIntro({
         ctx.stroke();
       }
       ctx.restore();
+    }
+
+    // Our five-tetrahedron ship arrives out of the wormhole and settles into
+    // orbit. It is the same ship used for transit and relief drops.
+    if (kind === 'wormhole' || kind === 'drift') {
+      const arrive = clamp01(elapsed / (kind === 'wormhole' ? 1800 : 2600));
+      const scale = kind === 'wormhole' ? 1.05 + arrive * 1.1 : 1.8;
+      drawTetraShip(ctx, {
+        x: cx + Math.sin(now * 0.7) * (1 - arrive) * 26,
+        y: cy + 66 - arrive * 38,
+        scale,
+        yaw: 0.55 + now * 0.6,
+        pitch: -0.28 + Math.sin(now * 0.5) * 0.08,
+        roll: Math.sin(now * 0.4) * 0.22,
+        hull: '#e8fbff',
+        fin: '#52d9ff',
+        edge: '#bffaff',
+        glow: '#55eaff',
+        alpha: kind === 'wormhole' ? 0.65 + arrive * 0.35 : 0.9,
+      });
     }
   }
 

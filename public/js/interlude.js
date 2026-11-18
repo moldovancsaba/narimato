@@ -9,6 +9,8 @@
  * object from the server and calls onComplete when the new planet is ready.
  */
 
+import { drawTetraShip } from './shared/tetra-ship.js';
+
 const PHASES = [
   { id: 'launch', duration: 1700, status: 'ESCAPE BURN', sub: 'CLEARING THE GRAVITY WELL', className: 'mode-launch' },
   { id: 'event', duration: 2500, status: 'SPACE STORM', sub: 'HULL BREACH // UNCONTROLLED DRIFT', className: 'mode-storm' },
@@ -165,6 +167,45 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
       ctx.arc(cx, cy, radius, 0, Math.PI * 2);
       ctx.fill();
     }
+
+    // The ship itself: burning away from the old world, drifting damaged, then
+    // falling toward the new one. Five tetrahedra, same silhouette as the intro.
+    const phaseIndex = PHASES.findIndex((phase) => phase.id === phaseId);
+    const phaseStart = startTime + PHASES.slice(0, Math.max(0, phaseIndex)).reduce((sum, phase) => sum + phase.duration, 0);
+    const phase = PHASES[Math.max(0, phaseIndex)] || PHASES[0];
+    const k = clamp01((t - phaseStart) / Math.max(1, phase.duration));
+    let shipX = cx;
+    let shipY = cy;
+    let shipScale = 1.15;
+    let shipYaw = now * 0.8;
+    if (phaseId === 'launch') {
+      shipX = cx + Math.sin(now * 0.5) * 12;
+      shipY = cy + 56 - k * 130;
+      shipScale = 1.1 + k * 0.35;
+    } else if (phaseId === 'event') {
+      shipX = cx + Math.sin(now * 2.4) * 44 - 12;
+      shipY = cy + 10 + Math.sin(now * 1.7) * 24;
+      shipScale = 1.05;
+      shipYaw += 1.6 + Math.sin(now * 4) * 0.5;
+    } else {
+      shipX = cx - 78 + k * 40;
+      shipY = cy - 150 + k * 210;
+      shipScale = 0.8 + k * 0.8;
+      shipYaw += 3.1;
+    }
+    drawTetraShip(ctx, {
+      x: shipX,
+      y: shipY,
+      scale: shipScale * Math.min(w, h) / 900,
+      yaw: shipYaw,
+      pitch: -0.3 + Math.sin(now * 0.8) * 0.1,
+      roll: phaseId === 'event' ? Math.sin(now * 2.2) * 0.6 : 0.12,
+      hull: phaseId === 'event' ? '#ffd9c8' : '#e8fbff',
+      fin: phaseId === 'event' ? '#ff8d72' : '#52d9ff',
+      edge: phaseId === 'event' ? '#ffb38e' : '#bffaff',
+      glow: phaseId === 'event' ? '#ff704f' : '#55eaff',
+      alpha: phaseId === 'fall' ? 0.58 + k * 0.3 : 0.9,
+    });
     ctx.restore();
   }
 
@@ -279,6 +320,8 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
     raf = requestAnimationFrame(paint);
   }
 
+  const nowComp = (t) => t;
+
   function drawMeteor() {
     if (!meteorActive || !meteorCtx || !meteorCanvas) return;
     const elapsed = performance.now() - meteorStart;
@@ -314,65 +357,106 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
           grad.addColorStop(0.55, 'rgba(255,80,35,0.22)');
           grad.addColorStop(1, 'rgba(90,20,10,0)');
           meteorCtx.fillStyle = grad;
-          meteorCtx.fillRect(x - 22, cy - rise, 44, rise);
+          // Triangle-only fire columns.
+          meteorCtx.beginPath();
+          meteorCtx.moveTo(x - 22, cy);
+          meteorCtx.lineTo(x + 22, cy);
+          meteorCtx.lineTo(x, cy - rise);
+          meteorCtx.closePath();
+          meteorCtx.fill();
         }
       } else if (incidentKind === 'solar') {
-        // White-gold flare, expanding halo, lens streaks.
-        if (t < 0.35) {
-          meteorCtx.fillStyle = `rgba(255,248,210,${(0.8 * (1 - t / 0.35)).toFixed(3)})`;
-          meteorCtx.fillRect(0, 0, w, h);
-        }
-        const halo = meteorCtx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h) * (0.4 + k * 0.5));
-        halo.addColorStop(0, `rgba(255,236,150,${0.5 * (1 - k)})`);
-        halo.addColorStop(0.3, `rgba(255,170,60,${0.22 * (1 - k)})`);
-        halo.addColorStop(1, 'rgba(255,100,20,0)');
-        meteorCtx.fillStyle = halo;
-        meteorCtx.fillRect(0, 0, w, h);
-        for (let i = 0; i < 9; i += 1) {
-          const ang = (i / 9) * Math.PI * 2 + Math.sin(t * 0.6 + i) * 0.04;
-          const r0 = 60 + (i % 3) * 30;
-          const r1 = 80 + (k * 0.9 + i * 0.03) * Math.max(w, h) * 0.55;
-          meteorCtx.strokeStyle = `rgba(255,${225 - (i % 3) * 20},120,${0.2 * (1 - k)})`;
-          meteorCtx.lineWidth = 2 + (i % 3);
+        // A faceted triangle sun, triangular corona shards, and our ship fleeing.
+        const sunX = cx + Math.min(w, h) * 0.31;
+        const sunY = cy - Math.min(w, h) * 0.24;
+        const sunR = Math.min(w, h) * (0.085 + k * 0.015);
+        const facets = 18;
+        for (let i = 0; i < facets; i += 1) {
+          const a0 = (i / facets) * Math.PI * 2;
+          const a1 = ((i + 1) / facets) * Math.PI * 2;
+          meteorCtx.fillStyle = i % 2
+            ? `rgba(255,232,120,${0.88 * (1 - k * 0.2)})`
+            : `rgba(255,176,48,${0.82 * (1 - k * 0.25)})`;
           meteorCtx.beginPath();
-          meteorCtx.moveTo(cx + Math.cos(ang) * r0, cy + Math.sin(ang) * r0);
-          meteorCtx.lineTo(cx + Math.cos(ang) * r1, cy + Math.sin(ang) * r1);
-          meteorCtx.stroke();
+          meteorCtx.moveTo(sunX, sunY);
+          meteorCtx.lineTo(sunX + Math.cos(a0) * sunR, sunY + Math.sin(a0) * sunR);
+          meteorCtx.lineTo(sunX + Math.cos(a1) * sunR, sunY + Math.sin(a1) * sunR);
+          meteorCtx.closePath();
+          meteorCtx.fill();
         }
+        for (let i = 0; i < 18; i += 1) {
+          const ang = (i / 18) * Math.PI * 2 + t * 0.13;
+          const rIn = sunR * 1.15;
+          const rOut = sunR * (1.75 + ((i * 7) % 5) * 0.3 + Math.sin(t * 1.8 + i) * 0.16);
+          const half = 0.035 + (i % 3) * 0.015;
+          meteorCtx.fillStyle = `rgba(255,${205 - (i % 4) * 22},95,${0.24 * (1 - k)})`;
+          meteorCtx.beginPath();
+          meteorCtx.moveTo(sunX + Math.cos(ang - half) * rIn, sunY + Math.sin(ang - half) * rIn);
+          meteorCtx.lineTo(sunX + Math.cos(ang) * rOut, sunY + Math.sin(ang) * rOut);
+          meteorCtx.lineTo(sunX + Math.cos(ang + half) * rIn, sunY + Math.sin(ang + half) * rIn);
+          meteorCtx.closePath();
+          meteorCtx.fill();
+        }
+        drawTetraShip(meteorCtx, {
+          x: cx - Math.min(w, h) * 0.16 + t * 34,
+          y: cy + Math.min(w, h) * 0.23 - t * 16,
+          scale: Math.min(w, h) / 900 * 1.15,
+          yaw: 0.8 + t * 0.9,
+          pitch: -0.35,
+          roll: 0.25,
+          hull: '#fff1d0',
+          fin: '#ff9e4a',
+          edge: '#ffe0a0',
+          glow: '#ffd36b',
+          alpha: 0.9,
+        });
       } else if (incidentKind === 'alien') {
-        // Green/violet orbital beams and scanning saucer rings.
+        // Two five-tetra alien ships and triangular tractor beams.
         for (let i = 0; i < 4; i += 1) {
-          const x = cx + (i - 1.5) * Math.min(w, h) * 0.22;
-          const grad = meteorCtx.createLinearGradient(x, 0, x, h);
-          grad.addColorStop(0, `rgba(165,255,150,${0.22 * (1 - k)})`);
-          grad.addColorStop(0.6, `rgba(90,255,170,${0.12 * (1 - k)})`);
-          grad.addColorStop(1, 'rgba(80,255,160,0)');
-          meteorCtx.fillStyle = grad;
-          meteorCtx.fillRect(x - 26, 0, 52, h);
-        }
-        for (let i = 0; i < 5; i += 1) {
-          const rr = 30 + k * Math.max(w, h) * (0.45 + i * 0.05);
-          meteorCtx.strokeStyle = `rgba(${150 + i * 18},255,190,${0.28 * (1 - k)})`;
-          meteorCtx.lineWidth = 2;
+          const bx = cx + (i - 1.5) * Math.min(w, h) * 0.22;
+          const beamW = 34 + (i % 2) * 18;
+          meteorCtx.fillStyle = `rgba(90,255,165,${0.12 * (1 - k)})`;
+          // Triangle-only tractor beam: narrow at the ship, wide on the crust.
           meteorCtx.beginPath();
-          meteorCtx.ellipse(cx, cy + Math.sin(t * 1.4 + i) * 18, rr, rr * 0.32, 0, 0, Math.PI * 2);
-          meteorCtx.stroke();
+          meteorCtx.moveTo(bx, 0);
+          meteorCtx.lineTo(bx + beamW, h);
+          meteorCtx.lineTo(bx - beamW, h);
+          meteorCtx.closePath();
+          meteorCtx.fill();
+        }
+        for (let i = 0; i < 2; i += 1) {
+          const drift = Math.sin(t * 1.2 + i * 1.7) * 26;
+          const x = cx + (i === 0 ? -Math.min(w, h) * 0.22 : Math.min(w, h) * 0.22) + drift;
+          const y = cy - Math.min(w, h) * 0.3 + Math.sin(t * 0.9 + i) * 12;
+          drawTetraShip(meteorCtx, {
+            x,
+            y,
+            scale: Math.min(w, h) / 900 * (1.35 - i * 0.2),
+            yaw: 0.7 + t * 0.5 + i,
+            pitch: -0.4,
+            roll: 0.25 + Math.sin(t + i) * 0.2,
+            hull: '#b6ffd2',
+            fin: '#42ff9d',
+            edge: '#c8ffe0',
+            glow: '#5cffb3',
+            alpha: 0.92,
+          });
         }
       } else {
-        // Meteor: the original orange impact shock.
-        meteorCtx.strokeStyle = `rgba(255, 190, 90, ${0.5 * (1 - k)})`;
-        meteorCtx.lineWidth = 4 + 8 * (1 - k);
-        meteorCtx.beginPath();
-        meteorCtx.arc(cx, cy, 30 + k * Math.max(w, h) * 0.6, 0, Math.PI * 2);
-        meteorCtx.stroke();
-        for (let i = 0; i < 26; i += 1) {
-          const a = (i / 26) * Math.PI * 2;
-          const r = 60 + k * 260 + (i % 5) * 20;
-          meteorCtx.strokeStyle = `rgba(255, 150, 60, ${0.18 * (1 - k)})`;
+        // Meteor: triangular shards + a low-poly impact shock.
+        const shards = 16;
+        for (let i = 0; i < shards; i += 1) {
+          const a = (i / shards) * Math.PI * 2;
+          const r0 = 24 + k * 90 + (i % 4) * 12;
+          const r1 = r0 + 26 + k * 70;
+          const spread = 0.06 + (i % 3) * 0.025;
+          meteorCtx.fillStyle = `rgba(255,${170 - (i % 4) * 20},70,${0.22 * (1 - k)})`;
           meteorCtx.beginPath();
-          meteorCtx.moveTo(cx + Math.cos(a) * r * 0.3, cy + Math.sin(a) * r * 0.3);
-          meteorCtx.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r);
-          meteorCtx.stroke();
+          meteorCtx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0);
+          meteorCtx.lineTo(cx + Math.cos(a - spread) * r1, cy + Math.sin(a - spread) * r1);
+          meteorCtx.lineTo(cx + Math.cos(a + spread) * r1, cy + Math.sin(a + spread) * r1);
+          meteorCtx.closePath();
+          meteorCtx.fill();
         }
       }
       meteorCtx.restore();

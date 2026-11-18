@@ -6,6 +6,8 @@
  * module is purely presentational and fails safe.
  */
 
+import { drawTetraShip } from './shared/tetra-ship.js';
+
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' &&
@@ -65,13 +67,21 @@ export function createSupplyDrop() {
       ctx.moveTo(px - 180, py - 110);
       ctx.lineTo(px, py);
       ctx.stroke();
-      ctx.fillStyle = `rgba(255,232,190,${0.9 * (1 - k)})`;
-      ctx.beginPath();
-      ctx.moveTo(px + 22, py + 8);
-      ctx.lineTo(px - 12, py + 2);
-      ctx.lineTo(px - 2, py - 12);
-      ctx.closePath();
-      ctx.fill();
+      // The relief ship is the same five-tetrahedron silhouette as our own.
+      const shipScale = (0.55 + (1 - clamp01(t * 1.4)) * 0.5) * Math.min(w, h) / 900;
+      drawTetraShip(ctx, {
+        x: px,
+        y: py,
+        scale: shipScale,
+        yaw: 0.7 + t * 2.4,
+        pitch: -0.35,
+        roll: t * 1.8,
+        hull: '#fff2d2',
+        fin: '#ffbd6a',
+        edge: '#ffe7b0',
+        glow: '#ffcf72',
+        alpha: clamp01(1 - k * 0.4),
+      });
       // Impact shock rings + scattered salvage sparks.
       const ring = clamp01((elapsed - 850) / 1600);
       if (elapsed > 700) {
@@ -97,7 +107,14 @@ export function createSupplyDrop() {
         for (let i = 0; i < 5; i += 1) {
           const ang = -0.9 + i * 0.42;
           const rr = 34 + a * 120;
-          ctx.fillRect(ix + Math.cos(ang) * rr - 5, iy + Math.sin(ang) * rr * 0.7 - 4, 10, 8);
+          const px2 = ix + Math.cos(ang) * rr;
+          const py2 = iy + Math.sin(ang) * rr * 0.7;
+          ctx.beginPath();
+          ctx.moveTo(px2 - 5, py2 - 4);
+          ctx.lineTo(px2 + 5, py2 - 4);
+          ctx.lineTo(px2, py2 + 5);
+          ctx.closePath();
+          ctx.fill();
         }
       }
       ctx.restore();

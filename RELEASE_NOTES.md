@@ -1,5 +1,37 @@
 # NARIMATO — Release Notes
 
+## v3.23.0 — “Triangle Fleet” (2026-11-18)
+
+### Added
+
+- **One five-tetrahedron ship**, shared by every cinematic:
+  - arrival in the load-in intro;
+  - departure/drift/arrival during interplanetary transit;
+  - relief ship in emergency supply drops;
+  - alien ships in the alien-invasion incident.
+- **Triangular geometry everywhere it matters:** 5 tetrahedra × 4 triangular faces, projected and
+  flat-shaded by `public/js/shared/tetra-ship.js`. No textures, no models, no dependencies.
+- **Solar flare has a visible faceted triangle sun** with a triangular corona and our ship fleeing
+  the storm.
+- **Alien invasion has actual spacecraft** above the planet, with triangle-only tractor beams.
+- Meteor/nuclear effects remain low-poly; relief canisters and fire columns are triangular.
+
+### Verification
+
+- Five-tetra model test: exactly 5 tetrahedra, 4 vertices each, 20 triangular faces, finite
+  projection and engine point.
+- Browser: intro ship, solar sun, alien ships, relief ship and incident story descriptions render
+  without console errors.
+- **94/94 tests**, Chromium + WebKit UI audits clean, axe clean.
+
+### Release artifact
+
+- Source tag: `v3.23.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.23.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.22.0 — “Real Opponents” (2026-11-18)
 
 ### Corrected — this supersedes v3.20/v3.21 solo behaviour
