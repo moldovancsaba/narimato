@@ -15,8 +15,9 @@ then shard. No distributed system should be built before the first metrics exist
 **Goal:** no unreadable/blocked UI at the supported viewport matrix; first-five-seconds
 clarity.
 
-**Status (v3.8.1):** A0 harness committed; A1 and A2 shipped and audit-clean.
-A3/A4 remain.
+**Status (v3.9.0):** A0–A3 delivered and audit-clean; A4 keyboard/aria and automated
+accessible-name checks delivered, real-device pass remains; **B0 observability delivered**.
+Next: A4 real-device gate, then B1 edge/CDN assets.
 
 ### A0. Audit harness (0.5 day)
 

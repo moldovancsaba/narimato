@@ -26,8 +26,15 @@ A0–A2 from the delivery plan are now implemented and verified with
 - **E6 fixed:** Field Manual reserves bottom space for captions.
 - **E7/E8 partially addressed:** compact icon row and moved planet identity reduce
   crowding; short landing join still needs the A3 hierarchy pass.
-- Remaining: labelled touch controls, 44 px targets, first-five-second voice hint,
-  real-device/accessibility pass (A3/A4).
+- **A3 delivered (v3.9.0):** mobile media controls now have visible labels and 44 px touch
+  targets; a `TAP FOR VOICE` hint appears until the first gesture unlocks autoplay; the landing
+  screen hides in-game chrome and uses a two-column short-landscape layout so JACK IN stays
+  on-screen. The A0 harness now asserts labels, 44 px targets, accessible button names and
+  short-landing visibility.
+- **A4 partially delivered:** Escape closes manual/brief/CTA; accessible-name and 44 px checks
+  are in the harness. Real iOS Safari/Android and screen-reader passes remain a manual gate.
+- **B0 delivered:** `/api/metrics`, privacy-safe `/api/telemetry`, client beacon and
+  `OBSERVABILITY.md`; see Track B below.
 
 ![HUD after A1 fix](media/audit/hud-fixed.jpg)
 

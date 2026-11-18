@@ -4,7 +4,7 @@
  * Zero npm dependencies. Responsibilities:
  *   - static serving of `public/` (traversal-safe, MIME, no-store html/js/css)
  *   - REST: /api/join, /api/action, /api/state, /api/world, /api/leaderboard,
- *     /api/health
+ *     /api/health, /api/metrics (observability), /api/telemetry (privacy-safe client beacons)
  *   - SSE: /api/events?token=… (snapshot{state,leaves}, throttled state ~1/s +
  *     on player changes, cell, break, toast, `:hb` heartbeat every 15s)
  *   - persistent world in DATA_DIR/world.json (via lib/world-core.js), saved
@@ -23,6 +23,7 @@ import { fileURLToPath } from 'node:url';
 
 import { resolveConfig } from './lib/world-core.js';
 import { PlanetManager } from './lib/planet-manager.js';
+import { Metrics } from './lib/metrics.js';
 
 const MODULE_FILE = fileURLToPath(import.meta.url);
 export const PUBLIC_DIR = path.join(path.dirname(MODULE_FILE), 'public');
@@ -33,6 +34,9 @@ const PUMP_MS = 100;
 const STATE_INTERVAL_MS = 1000; // "~1/s"; player changes force an immediate state
 const HEARTBEAT_MS = 15_000;
 const SSE_BACKPRESSURE_BYTES = 1024 * 1024;
+/** Strict body cap for client telemetry beacons (tiny numeric payloads only). */
+export const TELEMETRY_BODY_BYTES = 4096;
+const TELEMETRY_RATE = Object.freeze({ max: 30, windowMs: 60_000 });
 
 const MIME_TYPES = Object.freeze({
   '.html': 'text/html; charset=utf-8',
@@ -154,9 +158,11 @@ function safeDecode(value) {
 
 /** HTTP + SSE application around a WorldCore instance. */
 export class InfiniteServerApp {
-  constructor({ manager, config, publicDir = PUBLIC_DIR, now = Date.now, quiet = false } = {}) {
+  constructor({ manager, config, publicDir = PUBLIC_DIR, now = Date.now, quiet = false, metrics = null } = {}) {
     this.manager = manager;
     this.config = config;
+    this.metrics = metrics || new Metrics({ now });
+    this._telemetryBuckets = new Map();
     this.publicDir = publicDir;
     this.now = typeof now === 'function' ? now : Date.now;
     this.quiet = !!quiet;
@@ -186,6 +192,10 @@ export class InfiniteServerApp {
     this._heartbeatTimer = null;
     for (const client of [...this.clients]) {
       client.dead = true;
+      if (!client.metricsCounted) {
+        client.metricsCounted = true;
+        this.metrics.sseClosed(client.planetIndex, { dropped: false });
+      }
       try {
         client.res.end();
       } catch {
@@ -193,13 +203,32 @@ export class InfiniteServerApp {
       }
     }
     this.clients.clear();
+    this.metrics.close();
   }
 
   // ------------------------------------------------------------------ routing
 
   async handle(req, res) {
+    const method = (req.method || 'GET').toUpperCase();
+    const requestPath = typeof req.url === 'string' ? req.url.split('?')[0] : '/';
+    const startedAt = this.now();
+    let recorded = false;
+    const finalize = (status) => {
+      if (recorded) return;
+      recorded = true;
+      this.metrics.recordRequest({
+        method,
+        pathname: requestPath,
+        status: Number.isInteger(status) ? status : 0,
+        durationMs: this.now() - startedAt,
+        // SSE connections are counted as connections, not HTTP latency samples.
+        sse: requestPath.startsWith('/api/events'),
+      });
+    };
+    this.metrics.beginRequest();
+    res.on('finish', () => finalize(res.statusCode));
+    res.on('close', () => finalize(res.statusCode));
     try {
-      const method = (req.method || 'GET').toUpperCase();
       let url;
       try {
         url = new URL(req.url || '/', 'http://localhost');
@@ -245,6 +274,21 @@ export class InfiniteServerApp {
       if (pathname === '/api/events') {
         if (!this._allow(method, res, ['GET'], true)) return;
         await this._handleEvents(req, res, url);
+        return;
+      }
+
+      if (pathname === '/api/metrics') {
+        if (!this._allow(method, res, ['GET', 'HEAD'], true)) return;
+        sendJson(res, 200, this.metricsSnapshot());
+        return;
+      }
+      if (pathname === '/api/telemetry') {
+        if (!this._allow(method, res, ['GET', 'HEAD', 'POST'], true)) return;
+        if (method === 'POST') {
+          await this._handleTelemetry(req, res);
+          return;
+        }
+        sendJson(res, 200, { ok: true, telemetry: this.metrics.telemetrySnapshot() });
         return;
       }
 
@@ -334,6 +378,84 @@ export class InfiniteServerApp {
     sendJson(res, 200, routed.result);
   }
 
+  // ---------------------------------------------------- observability / telemetry
+
+  /** Read-only per-planet aggregates — never tokens/tags/ids/hidden deposits. */
+  metricsSnapshot() {
+    const planets = this.manager.loadedPlanets().map(({ index, core }) => ({
+      index,
+      name: this.manager.name(index),
+      depth: this.manager.depth(index),
+      playersOnline: core.onlineHumanCount(),
+      playersTotal: core.players.length,
+      robots: core.robotInfos().length,
+      faces: core.leafCount,
+      clicks: core.totalClicks,
+      breaks: core.totalBreaks,
+      maxDepthReached: core.maxDepthReached,
+      revision: core.revision,
+    }));
+    return this.metrics.snapshot({
+      planets,
+      uptimeMs: this.now() - this.startedAt,
+      generatedAt: this.now(),
+    });
+  }
+
+  _sameOrigin(req) {
+    const origin = req.headers.origin;
+    if (!origin) return true; // curl / same-process beacons without Origin
+    try {
+      return new URL(origin).host === req.headers.host;
+    } catch {
+      return false;
+    }
+  }
+
+  _telemetryAllowed(ip) {
+    const limit = this.metrics.telemetryLimit || TELEMETRY_RATE;
+    const now = this.now();
+    let bucket = this._telemetryBuckets.get(ip);
+    if (!bucket || now >= bucket.resetAt) {
+      bucket = { count: 0, resetAt: now + limit.windowMs };
+      this._telemetryBuckets.set(ip, bucket);
+      // Bound memory if a lot of addresses report.
+      if (this._telemetryBuckets.size > 2048) {
+        for (const [key, entry] of this._telemetryBuckets) {
+          if (now >= entry.resetAt && this._telemetryBuckets.size > 1024) this._telemetryBuckets.delete(key);
+        }
+      }
+    }
+    bucket.count += 1;
+    return bucket.count <= limit.max;
+  }
+
+  async _handleTelemetry(req, res) {
+    if (!this._sameOrigin(req)) {
+      sendJson(res, 403, { ok: false, error: 'CROSS_ORIGIN', message: 'Telemetry must be same-origin.' });
+      return;
+    }
+    let body;
+    try {
+      body = await readJsonBody(req, TELEMETRY_BODY_BYTES);
+    } catch (err) {
+      const status = err && err.code === 'PAYLOAD_TOO_LARGE' ? 413 : 400;
+      sendJson(res, status, {
+        ok: false,
+        error: err && err.code ? err.code : 'INVALID_JSON',
+        message: err && err.message ? err.message : 'Invalid telemetry payload.',
+      });
+      return;
+    }
+    const ip = (req.socket && req.socket.remoteAddress) || 'unknown';
+    if (!this._telemetryAllowed(ip)) {
+      sendJson(res, 429, { ok: false, error: 'RATE_LIMITED', message: 'Too many telemetry reports.' });
+      return;
+    }
+    const result = this.metrics.recordTelemetry(body);
+    sendJson(res, 200, { ok: true, accepted: result.accepted });
+  }
+
   // --------------------------------------------------------------------- SSE
 
   async _handleEvents(req, res, url) {
@@ -349,6 +471,7 @@ export class InfiniteServerApp {
       return;
     }
 
+    this.metrics.recordRoute('/api/events');
     res.writeHead(200, {
       'Content-Type': 'text/event-stream; charset=utf-8',
       'Cache-Control': 'no-store, no-transform',
@@ -357,8 +480,9 @@ export class InfiniteServerApp {
     });
     res.write('retry: 1500\n\n');
 
-    const client = { res, playerId, token, planetIndex: index, dead: false };
+    const client = { res, playerId, token, planetIndex: index, dead: false, metricsCounted: false };
     this.clients.add(client);
+    this.metrics.sseOpened(index);
     core.setOnline(playerId, true);
 
     const snapshot = {
@@ -400,6 +524,10 @@ export class InfiniteServerApp {
     if (!client || client.dead) return;
     client.dead = true;
     this.clients.delete(client);
+    if (!client.metricsCounted) {
+      client.metricsCounted = true;
+      this.metrics.sseClosed(client.planetIndex, { dropped: !!end });
+    }
     if (end) {
       try {
         client.res.end();
@@ -592,12 +720,19 @@ export async function startServer(options = {}) {
   // Backward compatible handle: `core` is planet 0's WorldCore.
   const core = manager.planetCore(0);
 
+  const metrics = new Metrics({
+    now,
+    eventLoop: options.metricsEventLoop !== false,
+    eventLoopResolutionMs: options.metricsEventLoopResolutionMs || 20,
+    telemetryLimit: options.telemetryRateLimit || undefined,
+  });
   const app = new InfiniteServerApp({
     manager,
     config,
     now,
     publicDir: options.publicDir || PUBLIC_DIR,
     quiet: options.quiet === true,
+    metrics,
   });
 
   const server = http.createServer((req, res) => {
@@ -633,6 +768,7 @@ export async function startServer(options = {}) {
     core,
     manager,
     app,
+    metrics,
     config,
     dataDir: config.dataDir,
     port,

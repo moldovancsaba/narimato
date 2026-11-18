@@ -105,6 +105,10 @@ resets its crust and releases new resources. The game never ends.
   to mine; tap the chip to fly the camera there or ↻ to cycle targets.
 - **Red locked cells** — a cell you just mined turns red until another operator contests it; then
   it clears and you can mine again.
+- **Observable by default** — `GET /api/metrics` exposes privacy-safe HTTP/SSE/planet/event-loop
+  metrics, and a tiny client beacon reports Web Vitals/audio-start timing. No tokens or tags.
+- **Mobile-first controls** — labelled 44 px media controls, a visible "tap for voice" hint, and a
+  two-column short-landscape landing screen that keeps JACK IN on-screen.
 - **Procedural refit missions** — every planet generates its own requirements from its seed. Planet 1
   starts minimal (3 units); each deeper planet grows the refit by 0–3 units and mixes in different
   materials, so no two planets ask for the same cargo.
@@ -173,5 +177,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.8.1** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.9.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.

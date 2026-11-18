@@ -1,5 +1,35 @@
 # NARIMATO — Release Notes
 
+## v3.9.0 — “Observable Skies” (2026-11-18)
+
+### Added
+
+- **Track B0 observability:** `GET /api/metrics` (HTTP latency p50/p95/p99, SSE active/opened/
+  closed per planet, per-planet aggregates, event-loop delay, heap/RSS) and privacy-safe
+  `POST /api/telemetry` for Web Vitals, HUD long tasks and audio-first-word timing. No tokens,
+  tags, player ids or hidden deposits in metrics. See `OBSERVABILITY.md`.
+- **A3 mobile controls:** visible short labels (SFX/CC/VOX/MANUAL), 44 px touch targets, top-row
+  clutter reduced, in-game chrome hidden on the landing screen.
+- **Voice hint:** captions show `TAP FOR VOICE` until the first gesture unlocks autoplay.
+- **Short-landscape landing:** two-column layout keeps JACK IN on-screen at 844×390 and 792×302.
+- **A4 keyboard/accessibility:** Escape closes manual/brief/CTA; the audit harness now checks
+  accessible button names, 44 px targets and short-landing visibility.
+
+### Verification
+
+- `npm run audit:ui` clean across nine viewports (score, target/subtitle, intro/steer, mobile
+  labels/targets, landing).
+- `/api/metrics` + telemetry verified end-to-end (HTTP/SSE/planet metrics, beacon aggregates).
+- Full `node --test test/` → **84/84 pass**.
+
+### Release artifact
+
+- Source tag: `v3.9.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.9.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.8.1 — “HUD Safety” (2026-11-18)
 
 ### Fixed

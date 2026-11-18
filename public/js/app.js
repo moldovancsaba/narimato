@@ -18,6 +18,7 @@ import { missionProgress, missionForPlanet, planetDepth, planetName, planetSourc
 import { createIntro } from './intro.js';
 import { createInterlude } from './interlude.js';
 import { createNarrator } from './narrator.js';
+import './telemetry.js';
 import { HELP_SECTIONS } from './narrative-data.js';
 
 const TOKEN_KEY = 'icosa.token';

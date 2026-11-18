@@ -1258,9 +1258,20 @@ class UI {
     if (doc && !this._manualKeyBound) {
       this._manualKeyBound = true;
       doc.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && this.isManualOpen) {
+        if (event.key !== 'Escape') return;
+        if (this.isManualOpen) {
           event.preventDefault();
           this.hideManual();
+          return;
+        }
+        if (!this._el.landingBrief?.hidden) {
+          event.preventDefault();
+          this.hideLandingBrief();
+          return;
+        }
+        if (!this._el.escapeCta?.hidden) {
+          event.preventDefault();
+          this.dismissEscapeCta();
         }
       });
     }

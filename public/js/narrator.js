@@ -9,6 +9,7 @@
  */
 
 import { NARRATION, VOICE_PROFILES, narrationSegments } from './narrative-data.js';
+import { telemetry } from './telemetry.js';
 
 const VOICE_KEY = 'icosa.voice';
 const SUBTITLE_KEY = 'icosa.subtitles';
@@ -68,6 +69,9 @@ export function createNarrator() {
   let gapTimer = 0;
   let hideTimer = 0;
   let lastSegmentText = '';
+  let firstWordMarked = false;
+  let shownSpeaker = '';
+  let shownText = '';
   const audio = new Map();
   const durations = new Map();
 
@@ -191,9 +195,14 @@ export function createNarrator() {
     if (!wrap || !textEl) return;
     wrap.classList.remove('is-hidden');
     wrap.hidden = false;
-    if (speakerEl) speakerEl.textContent = String(speaker || 'NARIMATO').toUpperCase();
-    textEl.textContent = String(text || '');
-    lastSegmentText = String(text || '');
+    const label = String(speaker || 'NARIMATO').toUpperCase();
+    shownSpeaker = label;
+    shownText = String(text || '');
+    if (speakerEl) {
+      speakerEl.textContent = voiceEnabled && !unlocked ? `${label} · TAP FOR VOICE` : label;
+    }
+    textEl.textContent = shownText;
+    lastSegmentText = shownText;
   }
 
   function hideSubtitles() {
@@ -261,6 +270,17 @@ export function createNarrator() {
       const a = getAudio(cueId, sequence.index, profile);
       currentAudio = a;
       currentAudioId = `${profile}:${fileId(cueId, sequence.index)}`;
+      if (!firstWordMarked) {
+        a.addEventListener('playing', () => {
+          if (firstWordMarked) return;
+          firstWordMarked = true;
+          try {
+            telemetry.markAudioFirstWord(Math.max(0, Math.round(performance.now())));
+          } catch {
+            /* telemetry is best-effort */
+          }
+        }, { once: true });
+      }
       try {
         a.currentTime = 0;
         const p = a.play();
@@ -299,6 +319,7 @@ export function createNarrator() {
   function unlock() {
     if (unlocked) return;
     unlocked = true;
+    if (shownText && subtitlesEnabled) showBar(shownSpeaker, shownText);
     if (pending) {
       sequence = pending;
       pending = null;
@@ -402,6 +423,7 @@ export function createNarrator() {
     } else {
       unlock();
     }
+    if (shownText && subtitlesEnabled) showBar(shownSpeaker, shownText);
     syncControls();
   }
 

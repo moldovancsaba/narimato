@@ -143,6 +143,24 @@ try {
       failures.push(`${name}: subtitles overlap the target inspector (${Math.round(hit(snap.target, snap.subtitle))}px²) target=${JSON.stringify(snap.target)} sub=${JSON.stringify(snap.subtitle)} body=${await page.evaluate(() => document.body.className)} bottom=${await page.evaluate(() => getComputedStyle(document.getElementById('narrative-subtitles')).bottom)}`);
     }
     if (consoleErrors.length) failures.push(`${name}: console errors: ${consoleErrors.slice(0, 2).join(' | ')}`);
+    const unnamed = await page.evaluate(() => [...document.querySelectorAll('button')].filter((e) => e.offsetParent !== null && !(e.getAttribute('aria-label') || e.getAttribute('title') || e.textContent.trim())).map((e) => e.id || e.className));
+    if (unnamed.length) failures.push(`${name}: visible buttons without accessible name: ${unnamed.slice(0, 3).join(', ')}`);
+    if (w <= 760) {
+      const minTarget = await page.evaluate(() => [...document.querySelectorAll('#mobile-dock button, .status-cluster button, .manual-play')].filter((e) => e.offsetParent !== null).map((e) => { const r = e.getBoundingClientRect(); return { w: r.width, h: r.height, id: e.id }; }));
+      if (minTarget.some((t) => t.w < 44 || t.h < 44)) failures.push(`${name}: primary touch targets below 44px`);
+    }
+    if (w <= 760) {
+      const touch = await page.evaluate(() => {
+        const buttons = [...document.querySelectorAll('.status-cluster .icon-btn')].filter((e) => e.offsetParent !== null);
+        return buttons.map((e) => {
+          const r = e.getBoundingClientRect();
+          const label = e.querySelector('.icon-btn-label');
+          return { w: r.width, h: r.height, label: label ? getComputedStyle(label).display : 'none' };
+        });
+      });
+      if (touch.some((t) => t.w < 44 || t.h < 44)) failures.push(`${name}: visible mobile media controls are smaller than 44px`);
+      if (touch.some((t) => t.label === 'none')) failures.push(`${name}: visible mobile media controls have no visible label`);
+    }
     console.log(`${name.padEnd(12)} viewport=${w}x${h} score-overlap=${Math.round(scoreHit)} target-sub-overlap=${Math.round(snap.target && snap.subtitle ? hit(snap.target, snap.subtitle) : 0)} errors=${consoleErrors.length}`);
     await context.close();
   }
@@ -162,6 +180,26 @@ try {
     });
     if (overlap > 8) failures.push(`${name}: intro subtitles overlap touch steering (${Math.round(overlap)}px²)`);
     console.log(`intro-${name.padEnd(7)} caption-steer-overlap=${Math.round(overlap)}`);
+    await context.close();
+  }
+
+  // A3: landing has no in-game chrome and the join action is on-screen in short landscape.
+  for (const [w, h, name] of [[844, 390, 'landscape'], [792, 302, 'short']]) {
+    const context = await browser.newContext({ viewport: { width: w, height: h } });
+    const page = await context.newPage();
+    await page.goto(`${BASE}/?intro=0`, { waitUntil: 'domcontentloaded' });
+    await delay(700);
+    const landing = await page.evaluate(() => {
+      const form = document.querySelector('.join-form')?.getBoundingClientRect();
+      const status = document.querySelector('.status-cluster');
+      const statusVisible = !!status && getComputedStyle(status).display !== 'none';
+      return { form: form ? { top: form.top, bottom: form.bottom } : null, statusVisible, vh: innerHeight };
+    });
+    if (!landing.form || landing.form.bottom < 0 || landing.form.top > landing.vh) {
+      failures.push(`${name}: join form is not visible on the landing screen`);
+    }
+    if (landing.statusVisible) failures.push(`${name}: in-game status cluster is visible over the landing screen`);
+    console.log(`landing-${name.padEnd(7)} form=${landing.form ? `${Math.round(landing.form.top)}..${Math.round(landing.form.bottom)}` : 'missing'} status=${landing.statusVisible}`);
     await context.close();
   }
 } finally {

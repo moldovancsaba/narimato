@@ -8,7 +8,7 @@
 | Rendering | Canvas 2D | geodesic sphere, biomes, ownership, ore markers, particles |
 | Simulation | Node.js ≥20 | authoritative game server, HTTP + Server-Sent Events |
 | Persistence | JSON files + atomic rename | one file per planet, one registry file |
-| Tests | `node:test` | 66 tests, no test dependencies |
+| Tests | `node:test` | 80+ tests, no test dependencies |
 | CI | GitHub Actions | Node 20 and 22, `npm test` |
 | Deploy | `node server.js` behind any static/reverse proxy | Cloudflare tunnel used for the live build |
 
@@ -32,12 +32,17 @@ Browser
                  ▼
 Node server.js
   ├─ static file server (public/)
+  ├─ lib/metrics.js        HTTP/SSE/event-loop/telemetry aggregates (/api/metrics)
   └─ lib/planet-manager.js
         ├─ registry.json        token → planetIndex
         ├─ Planet 0 WorldCore   DATA_DIR/world.json
         ├─ Planet 1 WorldCore   DATA_DIR/planets/p1/world.json
         └─ Planet n WorldCore   on demand · per-planet robots · per-planet SSE rooms
 ```
+
+Observability: `public/js/telemetry.js` posts a tiny privacy-safe numeric beacon to
+`/api/telemetry` (page hide + first spoken word); the server aggregates it and exposes
+`/api/metrics` (zero dependencies). See **OBSERVABILITY.md** for fields, SLOs and privacy notes.
 
 ## Modules
 
@@ -247,6 +252,9 @@ Three deliberate layouts, not just scaling:
 - `test/world-core.test.js` — config, identity/tokens, scoring, breaks, locks, resources, migration,
   robots, persistence, meteor/adopt/reset, arcade.
 - `test/server.test.js` — HTTP/SSE, rooms, escape, persistence, static safety.
+- `test/observability.test.js` — `/api/metrics` shape/aggregates, SSE counters, privacy (no
+  tokens/tags/ids/hidden deposits), telemetry whitelist/clamping, 4 KB body cap, same-origin,
+  rate limiting, and the Node-safe client beacon module.
 - QA: Playwright viewport suites (desktop/tablet/mobile/landscape), intro/interlude/meteor,
   report/card, abandon/new-pilot.
 
