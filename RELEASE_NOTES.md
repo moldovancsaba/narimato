@@ -1,5 +1,30 @@
 # NARIMATO — Release Notes
 
+## v3.15.0 — “Zoom Levels” (2026-11-18)
+
+### Added / changed
+
+- **Depth-aware zoom ladder.** Wheel and pinch now step between action levels:
+  `D0 = ×1`, `D1 = ×2`, `D2 = ×4`, … up to the planet's max depth. Each step uses a fast
+  **cubic-bezier(0.16, 1, 0.3, 1)** settle instead of a long exponential drift.
+- **Action-level snap.** Clicking a cell moves the camera to that cell's level; when your own break
+  creates the next generation, the camera advances to the child level automatically.
+- **Pinch** remains continuous while fingers move and settles to the nearest level rung on release.
+- **Limitless quaternion trackball** and reverse-drag navigation retained.
+
+### Verification
+
+- Wheel test: D0 → D1 (×2) → stopped at planet max level → D1 → D0; transitions animate and settle.
+- **89/89 tests**, Chromium + WebKit UI audits clean, axe clean.
+
+### Release artifact
+
+- Source tag: `v3.15.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.15.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.14.0 — “Free Rotation” (2026-11-18)
 
 ### Changed

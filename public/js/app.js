@@ -58,6 +58,7 @@ let pollTimer = null;
 let focusAnim = null;
 let spinVel = { x: 0, y: 0 }; // radians/sec after releasing a drag
 let zoomTarget = null; // eased zoom target (null = no movement)
+let zoomAnim = null; // fast cubic-bezier step to a cell level
 let zoomUiPending = false;
 let pointerDown = null;
 let pointers = new Map();
@@ -789,6 +790,9 @@ function handleBreakEvent(msg) {
   renderer.replaceFace(msg.label, children);
   for (const child of children) renderer.pulse(child.label, { color: '#d7ff00', kind: 'break', text: '' });
   safeAudio('breakShatter');
+  if (myPlayer && msg.byPlayerId === myPlayer.id) {
+    startZoom(zoomForLevel(Math.min(maxZoomLevel(), Number(msg.depth || 0) + 1)), 320);
+  }
   safeCall(ui, 'toast', `CELL ${msg.label} FRACTURED // 4 NEW NODES`, 'good');
   if (hoveredLabel === msg.label) {
     hoveredLabel = null;
@@ -1345,6 +1349,7 @@ function attemptClick(label) {
   if (!label) return;
   const node = world.get(label);
   if (!node) return;
+  ensureActionZoom(node);
   if (node.ownerIndex === myIndex && node.lastClickIndex === myIndex) {
     maybeTip('tip-lock', { delay: 250 });
     const stampLock = now();
@@ -1622,33 +1627,94 @@ function updateZoomUi() {
   safeCall(ui, 'setZoom', camera.zoom, depth);
 }
 
+/** Cubic-bezier(0.16, 1, 0.3, 1): fast start, long soft landing. */
+function bezierEase(t) {
+  const x = clamp(t, 0, 1);
+  const bx = (u) => 3 * (1 - u) ** 2 * u * 0.16 + 3 * (1 - u) * u ** 2 * 0.3 + u ** 3;
+  const by = (u) => 3 * (1 - u) ** 2 * u * 1 + 3 * (1 - u) * u ** 2 * 1 + u ** 3;
+  let lo = 0;
+  let hi = 1;
+  let u = x;
+  for (let i = 0; i < 10; i += 1) {
+    const sample = bx(u);
+    if (Math.abs(sample - x) < 1e-5) break;
+    if (sample < x) lo = u;
+    else hi = u;
+    u = (lo + hi) / 2;
+  }
+  return by(u);
+}
+
+function maxZoomLevel() {
+  return Math.max(0, Math.min(12, maxDepth()));
+}
+
+function zoomForLevel(level) {
+  return clamp(2 ** clamp(Math.round(Number(level) || 0), 0, 12), 0.4, MAX_ZOOM);
+}
+
+function zoomLevelForZoom(value) {
+  return clamp(Math.round(Math.log2(Math.max(1, Number(value) || 1))), 0, maxZoomLevel());
+}
+
+function startZoom(target, duration = 260) {
+  const to = clamp(Number(target) || 1, 0.4, MAX_ZOOM);
+  zoomTarget = to;
+  zoomAnim = {
+    from: camera.zoom,
+    to,
+    start: performance.now(),
+    duration: Math.max(100, Math.min(900, Number(duration) || 260)),
+  };
+}
+
+function cancelZoom() {
+  zoomAnim = null;
+  zoomTarget = null;
+}
+
+function snapZoomToLevel() {
+  const current = zoomTarget === null ? camera.zoom : zoomTarget;
+  const level = zoomLevelForZoom(current);
+  if (Math.abs(current - zoomForLevel(level)) > 0.0001) startZoom(zoomForLevel(level), 200);
+}
+
+function zoomByNotch(direction, magnitude = 1) {
+  const current = zoomTarget === null ? camera.zoom : zoomTarget;
+  const level = zoomLevelForZoom(current);
+  const next = clamp(level + (direction > 0 ? 1 : -1), 0, maxZoomLevel());
+  startZoom(zoomForLevel(next), 240 + 40 * clamp(magnitude, 0, 2));
+  lastInteraction = now();
+  hoverNeedsRefresh = true;
+}
+
 function zoomLevelsPerNotch() {
   const d = clamp(Math.log2(Math.max(1, camera.zoom)), 0, Math.max(1, maxDepth()));
   // Finer steps as you go deeper: ~13% at the coarse sphere, ~2.5% at depth 16+.
   return 0.2 / (1 + d * 0.3);
 }
 
-function zoomByNotch(direction, magnitude = 1) {
-  const levels = zoomLevelsPerNotch() * clamp(magnitude, 0.25, 2.5);
-  const factor = 2 ** (direction > 0 ? levels : -levels);
-  // Ease toward the new zoom instead of snapping: repeated wheel/pinch
-  // input accumulates a target and the frame loop eases into it.
-  const base = zoomTarget === null ? camera.zoom : zoomTarget;
-  zoomTarget = clamp(base * factor, 0.4, MAX_ZOOM);
-  lastInteraction = now();
-  hoverNeedsRefresh = true;
-}
-
 function cancelCameraInertia() {
   spinVel.x = 0;
   spinVel.y = 0;
-  zoomTarget = null;
+  cancelZoom();
 }
 
 function updateCameraInertia(dt) {
   if (dt <= 0) return;
   const dtSec = dt / 1000;
-  if (zoomTarget !== null) {
+  if (zoomAnim) {
+    const t = clamp((performance.now() - zoomAnim.start) / zoomAnim.duration, 0, 1);
+    const e = bezierEase(t);
+    camera.zoom = zoomAnim.from * (zoomAnim.to / zoomAnim.from) ** e;
+    if (t >= 1) {
+      camera.zoom = zoomAnim.to;
+      zoomAnim = null;
+      zoomTarget = null;
+    }
+    updateZoomUi();
+    hoverNeedsRefresh = true;
+  } else if (zoomTarget !== null) {
     const k = 1 - Math.exp(-8 * dtSec);
     camera.zoom += (zoomTarget - camera.zoom) * k;
     if (Math.abs(Math.log(zoomTarget / Math.max(1e-9, camera.zoom))) < 0.0007) {
@@ -1755,7 +1821,7 @@ function bindCanvasInput() {
       const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
       if (pinchDist > 0 && dist > 0) {
         const base = zoomTarget === null ? camera.zoom : zoomTarget;
-        zoomTarget = clamp(base * (dist / pinchDist), 0.4, MAX_ZOOM);
+        startZoom(clamp(base * (dist / pinchDist), 0.4, MAX_ZOOM), 90);
       }
       pinchDist = dist;
       hoverNeedsRefresh = true;
@@ -1817,6 +1883,7 @@ function bindCanvasInput() {
         if (label) attemptClick(label);
       }
     }
+    if (pointers.size < 2) snapZoomToLevel();
     if (pointers.size === 1) {
       const [id, p] = [...pointers.entries()][0];
       pointerDown = {
@@ -1954,12 +2021,20 @@ function setInvertDrag(next) {
 
 function cancelFocus() {
   focusAnim = null;
-  zoomTarget = null;
+  cancelZoom();
+}
+
+function ensureActionZoom(node) {
+  if (!node) return;
+  const level = clamp(Number(node.depth) || 0, 0, maxZoomLevel());
+  const current = zoomTarget === null ? camera.zoom : zoomTarget;
+  if (Math.abs(Math.log2(Math.max(1, current)) - level) > 0.42) startZoom(zoomForLevel(level), 260);
 }
 
 function focusFace(label) {
   const node = world.get(label);
   if (!node) return;
+  cancelZoom();
   const c = node.centroid;
   let targetYaw = Math.atan2(-c.x, c.z);
   const horizontal = Math.hypot(c.x, c.z);
@@ -1998,7 +2073,7 @@ function focusFace(label) {
       fromYaw: camera.yaw,
       toYaw: camera.yaw + dYaw,
       fromPitch: camera.pitch,
-      toPitch: clamp(targetPitch, -1.35, 1.35),
+      toPitch: targetPitch,
       fromZoom: camera.zoom,
       toZoom: targetZoom,
     };
@@ -2009,7 +2084,7 @@ function focusFace(label) {
 function updateFocus(nowMs) {
   if (!focusAnim) return;
   const t = clamp((nowMs - focusAnim.start) / focusAnim.duration, 0, 1);
-  const e = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+  const e = bezierEase(t);
   camera.yaw = focusAnim.fromYaw + (focusAnim.toYaw - focusAnim.fromYaw) * e;
   camera.pitch = focusAnim.fromPitch + (focusAnim.toPitch - focusAnim.fromPitch) * e;
   camera.zoom = focusAnim.fromZoom * (focusAnim.toZoom / focusAnim.fromZoom) ** e;
@@ -2130,7 +2205,13 @@ window.__ICOSA__ = {
     context: audio && audio._ctx ? audio._ctx.state : null,
   }),
   manual: () => safeCall(ui, 'showManual', HELP_SECTIONS),
-  cameraInertia: () => ({ spin: { ...spinVel }, zoomTarget, invertDrag, nav: { ...navVel } }),
+  cameraInertia: () => ({ spin: { ...spinVel }, zoomTarget, zoomAnim, invertDrag, nav: { ...navVel } }),
+  zoomLevel: () => ({
+    level: zoomLevelForZoom(zoomTarget === null ? camera.zoom : zoomTarget),
+    maxLevel: maxZoomLevel(),
+    target: zoomTarget,
+    animating: !!zoomAnim,
+  }),
   invertDrag: () => invertDrag,
   setInvertDrag: (value) => setInvertDrag(value),
   navTarget: () => (navLabel ? faceInfo(navLabel) : null),
