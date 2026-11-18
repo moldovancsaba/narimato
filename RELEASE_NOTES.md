@@ -1,5 +1,35 @@
 # NARIMATO — Release Notes
 
+## v3.21.0 — “Right Way Round” (2026-11-18)
+
+### Fixed
+
+- **Mouse drag now follows the cursor directly.** Drag left and the planet rotates left, even when
+  the globe is upside down. The arcball grab is captured at pointerdown, so direction cannot drift
+  mid-drag. Direct drag is the default; `I` still offers an optional reverse.
+- **Arrow travel is deliberately inverse.** Press left and the planet rotates right; this is the
+  expected “travel around the planet” feel and remains stable after the planet has been rolled
+  upside down.
+- **No automatic zoom.** Clicking/fracturing never changes zoom; wheel, pinch, double-click and
+  explicit NAV focus are the only zoom controls.
+- **Solo mining** remains available when no other human is online; contest rules return with an
+  opponent.
+
+### Verification
+
+- Projected-cell motion test before flipping: drag left → screen x −208 px; ArrowLeft → screen x
+  +346 px.
+- Same test after repeated vertical flips: drag left → −158 px; ArrowLeft → +495 px.
+- **92/92 tests**, Chromium + WebKit UI audits clean, axe clean.
+
+### Release artifact
+
+- Source tag: `v3.21.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.21.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.20.0 — “No Opponent Required” (2026-11-18)
 
 ### Fixed / changed

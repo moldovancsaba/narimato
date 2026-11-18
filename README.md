@@ -87,8 +87,9 @@ resets its crust and releases new resources. The game never ends.
   full-screen effect, narration and reseeded crust, then fresh resources.
 - **Responsive command deck** — deliberately different desktop, tablet, mobile portrait and
   landscape phone layouts; mobile is planet-first with drawers/dock/target sheet.
-- **Inertial camera** — drag-spin the planet and release: it coasts longer with an ease-out curve
-  and slowly comes to rest; wheel/pinch zoom eases into its target instead of snapping.
+- **Stable direct camera** — mouse drag follows the cursor; release leaves the planet exactly where
+  you left it. Arrow keys travel the other way (cursor left rotates the planet right). Wheel/pinch
+  zoom eases into its target instead of snapping.
 - **Narration & subtitles** — slow, deliberate prerecorded voice-over delivered **one sentence at
   a time**, with a short pause between lines, for the story, tips, Field Manual and every
   interplanetary story. **VOICE** and **CC** toggle independently and remember your choice;
@@ -109,8 +110,9 @@ resets its crust and releases new resources. The game never ends.
   it clears and you can mine again.
 - **Observable by default** — `GET /api/metrics` exposes privacy-safe HTTP/SSE/planet/event-loop
   metrics, and a tiny client beacon reports Web Vitals/audio-start timing. No tokens or tags.
-- **Separate mouse and cursor navigation** — mouse drag rotates the planet freely; arrow keys travel
-  around it in an upright, naturally eased orbit. Shift speeds up travel, `I` reverses mouse drag.
+- **Separate mouse and cursor navigation** — mouse drag follows the cursor directly; arrow keys
+  travel around the planet in the opposite direction (cursor left rotates the planet right), in a
+  naturally eased upright orbit. Shift speeds up travel; `I` reverses mouse drag.
   Audio resumes after tab interruptions and transient play failures rather than going silent.
 - **Limitless trackball rotation** — a quaternion camera replaces the clamped yaw/pitch orbit, so the
   view can roll past both poles and keep going in every direction.
@@ -124,7 +126,7 @@ resets its crust and releases new resources. The game never ends.
 - **Manual zoom only** — clicking or breaking no longer changes zoom. Zoom happens only with
   mouse wheel, pinch, double-click focus or the explicit NAV focus control.
 - **Stable mouse drag** — mouse rotation uses an absolute arcball grab, so the planet follows
-  the cursor consistently through the whole drag instead of flipping direction.
+  the cursor consistently through the whole drag, even when the planet is upside down.
 - **Gentle early rare budgets** — early planets demand one rare unit, then ramp up with depth.
 - **Captain's Log & humanised ship UI** — the panel tells the pilot a short story, names what is
   still missing in plain language, and shows a relief-ship countdown instead of a bare systems list.
@@ -212,5 +214,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.20.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.21.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.

@@ -148,10 +148,12 @@ function scheduleFirstGuide(delayMs = 700) {
 
 function readStoredInvertDrag() {
   try {
-    const raw = localStorage.getItem('icosa.invertDrag');
-    return raw === null ? true : raw === '1';
+    // New key: existing pilots get direct drag by default, even if they had the
+    // old reverse-drag experiment enabled.
+    const raw = localStorage.getItem('icosa.dragInvert.v2');
+    return raw === '1';
   } catch {
-    return true;
+    return false;
   }
 }
 
@@ -2063,7 +2065,9 @@ function updateKeyboardNavigation(dt) {
     const boost = navKeys.has('Shift') ? 2.1 : 1;
     const yawInput = (navKeys.has('ArrowRight') ? 1 : 0) - (navKeys.has('ArrowLeft') ? 1 : 0);
     const pitchInput = (navKeys.has('ArrowUp') ? 1 : 0) - (navKeys.has('ArrowDown') ? 1 : 0);
-    const yawTarget = yawInput * 1.55 * boost;
+    // Travel is deliberately inverse to mouse drag: pressing left rotates the
+    // planet right while dragging left moves the grabbed surface left.
+    const yawTarget = -yawInput * 1.55 * boost;
     const pitchTarget = pitchInput * 1.05 * boost;
     const ease = 1 - Math.exp(-16 * dtSec);
     navVel.x += (yawTarget - navVel.x) * ease;
@@ -2143,11 +2147,11 @@ function bindKeyboard() {
 function setInvertDrag(next) {
   invertDrag = !!next;
   try {
-    localStorage.setItem('icosa.invertDrag', invertDrag ? '1' : '0');
+    localStorage.setItem('icosa.dragInvert.v2', invertDrag ? '1' : '0');
   } catch {
     /* private mode */
   }
-  safeCall(ui, 'toast', invertDrag ? 'DRAG: FOLLOW CURSOR — press I to flip' : 'DRAG: MOVE THE WORLD — press I to flip', 'info');
+  safeCall(ui, 'toast', invertDrag ? 'DRAG: REVERSE — press I for direct drag' : 'DRAG: FOLLOW CURSOR — press I to reverse', 'info');
 }
 
 /* ------------------------------------------------------------------ *
@@ -2335,6 +2339,12 @@ window.__ICOSA__ = {
   }),
   manual: () => safeCall(ui, 'showManual', HELP_SECTIONS),
   guide: () => safeCall(ui, 'showGuide'),
+  projectFace: (label) => {
+    const node = world.get(label);
+    if (!node) return null;
+    const projected = camera.project(node.centroid);
+    return { x: projected.x, y: projected.y, z: projected.z, visible: projected.visible };
+  },
   cameraInertia: () => ({ spin: { ...spinVel }, zoomTarget, zoomAnim, invertDrag, nav: { ...navVel }, keyboard: { yaw: keyboardYaw, pitch: keyboardPitch, synced: !keyboardSyncNeeded } }),
   zoomLevel: () => ({
     level: zoomLevelForZoom(zoomTarget === null ? camera.zoom : zoomTarget),

@@ -136,9 +136,10 @@ the second level.
   the hull takes damage with screen shake, and you land on the next planet. The cinematic is fully
   procedural (CSS/Canvas, no assets). On touchdown, a centered **landing briefing** lists every ore
   required to leave the new planet and your collected/required counts; press START MINING to dismiss.
-- **Camera feel:** drag to spin and release — the planet keeps turning longer and eases to a stop
-  (inertial pan). Wheel/pinch zoom glides into its target instead of snapping, so fine control at
-  deep zoom is easier. Clicking/tapping still works immediately at any time.
+- **Camera feel:** mouse drag follows the cursor directly — drag left, the planet rotates left,
+  even when the planet is upside down. Release leaves the view where you left it. Arrow-key travel
+  is deliberately inverse: press left and the planet rotates right. Wheel/pinch zoom glides into
+  its target instead of snapping, so fine control at deep zoom is easier.
 
 ## Leaving / starting over
 

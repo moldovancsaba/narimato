@@ -199,6 +199,28 @@ test('camera projects the north pole above centre and picks fronts only', () => 
   assert.ok(Number.isInteger(picked));
 });
 
+test('camera drag follows the cursor; keyboard yaw is inverse', () => {
+  const front = { x: 0, y: 0, z: 1 };
+  const direct = new SphereCamera(1200, 800);
+  const before = direct.project(front).x;
+  direct.beginArcball(0, 0, 360);
+  direct.arcballTo(-100, 0, 360, false);
+  assert.ok(direct.project(front).x < before, 'drag left moves the grabbed surface left');
+
+  const inverted = new SphereCamera(1200, 800);
+  const invBefore = inverted.project(front).x;
+  inverted.beginArcball(0, 0, 360);
+  inverted.arcballTo(-100, 0, 360, true);
+  assert.ok(inverted.project(front).x > invBefore, 'reverse drag moves it right');
+
+  // Increasing yaw moves the front point right. The keyboard applies the
+  // opposite sign to ArrowLeft, so travel-left rotates the planet right.
+  const orbit = new SphereCamera(1200, 800);
+  const orbitBefore = orbit.project(front).x;
+  orbit.yaw += 0.2;
+  assert.ok(orbit.project(front).x > orbitBefore, 'positive yaw moves front surface right');
+});
+
 test('picking the projected pole hits a pole-cap face at level 0', () => {
   const camera = new SphereCamera(800, 800);
   camera.pitch = 0.9;

@@ -33,7 +33,9 @@ The **THE WAY HOME** panel lists every part the ship still needs.
 
 ## If you get stuck
 
-- **Arrow keys** travel around the planet; **mouse drag** rotates it; **Shift** speeds up travel.
+- **Mouse drag** rotates the planet with your cursor (drag left → planet left), even upside down.
+- **Arrow keys** travel around the planet in the opposite direction (left arrow → planet right);
+  **Shift** speeds up travel.
 - Press **I** to reverse mouse drag.
 - **? / GUIDE** opens this card again; **OPEN FIELD MANUAL** has the full story and controls.
 - If you make no refit progress for **two minutes**, a relief ship crashes onto the planet and scatters the missing ore across marked triangles. It repeats every two minutes while parts are still missing.
