@@ -18,6 +18,14 @@ const DEFAULT_PROFILE = 'george';
 const SEGMENT_GAP_MS = 220;
 const PLAYBACK_RATE = 0.94; // slower, deliberate delivery
 const AUDIO_VERSION = '3.6.0';
+
+/** Optional edge/CDN base for heavy audio assets. Same-origin by default. */
+function assetBase() {
+  if (typeof document === 'undefined') return '';
+  const meta = document.querySelector('meta[name="narimato-asset-base"]');
+  const raw = meta && meta.getAttribute('content') ? meta.getAttribute('content').trim() : '';
+  return raw ? raw.replace(/\/+$/, '') : '';
+}
 const FALLBACK_MS = 2100;
 
 function readBool(key, fallback) {
@@ -99,7 +107,7 @@ export function createNarrator() {
   }
 
   function audioUrl(cueId, index, profile = voiceProfile) {
-    return `/audio/voice/${profile}/${fileId(cueId, index)}.m4a?v=${AUDIO_VERSION}`;
+    return `${assetBase()}/audio/voice/${profile}/${fileId(cueId, index)}.m4a?v=${AUDIO_VERSION}`;
   }
 
   // Limited-concurrency warmup: fetch the first sentence of each cue and the

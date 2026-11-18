@@ -1,5 +1,37 @@
 # NARIMATO — Release Notes
 
+## v3.10.0 — “Edge & Load” (2026-11-18)
+
+### Added
+
+- **B1 CDN-ready asset delivery:** `ASSET_BASE_URL` rewrites the narration asset base at serve
+  time; audio remains versioned and immutable. CORS/range/edge cache rules documented in
+  `EDGE_DEPLOYMENT.md`.
+- **B3 load/soak/chaos harness:** `npm run load:test` runs join/click/SSE workloads and checks
+  HTTP p95, event-loop p95, dropped SSE and errors. See `LOAD_TEST.md`.
+- **A4 automated accessibility:** Chromium + WebKit audit engines, accessible-name checks,
+  44 px touch targets, short-landing checks, keyboard Escape behavior. Manual device/screen
+  reader checklist in `A11Y_CHECKLIST.md`.
+- **B2/B4 decision recorded:** sharding is **not started** because single-node SLOs are healthy;
+  peer-assisted assets are **not started** because there is no CDN miss/egress signal to justify
+  them. This follows the gate in `DELIVERY_PLAN.md`.
+
+### Verification
+
+- Full `node --test test/` — **84/84 pass**.
+- UI audit clean in **Chromium and WebKit** across nine viewports.
+- 100-client local load smoke: HTTP p95 1 ms, 0 errors, 0 dropped SSE, event-loop p95 ~21 ms
+  (monitor floor 20 ms; gate <50 ms).
+- `GET /api/metrics` and telemetry verified end-to-end.
+
+### Release artifact
+
+- Source tag: `v3.10.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.10.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.9.0 — “Observable Skies” (2026-11-18)
 
 ### Added

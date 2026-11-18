@@ -158,9 +158,10 @@ function safeDecode(value) {
 
 /** HTTP + SSE application around a WorldCore instance. */
 export class InfiniteServerApp {
-  constructor({ manager, config, publicDir = PUBLIC_DIR, now = Date.now, quiet = false, metrics = null } = {}) {
+  constructor({ manager, config, publicDir = PUBLIC_DIR, now = Date.now, quiet = false, metrics = null, assetBaseUrl = '' } = {}) {
     this.manager = manager;
     this.config = config;
+    this.assetBaseUrl = typeof assetBaseUrl === 'string' ? assetBaseUrl.replace(/\/+$/, '') : '';
     this.metrics = metrics || new Metrics({ now });
     this._telemetryBuckets = new Map();
     this.publicDir = publicDir;
@@ -666,6 +667,24 @@ export class InfiniteServerApp {
 
     const ext = path.extname(resolved).toLowerCase();
     const mime = MIME_TYPES[ext] || 'application/octet-stream';
+    // Optional CDN asset base: rewrite the asset-base meta tag at serve time.
+    if (ext === '.html' && this.assetBaseUrl) {
+      const html = await fsp.readFile(resolved, 'utf8');
+      const escaped = this.assetBaseUrl.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const body = html.replace(
+        /(<meta name="narimato-asset-base" content=")[^"]*(")/,
+        `$1${escaped}$2`,
+      );
+      res.writeHead(200, {
+        'Content-Type': mime,
+        'Content-Length': Buffer.byteLength(body),
+        'Cache-Control': 'no-store',
+        'X-Content-Type-Options': 'nosniff',
+      });
+      if (method === 'HEAD') res.end();
+      else res.end(body);
+      return;
+    }
     const cacheControl =
       ext === '.m4a'
         ? 'public, max-age=31536000, immutable'
@@ -733,6 +752,7 @@ export async function startServer(options = {}) {
     publicDir: options.publicDir || PUBLIC_DIR,
     quiet: options.quiet === true,
     metrics,
+    assetBaseUrl: options.assetBaseUrl ?? env.ASSET_BASE_URL ?? '',
   });
 
   const server = http.createServer((req, res) => {

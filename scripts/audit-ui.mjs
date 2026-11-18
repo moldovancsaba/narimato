@@ -25,6 +25,7 @@ const require = createRequire(import.meta.url);
 const PORT = Number(process.env.NARIMATO_AUDIT_PORT || 4391);
 const BASE = `http://127.0.0.1:${PORT}`;
 const PLAYWRIGHT = process.env.PLAYWRIGHT_MODULE || 'playwright';
+const ENGINE = process.env.PLAYWRIGHT_ENGINE || 'chromium';
 const VIEWPORTS = [
   [1440, 900, 'desktop'],
   [1280, 800, 'laptop'],
@@ -38,8 +39,10 @@ const VIEWPORTS = [
 ];
 
 let chromium;
+let webkit;
+let firefox;
 try {
-  ({ chromium } = require(PLAYWRIGHT));
+  ({ chromium, webkit, firefox } = require(PLAYWRIGHT));
 } catch {
   console.error(`[audit] Playwright not found at "${PLAYWRIGHT}".`);
   console.error('Instal it in dev, or set PLAYWRIGHT_MODULE to an existing playwright package.');
@@ -93,7 +96,12 @@ async function layoutSnapshot(page) {
 }
 
 await waitForServer();
-const browser = await chromium.launch({ headless: true });
+const engine = { chromium, webkit, firefox }[ENGINE] || chromium;
+if (!engine) {
+  console.error(`[audit] Engine "${ENGINE}" is not available in this Playwright build.`);
+  process.exit(0);
+}
+const browser = await engine.launch({ headless: true });
 const failures = [];
 let tagIndex = 0;
 try {
@@ -214,4 +222,4 @@ if (failures.length) {
   for (const failure of failures) console.error(`  - ${failure}`);
   process.exit(1);
 }
-console.log('\n[audit] clean.');
+console.log(`\n[audit] clean (engine: ${ENGINE}).`);

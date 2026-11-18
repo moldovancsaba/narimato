@@ -19,6 +19,15 @@ clarity.
 accessible-name checks delivered, real-device pass remains; **B0 observability delivered**.
 Next: A4 real-device gate, then B1 edge/CDN assets.
 
+**Delivery addendum (2026-11-18):**
+- A4 automated/WebKit + keyboard checks delivered; manual real-device checklist is in
+  `A11Y_CHECKLIST.md` (not executable headlessly).
+- B1 CDN-ready asset base and edge deployment guide delivered (`EDGE_DEPLOYMENT.md`);
+  external CDN activation needs credentials.
+- B3 load/soak harness and local SLO results delivered (`LOAD_TEST.md`). B2 is **not started**
+  because the measured single-node SLOs are healthy; B4 is **not started** because there is
+  no sustained CDN egress/miss signal to justify peer-assisted assets.
+
 ### A0. Audit harness (0.5 day)
 
 - Commit `scripts/audit-ui.mjs` (Playwright) running the nine-viewport matrix.
