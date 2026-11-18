@@ -86,6 +86,7 @@ let supplyPlanetKey = '';
 let supplyRequestedKey = '';
 let lastSupplyEventKey = '';
 let lastDistressProgressKey = '';
+let captainLogHoldUntil = 0;
 let pendingAutoJoin = null;
 const missionReadyNotified = new Set();
 
@@ -610,6 +611,7 @@ function resetSession() {
   clearDistressTimer();
   supplyRequestedKey = '';
   supplyPlanetKey = '';
+  captainLogHoldUntil = 0;
   appliedPlanetThemeKey = '';
   session.startedAt = Date.now();
   session.clicks = 0;
@@ -964,7 +966,7 @@ function handleSupplyEvent(msg) {
   const message = msg.message || 'EMERGENCY SUPPLY DROP // SALVAGE MARKED CELLS';
   clearDistressTimer();
   safeCall(ui, 'toast', message, 'good');
-  safeCall(ui, 'setCaptainLog', 'They heard us. A relief ship came down hard — the missing ore is scattered across the marked triangles. Go get it.');
+  setCaptainLogMessage('They heard us. A relief ship came down hard — the missing ore is scattered across the marked triangles. Go get it.', 30000);
   if (supplyDrop) supplyDrop.show({ message, cells });
   safeCall(renderer, 'setSupplyMarkers', cells);
   const label = msg.impactLabel || cells[0]?.label;
@@ -986,6 +988,11 @@ function handleSupplyEvent(msg) {
     supplyDeadline = Date.now() + 120000;
     startDistressTimer();
   }, 3500);
+}
+
+function setCaptainLogMessage(text, holdMs = 22000) {
+  captainLogHoldUntil = Date.now() + Math.max(1000, holdMs);
+  safeCall(ui, 'setCaptainLog', text || '');
 }
 
 function captainLogFor(planet, progress) {
@@ -1014,7 +1021,9 @@ function refreshMission() {
   const progress = missionProgress(counts, planet.mission);
   safeCall(ui, 'updateMission', progress);
   safeCall(ui, 'updateCargo', counts);
-  safeCall(ui, 'setCaptainLog', captainLogFor(planet, progress));
+  if (Date.now() >= captainLogHoldUntil) {
+    safeCall(ui, 'setCaptainLog', captainLogFor(planet, progress));
+  }
   safeCall(ui, 'setPlanet', {
     planetIndex: planet.planetIndex,
     planetDepth: planet.planetDepth,
@@ -1212,8 +1221,10 @@ function handleIncidentEvent(msg) {
   const kind = ['meteor', 'nuclear', 'solar', 'alien'].includes(msg.kind) ? msg.kind : 'meteor';
   const title = msg.title || kind.toUpperCase();
   const message = msg.message || 'PLANET EXHAUSTED // NEW RESOURCES AVAILABLE';
+  const description = msg.description || '';
   safeCall(ui, 'toast', message, 'warn');
-  if (interlude && !interlude.active) interlude.incident(kind, title, message);
+  setCaptainLogMessage(description || message, 26000);
+  if (interlude && !interlude.active) interlude.incident(kind, title, message, description);
   maybeTip(kind === 'meteor' ? 'tip-meteor' : 'tip-incident', { delay: 1800, speaker: 'SHIP AI' });
   setTimeout(async () => {
     await reloadWorld();
@@ -2246,7 +2257,7 @@ window.__ICOSA__ = {
   navTarget: () => (navLabel ? faceInfo(navLabel) : null),
   nextNavTarget: () => chooseNavTarget({ cycle: true }),
   meteor: (message) => handleIncidentEvent({ kind: 'meteor', title: 'METEOR IMPACT', message }),
-  incident: (kind, title, message) => handleIncidentEvent({ kind, title, message }),
+  incident: (kind, title, message, description) => handleIncidentEvent({ kind, title, message, description }),
   abandon: () => abandonRun(),
   newPilot: () => startNewPilot(),
   world,

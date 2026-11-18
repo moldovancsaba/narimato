@@ -43,13 +43,14 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
   let meteorMessage = '';
   let meteorTitle = 'METEOR IMPACT';
   let incidentKind = 'meteor';
+  let incidentDescription = '';
   let meteorRaf = 0;
 
   function collect() {
     for (const id of [
       'interlude-overlay', 'interlude-fx', 'interlude-title', 'interlude-sub',
       'interlude-story', 'interlude-status', 'interlude-bar', 'interlude-planet',
-      'meteor-overlay', 'meteor-fx', 'meteor-title', 'meteor-sub',
+      'meteor-overlay', 'meteor-fx', 'meteor-title', 'meteor-sub', 'meteor-description',
     ]) {
       els[id] = document.getElementById(id);
     }
@@ -385,10 +386,11 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
     meteorRaf = requestAnimationFrame(drawMeteor);
   }
 
-  function incident(kind = 'meteor', title = 'INCIDENT', message = 'PLANET RESET') {
+  function incident(kind = 'meteor', title = 'INCIDENT', message = 'PLANET RESET', description = '') {
     collect();
     incidentKind = ['meteor', 'nuclear', 'solar', 'alien'].includes(kind) ? kind : 'meteor';
     meteorTitle = String(title || incidentKind.toUpperCase());
+    incidentDescription = String(description || '');
     meteorActive = true;
     meteorStart = performance.now();
     meteorMessage = message;
@@ -410,6 +412,7 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
     }
     setText('meteor-title', meteorTitle);
     setText('meteor-sub', meteorMessage);
+    setText('meteor-description', incidentDescription);
     resizeCanvas(meteorCanvas, meteorCtx);
     cancelAnimationFrame(meteorRaf);
     meteorRaf = requestAnimationFrame(drawMeteor);

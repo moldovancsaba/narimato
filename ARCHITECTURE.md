@@ -182,8 +182,9 @@ changes and 1 MiB backpressure protection.
 When the last hidden deposit on a planet is mined, the core picks a random incident
 (`meteor`/`nuclear`/`solar`/`alien`), re-seeds the crust, resets the grid to its base leaves
 (players/scores/inventories preserved), and the manager broadcasts
-`{type:"incident", kind, title, tone, message, planetIndex}` followed by a fresh `snapshot` to that
-planet room only. The client renders a different full-screen effect per kind.
+`{type:"incident", kind, title, tone, message, description, planetIndex}` followed by a fresh
+`snapshot` to that planet room only. The client renders a different full-screen effect per kind and
+shows the `description` as a story paragraph plus a persistent Captain’s Log entry.
 
 ## Algorithms
 

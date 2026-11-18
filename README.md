@@ -80,6 +80,8 @@ resets its crust and releases new resources. The game never ends.
 - **Escape progression** — per-planet levels and scaled refit missions, a centered
   **TRY TO FLY AWAY** call-to-action when the drive is ready, random interplanetary story
   cinematics, screen shake/damage, separate multiplayer scene for every planet.
+- **Planetary incidents with consequences** — every catastrophe explains what happened and why new
+  resources are now available; the Captain’s Log keeps the story after the overlay disappears.
 - **Planetary incidents** — exhausted planets now end with one of four random catastrophes:
   **Meteor Impact**, **Nuclear War**, **Solar Flare** or **Alien Invasion**, each with its own
   full-screen effect, narration and reseeded crust, then fresh resources.
@@ -199,5 +201,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.16.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.17.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.

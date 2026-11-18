@@ -1507,7 +1507,8 @@ test('planets: adoptPlayer, resetGrid, hiddenDepositCount and meteor transition'
   assert.equal(meteor.event.type, 'incident');
   assert.ok(['meteor', 'nuclear', 'solar', 'alien'].includes(meteor.event.kind));
   assert.ok(meteor.event.title);
-  assert.match(meteor.event.message, /NEW RESOURCES|NEW DEPOSITS|RESEEDED/);
+  assert.match(meteor.event.message, /NEW RESOURCES|NEW DEPOSITS|RESEEDED|MATERIALS/);
+  assert.ok(typeof meteor.event.description === 'string' && meteor.event.description.length > 20);
   assert.equal(core.getLeaves().length, 20);
   assert.equal(core.planetSeed === 999, false, 'new planet seed after the impact');
   assert.equal(core.players.length, 2, 'players survive the meteor');

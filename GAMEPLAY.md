@@ -114,8 +114,9 @@ the second level.
   surface, atmosphere and HUD identity.
 - **Planetary incidents:** when the last hidden deposit is mined, the exhausted planet ends in a
   random catastrophe — **Meteor Impact**, **Nuclear War**, **Solar Flare** or **Alien Invasion**.
-  Each has a distinct full-screen visual effect, narration and shake, then resets/reseeds the crust
-  with new resources. Players, scores and inventories survive. The screen shakes,
+  Each has a distinct full-screen visual effect, narration, shake and a story paragraph explaining
+  the damage and the newly exposed resources, then resets/reseeds the crust with new resources.
+  The Captain’s Log keeps the explanation after the overlay clears. Players, scores and inventories survive. The screen shakes,
   the meteor overlay announces `METEOR IMPACT // NEW RESOURCES AVAILABLE`, and mining continues.
 - **Carried ore:** your full ore inventory (all materials, ore counts and total ore value) travels
   with you when you escape. It is available immediately on the next planet and counts toward that

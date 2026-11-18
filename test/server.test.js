@@ -834,7 +834,8 @@ test('multi-planet: meteor reset + rooms + escape routing', async (t) => {
   const meteorMiner = await minerSse.waitForEvent('incident', (event) => event.type === 'incident', { timeout: 3000 });
   assert.equal(meteorMiner.planetIndex, 0);
   assert.ok(['meteor', 'nuclear', 'solar', 'alien'].includes(meteorMiner.kind));
-  assert.match(meteorMiner.message, /NEW RESOURCES|NEW DEPOSITS|RESEEDED/);
+  assert.match(meteorMiner.message, /NEW RESOURCES|NEW DEPOSITS|RESEEDED|MATERIALS/);
+  assert.ok(typeof meteorMiner.description === 'string' && meteorMiner.description.length > 20);
   await observerSse.waitForEvent('incident', (event) => event.type === 'incident', { timeout: 3000 });
   const afterMeteor = (await getJson(base, '/api/world')).json;
   assert.notEqual(afterMeteor.state.planetSeed, seedBefore, 'meteor resamples the planet');

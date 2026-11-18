@@ -6776,3 +6776,16 @@ body.is-supply-drop .supply-overlay { display: grid; }
   letter-spacing: 0.08em;
   opacity: 0.8;
 }
+
+/* Incident story paragraph under the headline */
+.meteor-description {
+  margin: 12px auto 0;
+  max-width: 58ch;
+  color: rgba(235, 225, 215, 0.86);
+  font: 500 11px/1.6 var(--font-mono, monospace);
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8);
+}
+@media (max-width: 640px) {
+  .meteor-description { font-size: 10px; max-width: 34ch; }
+}

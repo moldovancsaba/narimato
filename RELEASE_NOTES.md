@@ -1,5 +1,36 @@
 # NARIMATO — Release Notes
 
+## v3.17.0 — “What Happened Here” (2026-11-18)
+
+### Added / changed
+
+- **Incidents now explain themselves.** Every catastrophe sends a short headline plus a full story
+  paragraph:
+  - **Meteor Impact:** “A rogue meteor punched straight through the surface… cracked open fresh ore
+    veins and threw rare material across the crater.”
+  - **Nuclear War:** “Atomic fire swept the planet… blast waves split the crust and exposed new
+    materials; everything old is ash.”
+  - **Solar Flare:** “The local star lashed out… magnetic storm peeled back rock and scattered rare
+    elements across the new ground.”
+  - **Alien Invasion:** “An alien fleet razed the planet from orbit… beams demolished the old
+    surface and scattered new elements and materials across the wreckage.”
+- The Captain’s Log keeps the explanation after the incident overlay clears, instead of being
+  overwritten by the next routine status refresh.
+- Incident SSE event now includes `description`.
+
+### Verification
+
+- Overlay shows title, short message and story paragraph; Captain’s Log retains it.
+- **89/89 tests**, Chromium + WebKit UI audits clean, axe clean.
+
+### Release artifact
+
+- Source tag: `v3.17.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.17.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.16.0 — “Two Hands” (2026-11-18)
 
 ### Changed
