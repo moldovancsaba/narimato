@@ -15,9 +15,11 @@ import { ArcadeAudio } from './audio.js';
 import { downloadResultCard, buildShareText, renderResultCard } from './result-card.js';
 import { resourceById } from './shared/resources.js';
 import { missionProgress, missionForPlanet, planetDepth, planetName, planetSource } from './shared/mission.js';
+import { planetTheme } from './shared/planet-theme.js';
 import { createIntro } from './intro.js';
 import { createInterlude } from './interlude.js';
 import { createNarrator } from './narrator.js';
+import { createSupplyDrop } from './supply-drop.js';
 import './telemetry.js';
 import { HELP_SECTIONS } from './narrative-data.js';
 
@@ -69,6 +71,14 @@ let interlude = null;
 let narrator = null;
 let escaping = false;
 let seenTips = loadSeenTips();
+let appliedPlanetThemeKey = '';
+let supplyDrop = null;
+let supplyTimer = 0;
+let supplyDeadline = 0;
+let supplyPlanetKey = '';
+let supplyRequestedKey = '';
+let lastSupplyEventKey = '';
+let lastDistressProgressKey = '';
 let pendingAutoJoin = null;
 const missionReadyNotified = new Set();
 
@@ -277,6 +287,7 @@ const ui = new UI({
  * ------------------------------------------------------------------ */
 
 narrator = createNarrator();
+supplyDrop = createSupplyDrop();
 
 function loadSeenTips() {
   try {
@@ -545,6 +556,7 @@ async function join(rawTag) {
 
   applySnapshot(data.state, data.leaves);
   const joinedProgress = refreshMission();
+  startDistressTimer();
   chooseNavTarget();
   safeCall(ui, 'hideLanding');
   if (!joinedProgress.ready) {
@@ -560,10 +572,14 @@ async function join(rawTag) {
   safeAudio('join');
   connectEvents();
 
-  safeCall(ui, 'toast', 'UPLINK ESTABLISHED // INFINITE GRID', 'good');
+  safeCall(ui, 'toast', "RADIO CHECK // YOU'RE NOT ALONE OUT HERE", 'good');
 }
 
 function resetSession() {
+  clearDistressTimer();
+  supplyRequestedKey = '';
+  supplyPlanetKey = '';
+  appliedPlanetThemeKey = '';
   session.startedAt = Date.now();
   session.clicks = 0;
   session.breaks = 0;
@@ -659,6 +675,9 @@ function handleEvent(msg) {
       break;
     case 'resource':
       handleResourceEvent(msg);
+      break;
+    case 'supply':
+      handleSupplyEvent(msg);
       break;
     case 'incident':
       handleIncidentEvent(msg);
@@ -786,7 +805,7 @@ function applyDiscoveredResource(label, resource, playerId) {
     if (!session.bestFind || value > session.bestFind.value) {
       session.bestFind = { id: resource.id, name: resource.name, glyph: resource.glyph, value, color: resource.color };
     }
-    safeCall(ui, 'toast', `ORE DISCOVERED // ${resource.name} +${value} CR`, 'good');
+    safeCall(ui, 'toast', `GOOD FIND // ${resource.name} +${value} CR`, 'good');
     safeAudio('discovery');
     maybeTip('tip-ore', { delay: 1200 });
     const stat = myStatePlayer();
@@ -808,6 +827,24 @@ function myStatePlayer() {
 }
 
 /** Recompute the escape mission from the pilot's persistent ore inventory. */
+/** Apply the planet's major colour identity to CSS and the procedural globe. */
+function applyPlanetTheme(planet) {
+  if (!planet) return;
+  const seed = Number.isInteger(planet.planetSeed) ? planet.planetSeed >>> 0 : 0;
+  const key = `${planet.planetIndex}:${seed}`;
+  if (key === appliedPlanetThemeKey) return;
+  appliedPlanetThemeKey = key;
+  const theme = planetTheme(planet.planetIndex, seed);
+  if (typeof document !== 'undefined' && document.body) {
+    document.body.style.setProperty('--planet-accent', theme.accent);
+    document.body.style.setProperty('--planet-secondary', theme.secondary);
+    document.body.style.setProperty('--planet-atmosphere', theme.atmosphere);
+    document.body.dataset.planetTheme = theme.id;
+  }
+  safeCall(renderer, 'setPlanetTheme', theme);
+  safeCall(renderer, 'setPlanetSurface', seed);
+}
+
 function planetInfoFromState() {
   const next = state || {};
   const index = Number.isInteger(next.planetIndex) ? next.planetIndex : 0;
@@ -822,13 +859,117 @@ function planetInfoFromState() {
   };
 }
 
+function clearDistressTimer() {
+  if (supplyTimer) clearTimeout(supplyTimer);
+  supplyTimer = 0;
+  safeCall(ui, 'setDistressTimer', null);
+}
+
+function startDistressTimer() {
+  clearDistressTimer();
+  if (!joined || !myPlayer) return;
+  const planet = planetInfoFromState();
+  supplyPlanetKey = `${planet.planetIndex}:${planet.planetSeed}`;
+  supplyRequestedKey = '';
+  lastDistressProgressKey = '';
+  supplyDeadline = Date.now() + 120000;
+  const tick = () => {
+    supplyTimer = 0;
+    if (!joined) return;
+    const progress = refreshMission();
+    if (progress.ready) {
+      clearDistressTimer();
+      return;
+    }
+    const progressKey = `${supplyPlanetKey}:${progress.have}`;
+    if (progressKey !== lastDistressProgressKey) {
+      lastDistressProgressKey = progressKey;
+      supplyDeadline = Date.now() + 120000;
+    }
+    const remaining = Math.max(0, Math.ceil((supplyDeadline - Date.now()) / 1000));
+    safeCall(ui, 'setDistressTimer', remaining);
+    if (remaining <= 0) {
+      requestEmergencySupply();
+      return;
+    }
+    supplyTimer = setTimeout(tick, 1000);
+  };
+  safeCall(ui, 'setDistressTimer', 120);
+  supplyTimer = setTimeout(tick, 1000);
+}
+
+async function requestEmergencySupply() {
+  if (!joined || !authToken) return;
+  const key = planetInfoFromState();
+  const planetKey = `${key.planetIndex}:${key.planetSeed}`;
+  if (supplyRequestedKey === planetKey) return;
+  supplyRequestedKey = planetKey;
+  const { res, data, error } = await postJSON('/api/action', {
+    token: authToken,
+    type: 'supply',
+    label: navLabel || undefined,
+  });
+  if (error || !res || !res.ok || !data || !data.ok) {
+    supplyRequestedKey = '';
+    safeCall(ui, 'setDistressTimer', 15);
+    safeCall(ui, 'setCaptainLog', 'The relief ship is holding off. We keep mining; she will find a window.');
+    supplyTimer = setTimeout(() => {
+      if (joined) requestEmergencySupply();
+    }, 15000);
+    return;
+  }
+  if (Array.isArray(data.cells)) handleSupplyEvent({ ...data, message: data.message, cells: data.cells, impactLabel: data.impactLabel });
+}
+
+function handleSupplyEvent(msg) {
+  if (!msg) return;
+  const cells = Array.isArray(msg.cells) ? msg.cells : [];
+  const eventKey = `${msg.impactLabel || ''}:${cells.map((c) => `${c.label}:${c.resourceId}`).join(',')}`;
+  if (eventKey && eventKey === lastSupplyEventKey) return;
+  lastSupplyEventKey = eventKey;
+  const message = msg.message || 'EMERGENCY SUPPLY DROP // SALVAGE MARKED CELLS';
+  clearDistressTimer();
+  safeCall(ui, 'toast', message, 'good');
+  safeCall(ui, 'setCaptainLog', 'They heard us. A relief ship came down hard — the missing ore is scattered across the marked triangles. Go get it.');
+  if (supplyDrop) supplyDrop.show({ message, cells });
+  safeCall(renderer, 'setSupplyMarkers', cells);
+  const label = msg.impactLabel || cells[0]?.label;
+  if (label) {
+    navLabel = label;
+    safeCall(renderer, 'setWaypoint', label);
+    const info = faceInfo(label);
+    if (info) safeCall(ui, 'setNavTarget', info);
+  }
+  safeAudio('discovery');
+}
+
+function captainLogFor(planet, progress) {
+  if (progress.ready) {
+    return `The drive is breathing again. We can leave ${planet.planetName} whenever you're ready — but the next world will ask for more.`;
+  }
+  const missing = [];
+  for (const objective of progress.objectives) {
+    for (const item of objective.items) {
+      if (item.done) continue;
+      const left = Math.max(0, item.need - item.have);
+      if (left > 0) missing.push(`${left} ${item.name}${left === 1 ? '' : 's'}`);
+    }
+  }
+  if (!missing.length) {
+    return `We're still on ${planet.planetName}. The drive is almost there. Check the ship, then take us home.`;
+  }
+  return `We're grounded on ${planet.planetName} — ${planet.planetSource || 'somewhere far from home'}. The drive still needs ${missing.join(' and ')}. The crust can give it to us.`;
+}
+
 function refreshMission() {
   const player = myStatePlayer();
   const counts = player && player.oreCounts ? player.oreCounts : {};
   const planet = planetInfoFromState();
+  applyPlanetTheme(planet);
   const progress = missionProgress(counts, planet.mission);
   safeCall(ui, 'updateMission', progress);
   safeCall(ui, 'updateCargo', counts);
+  safeCall(ui, 'setCaptainLog', captainLogFor(planet, progress));
   safeCall(ui, 'setPlanet', {
     planetIndex: planet.planetIndex,
     planetDepth: planet.planetDepth,
@@ -838,7 +979,7 @@ function refreshMission() {
   safeCall(ui, 'setEscapeReady', progress.ready && !(interlude && interlude.active), planet.mission.name);
   if (progress.ready && player && !missionReadyNotified.has(`${planet.planetIndex}:${player.id}`)) {
     missionReadyNotified.add(`${planet.planetIndex}:${player.id}`);
-    safeCall(ui, 'toast', `${planet.planetName} REFIT READY // BURN FOR ORBIT`, 'good');
+    safeCall(ui, 'toast', `THE DRIVE IS ALIVE // ${planet.planetName} IS READY TO LET US GO`, 'good');
     safeAudio('discovery');
     maybeTip('tip-escape', { delay: 1800, speaker: 'SHIP AI' });
   }
@@ -851,7 +992,7 @@ async function requestEscape() {
   if (interlude && interlude.active) return;
   const progress = refreshMission();
   if (!progress.ready) {
-    safeCall(ui, 'toast', 'MISSION INCOMPLETE // MINE THE REQUIRED ORES', 'warn');
+    safeCall(ui, 'toast', 'NOT YET // SHE STILL NEEDS THE MISSING PARTS', 'warn');
     return;
   }
   escaping = true;
@@ -862,7 +1003,7 @@ async function requestEscape() {
   if (error || !res || !res.ok || !data || !data.ok) {
     escaping = false;
     safeCall(ui, 'setJoinBusy', false);
-    safeCall(ui, 'toast', (data && data.message) || 'ESCAPE BURN ABORTED', 'warn');
+    safeCall(ui, 'toast', (data && data.message) || 'THE BURN IS NOT READY YET', 'warn');
     safeAudio('error');
     return;
   }
@@ -925,6 +1066,7 @@ function applyEscapeResult(data) {
   safeCall(ui, 'toast', `LANDED ON ${to.planetName} // LEVELS ${to.planetDepth} // ${to.mission.name}`, 'good');
   safeAudio('join');
   const progress = refreshMission();
+  startDistressTimer();
   chooseNavTarget();
   lastInteraction = now();
   // Put the new planet's required refit front and center.
@@ -1034,7 +1176,7 @@ function handleIncidentEvent(msg) {
     cancelCameraInertia();
     camera.reset();
     updateZoomUi();
-    safeCall(ui, 'toast', 'PLANET RESEEDED // NEW DEPOSITS DETECTED', 'good');
+    safeCall(ui, 'toast', 'THE DUST SETTLES // NEW ORE IN THE CRUST', 'good');
   }, 2400);
 }
 
@@ -1902,6 +2044,8 @@ window.__ICOSA__ = {
   missionConfig: () => planetInfoFromState().mission,
   planet: () => planetInfoFromState(),
   escape: () => requestEscape(),
+  supply: () => requestEmergencySupply(),
+  supplyEvent: (msg) => handleSupplyEvent(msg),
   get interludeState() {
     return interlude ? interlude.state() : null;
   },

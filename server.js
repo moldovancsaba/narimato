@@ -364,8 +364,44 @@ export class InfiniteServerApp {
       return;
     }
 
+    if (type === 'supply') {
+      const result = await this.manager.emergencySupply({ token: body.token, label: body.label });
+      if (!result.ok) {
+        sendJson(res, 409, {
+          ok: false,
+          error: result.error,
+          message: result.message,
+          ...(result.readyInMs !== undefined ? { readyInMs: result.readyInMs } : {}),
+          ...(result.mission ? { mission: result.mission } : {}),
+        });
+        return;
+      }
+      this._broadcastToRoom(result.planetIndex, {
+        type: 'supply',
+        impactLabel: result.impactLabel,
+        cells: result.cells,
+        resources: result.resources,
+        message: result.message,
+        playerId: result.playerId,
+      });
+      this.pump();
+      sendJson(res, 200, {
+        ok: true,
+        planetIndex: result.planetIndex,
+        impactLabel: result.impactLabel,
+        cells: result.cells,
+        resources: result.resources,
+        message: result.message,
+        playerId: result.playerId,
+        mission: result.mission,
+        state: result.state,
+        leaves: result.leaves,
+      });
+      return;
+    }
+
     if (type !== 'click') {
-      sendJson(res, 400, { ok: false, error: 'INVALID_ACTION', message: 'Action type must be "click" or "escape".' });
+      sendJson(res, 400, { ok: false, error: 'INVALID_ACTION', message: 'Action type must be "click", "escape" or "supply".' });
       return;
     }
     const routed = await this.manager.click({ token: body.token, label: body.label });

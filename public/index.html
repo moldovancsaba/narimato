@@ -15,7 +15,7 @@
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2305010f'/%3E%3Cpath d='M16 3 28 10v12L16 29 4 22V10z' fill='none' stroke='%2300f0ff' stroke-width='2'/%3E%3Cpath d='M16 3v26M4 10l24 12M28 10L4 22' stroke='%23ff2bd6' stroke-width='1' opacity='.6'/%3E%3C/svg%3E"
     />
-    <link rel="stylesheet" href="/css/cyberpunk.css?v=3.11.0" />
+    <link rel="stylesheet" href="/css/cyberpunk.css?v=3.12.0" />
   </head>
   <body class="game is-landing">
     <!-- Persistent geodesic arena: fixed behind every layer. -->
@@ -164,6 +164,16 @@
     </div>
 
     <!-- Field Manual -->
+    <!-- Emergency supply drop: a relief ship crashes and scatters missing ore. -->
+    <section id="supply-overlay" class="supply-overlay is-hidden" aria-label="Emergency supply drop" aria-hidden="true">
+      <canvas id="supply-fx" class="supply-fx" aria-hidden="true"></canvas>
+      <div class="supply-copy">
+        <p class="supply-kicker">DISTRESS BEACON ANSWERED</p>
+        <h2 class="supply-title">EMERGENCY SUPPLY DROP</h2>
+        <p id="supply-sub" class="supply-sub">A relief ship just came down hard. Salvage the marked triangles.</p>
+      </div>
+    </section>
+
     <section id="manual-overlay" class="manual-overlay is-hidden" role="dialog" aria-modal="true" aria-labelledby="manual-title" aria-hidden="true">
       <div class="manual-card">
         <header class="manual-head">
@@ -250,12 +260,12 @@
           <nav id="mobile-dock" class="mobile-dock" aria-label="HUD actions">
             <button id="btn-mission" class="dock-btn" type="button" aria-controls="mission-panel" aria-expanded="false">
               <span class="dock-icon" aria-hidden="true">◈</span>
-              <span class="dock-label">MISSION</span>
+              <span class="dock-label">SHIP</span>
               <span id="mission-badge" class="dock-badge" hidden>0/3</span>
             </button>
             <button id="btn-operators" class="dock-btn" type="button" aria-controls="players-panel" aria-expanded="false">
               <span class="dock-icon" aria-hidden="true">◉</span>
-              <span class="dock-label">OPERATORS</span>
+              <span class="dock-label">PILOTS HERE</span>
             </button>
             <button id="btn-arcade" class="dock-btn" type="button" aria-controls="arcade-panel" aria-expanded="false">
               <span class="dock-icon" aria-hidden="true">▲</span>
@@ -292,7 +302,7 @@
         <div class="landing-brief-card">
           <p id="landing-brief-kicker" class="landing-brief-kicker">NEW PLANET // SURFACE CONTACT</p>
           <h2 id="landing-brief-title" class="landing-brief-title">MAGRATHEA</h2>
-          <p id="landing-brief-sub" class="landing-brief-sub">LEVELS 3 // COLLECT THE REFIT TO LEAVE</p>
+          <p id="landing-brief-sub" class="landing-brief-sub">LEVELS 3 // FIND WHAT THE SHIP NEEDS</p>
           <ul id="landing-brief-list" class="landing-brief-list"></ul>
           <button id="btn-landing-brief-start" class="btn btn--landing-brief" type="button">START MINING</button>
         </div>
@@ -304,33 +314,42 @@
       <!-- Escape mission -->
       <aside id="mission-panel" class="panel mission-panel" aria-label="Escape mission objectives">
         <div class="panel-head">
-          <h2 class="panel-title">ESCAPE // SYSTEMS</h2>
-          <span id="mission-status" class="mission-status">ESCAPE PROTOCOL</span>
+          <h2 class="panel-title">THE WAY HOME</h2>
+          <span id="mission-status" class="mission-status">REFIT IN PROGRESS</span>
           <button class="panel-toggle drawer-close" type="button" data-drawer-close aria-label="Close mission panel" title="Close">✕</button>
         </div>
-        <div class="mission-wrap">
+        <div class="mission-wrap" tabindex="0" role="group" aria-label="Ship requirements, captain's log and cargo">
           <ul class="mission-list" data-mission="hud"></ul>
+          <div class="captains-log">
+            <p class="captains-log-kicker">CAPTAIN'S LOG</p>
+            <p id="captains-log-text" class="captains-log-text">We made it down. The drive is cold, but the crust is still full of what we need.</p>
+          </div>
           <div class="cargo-block">
             <div class="cargo-head">
-              <span class="cargo-title">CARGO // ALL MATERIALS</span>
+              <span class="cargo-title">WHAT WE'RE CARRYING</span>
               <span id="cargo-total" class="cargo-total">0</span>
             </div>
             <ul id="cargo-list" class="cargo-list"></ul>
           </div>
+        </div>
+        <div id="distress-row" class="distress-row" hidden>
+          <span class="distress-label">IF WE'RE STILL STUCK</span>
+          <span id="distress-time" class="distress-time">02:00</span>
+          <span class="distress-hint">a relief ship is on the way</span>
         </div>
         <div class="mission-foot">
           <button id="btn-escape" class="btn btn--escape" type="button" hidden>
             <span class="btn-label">ESCAPE // BURN FOR ORBIT</span>
             <span class="btn-glyph" aria-hidden="true">▸</span>
           </button>
-          <p class="panel-foot">MINE TO REBUILD THE DRIVE</p>
+          <p class="panel-foot">FIND THE PARTS. LIGHT THE DRIVE.</p>
         </div>
       </aside>
 
       <!-- Online operators -->
       <aside id="players-panel" class="panel players-panel" aria-label="Operators in the world">
         <div class="panel-head">
-          <h2 class="panel-title">OPERATORS</h2>
+          <h2 class="panel-title">PILOTS HERE</h2>
           <span class="panel-meta" id="players-count">0</span>
           <button
             class="panel-toggle"
@@ -358,7 +377,7 @@
       <div class="hud-side hud-side--right">
       <aside id="arcade-panel" class="panel arcade-panel" aria-label="All-time arcade top ten">
         <div class="panel-head">
-          <h2 class="panel-title">ARCADE // TOP 10</h2>
+          <h2 class="panel-title">LEGENDS OF THE GRID</h2>
           <button
             class="panel-toggle"
             type="button"
@@ -430,8 +449,8 @@
           </h1>
           <p class="hero-sub">THE WAY BACK // INFINITE GRID</p>
           <p class="hero-blurb">
-            ONE SPHERE. INFINITE CELLS.<br />
-            CHARGE A FACE UNTIL IT BREAKS — IT SPLITS INTO FOUR AND THE GRID GROWS FOREVER.
+            YOU WOKE UP ON THE WRONG SIDE OF A WORMHOLE.<br />
+            THE SHIP IS BROKEN. THE CRUST IS FULL OF ORE. MINE IT. FIX HER. FIND THE WAY HOME.
           </p>
 
           <section class="story-block" aria-labelledby="story-title">
@@ -439,8 +458,8 @@
             <h2 id="story-title" class="story-title">THE WAY BACK</h2>
             <p class="story-copy">
               A WORMHOLE ACCIDENT THREW YOUR SHIP TO THE FAR SIDE OF THE UNIVERSE.
-              YOU ARE GRAVITY-LOCKED ABOVE MAGRATHEA WITH EMPTY TANKS.
-              MINE THE HIDDEN ORE, REBUILD THE DRIVE, AND BURN FOR ORBIT.
+              YOU ARE GRAVITY-LOCKED ABOVE MAGRATHEA WITH EMPTY TANKS AND A DEAD DRIVE.
+              MINE THE HIDDEN ORE, PATCH HER UP, AND BURN FOR ORBIT.
               EVERY ESCAPE THROWS YOU DEEPER INTO THE STORM — AND ONE PLANET CLOSER TO HOME.
             </p>
             <p class="story-tag">MINE <span aria-hidden="true">//</span> REBUILD <span aria-hidden="true">//</span> ESCAPE <span aria-hidden="true">//</span> FIND THE WAY BACK</p>
@@ -504,7 +523,7 @@
               <span class="world-stat-value" id="world-breaks">0</span>
             </div>
           </div>
-          <p id="world-rule" class="world-rule">BREAK AT 08 CLICKS // CONTEST LOCK // DEPTH CAP 24</p>
+          <p id="world-rule" class="world-rule">TRIANGLES BREAK INTO FOUR // CONTESTED CELLS UNLOCK WHEN SOMEONE ELSE TOUCHES THEM</p>
 
           <div class="controls-legend" aria-label="Controls legend">
             <span class="legend-item"><b>CLICK</b><i>//</i><span>CLAIM + CHARGE</span></span>
@@ -518,7 +537,7 @@
           <aside id="landing-mission" class="panel landing-mission" aria-label="Escape mission briefing">
             <div class="panel-head">
               <h2 class="panel-title">ESCAPE MISSION</h2>
-              <span id="join-mission-status" class="mission-status">3 SYSTEMS OFFLINE</span>
+              <span id="join-mission-status" class="mission-status">SHE NEEDS PARTS</span>
             </div>
             <div class="mission-wrap">
               <ul class="mission-list" data-mission="landing"></ul>
@@ -551,11 +570,11 @@
       </div>
 
       <footer class="landing-foot" aria-hidden="true">
-        <span>v3.11.0 // THE WAY BACK</span>
+        <span>v3.12.0 // THE WAY BACK</span>
         <span class="landing-foot-sep">✶</span>
         <span>WORLD PERSISTS ACROSS RESTARTS</span>
         <span class="landing-foot-sep">✶</span>
-        <span>ZERO DEPENDENCIES · FULLY OFFLINE</span>
+        <span>THE GRID REMEMBERS // NO CLOUD, NO ACCOUNTS</span>
       </footer>
     </section>
 
@@ -612,7 +631,7 @@
 
         <div class="report-cols">
           <div class="report-arcade-col">
-            <h3 class="panel-title">ARCADE // TOP 10</h3>
+            <h3 class="panel-title">LEGENDS OF THE GRID</h3>
             <div id="report-arcade" class="report-arcade">
               <ol class="arcade-list" data-limit="10"></ol>
             </div>
@@ -667,6 +686,6 @@
       </div>
     </noscript>
 
-    <script type="module" src="/js/app.js?v=3.11.0"></script>
+    <script type="module" src="/js/app.js?v=3.12.0"></script>
   </body>
 </html>

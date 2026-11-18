@@ -106,6 +106,12 @@ the second level.
 
 - Each planet is its own **multiplayer scene**: its own players, robot(s), leaderboard, grid and
   resource deposits. You only see/fight people on your planet.
+- **Emergency relief:** if the refit makes no progress for two minutes, a relief ship crashes onto
+  the planet and scatters the missing ore across nearby triangles. Those deposits are marked with
+  salvage rings and are mineable on the first successful click. Only one drop per pilot per planet.
+- **Rare parts:** every refit includes at least one rare material; look for the **RARE** marker.
+- **Planet character:** each world has its own major/secondary colour palette that tints the
+  surface, atmosphere and HUD identity.
 - **Planetary incidents:** when the last hidden deposit is mined, the exhausted planet ends in a
   random catastrophe — **Meteor Impact**, **Nuclear War**, **Solar Flare** or **Alien Invasion**.
   Each has a distinct full-screen visual effect, narration and shake, then resets/reseeds the crust
@@ -150,6 +156,9 @@ status bar, and both remember your choice.
   controls and audio. Each section has a **▶ PLAY** button. Under **NARRATOR** you can switch
   between **GEORGE** (open-source Kokoro, default), British **DANIEL** and US **SAMANTHA**; the
   choice is remembered.
+- **Captain's Log:** the refit panel tells you, in plain language, what the ship still needs and
+  when the relief ship is due.
+
 - First-time hints are one-time and can be replayed from the manual. Story interplanetary narration
   extends the transit screen so the story is not cut off.
 

@@ -23,7 +23,7 @@
 
 import { renderResultCard } from './result-card.js';
 import { RESOURCE_MARKET, resourceById } from './shared/resources.js';
-import { missionForPlanet, missionProgress, planetName, planetSource } from './shared/mission.js';
+import { isRareResource, missionForPlanet, missionProgress, planetName, planetSource } from './shared/mission.js';
 import { BIOMES } from './shared/planet.js';
 
 const CONNECTIONS = new Set(['connected', 'connecting', 'reconnecting', 'offline']);
@@ -623,7 +623,7 @@ class UI {
     if (!entries.length) {
       const empty = this.doc.createElement('li');
       empty.className = 'cargo-empty';
-      empty.textContent = 'NO CARGO YET — MINE ANY ORE';
+      empty.textContent = "The hold is empty. Pick a triangle and see what she's hiding.";
       list.appendChild(empty);
       return;
     }
@@ -645,6 +645,26 @@ class UI {
       item.setAttribute('aria-label', `${resource.name}: ${amount} in cargo`);
       list.appendChild(item);
     }
+  }
+
+  /** Human log line shown under the cargo bay. */
+  setCaptainLog(text) {
+    this._setText(this._el.captainsLogText, text || '');
+  }
+
+  /** Show/update the relief-ship countdown, or hide with null. */
+  setDistressTimer(seconds) {
+    const row = this._el.distressRow;
+    if (!row) return;
+    if (seconds == null || !Number.isFinite(seconds) || seconds < 0) {
+      row.hidden = true;
+      return;
+    }
+    row.hidden = false;
+    const total = Math.max(0, Math.ceil(seconds));
+    const mm = String(Math.floor(total / 60)).padStart(2, '0');
+    const ss = String(total % 60).padStart(2, '0');
+    this._setText(this._el.distressTime, `${mm}:${ss}`);
   }
 
   /** Toggle the mission panel (opens the drawer on compact layouts). */
@@ -953,7 +973,7 @@ class UI {
     const source = planet && typeof planet.planetSource === 'string' ? planet.planetSource.trim().toUpperCase() : '';
     this._setText(this._el.landingBriefKicker, source ? `SURFACE CONTACT // ${source}` : 'SURFACE CONTACT // NEW WORLD');
     this._setText(this._el.landingBriefTitle, name);
-    this._setText(this._el.landingBriefSub, `LEVELS ${levels} // COLLECT THE REFIT TO LEAVE`);
+    this._setText(this._el.landingBriefSub, `LEVELS ${levels} // FIND WHAT SHE NEEDS TO FLY`);
     list.textContent = '';
     for (const objective of progress.objectives) {
       const li = this.doc.createElement('li');
@@ -964,14 +984,14 @@ class UI {
       title.textContent = objective.name;
       const state = this.doc.createElement('span');
       state.className = 'landing-brief-objective-state';
-      state.textContent = objective.done ? 'READY' : 'COLLECT';
+      state.textContent = objective.done ? 'LOADED' : 'FIND';
       if (objective.done) state.classList.add('is-done');
       head.appendChild(title);
       head.appendChild(state);
       li.appendChild(head);
       for (const item of objective.items) {
         const row = this.doc.createElement('div');
-        row.className = `landing-brief-row${item.done ? ' is-done' : ''}`;
+        row.className = `landing-brief-row${item.done ? ' is-done' : ''}${isRareResource && isRareResource(item.resourceId) ? ' is-rare' : ''}`;
         row.style.setProperty('--res-color', item.color || '#c9d6e5');
         const glyph = this.doc.createElement('span');
         glyph.className = 'landing-brief-glyph';
@@ -1891,11 +1911,11 @@ class UI {
     const ready = !!mission.ready || doneCount >= total;
 
     if (this._el.missionStatus) {
-      this._setText(this._el.missionStatus, ready ? 'WARP CORE READY' : 'ESCAPE PROTOCOL');
+      this._setText(this._el.missionStatus, ready ? 'READY TO FLY' : 'REFIT IN PROGRESS');
       this._el.missionStatus.classList.toggle('is-ready', ready);
     }
     if (this._el.joinMissionStatus) {
-      this._setText(this._el.joinMissionStatus, ready ? 'WARP CORE READY' : `${doneCount} / ${total} SYSTEMS ONLINE`);
+      this._setText(this._el.joinMissionStatus, ready ? 'READY TO FLY' : `${doneCount} / ${total} PARTS FOUND`);
       this._el.joinMissionStatus.classList.toggle('is-ready', ready);
     }
     if (this._el.missionBadge) {
@@ -1923,7 +1943,7 @@ class UI {
         name.textContent = objective.name;
         const state = doc.createElement('span');
         state.className = 'mission-obj-state';
-        state.textContent = objective.done ? 'READY' : 'OFFLINE';
+        state.textContent = objective.done ? 'LOADED' : 'STILL NEEDED';
         head.append(name, state);
         li.appendChild(head);
 
@@ -1933,6 +1953,7 @@ class UI {
           const row = doc.createElement('li');
           row.className = 'mission-item';
           row.classList.toggle('is-done', item.done);
+          if (isRareResource && isRareResource(item.resourceId)) row.classList.add('is-rare');
           row.style.setProperty('--res-color', item.color);
           row.setAttribute('aria-label', `${item.name}: ${item.have} of ${item.need}`);
 
@@ -2218,6 +2239,9 @@ function resolveElements(doc) {
     missionPanel: byId('mission-panel'),
     cargoList: byId('cargo-list'),
     cargoTotal: byId('cargo-total'),
+    captainsLogText: byId('captains-log-text'),
+    distressRow: byId('distress-row'),
+    distressTime: byId('distress-time'),
     landingMission: byId('landing-mission'),
     landingBriefKicker: byId('landing-brief-kicker'),
     missionStatus: byId('mission-status'),

@@ -66,6 +66,11 @@ const ACID = { r: 215, g: 255, b: 0 };
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const rgba = (c, a) => `rgba(${c.r},${c.g},${c.b},${a})`;
+const hexRgb = (hex) => {
+  const v = String(hex || '').replace('#', '');
+  if (v.length !== 6) return { r: 120, g: 120, b: 120 };
+  return { r: parseInt(v.slice(0, 2), 16), g: parseInt(v.slice(2, 4), 16), b: parseInt(v.slice(4, 6), 16) };
+};
 const mixRgb = (a, b, t) => ({
   r: Math.round(a.r + (b.r - a.r) * t),
   g: Math.round(a.g + (b.g - a.g) * t),
@@ -160,10 +165,13 @@ export class IcosaRenderer {
     this.poleLabelsVisible = false;
     this.surface = null;
     this.surfaceSeed = null;
+    this.planetTheme = null;
     this._surfaceCanvas = null;
     this._surfaceCtx = null;
     this.hoverLabel = null;
     this.waypointLabel = null;
+    this.supplyMarkers = new Map();
+    this._supplyUntil = 0;
     this.pulses = [];
     // label -> animation time of the last pulse, used for click-only ids.
     this._pulseLabels = new Map();
@@ -277,10 +285,21 @@ export class IcosaRenderer {
    * Uses a high-res icosphere mesh coloured once, then drawn behind the game
    * cells every frame. No per-frame noise work.
    */
+  /** Apply a per-planet palette (from shared/planet-theme.js). */
+  setPlanetTheme(theme) {
+    this.planetTheme = theme && typeof theme === 'object' ? theme : null;
+    this.surfaceSeed = null;
+    this.surface = null;
+    this._surfacePaths = null;
+  }
+
   setPlanetSurface(seed) {
     const next = Number(seed) >>> 0;
     if (this.surfaceSeed === next && this.surface) return;
     this.surfaceSeed = next;
+    const theme = this.planetTheme;
+    const landTint = theme && theme.land ? hexRgb(theme.land) : null;
+    const oceanTint = theme && theme.ocean ? hexRgb(theme.ocean) : null;
     const level = (this.width || 0) < 760 ? 2 : 3;
     const mesh = getMesh(level);
     const snow = { r: 232, g: 244, b: 255 };
@@ -299,6 +318,7 @@ export class IcosaRenderer {
       if (isOcean) {
         const depth = clamp((SEA_LEVEL - elevation) / 0.4, 0, 1);
         rgb = mixRgb(shallow, deep, Math.pow(depth, 0.78));
+        if (oceanTint) rgb = mixRgb(rgb, oceanTint, 0.55);
       } else {
         // Continuous climate/elevation ramp: coast sand → lowland green →
         // highland rock → snow, with dry basins shifting toward ochre.
@@ -315,6 +335,7 @@ export class IcosaRenderer {
         const snowLine = clamp((elevation - 0.48) / 0.26, 0, 1);
         const snowAmt = clamp(Math.max(snowLine, cold * 0.9), 0, 1);
         rgb = mixRgb(rgb, snow, snowAmt * 0.88);
+        if (landTint) rgb = mixRgb(rgb, landTint, 0.4);
       }
       // Quantize colour into ~a few hundred buckets; the frame loop groups
       // triangles into one Path2D per colour so 5k facets cost ~100 fills, not 5k.
@@ -529,6 +550,52 @@ export class IcosaRenderer {
     this.waypointLabel = typeof label === 'string' && label ? label : null;
   }
 
+  /** Highlight emergency supply salvage cells for a short time. */
+  setSupplyMarkers(cells, ttlMs = 25000) {
+    this.supplyMarkers.clear();
+    if (Array.isArray(cells)) {
+      for (const cell of cells) {
+        if (!cell || !cell.label) continue;
+        this.supplyMarkers.set(String(cell.label), { resourceId: cell.resourceId || null });
+      }
+    }
+    this._supplyUntil = this.t + Math.max(2000, Math.min(120000, Number(ttlMs) || 25000)) / 1000;
+  }
+
+  _drawSupplyMarkers(ctx, camera) {
+    if (!this.supplyMarkers.size) return;
+    if (this.t > this._supplyUntil) {
+      this.supplyMarkers.clear();
+      return;
+    }
+    const pulse = 0.5 + 0.5 * Math.sin(this.t * 4.2);
+    for (const [label, info] of this.supplyMarkers) {
+      const entry = this.byLabel.get(label);
+      if (!entry) continue;
+      const p = camera.project(entry.centroid);
+      if (!p || p.z <= 0.01) continue;
+      const resource = info.resourceId ? resourceById(info.resourceId) : null;
+      const color = hexRgb(resource ? resource.color : '#ffb347');
+      const r = clamp((entry.sr || 14) * 0.42, 12, 30) + pulse * 4;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = rgba(color, 0.78);
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, TAU);
+      ctx.stroke();
+      ctx.strokeStyle = rgba(color, 0.4 * (1 - pulse));
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r + 8 + pulse * 8, 0, TAU);
+      ctx.stroke();
+      ctx.fillStyle = rgba(color, 0.95);
+      ctx.font = `700 10px ${FONT_STACK}`;
+      ctx.textAlign = 'center';
+      ctx.fillText(resource ? resource.glyph : '◆', p.x, p.y + 3);
+      ctx.restore();
+    }
+  }
+
   /**
    * Click / break juice on one cell.
    * @param {string} label
@@ -690,6 +757,7 @@ export class IcosaRenderer {
       this._drawLabels(ctx, camera);
       this._drawChargeArcs(ctx);
       this._drawWaypoint(ctx, camera);
+      this._drawSupplyMarkers(ctx, camera);
     }
 
     if (hasCamera) this._drawPulses(ctx, camera, rm);
@@ -1163,6 +1231,7 @@ export class IcosaRenderer {
   _drawSurface(ctx, camera, cx, cy, R, W, H) {
     const surface = this.surface;
     if (!surface) return;
+    const theme = this.planetTheme;
     const Kx = this._Kx;
     const Ky = this._Ky;
     const Kz = this._Kz;
@@ -1186,7 +1255,7 @@ export class IcosaRenderer {
     sctx.beginPath();
     sctx.arc(cx, cy, Math.max(1, R), 0, TAU);
     sctx.clip();
-    sctx.fillStyle = 'rgb(6,28,52)';
+    sctx.fillStyle = theme && theme.ocean ? theme.ocean : 'rgb(6,28,52)';
     sctx.fillRect(cx - R, cy - R, R * 2, R * 2);
     // Group facets into one Path2D per quantized geography colour.
     const nBuckets = surface.buckets.length;
@@ -1247,10 +1316,11 @@ export class IcosaRenderer {
     ctx.fillStyle = shade;
     ctx.fillRect(cx - R, cy - R, R * 2, R * 2);
     // A faint atmosphere rim over the ocean edge.
+    const rimRgb = theme && theme.atmosphere ? hexRgb(theme.atmosphere) : { r: 100, g: 220, b: 255 };
     const rim = ctx.createRadialGradient(cx, cy, R * 0.9, cx, cy, R * 1.005);
-    rim.addColorStop(0, 'rgba(70,190,255,0)');
-    rim.addColorStop(0.82, 'rgba(80,210,255,0.13)');
-    rim.addColorStop(1, 'rgba(120,240,255,0.28)');
+    rim.addColorStop(0, `rgba(${rimRgb.r},${rimRgb.g},${rimRgb.b},0)`);
+    rim.addColorStop(0.82, `rgba(${rimRgb.r},${rimRgb.g},${rimRgb.b},0.18)`);
+    rim.addColorStop(1, `rgba(${rimRgb.r},${rimRgb.g},${rimRgb.b},0.38)`);
     ctx.fillStyle = rim;
     ctx.beginPath();
     ctx.arc(cx, cy, R, 0, TAU);

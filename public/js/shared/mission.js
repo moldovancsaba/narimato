@@ -137,23 +137,40 @@ export const MISSION_POOLS = Object.freeze({
   warp: Object.freeze(['palladium', 'myrthil', 'voidglass']),
 });
 
+/** Materials rare enough that every refit should demand at least one. */
+export const RARE_RESOURCES = Object.freeze([
+  'iridium',
+  'voidglass',
+  'myrthil',
+  'aetherium',
+  'adamantium',
+  'neutronium',
+]);
+
+const RARE_SET = new Set(RARE_RESOURCES);
+
+/** True when a resource id is one of the rare mission materials. */
+export function isRareResource(resourceId) {
+  return RARE_SET.has(String(resourceId));
+}
+
 const MISSION_CATEGORIES = Object.freeze([
   Object.freeze({
     id: 'fuel',
     name: 'FUEL RODS',
-    hint: 'Reactor fuel for the burn that breaks gravity.',
+    hint: 'The burn that gets us off this rock.',
     pool: MISSION_POOLS.fuel,
   }),
   Object.freeze({
     id: 'hull',
     name: 'HULL PLATES',
-    hint: 'Patch the wormhole damage before atmospheric entry.',
+    hint: 'Patch the wounds before we fly again.',
     pool: MISSION_POOLS.hull,
   }),
   Object.freeze({
     id: 'warp',
     name: 'WARP CORE',
-    hint: 'A stronger lattice to re-open a controlled wormhole.',
+    hint: 'A rare lattice to bend space one more time.',
     pool: MISSION_POOLS.warp,
   }),
 ]);
@@ -189,7 +206,7 @@ function deepFreeze(value) {
 
 function missionBriefing(index) {
   if (index === 0) {
-    return `The wormhole dropped you into ${planetName(0)}'s gravity well with empty tanks. Mine the required ores to rebuild the drive and break orbit.`;
+    return `The wormhole dropped us into ${planetName(0)}'s gravity well with empty tanks. The ship is hurt. Find what she needs in the crust, and we'll try for home.`;
   }
   return `The jump left ${planetName(index)}'s surface scarred and your drive half-dead. Mine the local ores to refit and break orbit again.`;
 }
@@ -212,7 +229,14 @@ export function missionForPlanet(index, planetSeed = 0) {
 
   const used = new Set();
   const objectives = MISSION_CATEGORIES.map((category) => {
-    const choices = category.pool.filter((id) => !used.has(id));
+    let choices = category.pool.filter((id) => !used.has(id));
+    if (i === 0) {
+      // Planet 0 is the minimal tutorial refit: exactly 3 units with exactly
+      // one rare material, always the WARP CORE.
+      const rareOnly = category.id === 'warp';
+      choices = choices.filter((id) => isRareResource(id) === rareOnly);
+      if (!choices.length) choices = category.pool.filter((id) => isRareResource(id) === rareOnly && !used.has(id));
+    }
     const resourceId = choices.length ? choices[Math.floor(rng() * choices.length)] : category.pool[0];
     used.add(resourceId);
     return {
@@ -244,11 +268,28 @@ export function missionForPlanet(index, planetSeed = 0) {
     remaining -= 1;
   }
 
+  // Guarantee at least one rare material per refit. Prefer the WARP CORE
+  // objective (planet 0 already guarantees exactly one via the restricted picks
+  // above, so this only kicks in for deeper planets whose seed rolled no rares).
+  const allItems = objectives.flatMap((objective) => objective.items);
+  if (!allItems.some((item) => isRareResource(item.resourceId))) {
+    const warp = objectives.find((objective) => objective.id === 'warp');
+    const warpPool = MISSION_POOLS.warp;
+    const rareChoices = warpPool.filter((id) => !used.has(id));
+    if (warp && rareChoices.length) {
+      const replacement = rareChoices[Math.floor(rng() * rareChoices.length)];
+      const target = warp.items.find((item) => !isRareResource(item.resourceId)) || warp.items[0];
+      used.delete(target.resourceId);
+      target.resourceId = replacement;
+      used.add(replacement);
+    }
+  }
+
   const mission = {
     id: i === 0 ? 'escape' : `escape-${i}`,
     planetIndex: i,
-    name: i === 0 ? 'ESCAPE PROTOCOL' : `DEEP-SPACE REFIT ${i + 1}`,
-    tagline: i === 0 ? 'FUEL EMPTY // GRAVITY CAPTURE' : 'STORM DAMAGE // REBUILD AGAIN',
+    name: i === 0 ? 'THE WAY BACK' : `THE NEXT BURN ${i + 1}`,
+    tagline: i === 0 ? 'FUEL EMPTY // GRAVITY HAS US' : 'WOUNDED AGAIN // WE GO ON',
     briefing: missionBriefing(i),
     objectives,
   };

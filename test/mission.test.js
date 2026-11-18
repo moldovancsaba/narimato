@@ -4,6 +4,8 @@ import assert from 'node:assert/strict';
 import {
   ESCAPE_MISSION,
   MISSION_POOLS,
+  RARE_RESOURCES,
+  isRareResource,
   sanitizeOreCounts,
   missionProgress,
   missionOreList,
@@ -155,4 +157,38 @@ test('planets: first planet is depth 2, second is depth 3, infinite progression 
   assert.equal(planetDepth(50), 8);
   assert.equal(planetName(0), 'MAGRATHEA');
   assert.equal(planetName(1), 'TATOOINE');
+});
+
+test('mission: every refit guarantees at least one rare material (planet 0 exactly one, warp core)', () => {
+  assert.deepEqual(RARE_RESOURCES, ['iridium', 'voidglass', 'myrthil', 'aetherium', 'adamantium', 'neutronium']);
+  for (const rare of RARE_RESOURCES) assert.equal(isRareResource(rare), true);
+  assert.equal(isRareResource('silver'), false);
+  assert.equal(isRareResource('uranium'), false);
+
+  for (const seed of [0, 1, 7, 42, 424242, 0xdeadbeef]) {
+    for (let index = 0; index < 12; index += 1) {
+      const mission = missionForPlanet(index, seed);
+      const items = missionItems(mission);
+      const rares = items.filter((item) => isRareResource(item.resourceId));
+      assert.ok(rares.length >= 1, `planet ${index} seed ${seed} has a rare material`);
+      assert.equal(new Set(items.map((item) => item.resourceId)).size, items.length, 'no duplicate resources');
+    }
+  }
+
+  // Planet 0 stays minimal: 3 units, one per objective, exactly one rare.
+  for (const seed of [0, 2, 9, 424242]) {
+    const mission = missionForPlanet(0, seed);
+    const items = missionItems(mission);
+    assert.equal(items.length, 3);
+    assert.equal(items.reduce((sum, item) => sum + item.need, 0), 3);
+    assert.ok(mission.objectives.every((objective) => objective.items.length === 1 && objective.items[0].need === 1));
+    const rares = items.filter((item) => isRareResource(item.resourceId));
+    assert.equal(rares.length, 1, 'planet 0 demands exactly one rare material');
+    const warp = mission.objectives.find((objective) => objective.id === 'warp');
+    assert.equal(isRareResource(warp.items[0].resourceId), true, 'the rare is in the WARP CORE');
+  }
+
+  // Determinism is preserved now that rare forcing consumes the seeded rng.
+  assert.deepEqual(missionForPlanet(3, 12345), missionForPlanet(3, 12345));
+  assert.notEqual(JSON.stringify(missionForPlanet(3, 1)), JSON.stringify(missionForPlanet(3, 2)));
 });

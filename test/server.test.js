@@ -16,7 +16,12 @@ import { setTimeout as delay } from 'node:timers/promises';
 
 import { startServer, MAX_BODY_BYTES } from '../server.js';
 import { WorldCore } from '../lib/world-core.js';
-import { robotTargetForOnlineHumans, randomEscapeDestination } from '../lib/planet-manager.js';
+import {
+  robotTargetForOnlineHumans,
+  randomEscapeDestination,
+  SUPPLY_MIN_AGE_MS,
+  SUPPLY_MESSAGE,
+} from '../lib/planet-manager.js';
 import { PLANET_VERSION, terrainAt } from '../public/js/shared/planet.js';
 import { missionForPlanet, missionProgress, planetDepth, planetName } from '../public/js/shared/mission.js';
 
@@ -1046,4 +1051,136 @@ test('static: ASSET_BASE_URL rewrites the narration asset base meta tag', async 
   const html = await res.text();
   assert.match(html, /<meta name="narimato-asset-base" content="https:\/\/cdn\.example\.com\/narimato" \/>/);
   await fetch(`http://127.0.0.1:${handle.port}/audio/voice/george/help-story__s1.m4a`);
+});
+
+// ------------------------------------------------------- emergency supply
+
+test('supply: gated by pilot age, places missing mission units as first-click deposits (one per planet)', async (t) => {
+  const { base, handle } = await makeServer(t, {
+    bots: 0,
+    depositChance: 1,
+    clickCooldownMs: 0,
+    planetSeed: 424242,
+  });
+  const join = await postJson(base, '/api/join', { tag: 'SUPPLY1' });
+  assert.equal(join.status, 200);
+  const token = join.json.token;
+  const playerId = join.json.player.id;
+  const core0 = handle.manager.planetCore(0);
+  const mission = missionForPlanet(0, core0.planetSeed);
+  const requiredUnits = mission.objectives.flatMap((objective) => objective.items).reduce((sum, item) => sum + item.need, 0);
+
+  // Too early: rejected with the remaining wait, nothing placed.
+  const hiddenBefore = core0.hiddenDepositCount();
+  let res = await postJson(base, '/api/action', { token, type: 'supply' });
+  assert.equal(res.status, 409);
+  assert.equal(res.json.error, 'SUPPLY_NOT_READY');
+  assert.ok(res.json.readyInMs > 0);
+  assert.equal(core0.hiddenDepositCount(), hiddenBefore);
+
+  // Simulate a pilot older than 120 s (the server checks player.createdAt).
+  const player = core0.findByToken(token);
+  player.createdAt = Date.now() - SUPPLY_MIN_AGE_MS - 10_000;
+
+  // A discovered deposit must never be overwritten by the drop.
+  const foundCell = [...core0.getLeafMap().values()].find(
+    (cell) => cell.resourceId && !cell.resourceFound && terrainAt(core0.planetSeed, cell.centroid).biome.mineable,
+  );
+  foundCell.resourceFindClick = 1;
+  const mine = await postJson(base, '/api/action', { token, type: 'click', label: foundCell.label });
+  assert.equal(mine.status, 200);
+  assert.ok(mine.json.resource);
+
+  const sse = await openSse(base, token);
+  t.after(async () => {
+    await sse.close();
+  });
+  await sse.waitForEvent('snapshot');
+
+  res = await postJson(base, '/api/action', { token, type: 'supply', label: foundCell.label });
+  assert.equal(res.status, 200);
+  assert.equal(res.json.ok, true);
+  assert.equal(res.json.message, SUPPLY_MESSAGE);
+  assert.equal(res.json.planetIndex, 0);
+  assert.equal(typeof res.json.impactLabel, 'string');
+  const missingUnits = mission.objectives
+    .flatMap((objective) => objective.items)
+    .flatMap((item) => Array.from({ length: Math.max(0, item.need - (player.oreCounts?.[item.resourceId] || 0)) }, () => item.resourceId))
+    .sort();
+  assert.equal(res.json.cells.length, missingUnits.length, 'one deposit per still-missing mission unit');
+  assert.ok(res.json.cells.length >= 1 && res.json.cells.length <= requiredUnits);
+  assert.deepEqual(
+    res.json.cells.map((cell) => cell.resourceId).sort(),
+    missingUnits,
+  );
+  for (const cell of res.json.cells) assert.equal(Object.keys(cell).sort().join(','), 'label,resourceId');
+  // Deposit materials are public resource objects; one entry per distinct id.
+  assert.equal(res.json.resources.length, new Set(res.json.cells.map((cell) => cell.resourceId)).size);
+  for (const resource of res.json.resources) assert.deepEqual(Object.keys(resource).sort(), ['color', 'glyph', 'id', 'name', 'value']);
+  // No ore is auto-added by the drop.
+  assert.equal((await getJson(base, '/api/state')).json.state.players.find((entry) => entry.id === playerId).ores, 1);
+  // First successful click mines the supplied unit (resourceFindClick = 1).
+  const first = res.json.cells[0];
+  const suppliedCell = core0.getLeafMap().get(first.label);
+  assert.equal(suppliedCell.resourceId, first.resourceId);
+  assert.equal(suppliedCell.resourceFound, false);
+  assert.equal(suppliedCell.resourceFindClick, 1);
+  const click = await postJson(base, '/api/action', { token, type: 'click', label: first.label });
+  assert.equal(click.status, 200);
+  assert.equal(click.json.resource.id, first.resourceId, 'first click mines the supplied deposit');
+  // The discovered deposit above was untouched by the drop.
+  assert.equal(res.json.cells.some((cell) => cell.label === foundCell.label), false, 'no discovered deposit overwritten');
+
+  // Event shape in the planet room (no tokens/tags).
+  const frame = await sse.waitForEvent('supply', () => true, { timeout: 3000 });
+  assert.equal(frame.impactLabel, res.json.impactLabel);
+  assert.deepEqual(frame.cells, res.json.cells);
+  assert.deepEqual(frame.resources, res.json.resources);
+  assert.equal(frame.message, SUPPLY_MESSAGE);
+  assert.equal(frame.playerId, playerId);
+  assert.deepEqual(Object.keys(frame).sort(), ['cells', 'impactLabel', 'message', 'playerId', 'resources', 'type']);
+  assert.equal(JSON.stringify(frame).includes(token), false);
+
+  // One drop per player per planet.
+  res = await postJson(base, '/api/action', { token, type: 'supply' });
+  assert.equal(res.status, 409);
+  assert.equal(res.json.error, 'SUPPLY_USED');
+});
+
+test('supply: rejected when the refit is already complete, and available again on a new planet', async (t) => {
+  const { base, handle } = await makeServer(t, {
+    bots: 0,
+    depositChance: 1,
+    clickCooldownMs: 0,
+    planetSeed: 424242,
+  });
+  const join = await postJson(base, '/api/join', { tag: 'SUPPLY2' });
+  const token = join.json.token;
+  const core0 = handle.manager.planetCore(0);
+  const player = core0.findByToken(token);
+  player.createdAt = Date.now() - SUPPLY_MIN_AGE_MS - 1000;
+
+  // Mission complete -> MISSION_COMPLETE.
+  player.oreCounts = oreCountsForMission(missionForPlanet(0, core0.planetSeed));
+  let res = await postJson(base, '/api/action', { token, type: 'supply' });
+  assert.equal(res.status, 409);
+  assert.equal(res.json.error, 'MISSION_COMPLETE');
+
+  // Escape to a random destination, then the next planet's drop is available again.
+  const escape = await postJson(base, '/api/action', { token, type: 'escape' });
+  assert.equal(escape.status, 200);
+  const dest = escape.json.planetIndex;
+  const destCore = handle.manager.planetCore(dest);
+  const destPlayer = destCore.findByToken(token);
+  destPlayer.createdAt = Date.now() - SUPPLY_MIN_AGE_MS - 1000;
+  assert.deepEqual(destPlayer.suppliedPlanets || [], []);
+  res = await postJson(base, '/api/action', { token, type: 'supply' });
+  assert.equal(res.status, 200);
+  assert.equal(res.json.planetIndex, dest);
+  assert.ok(res.json.cells.length >= 1);
+  assert.deepEqual(destPlayer.suppliedPlanets, [dest]);
+  // Bookkeeping persists so the drop cannot be farmed by restarting/retrying.
+  const again = await postJson(base, '/api/action', { token, type: 'supply' });
+  assert.equal(again.status, 409);
+  assert.equal(again.json.error, 'SUPPLY_USED');
 });

@@ -1,5 +1,34 @@
 # NARIMATO — Release Notes
 
+## v3.12.0 — “The Relief Ship” (2026-11-18)
+
+### Added
+
+- **Captain's Log and humanised ship panel.** The refit panel now reads as a story (“We're grounded
+  on …”), names missing parts in plain language, and includes a relief-ship countdown.
+- **Emergency supply drop.** If no needed refit progress happens for **two minutes**, a relief ship
+  crashes onto the planet, scatters the missing ore across nearby triangles and marks them with
+  salvage rings. Deposits are mineable on the first successful click; one drop per pilot per planet.
+- **Rare parts in every mission.** Every planet now guarantees at least one rare material, marked
+  **RARE** in the refit list.
+- **Planet major colours.** Eight palettes tint surface, atmosphere, HUD identity and landing
+  briefing so worlds feel visibly different.
+
+### Verification
+
+- Full `node --test test/` → **89/89 pass**.
+- UI audit clean in Chromium; axe WCAG audit clean; supply crash visual exercised via QA.
+- Server tests cover the 120-second gate, missing-resource placement, cooldown, event shape and
+  rare-material guarantee.
+
+### Release artifact
+
+- Source tag: `v3.12.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.12.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.11.0 — “Accessible Edge” (2026-11-18)
 
 ### Added / fixed

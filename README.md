@@ -107,6 +107,15 @@ resets its crust and releases new resources. The game never ends.
   it clears and you can mine again.
 - **Observable by default** — `GET /api/metrics` exposes privacy-safe HTTP/SSE/planet/event-loop
   metrics, and a tiny client beacon reports Web Vitals/audio-start timing. No tokens or tags.
+- **Captain's Log & humanised ship UI** — the panel tells the pilot a short story, names what is
+  still missing in plain language, and shows a relief-ship countdown instead of a bare systems list.
+- **Emergency supply drop** — if you make no refit progress for two minutes, a relief ship crashes
+  onto the planet and scatters the missing ore across nearby triangles; those deposits are mineable
+  on the first successful click.
+- **Rare refit parts** — every planet now requires at least one rare material (iridium, voidglass,
+  myrthil, aetherium, adamantium or neutronium), marked **RARE** in the refit list.
+- **Planet major colours** — eight palette identities tint the surface, atmosphere, HUD identity and
+  landing briefing, so neighbouring worlds feel like different places.
 - **CDN-ready assets** — narration URLs can move to an edge cache with `ASSET_BASE_URL`; audio is
   versioned and immutable.
 - **Accessibility + resilience gates** — Chromium/WebKit UI audits, axe-core WCAG checks, 44 px
@@ -145,6 +154,7 @@ resets its crust and releases new resources. The game never ends.
 | ![Narration subtitles in the cockpit intro](media/narration.jpg) | ![NARIMATO Field Manual](media/manual.jpg) |
 | ![Nuclear war incident](media/incident-nuclear.jpg) | ![Alien invasion incident](media/incident-alien.jpg) |
 | ![Procedural refit and full cargo](media/cargo.jpg) | ![Navigation waypoint on the planet](media/navigation.jpg) |
+| ![Captain’s Log and planet colour identity](media/captains-log.jpg) | ![Emergency supply crash](media/supply-drop.jpg) |
 | ![Detailed procedural planet geography behind the grid](media/geography.jpg) | ![Navigation waypoint on the planet](media/navigation.jpg) | ![Red locked cell after mining](media/red-locked.jpg) |
 | ![Centered TRY TO FLY AWAY escape CTA](media/escape-cta.jpg) | ![New-planet landing briefing](media/landing-brief.jpg) |
 | ![Escape CTA on mobile](media/escape-cta-mobile.jpg) | ![Landing briefing on mobile](media/landing-brief-mobile.jpg) |
@@ -181,5 +191,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.11.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.12.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.
