@@ -155,7 +155,6 @@ export class IcosaRenderer {
     this.players = [];
     this.myPlayerId = null;
     this.myIndex = -1;
-    this.soloMining = false;
     this.faces = []; // active leaf entries
     this.byLabel = new Map(); // label -> entry
     this.threshold = 8;
@@ -267,11 +266,6 @@ export class IcosaRenderer {
    * ================================================================ */
 
   /** @param {Array} players state.players; @param {string|null} myPlayerId */
-  /** Solo scenes have no contest lock, so owned cells are not rendered red-locked. */
-  setSoloMining(solo) {
-    this.soloMining = !!solo;
-  }
-
   setPlayers(players, myPlayerId) {
     this.players = Array.isArray(players) ? players : [];
     this.myPlayerId = myPlayerId == null ? null : myPlayerId;
@@ -1521,7 +1515,7 @@ export class IcosaRenderer {
       const sid = this._styleIndex(e.ownerIndex);
       const style = styles[sid];
       const isMine = this.myIndex >= 0 && e.ownerIndex === this.myIndex;
-      const lockedToMe = isMine && !this.soloMining && e.lastClickIndex === this.myIndex;
+      const lockedToMe = isMine && e.lastClickIndex === this.myIndex;
       const frac = clamp(e.clicks / thr, 0, 1);
       const huge = sr > Math.min(W, H) * 0.6;
       const tier = clamp(Math.round(frac * (CHARGE_TIERS - 1)), 0, CHARGE_TIERS - 1);

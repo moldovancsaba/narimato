@@ -435,16 +435,10 @@ test('own-cell lock: cooldown is validated before the lock rule', async (t) => {
   assert.equal(click(core, a.token, '2').ok, true);
   assert.equal(click(core, a.token, '2').error, 'COOLDOWN');
   clock.advance(41);
-  // A lone human may keep charging; no opponent is required to play.
-  assert.equal(click(core, a.token, '2').ok, true);
-  const b = core.join({ tag: 'BETA' });
-  assert.equal(core.getState().humansOnline, 2);
-  clock.advance(41);
   const res = click(core, a.token, '2');
   assert.equal(res.ok, false);
   assert.equal(res.error, 'OWN_CELL_LOCKED');
-  assert.equal(core.getState().totalClicks, 2);
-  void b;
+  assert.equal(core.getState().totalClicks, 1);
 });
 
 test('click scoring: claim and steal (reinforce contested away)', async (t) => {
@@ -742,9 +736,7 @@ test('persistence: players + tree survive a reload; lastClickIndex + indexes per
   assert.equal(afterState.createdAt, before.state.createdAt);
   assert.deepEqual(afterState.arcade, before.state.arcade);
   assert.equal(afterState.players[0].facesHeld, before.state.players[0].facesHeld);
-  // The lock rule survives a reload once another human is online.
-  reloaded.setOnline(a.player.id, true);
-  reloaded.setOnline(b.player.id, true);
+  // The lock rule survives a reload.
   assert.equal(reloaded.click({ token: b.token, label: '12.1' }).error, 'OWN_CELL_LOCKED');
 
   // Token reconnect resolves to the same persistent player index.
@@ -1038,6 +1030,23 @@ test('robot: contests (steals) human-owned cells so solo play cannot speed-run',
   assert.equal(click(core, human.token, '1').ok, true);
 });
 
+test('robot: prioritises a human cell locked to its owner even on explore rolls', async (t) => {
+  // rng 0.9 would normally fall into explore mode; a locked human cell must win.
+  const { core, clock } = await makeCore(t, {
+    rng: () => 0.9,
+    config: { bots: 1, botGapMinMs: 10, botGapMaxMs: 10, botMinMs: 10_000, botMaxMs: 10_000, botClickMinMs: 10, botClickMaxMs: 10, clickCooldownMs: 0 },
+  });
+  const human = core.join({ tag: 'HUMAN' });
+  assert.equal(click(core, human.token, '2').ok, true);
+  assert.equal(click(core, human.token, '2').error, 'OWN_CELL_LOCKED');
+  core.tick(clock.now());
+  clock.advance(11);
+  core.tick(clock.now());
+  const leaves = leafMap(core);
+  assert.notEqual(leaves.get('2').owner, 0, 'robot contested the locked human cell');
+  assert.equal(click(core, human.token, '2').ok, true, 'human can act again after the robot contest');
+});
+
 test('robot: BOTS=0 disables the robot entirely', async (t) => {
   const { core, clock } = await makeCore(t, { config: { bots: 0 } });
   core.join({ tag: 'HUMAN' });
@@ -1138,9 +1147,6 @@ test('mining: rejected clicks (cooldown / own-cell lock) never mine', async (t) 
   clock.advance(41);
   assert.equal(core.click({ token: a.token, label: second }).ok, true);
   const ores = core.getState().players[0].ores;
-  // The contest lock only applies once another human is present.
-  const b = core.join({ tag: 'BETA' });
-  void b;
   clock.advance(41);
   assert.equal(core.click({ token: a.token, label: second }).error, 'OWN_CELL_LOCKED');
   assert.equal(core.getState().players[0].ores, ores);
@@ -1420,9 +1426,7 @@ test('inventory: oreCounts tracks each resource id, persists, migrates and sanit
   const rejoin = core.join({ tag: 'ALPHA', token: a.token });
   assert.deepEqual(rejoin.state.players[0].oreCounts, expectedCounts);
 
-  // Rejected clicks never increment inventory. A second human enables the
-  // contest lock; solo play remains unblocked.
-  core.join({ tag: 'BETA' });
+  // Rejected clicks never increment inventory.
   clock.advance(0); // cooldown 0 -> own-cell lock on an already-clicked cell
   const locked = core.click({ token: a.token, label: first.label });
   assert.equal(locked.error, 'OWN_CELL_LOCKED');

@@ -821,7 +821,6 @@ function applyState(next) {
     return;
   }
   renderer.setPlayers(next.players, myPlayer ? myPlayer.id : null);
-  safeCall(renderer, 'setSoloMining', !hasHumanOpponent());
   renderer.setConfig({ threshold: next.threshold, maxDepth: next.maxDepth });
   safeCall(ui, 'updateHud', next, myPlayer ? myPlayer.id : null, {
     zoom: camera.zoom,
@@ -922,15 +921,8 @@ function myStatePlayer() {
   return state.players.find((player) => player && player.id === myPlayer.id) || null;
 }
 
-/** Solo play has no contest lock; the server applies the same rule. */
-function hasHumanOpponent() {
-  if (!state) return false;
-  if (Number.isInteger(state.humansOnline)) return state.humansOnline > 1;
-  return Array.isArray(state.players) && state.players.filter((player) => player && player.online).length > 1;
-}
-
 function cellLockedForMe(node) {
-  return !!node && hasHumanOpponent() && node.ownerIndex === myIndex && node.lastClickIndex === myIndex;
+  return !!node && node.ownerIndex === myIndex && node.lastClickIndex === myIndex;
 }
 
 /** Recompute the escape mission from the pilot's persistent ore inventory. */

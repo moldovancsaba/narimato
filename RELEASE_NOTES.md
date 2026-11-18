@@ -1,5 +1,35 @@
 # NARIMATO — Release Notes
 
+## v3.22.0 — “Real Opponents” (2026-11-18)
+
+### Corrected — this supersedes v3.20/v3.21 solo behaviour
+
+- **The own-cell contest lock is restored permanently.** You cannot mine the same cell repeatedly.
+  After your click, another operator must contest it before you can charge it again.
+- **Opponent spawn/priority fixed.** When you are the only human on a planet, the scene staffs two
+  robots; a robot now **prioritises the cell locked to you** and contests it, so the lock is always
+  breakable. With two humans there is one robot; with three or more humans robots are removed and
+  humans contest each other.
+- **No solo-farming shortcut.** The v3.20 “lone human can keep charging” behaviour was a
+  misinterpretation of the report and is removed. Tests, UI lock state, renderer red-lock and
+  documentation are consistent again.
+- Manual-only zoom, direct mouse drag and inverse arrow travel from v3.20/v3.21 are retained.
+
+### Verification
+
+- Robot priority test: even with an explore-biased RNG, a robot contests the locked human cell and
+  the human can act again.
+- Lock is always enforced solo; no infinite same-cell mining.
+- **93/93 tests**, Chromium + WebKit UI audits clean, axe clean.
+
+### Release artifact
+
+- Source tag: `v3.22.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.22.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.21.0 — “Right Way Round” (2026-11-18)
 
 ### Fixed

@@ -15,8 +15,9 @@ The **THE WAY HOME** panel lists every part the ship still needs.
 - **Four clicks** break a base triangle into four smaller cells.
 - Deeper cells need **eight clicks**.
 - Keep breaking deeper to find richer ground.
-- If you are the only human on the planet, the contest lock is off and you can mine alone.
-  When another pilot arrives, cells require a contest before you can recharge your own.
+- The contest lock is always on: after your click, another operator must contest the cell before
+  you can charge it again. If no human is around, the game staffs robots; one will prioritise
+  your locked cell and contest it.
 
 ## 3. Where to dig
 
