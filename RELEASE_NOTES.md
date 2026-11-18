@@ -1,5 +1,32 @@
 # NARIMATO — Release Notes
 
+## v3.20.0 — “No Opponent Required” (2026-11-18)
+
+### Fixed / changed
+
+- **Solo mining.** With one online human in the planet room, the own-cell contest lock is disabled:
+  you can charge and break repeatedly. When a second human is present, the lock returns. Server,
+  renderer and target inspector use the new `humansOnline` state.
+- **No automatic zoom.** Clicking or fracturing no longer changes zoom. Zoom happens only through
+  mouse wheel, pinch, double-click focus or the explicit NAV focus control.
+- **Stable mouse drag.** Mouse rotation now uses an absolute arcball grab captured at pointerdown,
+  so the planet follows the cursor consistently for the whole drag; release no longer adds a
+  spin that can reverse direction.
+- **Manual zoom ladder** and quaternion rotation retained.
+
+### Verification
+
+- Solo browser: repeated clicks break a cell with no opponent; zoom stays at ×1.0.
+- **91/91 tests**, Chromium + WebKit UI audits clean, axe clean.
+
+### Release artifact
+
+- Source tag: `v3.20.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.20.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.19.0 — “Everyone Digs” (2026-11-18)
 
 ### Changed

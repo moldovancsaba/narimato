@@ -425,6 +425,18 @@ const qRotate = (q, v) => {
   };
 };
 const qRotateInverse = (q, v) => qRotate(qNormalize({ x: -q.x, y: -q.y, z: -q.z, w: q.w }), v);
+const arcballVector = (xPx, yPx, radius) => {
+  const r = Math.max(1, Number(radius) || 1);
+  let x = (Number(xPx) || 0) / r;
+  let y = (Number(yPx) || 0) / r;
+  const len = Math.hypot(x, y);
+  if (len > 1) {
+    x /= len;
+    y /= len;
+  }
+  const z = Math.sqrt(Math.max(0, 1 - x * x - y * y));
+  return { x, y, z };
+};
 
 export class SphereCamera {
   constructor(widthOrOpts = 1, heightArg) {
@@ -507,6 +519,42 @@ export class SphereCamera {
   /** Invert the camera rotation for screen-ray picking. */
   unprojectView(v) {
     return qRotateInverse(this._q, v);
+  }
+
+  /** Start a stable screen-space drag: remember the orientation at grab time. */
+  beginArcball(xPx, yPx, radius) {
+    this._arc = {
+      q0: { ...this._q },
+      start: arcballVector(xPx, yPx, radius),
+    };
+    return this;
+  }
+
+  /**
+   * Absolute pointer-to-view rotation. Unlike incremental local-axis rotation,
+   * the grabbed point follows the cursor consistently for the whole drag.
+   */
+  arcballTo(xPx, yPx, radius, invert = false) {
+    if (!this._arc) return this;
+    const current = arcballVector(xPx, yPx, radius);
+    const a = this._arc.start;
+    const cross = {
+      x: a.y * current.z - a.z * current.y,
+      y: a.z * current.x - a.x * current.z,
+      z: a.x * current.y - a.y * current.x,
+    };
+    const crossLen = Math.hypot(cross.x, cross.y, cross.z);
+    const dot = clamp(a.x * current.x + a.y * current.y + a.z * current.z, -1, 1);
+    let angle = Math.atan2(crossLen, dot);
+    if (!(angle > 1e-7)) return this;
+    const axis = { x: cross.x / crossLen, y: cross.y / crossLen, z: cross.z / crossLen };
+    const delta = qFromAxis(axis, invert ? -angle : angle);
+    this._q = qNormalize(qMul(delta, this._arc.q0));
+    this._viewAxis = qRotateInverse(this._q, { x: 0, y: 0, z: 1 });
+    const e = this.viewEuler();
+    this._yaw = e.yaw;
+    this._pitch = e.pitch;
+    return this;
   }
 
   zoomBy(factor) {

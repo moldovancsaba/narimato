@@ -15,12 +15,15 @@ The **THE WAY HOME** panel lists every part the ship still needs.
 - **Four clicks** break a base triangle into four smaller cells.
 - Deeper cells need **eight clicks**.
 - Keep breaking deeper to find richer ground.
+- If you are the only human on the planet, the contest lock is off and you can mine alone.
+  When another pilot arrives, cells require a contest before you can recharge your own.
 
 ## 3. Where to dig
 
 - Ore is hidden; it can appear on a random click.
 - Follow the gold **NAV** beacon to the best nearby ground.
 - Double-click a cell to focus the camera; use **Wheel/pinch** to zoom through D0/D1/D2 levels.
+  Clicking or breaking a cell does **not** change zoom automatically.
 
 ## 4. How to leave
 

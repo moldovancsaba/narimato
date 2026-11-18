@@ -291,7 +291,7 @@ function faceInfo(label) {
     ownerIndex: node.ownerIndex,
     isMine: node.ownerIndex === myIndex,
     isFinal: node.depth >= maxDepth(),
-    locked: node.ownerIndex === myIndex && node.lastClickIndex === myIndex,
+    locked: cellLockedForMe(node),
     terrain: (() => {
       const terrain = world.terrainFor(node);
       if (!terrain) return null;
@@ -819,6 +819,7 @@ function applyState(next) {
     return;
   }
   renderer.setPlayers(next.players, myPlayer ? myPlayer.id : null);
+  safeCall(renderer, 'setSoloMining', !hasHumanOpponent());
   renderer.setConfig({ threshold: next.threshold, maxDepth: next.maxDepth });
   safeCall(ui, 'updateHud', next, myPlayer ? myPlayer.id : null, {
     zoom: camera.zoom,
@@ -856,9 +857,6 @@ function handleBreakEvent(msg) {
   renderer.replaceFace(msg.label, children);
   for (const child of children) renderer.pulse(child.label, { color: '#d7ff00', kind: 'break', text: '' });
   safeAudio('breakShatter');
-  if (myPlayer && msg.byPlayerId === myPlayer.id) {
-    startZoom(zoomForLevel(Math.min(maxZoomLevel(), Number(msg.depth || 0) + 1)), 320);
-  }
   safeCall(ui, 'toast', `CELL ${msg.label} FRACTURED // 4 NEW NODES`, 'good');
   if (hoveredLabel === msg.label) {
     hoveredLabel = null;
@@ -920,6 +918,17 @@ function applyDiscoveredResource(label, resource, playerId) {
 function myStatePlayer() {
   if (!state || !myPlayer || !Array.isArray(state.players)) return null;
   return state.players.find((player) => player && player.id === myPlayer.id) || null;
+}
+
+/** Solo play has no contest lock; the server applies the same rule. */
+function hasHumanOpponent() {
+  if (!state) return false;
+  if (Number.isInteger(state.humansOnline)) return state.humansOnline > 1;
+  return Array.isArray(state.players) && state.players.filter((player) => player && player.online).length > 1;
+}
+
+function cellLockedForMe(node) {
+  return !!node && hasHumanOpponent() && node.ownerIndex === myIndex && node.lastClickIndex === myIndex;
 }
 
 /** Recompute the escape mission from the pilot's persistent ore inventory. */
@@ -1344,7 +1353,7 @@ function chooseNavTarget({ cycle = false } = {}) {
   for (const node of leafList) {
     if (!node) continue;
     if (node.depth >= maxD && node.resourceId) continue; // emptied max-level cell
-    if (node.ownerIndex === myIndex && node.lastClickIndex === myIndex) continue; // locked to me
+    if (cellLockedForMe(node)) continue; // locked to me in contested play
     const terrain = world.terrainFor(node);
     if (!terrain || !terrain.biome || !terrain.biome.mineable) continue;
     const p = camera.project(node.centroid);
@@ -1455,8 +1464,7 @@ function attemptClick(label) {
   if (!label) return;
   const node = world.get(label);
   if (!node) return;
-  ensureActionZoom(node);
-  if (node.ownerIndex === myIndex && node.lastClickIndex === myIndex) {
+  if (cellLockedForMe(node)) {
     maybeTip('tip-lock', { delay: 250 });
     const stampLock = now();
     if (stampLock - lastLockToastAt > 1200) {
@@ -1913,6 +1921,8 @@ function bindCanvasInput() {
         lastMoveAt: now(),
       };
       canvas.setPointerCapture && canvas.setPointerCapture(event.pointerId);
+      const start = localPoint(event);
+      safeCall(camera, 'beginArcball', start.x - camera.width / 2, start.y - camera.height / 2, Math.min(camera.width, camera.height) * 0.45);
       setHover(null);
     } else if (pointers.size === 2) {
       pointerDown = null;
@@ -1944,17 +1954,14 @@ function bindCanvasInput() {
       pointerDown.lastY = event.clientY;
       pointerDown.moved += Math.abs(dx) + Math.abs(dy);
       if (pointerDown.moved > 2) {
-        const s = rotationScale();
-        const direction = invertDrag ? -1 : 1;
-        camera.rotate(direction * dx * s, direction * dy * s);
+        const p = localPoint(event);
+        const radius = Math.min(camera.width, camera.height) * 0.45;
+        safeCall(camera, 'arcballTo', p.x - camera.width / 2, p.y - camera.height / 2, radius, invertDrag);
         const stamp = now();
-        const elapsed = Math.max(8, stamp - pointerDown.lastMoveAt) / 1000;
-        // Keep the last few movements in rad/s; release uses this for inertia.
-        const targetYaw = (direction * dx * s * 0.006) / elapsed;
-        const targetPitch = (direction * dy * s * 0.006) / elapsed;
-        spinVel.x = spinVel.x * 0.55 + clamp(targetYaw, -7, 7) * 0.45;
-        spinVel.y = spinVel.y * 0.55 + clamp(targetPitch, -4.5, 4.5) * 0.45;
         pointerDown.lastMoveAt = stamp;
+        // A direct grab is deterministic; no residual spin can reverse it.
+        spinVel.x = 0;
+        spinVel.y = 0;
         canvas.style.cursor = 'grabbing';
       }
       return;
@@ -1971,21 +1978,18 @@ function bindCanvasInput() {
       const dragged = pointerDown.moved > 2;
       const sinceMove = now() - (pointerDown.lastMoveAt || pointerDown.time);
       if (dragged) {
-        if (sinceMove > 140) {
-          spinVel.x = 0;
-          spinVel.y = 0;
-        } else {
-          // A little more glide than before: carry the release momentum.
-          spinVel.x = clamp(spinVel.x * 1.28, -9, 9);
-          spinVel.y = clamp(spinVel.y * 1.28, -5.5, 5.5);
-          canvas.style.cursor = 'grab';
-          hoverNeedsRefresh = true;
-        }
+        // Direct arcball drag ends where the cursor left it; no post-release
+        // spin that could make the planet keep moving in a different direction.
+        spinVel.x = 0;
+        spinVel.y = 0;
+        canvas.style.cursor = 'grab';
+        hoverNeedsRefresh = true;
       } else {
         spinVel.x = 0;
         spinVel.y = 0;
       }
       pointerDown = null;
+      if (camera && camera._arc) camera._arc = null;
       if (clickLike) {
         const rect = canvas.getBoundingClientRect();
         const label = pickAt(event.clientX - rect.left, event.clientY - rect.top);
@@ -2012,6 +2016,7 @@ function bindCanvasInput() {
   canvas.addEventListener('pointercancel', (event) => {
     pointers.delete(event.pointerId);
     pointerDown = null;
+    if (camera && camera._arc) camera._arc = null;
     pinchDist = 0;
     spinVel.x = 0;
     spinVel.y = 0;
@@ -2152,13 +2157,6 @@ function setInvertDrag(next) {
 function cancelFocus() {
   focusAnim = null;
   cancelZoom();
-}
-
-function ensureActionZoom(node) {
-  if (!node) return;
-  const level = clamp(Number(node.depth) || 0, 0, maxZoomLevel());
-  const current = zoomTarget === null ? camera.zoom : zoomTarget;
-  if (Math.abs(Math.log2(Math.max(1, current)) - level) > 0.42) startZoom(zoomForLevel(level), 260);
 }
 
 function focusFace(label) {

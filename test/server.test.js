@@ -226,6 +226,7 @@ test('HTTP: join, click flow, state/world/leaderboard/health, static safety and 
     'arcade',
     'createdAt',
     'faces',
+    'humansOnline',
     'maxDepth',
     'maxDepthReached',
     'planetDepth',

@@ -242,6 +242,7 @@ test('fresh world: 20 unowned base leaves and no round/timer fields', async (t) 
     'arcade',
     'createdAt',
     'faces',
+    'humansOnline',
     'maxDepth',
     'maxDepthReached',
     'planetSeed',
@@ -434,10 +435,16 @@ test('own-cell lock: cooldown is validated before the lock rule', async (t) => {
   assert.equal(click(core, a.token, '2').ok, true);
   assert.equal(click(core, a.token, '2').error, 'COOLDOWN');
   clock.advance(41);
+  // A lone human may keep charging; no opponent is required to play.
+  assert.equal(click(core, a.token, '2').ok, true);
+  const b = core.join({ tag: 'BETA' });
+  assert.equal(core.getState().humansOnline, 2);
+  clock.advance(41);
   const res = click(core, a.token, '2');
   assert.equal(res.ok, false);
   assert.equal(res.error, 'OWN_CELL_LOCKED');
-  assert.equal(core.getState().totalClicks, 1);
+  assert.equal(core.getState().totalClicks, 2);
+  void b;
 });
 
 test('click scoring: claim and steal (reinforce contested away)', async (t) => {
@@ -735,7 +742,9 @@ test('persistence: players + tree survive a reload; lastClickIndex + indexes per
   assert.equal(afterState.createdAt, before.state.createdAt);
   assert.deepEqual(afterState.arcade, before.state.arcade);
   assert.equal(afterState.players[0].facesHeld, before.state.players[0].facesHeld);
-  // The lock rule survives a reload (owner still can't re-charge their own cell).
+  // The lock rule survives a reload once another human is online.
+  reloaded.setOnline(a.player.id, true);
+  reloaded.setOnline(b.player.id, true);
   assert.equal(reloaded.click({ token: b.token, label: '12.1' }).error, 'OWN_CELL_LOCKED');
 
   // Token reconnect resolves to the same persistent player index.
@@ -1129,6 +1138,9 @@ test('mining: rejected clicks (cooldown / own-cell lock) never mine', async (t) 
   clock.advance(41);
   assert.equal(core.click({ token: a.token, label: second }).ok, true);
   const ores = core.getState().players[0].ores;
+  // The contest lock only applies once another human is present.
+  const b = core.join({ tag: 'BETA' });
+  void b;
   clock.advance(41);
   assert.equal(core.click({ token: a.token, label: second }).error, 'OWN_CELL_LOCKED');
   assert.equal(core.getState().players[0].ores, ores);
@@ -1408,7 +1420,9 @@ test('inventory: oreCounts tracks each resource id, persists, migrates and sanit
   const rejoin = core.join({ tag: 'ALPHA', token: a.token });
   assert.deepEqual(rejoin.state.players[0].oreCounts, expectedCounts);
 
-  // Rejected clicks never increment inventory.
+  // Rejected clicks never increment inventory. A second human enables the
+  // contest lock; solo play remains unblocked.
+  core.join({ tag: 'BETA' });
   clock.advance(0); // cooldown 0 -> own-cell lock on an already-clicked cell
   const locked = core.click({ token: a.token, label: first.label });
   assert.equal(locked.error, 'OWN_CELL_LOCKED');
@@ -1443,8 +1457,10 @@ test('inventory: oreCounts tracks each resource id, persists, migrates and sanit
   const migrated = await WorldCore.open({ dataDir, config, now: clock.now, autoSave: false, quiet: true });
   const players = migrated.getState().players;
   assert.deepEqual(players[0].oreCounts, {}, 'missing inventory migrates to an empty object');
-  assert.deepEqual(players[1].oreCounts, { silver: 2, neutronium: 1 }, 'unknown/negative/non-numeric entries are dropped');
-  assert.ok(players[1].oreCounts.silver === 2);
+  const corrupt = players.find((player) => player.tag === 'CORRUPT');
+  assert.ok(corrupt, 'corrupt pilot survives migration');
+  assert.deepEqual(corrupt.oreCounts, { silver: 2, neutronium: 1 }, 'unknown/negative/non-numeric entries are dropped');
+  assert.ok(corrupt.oreCounts.silver === 2);
 });
 
 // ------------------------------------------------------- planets / meteor API

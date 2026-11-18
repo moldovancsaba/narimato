@@ -155,6 +155,7 @@ export class IcosaRenderer {
     this.players = [];
     this.myPlayerId = null;
     this.myIndex = -1;
+    this.soloMining = false;
     this.faces = []; // active leaf entries
     this.byLabel = new Map(); // label -> entry
     this.threshold = 8;
@@ -266,6 +267,11 @@ export class IcosaRenderer {
    * ================================================================ */
 
   /** @param {Array} players state.players; @param {string|null} myPlayerId */
+  /** Solo scenes have no contest lock, so owned cells are not rendered red-locked. */
+  setSoloMining(solo) {
+    this.soloMining = !!solo;
+  }
+
   setPlayers(players, myPlayerId) {
     this.players = Array.isArray(players) ? players : [];
     this.myPlayerId = myPlayerId == null ? null : myPlayerId;
@@ -1515,6 +1521,7 @@ export class IcosaRenderer {
       const sid = this._styleIndex(e.ownerIndex);
       const style = styles[sid];
       const isMine = this.myIndex >= 0 && e.ownerIndex === this.myIndex;
+      const lockedToMe = isMine && !this.soloMining && e.lastClickIndex === this.myIndex;
       const frac = clamp(e.clicks / thr, 0, 1);
       const huge = sr > Math.min(W, H) * 0.6;
       const tier = clamp(Math.round(frac * (CHARGE_TIERS - 1)), 0, CHARGE_TIERS - 1);
@@ -1583,8 +1590,8 @@ export class IcosaRenderer {
         ctx.fill();
       }
       ctx.globalAlpha = 1;
-      // Locked-to-me cell: red wash = you already mined it; only others can act.
-      if (isMine) {
+      // Locked-to-me cell: red wash = contested play and only others can act.
+      if (lockedToMe) {
         ctx.globalAlpha = lodAlpha * 0.52;
         ctx.fillStyle = 'rgb(255,38,82)';
         ctx.fill();
@@ -1727,7 +1734,7 @@ export class IcosaRenderer {
       edgePath.moveTo(px[0], py[0]);
       for (let k = 1; k < np; k++) edgePath.lineTo(px[k], py[k]);
       edgePath.closePath();
-      if (isMine) {
+      if (lockedToMe) {
         lockedEdges.moveTo(px[0], py[0]);
         for (let k = 1; k < np; k++) lockedEdges.lineTo(px[k], py[k]);
         lockedEdges.closePath();

@@ -118,6 +118,13 @@ resets its crust and releases new resources. The game never ends.
   cubic-bezier settle. Clicking/fracturing a cell automatically moves the camera to that action level.
 - **Quick Guide** — a first-run, shareable one-screen card explains what to mine, how to
   mine, where to dig and how to leave; press **GUIDE** or open `?guide=1`.
+- **Solo mining** — with no other online human in the planet room, the contest lock is
+  disabled; you can charge and break cells alone. The lock returns when another human is
+  present.
+- **Manual zoom only** — clicking or breaking no longer changes zoom. Zoom happens only with
+  mouse wheel, pinch, double-click focus or the explicit NAV focus control.
+- **Stable mouse drag** — mouse rotation uses an absolute arcball grab, so the planet follows
+  the cursor consistently through the whole drag instead of flipping direction.
 - **Gentle early rare budgets** — early planets demand one rare unit, then ramp up with depth.
 - **Captain's Log & humanised ship UI** — the panel tells the pilot a short story, names what is
   still missing in plain language, and shows a relief-ship countdown instead of a bare systems list.
@@ -205,5 +212,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.19.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.20.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.
