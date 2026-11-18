@@ -1172,7 +1172,8 @@ test('mining: DEPOSIT_CHANCE override applies only to mineable biomes', async (t
   }
   for (const label of oceanLabels(core)) assert.equal(core.getLeafMap().get(label).resourceId, null);
   // Unset override uses the biome geological chance (deterministic seed).
-  const { core: terrain } = await makeCore(t, { config: { depositChance: null, planetSeed: 424242, bots: 0 } });
+  // Deterministic geology roll for this assertion (rng=0 < every mineable chance).
+  const { core: terrain } = await makeCore(t, { config: { depositChance: null, planetSeed: 424242, bots: 0 }, rng: () => 0 });
   assert.ok(terrain.getLeaves().some(([label]) => terrain.getLeafMap().get(label).resourceId));
   for (const label of oceanLabels(terrain)) assert.equal(terrain.getLeafMap().get(label).resourceId, null);
   // Shared planet helpers still expose the same weighted geology.
