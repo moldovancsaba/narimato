@@ -840,6 +840,9 @@ function handleEvent(msg) {
     case 'surface_leave':
       handleSurfaceEvent(msg);
       break;
+    case 'surface_mine':
+      if (surface && surface.active) safeCall(surface, 'showMine', msg);
+      break;
     case 'incident':
       handleIncidentEvent(msg);
       break;
@@ -1099,6 +1102,10 @@ function turnViewToSupply(label) {
   let dYaw = targetYaw - camera.yaw;
   while (dYaw > Math.PI) dYaw -= Math.PI * 2;
   while (dYaw < -Math.PI) dYaw += Math.PI * 2;
+  const targetZoom = Math.max(
+    camera.zoom,
+    zoomForLevel(Math.min(maxOrbitZoomLevel(), Math.max(2, (Number(node.depth) || 0) + 2))),
+  );
   focusAnim = {
     start: now(),
     duration: 560,
@@ -1107,7 +1114,7 @@ function turnViewToSupply(label) {
     fromPitch: camera.pitch,
     toPitch: targetPitch,
     fromZoom: camera.zoom,
-    toZoom: camera.zoom,
+    toZoom: targetZoom,
   };
   keyboardSyncNeeded = true;
   lastInteraction = now();

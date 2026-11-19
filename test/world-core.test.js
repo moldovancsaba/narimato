@@ -1730,3 +1730,20 @@ test('incidents: a completed refit can trigger the next incident before every de
   assert.ok(meteor && meteor.event && meteor.event.title);
   assert.deepEqual(core.getLeaves().length, 20);
 });
+
+test('robot: emits surface_mine for the authoritative cell it clicked', async (t) => {
+  const { core, clock } = await makeCore(t, {
+    config: { bots: 1, botGapMinMs: 10, botGapMaxMs: 10, botMinMs: 10_000, botMaxMs: 10_000, botClickMinMs: 10, botClickMaxMs: 10, clickCooldownMs: 0 },
+  });
+  core.tick(clock.now());
+  const robot = core._robots[0];
+  core.drainEvents();
+  robot.nextClickAt = clock.now();
+  core.tick(clock.now());
+  const events = core.drainEvents();
+  const mine = events.find((event) => event.type === 'surface_mine');
+  assert.ok(mine, 'surface_mine event emitted');
+  assert.equal(mine.playerId, robot.playerId);
+  assert.ok(core._leaves.has(mine.label));
+  assert.equal(mine.pos.x, robot.surface.pos.x);
+});

@@ -132,6 +132,7 @@ export function createSurfaceMode({
   let shown = false;
   let debug = {};
   let effects = [];
+  let mineEffects = [];
   let missionSignature = '';
   let missionTick = 0;
   let targetTick = 0;
@@ -559,6 +560,39 @@ export function createSurfaceMode({
     el.dataset.state = can ? 'can' : 'locked';
   }
 
+  function drawMineEffects(w, h, now, camera) {
+    mineEffects = mineEffects.filter((effect) => now - effect.start < 1000);
+    for (const effect of mineEffects) {
+      const node = getLeaves().find((n) => n.label === effect.label);
+      if (!node || !camera) continue;
+      const anchor = camera.project(mul(node.centroid, 1.003));
+      if (!anchor || !anchor.visible) continue;
+      const k = clamp01((now - effect.start) / 1000);
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = 0.5 * (1 - k);
+      ctx.fillStyle = effect.color || '#8afcff';
+      ctx.beginPath();
+      ctx.moveTo(anchor.x - 2, anchor.y - 180);
+      ctx.lineTo(anchor.x + 2, anchor.y - 180);
+      ctx.lineTo(anchor.x + 34, anchor.y);
+      ctx.lineTo(anchor.x - 34, anchor.y);
+      ctx.closePath();
+      ctx.fill();
+      for (let i = 0; i < 6; i += 1) {
+        const a = (i / 6) * Math.PI * 2 + now / 180;
+        ctx.fillRect(anchor.x + Math.cos(a) * (10 + k * 30), anchor.y + Math.sin(a) * 7, 2, 2);
+      }
+      ctx.restore();
+      ctx.globalAlpha = 0.8 * (1 - k);
+      ctx.fillStyle = '#f3ffff';
+      ctx.font = '8px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${effect.tag || 'ROBOT'} // MINE ${effect.label}`, anchor.x, anchor.y - 30);
+    }
+    ctx.globalAlpha = 1;
+  }
+
   function drawExternalOverlay(w, h, now) {
     ctx.clearRect(0, 0, w, h);
     const camera = getExternalCamera && getExternalCamera();
@@ -665,6 +699,7 @@ export function createSurfaceMode({
       ctx.textAlign = 'center';
       ctx.fillText(String(cell.name || 'ORE').toUpperCase(), a.x, a.y - 70);
     }
+    drawMineEffects(w, h, now, camera);
     drawHarvestEffects(w, h, now);
   }
 
@@ -1156,6 +1191,18 @@ export function createSurfaceMode({
     resize,
     get active() { return active; },
     get phase() { return phase; },
+    /** Authoritative robot mining event: beam on the actual mined cell. */
+    showMine: (msg) => {
+      if (!active || !msg || !msg.label) return false;
+      mineEffects.push({
+        start: performance.now(),
+        label: String(msg.label),
+        tag: String(msg.tag || 'ROBOT').slice(0, 14),
+        color: msg.color || '#8afcff',
+      });
+      mineEffects = mineEffects.slice(-12);
+      return true;
+    },
     /** Relocate the pilot to a known impact cell (emergency supply). */
     focusLabel: (label) => {
       if (!active || !label) return false;

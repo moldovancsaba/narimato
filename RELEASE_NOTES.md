@@ -1,5 +1,30 @@
 # NARIMATO — Release Notes
 
+## v3.46.0 — “Visible Riggers” (2026-11-18)
+
+### Added
+
+- **Authoritative robot mining event:** robot clicks emit `surface_mine` with robot id, pose and the
+  actual cell label. The surface draws a triangular beam/sparks on that cell.
+- **Supply camera focus zooms to the impact** for all orbital humans (and surface pilots already
+  snap), so the drop is visible immediately.
+- **106/106 tests**, including a server test that the beam label is an active leaf and the event pose
+  matches the robot surface pose.
+
+### Still open
+
+- Two-client visual pass for robot beams.
+- Full single-renderer/controller parity and final humanoid rig.
+- Browser colour-vs-`/api/action` round-trip and orbital supply relocation assertion.
+
+### Release artifact
+
+- Source tag: `v3.46.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.46.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.45.0 — “One Truth” (2026-11-18)
 
 ### Fixed
