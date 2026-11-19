@@ -1,5 +1,31 @@
 # NARIMATO — Release Notes
 
+## v3.36.0 — “Only Mineable Pins” (2026-11-18)
+
+### Fixed
+
+- **Removed the pin forest.** Every discovered/mined resource was pinned across the surface; those
+  cells are no longer mineable and should not be marked. Pins now appear only on:
+  - the **target cell** under the avatar (green = harvest, red = locked), and
+  - **known relief/supply cells**.
+- Restored the clear target HUD: `TARGET <label> // GREEN // HARVEST` or `RED // LOCKED`.
+- Cell fills use terrain/owner data and cyan edges like orbit; green/red is target-only.
+- Surface HUD remains center-safe; exit returns to maximum orbit zoom-out.
+
+### Verification
+
+- Browser surface: no resource-pin forest; target HUD/status visible.
+- **97/97 tests**, Chromium + WebKit UI audits clean, axe clean.
+- [ROADMAP.md](ROADMAP.md) updated with this regression and open gaps.
+
+### Release artifact
+
+- Source tag: `v3.36.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.36.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.35.0 — “Truth & Colors” (2026-11-18)
 
 ### Fixed / documented

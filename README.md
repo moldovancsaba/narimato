@@ -130,8 +130,9 @@ resets its crust and releases new resources. The game never ends.
   pilot/robot is drawn walking the same surface with the same avatar system. Remote opponents move
   around fixed independent home orbits — never around the local player. Surface HUD is center-safe
   with a central NEED summary and a bottom RETURN TO ORBIT; returning restores maximum orbit zoom-out.
-  Discovered resources and known relief drops stand as pins; cyan cell edges match orbit, green/red
-  pins are the harvest status, and remote robots visibly mine with their own beams. Cells keep the same
+  Only the target cell and known relief drops get pins; already-mined discovered resources no
+  longer clutter the surface. Cyan cell edges match orbit, green/red target state is explicit, and
+  remote robots visibly mine with their own beams. Cells keep the same
   terrain/owner palette as orbit; green/red is used only on the cell boundaries as the harvest
   affordance.
   **GREEN** triangles can be harvested, **RED** means locked/empty. The **WHAT SHE NEEDS** panel
@@ -242,5 +243,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.35.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.36.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.

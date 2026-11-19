@@ -22,7 +22,7 @@ single release note: if the code and this document disagree, fix one of them.
 | Surface triangles | Active cells → adaptive `childTriangles` normalised back to sphere | Spherical arc triangles, not flat chords. No generated terrain map. |
 | Surface fills | Active cell biome/elevation + owner colour | Same data orbit uses; red/green is not a fill. |
 | Harvest affordance | Target cell only: green target = can harvest, red target = locked; compact target pin + HUD | One unambiguous colour rule instead of recolouring the whole surface. |
-| Resource pins | Discovered resources + known supply cells only | Hidden ore must stay hidden; pins cannot reveal server-only deposits. |
+| Resource pins | Target cell + known relief/supply cells only | Hidden ore must stay hidden; already-mined discovered resources are not mineable and must not clutter the surface. |
 | Opponents | Real surface poses for human clients; fixed independent home routes for robots/other online pilots | Opponents never orbit the local player. Authoritative robot clicks still come through server cell events. |
 | Ships | Five-tetrahedron shared model (`public/js/shared/tetra-ship.js`) | 5 tetrahedra × 4 triangular faces; intro, transit, relief, alien incidents. |
 | Audio / voice | Arcade synth + Kokoro/macOS packs, HTMLAudio with resume watchdog | No external runtime dependency for SFX; versioned immutable voice clips. |
@@ -57,6 +57,7 @@ single release note: if the code and this document disagree, fix one of them.
 | v3.33 | Center-safe surface HUD, maximum orbit zoom-out on exit |
 | v3.34 | Resource/supply pins, cyan edges, remote mining beams |
 | v3.35 | Target-only green/red rule, explicit target HUD, roadmap + README/release audit, stale comment cleanup |
+| v3.36 | Pin cleanup: no pins for already-mined resources; target + known supply only |
 
 ### Earlier but still active
 
@@ -83,6 +84,8 @@ These are real regressions, not polish items. Each one must not recur.
 6. **Orbital HUD bleed and clipping:** corrected v3.30/v3.33; surface owns the screen, central NEED
    summary and bottom exit are clamp/safe-area positioned.
 7. **Opponents orbiting the player:** corrected v3.32; fixed independent homes.
+8. **Pin explosion:** every discovered/mined cell was pinned, making the surface look like a forest.
+   Corrected v3.36: only target/supply pins.
 8. **Opponents not visibly mining:** corrected v3.34 with independent mining beams; authoritative
    cell updates still arrive through the server.
 9. **Deep zoom on surface exit:** corrected v3.33; exit returns to maximum orbit zoom-out (`0.4`).
@@ -121,11 +124,11 @@ server does not yet stream a robot’s surface position or map its click to a vi
 ### P1 — Resource visibility rules
 
 Pins currently show:
-- discovered resources (`resourceId` known to clients)
+- the target cell under the avatar
 - known relief/supply cells
 
-Hidden deposits are intentionally not exposed. If a future requirement needs “show every resource,” it
-must change the server secrecy model, not fake client data.
+Already-mined discovered resources are no longer pinned. Hidden deposits remain intentionally
+unexposed. “Show every resource” would require a server secrecy-model change, not fake client data.
 
 ### P1 — New-story voice cues
 
