@@ -375,6 +375,7 @@ export class IcosaRenderer {
       if (!entry) entry = this._createEntry(f);
       entry.ownerIndex = Number.isInteger(f.ownerIndex) ? f.ownerIndex : -1;
       entry.clicks = Number.isFinite(f.clicks) ? Math.max(0, Math.trunc(f.clicks)) : 0;
+      entry.lastClickIndex = Number.isInteger(f.lastClickIndex) ? f.lastClickIndex : -1;
       this._setEntryResource(entry, f.resourceId);
       this._setEntryTerrain(entry, f.terrain);
       nextFaces.push(entry);
@@ -387,12 +388,13 @@ export class IcosaRenderer {
   }
 
   /** Lightweight owner/charge update (no geometry change). */
-  updateCell(label, ownerIndex, clicks) {
+  updateCell(label, ownerIndex, clicks, lastClickIndex) {
     if (typeof label !== 'string') return;
     const entry = this.byLabel.get(label);
     if (!entry) return;
     if (Number.isInteger(ownerIndex)) entry.ownerIndex = ownerIndex;
     if (Number.isFinite(clicks)) entry.clicks = Math.max(0, Math.trunc(clicks));
+    if (Number.isInteger(lastClickIndex)) entry.lastClickIndex = lastClickIndex;
   }
 
   /**
@@ -412,6 +414,7 @@ export class IcosaRenderer {
       if (!entry) entry = this._createEntry(ch);
       entry.ownerIndex = Number.isInteger(ch.ownerIndex) ? ch.ownerIndex : -1;
       entry.clicks = Number.isFinite(ch.clicks) ? Math.max(0, Math.trunc(ch.clicks)) : 0;
+      entry.lastClickIndex = Number.isInteger(ch.lastClickIndex) ? ch.lastClickIndex : -1;
       this._setEntryResource(entry, ch.resourceId);
       this._setEntryTerrain(entry, ch.terrain);
       entry.born = this.t;
@@ -825,6 +828,7 @@ export class IcosaRenderer {
       sinTheta: Math.sin(theta),
       ownerIndex: Number.isInteger(face.ownerIndex) ? face.ownerIndex : -1,
       clicks: Number.isFinite(face.clicks) ? Math.max(0, Math.trunc(face.clicks)) : 0,
+      lastClickIndex: Number.isInteger(face.lastClickIndex) ? face.lastClickIndex : -1,
       resourceId: null,
       resource: null,
       resRgb: null,

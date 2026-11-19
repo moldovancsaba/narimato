@@ -901,7 +901,7 @@ function handleCellEvent(msg) {
   const [label, ownerIndex, clicks, , lastClickIndex] = msg.cell;
   const node = world.applyCell(label, ownerIndex, clicks, lastClickIndex);
   if (!node) return;
-  renderer.updateCell(label, node.ownerIndex, node.clicks);
+  renderer.updateCell(label, node.ownerIndex, node.clicks, node.lastClickIndex);
   if (hoveredLabel === label) safeCall(ui, 'setHoverFace', faceInfo(label));
 }
 
@@ -1495,7 +1495,7 @@ function optimisticClick(label) {
   node.clicks += 1;
   if (kind !== 'reinforce' && myIndex >= 0) node.ownerIndex = myIndex;
   if (myIndex >= 0) node.lastClickIndex = myIndex;
-  renderer.updateCell(label, node.ownerIndex, node.clicks);
+  renderer.updateCell(label, node.ownerIndex, node.clicks, node.lastClickIndex);
   const color = myPlayer ? myPlayer.color : '#00f0ff';
   const info = faceInfo(label);
   renderer.pulse(label, {
@@ -1545,7 +1545,7 @@ function attemptClick(label) {
         if (node) {
           node.ownerIndex = before.ownerIndex;
           node.clicks = before.clicks;
-          renderer.updateCell(label, node.ownerIndex, node.clicks);
+          renderer.updateCell(label, node.ownerIndex, node.clicks, node.lastClickIndex);
           if (hoveredLabel === label) safeCall(ui, 'setHoverFace', faceInfo(label));
         }
       } else if (err === 'NOT_JOINED') {
@@ -1556,7 +1556,7 @@ function attemptClick(label) {
           node.ownerIndex = before.ownerIndex;
           node.clicks = before.clicks;
           if (myIndex >= 0) node.lastClickIndex = myIndex; // remember locally: no more optimistic pulses
-          renderer.updateCell(label, node.ownerIndex, node.clicks);
+          renderer.updateCell(label, node.ownerIndex, node.clicks, node.lastClickIndex);
           if (hoveredLabel === label) safeCall(ui, 'setHoverFace', faceInfo(label));
         }
         safeCall(ui, 'toast', 'CELL LOCKED // ANOTHER OPERATOR MUST CONTEST IT FIRST', 'warn');
@@ -1566,7 +1566,7 @@ function attemptClick(label) {
         if (node) {
           node.ownerIndex = before.ownerIndex;
           node.clicks = before.clicks;
-          renderer.updateCell(label, node.ownerIndex, node.clicks);
+          renderer.updateCell(label, node.ownerIndex, node.clicks, node.lastClickIndex);
         }
         safeCall(ui, 'toast', (data && data.message) || 'GRID REJECTED THE CLICK', 'warn');
         safeAudio('error');
@@ -1577,7 +1577,7 @@ function attemptClick(label) {
     const cell = Array.isArray(data.cell) ? data.cell : null;
     if (cell) {
       const node = world.applyCell(cell[0], cell[1], cell[2], cell[4]);
-      if (node) renderer.updateCell(node.label, node.ownerIndex, node.clicks);
+      if (node) renderer.updateCell(node.label, node.ownerIndex, node.clicks, node.lastClickIndex);
     }
     if (data.resource) applyDiscoveredResource(data.cell ? data.cell[0] : label, data.resource, myPlayer.id);
     const kind = data.kind || 'claim';

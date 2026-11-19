@@ -1,5 +1,31 @@
 # NARIMATO — Release Notes
 
+## v3.38.0 — “Delivery Contract” (2026-11-18)
+
+### Added / fixed
+
+- **Delivery task contract** added: [DELIVERY_TASKS.md](DELIVERY_TASKS.md) defines the remaining work
+  file-by-file with acceptance tests, including the single-scene renderer migration, authoritative
+  robot surface mining, supply focus for every human, controls/pole regressions, colours and exit
+  zoom.
+- **Renderer lock-state sync:** `IcosaRenderer.updateCell` now accepts and stores `lastClickIndex`;
+  orbital locked-cell rendering can finally match the server's own-cell lock instead of relying on
+  stale state.
+- Status documents updated: README, ROADMAP, REQUESTS_24H, RELEASE_NOTES.
+- No claim that the single-renderer migration is complete; it is the P0 task.
+
+### Verification
+
+- **97/97 tests**, Chromium + WebKit UI audits clean, axe clean.
+
+### Release artifact
+
+- Source tag: `v3.38.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.38.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.37.0 — “Paths & Cleanup” (2026-11-18)
 
 ### Fixed

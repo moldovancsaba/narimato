@@ -1,7 +1,7 @@
 # NARIMATO — 24-Hour Request & Delivery Status
 
 **Window:** 2026-11-18 → 2026-11-19  
-**Current:** `v3.37.0`  
+**Current:** `v3.38.0`  
 **Source of truth for engineering gaps:** [ROADMAP.md](ROADMAP.md)
 
 Legend: **Delivered** = shipped and verified; **Partial** = visible/shipped but not the full
