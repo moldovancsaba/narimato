@@ -8,7 +8,7 @@
  */
 
 import { drawTetraShip } from './shared/tetra-ship.js';
-import { childTriangles, faceCentroid } from './shared/geometry.js';
+import { childTriangles, faceCentroid, getMesh } from './shared/geometry.js';
 import { isRareResource } from './shared/mission.js';
 
 const LAP_SECONDS = 60;
@@ -92,6 +92,7 @@ export function createSurfaceMode({
   let travel = 0;
   let harvestTimer = 0;
   let harvestCheck = 0;
+  let harvestQueue = [];
   let lastHarvestLabel = null;
   let keys = new Set();
   let planet = { name: '', seed: 0, depth: 2 };
@@ -104,7 +105,9 @@ export function createSurfaceMode({
   let missionTick = 0;
   const SURFACE_RADIUS = 0.44;
   const SURFACE_SUBDIV = 2;
+  const FOOTPRINT_RADIUS = 0.028;
   const visualCache = new Map();
+  const baseSphere = getMesh(2).faces;
 
   function ensureDom() {
     if (!doc || shown) return;
@@ -200,28 +203,51 @@ export function createSurfaceMode({
     return best;
   }
 
+  function cellsUnderFoot() {
+    const basis = tangentBasis(pos);
+    const fwd = add(mul(basis.north, Math.cos(heading)), mul(basis.east, Math.sin(heading)));
+    const right = norm(cross(fwd, pos));
+    const samples = [[0, 0]];
+    for (let i = 0; i < 8; i += 1) {
+      const a = (i / 8) * Math.PI * 2;
+      samples.push([Math.cos(a) * FOOTPRINT_RADIUS, Math.sin(a) * FOOTPRINT_RADIUS]);
+    }
+    const found = new Map();
+    for (const [x, z] of samples) {
+      const point = norm(add(pos, add(mul(right, x), mul(fwd, z))));
+      const cell = findCell(point);
+      if (cell && canHarvestNode(cell)) found.set(cell.label, cell);
+    }
+    return [...found.values()];
+  }
+
   function harvestTick(dt) {
     if (phase !== 'walking') return;
     harvestCheck += dt;
-    if (harvestCheck < 140) return;
+    if (harvestCheck < 180) return;
     harvestCheck = 0;
-    const cell = findCell(pos);
-    if (!cell || !canHarvestNode(cell)) return;
-    // Entering a triangle starts harvesting; staying in it keeps charging it on
-    // the authoritative server until it breaks or finds ore.
-    if (cell.label !== lastHarvestLabel) {
-      lastHarvestLabel = cell.label;
-      setText('surface-auto', `${cell.label}`);
-      harvestTimer = 0;
-      effects.push({ start: performance.now(), color: '#9efcff', name: '', value: 0, beamOnly: true });
-      effects = effects.slice(-4);
-      onHarvest(cell.label);
-    } else {
-      harvestTimer += dt;
-      if (harvestTimer >= HARVEST_INTERVAL_MS) {
-        harvestTimer = 0;
-        onHarvest(cell.label);
+    const cells = cellsUnderFoot();
+    if (!cells.length) return;
+    // Every triangle touched by the avatar's footprint is harvested, not only
+    // the single cell under its centre point.
+    const next = cells.find((cell) => cell.label !== lastHarvestLabel) || cells[0];
+    if (!next) return;
+    lastHarvestLabel = next.label;
+    setText('surface-auto', next.label);
+    effects.push({ start: performance.now(), color: '#9efcff', name: '', value: 0 });
+    effects = effects.slice(-4);
+    onHarvest(next.label);
+    // Drain the rest of the footprint on subsequent throttled ticks.
+    for (const cell of cells) {
+      if (cell.label !== next.label) {
+        harvestQueue.push(cell.label);
+        if (harvestQueue.length > 12) harvestQueue.shift();
       }
+    }
+    if (harvestQueue.length && performance.now() - harvestTimer > HARVEST_INTERVAL_MS) {
+      harvestTimer = performance.now();
+      const queued = harvestQueue.shift();
+      if (queued) onHarvest(queued);
     }
   }
 
@@ -430,6 +456,35 @@ export function createSurfaceMode({
     const camU = norm(cross(camR, camF));
     const view = { f: camF, r: camR, u: camU };
     const focal = h * 1.02;
+    // Opaque low-poly planet shell under the live cells: hides the far side and
+    // keeps the surface visually continuous without any geography sampling.
+    const shell = [];
+    for (const face of baseSphere) {
+      const center = mul(face.centroid, SURFACE_RADIUS * 0.998);
+      if (dot(center, pos) < 0.02) continue;
+      const verts = [face.a, face.b, face.c].map((v) => mul(v, SURFACE_RADIUS * 0.998));
+      const projected = verts.map((v) => projectPoint(v, cam, view, w, h));
+      if (projected.some((p) => !p)) continue;
+      const depth = (projected[0].z + projected[1].z + projected[2].z) / 3;
+      shell.push({ projected, depth });
+    }
+    shell.sort((a, b) => b.depth - a.depth);
+    for (const face of shell) {
+      ctx.fillStyle = '#091522';
+      ctx.globalAlpha = 0.96;
+      ctx.beginPath();
+      ctx.moveTo(face.projected[0].x, face.projected[0].y);
+      ctx.lineTo(face.projected[1].x, face.projected[1].y);
+      ctx.lineTo(face.projected[2].x, face.projected[2].y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 0.14;
+      ctx.strokeStyle = '#4c7d9f';
+      ctx.lineWidth = 0.6;
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
     const tris = [];
     const leaves = getLeaves();
     let drawn = 0;
@@ -662,22 +717,41 @@ export function createSurfaceMode({
       ctx.fill();
       ctx.stroke();
     }
-    // Helmet.
+    // Helmet / head: faceted cranium, faceplate and jaw.
     ctx.fillStyle = '#d8f6ff';
     ctx.beginPath();
-    ctx.moveTo(0, -86);
-    ctx.lineTo(18, -48);
-    ctx.lineTo(-18, -48);
+    ctx.moveTo(0, -96);
+    ctx.lineTo(15, -78);
+    ctx.lineTo(18, -55);
+    ctx.lineTo(9, -43);
+    ctx.lineTo(-9, -43);
+    ctx.lineTo(-18, -55);
+    ctx.lineTo(-15, -78);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
     ctx.fillStyle = visor;
     ctx.beginPath();
-    ctx.moveTo(0, -73);
-    ctx.lineTo(12, -55);
-    ctx.lineTo(-12, -55);
+    ctx.moveTo(-11, -76);
+    ctx.lineTo(11, -76);
+    ctx.lineTo(13, -60);
+    ctx.lineTo(0, -52);
+    ctx.lineTo(-13, -60);
     ctx.closePath();
     ctx.fill();
+    ctx.strokeStyle = '#eaffff';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = '#d8f6ff';
+    ctx.beginPath();
+    ctx.moveTo(0, -100);
+    ctx.lineTo(5, -94);
+    ctx.lineTo(-5, -94);
+    ctx.closePath();
+    ctx.fill();
+    // Neck.
+    ctx.fillStyle = '#334a74';
+    ctx.fillRect(-5, -44, 10, 7);
     // Chest core.
     ctx.fillStyle = visor;
     ctx.beginPath();

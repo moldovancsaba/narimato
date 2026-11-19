@@ -1,5 +1,36 @@
 # NARIMATO — Release Notes
 
+## v3.27.0 — “Underfoot” (2026-11-18)
+
+### Fixed / changed
+
+- **Opaque planet surface restored under the cell layer.** A low-poly spherical shell now sits
+  beneath the live triangles, so gaps no longer reveal the far side of the planet. It uses the same
+  icosahedral geometry, with no geography/terrain sampling.
+- **Every touched triangle harvests.** The avatar now samples a wider footprint (nine points across
+  the feet) and auto-harvests every active green cell under it, with a small queue for cells found
+  on the same tick. Locked/red cells are skipped.
+- **Head redesigned:** faceted helmet, faceplate, jaw, neck and crest instead of the old flat
+  triangle head.
+- Surface red/green affordances, **WHAT SHE NEEDS** mission panel, resource tractor beam and
+  five-tetra ship effects retained.
+- Peer surface pilots remain synced.
+
+### Verification
+
+- Surface mission panel still lists required parts and counts.
+- Opaque shell hides the far side; live cells remain the only cell layer.
+- Footprint sampling covers multiple active cells; harvest effects fire.
+- **95/95 tests**, Chromium + WebKit UI audits clean, axe clean.
+
+### Release artifact
+
+- Source tag: `v3.27.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.27.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.26.0 — “Green Means Go” (2026-11-18)
 
 ### Added / fixed
