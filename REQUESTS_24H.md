@@ -1,7 +1,7 @@
 # NARIMATO — 24-Hour Request & Delivery Status (updated)
 
 **Window:** 2026-11-18 → 2026-11-19  
-**Current:** `v3.40.0`  
+**Current:** `v3.41.0`  
 **Engineering contract:** [DELIVERY_TASKS.md](DELIVERY_TASKS.md)
 
 Legend: **Delivered** = working and verified; **Partial** = real work landed but acceptance not
@@ -13,10 +13,10 @@ met; **Open** = not delivered; **Superseded** = changed after a correction.
 | 2 | Emergency supply / crashed ship when stuck | Partial | Broadcast exists; surface pilots now snap to impact (`focusLabel`); orbital focus and two-client verification still needed; D4 |
 | 3 | More rare elements | Delivered | Guaranteed rare in refit |
 | 4 | Major planet colours | Delivered | Eight palettes |
-| 5 | Reverse cursor movement | Open | Still hectic/can change direction; D6 stable screen-space arcball required |
+| 5 | Reverse cursor movement | **Partial — changed** | Absolute arcball replaced by incremental screen-space rotation; direct drag direction unit-tested. Live device feel still to sign off. |
 | 6 | Smooth/faster cursor navigation | Delivered | Eased travel + Shift |
 | 7 | Voice/audio disappearing | Partial | Desktop watchdog fixed; real-device gate open |
-| 8 | Limitless rotation through poles | Partial | Math fixed, but visual disappearance still reported; D7 culling test |
+| 8 | Limitless rotation through poles | **Partial — improved** | Direct incremental rotation + pole-direction unit test; pole render checked. User live sign-off still open. |
 | 9 | Zoom levels with bezier | Delivered | Manual-only |
 | 10 | Separate mouse vs cursor travel | Partial | Mouse direct + arrows inverse, but direction regression remains; D6 |
 | 11 | Incident explanations | Delivered | Story text exists |
@@ -29,7 +29,7 @@ met; **Open** = not delivered; **Superseded** = changed after a correction.
 | 18 | **One single planet, camera-only change** | **Partial — major step this turn** | The existing `IcosaRenderer` now draws surface mode through `SurfaceCamera`; the separate terrain canvas no longer draws sky/terrain. HUD remains the orbital HUD; surface controls are overlays. Remaining: remove derived visual mesh/controller duplication, full DOM parity, acceptance test. |
 | 19 | **Same HUD/layout/information, 2D→3D only** | **Partial** | Main orbital HUD is visible in surface mode; surface-specific title/mission duplicates are hidden; target/exit/lap are bottom overlays. Need complete DOM parity and no conflicting panels. |
 | 20 | **UI elements must be present (no missing UI)** | Partial | Main HUD visible; target/exit/lap present. Previous stale full-screen surface rectangle removed on exit. Need regression audit at all viewports. |
-| 21 | **All players/robots walk and mine** | **Partial — server authority landed this turn** | Robots now have server-generated surface routes, publish `surface` pose in player state/events, and click the active cell under that pose. Two-client visual/beam verification pending. |
+| 21 | **All players/robots walk and mine** | **Partial — server authority + nearby routes** | Robots now spawn/route near active human surface pilots, publish pose, and click under their own pose. Two-client visual/beam verification pending. |
 | 22 | **Robots own paths, turns, mining** | **Partial — server routes/click mapping landed** | Server route/turn + cell-under-pose clicks implemented; client visual mapping and two-client acceptance pending. |
 | 23 | **Triangles change while walking** | Partial | Live mesh refreshes on cell/break/click; footprint harvesting faster; authoritative-only visual mesh acceptance pending |
 | 24 | Surface uses live cells, no generated geography | Partial | Renderer draws current cells; derived visual mesh rebuilt live. D1 removes the last derived layer |
@@ -39,7 +39,7 @@ met; **Open** = not delivered; **Superseded** = changed after a correction.
 | 28 | Seamless pole crossing | Partial | Math tests pass; visual visibility still reported; D7 |
 | 29 | Green/red harvest semantics | Partial | Target-only rule + explicit HUD; renderer lastClick synced. Need automated colour-vs-server test; D8 |
 | 30 | Resource pins only where mineable | Delivered | Target/supply only; hidden resources intentionally unexposed |
-| 31 | Exit to farthest orbit | Delivered | Named `ORBIT_FAR_ZOOM = 0.4`; exit returns there; D9 test remains |
+| 31 | Exit to farthest orbit | Delivered | Named `ORBIT_FAR_ZOOM = 0.4`; exit returns there |
 | 32 | Roadmap / README / release notes / code comments | Delivered | ROADMAP, DELIVERY_TASKS, README, RELEASE_NOTES |
 | 33 | **Make/update the task list** | Delivered | This document + DELIVERY_TASKS updated |
 

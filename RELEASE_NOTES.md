@@ -1,5 +1,31 @@
 # NARIMATO — Release Notes
 
+## v3.41.0 — “Stable Hands” (2026-11-18)
+
+### Fixed / changed
+
+- **Mouse drag direction is now stable.** Replaced the absolute trackball (`arcballTo`) with incremental
+  screen-space rotation; direction cannot flip when the pointer leaves the virtual ball or the view
+  crosses a pole. Added direction + pole tests.
+- **Robots now route/spawn near active human surface pilots**, so they are visible and contest the
+  same crust instead of walking an unrelated patch. Server-authoritative pose/click remains.
+- Supply impact snap and robot surface publication retained.
+- Current **102/102 tests**.
+
+### Still open
+
+- Live feel/sign-off for mouse drag and pole view.
+- Two-client robot beam/visual acceptance.
+- Full single-renderer/controller parity, final humanoid rig, deterministic incidents.
+
+### Release artifact
+
+- Source tag: `v3.41.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.41.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.40.0 — “Server-Side Riggers” (2026-11-18)
 
 ### Added / fixed

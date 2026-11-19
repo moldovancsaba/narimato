@@ -2048,9 +2048,10 @@ function bindCanvasInput() {
       pointerDown.lastY = event.clientY;
       pointerDown.moved += Math.abs(dx) + Math.abs(dy);
       if (pointerDown.moved > 2) {
-        const p = localPoint(event);
-        const radius = Math.min(camera.width, camera.height) * 0.45;
-        safeCall(camera, 'arcballTo', p.x - camera.width / 2, p.y - camera.height / 2, radius, invertDrag);
+        // Incremental screen-space rotation: unlike an absolute trackball the
+        // direction cannot flip when the pointer leaves the virtual ball or the
+        // view crosses a pole. Mouse-direct; I flips the screen axes.
+        safeCall(camera, 'rotate', invertDrag ? -dx : dx, invertDrag ? -dy : dy);
         const stamp = now();
         pointerDown.lastMoveAt = stamp;
         // A direct grab is deterministic; no residual spin can reverse it.
