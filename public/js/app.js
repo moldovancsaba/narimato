@@ -83,6 +83,7 @@ let appliedPlanetThemeKey = '';
 let supplyDrop = null;
 let surface = null;
 const surfacePeers = new Map();
+let surfaceSupplyCells = [];
 let supplyTimer = 0;
 let supplyDeadline = 0;
 let supplyPlanetKey = '';
@@ -356,6 +357,7 @@ surface = createSurfaceMode({
       progress: missionProgress((player && player.oreCounts) || {}, planet.mission),
     };
   },
+  getSupplyCells: () => surfaceSupplyCells,
   getPeers: () => {
     const synced = [...surfacePeers.values()].filter((peer) => Date.now() - (peer.updatedAt || 0) < 5000);
     const ids = new Set(synced.map((peer) => peer.playerId));
@@ -721,6 +723,7 @@ function resetSession() {
   clearDistressTimer();
   supplyRequestedKey = '';
   supplyPlanetKey = '';
+  surfaceSupplyCells = [];
   captainLogHoldUntil = 0;
   appliedPlanetThemeKey = '';
   session.startedAt = Date.now();
@@ -1105,6 +1108,10 @@ function handleSupplyEvent(msg) {
   if (eventKey && eventKey === lastSupplyEventKey) return;
   lastSupplyEventKey = eventKey;
   const message = msg.message || 'EMERGENCY SUPPLY DROP // SALVAGE MARKED CELLS';
+  surfaceSupplyCells = cells.map((cell) => {
+    const resource = resourceById(cell.resourceId) || { name: cell.resourceId, color: '#ffd166' };
+    return { label: cell.label, resourceId: cell.resourceId, name: resource.name, color: resource.color };
+  });
   clearDistressTimer();
   safeCall(ui, 'toast', message, 'good');
   setCaptainLogMessage('They heard us. A relief ship came down hard — the missing ore is scattered across the marked triangles. Go get it.', 30000);

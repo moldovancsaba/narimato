@@ -1,5 +1,34 @@
 # NARIMATO — Release Notes
 
+## v3.34.0 — “Pins & Riggers” (2026-11-18)
+
+### Added / fixed
+
+- **Standing resource pins.** Discovered resources and known relief-drop cells now render as
+  standing diamond pins with resource colour, name and a pole above the cell.
+- **Same visual language as orbit:** cell edges are cyan/white; biome/owner fills remain; the
+  green/red harvest status is a compact pin, not a full-surface recolour.
+- **Remote robots visibly mine:** each independent opponent avatar periodically shows its own
+  triangular mining beam and sparks at its own location.
+- **Central NEED summary** and bottom RETURN TO ORBIT remain; side HUD clamp-safe.
+- **Exit returns to maximum orbit zoom-out (`0.4`)**.
+- Independent opponent homes, spherical arcs, opaque shell, pole crossing, fourth-rung entry and
+  footprint harvesting retained.
+
+### Verification
+
+- Surface shows resource/supply pins and cyan cell edges.
+- Remote mining beams render at independent opponent positions.
+- **97/97 tests**, Chromium + WebKit UI audits clean, axe clean.
+
+### Release artifact
+
+- Source tag: `v3.34.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.34.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.33.0 — “Back to Orbit” (2026-11-18)
 
 ### Fixed

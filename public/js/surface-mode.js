@@ -10,6 +10,7 @@
 import { drawTetraShip } from './shared/tetra-ship.js';
 import { childTriangles, faceCentroid, getMesh } from './shared/geometry.js';
 import { isRareResource } from './shared/mission.js';
+import { resourceById } from './shared/resources.js';
 
 const LAP_SECONDS = 60;
 const ANGULAR_SPEED = (Math.PI * 2) / LAP_SECONDS;
@@ -98,6 +99,7 @@ export function createSurfaceMode({
   getMyIndex = () => -1,
   getMaxDepth = () => 8,
   getMission = () => null,
+  getSupplyCells = () => [],
   onHarvest = () => {},
   onExit = () => {},
   getPeers = () => [],
@@ -163,7 +165,7 @@ export function createSurfaceMode({
       <aside class="surface-mission" aria-label="What the ship needs">
         <h3>WHAT SHE NEEDS</h3>
         <ul id="surface-mission-list"></ul>
-        <p class="surface-legend"><i class="is-open"></i> GREEN EDGE = HARVEST <i class="is-red"></i> RED EDGE = LOCKED / EMPTY</p>
+        <p class="surface-legend"><i class="is-open"></i> GREEN PIN = HARVEST <i class="is-red"></i> RED PIN = LOCKED / EMPTY</p>
       </aside>
       <div class="surface-hint" id="surface-hint">WASD / ARROWS RUN · A / D TURN · SHIFT SPRINT · ENTER TRIANGLES TO HARVEST</div>
       <div class="surface-pads" aria-label="Surface movement controls">
@@ -391,7 +393,8 @@ export function createSurfaceMode({
     const can = canHarvestNode(node);
     return {
       fill,
-      edge: can ? '#22ff88' : '#ff3355',
+      edge: 'rgba(218,255,255,0.78)',
+      status: can ? '#22ff88' : '#ff3355',
       can,
     };
   }
@@ -597,6 +600,7 @@ export function createSurfaceMode({
     let drawn = 0;
     const threshold = 4;
     const outlines = [];
+    const pins = [];
     for (const node of leaves) {
       if (!node || !node.a || !node.b || !node.c) continue;
       const parentCenter = mul(node.centroid, SURFACE_RADIUS);
@@ -624,6 +628,13 @@ export function createSurfaceMode({
         }
       }
       if (boundary.length >= 2) outlines.push({ colors, boundary });
+      const statusAnchor = projectPoint(mul(node.centroid, SURFACE_RADIUS * 1.002), cam, view, w, h);
+      if (statusAnchor) pins.push({ x: statusAnchor.x, y: statusAnchor.y, z: statusAnchor.z, status: colors.status, label: node.label });
+      if (node.resourceId) {
+        const resource = resourceById(node.resourceId);
+        const resourceAnchor = projectPoint(mul(node.centroid, SURFACE_RADIUS * 1.002), cam, view, w, h);
+        if (resourceAnchor) pins.push({ x: resourceAnchor.x, y: resourceAnchor.y, z: resourceAnchor.z, resource: resource || { name: node.resourceId, color: '#ffe066' } });
+      }
     }
     debug = { leaves: leaves.length, drawn };
     tris.sort((a, b) => b.depth - a.depth);
@@ -643,14 +654,43 @@ export function createSurfaceMode({
     }
     // Parent-cell spherical boundaries carry the green/red harvest affordance.
     for (const outline of outlines) {
-      ctx.globalAlpha = 0.9;
+      ctx.globalAlpha = 0.72;
       ctx.strokeStyle = outline.colors.edge;
-      ctx.lineWidth = outline.colors.can ? 1.2 : 1.6;
+      ctx.lineWidth = 0.9;
       ctx.beginPath();
       ctx.moveTo(outline.boundary[0].x, outline.boundary[0].y);
       for (let i = 1; i < outline.boundary.length; i += 1) ctx.lineTo(outline.boundary[i].x, outline.boundary[i].y);
       ctx.closePath();
       ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    // Standing pins: green/red harvest status and discovered resource markers.
+    pins.sort((a, b) => b.z - a.z);
+    for (const pin of pins) {
+      if (pin.x < -20 || pin.x > w + 20 || pin.y < -20 || pin.y > h + 20) continue;
+      const tall = pin.resource ? 46 : 22;
+      ctx.globalAlpha = 0.9;
+      ctx.strokeStyle = pin.resource ? (pin.resource.color || '#ffe066') : pin.status;
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.moveTo(pin.x, pin.y);
+      ctx.lineTo(pin.x, pin.y - tall);
+      ctx.stroke();
+      ctx.fillStyle = pin.resource ? (pin.resource.color || '#ffe066') : pin.status;
+      ctx.beginPath();
+      ctx.moveTo(pin.x, pin.y - tall - 8);
+      ctx.lineTo(pin.x + 6, pin.y - tall);
+      ctx.lineTo(pin.x, pin.y - tall + 8);
+      ctx.lineTo(pin.x - 6, pin.y - tall);
+      ctx.closePath();
+      ctx.fill();
+      if (pin.resource) {
+        ctx.globalAlpha = 0.9;
+        ctx.fillStyle = '#f3ffff';
+        ctx.font = '8px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(String(pin.resource.name || '').slice(0, 12), pin.x, pin.y - tall - 13);
+      }
     }
     ctx.globalAlpha = 1;
 
@@ -686,6 +726,29 @@ export function createSurfaceMode({
           tint: peer.color || '#a78bfa',
           label: peer.tag || 'PILOT',
         });
+        // Remote operators visibly work the crust: periodic triangular mining
+        // beam and sparks at their own location.
+        let ph = 0;
+        for (let i = 0; i < String(peer.playerId || peer.tag).length; i += 1) ph = (ph * 31 + String(peer.playerId || peer.tag).charCodeAt(i)) % 997;
+        const cycle = (now / 2600 + ph / 997) % 1;
+        if (cycle < 0.32) {
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.globalAlpha = 0.5 * (1 - cycle / 0.32);
+          ctx.fillStyle = peer.color || '#8afcff';
+          ctx.beginPath();
+          ctx.moveTo(anchor.x - 2, anchor.y - 210);
+          ctx.lineTo(anchor.x + 2, anchor.y - 210);
+          ctx.lineTo(anchor.x + 38, anchor.y + 4);
+          ctx.lineTo(anchor.x - 38, anchor.y + 4);
+          ctx.closePath();
+          ctx.fill();
+          for (let i = 0; i < 5; i += 1) {
+            const a = (i / 5) * Math.PI * 2 + now / 300;
+            ctx.fillRect(anchor.x + Math.cos(a) * 20, anchor.y + Math.sin(a) * 8, 2, 2);
+          }
+          ctx.restore();
+        }
       }
     }
     drawHarvestEffects(w, h, now);
