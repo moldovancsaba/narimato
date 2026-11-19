@@ -6890,3 +6890,61 @@ body.is-guide .hud { pointer-events: none; }
   .guide-steps li { grid-template-columns: 24px minmax(0, 1fr); padding: 8px 9px; }
   .guide-actions .btn { flex: 1 1 100%; }
 }
+
+/* Surface mode — landing, third-person run and auto-harvest */
+.surface-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  overflow: hidden;
+  background: #060411;
+  color: #e8fbff;
+  font-family: var(--font-mono, monospace);
+  pointer-events: auto;
+}
+.surface-overlay.is-hidden { display: none; }
+.surface-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.surface-vignette {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 58%, transparent 35%, rgba(1,0,8,0.62) 100%);
+}
+.surface-head {
+  position: absolute; top: max(18px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
+  text-align: center; pointer-events: none; text-shadow: 0 2px 18px rgba(0,0,0,0.8);
+}
+.surface-kicker { margin: 0 0 5px; color: #8ef9ff; font-size: 9px; letter-spacing: 0.2em; }
+.surface-title { margin: 0; font: 800 clamp(23px, 4vw, 42px)/1 var(--font-display, sans-serif); letter-spacing: 0.06em; }
+.surface-planet { margin: 7px 0 0; color: rgba(220,245,255,0.72); font-size: 10px; letter-spacing: 0.14em; }
+.surface-stats {
+  position: absolute; top: max(18px, env(safe-area-inset-top)); left: max(16px, env(safe-area-inset-left));
+  display: grid; gap: 6px; padding: 9px 11px;
+  border: 1px solid rgba(122,244,255,0.28); background: rgba(4,8,18,0.74);
+  font-size: 10px; letter-spacing: 0.12em; color: rgba(220,245,255,0.74);
+}
+.surface-stats b { color: #d4ff3f; font-weight: 700; }
+.surface-hint {
+  position: absolute; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%);
+  max-width: min(94vw, 760px); text-align: center; color: rgba(220,245,255,0.66);
+  font-size: 9px; letter-spacing: 0.1em; line-height: 1.6; pointer-events: none;
+}
+.surface-exit {
+  position: absolute; top: max(18px, env(safe-area-inset-top)); right: max(16px, env(safe-area-inset-right));
+  min-height: 44px; padding: 0 14px; border: 1px solid rgba(255,179,71,0.5);
+  background: rgba(10,8,20,0.8); color: #ffd36b; font: 700 9px/1 var(--font-mono, monospace);
+  letter-spacing: 0.12em; cursor: pointer;
+}
+.surface-pads { display: none; position: absolute; right: max(16px, env(safe-area-inset-right)); bottom: max(54px, env(safe-area-inset-bottom)); gap: 6px; grid-template-columns: repeat(3, 48px); grid-template-rows: repeat(2, 48px); }
+.surface-pads [data-surface-hold] {
+  width: 48px; height: 48px; border: 1px solid rgba(122,244,255,0.38);
+  background: rgba(4,8,18,0.8); color: #dffaff; font-size: 15px; touch-action: none;
+}
+.surface-pads [data-surface-hold="KeyW"] { grid-column: 2; grid-row: 1; }
+.surface-pads [data-surface-hold="KeyA"] { grid-column: 1; grid-row: 2; }
+.surface-pads [data-surface-hold="KeyS"] { grid-column: 2; grid-row: 2; }
+.surface-pads [data-surface-hold="KeyD"] { grid-column: 3; grid-row: 2; }
+.surface-pads [data-surface-hold].is-held { background: rgba(0,240,255,0.22); border-color: #8ef9ff; }
+@media (max-width: 760px), (pointer: coarse) {
+  .surface-pads { display: grid; }
+  .surface-hint { bottom: max(108px, calc(env(safe-area-inset-bottom) + 108px)); max-width: 66vw; font-size: 8px; }
+  .surface-stats { top: auto; bottom: max(18px, env(safe-area-inset-bottom)); left: max(12px, env(safe-area-inset-left)); }
+}

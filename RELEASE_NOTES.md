@@ -1,5 +1,36 @@
 # NARIMATO — Release Notes
 
+## v3.24.0 — “Small World” (2026-11-18)
+
+### Added
+
+- **Surface mode.** One more zoom notch past the deepest cell level lands the five-tetrahedron ship.
+  The pilot then runs a deliberately tiny planet in third person.
+- **60-second lap:** base running speed is `2π / 60` rad/s, so holding forward at normal speed
+  circles the world in exactly **60 seconds**. `Shift` sprints; `A/D` turn.
+- **Auto-harvest:** entering a triangle calls the normal authoritative click path for the active leaf
+  under the player, and keeps charging while the pilot stays inside it.
+- **Triangle-only surface:** low-poly triangle ground, triangle mountains/ridge, triangle avatar and
+  the same five-tetrahedron ship for landing and departure.
+- Enter from the wheel **or** pinch at deepest zoom. Exit with **RETURN TO ORBIT** or Escape.
+- Touch pads for mobile; desktop HUD shows lap counter and auto-harvest cell.
+
+### Verification
+
+- Wheel entry: deepest rung → next wheel opens surface landing.
+- Landing ship renders; avatar appears only after touchdown.
+- Walking updates the lap counter; auto-harvest reports the active cell label.
+- Exit returns to orbit at the deepest zoom; no console errors.
+- **94/94 tests**, Chromium + WebKit UI audits clean, axe clean.
+
+### Release artifact
+
+- Source tag: `v3.24.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.24.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.23.0 — “Triangle Fleet” (2026-11-18)
 
 ### Added

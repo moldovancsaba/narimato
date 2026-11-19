@@ -20,6 +20,7 @@ import { createIntro } from './intro.js';
 import { createInterlude } from './interlude.js';
 import { createNarrator } from './narrator.js';
 import { createSupplyDrop } from './supply-drop.js';
+import { createSurfaceMode } from './surface-mode.js';
 import './telemetry.js';
 import { HELP_SECTIONS } from './narrative-data.js';
 
@@ -80,6 +81,7 @@ let escaping = false;
 let seenTips = loadSeenTips();
 let appliedPlanetThemeKey = '';
 let supplyDrop = null;
+let surface = null;
 let supplyTimer = 0;
 let supplyDeadline = 0;
 let supplyPlanetKey = '';
@@ -334,6 +336,26 @@ const ui = new UI({
 
 narrator = createNarrator();
 supplyDrop = createSupplyDrop();
+surface = createSurfaceMode({
+  getStartPoint: () => (camera && typeof camera.viewAxis === 'function' ? camera.viewAxis() : { x: 0, y: 0, z: 1 }),
+  getLeaves: () => leafList,
+  getPlanet: () => {
+    const p = typeof planetInfoFromState === 'function' ? planetInfoFromState() : {};
+    return { name: p.planetName || 'UNKNOWN WORLD', seed: p.planetSeed || 0, depth: p.planetDepth || 2 };
+  },
+  onHarvest: (label) => {
+    if (!joined || !label) return;
+    attemptClick(label);
+  },
+  onExit: () => {
+    camera.zoom = zoomForLevel(maxZoomLevel());
+    zoomTarget = null;
+    zoomAnim = null;
+    keyboardSyncNeeded = true;
+    updateZoomUi();
+    safeCall(ui, 'toast', 'BACK IN ORBIT // THE SURFACE IS STILL THERE', 'info');
+  },
+});
 
 function loadSeenTips() {
   try {
@@ -1790,7 +1812,14 @@ function snapZoomToLevel() {
 function zoomByNotch(direction, magnitude = 1) {
   const current = zoomTarget === null ? camera.zoom : zoomTarget;
   const level = zoomLevelForZoom(current);
+  if (direction > 0 && level >= maxZoomLevel()) {
+    enterSurfaceMode();
+    return;
+  }
   const next = clamp(level + (direction > 0 ? 1 : -1), 0, maxZoomLevel());
+  if (direction > 0 && next >= maxZoomLevel()) {
+    safeCall(ui, 'toast', 'DEEPEST ZOOM // SCROLL AGAIN TO LAND ON THE SURFACE', 'info');
+  }
   startZoom(zoomForLevel(next), 240 + 40 * clamp(magnitude, 0, 2));
   lastInteraction = now();
   hoverNeedsRefresh = true;
@@ -1934,6 +1963,10 @@ function bindCanvasInput() {
       const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
       if (pinchDist > 0 && dist > 0) {
         const base = zoomTarget === null ? camera.zoom : zoomTarget;
+        if (dist > pinchDist * 1.25 && zoomLevelForZoom(base) >= maxZoomLevel()) {
+          enterSurfaceMode();
+          return;
+        }
         startZoom(clamp(base * (dist / pinchDist), 0.4, MAX_ZOOM), 90);
       }
       pinchDist = dist;
@@ -2083,8 +2116,21 @@ function updateKeyboardNavigation(dt) {
   camera.pitch = keyboardPitch;
 }
 
+function enterSurfaceMode() {
+  if (!joined || !surface || surface.active) return;
+  cancelFocus();
+  cancelZoom();
+  narrator.stop();
+  safeCall(ui, 'hideGuide');
+  safeCall(ui, 'hideManual');
+  const planet = planetInfoFromState();
+  if (!surface.start({ planetName: planet.planetName, seed: planet.planetSeed, depth: planet.planetDepth })) return;
+  safeAudio('introWhoosh');
+}
+
 function bindKeyboard() {
   window.addEventListener('keydown', (event) => {
+    if (surface && surface.active) return;
     const target = event.target;
     if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
     switch (event.key) {
@@ -2245,6 +2291,11 @@ function frame(t) {
     return;
   }
 
+  if (surface && surface.active) {
+    requestAnimationFrame(frame);
+    return;
+  }
+
   updateFocus(t);
   if (!focusAnim && !(interlude && interlude.active)) updateKeyboardNavigation(dt);
   if (!focusAnim && !(interlude && interlude.active)) updateCameraInertia(dt);
@@ -2331,6 +2382,8 @@ window.__ICOSA__ = {
   }),
   manual: () => safeCall(ui, 'showManual', HELP_SECTIONS),
   guide: () => safeCall(ui, 'showGuide'),
+  surface: () => enterSurfaceMode(),
+  surfaceMode: () => (surface ? { active: surface.active, phase: surface.phase } : null),
   projectFace: (label) => {
     const node = world.get(label);
     if (!node) return null;

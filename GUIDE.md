@@ -32,6 +32,13 @@ The **THE WAY HOME** panel lists every part the ship still needs.
 - The central **TRY TO FLY AWAY** button opens.
 - Take it to reach the next planet.
 
+## Surface mode
+
+Scroll one notch past the deepest zoom (or pinch outward) to land. The ship descends, then you run
+the small planet in third person. A lap takes **60 seconds** at normal speed. Entering triangles
+auto-harvests them. Use `WASD`/arrows to run, `A/D` to turn, `Shift` to sprint, and
+**RETURN TO ORBIT** or Escape to leave.
+
 ## If you get stuck
 
 - **Mouse drag** rotates the planet with your cursor (drag left → planet left), even upside down.
