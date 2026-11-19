@@ -161,7 +161,7 @@ export function createSurfaceMode({
       <aside class="surface-mission" aria-label="What the ship needs">
         <h3>WHAT SHE NEEDS</h3>
         <ul id="surface-mission-list"></ul>
-        <p class="surface-legend"><i class="is-open"></i> GREEN = HARVEST <i class="is-red"></i> RED = LOCKED / EMPTY</p>
+        <p class="surface-legend"><i class="is-open"></i> GREEN EDGE = HARVEST <i class="is-red"></i> RED EDGE = LOCKED / EMPTY</p>
       </aside>
       <div class="surface-hint" id="surface-hint">WASD / ARROWS RUN · A / D TURN · SHIFT SPRINT · ENTER TRIANGLES TO HARVEST</div>
       <div class="surface-pads" aria-label="Surface movement controls">
@@ -363,9 +363,35 @@ export function createSurfaceMode({
   }
 
   function leafColor(node) {
+    const terrain = node.terrain || null;
+    const elevation = terrain && Number.isFinite(terrain.elevation) ? terrain.elevation : 0;
+    let rgb = { r: 42, g: 92, b: 116 };
+    if (terrain && terrain.biome && terrain.biome.color) {
+      const raw = String(terrain.biome.color).replace('#', '');
+      const full = raw.length === 3 ? raw.split('').map((c) => c + c).join('') : raw;
+      const n = Number.parseInt(full.slice(0, 6), 16);
+      if (Number.isFinite(n)) rgb = { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+    }
+    // Same terrain/owner language as the orbital renderer.
+    const players = getPlayers();
+    const owner = Number.isInteger(node.ownerIndex) && node.ownerIndex >= 0 ? players[node.ownerIndex] : null;
+    if (owner) {
+      const raw = String(owner.color || '#4f7dff').replace('#', '');
+      const full = raw.length === 3 ? raw.split('').map((c) => c + c).join('') : raw;
+      const n = Number.parseInt(full.slice(0, 6), 16);
+      if (Number.isFinite(n)) {
+        const oc = { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+        rgb = { r: Math.round(rgb.r * 0.78 + oc.r * 0.22), g: Math.round(rgb.g * 0.78 + oc.g * 0.22), b: Math.round(rgb.b * 0.78 + oc.b * 0.22) };
+      }
+    }
+    const lift = clamp(0.5 + elevation * 1.4, 0.25, 1.25);
+    const fill = `rgb(${Math.round(rgb.r * lift)},${Math.round(rgb.g * lift)},${Math.round(rgb.b * lift)})`;
     const can = canHarvestNode(node);
-    if (!can) return { fill: '#ff2d55', edge: '#ffafbd', open: false };
-    return { fill: '#20d87a', edge: '#b6ffd0', open: true };
+    return {
+      fill,
+      edge: can ? '#22ff88' : '#ff3355',
+      can,
+    };
   }
 
 
@@ -543,6 +569,7 @@ export function createSurfaceMode({
     const leaves = getLeaves();
     let drawn = 0;
     const threshold = 4;
+    const outlines = [];
     for (const node of leaves) {
       if (!node || !node.a || !node.b || !node.c) continue;
       const parentCenter = mul(node.centroid, SURFACE_RADIUS);
@@ -559,6 +586,17 @@ export function createSurfaceMode({
         tris.push({ colors, frac, projected, depth, label: node.label });
         drawn += 1;
       }
+      // Spherical arc boundary for the parent cell, drawn in the harvest colour.
+      const boundary = [];
+      for (const [a, b] of [[node.a, node.b], [node.b, node.c], [node.c, node.a]]) {
+        for (let i = 0; i <= 6; i += 1) {
+          const t = i / 6;
+          const p = norm(add(mul(a, 1 - t), mul(b, t)));
+          const projected = projectPoint(mul(p, SURFACE_RADIUS), cam, view, w, h);
+          if (projected) boundary.push(projected);
+        }
+      }
+      if (boundary.length >= 2) outlines.push({ colors, boundary });
     }
     debug = { leaves: leaves.length, drawn };
     tris.sort((a, b) => b.depth - a.depth);
@@ -571,9 +609,20 @@ export function createSurfaceMode({
       ctx.lineTo(tri.projected[2].x, tri.projected[2].y);
       ctx.closePath();
       ctx.fill();
-      ctx.globalAlpha = 0.6;
-      ctx.strokeStyle = tri.colors.edge;
-      ctx.lineWidth = 0.65;
+      ctx.globalAlpha = 0.18;
+      ctx.strokeStyle = 'rgba(205,245,255,0.8)';
+      ctx.lineWidth = 0.45;
+      ctx.stroke();
+    }
+    // Parent-cell spherical boundaries carry the green/red harvest affordance.
+    for (const outline of outlines) {
+      ctx.globalAlpha = 0.9;
+      ctx.strokeStyle = outline.colors.edge;
+      ctx.lineWidth = outline.colors.can ? 1.2 : 1.6;
+      ctx.beginPath();
+      ctx.moveTo(outline.boundary[0].x, outline.boundary[0].y);
+      for (let i = 1; i < outline.boundary.length; i += 1) ctx.lineTo(outline.boundary[i].x, outline.boundary[i].y);
+      ctx.closePath();
       ctx.stroke();
     }
     ctx.globalAlpha = 1;

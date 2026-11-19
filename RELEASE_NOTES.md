@@ -1,5 +1,38 @@
 # NARIMATO — Release Notes
 
+## v3.31.0 — “Same World” (2026-11-18)
+
+### Fixed
+
+- **Surface cells now use the same terrain/owner palette as orbit.** Fills come from the active
+  cell's biome elevation and player ownership, not from a red/green recolour.
+- **Green/red is now only the cell-boundary harvest affordance:** green edge = can harvest,
+  red edge = locked/empty. Cell geography remains readable.
+- Subtle spherical sub-triangle edges show the arc triangulation without replacing the parent cell
+  colour.
+- **All online pilots/robots render as the same detailed walking avatar** with colour and callsign.
+  Real surface positions are used when available; other online players/robots use deterministic
+  surface routes.
+- **Orbital HUD is fully hidden in surface mode**; no panels or score bleed through.
+- Surface entry occurs after the fourth zoom rung.
+- Pole movement remains parallel-transported and seamless.
+- Opaque shell, green/red edges, mission panel, footprint harvesting, tractor effects and helmet
+  retained.
+
+### Verification
+
+- Surface render now uses node terrain + owner colours; boundary status edges remain.
+- Browser: HUD hidden; fourth zoom enters surface; robots/pilots walk as avatars.
+- **97/97 tests**, Chromium + WebKit UI audits clean, axe clean.
+
+### Release artifact
+
+- Source tag: `v3.31.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.31.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.30.0 — “Surface Discipline” (2026-11-18)
 
 ### Fixed
