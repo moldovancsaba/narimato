@@ -1,5 +1,33 @@
 # NARIMATO — Release Notes
 
+## v3.28.0 — “Spherical Arcs” (2026-11-18)
+
+### Fixed
+
+- **Surface triangles are now spherical arcs, not flat chords.** Each active cell is adaptively
+  subdivided along the actual sphere (large cells more, small cells less) with every child vertex
+  normalised back to the sphere.
+- **Opaque low-poly planet shell** remains under the cell layer, hiding the far side; the shell uses
+  the same icosahedral geometry and no geography sampling.
+- Footprint harvesting, green/red affordances, mission panel, helmet head, ship tractor effects and
+  peer surface presence retained.
+- **Performance:** adaptive subdivision caps visual triangle counts, caches by cell label + level,
+  and keeps the base shell static.
+
+### Verification
+
+- Surface close-up renders small spherical arc triangles rather than giant flat planes.
+- Far side no longer shows through.
+- **95/95 tests**, Chromium + WebKit UI audits clean, axe clean.
+
+### Release artifact
+
+- Source tag: `v3.28.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.28.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.27.0 — “Underfoot” (2026-11-18)
 
 ### Fixed / changed

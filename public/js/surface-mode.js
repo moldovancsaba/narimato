@@ -104,10 +104,10 @@ export function createSurfaceMode({
   let missionSignature = '';
   let missionTick = 0;
   const SURFACE_RADIUS = 0.44;
-  const SURFACE_SUBDIV = 2;
+  const MAX_SURFACE_SUBDIV = 4;
   const FOOTPRINT_RADIUS = 0.028;
   const visualCache = new Map();
-  const baseSphere = getMesh(2).faces;
+  const baseSphere = getMesh(4).faces;
 
   function ensureDom() {
     if (!doc || shown) return;
@@ -299,9 +299,20 @@ export function createSurfaceMode({
   }
 
   function visualTriangles(node) {
-    if (visualCache.has(node.label)) return visualCache.get(node.label);
+    // Subdivide large active cells more than small ones. Every child vertex is
+    // normalised back to the sphere, so these are spherical arc triangles, not
+    // flat chords.
+    const angle = (p, q) => Math.acos(clamp(dot(p, q), -1, 1));
+    const edge = Math.max(
+      angle(node.a, node.b),
+      angle(node.b, node.c),
+      angle(node.c, node.a),
+    );
+    const level = clamp(Math.ceil(Math.log2(Math.max(1e-4, edge / 0.055))), 0, MAX_SURFACE_SUBDIV);
+    const key = `${node.label}:${level}`;
+    if (visualCache.has(key)) return visualCache.get(key);
     let tris = [{ a: node.a, b: node.b, c: node.c }];
-    for (let level = 0; level < SURFACE_SUBDIV; level += 1) {
+    for (let i = 0; i < level; i += 1) {
       const next = [];
       for (const tri of tris) {
         for (const child of childTriangles(tri.a, tri.b, tri.c)) {
@@ -311,9 +322,10 @@ export function createSurfaceMode({
       tris = next;
     }
     const out = tris.map((tri) => ({ ...tri, center: faceCentroid(tri.a, tri.b, tri.c) }));
-    visualCache.set(node.label, out);
+    visualCache.set(key, out);
     return out;
   }
+
 
   function canHarvestNode(node) {
     if (!node) return false;

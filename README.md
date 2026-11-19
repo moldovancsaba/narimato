@@ -122,7 +122,8 @@ resets its crust and releases new resources. The game never ends.
   mine, where to dig and how to leave; press **GUIDE** or open `?guide=1`.
 - **Surface mode** — scroll past the deepest zoom to land the ship, then run a tiny planet in
   third person. One lap is **60 seconds**. The view draws only live cell triangles (no generated
-  geography) over an opaque low-poly planet shell, so the far side never shows through.
+  geography) over an opaque low-poly planet shell, so the far side never shows through. Large
+  cells are adaptively subdivided along the sphere into small arc triangles.
   **GREEN** triangles can be harvested, **RED** means locked/empty. The **WHAT SHE NEEDS** panel
   lists the remaining refit parts. A wider footprint harvests every cell touched by the avatar’s
   feet, and harvests show a ship tractor beam, particles and resource value. Press **RETURN TO
@@ -224,5 +225,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.27.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.28.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.
