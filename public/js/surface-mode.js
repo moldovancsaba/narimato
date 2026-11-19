@@ -363,11 +363,7 @@ export function createSurfaceMode({
 
 
   function canHarvestNode(node) {
-    if (!node) return false;
-    const myIndex = getMyIndex();
-    if (node.ownerIndex === myIndex && node.lastClickIndex === myIndex) return false;
-    if (node.depth >= getMaxDepth() && node.resourceId) return false;
-    return true;
+    return canHarvestCell(node, getMyIndex(), getMaxDepth());
   }
 
   function leafColor(node, isTarget = false) {

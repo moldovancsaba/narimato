@@ -1,6 +1,6 @@
 # NARIMATO — Delivery Task List & Acceptance Contract
 
-**Current version:** `3.44.0`
+**Current version:** `3.45.0`
 **Why this file exists:** the same items were repeatedly marked “delivered” while only partially
 matching the request. This file defines the remaining work at file level, in dependency order, with
 acceptance criteria. A task is **not delivered** until its acceptance test passes in the browser
@@ -139,7 +139,7 @@ direction; unit tests for arcball/tangent transport.
 - Only target cell gets green/red; all other cells keep terrain/owner + cyan edges.
 - Renderer lock state must use the same `lastClickIndex` as server (fixed in v3.38).
 - Automated test: compare target HUD/colour with `/api/action` response for green and red cells.
-**Acceptance:** no contradictory colour/response pair.
+**Progress:** single `canHarvestCell` truth function now drives surface target/HUD; unit-tested against lock/depletion cases. Remaining: browser round-trip against `/api/action`.
 
 ### D9. Exit to the farthest orbit
 

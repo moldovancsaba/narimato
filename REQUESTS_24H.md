@@ -1,7 +1,7 @@
 # NARIMATO — 24-Hour Request & Delivery Status (updated)
 
 **Window:** 2026-11-18 → 2026-11-19  
-**Current:** `v3.44.0`  
+**Current:** `v3.45.0`  
 **Engineering contract:** [DELIVERY_TASKS.md](DELIVERY_TASKS.md)
 
 Legend: **Delivered** = working and verified; **Partial** = real work landed but acceptance not
@@ -37,7 +37,7 @@ met; **Open** = not delivered; **Superseded** = changed after a correction.
 | 26 | Surface HUD visible / unclipped | Partial | Main HUD visible; surface target/exit/lap bottom overlays; full viewport audit pending |
 | 27 | Surface entry after 4th zoom | Delivered | v3.30/v3.33 |
 | 28 | Seamless pole crossing | Partial | Math tests pass; visual visibility still reported; D7 |
-| 29 | Green/red harvest semantics | Partial | Target-only rule + explicit HUD; renderer lastClick synced. Need automated colour-vs-server test; D8 |
+| 29 | Green/red harvest semantics | **Delivered** | Shared `canHarvestCell` truth used by surface target/HUD and unit-tested; renderer lastClick synced; target-only rule enforced. |
 | 30 | Resource pins only where mineable | Delivered | Target/supply only; hidden resources intentionally unexposed |
 | 31 | Exit to farthest orbit | Delivered | Named `ORBIT_FAR_ZOOM = 0.4`; exit returns there |
 | 32 | Roadmap / README / release notes / code comments | Delivered | ROADMAP, DELIVERY_TASKS, README, RELEASE_NOTES |

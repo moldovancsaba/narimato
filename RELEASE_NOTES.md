@@ -1,5 +1,32 @@
 # NARIMATO — Release Notes
 
+## v3.45.0 — “One Truth” (2026-11-18)
+
+### Fixed
+
+- Green/red harvest truth is now a single shared pure function (`canHarvestCell`) used by the surface
+  target/HUD and unit-tested against:
+  - unowned cells,
+  - contested cells,
+  - own-last-click locks,
+  - depleted max-depth resource cells.
+- Renderer `lastClickIndex` remains synced, so orbital lock colour cannot drift from the server.
+- **105/105 tests.**
+
+### Still open
+
+- Browser colour-vs-`/api/action` round-trip assertion.
+- Single-renderer/controller parity and final humanoid rig.
+- Robot beam visual assertion and orbital supply relocation.
+
+### Release artifact
+
+- Source tag: `v3.45.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.45.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.44.0 — “Two Clients” (2026-11-18)
 
 ### Added
