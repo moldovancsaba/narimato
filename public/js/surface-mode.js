@@ -153,6 +153,7 @@ export function createSurfaceMode({
         <p class="surface-kicker">SURFACE MODE // ONE SMALL WORLD</p>
         <h2 id="surface-title" class="surface-title">TOUCHDOWN</h2>
         <p id="surface-planet" class="surface-planet"></p>
+        <p id="surface-goal" class="surface-goal" role="status" aria-live="polite"></p>
       </header>
       <div class="surface-stats" role="status" aria-live="polite">
         <span>LAP <b>60s</b></span>
@@ -385,7 +386,7 @@ export function createSurfaceMode({
         rgb = { r: Math.round(rgb.r * 0.78 + oc.r * 0.22), g: Math.round(rgb.g * 0.78 + oc.g * 0.22), b: Math.round(rgb.b * 0.78 + oc.b * 0.22) };
       }
     }
-    const lift = clamp(0.5 + elevation * 1.4, 0.25, 1.25);
+    const lift = clamp(0.68 + elevation * 1.15, 0.45, 1.35);
     const fill = `rgb(${Math.round(rgb.r * lift)},${Math.round(rgb.g * lift)},${Math.round(rgb.b * lift)})`;
     const can = canHarvestNode(node);
     return {
@@ -408,6 +409,10 @@ export function createSurfaceMode({
     const signature = progress
       ? `${progress.ready}:${progress.objectives.map((o) => o.items.map((i) => `${i.resourceId}:${i.have}:${i.need}`).join(',')).join('|')}`
       : 'offline';
+    const goal = progress
+      ? progress.objectives.flatMap((objective) => objective.items.map((item) => `${item.name} ${item.have}/${item.need}`)).join(' · ')
+      : 'MISSION DATA OFFLINE';
+    setText('surface-goal', progress && progress.ready ? 'READY TO FLY' : `NEED: ${goal}`);
     if (signature === missionSignature) return;
     missionSignature = signature;
     const list = doc && doc.getElementById('surface-mission-list');
@@ -624,7 +629,7 @@ export function createSurfaceMode({
     tris.sort((a, b) => b.depth - a.depth);
     for (const tri of tris) {
       ctx.fillStyle = tri.colors.fill;
-      ctx.globalAlpha = 0.45 + tri.frac * 0.42;
+      ctx.globalAlpha = 0.62 + tri.frac * 0.28;
       ctx.beginPath();
       ctx.moveTo(tri.projected[0].x, tri.projected[0].y);
       ctx.lineTo(tri.projected[1].x, tri.projected[1].y);

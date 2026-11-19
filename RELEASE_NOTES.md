@@ -1,5 +1,33 @@
 # NARIMATO — Release Notes
 
+## v3.33.0 — “Back to Orbit” (2026-11-18)
+
+### Fixed
+
+- **Surface HUD no longer clips off-screen.** Stats, mission panel and central NEED summary use
+  clamp/safe-area positioning; RETURN TO ORBIT moved to the bottom centre (top right on phones).
+- **Central NEED line** under the title always shows remaining refit materials even if the side
+  panel is clipped.
+- **Leaving the surface now returns to maximum orbit zoom-out** (`zoom = 0.4`), not the deepest
+  cell zoom. The orbital HUD returns.
+- Terrain cell fills brightened to read closer to the orbital view.
+- Independent opponent routes, same terrain/owner palette, edge-only green/red, spherical arcs,
+  opaque shell, pole crossing, fourth-rung landing and footprint harvesting retained.
+
+### Verification
+
+- Surface HUD fully inside the viewport; central NEED summary and bottom exit visible.
+- Exit: surface hidden, orbital HUD visible, zoom 0.4.
+- **97/97 tests**, Chromium + WebKit UI audits clean, axe clean.
+
+### Release artifact
+
+- Source tag: `v3.33.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.33.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.32.0 — “Own Routes” (2026-11-18)
 
 ### Fixed

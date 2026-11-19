@@ -127,7 +127,8 @@ resets its crust and releases new resources. The game never ends.
   across both poles; the heading is parallel-transported instead of rebuilt from east/north.
   Surface entry happens after the fourth zoom rung, the orbital HUD is hidden, and every online
   pilot/robot is drawn walking the same surface with the same avatar system. Remote opponents move
-  around fixed independent home orbits — never around the local player. Cells keep the same
+  around fixed independent home orbits — never around the local player. Surface HUD is center-safe
+  with a central NEED summary and a bottom RETURN TO ORBIT; returning restores maximum orbit zoom-out. Cells keep the same
   terrain/owner palette as orbit; green/red is used only on the cell boundaries as the harvest
   affordance.
   **GREEN** triangles can be harvested, **RED** means locked/empty. The **WHAT SHE NEEDS** panel
@@ -231,5 +232,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.32.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.33.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.

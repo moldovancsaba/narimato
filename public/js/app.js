@@ -371,12 +371,15 @@ surface = createSurfaceMode({
   },
   onExit: () => {
     sendSurfaceLeave();
-    camera.zoom = zoomForLevel(maxZoomLevel());
+    // Returning from the crust must put the camera at maximum zoom-out in orbit,
+    // not back at the deepest cell zoom.
+    camera.reset();
+    camera.zoom = 0.4;
     zoomTarget = null;
     zoomAnim = null;
     keyboardSyncNeeded = true;
     updateZoomUi();
-    safeCall(ui, 'toast', 'BACK IN ORBIT // THE SURFACE IS STILL THERE', 'info');
+    safeCall(ui, 'toast', 'ORBIT VIEW // MAXIMUM ZOOM OUT', 'info');
   },
 });
 

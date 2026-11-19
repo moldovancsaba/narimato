@@ -7004,3 +7004,40 @@ body.is-surface #surface-overlay * {
   visibility: visible !important;
 }
 body.is-surface #surface-overlay { pointer-events: auto !important; }
+
+/* Keep surface HUD inside the visible viewport at any zoom/crop. */
+body.is-surface { overflow: hidden !important; }
+.surface-overlay {
+  left: 0 !important; top: 0 !important;
+  width: 100% !important; height: 100dvh !important;
+  max-width: 100vw !important; max-height: 100dvh !important;
+}
+.surface-stats { left: clamp(10px, 2vw, 22px) !important; top: clamp(8px, 2vh, 18px) !important; }
+.surface-mission {
+  left: clamp(10px, 2vw, 22px) !important;
+  top: clamp(78px, 12vh, 104px) !important;
+  width: min(240px, calc(100vw - 20px)) !important;
+  box-sizing: border-box;
+}
+.surface-head { max-width: calc(100vw - 24px); }
+.surface-title { font-size: clamp(20px, 3.4vw, 38px) !important; }
+.surface-goal {
+  margin: 6px 0 0;
+  color: rgba(220,245,255,0.72);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+.surface-exit {
+  top: auto !important;
+  right: auto !important;
+  left: 50% !important;
+  bottom: clamp(42px, 6vh, 58px) !important;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+.surface-hint { bottom: clamp(12px, 2.5vh, 20px) !important; max-width: min(92vw, 760px); }
+@media (max-width: 760px), (pointer: coarse) {
+  .surface-mission { top: clamp(72px, 12vh, 100px) !important; width: min(220px, 52vw) !important; }
+  .surface-exit { bottom: auto !important; top: clamp(8px, 2vh, 18px) !important; left: auto !important; right: max(10px, env(safe-area-inset-right)) !important; transform: none; }
+  .surface-stats { bottom: max(10px, env(safe-area-inset-bottom)) !important; top: auto !important; }
+}
