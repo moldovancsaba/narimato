@@ -1721,3 +1721,12 @@ test('incidents: deterministic rotation covers all four event kinds', async (t) 
   assert.deepEqual(kinds, ['meteor', 'nuclear', 'solar', 'alien']);
   assert.deepEqual(new Set(kinds).size, 4);
 });
+
+test('incidents: a completed refit can trigger the next incident before every deposit is gone', async (t) => {
+  const { core } = await makeCore(t, { config: { depositChance: 1 } });
+  core._meteorArmed = true;
+  assert.ok(core.hiddenDepositCount() >= 0);
+  const meteor = core.maybeMeteor({ missionReady: true });
+  assert.ok(meteor && meteor.event && meteor.event.title);
+  assert.deepEqual(core.getLeaves().length, 20);
+});

@@ -1,5 +1,29 @@
 # NARIMATO — Release Notes
 
+## v3.43.0 — “Incidents Reachable” (2026-11-18)
+
+### Fixed
+
+- Incidents now also fire when the refit mission is complete, even if unrelated hidden deposits
+  remain. Previously mission/supply deposits could keep incidents unreachable forever.
+- Deterministic incident rotation retained: `meteor → nuclear → solar → alien`.
+- Updated meteor test to stop clicking stale labels once the incident resets the crust.
+- **104/104 tests.**
+
+### Still open
+
+- Five-tetra ship/effect visual coverage for every incident.
+- Two-client robot/supply acceptance.
+- Single-renderer/controller parity and final 3D humanoid rig.
+
+### Release artifact
+
+- Source tag: `v3.43.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.43.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.42.0 — “Event Cycle” (2026-11-18)
 
 ### Added

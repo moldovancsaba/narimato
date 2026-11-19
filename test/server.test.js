@@ -831,6 +831,10 @@ test('multi-planet: meteor reset + rooms + escape routing', async (t) => {
   for (const label of hidden) {
     const res = await postJson(base, '/api/action', { token: miner.json.token, type: 'click', label });
     assert.equal(res.status, 200, `click ${label}`);
+    // Incidents may now fire as soon as the refit is complete, before every
+    // unrelated deposit is gone. Stop clicking stale labels once the server
+    // has actually reseeded the planet.
+    if (minerSse.events.some((event) => event.type === 'incident') || core0.planetSeed !== seedBefore) break;
   }
   const meteorMiner = await minerSse.waitForEvent('incident', (event) => event.type === 'incident', { timeout: 3000 });
   assert.equal(meteorMiner.planetIndex, 0);

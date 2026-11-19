@@ -1,6 +1,6 @@
 # NARIMATO — Roadmap & Delivery Audit
 
-**Current version:** `3.42.0`
+**Current version:** `3.43.0`
 **Audit window:** 2026-11-18 → 2026-11-19 (last 24 hours)
 **Live:** https://treasurer-record-flooring-mounting.trycloudflare.com
 
@@ -65,6 +65,7 @@ single release note: if the code and this document disagree, fix one of them.
 | v3.40 | Authoritative robot surface routes/poses/click-under-pose; robot surface state publication; supply impact snap; named farthest zoom |
 | v3.41 | Robots route near human surface pilots; incremental screen-space mouse rotation; pole/direction tests |
 | v3.42 | Deterministic incident rotation test; robots near surface pilots; camera direction tests |
+| v3.43 | Incidents reachable on completed refit; deterministic cycle preserved; 104 tests |
 
 ### Earlier but still active
 
