@@ -1,5 +1,30 @@
 # NARIMATO — Release Notes
 
+## v3.32.0 — “Own Routes” (2026-11-18)
+
+### Fixed
+
+- **Remote opponents no longer follow the local player.** Each virtual pilot/robot gets one fixed
+  home position and orbit at surface entry, then moves only relative to that home. Their heading,
+  phase and speed are independent of the local player's position and camera.
+- Real surface pilots still use their own synced positions; robots/others are rendered on their
+  independent routes.
+- Same terrain/owner palette, edge-only green/red harvest status, spherical cells, opaque shell,
+  pole crossing, fourth-rung landing, HUD isolation, footprint harvesting and ship effects retained.
+
+### Verification
+
+- Opponent position calculation no longer references local `pos` or `headingVec` after home setup.
+- **97/97 tests**, Chromium + WebKit UI audits clean, axe clean.
+
+### Release artifact
+
+- Source tag: `v3.32.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.32.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.31.0 — “Same World” (2026-11-18)
 
 ### Fixed

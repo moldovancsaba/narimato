@@ -134,6 +134,7 @@ export function createSurfaceMode({
   const MAX_SURFACE_SUBDIV = 4;
   const FOOTPRINT_RADIUS = 0.028;
   const visualCache = new Map();
+  const virtualHomes = new Map();
   const baseSphere = getMesh(4).faces;
 
   function ensureDom() {
@@ -500,12 +501,33 @@ export function createSurfaceMode({
       hash = Math.imul(hash, 16777619);
     }
     hash >>>= 0;
-    const fwd = headingVec;
-    const right = norm(cross(fwd, pos));
-    const radius = 0.07 + ((hash >>> 8) % 80) / 1000;
-    const angle = now * (0.00008 + (hash % 7) * 0.00002) + (hash % 360) * (Math.PI / 180);
-    const tangent = add(mul(right, Math.cos(angle) * radius), mul(fwd, Math.sin(angle) * radius));
-    return norm(add(pos, tangent));
+    // Establish a fixed home once, near the surface entry point. After this the
+    // opponent moves relative only to its own home, never relative to the local
+    // player's current position or heading.
+    let home = virtualHomes.get(id);
+    if (!home) {
+      const basis = tangentBasis(pos);
+      const radius = 0.035 + (hash % 60) / 1500;
+      const angle = ((hash >>> 7) % 628) / 100;
+      const homeBase = norm(add(pos, add(
+        mul(basis.east, Math.cos(angle) * radius),
+        mul(basis.north, Math.sin(angle) * radius),
+      )));
+      home = {
+        base: homeBase,
+        phase: ((hash >>> 13) % 628) / 100,
+        speed: 0.00006 + ((hash >>> 3) % 7) * 0.000015,
+        radius: 0.018 + (hash % 45) / 1600,
+        direction: (hash & 1) ? 1 : -1,
+      };
+      virtualHomes.set(id, home);
+    }
+    const basis = tangentBasis(home.base);
+    const angle = now * home.speed * home.direction + home.phase;
+    return norm(add(home.base, add(
+      mul(basis.east, Math.cos(angle) * home.radius),
+      mul(basis.north, Math.sin(angle) * home.radius),
+    )));
   }
 
   function drawTerrain(w, h, now) {
@@ -875,6 +897,7 @@ export function createSurfaceMode({
       depth: Number(options.depth || planetInfo.depth) || 2,
     };
     pos = norm(getStartPoint() || { x: 0, y: 0, z: 1 });
+    virtualHomes.clear();
     heading = Math.PI / 2;
     const startBasis = tangentBasis(pos);
     headingVec = tangentAt(pos, startBasis.east);

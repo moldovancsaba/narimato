@@ -126,7 +126,8 @@ resets its crust and releases new resources. The game never ends.
   cells are adaptively subdivided along the sphere into small arc triangles. Running is seamless
   across both poles; the heading is parallel-transported instead of rebuilt from east/north.
   Surface entry happens after the fourth zoom rung, the orbital HUD is hidden, and every online
-  pilot/robot is drawn walking the same surface with the same avatar system. Cells keep the same
+  pilot/robot is drawn walking the same surface with the same avatar system. Remote opponents move
+  around fixed independent home orbits — never around the local player. Cells keep the same
   terrain/owner palette as orbit; green/red is used only on the cell boundaries as the harvest
   affordance.
   **GREEN** triangles can be harvested, **RED** means locked/empty. The **WHAT SHE NEEDS** panel
@@ -230,5 +231,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.31.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.32.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.
