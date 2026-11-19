@@ -121,8 +121,10 @@ resets its crust and releases new resources. The game never ends.
 - **Quick Guide** — a first-run, shareable one-screen card explains what to mine, how to
   mine, where to dig and how to leave; press **GUIDE** or open `?guide=1`.
 - **Surface mode** — scroll past the deepest zoom to land the ship, then run a tiny planet in
-  third person. One lap is **60 seconds** at normal running speed. Entering triangles auto-harvests
-  them; press **RETURN TO ORBIT** or Escape to leave.
+  third person. One lap is **60 seconds** at normal running speed. The view draws only live cell
+  triangles (no generated geography), mining/breaks update them, other surface pilots appear and
+  walk with you, and entering triangles auto-harvests them. Press **RETURN TO ORBIT** or Escape
+  to leave.
 - **Five-tetrahedron ships** — one shared low-poly ship appears in the load-in, interplanetary
   transit, relief drops and alien invasion. Every object is triangle-faced; the solar flare now has
   a visibly faceted sun.
@@ -220,5 +222,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.24.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.25.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.

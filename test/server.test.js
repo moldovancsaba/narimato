@@ -1055,6 +1055,41 @@ test('static: ASSET_BASE_URL rewrites the narration asset base meta tag', async 
   await fetch(`http://127.0.0.1:${handle.port}/audio/voice/george/help-story__s1.m4a`);
 });
 
+// ------------------------------------------------------- surface presence
+
+test('surface: pose and leave broadcasts reach every human in the planet room', async (t) => {
+  const { base } = await makeServer(t, { bots: 0, planetSeed: 424242 });
+  const joinA = await postJson(base, '/api/join', { tag: 'SURFA' });
+  const joinB = await postJson(base, '/api/join', { tag: 'SURFB' });
+  const tokenA = joinA.json.token;
+  const tokenB = joinB.json.token;
+  const sseA = await openSse(base, tokenA);
+  const sseB = await openSse(base, tokenB);
+  t.after(async () => {
+    await sseA.close();
+    await sseB.close();
+  });
+  await Promise.all([sseA.waitForEvent('snapshot'), sseB.waitForEvent('snapshot')]);
+
+  const pose = { x: 0, y: 0, z: 1 };
+  const res = await postJson(base, '/api/action', { token: tokenA, type: 'surface', pos: pose, heading: 1.2, moving: true });
+  assert.equal(res.status, 200);
+  const [frameA, frameB] = await Promise.all([
+    sseA.waitForEvent('surface', (event) => event.playerId === joinA.json.player.id, { timeout: 3000 }),
+    sseB.waitForEvent('surface', (event) => event.playerId === joinA.json.player.id, { timeout: 3000 }),
+  ]);
+  assert.deepEqual(frameA.pos, pose);
+  assert.deepEqual(frameB.pos, pose);
+  assert.equal(frameB.tag, 'SURFA');
+  assert.equal(frameB.moving, true);
+  assert.equal(JSON.stringify(frameB).includes(tokenA), false);
+
+  const leave = await postJson(base, '/api/action', { token: tokenA, type: 'surface_leave' });
+  assert.equal(leave.status, 200);
+  const leaveB = await sseB.waitForEvent('surface_leave', (event) => event.playerId === joinA.json.player.id, { timeout: 3000 });
+  assert.equal(leaveB.playerId, joinA.json.player.id);
+});
+
 // ------------------------------------------------------- emergency supply
 
 test('supply: gated by pilot age, places missing mission units as first-click deposits (repeatable after the 120s stuck window)', async (t) => {

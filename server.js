@@ -364,6 +364,27 @@ export class InfiniteServerApp {
       return;
     }
 
+    if (type === 'surface' || type === 'surface_leave') {
+      const result = type === 'surface'
+        ? await this.manager.surfacePose({ token: body.token, pos: body.pos, heading: body.heading, moving: body.moving })
+        : await this.manager.surfaceLeave({ token: body.token });
+      if (!result.ok) {
+        sendJson(res, 409, { ok: false, error: result.error, message: result.message });
+        return;
+      }
+      this._broadcastToRoom(result.planetIndex, {
+        type: type === 'surface' ? 'surface' : 'surface_leave',
+        playerId: result.playerId,
+        tag: result.tag,
+        color: result.color,
+        pos: result.pos,
+        heading: result.heading,
+        moving: result.moving,
+      });
+      sendJson(res, 200, { ok: true, planetIndex: result.planetIndex });
+      return;
+    }
+
     if (type === 'supply') {
       const result = await this.manager.emergencySupply({ token: body.token, label: body.label });
       if (!result.ok) {
@@ -401,7 +422,7 @@ export class InfiniteServerApp {
     }
 
     if (type !== 'click') {
-      sendJson(res, 400, { ok: false, error: 'INVALID_ACTION', message: 'Action type must be "click", "escape" or "supply".' });
+      sendJson(res, 400, { ok: false, error: 'INVALID_ACTION', message: 'Action type must be "click", "escape", "supply", "surface" or "surface_leave".' });
       return;
     }
     const routed = await this.manager.click({ token: body.token, label: body.label });

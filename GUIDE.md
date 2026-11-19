@@ -35,9 +35,10 @@ The **THE WAY HOME** panel lists every part the ship still needs.
 ## Surface mode
 
 Scroll one notch past the deepest zoom (or pinch outward) to land. The ship descends, then you run
-the small planet in third person. A lap takes **60 seconds** at normal speed. Entering triangles
-auto-harvests them. Use `WASD`/arrows to run, `A/D` to turn, `Shift` to sprint, and
-**RETURN TO ORBIT** or Escape to leave.
+the small planet in third person. A lap takes **60 seconds** at normal speed. The surface view draws
+only the live cell triangles; mining/breaks update them and other surface pilots appear and walk in
+the same view. Entering triangles auto-harvests them. Use `WASD`/arrows to run, `A/D` to turn,
+`Shift` to sprint, and **RETURN TO ORBIT** or Escape to leave.
 
 ## If you get stuck
 

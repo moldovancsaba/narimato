@@ -1,5 +1,39 @@
 # NARIMATO — Release Notes
 
+## v3.25.0 — “Live Cells” (2026-11-18)
+
+### Changed
+
+- **Surface view uses only the live cell triangles.** Removed generated ground/geography and all
+  terrain sampling from the surface renderer. It draws the actual active cells (visually subdivided
+  into triangles), so mining colour/charge, breaks and newly exposed children are reflected
+  immediately.
+- **Smaller planet:** surface radius reduced and camera moved to the crust; normal running speed
+  still completes one lap in **60 seconds**.
+- **Better humanoid:** larger layered triangle pilot with helmet/visor, chest core, shoulder pads,
+  animated arms and legs, and a contact shadow.
+- **Other pilots on the surface:** transient `surface` / `surface_leave` presence events are
+  broadcast within the planet room. Other human avatars and callsigns appear in the same surface
+  view and walk using their transmitted positions. No positions or tokens are persisted.
+- **Performance:** live-cell visual triangles are cached by label, terrain sampling is gone, harvest
+  checks are throttled, and the orbital renderer is skipped while surface mode is active.
+- Touch controls, exit-to-orbit, landing ship and triangle-only aesthetic retained.
+
+### Verification
+
+- Live-cell surface renders; no geography/terrain code remains.
+- Two-client surface test: positions and `surface_leave` broadcast to both clients.
+- Humanoid/landing/lap/auto-harvest/exit behaviour tested without console errors.
+- **95/95 tests**, Chromium + WebKit UI audits clean, axe clean.
+
+### Release artifact
+
+- Source tag: `v3.25.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.25.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.24.0 — “Small World” (2026-11-18)
 
 ### Added

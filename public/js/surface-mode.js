@@ -8,7 +8,7 @@
  */
 
 import { drawTetraShip } from './shared/tetra-ship.js';
-import { terrainAt } from './shared/planet.js';
+import { childTriangles, faceCentroid } from './shared/geometry.js';
 
 const LAP_SECONDS = 60;
 const ANGULAR_SPEED = (Math.PI * 2) / LAP_SECONDS;
@@ -66,8 +66,12 @@ export function createSurfaceMode({
   getStartPoint = () => ({ x: 0, y: 0, z: 1 }),
   getLeaves = () => [],
   getPlanet = () => ({ name: 'UNKNOWN WORLD', seed: 0, depth: 2 }),
+  getPlayers = () => [],
+  getMyPlayerId = () => null,
   onHarvest = () => {},
   onExit = () => {},
+  getPeers = () => [],
+  onPose = () => {},
 } = {}) {
   const doc = typeof document !== 'undefined' ? document : null;
   let overlay = null;
@@ -83,11 +87,17 @@ export function createSurfaceMode({
   let heading = Math.PI / 2; // start running east along the equator
   let travel = 0;
   let harvestTimer = 0;
+  let harvestCheck = 0;
   let lastHarvestLabel = null;
   let keys = new Set();
   let planet = { name: '', seed: 0, depth: 2 };
   let lastHud = 0;
+  let lastPoseAt = 0;
   let shown = false;
+  let debug = {};
+  const SURFACE_RADIUS = 0.44;
+  const SURFACE_SUBDIV = 2;
+  const visualCache = new Map();
 
   function ensureDom() {
     if (!doc || shown) return;
@@ -180,6 +190,9 @@ export function createSurfaceMode({
 
   function harvestTick(dt) {
     if (phase !== 'walking') return;
+    harvestCheck += dt;
+    if (harvestCheck < 140) return;
+    harvestCheck = 0;
     const cell = findCell(pos);
     if (!cell) return;
     // Entering a triangle starts harvesting; staying in it keeps charging it on
@@ -222,6 +235,15 @@ export function createSurfaceMode({
       travel += Math.abs(step);
     }
     harvestTick(dt);
+    const nowMs = performance.now();
+    if (nowMs - lastPoseAt > 110) {
+      lastPoseAt = nowMs;
+      onPose({
+        pos: { ...pos },
+        heading,
+        moving: !!(forward || backward),
+      });
+    }
   }
 
   function projectPoint(point, cam, basis, w, h) {
@@ -236,106 +258,102 @@ export function createSurfaceMode({
     };
   }
 
-  function drawGroundMesh(w, h, now) {
-    // Triangle-only ground shell. It is intentionally a low-poly approximation:
-    // the authoritative cells still drive harvesting, while this gives the
-    // running pilot a complete, readable horizon and foreground.
-    const horizonY = h * 0.34;
-    const rows = 32;
-    const cols = 40;
-    const palette = ['#1c2142', '#253955', '#2f4d5a', '#3a5b58', '#514d48', '#3a2d52', '#2a2448'];
-    const hash = (n) => {
-      let x = Math.imul(n ^ (n >>> 13), 0x5bd1e995) ^ Math.imul(Math.floor(travel * 9), 0x27d4eb2d);
-      x ^= x >>> 15;
-      return (x >>> 0) % palette.length;
-    };
-    const grid = [];
-    for (let r = 0; r <= rows; r += 1) {
-      const t = r / rows;
-      const y = horizonY + (h - horizonY) * (t ** 1.62);
-      const half = w * (0.34 + t * 0.88);
-      const row = [];
-      for (let c = 0; c <= cols; c += 1) {
-        const u = c / cols;
-        const jitter = (((r * 73 + c * 151) % 13) / 13 - 0.5) * w * 0.006 * (0.25 + t);
-        row.push({
-          x: w / 2 + (u - 0.5) * 2 * half + Math.sin(travel * 0.7 + heading) * w * 0.018 * t + jitter,
-          y: y + Math.sin(u * Math.PI * 5 + travel * 0.25) * h * 0.007 * (1 - t) * t + jitter * 0.35,
-        });
-      }
-      grid.push(row);
-    }
-    for (let r = 0; r < rows; r += 1) {
-      for (let c = 0; c < cols; c += 1) {
-        const a = grid[r][c];
-        const b = grid[r][c + 1];
-        const d = grid[r + 1][c];
-        const e = grid[r + 1][c + 1];
-        const triA = hash(r * 131 + c * 17 + 3);
-        const triB = hash(r * 131 + c * 17 + 11 + Math.floor(heading * 3));
-        for (const [tri, idx] of [[[a, b, d], triA], [[b, e, d], triB]]) {
-          ctx.fillStyle = palette[idx];
-          ctx.globalAlpha = 0.5 + (r / rows) * 0.34;
-          ctx.beginPath();
-          ctx.moveTo(tri[0].x, tri[0].y);
-          ctx.lineTo(tri[1].x, tri[1].y);
-          ctx.lineTo(tri[2].x, tri[2].y);
-          ctx.closePath();
-          ctx.fill();
+  function visualTriangles(node) {
+    if (visualCache.has(node.label)) return visualCache.get(node.label);
+    let tris = [{ a: node.a, b: node.b, c: node.c }];
+    for (let level = 0; level < SURFACE_SUBDIV; level += 1) {
+      const next = [];
+      for (const tri of tris) {
+        for (const child of childTriangles(tri.a, tri.b, tri.c)) {
+          next.push({ a: child.a, b: child.b, c: child.c });
         }
       }
+      tris = next;
     }
-    // Distant low-poly ridge.
-    for (let i = 0; i < 22; i += 1) {
-      const x = (i / 22) * w;
-      const peak = horizonY - 10 - ((i * 37) % 52);
-      ctx.fillStyle = i % 2 ? 'rgba(52,44,92,0.7)' : 'rgba(37,35,72,0.7)';
-      ctx.beginPath();
-      ctx.moveTo(x, horizonY + 10);
-      ctx.lineTo(x + w / 22, horizonY + 10);
-      ctx.lineTo(x + w / 44, peak);
-      ctx.closePath();
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1;
+    const out = tris.map((tri) => ({ ...tri, center: faceCentroid(tri.a, tri.b, tri.c) }));
+    visualCache.set(node.label, out);
+    return out;
+  }
+
+  function leafColor(node) {
+    const players = getPlayers();
+    const owner = Number.isInteger(node.ownerIndex) && node.ownerIndex >= 0 ? players[node.ownerIndex] : null;
+    const myId = getMyPlayerId();
+    const mine = !!(owner && myId && owner.id === myId);
+    if (node.resourceId) return { fill: mine ? '#d9ff3f' : '#ffe066', edge: '#f4ff9a' };
+    if (node.ownerIndex === -1) return { fill: '#143744', edge: '#2dd8ff' };
+    if (mine) return { fill: '#2546c8', edge: '#9efcff' };
+    return { fill: owner && owner.color ? owner.color : '#7b4fa8', edge: '#c9a6ff' };
   }
 
   function drawTerrain(w, h, now) {
-    // Sky / atmosphere.
+    // Live cell mesh only: no generated geography, no terrain sampling. Every
+    // triangle is an actual active cell from the game world.
     const sky = ctx.createLinearGradient(0, 0, 0, h);
-    sky.addColorStop(0, '#09061c');
-    sky.addColorStop(0.55, '#20124d');
-    sky.addColorStop(0.82, '#3b255f');
-    sky.addColorStop(1, '#120a20');
+    sky.addColorStop(0, '#050414');
+    sky.addColorStop(0.55, '#17103a');
+    sky.addColorStop(1, '#0b0818');
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, w, h);
     ctx.fillStyle = 'rgba(255,255,255,0.55)';
-    for (let i = 0; i < 80; i += 1) {
-      const x = ((i * 977) % Math.max(1, w));
-      const y = ((i * 431) % Math.max(1, h * 0.6));
-      const a = 0.16 + ((i * 13) % 60) / 100;
-      ctx.globalAlpha = a;
-      ctx.fillRect(x, y, 1.2, 1.2);
+    for (let i = 0; i < 75; i += 1) {
+      const sx = (i * 977) % Math.max(1, w);
+      const sy = (i * 431) % Math.max(1, h * 0.6);
+      ctx.globalAlpha = 0.1 + ((i * 17) % 50) / 100;
+      ctx.fillRect(sx, sy, 1.2, 1.2);
     }
     ctx.globalAlpha = 1;
-    // A deep ground base prevents any unfilled void below the horizon.
-    const groundBase = ctx.createLinearGradient(0, h * 0.28, 0, h);
-    groundBase.addColorStop(0, '#17143b');
-    groundBase.addColorStop(0.55, '#18103a');
-    groundBase.addColorStop(1, '#0d0820');
-    ctx.fillStyle = groundBase;
-    ctx.fillRect(0, h * 0.28, w, h * 0.72);
-    drawGroundMesh(w, h, now);
 
-    // Horizon glow.
-    const horizon = ctx.createLinearGradient(0, h * 0.34, 0, h * 0.72);
-    horizon.addColorStop(0, 'rgba(120,190,255,0)');
-    horizon.addColorStop(0.55, 'rgba(120,190,255,0.06)');
-    horizon.addColorStop(1, 'rgba(120,190,255,0)');
-    ctx.fillStyle = horizon;
-    ctx.fillRect(0, 0, w, h);
+    const up = pos;
+    const basis = tangentBasis(pos);
+    const fwd = add(mul(basis.north, Math.cos(heading)), mul(basis.east, Math.sin(heading)));
+    const playerPoint = mul(pos, SURFACE_RADIUS);
+    const cam = add(playerPoint, add(mul(up, 0.035), mul(fwd, -0.055)));
+    const target = add(playerPoint, add(mul(fwd, 0.18), mul(up, -0.065)));
+    const camF = norm(sub(target, cam));
+    const camR = norm(cross(camF, up));
+    const camU = norm(cross(camR, camF));
+    const view = { f: camF, r: camR, u: camU };
+    const focal = h * 1.02;
+    const tris = [];
+    const leaves = getLeaves();
+    let drawn = 0;
+    const threshold = 4;
+    for (const node of leaves) {
+      if (!node || !node.a || !node.b || !node.c) continue;
+      const parentCenter = mul(node.centroid, SURFACE_RADIUS);
+      if (dot(parentCenter, pos) < 0.05) continue;
+      const colors = leafColor(node);
+      const frac = clamp01((node.clicks || 0) / threshold);
+      for (const visual of visualTriangles(node)) {
+        const center = mul(visual.center, SURFACE_RADIUS);
+        if (dot(center, pos) < 0.03) continue;
+        const verts = [visual.a, visual.b, visual.c].map((v) => mul(v, SURFACE_RADIUS));
+        const projected = verts.map((v) => projectPoint(v, cam, view, w, h));
+        if (projected.some((p) => !p)) continue;
+        const depth = (projected[0].z + projected[1].z + projected[2].z) / 3;
+        tris.push({ colors, frac, projected, depth, label: node.label });
+        drawn += 1;
+      }
+    }
+    debug = { leaves: leaves.length, drawn };
+    tris.sort((a, b) => b.depth - a.depth);
+    for (const tri of tris) {
+      ctx.fillStyle = tri.colors.fill;
+      ctx.globalAlpha = 0.45 + tri.frac * 0.42;
+      ctx.beginPath();
+      ctx.moveTo(tri.projected[0].x, tri.projected[0].y);
+      ctx.lineTo(tri.projected[1].x, tri.projected[1].y);
+      ctx.lineTo(tri.projected[2].x, tri.projected[2].y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 0.6;
+      ctx.strokeStyle = tri.colors.edge;
+      ctx.lineWidth = 0.65;
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
 
-    // Landing ship.
     if (phase === 'landing') {
       const k = clamp01((performance.now() - startedAt) / 2200);
       drawTetraShip(ctx, {
@@ -352,8 +370,17 @@ export function createSurfaceMode({
         alpha: 0.95,
       });
     }
-    if (phase === 'walking' || exiting) drawAvatar(w, h, now);
-    // Ship leaving after exit.
+    if (phase === 'walking' || exiting) {
+      drawAvatar(w, h, now, null);
+      for (const peer of getPeers()) {
+        if (!peer || !peer.pos || peer.playerId === getMyPlayerId()) continue;
+        const wp = mul(peer.pos, SURFACE_RADIUS);
+        if (dot(peer.pos, pos) < -0.2) continue;
+        const anchor = projectPoint(wp, cam, view, w, h);
+        if (!anchor) continue;
+        drawPeerAvatar(w, h, now, anchor, peer);
+      }
+    }
     if (exiting) {
       const k = clamp01((performance.now() - leaveStart) / 1600);
       drawTetraShip(ctx, {
@@ -368,63 +395,184 @@ export function createSurfaceMode({
     }
   }
 
-  function drawAvatar(w, h, now) {
-    const bob = Math.sin(now / 180) * 2;
-    const x = w / 2;
-    const y = h * 0.72 + bob;
+
+  function drawPeerAvatar(w, h, now, anchor, peer) {
+    const tint = peer.color || '#a78bfa';
+    const x = anchor.x;
+    const y = anchor.y;
+    const scale = 0.9;
     ctx.save();
-    ctx.globalAlpha = 0.25;
-    ctx.fillStyle = '#000';
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+    ctx.globalAlpha = 0.9;
+    ctx.strokeStyle = '#dffcff';
+    ctx.lineWidth = 1.1;
+    ctx.fillStyle = tint;
     ctx.beginPath();
-    ctx.ellipse(x, y + 76, 26, 7, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.globalAlpha = 1;
-    const body = '#5f7fff';
-    const edge = '#a9ffff';
-    ctx.strokeStyle = edge;
-    ctx.lineWidth = 1.4;
-    // Head.
-    ctx.fillStyle = '#b9e9ff';
-    ctx.beginPath();
-    ctx.moveTo(x, y - 77);
-    ctx.lineTo(x + 12, y - 58);
-    ctx.lineTo(x - 12, y - 58);
+    ctx.moveTo(0, -48);
+    ctx.lineTo(12, -28);
+    ctx.lineTo(-12, -28);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
-    // Torso.
-    ctx.fillStyle = body;
     ctx.beginPath();
-    ctx.moveTo(x, y - 55);
-    ctx.lineTo(x + 19, y - 10);
-    ctx.lineTo(x, y + 26);
-    ctx.lineTo(x - 19, y - 10);
+    ctx.moveTo(0, -26);
+    ctx.lineTo(16, 4);
+    ctx.lineTo(0, 22);
+    ctx.lineTo(-16, 4);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
-    // Legs.
-    ctx.fillStyle = '#334aa8';
-    for (const s of [-1, 1]) {
+    for (const side of [-1, 1]) {
       ctx.beginPath();
-      ctx.moveTo(x + s * 4, y + 18);
-      ctx.lineTo(x + s * 22, y + 66);
-      ctx.lineTo(x + s * 8, y + 68);
+      ctx.moveTo(side * 5, 16);
+      ctx.lineTo(side * 19, 42);
+      ctx.lineTo(side * 7, 44);
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
     }
-    // Arms.
-    for (const s of [-1, 1]) {
-      ctx.beginPath();
-      ctx.moveTo(x + s * 14, y - 38);
-      ctx.lineTo(x + s * 30, y + 2 + Math.sin(now / 160) * 4);
-      ctx.lineTo(x + s * 20, y + 8);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-    }
+    ctx.globalAlpha = 0.95;
+    ctx.fillStyle = '#e9ffff';
+    ctx.font = '8px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(String(peer.tag || 'PILOT').slice(0, 12), 0, -58);
     ctx.restore();
   }
+
+  function drawAvatar(w, h, now, anchor = null) {
+    const bob = Math.sin(now / 170) * 2.5;
+    const x = anchor ? anchor.x : w / 2;
+    const y = (anchor ? anchor.y : h * 0.72) + bob;
+    const scale = 1.45;
+    const stride = Math.sin(now / 150) * 0.45;
+    const moving = keys.has('KeyW') || keys.has('KeyS') || keys.has('ArrowUp') || keys.has('ArrowDown');
+    const swing = moving ? stride : 0;
+    const armor = '#2f4f9e';
+    const armorLight = '#6a8dff';
+    const trim = '#9efcff';
+    const visor = '#d4ff3f';
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+    // Contact shadow.
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.ellipse(0, 78, 34, 10, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = trim;
+    ctx.lineWidth = 1.35;
+    // Backpack.
+    ctx.fillStyle = '#1c2b5a';
+    ctx.beginPath();
+    ctx.moveTo(-18, -38);
+    ctx.lineTo(18, -38);
+    ctx.lineTo(14, 2);
+    ctx.lineTo(-14, 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    // Legs: thigh + shin triangles, alternating stride.
+    for (const side of [-1, 1]) {
+      const lift = side * swing * 16;
+      const hipX = side * 9;
+      ctx.fillStyle = '#253b74';
+      ctx.beginPath();
+      ctx.moveTo(hipX - 8, 22);
+      ctx.lineTo(hipX + 8, 22);
+      ctx.lineTo(hipX + side * 6 + lift, 52);
+      ctx.lineTo(hipX - side * 5 + lift, 52);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#2c4a8f';
+      ctx.beginPath();
+      ctx.moveTo(hipX + side * 6 + lift, 52);
+      ctx.lineTo(hipX - side * 5 + lift, 52);
+      ctx.lineTo(hipX + side * 2 + lift * 0.2, 76);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+    // Torso diamond + chest plate.
+    ctx.fillStyle = armor;
+    ctx.beginPath();
+    ctx.moveTo(0, -48);
+    ctx.lineTo(28, -12);
+    ctx.lineTo(0, 30);
+    ctx.lineTo(-28, -12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = armorLight;
+    ctx.beginPath();
+    ctx.moveTo(0, -40);
+    ctx.lineTo(18, -8);
+    ctx.lineTo(0, 18);
+    ctx.lineTo(-18, -8);
+    ctx.closePath();
+    ctx.fill();
+    // Arms: shoulder + upper/lower triangular segments.
+    for (const side of [-1, 1]) {
+      const swingArm = -side * swing * 18;
+      ctx.fillStyle = '#263d7a';
+      ctx.beginPath();
+      ctx.moveTo(side * 24, -24);
+      ctx.lineTo(side * 42, -15 + swingArm * 0.4);
+      ctx.lineTo(side * 30, 12 + swingArm);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#304f96';
+      ctx.beginPath();
+      ctx.moveTo(side * 30, 8 + swingArm);
+      ctx.lineTo(side * 42, 28 + swingArm);
+      ctx.lineTo(side * 26, 32 + swingArm);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      // Shoulder pad.
+      ctx.beginPath();
+      ctx.moveTo(side * 21, -32);
+      ctx.lineTo(side * 38, -30);
+      ctx.lineTo(side * 27, -13);
+      ctx.closePath();
+      ctx.fillStyle = '#4169d8';
+      ctx.fill();
+      ctx.stroke();
+    }
+    // Helmet.
+    ctx.fillStyle = '#d8f6ff';
+    ctx.beginPath();
+    ctx.moveTo(0, -86);
+    ctx.lineTo(18, -48);
+    ctx.lineTo(-18, -48);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = visor;
+    ctx.beginPath();
+    ctx.moveTo(0, -73);
+    ctx.lineTo(12, -55);
+    ctx.lineTo(-12, -55);
+    ctx.closePath();
+    ctx.fill();
+    // Chest core.
+    ctx.fillStyle = visor;
+    ctx.beginPath();
+    ctx.moveTo(0, -23);
+    ctx.lineTo(7, -11);
+    ctx.lineTo(0, 1);
+    ctx.lineTo(-7, -11);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
   let leaveStart = 0;
 
   function frame(now) {
@@ -487,6 +635,8 @@ export function createSurfaceMode({
     document.addEventListener('keyup', onKeyUp, true);
     window.addEventListener('resize', resize);
     cancelAnimationFrame(raf);
+    lastPoseAt = 0;
+    onPose({ pos: { ...pos }, heading, moving: false });
     raf = requestAnimationFrame(frame);
     return true;
   }
@@ -540,5 +690,7 @@ export function createSurfaceMode({
     resize,
     get active() { return active; },
     get phase() { return phase; },
+    debug: () => debug,
+    peers: () => getPeers().length,
   };
 }

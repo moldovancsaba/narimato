@@ -82,6 +82,7 @@ let seenTips = loadSeenTips();
 let appliedPlanetThemeKey = '';
 let supplyDrop = null;
 let surface = null;
+const surfacePeers = new Map();
 let supplyTimer = 0;
 let supplyDeadline = 0;
 let supplyPlanetKey = '';
@@ -343,11 +344,16 @@ surface = createSurfaceMode({
     const p = typeof planetInfoFromState === 'function' ? planetInfoFromState() : {};
     return { name: p.planetName || 'UNKNOWN WORLD', seed: p.planetSeed || 0, depth: p.planetDepth || 2 };
   },
+  getPlayers: () => (state && Array.isArray(state.players) ? state.players : []),
+  getMyPlayerId: () => (myPlayer ? myPlayer.id : null),
+  getPeers: () => [...surfacePeers.values()].filter((peer) => Date.now() - (peer.updatedAt || 0) < 5000),
+  onPose: (pose) => sendSurfacePose(pose),
   onHarvest: (label) => {
     if (!joined || !label) return;
     attemptClick(label);
   },
   onExit: () => {
+    sendSurfaceLeave();
     camera.zoom = zoomForLevel(maxZoomLevel());
     zoomTarget = null;
     zoomAnim = null;
@@ -795,6 +801,10 @@ function handleEvent(msg) {
       break;
     case 'supply':
       handleSupplyEvent(msg);
+      break;
+    case 'surface':
+    case 'surface_leave':
+      handleSurfaceEvent(msg);
       break;
     case 'incident':
       handleIncidentEvent(msg);
@@ -2116,6 +2126,46 @@ function updateKeyboardNavigation(dt) {
   camera.pitch = keyboardPitch;
 }
 
+let lastSurfacePoseSent = 0;
+function sendSurfacePose(pose) {
+  if (!joined || !authToken || !pose || !pose.pos) return;
+  const stamp = now();
+  if (stamp - lastSurfacePoseSent < 90) return;
+  lastSurfacePoseSent = stamp;
+  postJSON('/api/action', {
+    token: authToken,
+    type: 'surface',
+    pos: pose.pos,
+    heading: pose.heading,
+    moving: !!pose.moving,
+  }).catch(() => {});
+}
+
+function sendSurfaceLeave() {
+  if (!authToken) return;
+  postJSON('/api/action', { token: authToken, type: 'surface_leave' }).catch(() => {});
+}
+
+function handleSurfaceEvent(msg) {
+  if (!msg || !msg.playerId) return;
+  if (myPlayer && msg.playerId === myPlayer.id) return;
+  if (msg.type === 'surface_leave') {
+    surfacePeers.delete(msg.playerId);
+    return;
+  }
+  const pos = msg.pos;
+  if (!pos || !Number.isFinite(pos.x) || !Number.isFinite(pos.y) || !Number.isFinite(pos.z)) return;
+  surfacePeers.set(msg.playerId, {
+    playerId: msg.playerId,
+    tag: String(msg.tag || 'PILOT').slice(0, 12),
+    color: typeof msg.color === 'string' ? msg.color : '#a78bfa',
+    pos: { x: Number(pos.x), y: Number(pos.y), z: Number(pos.z) },
+    heading: Number(msg.heading) || 0,
+    moving: !!msg.moving,
+    updatedAt: Date.now(),
+  });
+}
+
 function enterSurfaceMode() {
   if (!joined || !surface || surface.active) return;
   cancelFocus();
@@ -2384,6 +2434,8 @@ window.__ICOSA__ = {
   guide: () => safeCall(ui, 'showGuide'),
   surface: () => enterSurfaceMode(),
   surfaceMode: () => (surface ? { active: surface.active, phase: surface.phase } : null),
+  surfaceDebug: () => (surface ? surface.debug() : null),
+  surfacePeers: () => [...surfacePeers.values()],
   projectFace: (label) => {
     const node = world.get(label);
     if (!node) return null;
