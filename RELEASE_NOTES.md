@@ -1,5 +1,36 @@
 # NARIMATO — Release Notes
 
+## v3.26.0 — “Green Means Go” (2026-11-18)
+
+### Added / fixed
+
+- **Surface information restored.** A **WHAT SHE NEEDS** panel lists every remaining refit item,
+  owned/required counts, and RARE markers. The planet name and lap target are visible again.
+- **Clear surface affordances:**
+  - **GREEN triangle** = this pilot can harvest/charge it now.
+  - **RED triangle** = locked to this pilot, already depleted at max depth, or otherwise unavailable.
+- **Ship harvest effects:** on a resource hit or auto-harvest scan, the surface shows a triangular
+  tractor cone from the five-tetra ship, a ship silhouette above, triangular resource particles and
+  a floating `+value RESOURCE` label.
+- Surface remains live-cell-only: no generative geography, no terrain sampling.
+- Peer surface pilots/positions and the 60-second lap remain.
+
+### Verification
+
+- Surface mission panel shows the active refit resources and counts.
+- Green/red semantic colours verified in browser.
+- Harvest beam/ship effect wired to the authoritative resource event and auto-harvest.
+- Surface still renders only triangles.
+- **95/95 tests**, Chromium + WebKit UI audits clean, axe clean.
+
+### Release artifact
+
+- Source tag: `v3.26.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.26.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.25.0 — “Live Cells” (2026-11-18)
 
 ### Changed

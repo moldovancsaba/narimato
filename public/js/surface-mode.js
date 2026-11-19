@@ -9,6 +9,7 @@
 
 import { drawTetraShip } from './shared/tetra-ship.js';
 import { childTriangles, faceCentroid } from './shared/geometry.js';
+import { isRareResource } from './shared/mission.js';
 
 const LAP_SECONDS = 60;
 const ANGULAR_SPEED = (Math.PI * 2) / LAP_SECONDS;
@@ -68,6 +69,9 @@ export function createSurfaceMode({
   getPlanet = () => ({ name: 'UNKNOWN WORLD', seed: 0, depth: 2 }),
   getPlayers = () => [],
   getMyPlayerId = () => null,
+  getMyIndex = () => -1,
+  getMaxDepth = () => 8,
+  getMission = () => null,
   onHarvest = () => {},
   onExit = () => {},
   getPeers = () => [],
@@ -95,6 +99,9 @@ export function createSurfaceMode({
   let lastPoseAt = 0;
   let shown = false;
   let debug = {};
+  let effects = [];
+  let missionSignature = '';
+  let missionTick = 0;
   const SURFACE_RADIUS = 0.44;
   const SURFACE_SUBDIV = 2;
   const visualCache = new Map();
@@ -121,6 +128,11 @@ export function createSurfaceMode({
         <span>RUN <b id="surface-run">0.0</b></span>
         <span>AUTO <b id="surface-auto">—</b></span>
       </div>
+      <aside class="surface-mission" aria-label="What the ship needs">
+        <h3>WHAT SHE NEEDS</h3>
+        <ul id="surface-mission-list"></ul>
+        <p class="surface-legend"><i class="is-open"></i> GREEN = HARVEST <i class="is-red"></i> RED = LOCKED / EMPTY</p>
+      </aside>
       <div class="surface-hint" id="surface-hint">WASD / ARROWS RUN · A / D TURN · SHIFT SPRINT · ENTER TRIANGLES TO HARVEST</div>
       <div class="surface-pads" aria-label="Surface movement controls">
         <button type="button" data-surface-hold="KeyW" aria-label="Run forward">▲</button>
@@ -194,13 +206,15 @@ export function createSurfaceMode({
     if (harvestCheck < 140) return;
     harvestCheck = 0;
     const cell = findCell(pos);
-    if (!cell) return;
+    if (!cell || !canHarvestNode(cell)) return;
     // Entering a triangle starts harvesting; staying in it keeps charging it on
     // the authoritative server until it breaks or finds ore.
     if (cell.label !== lastHarvestLabel) {
       lastHarvestLabel = cell.label;
       setText('surface-auto', `${cell.label}`);
       harvestTimer = 0;
+      effects.push({ start: performance.now(), color: '#9efcff', name: '', value: 0, beamOnly: true });
+      effects = effects.slice(-4);
       onHarvest(cell.label);
     } else {
       harvestTimer += dt;
@@ -275,15 +289,116 @@ export function createSurfaceMode({
     return out;
   }
 
+  function canHarvestNode(node) {
+    if (!node) return false;
+    const myIndex = getMyIndex();
+    if (node.ownerIndex === myIndex && node.lastClickIndex === myIndex) return false;
+    if (node.depth >= getMaxDepth() && node.resourceId) return false;
+    return true;
+  }
+
   function leafColor(node) {
-    const players = getPlayers();
-    const owner = Number.isInteger(node.ownerIndex) && node.ownerIndex >= 0 ? players[node.ownerIndex] : null;
-    const myId = getMyPlayerId();
-    const mine = !!(owner && myId && owner.id === myId);
-    if (node.resourceId) return { fill: mine ? '#d9ff3f' : '#ffe066', edge: '#f4ff9a' };
-    if (node.ownerIndex === -1) return { fill: '#143744', edge: '#2dd8ff' };
-    if (mine) return { fill: '#2546c8', edge: '#9efcff' };
-    return { fill: owner && owner.color ? owner.color : '#7b4fa8', edge: '#c9a6ff' };
+    const can = canHarvestNode(node);
+    if (!can) return { fill: '#ff2d55', edge: '#ffafbd', open: false };
+    return { fill: '#20d87a', edge: '#b6ffd0', open: true };
+  }
+
+
+  function updateMissionPanel(now) {
+    if (now - missionTick < 400) return;
+    missionTick = now;
+    let info = null;
+    try { info = getMission(); } catch { info = null; }
+    const progress = info && info.progress ? info.progress : null;
+    const planet = info && info.planet ? info.planet : planet;
+    const worldName = planet.name || planet.planetName || 'UNKNOWN WORLD';
+    setText('surface-planet', `${worldName} // LAP ${LAP_SECONDS}s`);
+    const signature = progress
+      ? `${progress.ready}:${progress.objectives.map((o) => o.items.map((i) => `${i.resourceId}:${i.have}:${i.need}`).join(',')).join('|')}`
+      : 'offline';
+    if (signature === missionSignature) return;
+    missionSignature = signature;
+    const list = doc && doc.getElementById('surface-mission-list');
+    if (!list) return;
+    if (!progress) {
+      list.innerHTML = '<li>MISSION DATA OFFLINE</li>';
+      return;
+    }
+    list.innerHTML = progress.objectives
+      .flatMap((objective) => objective.items.map((item) => {
+        const rare = isRareResource(item.resourceId) ? ' <em>RARE</em>' : '';
+        const cls = item.done ? 'is-done' : '';
+        return `<li class="${cls}"><span>${objective.name.slice(0, 4)}</span><b>${item.name}</b><i>${item.have}/${item.need}</i>${rare}</li>`;
+      }))
+      .join('') + (progress.ready ? '<li class="is-ready">READY TO FLY</li>' : '');
+  }
+
+  function harvestEffect(effect = {}) {
+    if (!active) return;
+    effects.push({
+      start: performance.now(),
+      color: (effect.resource && effect.resource.color) || '#ffe066',
+      name: (effect.resource && effect.resource.name) || '',
+      value: Number(effect.value) || 0,
+    });
+    effects = effects.slice(-4);
+  }
+
+  function drawHarvestEffects(w, h, now) {
+    if (!effects.length) return;
+    effects = effects.filter((effect) => now - effect.start < 1600);
+    for (const effect of effects) {
+      const k = clamp01((now - effect.start) / 1600);
+      const x = w / 2;
+      const y = h * 0.69;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      // Tractor cone from the ship above to the harvested triangle.
+      ctx.fillStyle = `rgba(120,255,190,${0.18 * (1 - k)})`;
+      ctx.beginPath();
+      ctx.moveTo(x - 18, 0);
+      ctx.lineTo(x + 18, 0);
+      ctx.lineTo(x + 90, y);
+      ctx.lineTo(x - 90, y);
+      ctx.closePath();
+      ctx.fill();
+      for (let i = 0; i < 22; i += 1) {
+        const a = (i / 22) * Math.PI * 2 + k * 2;
+        const r = 18 + k * 130 + (i % 4) * 9;
+        ctx.fillStyle = effect.color;
+        ctx.globalAlpha = 0.8 * (1 - k);
+        ctx.beginPath();
+        ctx.moveTo(x + Math.cos(a) * r, y + Math.sin(a) * r * 0.45 - 20);
+        ctx.lineTo(x + Math.cos(a + 0.18) * (r + 9), y + Math.sin(a + 0.18) * (r + 9) * 0.45 - 20);
+        ctx.lineTo(x + Math.cos(a - 0.18) * (r + 9), y + Math.sin(a - 0.18) * (r + 9) * 0.45 - 20);
+        ctx.closePath();
+        ctx.fill();
+      }
+      if (effect.value > 0) {
+        ctx.globalAlpha = 0.9 * (1 - k);
+        ctx.fillStyle = effect.color;
+        ctx.font = '700 14px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(`+${effect.value} ${effect.name}`, x, y - 52 - k * 42);
+      }
+      ctx.restore();
+      // The ship is the source of the beam; show its silhouette above.
+      drawTetraShip(ctx, {
+        x: w / 2,
+        y: h * 0.07 + Math.sin(k * Math.PI) * 8,
+        scale: 0.55,
+        yaw: 0.6 + k,
+        pitch: -0.4,
+        hull: '#e8fbff',
+        fin: effect.color,
+        edge: '#bffaff',
+        glow: effect.color,
+        alpha: 0.55 * (1 - k),
+        engine: false,
+        shadow: false,
+      });
+    }
+    ctx.globalAlpha = 1;
   }
 
   function drawTerrain(w, h, now) {
@@ -371,6 +486,7 @@ export function createSurfaceMode({
       });
     }
     if (phase === 'walking' || exiting) {
+      updateMissionPanel(now);
       drawAvatar(w, h, now, null);
       for (const peer of getPeers()) {
         if (!peer || !peer.pos || peer.playerId === getMyPlayerId()) continue;
@@ -381,6 +497,7 @@ export function createSurfaceMode({
         drawPeerAvatar(w, h, now, anchor, peer);
       }
     }
+    drawHarvestEffects(w, h, now);
     if (exiting) {
       const k = clamp01((performance.now() - leaveStart) / 1600);
       drawTetraShip(ctx, {
@@ -692,5 +809,6 @@ export function createSurfaceMode({
     get phase() { return phase; },
     debug: () => debug,
     peers: () => getPeers().length,
+    harvestEffect,
   };
 }

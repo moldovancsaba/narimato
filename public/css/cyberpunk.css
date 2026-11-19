@@ -6948,3 +6948,48 @@ body.is-guide .hud { pointer-events: none; }
   .surface-hint { bottom: max(108px, calc(env(safe-area-inset-bottom) + 108px)); max-width: 66vw; font-size: 8px; }
   .surface-stats { top: auto; bottom: max(18px, env(safe-area-inset-bottom)); left: max(12px, env(safe-area-inset-left)); }
 }
+
+/* Surface mission info + harvest colour legend */
+.surface-mission {
+  position: absolute;
+  top: max(94px, calc(env(safe-area-inset-top) + 94px));
+  left: max(16px, env(safe-area-inset-left));
+  width: min(260px, 40vw);
+  padding: 10px 12px;
+  border: 1px solid rgba(122,244,255,0.24);
+  background: rgba(4,8,18,0.76);
+  color: rgba(220,245,255,0.82);
+  font: 500 9px/1.45 var(--font-mono, monospace);
+  letter-spacing: 0.03em;
+  pointer-events: none;
+}
+.surface-mission h3 {
+  margin: 0 0 7px;
+  color: #8ef9ff;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+.surface-mission ul { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.surface-mission li {
+  display: grid;
+  grid-template-columns: 34px minmax(0,1fr) auto;
+  gap: 4px;
+  align-items: baseline;
+  padding-bottom: 3px;
+  border-bottom: 1px solid rgba(122,244,255,0.08);
+}
+.surface-mission li span { color: rgba(150,220,240,0.55); font-size: 7px; }
+.surface-mission li b { color: #e9fbff; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.surface-mission li i { color: var(--acid, #d4ff3f); font-style: normal; }
+.surface-mission li em { color: #ffb347; font-style: normal; font-size: 7px; }
+.surface-mission li.is-done b { color: #7dffb0; }
+.surface-mission li.is-done i { color: #7dffb0; }
+.surface-mission li.is-ready { display: block; color: #d4ff3f; font-weight: 700; }
+.surface-legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; color: rgba(210,235,245,0.55); font-size: 7px; letter-spacing: 0.06em; align-items: center; }
+.surface-legend i { width: 8px; height: 8px; display: inline-block; }
+.surface-legend i.is-open { background: #20d87a; }
+.surface-legend i.is-red { background: #ff2d55; }
+@media (max-width: 760px), (pointer: coarse) {
+  .surface-mission { top: max(84px, calc(env(safe-area-inset-top) + 84px)); width: min(230px, 56vw); }
+}

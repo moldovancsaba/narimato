@@ -346,6 +346,16 @@ surface = createSurfaceMode({
   },
   getPlayers: () => (state && Array.isArray(state.players) ? state.players : []),
   getMyPlayerId: () => (myPlayer ? myPlayer.id : null),
+  getMyIndex: () => myIndex,
+  getMaxDepth: () => maxDepth(),
+  getMission: () => {
+    const player = myStatePlayer();
+    const planet = planetInfoFromState();
+    return {
+      planet,
+      progress: missionProgress((player && player.oreCounts) || {}, planet.mission),
+    };
+  },
   getPeers: () => [...surfacePeers.values()].filter((peer) => Date.now() - (peer.updatedAt || 0) < 5000),
   onPose: (pose) => sendSurfacePose(pose),
   onHarvest: (label) => {
@@ -945,6 +955,7 @@ function applyDiscoveredResource(label, resource, playerId) {
     const tag = playerId && state ? (state.players.find((p) => p.id === playerId) || {}).tag : null;
     safeCall(ui, 'toast', `${tag || 'OPERATOR'} STRUCK ${resource.name} // +${value} CR`, 'info');
   }
+  if (surface && surface.active) safeCall(surface, 'harvestEffect', { resource, value, label });
   if (hoveredLabel === label) safeCall(ui, 'setHoverFace', faceInfo(label));
 }
 
@@ -2436,6 +2447,7 @@ window.__ICOSA__ = {
   surfaceMode: () => (surface ? { active: surface.active, phase: surface.phase } : null),
   surfaceDebug: () => (surface ? surface.debug() : null),
   surfacePeers: () => [...surfacePeers.values()],
+  surfaceEffect: (name = 'ORE', value = 90, color = '#ffd166') => safeCall(surface, 'harvestEffect', { resource: { name, color }, value }),
   projectFace: (label) => {
     const node = world.get(label);
     if (!node) return null;
