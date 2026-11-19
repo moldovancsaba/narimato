@@ -123,7 +123,10 @@ resets its crust and releases new resources. The game never ends.
 - **Surface mode** — scroll past the deepest zoom to land the ship, then run a tiny planet in
   third person. One lap is **60 seconds**. The view draws only live cell triangles (no generated
   geography) over an opaque low-poly planet shell, so the far side never shows through. Large
-  cells are adaptively subdivided along the sphere into small arc triangles.
+  cells are adaptively subdivided along the sphere into small arc triangles. Running is seamless
+  across both poles; the heading is parallel-transported instead of rebuilt from east/north.
+  Surface entry happens after the fourth zoom rung, the orbital HUD is hidden, and every online
+  pilot/robot is drawn walking the same surface with the same avatar system.
   **GREEN** triangles can be harvested, **RED** means locked/empty. The **WHAT SHE NEEDS** panel
   lists the remaining refit parts. A wider footprint harvests every cell touched by the avatar’s
   feet, and harvests show a ship tractor beam, particles and resource value. Press **RETURN TO
@@ -225,5 +228,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.28.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.30.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.

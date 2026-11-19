@@ -32,6 +32,32 @@ const add = (a, b) => ({ x: a.x + b.x, y: a.y + b.y, z: a.z + b.z });
 const mul = (a, s) => ({ x: a.x * s, y: a.y * s, z: a.z * s });
 const sub = (a, b) => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
 
+/** Project a vector onto the tangent plane at `up` and normalize it. */
+export function tangentAt(up, vector) {
+  const u = norm(up);
+  const d = dot(vector, u);
+  return norm(sub(vector, mul(u, d)));
+}
+
+/** Rotate a tangent vector around the local surface normal. */
+export function turnSurface(forward, up, angle) {
+  const f = tangentAt(up, forward);
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  return tangentAt(up, add(mul(f, cos), mul(cross(up, f), sin)));
+}
+
+/** Advance across the sphere and parallel-transport the heading tangent. */
+export function advanceSurface(up, forward, step) {
+  const u = norm(up);
+  const f = tangentAt(u, forward);
+  const cos = Math.cos(step);
+  const sin = Math.sin(step);
+  const nextUp = norm(add(mul(u, cos), mul(f, sin)));
+  const nextForward = tangentAt(nextUp, add(mul(f, cos), mul(u, -sin)));
+  return { up: nextUp, forward: nextForward };
+}
+
 function tangentBasis(p) {
   let east = cross(WORLD_UP, p);
   if (Math.hypot(east.x, east.y, east.z) < 0.02) east = cross({ x: 1, y: 0, z: 0 }, p);
@@ -88,7 +114,8 @@ export function createSurfaceMode({
   let startedAt = 0;
   let lastFrame = 0;
   let pos = { x: 0, y: 0, z: 1 };
-  let heading = Math.PI / 2; // start running east along the equator
+  let heading = Math.PI / 2; // display bearing; movement uses the tangent vector below
+  let headingVec = { x: 1, y: 0, z: 0 };
   let travel = 0;
   let harvestTimer = 0;
   let harvestCheck = 0;
@@ -204,8 +231,7 @@ export function createSurfaceMode({
   }
 
   function cellsUnderFoot() {
-    const basis = tangentBasis(pos);
-    const fwd = add(mul(basis.north, Math.cos(heading)), mul(basis.east, Math.sin(heading)));
+    const fwd = headingVec;
     const right = norm(cross(fwd, pos));
     const samples = [[0, 0]];
     for (let i = 0; i < 8; i += 1) {
@@ -263,21 +289,22 @@ export function createSurfaceMode({
     const left = keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0;
     const right = keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0;
     const turn = (right - left) * 1.7 * dtSec;
-    heading += turn;
+    if (turn) headingVec = turnSurface(headingVec, pos, turn);
     const motion = forward - backward;
     if (motion) {
       const sprint = keys.has('ShiftLeft') || keys.has('ShiftRight') ? 1.65 : 1;
-      heading += 0;
       const step = ANGULAR_SPEED * motion * sprint * dtSec;
-      const basis = tangentBasis(pos);
-      const fwd = add(mul(basis.north, Math.cos(heading)), mul(basis.east, Math.sin(heading)));
-      pos = norm(add(mul(pos, Math.cos(step)), mul(fwd, Math.sin(step))));
+      const moved = advanceSurface(pos, headingVec, step);
+      pos = moved.up;
+      headingVec = moved.forward;
       travel += Math.abs(step);
     }
     harvestTick(dt);
     const nowMs = performance.now();
     if (nowMs - lastPoseAt > 110) {
       lastPoseAt = nowMs;
+      const basis = tangentBasis(pos);
+      heading = Math.atan2(dot(headingVec, basis.east), dot(headingVec, basis.north));
       onPose({
         pos: { ...pos },
         heading,
@@ -439,6 +466,22 @@ export function createSurfaceMode({
     ctx.globalAlpha = 1;
   }
 
+  function virtualPeerPosition(peer, now) {
+    const id = String(peer.playerId || peer.tag || 'PILOT');
+    let hash = 2166136261;
+    for (let i = 0; i < id.length; i += 1) {
+      hash ^= id.charCodeAt(i);
+      hash = Math.imul(hash, 16777619);
+    }
+    hash >>>= 0;
+    const fwd = headingVec;
+    const right = norm(cross(fwd, pos));
+    const radius = 0.07 + ((hash >>> 8) % 80) / 1000;
+    const angle = now * (0.00008 + (hash % 7) * 0.00002) + (hash % 360) * (Math.PI / 180);
+    const tangent = add(mul(right, Math.cos(angle) * radius), mul(fwd, Math.sin(angle) * radius));
+    return norm(add(pos, tangent));
+  }
+
   function drawTerrain(w, h, now) {
     // Live cell mesh only: no generated geography, no terrain sampling. Every
     // triangle is an actual active cell from the game world.
@@ -458,8 +501,7 @@ export function createSurfaceMode({
     ctx.globalAlpha = 1;
 
     const up = pos;
-    const basis = tangentBasis(pos);
-    const fwd = add(mul(basis.north, Math.cos(heading)), mul(basis.east, Math.sin(heading)));
+    const fwd = headingVec;
     const playerPoint = mul(pos, SURFACE_RADIUS);
     const cam = add(playerPoint, add(mul(up, 0.035), mul(fwd, -0.055)));
     const target = add(playerPoint, add(mul(fwd, 0.18), mul(up, -0.065)));
@@ -556,12 +598,18 @@ export function createSurfaceMode({
       updateMissionPanel(now);
       drawAvatar(w, h, now, null);
       for (const peer of getPeers()) {
-        if (!peer || !peer.pos || peer.playerId === getMyPlayerId()) continue;
-        const wp = mul(peer.pos, SURFACE_RADIUS);
-        if (dot(peer.pos, pos) < -0.2) continue;
+        if (!peer || peer.playerId === getMyPlayerId()) continue;
+        const peerPos = peer.pos && Number.isFinite(peer.pos.x) ? peer.pos : virtualPeerPosition(peer, now);
+        if (!peerPos) continue;
+        if (dot(peerPos, pos) < -0.2) continue;
+        const wp = mul(peerPos, SURFACE_RADIUS);
         const anchor = projectPoint(wp, cam, view, w, h);
         if (!anchor) continue;
-        drawPeerAvatar(w, h, now, anchor, peer);
+        drawAvatar(w, h, now, anchor, {
+          scale: 0.85,
+          tint: peer.color || '#a78bfa',
+          label: peer.tag || 'PILOT',
+        });
       }
     }
     drawHarvestEffects(w, h, now);
@@ -580,60 +628,17 @@ export function createSurfaceMode({
   }
 
 
-  function drawPeerAvatar(w, h, now, anchor, peer) {
-    const tint = peer.color || '#a78bfa';
-    const x = anchor.x;
-    const y = anchor.y;
-    const scale = 0.9;
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.scale(scale, scale);
-    ctx.globalAlpha = 0.9;
-    ctx.strokeStyle = '#dffcff';
-    ctx.lineWidth = 1.1;
-    ctx.fillStyle = tint;
-    ctx.beginPath();
-    ctx.moveTo(0, -48);
-    ctx.lineTo(12, -28);
-    ctx.lineTo(-12, -28);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(0, -26);
-    ctx.lineTo(16, 4);
-    ctx.lineTo(0, 22);
-    ctx.lineTo(-16, 4);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    for (const side of [-1, 1]) {
-      ctx.beginPath();
-      ctx.moveTo(side * 5, 16);
-      ctx.lineTo(side * 19, 42);
-      ctx.lineTo(side * 7, 44);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-    }
-    ctx.globalAlpha = 0.95;
-    ctx.fillStyle = '#e9ffff';
-    ctx.font = '8px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText(String(peer.tag || 'PILOT').slice(0, 12), 0, -58);
-    ctx.restore();
-  }
-
-  function drawAvatar(w, h, now, anchor = null) {
+  function drawAvatar(w, h, now, anchor = null, options = {}) {
     const bob = Math.sin(now / 170) * 2.5;
     const x = anchor ? anchor.x : w / 2;
     const y = (anchor ? anchor.y : h * 0.72) + bob;
-    const scale = 1.45;
+    const scale = options.scale || 1.45;
+    const tint = options.tint || null;
     const stride = Math.sin(now / 150) * 0.45;
     const moving = keys.has('KeyW') || keys.has('KeyS') || keys.has('ArrowUp') || keys.has('ArrowDown');
     const swing = moving ? stride : 0;
-    const armor = '#2f4f9e';
-    const armorLight = '#6a8dff';
+    const armor = tint || '#2f4f9e';
+    const armorLight = tint ? '#c9b8ff' : '#6a8dff';
     const trim = '#9efcff';
     const visor = '#d4ff3f';
     ctx.save();
@@ -773,6 +778,13 @@ export function createSurfaceMode({
     ctx.lineTo(-7, -11);
     ctx.closePath();
     ctx.fill();
+    if (options.label) {
+      ctx.scale(1 / scale, 1 / scale);
+      ctx.fillStyle = '#e9ffff';
+      ctx.font = '8px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(String(options.label).slice(0, 12), 0, -102);
+    }
     ctx.restore();
   }
 
@@ -815,6 +827,8 @@ export function createSurfaceMode({
     };
     pos = norm(getStartPoint() || { x: 0, y: 0, z: 1 });
     heading = Math.PI / 2;
+    const startBasis = tangentBasis(pos);
+    headingVec = tangentAt(pos, startBasis.east);
     travel = 0;
     lastHarvestLabel = null;
     harvestTimer = 0;

@@ -6993,3 +6993,14 @@ body.is-guide .hud { pointer-events: none; }
 @media (max-width: 760px), (pointer: coarse) {
   .surface-mission { top: max(84px, calc(env(safe-area-inset-top) + 84px)); width: min(230px, 56vw); }
 }
+
+/* Surface mode owns the screen; orbital HUD must never bleed through. */
+body.is-surface > *:not(#surface-overlay) {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+body.is-surface #surface-overlay,
+body.is-surface #surface-overlay * {
+  visibility: visible !important;
+}
+body.is-surface #surface-overlay { pointer-events: auto !important; }

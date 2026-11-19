@@ -356,7 +356,14 @@ surface = createSurfaceMode({
       progress: missionProgress((player && player.oreCounts) || {}, planet.mission),
     };
   },
-  getPeers: () => [...surfacePeers.values()].filter((peer) => Date.now() - (peer.updatedAt || 0) < 5000),
+  getPeers: () => {
+    const synced = [...surfacePeers.values()].filter((peer) => Date.now() - (peer.updatedAt || 0) < 5000);
+    const ids = new Set(synced.map((peer) => peer.playerId));
+    const others = (state && Array.isArray(state.players) ? state.players : [])
+      .filter((player) => player && player.online && player.id !== (myPlayer && myPlayer.id) && !ids.has(player.id))
+      .map((player) => ({ playerId: player.id, tag: player.tag, color: player.color, virtual: true }));
+    return [...synced, ...others];
+  },
   onPose: (pose) => sendSurfacePose(pose),
   onHarvest: (label) => {
     if (!joined || !label) return;
@@ -1774,7 +1781,7 @@ function refreshHoverFromPointer() {
 
 function updateZoomUi() {
   // Approximate visible depth from zoom (avoids picking the whole leaf set 4×/s).
-  const depth = clamp(Math.round(Math.log2(Math.max(1, camera.zoom))), 0, maxDepth());
+  const depth = clamp(Math.round(Math.log2(Math.max(1, camera.zoom))), 0, Math.max(maxDepth(), SURFACE_ENTER_LEVEL));
   safeCall(ui, 'setZoom', camera.zoom, depth);
 }
 
@@ -1800,12 +1807,18 @@ function maxZoomLevel() {
   return Math.max(0, Math.min(12, maxDepth()));
 }
 
+/** Surface landing happens after the fourth zoom rung (D0..D3), not maxDepth. */
+const SURFACE_ENTER_LEVEL = 3;
+function maxOrbitZoomLevel() {
+  return Math.max(maxZoomLevel(), SURFACE_ENTER_LEVEL);
+}
+
 function zoomForLevel(level) {
   return clamp(2 ** clamp(Math.round(Number(level) || 0), 0, 12), 0.4, MAX_ZOOM);
 }
 
 function zoomLevelForZoom(value) {
-  return clamp(Math.round(Math.log2(Math.max(1, Number(value) || 1))), 0, maxZoomLevel());
+  return clamp(Math.round(Math.log2(Math.max(1, Number(value) || 1))), 0, maxOrbitZoomLevel());
 }
 
 function startZoom(target, duration = 260) {
@@ -1833,13 +1846,13 @@ function snapZoomToLevel() {
 function zoomByNotch(direction, magnitude = 1) {
   const current = zoomTarget === null ? camera.zoom : zoomTarget;
   const level = zoomLevelForZoom(current);
-  if (direction > 0 && level >= maxZoomLevel()) {
+  if (direction > 0 && level >= SURFACE_ENTER_LEVEL) {
     enterSurfaceMode();
     return;
   }
-  const next = clamp(level + (direction > 0 ? 1 : -1), 0, maxZoomLevel());
-  if (direction > 0 && next >= maxZoomLevel()) {
-    safeCall(ui, 'toast', 'DEEPEST ZOOM // SCROLL AGAIN TO LAND ON THE SURFACE', 'info');
+  const next = clamp(level + (direction > 0 ? 1 : -1), 0, maxOrbitZoomLevel());
+  if (direction > 0 && next >= SURFACE_ENTER_LEVEL) {
+    safeCall(ui, 'toast', 'FOURTH ZOOM LEVEL // SCROLL AGAIN TO LAND ON THE SURFACE', 'info');
   }
   startZoom(zoomForLevel(next), 240 + 40 * clamp(magnitude, 0, 2));
   lastInteraction = now();
@@ -1984,7 +1997,7 @@ function bindCanvasInput() {
       const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
       if (pinchDist > 0 && dist > 0) {
         const base = zoomTarget === null ? camera.zoom : zoomTarget;
-        if (dist > pinchDist * 1.25 && zoomLevelForZoom(base) >= maxZoomLevel()) {
+        if (dist > pinchDist * 1.25 && zoomLevelForZoom(base) >= SURFACE_ENTER_LEVEL) {
           enterSurfaceMode();
           return;
         }

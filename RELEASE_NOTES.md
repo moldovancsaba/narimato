@@ -1,5 +1,36 @@
 # NARIMATO — Release Notes
 
+## v3.30.0 — “Surface Discipline” (2026-11-18)
+
+### Fixed
+
+- **Seamless pole crossing on the surface.** Movement now carries a world-space tangent heading
+  and **parallel-transports** it across the sphere instead of rebuilding east/north at each step.
+  Turning uses local-normal rotation; crossing a pole no longer stops, flips or snaps the view.
+- **Orbital HUD completely hidden in surface mode.** The surface overlay now owns the screen; no
+  panels, score, dock, status buttons or orbital HUD can bleed through.
+- **Every online pilot/robot walks the surface.** Real surface pilots use synced positions; other
+  online pilots/robots are drawn with deterministic surface routes and the same detailed avatar
+  system, colour and callsign.
+- **Surface entry after the fourth zoom rung** (D0→D3), not at the planet’s max depth.
+- Green/red affordances, mission panel, footprint harvesting, ship effects, opaque shell,
+  spherical arcs and helmet retained.
+
+### Verification
+
+- Pole-crossing unit tests: 30 steps remain normalized/tangent; repeated turns stay tangent.
+- Browser: HUD computed hidden in surface mode; fourth zoom notch enters surface.
+- Browser: online robots/pilots render as walking avatars on the surface.
+- **97/97 tests**, Chromium + WebKit UI audits clean, axe clean.
+
+### Release artifact
+
+- Source tag: `v3.30.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.30.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.28.0 — “Spherical Arcs” (2026-11-18)
 
 ### Fixed
