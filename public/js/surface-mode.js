@@ -11,6 +11,7 @@ import { drawTetraShip } from './shared/tetra-ship.js';
 import { childTriangles, faceCentroid, getMesh } from './shared/geometry.js';
 import { isRareResource } from './shared/mission.js';
 import { drawHumanoid3D } from './shared/humanoid-3d.js';
+import { canHarvestCell } from './shared/harvest.js';
 
 const LAP_SECONDS = 60;
 const ANGULAR_SPEED = (Math.PI * 2) / LAP_SECONDS;
@@ -133,6 +134,7 @@ export function createSurfaceMode({
   let debug = {};
   let effects = [];
   let mineEffects = [];
+  let mineTotal = 0;
   let missionSignature = '';
   let missionTick = 0;
   let targetTick = 0;
@@ -558,6 +560,8 @@ export function createSurfaceMode({
     const can = canHarvestNode(cell);
     el.textContent = `LAP ${(travel / (Math.PI * 2)).toFixed(2)} // TARGET ${cell.label} // ${can ? 'GREEN // HARVEST' : 'RED // LOCKED'}`;
     el.dataset.state = can ? 'can' : 'locked';
+    debug.targetLabel = cell.label;
+    debug.targetCan = can;
   }
 
   function drawMineEffects(w, h, now, camera) {
@@ -1201,6 +1205,7 @@ export function createSurfaceMode({
         color: msg.color || '#8afcff',
       });
       mineEffects = mineEffects.slice(-12);
+      mineTotal += 1;
       return true;
     },
     /** Relocate the pilot to a known impact cell (emergency supply). */
@@ -1219,6 +1224,7 @@ export function createSurfaceMode({
     pose: () => ({ pos: { ...pos }, forward: { ...headingVec } }),
     debug: () => debug,
     peers: () => getPeers().length,
+    mineCount: () => mineTotal,
     harvestEffect,
   };
 }

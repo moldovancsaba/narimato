@@ -1,6 +1,6 @@
 # NARIMATO — Roadmap & Delivery Audit
 
-**Current version:** `3.46.0`
+**Current version:** `3.47.0`
 **Audit window:** 2026-11-18 → 2026-11-19 (last 24 hours)
 **Live:** https://treasurer-record-flooring-mounting.trycloudflare.com
 
@@ -69,6 +69,7 @@ single release note: if the code and this document disagree, fix one of them.
 | v3.44 | Robot spawn ring around surface pilots; two-client surface acceptance harness |
 | v3.45 | Shared green/red harvest truth + unit test |
 | v3.46 | Robot `surface_mine` event + beam on actual cell; supply camera zoom focus |
+| v3.47 | Browser truth/beam acceptance; cumulative mine counter |
 
 ### Earlier but still active
 

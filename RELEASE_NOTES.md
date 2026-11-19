@@ -1,5 +1,30 @@
 # NARIMATO — Release Notes
 
+## v3.47.0 — “Proof” (2026-11-18)
+
+### Added
+
+- Browser acceptance for green/red truth: the surface target colour is checked against the actual
+  `/api/action` result (`green → 200`).
+- Browser acceptance for robot mining: cumulative authoritative `surface_mine` effects observed
+  (9 in a 6-second run).
+- Fixed missing shared harvest import in the surface module.
+- **106/106 tests.**
+
+### Still open
+
+- Two-client visual beam pass.
+- Full single-renderer/controller parity and final humanoid rig.
+- Orbital supply relocation assertion.
+
+### Release artifact
+
+- Source tag: `v3.47.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.47.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.46.0 — “Visible Riggers” (2026-11-18)
 
 ### Added

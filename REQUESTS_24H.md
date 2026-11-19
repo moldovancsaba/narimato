@@ -1,7 +1,7 @@
 # NARIMATO — 24-Hour Request & Delivery Status (updated)
 
 **Window:** 2026-11-18 → 2026-11-19  
-**Current:** `v3.46.0`  
+**Current:** `v3.47.0`  
 **Engineering contract:** [DELIVERY_TASKS.md](DELIVERY_TASKS.md)
 
 Legend: **Delivered** = working and verified; **Partial** = real work landed but acceptance not
@@ -29,7 +29,7 @@ met; **Open** = not delivered; **Superseded** = changed after a correction.
 | 18 | **One single planet, camera-only change** | **Partial — major step this turn** | The existing `IcosaRenderer` now draws surface mode through `SurfaceCamera`; the separate terrain canvas no longer draws sky/terrain. HUD remains the orbital HUD; surface controls are overlays. Remaining: remove derived visual mesh/controller duplication, full DOM parity, acceptance test. |
 | 19 | **Same HUD/layout/information, 2D→3D only** | **Partial** | Main orbital HUD is visible in surface mode; surface-specific title/mission duplicates are hidden; target/exit/lap are bottom overlays. Need complete DOM parity and no conflicting panels. |
 | 20 | **UI elements must be present (no missing UI)** | Partial | Main HUD visible; target/exit/lap present. Previous stale full-screen surface rectangle removed on exit. Need regression audit at all viewports. |
-| 21 | **All players/robots walk and mine** | **Delivered core** | Robots spawn/route near pilots, publish pose, click under pose, emit `surface_mine`; surface draws the beam on that authoritative cell. |
+| 21 | **All players/robots walk and mine** | **Delivered core + acceptance** | Server routes/poses/clicks + `surface_mine`; surface beam on actual cell; browser acceptance sees 9 authoritative mine effects in 6 s. |
 | 22 | **Robots own paths, turns, mining** | **Partial — server routes/click mapping landed** | Server route/turn + cell-under-pose clicks implemented; client visual mapping and two-client acceptance pending. |
 | 23 | **Triangles change while walking** | Partial | Live mesh refreshes on cell/break/click; footprint harvesting faster; authoritative-only visual mesh acceptance pending |
 | 24 | Surface uses live cells, no generated geography | Partial | Renderer draws current cells; derived visual mesh rebuilt live. D1 removes the last derived layer |
@@ -37,7 +37,7 @@ met; **Open** = not delivered; **Superseded** = changed after a correction.
 | 26 | Surface HUD visible / unclipped | Partial | Main HUD visible; surface target/exit/lap bottom overlays; full viewport audit pending |
 | 27 | Surface entry after 4th zoom | Delivered | v3.30/v3.33 |
 | 28 | Seamless pole crossing | Partial | Math tests pass; visual visibility still reported; D7 |
-| 29 | Green/red harvest semantics | **Delivered** | Shared `canHarvestCell` truth used by surface target/HUD and unit-tested; renderer lastClick synced; target-only rule enforced. |
+| 29 | Green/red harvest semantics | **Delivered + browser-verified** | Shared `canHarvestCell` truth; browser acceptance checks target colour against the actual `/api/action` result and sees green→200. |
 | 30 | Resource pins only where mineable | Delivered | Target/supply only; hidden resources intentionally unexposed |
 | 31 | Exit to farthest orbit | Delivered | Named `ORBIT_FAR_ZOOM = 0.4`; exit returns there |
 | 32 | Roadmap / README / release notes / code comments | Delivered | ROADMAP, DELIVERY_TASKS, README, RELEASE_NOTES |

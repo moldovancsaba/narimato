@@ -2556,6 +2556,7 @@ window.__ICOSA__ = {
   surface: () => enterSurfaceMode(),
   surfaceMode: () => (surface ? { active: surface.active, phase: surface.phase } : null),
   surfaceDebug: () => (surface ? surface.debug() : null),
+  surfaceMineCount: () => (surface ? surface.mineCount() : 0),
   surfacePeers: () => [...surfacePeers.values()],
   surfaceEffect: (name = 'ORE', value = 90, color = '#ffd166') => safeCall(surface, 'harvestEffect', { resource: { name, color }, value }),
   projectFace: (label) => {
