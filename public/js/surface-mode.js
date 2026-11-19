@@ -132,6 +132,7 @@ export function createSurfaceMode({
   let effects = [];
   let missionSignature = '';
   let missionTick = 0;
+  let targetTick = 0;
   const SURFACE_RADIUS = 0.44;
   const MAX_SURFACE_SUBDIV = 4;
   const FOOTPRINT_RADIUS = 0.028;
@@ -156,6 +157,7 @@ export function createSurfaceMode({
         <h2 id="surface-title" class="surface-title">TOUCHDOWN</h2>
         <p id="surface-planet" class="surface-planet"></p>
         <p id="surface-goal" class="surface-goal" role="status" aria-live="polite"></p>
+        <p id="surface-target" class="surface-target" data-state="idle">TARGET: —</p>
       </header>
       <div class="surface-stats" role="status" aria-live="polite">
         <span>LAP <b>60s</b></span>
@@ -165,7 +167,7 @@ export function createSurfaceMode({
       <aside class="surface-mission" aria-label="What the ship needs">
         <h3>WHAT SHE NEEDS</h3>
         <ul id="surface-mission-list"></ul>
-        <p class="surface-legend"><i class="is-open"></i> GREEN PIN = HARVEST <i class="is-red"></i> RED PIN = LOCKED / EMPTY</p>
+        <p class="surface-legend"><i class="is-open"></i> GREEN TARGET = HARVEST <i class="is-red"></i> RED TARGET = LOCKED</p>
       </aside>
       <div class="surface-hint" id="surface-hint">WASD / ARROWS RUN · A / D TURN · SHIFT SPRINT · ENTER TRIANGLES TO HARVEST</div>
       <div class="surface-pads" aria-label="Surface movement controls">
@@ -366,7 +368,7 @@ export function createSurfaceMode({
     return true;
   }
 
-  function leafColor(node) {
+  function leafColor(node, isTarget = false) {
     const terrain = node.terrain || null;
     const elevation = terrain && Number.isFinite(terrain.elevation) ? terrain.elevation : 0;
     let rgb = { r: 42, g: 92, b: 116 };
@@ -393,7 +395,10 @@ export function createSurfaceMode({
     const can = canHarvestNode(node);
     return {
       fill,
-      edge: 'rgba(218,255,255,0.78)',
+      // Cyan is the normal world edge. Green/red is reserved for the single
+      // target cell under the avatar so terrain/owner colours cannot be
+      // mistaken for the harvest rule.
+      edge: isTarget ? (can ? '#22ff88' : '#ff3355') : 'rgba(218,255,255,0.78)',
       status: can ? '#22ff88' : '#ff3355',
       can,
     };
@@ -511,7 +516,8 @@ export function createSurfaceMode({
     hash >>>= 0;
     // Establish a fixed home once, near the surface entry point. After this the
     // opponent moves relative only to its own home, never relative to the local
-    // player's current position or heading.
+    // player's current position or heading. This is intentionally visual presence:
+    // authoritative robot clicks still come through the server cell stream.
     let home = virtualHomes.get(id);
     if (!home) {
       const basis = tangentBasis(pos);
@@ -538,9 +544,26 @@ export function createSurfaceMode({
     )));
   }
 
+  function updateTargetStatus(now) {
+    if (now - targetTick < 140) return;
+    targetTick = now;
+    const cell = findCell(pos);
+    const el = doc && doc.getElementById('surface-target');
+    if (!el) return;
+    if (!cell) {
+      el.textContent = 'TARGET: VOID';
+      el.dataset.state = 'idle';
+      return;
+    }
+    const can = canHarvestNode(cell);
+    el.textContent = `TARGET ${cell.label} // ${can ? 'GREEN // HARVEST' : 'RED // LOCKED'}`;
+    el.dataset.state = can ? 'can' : 'locked';
+  }
+
   function drawTerrain(w, h, now) {
-    // Live cell mesh only: no generated geography, no terrain sampling. Every
-    // triangle is an actual active cell from the game world.
+    // Live cell mesh only. Fills use each active cell's cached terrain/elevation
+    // and owner metadata (the same data orbit sees); no global terrain projection or
+    // generated map is created. Every visible triangle belongs to an active cell.
     const sky = ctx.createLinearGradient(0, 0, 0, h);
     sky.addColorStop(0, '#050414');
     sky.addColorStop(0.55, '#17103a');
@@ -601,11 +624,12 @@ export function createSurfaceMode({
     const threshold = 4;
     const outlines = [];
     const pins = [];
+    const under = findCell(pos);
     for (const node of leaves) {
       if (!node || !node.a || !node.b || !node.c) continue;
       const parentCenter = mul(node.centroid, SURFACE_RADIUS);
       if (dot(parentCenter, pos) < 0.05) continue;
-      const colors = leafColor(node);
+      const colors = leafColor(node, under && node.label === under.label);
       const frac = clamp01((node.clicks || 0) / threshold);
       for (const visual of visualTriangles(node)) {
         const center = mul(visual.center, SURFACE_RADIUS);
@@ -628,8 +652,6 @@ export function createSurfaceMode({
         }
       }
       if (boundary.length >= 2) outlines.push({ colors, boundary });
-      const statusAnchor = projectPoint(mul(node.centroid, SURFACE_RADIUS * 1.002), cam, view, w, h);
-      if (statusAnchor) pins.push({ x: statusAnchor.x, y: statusAnchor.y, z: statusAnchor.z, status: colors.status, label: node.label });
       if (node.resourceId) {
         const resource = resourceById(node.resourceId);
         const resourceAnchor = projectPoint(mul(node.centroid, SURFACE_RADIUS * 1.002), cam, view, w, h);
@@ -938,6 +960,7 @@ export function createSurfaceMode({
     const w = window.innerWidth;
     const h = window.innerHeight;
     ctx.clearRect(0, 0, w, h);
+    updateTargetStatus(now);
     drawTerrain(w, h, now);
     if (now - lastHud > 200) {
       lastHud = now;

@@ -121,7 +121,8 @@ resets its crust and releases new resources. The game never ends.
 - **Quick Guide** — a first-run, shareable one-screen card explains what to mine, how to
   mine, where to dig and how to leave; press **GUIDE** or open `?guide=1`.
 - **Surface mode** — scroll past the deepest zoom to land the ship, then run a tiny planet in
-  third person. One lap is **60 seconds**. The view draws only live cell triangles (no generated
+  third person. Same active cells/terrain/owner palette as orbit; only the target cell gets
+  green/red harvest treatment (GREEN TARGET = harvest, RED TARGET = locked). One lap is **60 seconds**. The view draws only live cell triangles (no generated
   geography) over an opaque low-poly planet shell, so the far side never shows through. Large
   cells are adaptively subdivided along the sphere into small arc triangles. Running is seamless
   across both poles; the heading is parallel-transported instead of rebuilt from east/north.
@@ -187,6 +188,13 @@ resets its crust and releases new resources. The game never ends.
 - **Reports & sharing** — 1200×630 session card, shareable URL, all stats persisted.
 - **Zero runtime dependencies**, all UI/audio/visuals generated in code.
 
+## Documentation & roadmap
+
+- [ROADMAP.md](ROADMAP.md) — delivery audit, what was ruined/fixed, open gaps and acceptance criteria.
+- [GUIDE.md](GUIDE.md) — shareable new-pilot guide.
+- [GAMEPLAY.md](GAMEPLAY.md) — controls, missions, surface mode and incidents.
+- [A11Y_CHECKLIST.md](A11Y_CHECKLIST.md) — manual real-device gate.
+
 ## Screenshots
 
 | | |
@@ -234,5 +242,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.34.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.35.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.

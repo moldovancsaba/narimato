@@ -7041,3 +7041,12 @@ body.is-surface { overflow: hidden !important; }
   .surface-exit { bottom: auto !important; top: clamp(8px, 2vh, 18px) !important; left: auto !important; right: max(10px, env(safe-area-inset-right)) !important; transform: none; }
   .surface-stats { bottom: max(10px, env(safe-area-inset-bottom)) !important; top: auto !important; }
 }
+
+.surface-target {
+  margin: 7px 0 0;
+  color: rgba(220,245,255,0.7);
+  font-size: 8px;
+  letter-spacing: 0.1em;
+}
+.surface-target[data-state="can"] { color: #22ff88; }
+.surface-target[data-state="locked"] { color: #ff5577; }

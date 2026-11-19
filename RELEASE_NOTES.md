@@ -1,5 +1,49 @@
 # NARIMATO — Release Notes
 
+## v3.35.0 — “Truth & Colors” (2026-11-18)
+
+### Fixed / documented
+
+- **Harvest colour semantics are now unambiguous.** Terrain/owner fills and cyan edges stay
+  consistent with orbit. Only the **target cell under the avatar** gets green/red treatment:
+  - GREEN TARGET = can harvest now
+  - RED TARGET = locked or depleted
+  - target pin + explicit `TARGET … // GREEN/RED` HUD line
+  - resource/supply pins are separate diamond markers, never status colours.
+- **Roadmap/audit document** added: [ROADMAP.md](ROADMAP.md) records delivered work, regressions,
+  corrections, open gaps and acceptance criteria.
+- **README + release notes audited** against the last 24 hours.
+- **Code comments corrected** where they no longer described the system (world/bot wording,
+  surface colour rules, virtual-opponent reasoning).
+- **Earlier fixes retained:** independent opponent routes, remote mining beams, resource/supply
+  pins, center-safe surface HUD, maximum orbit zoom-out on exit, fourth-rung landing, pole
+  crossing, spherical arcs, opaque shell, terrain/owner fills, footprint harvesting, ship
+  effects, five-tetra ship fleet, incidents, Quick Guide, rare budgets, audio recovery.
+
+### Open gaps (documented, not hidden)
+
+- Surface and orbit still use separate Canvas renderers; same data, not yet literally the same
+  renderer.
+- Robot surface positions/mining are visual presence; authoritative robot clicks still arrive via
+  the server cell stream but are not yet mapped to their surface pose.
+- Hidden resources are intentionally not shown.
+- New-story voice cues, manual real-device accessibility, CDN activation and sharding/peer assets
+  remain open.
+
+### Verification
+
+- **97/97 tests**, Chromium + WebKit UI audits clean, axe clean.
+- Color target HUD/status code comment and rules audited.
+- [ROADMAP.md](ROADMAP.md) is the current source of truth.
+
+### Release artifact
+
+- Source tag: `v3.35.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.35.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.34.0 — “Pins & Riggers” (2026-11-18)
 
 ### Added / fixed
