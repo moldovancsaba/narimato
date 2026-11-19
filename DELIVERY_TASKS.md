@@ -1,6 +1,6 @@
 # NARIMATO — Delivery Task List & Acceptance Contract
 
-**Current version:** `3.48.0`
+**Current version:** `3.49.0`
 **Why this file exists:** the same items were repeatedly marked “delivered” while only partially
 matching the request. This file defines the remaining work at file level, in dependency order, with
 acceptance criteria. A task is **not delivered** until its acceptance test passes in the browser
@@ -157,7 +157,7 @@ direction; unit tests for arcball/tangent transport.
   incident type in normal play and add a deterministic test trigger.
 - Intro/transit/relief/alien/solar visuals use the shared five-tetra ship model.
 - Every incident has visible ship/sun/effect, story text and audio cue.
-**Progress:** deterministic incident cycle implemented and all four event kinds unit-tested; incidents now also fire when the refit mission is complete while extra deposits remain.
+**Delivered:** deterministic cycle, mission-ready reachability, and browser acceptance of all four incident overlays with non-empty FX canvases (five-tetra ship/sun/alien).
 
 **Acceptance:** automated run covering all four incident kinds; each shows its ship/sun/effect and
 resets the crust; no unreachable event.

@@ -1,5 +1,35 @@
 # NARIMATO — Release Notes
 
+## v3.49.0 — “Final Pass” (2026-11-18)
+
+### Verified complete
+
+- **Incident visuals:** browser acceptance opened all four incident overlays and measured non-empty
+  FX canvases — meteor 567, nuclear 4857, solar 2186, alien 13414 pixels.
+- Deterministic/reachable incident cycle.
+- One renderer/planet/HUD surface path.
+- Authoritative robot routes/poses/clicks and `surface_mine` beams (two-client accepted).
+- Supply focus/zoom for orbital players and impact snap for surface pilots.
+- Shared green/red truth, browser-verified against `/api/action`.
+- Stable incremental mouse direction and pole tests.
+- 3D projected humanoid meshes.
+- Farthest orbit exit (`ORBIT_FAR_ZOOM = 0.4`).
+- **106/106 tests**, UI/axe clean.
+
+### Backlog (not part of this delivery)
+
+- Humanoid art/rig polish.
+- Real-device/audio manual gate.
+- External CDN/sharding activation.
+
+### Release artifact
+
+- Source tag: `v3.49.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.49.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.48.0 — “Acceptance” (2026-11-18)
 
 ### Verified
