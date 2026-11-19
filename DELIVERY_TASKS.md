@@ -31,6 +31,8 @@ look/behave like copies. Copying is explicitly not acceptable.
   - the same HUD/mission/players panels with surface-specific controls only.
 - No second terrain generation. No “look-alike” renderer. No duplicated HUD markup.
 
+**Foundation landed:** `SurfaceCamera` (`public/js/shared/surface-camera.js`) and `IcosaRenderer.setSurfaceView()` now render the real active cell mesh through the existing renderer. App/HUD/controller integration is still pending.
+
 **Files:** `public/js/renderer.js`, `public/js/surface-mode.js` (replace with controller),
 `public/js/app.js`, `public/index.html`, CSS.
 **Acceptance:**

@@ -60,6 +60,7 @@ single release note: if the code and this document disagree, fix one of them.
 | v3.36 | Pin cleanup: no pins for already-mined resources; target + known supply only |
 | v3.37 | Overlay hard removal on exit; robot Lissajous paths + faster footprint harvesting; 24h request/status doc |
 | v3.38 | Renderer lastClick lock sync; delivery task contract; docs audit |
+| in progress | D1 foundation: SurfaceCamera + IcosaRenderer surface-view branch + camera tests (app integration pending) |
 
 ### Earlier but still active
 

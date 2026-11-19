@@ -165,6 +165,7 @@ export class IcosaRenderer {
     this.poleLabelsVisible = false;
     this.surface = null;
     this.surfaceSeed = null;
+    this.surfaceView = false;
     this.planetTheme = null;
     this._surfaceCanvas = null;
     this._surfaceCtx = null;
@@ -362,6 +363,11 @@ export class IcosaRenderer {
       };
     });
     this.surface = { seed: next, level, faces, buckets: [...buckets.values()] };
+  }
+
+  /** Use the existing cell/material pipeline from a close surface camera. */
+  setSurfaceView(enabled) {
+    this.surfaceView = !!enabled;
   }
 
   setFaces(faces) {
@@ -731,14 +737,14 @@ export class IcosaRenderer {
     this._drawBackdrop(ctx, W, H);
     this._drawStarfield(ctx, W, H, dt, hasCamera ? camera : null, rm);
     const gridFade = clamp(1 - (zoom - 10) / 10, 0, 1);
-    if (gridFade > 0.01) this._drawFloorGrid(ctx, W, H, cx, rm, gridFade);
+    if (!this.surfaceView && gridFade > 0.01) this._drawFloorGrid(ctx, W, H, cx, rm, gridFade);
 
     // Zoom-aware decoration fades: sphere-scale glow must not wash a deep zoom.
     const haloFade = clamp(1 - (zoom - 2.5) / 4.5, 0, 1);
     const glassFade = clamp(1 - (zoom - 3) / 3, 0, 1);
     const cartoFade = clamp(1 - (zoom - 5) / 6, 0, 1);
 
-    if (haloFade > 0.01) this._drawHalo(ctx, W, H, cx, cy, R, rm, haloFade);
+    if (!this.surfaceView && haloFade > 0.01) this._drawHalo(ctx, W, H, cx, cy, R, rm, haloFade);
 
     this._visCount = 0;
     if (this.faces.length && hasCamera) {
@@ -746,7 +752,7 @@ export class IcosaRenderer {
       this._drawResourceMarkers(ctx);
     }
 
-    if (hasCamera && cartoFade > 0.01) {
+    if (!this.surfaceView && hasCamera && cartoFade > 0.01) {
       this._drawGraticule(ctx, camera, cartoFade);
       this._drawPoles(ctx, camera, cx, cy, cartoFade);
     }
@@ -1378,7 +1384,7 @@ export class IcosaRenderer {
 
     // --- Back hemisphere wireframe (cheap hologram scaffold). --------
     const backFade = clamp(1 - (this._zoom - 6) / 8, 0, 1);
-    if (backFade > 0.02) {
+    if (!this.surfaceView && backFade > 0.02) {
       const backPath = new Path2D();
       let backCount = 0;
       if (nf <= 800) {
@@ -1426,7 +1432,7 @@ export class IcosaRenderer {
     }
 
     // --- Detailed procedural geography underlay. -------------------
-    if (this.surface && this.surface.faces.length) {
+    if (!this.surfaceView && this.surface && this.surface.faces.length) {
       this._drawSurface(ctx, camera, cx, cy, R, W, H);
     }
 
@@ -1434,6 +1440,16 @@ export class IcosaRenderer {
     let vc = 0;
     for (let i = 0; i < nf; i++) {
       const e = faces[i];
+      if (this.surfaceView) {
+        // Surface camera can see cells outside the orbital front cone. Project
+        // all actual cells and let the camera depth clip the far side.
+        if (!this._projectEntry(e, camera, W, H)) continue;
+        let sumZ = 0;
+        for (let k = 0; k < e.n; k += 1) sumZ += e.pz[k];
+        dotZ[i] = sumZ / Math.max(1, e.n);
+        vis[vc++] = i;
+        continue;
+      }
       const c = e.centroid;
       const dotc = c.x * Kx + c.y * Ky + c.z * Kz;
       const ct = e.cosTheta;
@@ -1448,7 +1464,7 @@ export class IcosaRenderer {
 
     // Depth sort (far → near). Leaves tile the sphere, so this is cheap and
     // only fixes edge-glow overdraw order.
-    vis.subarray(0, vc).sort((a, b) => dotZ[a] - dotZ[b]);
+    vis.subarray(0, vc).sort((a, b) => (this.surfaceView ? dotZ[b] - dotZ[a] : dotZ[a] - dotZ[b]));
 
     // --- Fills + edge buckets. --------------------------------------
     const buckets = this._buckets;
@@ -1472,7 +1488,7 @@ export class IcosaRenderer {
       const faceIdx = vis[idx];
       const e = faces[faceIdx];
       const dotc = dotZ[faceIdx];
-      const band = clamp(Math.floor(dotc * 6), 0, 5);
+      const band = this.surfaceView ? clamp(Math.floor((1 - Math.min(1, dotc)) * 5), 0, 5) : clamp(Math.floor(dotc * 6), 0, 5);
 
       let np;
       if (e.allFront) {
