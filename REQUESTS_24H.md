@@ -1,52 +1,57 @@
-# NARIMATO — 24-Hour Request & Delivery Status
+# NARIMATO — 24-Hour Request & Delivery Status (updated)
 
 **Window:** 2026-11-18 → 2026-11-19  
-**Current:** `v3.38.0`  
-**Source of truth for engineering gaps:** [ROADMAP.md](ROADMAP.md)
+**Current:** `v3.39.0`  
+**Engineering contract:** [DELIVERY_TASKS.md](DELIVERY_TASKS.md)
 
-Legend: **Delivered** = shipped and verified; **Partial** = visible/shipped but not the full
-requested behaviour; **Open** = not delivered; **Superseded** = delivered then corrected.
+Legend: **Delivered** = working and verified; **Partial** = real work landed but acceptance not
+met; **Open** = not delivered; **Superseded** = changed after a correction.
 
-| # | Request | Status | Release / notes |
+| # | Request | Status | Current evidence / remaining work |
 |---|---|---|---|
-| 1 | More story, less under-the-hood UI; improve Elephant–Goldfish | Delivered | v3.12; Captain's Log, human labels, incidents; subjective sign-off still yours |
-| 2 | Emergency supply/crashed ship when missing ore for 2 min | Delivered | v3.12/v3.13/v3.19; repeats, 2-minute gate tested |
-| 3 | More rare elements | Delivered | v3.12; guaranteed rare per refit |
-| 4 | Major planet colours | Delivered | v3.12; eight palettes |
-| 5 | Reverse cursor movement | Superseded | v3.13 reverse; v3.21 made mouse direct + arrows inverse |
-| 6 | Smoother/faster cursor navigation | Delivered | v3.13/v3.16; eased arrow travel, Shift boost |
-| 7 | Voice/audio disappears after 1–2 min | Delivered desktop; real-device open | v3.13 watchdog/resume; 2-min desktop check |
-| 8 | Limitless rotation through poles | Delivered | v3.14 quaternion trackball |
-| 9 | Zoom levels with fast bezier steps | Delivered | v3.15; manual-only from v3.20 |
-| 10 | Separate mouse rotation vs cursor travel | Delivered | v3.16; later direct/inverse corrected v3.21 |
-| 11 | Incident explanations (alien/meteor/solar/nuclear) | Delivered | v3.17; story descriptions + Captain's Log |
-| 12 | Key information / shareable help | Delivered | v3.18; GUIDE button, `?guide=1`, GUIDE.md |
-| 13 | Fewer required rare elements on early planets | Delivered | v3.18; early caps |
-| 14 | Supply available to all humans, camera turns to impact | Delivered | v3.19; server broadcast + camera turn |
-| 15 | Five-tetrahedron ship; lands/arrives/departs; solar sun; alien ships | Delivered | v3.23; triangle fleet |
-| 16 | Surface landing + walk on small planet, 60s lap, auto-harvest | Delivered | v3.24 onward |
-| 17 | Surface uses live triangles only, no generated geography | Delivered | v3.25–v3.31; active cells, spherical arcs, opaque shell |
-| 18 | Same planet geography/visual experience as orbit | **Partial** | Same active cells, terrain/owner palette, cyan edges; still a separate surface renderer (ROADMAP P0) |
-| 19 | All players/robots visible walking on surface | **Partial** | Human peers synced; remote robots use independent visual routes/beams; authoritative robot surface positions/mining not mapped (ROADMAP P0) |
-| 20 | Robots should walk their own generated paths, turn, mine | **Partial** | Independent Lissajous routes + mining beams; visual only, not server-authoritative cell targets |
-| 21 | Robots/players mining and triangles changing while walking | **Partial** | Cells update from server events; footprint harvesting speed increased; robot mining is visual, not authoritative surface actions |
-| 22 | Remove orbital UI from surface | Delivered | v3.30/v3.33; surface owns screen |
-| 23 | Surface HUD visible/not clipped | Delivered | v3.33/v3.35; center-safe HUD, central NEED/target lines |
-| 24 | Surface entry after 4th zoom level | Delivered | v3.30/v3.33 |
-| 25 | Seamless movement across poles | Delivered | v3.29/v3.30; parallel transport + tests |
-| 26 | Green/red harvest semantics | Delivered (current) | v3.35/v3.36: only target cell green/red; GREEN TARGET = harvest, RED TARGET = locked |
-| 27 | Resource pins only where mineable, not a pin forest | Delivered | v3.36; target + known supply pins only; hidden resources intentionally unexposed |
-| 28 | Return to orbit at maximum zoom-out | Delivered | v3.33; zoom 0.4 |
-| 29 | Roadmap/README/release notes/comments audit | Delivered | v3.35/v3.36; ROADMAP + updated docs |
-| 30 | List all requests and delivery status | Delivered | This document + final response |
+| 1 | More story, less system-console UI | Delivered | Captain's Log, human labels, incidents; subjective sign-off yours |
+| 2 | Emergency supply / crashed ship when stuck | Partial | Broadcast exists, but every human is **not** reliably relocated to the impact; D4 |
+| 3 | More rare elements | Delivered | Guaranteed rare in refit |
+| 4 | Major planet colours | Delivered | Eight palettes |
+| 5 | Reverse cursor movement | Open | Still hectic/can change direction; D6 stable screen-space arcball required |
+| 6 | Smooth/faster cursor navigation | Delivered | Eased travel + Shift |
+| 7 | Voice/audio disappearing | Partial | Desktop watchdog fixed; real-device gate open |
+| 8 | Limitless rotation through poles | Partial | Math fixed, but visual disappearance still reported; D7 culling test |
+| 9 | Zoom levels with bezier | Delivered | Manual-only |
+| 10 | Separate mouse vs cursor travel | Partial | Mouse direct + arrows inverse, but direction regression remains; D6 |
+| 11 | Incident explanations | Delivered | Story text exists |
+| 12 | Shareable key-info guide | Delivered | GUIDE |
+| 13 | Fewer early rare requirements | Delivered | Early caps |
+| 14 | Supply for all humans + camera turns | Partial | Camera turn path exists; all-human relocation/mineable impact not verified; D4 |
+| 15 | Five-tetra ship / solar sun / alien ships | Partial | Assets exist; events not reliably reached in normal play; D10 |
+| 16 | **Actual 3D humanoid dolls on the surface, not imitation sprites** | **Partial — changed this turn** | Surface external view now uses a projected closed-triangle **3D humanoid** (head, visor, torso, hips, arms, legs) through the same camera, not the old 2D sprite. Final art/rig/animation polish and peer verification remain. |
+| 17 | **No cached copy — multiplayer planet changes continuously** | **Partial — changed this turn** | Removed the “cached planet” path: `surfaceLiveFaces` is rebuilt from the live `leafList` on every authoritative cell/break/click. It is still a derived visual triangle mesh at walkable density; direct renderer-of-active-leaf-only and full HUD/controller parity remain D1. |
+| 18 | **One single planet, camera-only change** | **Partial — major step this turn** | The existing `IcosaRenderer` now draws surface mode through `SurfaceCamera`; the separate terrain canvas no longer draws sky/terrain. HUD remains the orbital HUD; surface controls are overlays. Remaining: remove derived visual mesh/controller duplication, full DOM parity, acceptance test. |
+| 19 | **Same HUD/layout/information, 2D→3D only** | **Partial** | Main orbital HUD is visible in surface mode; surface-specific title/mission duplicates are hidden; target/exit/lap are bottom overlays. Need complete DOM parity and no conflicting panels. |
+| 20 | **UI elements must be present (no missing UI)** | Partial | Main HUD visible; target/exit/lap present. Previous stale full-screen surface rectangle removed on exit. Need regression audit at all viewports. |
+| 21 | **All players/robots walk and mine** | Open | Robots are still visual routes; authoritative surface pose/click mapping not done; D3/D5 |
+| 22 | **Robots own paths, turns, mining** | Partial | Independent Lissajous routes + beams; server-authoritative paths/mining pending |
+| 23 | **Triangles change while walking** | Partial | Live mesh refreshes on cell/break/click; footprint harvesting faster; authoritative-only visual mesh acceptance pending |
+| 24 | Surface uses live cells, no generated geography | Partial | Renderer draws current cells; derived visual mesh rebuilt live. D1 removes the last derived layer |
+| 25 | Orbital UI removed from surface | Superseded | Now the orbital HUD is intentionally reused; surface-specific duplicates hidden |
+| 26 | Surface HUD visible / unclipped | Partial | Main HUD visible; surface target/exit/lap bottom overlays; full viewport audit pending |
+| 27 | Surface entry after 4th zoom | Delivered | v3.30/v3.33 |
+| 28 | Seamless pole crossing | Partial | Math tests pass; visual visibility still reported; D7 |
+| 29 | Green/red harvest semantics | Partial | Target-only rule + explicit HUD; renderer lastClick synced. Need automated colour-vs-server test; D8 |
+| 30 | Resource pins only where mineable | Delivered | Target/supply only; hidden resources intentionally unexposed |
+| 31 | Exit to farthest orbit | Delivered | Camera returns to zoom 0.4; named/tested constant pending D9 |
+| 32 | Roadmap / README / release notes / code comments | Delivered | ROADMAP, DELIVERY_TASKS, README, RELEASE_NOTES |
+| 33 | **Make/update the task list** | Delivered | This document + DELIVERY_TASKS updated |
 
-## Critical remaining gaps
+## Reconsidered priorities
 
-1. **Surface is not yet literally the orbital renderer with a changed camera.** It consumes the same
-   active cells/terrain/owner data but is a separate Canvas implementation. This is the main P0.
-2. **Robot surface mining is visual.** Robots walk independent paths and show beams; their surface
-   pose/target cell is not yet authoritative or mapped to their server click.
-3. **Hidden resources remain hidden.** Pins are target/supply only by design; showing all resources
-   requires a server secrecy-model change.
-4. **Manual real-device/audio gate, story voice cues, CDN activation, sharding/peer assets** remain
-   open as documented in ROADMAP.
+1. **D1/D2** — finish the single-renderer/HUD migration; remove the derived visual mesh and dedicated
+   surface controller duplication.
+2. **D15** — finish the 3D humanoid: connected neck/hips, arm/leg rig, peer walk/mining animation,
+   close-up verification.
+3. **D16** — no stale state: all surface geometry from live authoritative cell changes; add a
+   multiplayer mutation test.
+4. **D3/D5** — authoritative robot pose/path/click mapping and visible mining.
+5. **D4** — supply relocation for every human.
+6. **D6–D10** — controls, poles, colours, exit constant, deterministic incidents.
+7. **D12–D14** — audio/a11y/CDN/sharding.

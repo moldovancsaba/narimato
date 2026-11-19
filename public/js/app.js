@@ -16,11 +16,13 @@ import { downloadResultCard, buildShareText, renderResultCard } from './result-c
 import { resourceById } from './shared/resources.js';
 import { missionProgress, missionForPlanet, planetDepth, planetName, planetSource } from './shared/mission.js';
 import { planetTheme } from './shared/planet-theme.js';
+import { childTriangles, faceCentroid } from './shared/geometry.js';
 import { createIntro } from './intro.js';
 import { createInterlude } from './interlude.js';
 import { createNarrator } from './narrator.js';
 import { createSupplyDrop } from './supply-drop.js';
 import { createSurfaceMode } from './surface-mode.js';
+import { SurfaceCamera } from './shared/surface-camera.js';
 import './telemetry.js';
 import { HELP_SECTIONS } from './narrative-data.js';
 
@@ -84,6 +86,8 @@ let supplyDrop = null;
 let surface = null;
 const surfacePeers = new Map();
 let surfaceSupplyCells = [];
+let surfaceCamera = null;
+let surfaceLiveFaces = null;
 let supplyTimer = 0;
 let supplyDeadline = 0;
 let supplyPlanetKey = '';
@@ -338,6 +342,7 @@ const ui = new UI({
 
 narrator = createNarrator();
 supplyDrop = createSupplyDrop();
+surfaceCamera = new SurfaceCamera(camera.width || window.innerWidth, camera.height || window.innerHeight);
 surface = createSurfaceMode({
   getStartPoint: () => (camera && typeof camera.viewAxis === 'function' ? camera.viewAxis() : { x: 0, y: 0, z: 1 }),
   getLeaves: () => leafList,
@@ -358,6 +363,8 @@ surface = createSurfaceMode({
     };
   },
   getSupplyCells: () => surfaceSupplyCells,
+  externalScene: true,
+  getExternalCamera: () => surfaceCamera,
   getPeers: () => {
     const synced = [...surfacePeers.values()].filter((peer) => Date.now() - (peer.updatedAt || 0) < 5000);
     const ids = new Set(synced.map((peer) => peer.playerId));
@@ -372,6 +379,9 @@ surface = createSurfaceMode({
     attemptClick(label);
   },
   onExit: () => {
+    renderer.setSurfaceView(false);
+    surfaceLiveFaces = null;
+    renderer.setFaces(leafList);
     sendSurfaceLeave();
     // Returning from the crust must put the camera at maximum zoom-out in orbit,
     // not back at the deepest cell zoom.
@@ -595,6 +605,7 @@ function resize() {
   const h = window.innerHeight || 1;
   camera.setViewport(w, h);
   try {
+    if (surfaceCamera) surfaceCamera.setViewport(w, h);
     renderer.resize();
   } catch (err) {
     console.warn('[icosa] renderer resize failed', err);
@@ -902,6 +913,7 @@ function handleCellEvent(msg) {
   const node = world.applyCell(label, ownerIndex, clicks, lastClickIndex);
   if (!node) return;
   renderer.updateCell(label, node.ownerIndex, node.clicks, node.lastClickIndex);
+  if (surface && surface.active) refreshSurfaceLiveFaces();
   if (hoveredLabel === label) safeCall(ui, 'setHoverFace', faceInfo(label));
 }
 
@@ -911,6 +923,7 @@ function handleBreakEvent(msg) {
   if (!children) return;
   refreshLeafList();
   renderer.replaceFace(msg.label, children);
+  if (surface && surface.active) refreshSurfaceLiveFaces();
   for (const child of children) renderer.pulse(child.label, { color: '#d7ff00', kind: 'break', text: '' });
   safeAudio('breakShatter');
   safeCall(ui, 'toast', `CELL ${msg.label} FRACTURED // 4 NEW NODES`, 'good');
@@ -1496,6 +1509,7 @@ function optimisticClick(label) {
   if (kind !== 'reinforce' && myIndex >= 0) node.ownerIndex = myIndex;
   if (myIndex >= 0) node.lastClickIndex = myIndex;
   renderer.updateCell(label, node.ownerIndex, node.clicks, node.lastClickIndex);
+  if (surface && surface.active) refreshSurfaceLiveFaces();
   const color = myPlayer ? myPlayer.color : '#00f0ff';
   const info = faceInfo(label);
   renderer.pulse(label, {
@@ -1546,6 +1560,7 @@ function attemptClick(label) {
           node.ownerIndex = before.ownerIndex;
           node.clicks = before.clicks;
           renderer.updateCell(label, node.ownerIndex, node.clicks, node.lastClickIndex);
+  if (surface && surface.active) refreshSurfaceLiveFaces();
           if (hoveredLabel === label) safeCall(ui, 'setHoverFace', faceInfo(label));
         }
       } else if (err === 'NOT_JOINED') {
@@ -1557,6 +1572,7 @@ function attemptClick(label) {
           node.clicks = before.clicks;
           if (myIndex >= 0) node.lastClickIndex = myIndex; // remember locally: no more optimistic pulses
           renderer.updateCell(label, node.ownerIndex, node.clicks, node.lastClickIndex);
+  if (surface && surface.active) refreshSurfaceLiveFaces();
           if (hoveredLabel === label) safeCall(ui, 'setHoverFace', faceInfo(label));
         }
         safeCall(ui, 'toast', 'CELL LOCKED // ANOTHER OPERATOR MUST CONTEST IT FIRST', 'warn');
@@ -1567,6 +1583,7 @@ function attemptClick(label) {
           node.ownerIndex = before.ownerIndex;
           node.clicks = before.clicks;
           renderer.updateCell(label, node.ownerIndex, node.clicks, node.lastClickIndex);
+  if (surface && surface.active) refreshSurfaceLiveFaces();
         }
         safeCall(ui, 'toast', (data && data.message) || 'GRID REJECTED THE CLICK', 'warn');
         safeAudio('error');
@@ -2161,6 +2178,48 @@ function updateKeyboardNavigation(dt) {
 }
 
 let lastSurfacePoseSent = 0;
+function buildSurfaceLiveFaces() {
+  // Rebuilt from the live leaf list; there is no cached planet copy. Every
+  // visual triangle is a child of a currently active leaf, so multiplayer
+  // mining/breaks are reflected on the next authoritative cell/break event.
+  const out = [];
+  const angle = (p, q) => Math.acos(clamp(p.x * q.x + p.y * q.y + p.z * q.z, -1, 1));
+  for (const node of leafList) {
+    if (!node || !node.a) continue;
+    const edge = Math.max(angle(node.a, node.b), angle(node.b, node.c), angle(node.c, node.a));
+    const level = clamp(Math.ceil(Math.log2(Math.max(1e-4, edge / 0.055))), 0, 4);
+    let tris = [{ a: node.a, b: node.b, c: node.c }];
+    for (let i = 0; i < level; i += 1) {
+      const next = [];
+      for (const tri of tris) for (const child of childTriangles(tri.a, tri.b, tri.c)) next.push(child);
+      tris = next;
+    }
+    for (let i = 0; i < tris.length; i += 1) {
+      const tri = tris[i];
+      out.push({
+        label: `~${node.label}.${i}`,
+        a: tri.a,
+        b: tri.b,
+        c: tri.c,
+        centroid: faceCentroid(tri.a, tri.b, tri.c),
+        depth: node.depth,
+        ownerIndex: node.ownerIndex,
+        clicks: node.clicks,
+        lastClickIndex: node.lastClickIndex,
+        terrain: node.terrain,
+        resourceId: null,
+      });
+    }
+  }
+  return out;
+}
+
+function refreshSurfaceLiveFaces() {
+  if (!(surface && surface.active)) return;
+  surfaceLiveFaces = buildSurfaceLiveFaces();
+  renderer.setFaces(surfaceLiveFaces);
+}
+
 function sendSurfacePose(pose) {
   if (!joined || !authToken || !pose || !pose.pos) return;
   const stamp = now();
@@ -2209,6 +2268,7 @@ function enterSurfaceMode() {
   safeCall(ui, 'hideManual');
   const planet = planetInfoFromState();
   if (!surface.start({ planetName: planet.planetName, seed: planet.planetSeed, depth: planet.planetDepth })) return;
+  refreshSurfaceLiveFaces();
   safeAudio('introWhoosh');
 }
 
@@ -2376,9 +2436,22 @@ function frame(t) {
   }
 
   if (surface && surface.active) {
+    const pose = surface.pose();
+    surfaceCamera.setViewport(camera.width || window.innerWidth, camera.height || window.innerHeight);
+    surfaceCamera.setPose(pose.pos, pose.forward);
+    renderer.setSurfaceView(true);
+    try {
+      renderer.render(surfaceCamera, t);
+    } catch (err) {
+      if (!frame.warned) {
+        frame.warned = true;
+        console.warn('[icosa] surface render failed', err);
+      }
+    }
     requestAnimationFrame(frame);
     return;
   }
+  renderer.setSurfaceView(false);
 
   updateFocus(t);
   if (!focusAnim && !(interlude && interlude.active)) updateKeyboardNavigation(dt);

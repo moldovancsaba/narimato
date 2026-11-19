@@ -10,6 +10,7 @@
 import { drawTetraShip } from './shared/tetra-ship.js';
 import { childTriangles, faceCentroid, getMesh } from './shared/geometry.js';
 import { isRareResource } from './shared/mission.js';
+import { drawHumanoid3D } from './shared/humanoid-3d.js';
 
 const LAP_SECONDS = 60;
 const ANGULAR_SPEED = (Math.PI * 2) / LAP_SECONDS;
@@ -99,6 +100,8 @@ export function createSurfaceMode({
   getMaxDepth = () => 8,
   getMission = () => null,
   getSupplyCells = () => [],
+  externalScene = false,
+  getExternalCamera = () => null,
   onHarvest = () => {},
   onExit = () => {},
   getPeers = () => [],
@@ -144,7 +147,7 @@ export function createSurfaceMode({
     shown = true;
     overlay = doc.createElement('section');
     overlay.id = 'surface-overlay';
-    overlay.className = 'surface-overlay is-hidden';
+    overlay.className = 'surface-overlay is-hidden' + (externalScene ? ' surface-overlay--external' : '');
     overlay.hidden = true;
     overlay.setAttribute('aria-label', 'Surface mode');
     overlay.setAttribute('aria-hidden', 'true');
@@ -156,8 +159,8 @@ export function createSurfaceMode({
         <h2 id="surface-title" class="surface-title">TOUCHDOWN</h2>
         <p id="surface-planet" class="surface-planet"></p>
         <p id="surface-goal" class="surface-goal" role="status" aria-live="polite"></p>
-        <p id="surface-target" class="surface-target" data-state="idle">TARGET: —</p>
       </header>
+      <p id="surface-target" class="surface-target" data-state="idle">TARGET: —</p>
       <div class="surface-stats" role="status" aria-live="polite">
         <span>LAP <b>60s</b></span>
         <span>RUN <b id="surface-run">0.0</b></span>
@@ -556,11 +559,118 @@ export function createSurfaceMode({
       return;
     }
     const can = canHarvestNode(cell);
-    el.textContent = `TARGET ${cell.label} // ${can ? 'GREEN // HARVEST' : 'RED // LOCKED'}`;
+    el.textContent = `LAP ${(travel / (Math.PI * 2)).toFixed(2)} // TARGET ${cell.label} // ${can ? 'GREEN // HARVEST' : 'RED // LOCKED'}`;
     el.dataset.state = can ? 'can' : 'locked';
   }
 
+  function drawExternalOverlay(w, h, now) {
+    ctx.clearRect(0, 0, w, h);
+    const camera = getExternalCamera && getExternalCamera();
+    const project = (p) => {
+      if (!camera) return { x: w / 2, y: h * 0.7, z: 1 };
+      return camera.project(p);
+    };
+    // Opponent avatars on the same rendered planet.
+    for (const peer of getPeers()) {
+      if (!peer || peer.playerId === getMyPlayerId()) continue;
+      const peerPos = peer.pos && Number.isFinite(peer.pos.x) ? peer.pos : virtualPeerPosition(peer, now);
+      const anchor = project(peerPos);
+      if (!anchor || !anchor.visible) continue;
+      const peerForward = peer.forward && Number.isFinite(peer.forward.x)
+        ? peer.forward
+        : tangentAt(peerPos, { x: 1, y: 0, z: 0 });
+      drawHumanoid3D(ctx, camera, peerPos, peerForward, {
+        scale: 0.014,
+        walkPhase: now * 0.004,
+        tint: peer.color || '#a78bfa',
+        skin: '#dffcff',
+      });
+      const head = camera.project(mul(peerPos, 1.016));
+      if (head && head.visible) {
+        ctx.fillStyle = 'rgba(225,250,255,0.8)';
+        ctx.font = '8px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(String(peer.tag || 'PILOT').toUpperCase().slice(0, 14), head.x, head.y - 10);
+      }
+      const hashSeed = String(peer.playerId || peer.tag);
+      let ph = 0;
+      for (let i = 0; i < hashSeed.length; i += 1) ph = (ph * 31 + hashSeed.charCodeAt(i)) % 997;
+      const cycle = (now / 2600 + ph / 997) % 1;
+      if (cycle < 0.32) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = 0.45 * (1 - cycle / 0.32);
+        ctx.fillStyle = peer.color || '#8afcff';
+        ctx.beginPath();
+        ctx.moveTo(anchor.x - 2, anchor.y - 190);
+        ctx.lineTo(anchor.x + 2, anchor.y - 190);
+        ctx.lineTo(anchor.x + 32, anchor.y);
+        ctx.lineTo(anchor.x - 32, anchor.y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+    const players = getPlayers();
+    const me = players[getMyIndex()];
+    const themeColor = (me && me.color) || '#67ddff';
+    drawHumanoid3D(ctx, camera, pos, headingVec, {
+      scale: 0.015,
+      walkPhase: travel * 2600,
+      tint: themeColor,
+      skin: '#f2ffff',
+    });
+    // Target pin and supply pins are projected by the shared surface camera.
+    const target = findCell(pos);
+    if (target) {
+      const a = project(mul(target.centroid, 1.002));
+      if (a && a.visible) {
+        const can = canHarvestNode(target);
+        ctx.strokeStyle = can ? '#22ff88' : '#ff3355';
+        ctx.fillStyle = can ? '#22ff88' : '#ff3355';
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(a.x, a.y - 22);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y - 32);
+        ctx.lineTo(a.x + 6, a.y - 24);
+        ctx.lineTo(a.x, a.y - 16);
+        ctx.lineTo(a.x - 6, a.y - 24);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+    for (const cell of getSupplyCells()) {
+      const node = getLeaves().find((n) => n.label === cell.label);
+      if (!node) continue;
+      const a = project(mul(node.centroid, 1.004));
+      if (!a || !a.visible) continue;
+      ctx.strokeStyle = cell.color || '#ffd166';
+      ctx.fillStyle = cell.color || '#ffd166';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(a.x, a.y - 52);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y - 62);
+      ctx.lineTo(a.x + 5, a.y - 55);
+      ctx.lineTo(a.x, a.y - 48);
+      ctx.lineTo(a.x - 5, a.y - 55);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#f3ffff';
+      ctx.font = '8px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(String(cell.name || 'ORE').toUpperCase(), a.x, a.y - 70);
+    }
+    drawHarvestEffects(w, h, now);
+  }
+
   function drawTerrain(w, h, now) {
+    if (externalScene) { drawExternalOverlay(w, h, now); return; }
     // Live cell mesh only. Fills use each active cell's cached terrain/elevation
     // and owner metadata (the same data orbit sees); no global terrain projection or
     // generated map is created. Every visible triangle belongs to an active cell.
@@ -1046,6 +1156,7 @@ export function createSurfaceMode({
     resize,
     get active() { return active; },
     get phase() { return phase; },
+    pose: () => ({ pos: { ...pos }, forward: { ...headingVec } }),
     debug: () => debug,
     peers: () => getPeers().length,
     harvestEffect,

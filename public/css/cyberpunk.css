@@ -7050,3 +7050,54 @@ body.is-surface { overflow: hidden !important; }
 }
 .surface-target[data-state="can"] { color: #22ff88; }
 .surface-target[data-state="locked"] { color: #ff5577; }
+
+/* External-renderer surface: same planet/HUD, transparent control overlay. */
+body.is-surface > *:not(#surface-overlay) {
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+.surface-overlay--external {
+  background: transparent !important;
+  pointer-events: none !important;
+}
+.surface-overlay--external .surface-canvas { pointer-events: none !important; background: transparent !important; }
+.surface-overlay--external .surface-vignette,
+.surface-overlay--external .surface-mission,
+.surface-overlay--external .surface-goal { display: none !important; }
+.surface-overlay--external .surface-head,
+.surface-overlay--external .surface-stats,
+.surface-overlay--external .surface-target,
+.surface-overlay--external .surface-hint,
+.surface-overlay--external .surface-exit,
+.surface-overlay--external .surface-pads { pointer-events: auto !important; }
+
+/* External surface: same orbit HUD, minimal controls at bottom centre. */
+.surface-overlay--external .surface-head,
+.surface-overlay--external .surface-stats,
+.surface-overlay--external .surface-goal,
+.surface-overlay--external .surface-mission { display: none !important; }
+body.is-surface #target-panel { visibility: hidden !important; }
+.surface-overlay--external .surface-target {
+  display: block !important;
+  position: absolute;
+  left: 50%;
+  bottom: 154px;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 5px 10px;
+  border: 1px solid rgba(122,244,255,0.25);
+  background: rgba(4,8,18,0.78);
+  white-space: nowrap;
+  z-index: 3;
+}
+.surface-overlay--external .surface-exit {
+  position: absolute !important;
+  left: 50% !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: 96px !important;
+  transform: translateX(-50%);
+  z-index: 3;
+}
+.surface-overlay--external .surface-hint { bottom: 12px !important; z-index: 3; }
+.surface-overlay--external .surface-pads { z-index: 3; }

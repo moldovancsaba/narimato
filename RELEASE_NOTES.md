@@ -1,5 +1,40 @@
 # NARIMATO — Release Notes
 
+## v3.39.0 — “Same Renderer, Real Figures” (2026-11-18)
+
+### Changed
+
+- **Surface now renders through the existing `IcosaRenderer` with `SurfaceCamera`.** The old
+  separate terrain canvas no longer draws sky/terrain; the main orbital HUD remains mounted and
+  visible, with surface target/lap/exit as minimal overlays.
+- **Replaced 2D surface sprites with projected low-poly 3D humanoid meshes**: head/visor, torso,
+  hips, arms and legs built from closed triangles and depth-sorted through the same surface camera.
+- **Removed cached planet wording/behavior:** `surfaceLiveFaces` is rebuilt from the live leaf list
+  on every authoritative cell/break/click.
+- Updated [REQUESTS_24H.md](REQUESTS_24H.md) with the new 3D-humanoid and no-cache requirements,
+  reordered priorities and honest partial/open statuses.
+
+### Still open
+
+- Derived visual mesh/controller duplication removal (D1/D2).
+- Final humanoid art/rig/animation and peer verification (D15).
+- Multiplayer live-mutation surface test (D16).
+- Authoritative robot surface paths/mining, supply relocation, stable controls/poles, deterministic
+  incidents.
+
+### Verification
+
+- Browser: renderer surface mode draws live cells; no surface terrain canvas; main HUD visible.
+- **99/99 tests**, Chromium + WebKit UI audits clean, axe clean.
+
+### Release artifact
+
+- Source tag: `v3.39.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.39.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.38.0 — “Delivery Contract” (2026-11-18)
 
 ### Added / fixed

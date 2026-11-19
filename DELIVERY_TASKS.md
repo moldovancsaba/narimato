@@ -1,6 +1,6 @@
 # NARIMATO — Delivery Task List & Acceptance Contract
 
-**Current version:** `3.38.0`
+**Current version:** `3.39.0`
 **Why this file exists:** the same items were repeatedly marked “delivered” while only partially
 matching the request. This file defines the remaining work at file level, in dependency order, with
 acceptance criteria. A task is **not delivered** until its acceptance test passes in the browser
@@ -31,7 +31,7 @@ look/behave like copies. Copying is explicitly not acceptable.
   - the same HUD/mission/players panels with surface-specific controls only.
 - No second terrain generation. No “look-alike” renderer. No duplicated HUD markup.
 
-**Foundation landed:** `SurfaceCamera` (`public/js/shared/surface-camera.js`) and `IcosaRenderer.setSurfaceView()` now render the real active cell mesh through the existing renderer. App/HUD/controller integration is still pending.
+**Progress:** `SurfaceCamera` (`public/js/shared/surface-camera.js`) and `IcosaRenderer.setSurfaceView()` are now wired into app surface mode. The existing renderer draws the planet; the old terrain canvas no longer draws. Main orbital HUD stays visible. Remaining: remove the derived visual mesh/controller duplication and prove full DOM/geometry parity.
 
 **Files:** `public/js/renderer.js`, `public/js/surface-mode.js` (replace with controller),
 `public/js/app.js`, `public/index.html`, CSS.
@@ -88,6 +88,22 @@ human at the impact or make surface players able to collect immediately.
 cells change.
 
 ---
+
+### D15. Real 3D humanoid avatars
+
+- Replace the old 2D surface sprite with closed-triangle 3D humanoid meshes projected by the same
+  `SurfaceCamera` (head/visor/torso/hips/arms/legs).
+- Connect neck/hips, add walking rig, peer animation, mining pose; verify from front/back/side.
+- **Acceptance:** no sprite path in surface mode; every figure is a depth-sorted 3D mesh on the
+  surface; visible at normal and close camera distance.
+
+### D16. Live world, no cached copy
+
+- Surface visual triangles are rebuilt from the live `leafList` on every authoritative cell, break
+  and click; no stale planet copy.
+- Add a two-client mutation test: one client mines/breaks, the other client's surface updates
+  without reload.
+- **Acceptance:** no stale mesh; multiplayer changes appear on all surface clients.
 
 ## P1 — Controls, poles, colours
 

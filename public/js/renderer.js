@@ -1821,10 +1821,11 @@ export class IcosaRenderer {
     }
 
     // --- Glass: rim light, sheen, sweep, scanlines (faded at deep zoom).
-    if (glassFade > 0.01) this._drawSphereFx(ctx, cx, cy, R, rm, nf, glassFade);
+    // Surface mode must not draw a whole-planet glass dome over the crust.
+    if (!this.surfaceView && glassFade > 0.01) this._drawSphereFx(ctx, cx, cy, R, rm, nf, glassFade);
 
     // --- Silhouette ring. -------------------------------------------
-    if (glassFade > 0.01 && R < Math.max(W, H) * 2.5) {
+    if (!this.surfaceView && glassFade > 0.01 && R < Math.max(W, H) * 2.5) {
       ctx.save();
       ctx.globalAlpha = glassFade;
       ctx.globalCompositeOperation = 'lighter';
