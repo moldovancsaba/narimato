@@ -192,6 +192,7 @@ resets its crust and releases new resources. The game never ends.
 ## Documentation & roadmap
 
 - [ROADMAP.md](ROADMAP.md) — delivery audit, what was ruined/fixed, open gaps and acceptance criteria.
+- [REQUESTS_24H.md](REQUESTS_24H.md) — request-by-request delivered/partial/open table.
 - [GUIDE.md](GUIDE.md) — shareable new-pilot guide.
 - [GAMEPLAY.md](GAMEPLAY.md) — controls, missions, surface mode and incidents.
 - [A11Y_CHECKLIST.md](A11Y_CHECKLIST.md) — manual real-device gate.
@@ -243,5 +244,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.36.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.37.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.

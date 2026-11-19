@@ -13,7 +13,7 @@ import { isRareResource } from './shared/mission.js';
 
 const LAP_SECONDS = 60;
 const ANGULAR_SPEED = (Math.PI * 2) / LAP_SECONDS;
-const HARVEST_INTERVAL_MS = 900;
+const HARVEST_INTERVAL_MS = 120;
 const WORLD_UP = { x: 0, y: 1, z: 0 };
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
@@ -537,10 +537,11 @@ export function createSurfaceMode({
     }
     const basis = tangentBasis(home.base);
     const angle = now * home.speed * home.direction + home.phase;
-    return norm(add(home.base, add(
-      mul(basis.east, Math.cos(angle) * home.radius),
-      mul(basis.north, Math.sin(angle) * home.radius),
-    )));
+    // Lissajous-ish route: the opponent turns, reverses direction and changes
+    // radius on its own, rather than following a perfect circle.
+    const x = Math.cos(angle) * home.radius;
+    const y = Math.sin(angle * 0.63 + home.phase) * home.radius * 0.62;
+    return norm(add(home.base, add(mul(basis.east, x), mul(basis.north, y))));
   }
 
   function updateTargetStatus(now) {
@@ -1020,11 +1021,21 @@ export function createSurfaceMode({
     active = false;
     cancelAnimationFrame(raf);
     raf = 0;
+    if (ctx && canvas) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
     if (overlay) {
       overlay.classList.add('is-hidden');
       overlay.hidden = true;
       overlay.setAttribute('aria-hidden', 'true');
+      // Remove the overlay entirely. This prevents a stale surface canvas/frame
+      // from lingering over the orbital HUD after returning to orbit.
+      overlay.remove();
     }
+    overlay = null;
+    canvas = null;
+    ctx = null;
+    shown = false;
     if (doc && doc.body) doc.body.classList.remove('is-surface');
   }
 

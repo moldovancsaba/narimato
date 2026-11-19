@@ -1,6 +1,6 @@
 # NARIMATO — Roadmap & Delivery Audit
 
-**Current version:** `3.35.0`
+**Current version:** `3.37.0`
 **Audit window:** 2026-11-18 → 2026-11-19 (last 24 hours)
 **Live:** https://treasurer-record-flooring-mounting.trycloudflare.com
 
@@ -58,6 +58,7 @@ single release note: if the code and this document disagree, fix one of them.
 | v3.34 | Resource/supply pins, cyan edges, remote mining beams |
 | v3.35 | Target-only green/red rule, explicit target HUD, roadmap + README/release audit, stale comment cleanup |
 | v3.36 | Pin cleanup: no pins for already-mined resources; target + known supply only |
+| v3.37 | Overlay hard removal on exit; robot Lissajous paths + faster footprint harvesting; 24h request/status doc |
 
 ### Earlier but still active
 
@@ -103,6 +104,8 @@ These are real regressions, not polish items. Each one must not recur.
 ---
 
 ## 4. Left behind / main open gaps
+
+See [REQUESTS_24H.md](REQUESTS_24H.md) for the request-by-request delivery table.
 
 ### P0 — Unify the surface renderer with the orbital renderer
 

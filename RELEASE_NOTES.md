@@ -1,5 +1,41 @@
 # NARIMATO — Release Notes
 
+## v3.37.0 — “Paths & Cleanup” (2026-11-18)
+
+### Fixed
+
+- **Surface overlay is removed from the DOM on exit**, not just hidden. A stale surface frame/canvas
+  can no longer linger over the orbital HUD.
+- **Virtual robots now follow generated independent Lissajous routes** with turns and radius changes,
+  still completely decoupled from the local player's position/heading, plus their own mining beams.
+- **Footprint harvesting is much faster** (120 ms queue instead of 900 ms), so cells under the
+  avatar change/charge/break sooner as the pilot walks.
+- **Explicit 24-hour request/status audit** added: [REQUESTS_24H.md](REQUESTS_24H.md).
+- Target-only green/red semantics, target/supply-only pins, surface HUD isolation, 4th-rung entry,
+  pole crossing, spherical arcs, opaque shell and maximum orbit zoom-out retained.
+
+### Honest open gaps
+
+- Surface is still a separate renderer; same active cells/terrain/owner data, not yet literally the
+  same renderer with camera-only change.
+- Robot surface paths/beams are visual; authoritative robot surface pose/mining mapping remains P0.
+- Hidden resources remain hidden; only target/known supply pins are shown.
+- Manual real-device/a11y, story voice cues, CDN and sharding remain open.
+
+### Verification
+
+- Browser: surface overlay removed after exit; orbital HUD returns at zoom 0.4.
+- Browser: robot routes render independently; no console errors.
+- **97/97 tests**, Chromium + WebKit UI audits clean, axe clean.
+
+### Release artifact
+
+- Source tag: `v3.37.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.37.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.36.0 — “Only Mineable Pins” (2026-11-18)
 
 ### Fixed
