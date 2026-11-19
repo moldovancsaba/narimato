@@ -1707,3 +1707,17 @@ test('robot: owns a server-authoritative surface pose and mines the cell under i
   const cell = core._leaves.get(target.label);
   assert.equal(cell.ownerIndex, robot.index, 'robot mined the cell under its own surface pose');
 });
+
+test('incidents: deterministic rotation covers all four event kinds', async (t) => {
+  const { core } = await makeCore(t, { config: { depositChance: 0 } });
+  core._meteorArmed = true;
+  const kinds = [];
+  for (let i = 0; i < 4; i += 1) {
+    const meteor = core.maybeMeteor();
+    assert.ok(meteor && meteor.event, 'incident fired');
+    kinds.push(meteor.event.kind);
+    core._meteorArmed = true;
+  }
+  assert.deepEqual(kinds, ['meteor', 'nuclear', 'solar', 'alien']);
+  assert.deepEqual(new Set(kinds).size, 4);
+});

@@ -1,5 +1,30 @@
 # NARIMATO — Release Notes
 
+## v3.42.0 — “Event Cycle” (2026-11-18)
+
+### Added
+
+- **Deterministic incident rotation:** `meteor → nuclear → solar → alien` instead of random repeat.
+  All four event kinds are unit-tested. The end-of-crust gate remains until the hidden deposit count
+  reaches zero.
+- Camera direct-direction and pole-direction tests.
+- Robot surface routes now start near active human surface pilots, keeping the opponents visible.
+- **103/103 tests.**
+
+### Still open
+
+- Incident reachability in ordinary play without exhausting every deposit.
+- Two-client robot/supply acceptance.
+- Single-renderer/controller parity and final humanoid rig.
+
+### Release artifact
+
+- Source tag: `v3.42.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.42.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.41.0 — “Stable Hands” (2026-11-18)
 
 ### Fixed / changed
