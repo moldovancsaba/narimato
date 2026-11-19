@@ -1,6 +1,6 @@
 # NARIMATO — Delivery Task List & Acceptance Contract
 
-**Current version:** `3.43.0`
+**Current version:** `3.44.0`
 **Why this file exists:** the same items were repeatedly marked “delivered” while only partially
 matching the request. This file defines the remaining work at file level, in dependency order, with
 acceptance criteria. A task is **not delivered** until its acceptance test passes in the browser
@@ -61,6 +61,8 @@ mining beams are not tied to authoritative clicks.
   real token through `WorldCore.click`.
 - Broadcast `surface` pose and `surface_mine` events; cell events remain authoritative.
 **Progress:** server-side surface pose/route/click mapping and robot `surface` publication landed. Two-client visual/beam acceptance is still pending.
+
+**Progress:** two-client acceptance harness added and passing (both clients see surface peers and robot server poses).
 
 **Acceptance:**
 - two humans + robots visible at the same surface positions on all clients;

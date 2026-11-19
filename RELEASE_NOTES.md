@@ -1,5 +1,32 @@
 # NARIMATO — Release Notes
 
+## v3.44.0 — “Two Clients” (2026-11-18)
+
+### Added
+
+- **Two-client surface acceptance harness** (`scripts/acceptance-two-client-surface.mjs`):
+  two real browser contexts join, enter the surface and verify peers/robot server poses with no
+  page errors.
+- Robots now spawn on a visible ring around active human surface pilots instead of directly on top
+  of them.
+- Incident reachability and deterministic rotation retained.
+- **104/104 tests.**
+
+### Still open
+
+- Robot beam-to-authoritative-cell visual assertion.
+- Full single-renderer/controller parity and final humanoid rig.
+- Supply relocation for every human in the orbital view.
+- Colour/server truth test.
+
+### Release artifact
+
+- Source tag: `v3.44.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.44.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.43.0 — “Incidents Reachable” (2026-11-18)
 
 ### Fixed

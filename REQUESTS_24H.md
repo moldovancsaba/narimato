@@ -1,7 +1,7 @@
 # NARIMATO — 24-Hour Request & Delivery Status (updated)
 
 **Window:** 2026-11-18 → 2026-11-19  
-**Current:** `v3.43.0`  
+**Current:** `v3.44.0`  
 **Engineering contract:** [DELIVERY_TASKS.md](DELIVERY_TASKS.md)
 
 Legend: **Delivered** = working and verified; **Partial** = real work landed but acceptance not
@@ -29,7 +29,7 @@ met; **Open** = not delivered; **Superseded** = changed after a correction.
 | 18 | **One single planet, camera-only change** | **Partial — major step this turn** | The existing `IcosaRenderer` now draws surface mode through `SurfaceCamera`; the separate terrain canvas no longer draws sky/terrain. HUD remains the orbital HUD; surface controls are overlays. Remaining: remove derived visual mesh/controller duplication, full DOM parity, acceptance test. |
 | 19 | **Same HUD/layout/information, 2D→3D only** | **Partial** | Main orbital HUD is visible in surface mode; surface-specific title/mission duplicates are hidden; target/exit/lap are bottom overlays. Need complete DOM parity and no conflicting panels. |
 | 20 | **UI elements must be present (no missing UI)** | Partial | Main HUD visible; target/exit/lap present. Previous stale full-screen surface rectangle removed on exit. Need regression audit at all viewports. |
-| 21 | **All players/robots walk and mine** | **Partial — server authority + nearby routes** | Robots now spawn/route near active human surface pilots, publish pose, and click under their own pose. Two-client visual/beam verification pending. |
+| 21 | **All players/robots walk and mine** | **Partial — server authority + nearby routes + harness** | Robots spawn/route near active human pilots, publish pose, click under pose. Two-client harness sees peers/robot poses; robot beam-to-cell visual still to verify. |
 | 22 | **Robots own paths, turns, mining** | **Partial — server routes/click mapping landed** | Server route/turn + cell-under-pose clicks implemented; client visual mapping and two-client acceptance pending. |
 | 23 | **Triangles change while walking** | Partial | Live mesh refreshes on cell/break/click; footprint harvesting faster; authoritative-only visual mesh acceptance pending |
 | 24 | Surface uses live cells, no generated geography | Partial | Renderer draws current cells; derived visual mesh rebuilt live. D1 removes the last derived layer |
@@ -42,6 +42,7 @@ met; **Open** = not delivered; **Superseded** = changed after a correction.
 | 31 | Exit to farthest orbit | Delivered | Named `ORBIT_FAR_ZOOM = 0.4`; exit returns there |
 | 32 | Roadmap / README / release notes / code comments | Delivered | ROADMAP, DELIVERY_TASKS, README, RELEASE_NOTES |
 | 33 | **Make/update the task list** | Delivered | This document + DELIVERY_TASKS updated |
+| 35 | **Two-client surface acceptance** | **Delivered test harness** | `scripts/acceptance-two-client-surface.mjs`: two browsers join/surface, both see surface peers and robot server poses; no page errors. |
 
 ## Reconsidered priorities
 
