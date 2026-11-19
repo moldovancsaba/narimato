@@ -1,6 +1,6 @@
 # NARIMATO — Delivery Task List & Acceptance Contract
 
-**Current version:** `3.39.0`
+**Current version:** `3.40.0`
 **Why this file exists:** the same items were repeatedly marked “delivered” while only partially
 matching the request. This file defines the remaining work at file level, in dependency order, with
 acceptance criteria. A task is **not delivered** until its acceptance test passes in the browser
@@ -60,6 +60,8 @@ mining beams are not tied to authoritative clicks.
 - Robot click target is resolved from its surface pose to the active leaf under it; use the robot's
   real token through `WorldCore.click`.
 - Broadcast `surface` pose and `surface_mine` events; cell events remain authoritative.
+**Progress:** server-side surface pose/route/click mapping and robot `surface` publication landed. Two-client visual/beam acceptance is still pending.
+
 **Acceptance:**
 - two humans + robots visible at the same surface positions on all clients;
 - a robot's beam is at the cell it actually changed;
@@ -70,6 +72,8 @@ mining beams are not tied to authoritative clicks.
 
 **Problem:** supply currently broadcasts cells and a visual turn; it does not reliably place every
 human at the impact or make surface players able to collect immediately.
+**Progress:** surface pilots snap to the impact via `focusLabel`; server already broadcasts the cell list. Every-human orbital relocation test remains.
+
 **How:**
 - Server computes the impact cell and broadcasts `supply_focus` with a safe standing position for
   every human in the room.

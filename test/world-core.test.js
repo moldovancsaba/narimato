@@ -1689,3 +1689,21 @@ test('discovery timing: old deposits without resourceFindClick migrate to a rand
   assert.ok(guaranteed.length > 0);
   for (const cell of guaranteed) assert.ok(cell.resourceFindClick >= 1 && cell.resourceFindClick <= reloaded.config.breakClicks);
 });
+
+test('robot: owns a server-authoritative surface pose and mines the cell under it', async (t) => {
+  const { core, clock } = await makeCore(t, {
+    config: { bots: 1, botGapMinMs: 10, botGapMaxMs: 10, botMinMs: 10_000, botMaxMs: 10_000, botClickMinMs: 10, botClickMaxMs: 10, clickCooldownMs: 0 },
+  });
+  core.tick(clock.now());
+  const robot = core._robots[0];
+  assert.ok(robot && robot.surface, 'robot has a transient surface pose');
+  assert.ok(Math.abs(Math.hypot(robot.surface.pos.x, robot.surface.pos.y, robot.surface.pos.z) - 1) < 1e-9);
+  const target = core._labelAtSurface(robot.surface.pos);
+  assert.ok(target, 'surface pose resolves to an active leaf');
+  const publicRobot = core.getState().players.find((player) => player.id === robot.playerId);
+  assert.ok(publicRobot.surface && publicRobot.surface.pos, 'surface pose is published to clients');
+  robot.nextClickAt = clock.now();
+  core.tick(clock.now());
+  const cell = core._leaves.get(target.label);
+  assert.equal(cell.ownerIndex, robot.index, 'robot mined the cell under its own surface pose');
+});

@@ -573,12 +573,15 @@ export function createSurfaceMode({
     // Opponent avatars on the same rendered planet.
     for (const peer of getPeers()) {
       if (!peer || peer.playerId === getMyPlayerId()) continue;
-      const peerPos = peer.pos && Number.isFinite(peer.pos.x) ? peer.pos : virtualPeerPosition(peer, now);
+      const serverSurface = peer.surface && peer.surface.pos && Number.isFinite(peer.surface.pos.x) ? peer.surface.pos : null;
+      const peerPos = serverSurface || (peer.pos && Number.isFinite(peer.pos.x) ? peer.pos : virtualPeerPosition(peer, now));
       const anchor = project(peerPos);
       if (!anchor || !anchor.visible) continue;
-      const peerForward = peer.forward && Number.isFinite(peer.forward.x)
-        ? peer.forward
-        : tangentAt(peerPos, { x: 1, y: 0, z: 0 });
+      const peerForward = (peer.surface && peer.surface.heading && Number.isFinite(peer.surface.heading.x))
+        ? peer.surface.heading
+        : (peer.forward && Number.isFinite(peer.forward.x)
+          ? peer.forward
+          : tangentAt(peerPos, { x: 1, y: 0, z: 0 }));
       drawHumanoid3D(ctx, camera, peerPos, peerForward, {
         scale: 0.014,
         walkPhase: now * 0.004,
@@ -813,7 +816,8 @@ export function createSurfaceMode({
       drawAvatar(w, h, now, null);
       for (const peer of getPeers()) {
         if (!peer || peer.playerId === getMyPlayerId()) continue;
-        const peerPos = peer.pos && Number.isFinite(peer.pos.x) ? peer.pos : virtualPeerPosition(peer, now);
+        const serverSurface = peer.surface && peer.surface.pos && Number.isFinite(peer.surface.pos.x) ? peer.surface.pos : null;
+      const peerPos = serverSurface || (peer.pos && Number.isFinite(peer.pos.x) ? peer.pos : virtualPeerPosition(peer, now));
         if (!peerPos) continue;
         if (dot(peerPos, pos) < -0.2) continue;
         const wp = mul(peerPos, SURFACE_RADIUS);
@@ -1156,6 +1160,19 @@ export function createSurfaceMode({
     resize,
     get active() { return active; },
     get phase() { return phase; },
+    /** Relocate the pilot to a known impact cell (emergency supply). */
+    focusLabel: (label) => {
+      if (!active || !label) return false;
+      const node = getLeaves().find((n) => n && n.label === label);
+      if (!node || !node.centroid) return false;
+      pos = norm(node.centroid);
+      const seed = getPlayers()[getMyIndex()] ? { x: 1, y: 0, z: 0 } : { x: 1, y: 0, z: 0 };
+      headingVec = tangentAt(pos, seed);
+      travel = Math.max(0, travel - 0.0001);
+      harvestTimer = 0;
+      harvestQueue.length = 0;
+      return true;
+    },
     pose: () => ({ pos: { ...pos }, forward: { ...headingVec } }),
     debug: () => debug,
     peers: () => getPeers().length,

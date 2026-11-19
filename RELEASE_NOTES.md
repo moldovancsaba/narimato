@@ -1,5 +1,37 @@
 # NARIMATO — Release Notes
 
+## v3.40.0 — “Server-Side Riggers” (2026-11-18)
+
+### Added / fixed
+
+- **Authoritative robot surface routes.** Each robot gets a server-generated surface position,
+  heading and turn schedule; robots publish their surface pose in player state and via `surface`
+  events.
+- **Robots mine the cell under their own surface pose.** The server resolves the active leaf at the
+  robot surface point and clicks that label using the robot's real token; cell/break events remain
+  authoritative.
+- **Supply surface focus.** A supply drop now snaps every surface pilot to the impact cell
+  (`surface.focusLabel`) so they can mine the marked cells immediately instead of only watching the
+  camera turn.
+- **Named farthest orbit zoom:** `ORBIT_FAR_ZOOM = 0.4`.
+- New test: robot surface pose is unit-length, published to clients, resolves to an active leaf and
+  the robot mines that cell. **100/100 tests.**
+
+### Still open
+
+- Two-client visual/beam verification for robots.
+- Full single-renderer/HUD controller duplication removal (D1/D2).
+- Stable reverse controls/pole visibility, automated colour/server truth test, orbital relocation
+  test for supply.
+
+### Release artifact
+
+- Source tag: `v3.40.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.40.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.39.0 — “Same Renderer, Real Figures” (2026-11-18)
 
 ### Changed

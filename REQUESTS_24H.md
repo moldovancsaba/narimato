@@ -1,7 +1,7 @@
 # NARIMATO — 24-Hour Request & Delivery Status (updated)
 
 **Window:** 2026-11-18 → 2026-11-19  
-**Current:** `v3.39.0`  
+**Current:** `v3.40.0`  
 **Engineering contract:** [DELIVERY_TASKS.md](DELIVERY_TASKS.md)
 
 Legend: **Delivered** = working and verified; **Partial** = real work landed but acceptance not
@@ -10,7 +10,7 @@ met; **Open** = not delivered; **Superseded** = changed after a correction.
 | # | Request | Status | Current evidence / remaining work |
 |---|---|---|---|
 | 1 | More story, less system-console UI | Delivered | Captain's Log, human labels, incidents; subjective sign-off yours |
-| 2 | Emergency supply / crashed ship when stuck | Partial | Broadcast exists, but every human is **not** reliably relocated to the impact; D4 |
+| 2 | Emergency supply / crashed ship when stuck | Partial | Broadcast exists; surface pilots now snap to impact (`focusLabel`); orbital focus and two-client verification still needed; D4 |
 | 3 | More rare elements | Delivered | Guaranteed rare in refit |
 | 4 | Major planet colours | Delivered | Eight palettes |
 | 5 | Reverse cursor movement | Open | Still hectic/can change direction; D6 stable screen-space arcball required |
@@ -22,15 +22,15 @@ met; **Open** = not delivered; **Superseded** = changed after a correction.
 | 11 | Incident explanations | Delivered | Story text exists |
 | 12 | Shareable key-info guide | Delivered | GUIDE |
 | 13 | Fewer early rare requirements | Delivered | Early caps |
-| 14 | Supply for all humans + camera turns | Partial | Camera turn path exists; all-human relocation/mineable impact not verified; D4 |
+| 14 | Supply for all humans + camera turns | Partial | Camera turn + surface impact snap landed; every-human orbital relocation and two-client test pending; D4 |
 | 15 | Five-tetra ship / solar sun / alien ships | Partial | Assets exist; events not reliably reached in normal play; D10 |
 | 16 | **Actual 3D humanoid dolls on the surface, not imitation sprites** | **Partial — changed this turn** | Surface external view now uses a projected closed-triangle **3D humanoid** (head, visor, torso, hips, arms, legs) through the same camera, not the old 2D sprite. Final art/rig/animation polish and peer verification remain. |
 | 17 | **No cached copy — multiplayer planet changes continuously** | **Partial — changed this turn** | Removed the “cached planet” path: `surfaceLiveFaces` is rebuilt from the live `leafList` on every authoritative cell/break/click. It is still a derived visual triangle mesh at walkable density; direct renderer-of-active-leaf-only and full HUD/controller parity remain D1. |
 | 18 | **One single planet, camera-only change** | **Partial — major step this turn** | The existing `IcosaRenderer` now draws surface mode through `SurfaceCamera`; the separate terrain canvas no longer draws sky/terrain. HUD remains the orbital HUD; surface controls are overlays. Remaining: remove derived visual mesh/controller duplication, full DOM parity, acceptance test. |
 | 19 | **Same HUD/layout/information, 2D→3D only** | **Partial** | Main orbital HUD is visible in surface mode; surface-specific title/mission duplicates are hidden; target/exit/lap are bottom overlays. Need complete DOM parity and no conflicting panels. |
 | 20 | **UI elements must be present (no missing UI)** | Partial | Main HUD visible; target/exit/lap present. Previous stale full-screen surface rectangle removed on exit. Need regression audit at all viewports. |
-| 21 | **All players/robots walk and mine** | Open | Robots are still visual routes; authoritative surface pose/click mapping not done; D3/D5 |
-| 22 | **Robots own paths, turns, mining** | Partial | Independent Lissajous routes + beams; server-authoritative paths/mining pending |
+| 21 | **All players/robots walk and mine** | **Partial — server authority landed this turn** | Robots now have server-generated surface routes, publish `surface` pose in player state/events, and click the active cell under that pose. Two-client visual/beam verification pending. |
+| 22 | **Robots own paths, turns, mining** | **Partial — server routes/click mapping landed** | Server route/turn + cell-under-pose clicks implemented; client visual mapping and two-client acceptance pending. |
 | 23 | **Triangles change while walking** | Partial | Live mesh refreshes on cell/break/click; footprint harvesting faster; authoritative-only visual mesh acceptance pending |
 | 24 | Surface uses live cells, no generated geography | Partial | Renderer draws current cells; derived visual mesh rebuilt live. D1 removes the last derived layer |
 | 25 | Orbital UI removed from surface | Superseded | Now the orbital HUD is intentionally reused; surface-specific duplicates hidden |
@@ -39,7 +39,7 @@ met; **Open** = not delivered; **Superseded** = changed after a correction.
 | 28 | Seamless pole crossing | Partial | Math tests pass; visual visibility still reported; D7 |
 | 29 | Green/red harvest semantics | Partial | Target-only rule + explicit HUD; renderer lastClick synced. Need automated colour-vs-server test; D8 |
 | 30 | Resource pins only where mineable | Delivered | Target/supply only; hidden resources intentionally unexposed |
-| 31 | Exit to farthest orbit | Delivered | Camera returns to zoom 0.4; named/tested constant pending D9 |
+| 31 | Exit to farthest orbit | Delivered | Named `ORBIT_FAR_ZOOM = 0.4`; exit returns there; D9 test remains |
 | 32 | Roadmap / README / release notes / code comments | Delivered | ROADMAP, DELIVERY_TASKS, README, RELEASE_NOTES |
 | 33 | **Make/update the task list** | Delivered | This document + DELIVERY_TASKS updated |
 

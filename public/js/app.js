@@ -370,7 +370,7 @@ surface = createSurfaceMode({
     const ids = new Set(synced.map((peer) => peer.playerId));
     const others = (state && Array.isArray(state.players) ? state.players : [])
       .filter((player) => player && player.online && player.id !== (myPlayer && myPlayer.id) && !ids.has(player.id))
-      .map((player) => ({ playerId: player.id, tag: player.tag, color: player.color, virtual: true }));
+      .map((player) => ({ playerId: player.id, tag: player.tag, color: player.color, virtual: true, surface: player.surface || null }));
     return [...synced, ...others];
   },
   onPose: (pose) => sendSurfacePose(pose),
@@ -386,7 +386,7 @@ surface = createSurfaceMode({
     // Returning from the crust must put the camera at maximum zoom-out in orbit,
     // not back at the deepest cell zoom.
     camera.reset();
-    camera.zoom = 0.4;
+    camera.zoom = ORBIT_FAR_ZOOM;
     zoomTarget = null;
     zoomAnim = null;
     keyboardSyncNeeded = true;
@@ -1125,6 +1125,11 @@ function handleSupplyEvent(msg) {
     const resource = resourceById(cell.resourceId) || { name: cell.resourceId, color: '#ffd166' };
     return { label: cell.label, resourceId: cell.resourceId, name: resource.name, color: resource.color };
   });
+  if (surface && surface.active) {
+    // A supply drop is a shared race: put every surface pilot at the impact
+    // footprint immediately so they can mine the marked cells, not just watch.
+    surface.focusLabel(msg.impactLabel);
+  }
   clearDistressTimer();
   safeCall(ui, 'toast', message, 'good');
   setCaptainLogMessage('They heard us. A relief ship came down hard — the missing ore is scattered across the marked triangles. Go get it.', 30000);
@@ -1836,6 +1841,7 @@ function maxZoomLevel() {
 
 /** Surface landing happens after the fourth zoom rung (D0..D3), not maxDepth. */
 const SURFACE_ENTER_LEVEL = 3;
+const ORBIT_FAR_ZOOM = 0.4;
 function maxOrbitZoomLevel() {
   return Math.max(maxZoomLevel(), SURFACE_ENTER_LEVEL);
 }
