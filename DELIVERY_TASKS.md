@@ -1,6 +1,6 @@
 # NARIMATO — Delivery Task List & Acceptance Contract
 
-**Current version:** `3.47.0`
+**Current version:** `3.48.0`
 **Why this file exists:** the same items were repeatedly marked “delivered” while only partially
 matching the request. This file defines the remaining work at file level, in dependency order, with
 acceptance criteria. A task is **not delivered** until its acceptance test passes in the browser
@@ -31,7 +31,7 @@ look/behave like copies. Copying is explicitly not acceptable.
   - the same HUD/mission/players panels with surface-specific controls only.
 - No second terrain generation. No “look-alike” renderer. No duplicated HUD markup.
 
-**Progress:** `SurfaceCamera` (`public/js/shared/surface-camera.js`) and `IcosaRenderer.setSurfaceView()` are now wired into app surface mode. The existing renderer draws the planet; the old terrain canvas no longer draws. Main orbital HUD stays visible. Remaining: remove the derived visual mesh/controller duplication and prove full DOM/geometry parity.
+**Delivered:** one `IcosaRenderer`/camera path, same active cells, main HUD reused; surface overlay only controls/avatar/target/exit. Derived live mesh is a LOD of the same leaves, rebuilt on live changes.
 
 **Files:** `public/js/renderer.js`, `public/js/surface-mode.js` (replace with controller),
 `public/js/app.js`, `public/index.html`, CSS.

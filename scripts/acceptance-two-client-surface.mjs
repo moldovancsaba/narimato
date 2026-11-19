@@ -30,17 +30,22 @@ for (const [i, page] of pages.entries()) {
   await delay(1200);
 }
 
+await delay(5000);
 const peers = [];
 const robots = [];
+const mineCounts = [];
 for (const page of pages) {
   peers.push(await page.evaluate(() => window.__ICOSA__.surfacePeers()));
   robots.push(await page.evaluate(() => (window.__ICOSA__.state?.players || []).filter((p) => p.surface)));
+  mineCounts.push(await page.evaluate(() => window.__ICOSA__.surfaceMineCount()));
 }
 const result = {
   peers: peers.map((list) => list.map((p) => p.tag)),
   robots: robots.map((list) => list.map((r) => ({ tag: r.tag, pos: r.surface?.pos }))),
+  mineCounts,
   errors,
 };
 console.log(JSON.stringify(result, null, 2));
 await browser.close();
 if (errors.length) process.exitCode = 1;
+if (!mineCounts.some((count) => count > 0)) process.exitCode = 1;

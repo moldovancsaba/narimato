@@ -1,5 +1,30 @@
 # NARIMATO — Release Notes
 
+## v3.48.0 — “Acceptance” (2026-11-18)
+
+### Verified
+
+- **Two-client visual mining:** both clients observed authoritative surface-mine effects (5 and 2),
+  with peers and robot server poses visible; no page errors.
+- **Orbital supply focus:** supply event moved camera zoom from 1× to 4× toward the impact; surface
+  pilots already snap to the impact footprint.
+- **Single renderer/HUD path marked delivered:** one `IcosaRenderer`, same active cells, main HUD
+  reused; surface overlay is controls/avatar/target/exit only.
+- **106/106 tests.**
+
+### Remaining
+
+- Final 3D humanoid rig/art polish.
+- Incident five-tetra visual assertion.
+
+### Release artifact
+
+- Source tag: `v3.48.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.48.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.47.0 — “Proof” (2026-11-18)
 
 ### Added

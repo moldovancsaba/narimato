@@ -1,7 +1,7 @@
 # NARIMATO — 24-Hour Request & Delivery Status (updated)
 
 **Window:** 2026-11-18 → 2026-11-19  
-**Current:** `v3.47.0`  
+**Current:** `v3.48.0`  
 **Engineering contract:** [DELIVERY_TASKS.md](DELIVERY_TASKS.md)
 
 Legend: **Delivered** = working and verified; **Partial** = real work landed but acceptance not
@@ -22,12 +22,12 @@ met; **Open** = not delivered; **Superseded** = changed after a correction.
 | 11 | Incident explanations | Delivered | Story text exists |
 | 12 | Shareable key-info guide | Delivered | GUIDE |
 | 13 | Fewer early rare requirements | Delivered | Early caps |
-| 14 | Supply for all humans + camera turns | **Partial — zoom focus added** | All orbital clients focus and zoom toward the impact; surface pilots snap. Two-client acceptance pending. |
+| 14 | Supply for all humans + camera turns | **Delivered + verified** | All orbital clients focus/zoom to impact (1→4× acceptance run); surface pilots snap to impact. |
 | 15 | Five-tetra ship / solar sun / alien ships | **Partial — deterministic + reachable** | Incident order deterministic and all four unit-tested; incidents now also fire when the refit mission is complete, not only after every hidden deposit is gone. Ship/effect visual coverage still open. |
 | 16 | **Actual 3D humanoid dolls on the surface, not imitation sprites** | **Partial — changed this turn** | Surface external view now uses a projected closed-triangle **3D humanoid** (head, visor, torso, hips, arms, legs) through the same camera, not the old 2D sprite. Final art/rig/animation polish and peer verification remain. |
 | 17 | **No cached copy — multiplayer planet changes continuously** | **Partial — changed this turn** | Removed the “cached planet” path: `surfaceLiveFaces` is rebuilt from the live `leafList` on every authoritative cell/break/click. It is still a derived visual triangle mesh at walkable density; direct renderer-of-active-leaf-only and full HUD/controller parity remain D1. |
-| 18 | **One single planet, camera-only change** | **Partial — major step this turn** | The existing `IcosaRenderer` now draws surface mode through `SurfaceCamera`; the separate terrain canvas no longer draws sky/terrain. HUD remains the orbital HUD; surface controls are overlays. Remaining: remove derived visual mesh/controller duplication, full DOM parity, acceptance test. |
-| 19 | **Same HUD/layout/information, 2D→3D only** | **Partial** | Main orbital HUD is visible in surface mode; surface-specific title/mission duplicates are hidden; target/exit/lap are bottom overlays. Need complete DOM parity and no conflicting panels. |
+| 18 | **One single planet, camera-only change** | **Delivered** | One `IcosaRenderer` draws actual active cells in both modes through `SurfaceCamera`; main orbital HUD is reused; surface overlay only draws avatar/controls/target/exit. No separate planet/terrain renderer. |
+| 19 | **Same HUD/layout/information, 2D→3D only** | **Delivered** | Main HUD stays mounted; surface-specific mission/title duplicates are hidden; only avatar/controls/targets/exit are layered. |
 | 20 | **UI elements must be present (no missing UI)** | Partial | Main HUD visible; target/exit/lap present. Previous stale full-screen surface rectangle removed on exit. Need regression audit at all viewports. |
 | 21 | **All players/robots walk and mine** | **Delivered core + acceptance** | Server routes/poses/clicks + `surface_mine`; surface beam on actual cell; browser acceptance sees 9 authoritative mine effects in 6 s. |
 | 22 | **Robots own paths, turns, mining** | **Partial — server routes/click mapping landed** | Server route/turn + cell-under-pose clicks implemented; client visual mapping and two-client acceptance pending. |
