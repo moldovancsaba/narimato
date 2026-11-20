@@ -4,7 +4,7 @@
 > **Delivery SSOT:** [NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80) · [Definition of Done](docs/DEFINITION_OF_DONE.md) · [Issue index](docs/ISSUE_MAP.md).
 > This document owns durable knowledge; it does not track delivery status.
 >
-> **Related delivery issues:** [SSOT-01](https://github.com/moldovancsaba/narimato/issues/1) · [SSOT-03](https://github.com/moldovancsaba/narimato/issues/3) · [QA-01](https://github.com/moldovancsaba/narimato/issues/5) · [DOC-01](https://github.com/moldovancsaba/narimato/issues/6) · [UI-01](https://github.com/moldovancsaba/narimato/issues/7) · [RND-06](https://github.com/moldovancsaba/narimato/issues/19) · [SRV-01](https://github.com/moldovancsaba/narimato/issues/20) · [TST-01](https://github.com/moldovancsaba/narimato/issues/25) · [EVT-01](https://github.com/moldovancsaba/narimato/issues/32) · [STR-01](https://github.com/moldovancsaba/narimato/issues/35) · [STR-02](https://github.com/moldovancsaba/narimato/issues/36) · [OPS-03](https://github.com/moldovancsaba/narimato/issues/40) · [OPS-05](https://github.com/moldovancsaba/narimato/issues/42) · [SEC-01](https://github.com/moldovancsaba/narimato/issues/43) · [PERF-01](https://github.com/moldovancsaba/narimato/issues/44)
+> **Related delivery issues:** [SSOT-01](https://github.com/moldovancsaba/narimato/issues/1) · [SSOT-03](https://github.com/moldovancsaba/narimato/issues/3) · [QA-01](https://github.com/moldovancsaba/narimato/issues/5) · [DOC-01](https://github.com/moldovancsaba/narimato/issues/6) · [UI-01](https://github.com/moldovancsaba/narimato/issues/7) · [RND-01](https://github.com/moldovancsaba/narimato/issues/14) · [RND-02](https://github.com/moldovancsaba/narimato/issues/15) · [RND-03](https://github.com/moldovancsaba/narimato/issues/16) · [RND-04](https://github.com/moldovancsaba/narimato/issues/17) · [RND-06](https://github.com/moldovancsaba/narimato/issues/19) · [SRV-01](https://github.com/moldovancsaba/narimato/issues/20) · [TST-01](https://github.com/moldovancsaba/narimato/issues/25) · [EVT-01](https://github.com/moldovancsaba/narimato/issues/32) · [STR-01](https://github.com/moldovancsaba/narimato/issues/35) · [STR-02](https://github.com/moldovancsaba/narimato/issues/36) · [OPS-03](https://github.com/moldovancsaba/narimato/issues/40) · [OPS-05](https://github.com/moldovancsaba/narimato/issues/42) · [SEC-01](https://github.com/moldovancsaba/narimato/issues/43) · [PERF-01](https://github.com/moldovancsaba/narimato/issues/44)
 <!-- delivery-ssot:end -->
 
 Architecture decisions are recorded as ADRs: [docs/adr/README.md](docs/adr/README.md).
@@ -110,7 +110,11 @@ Observability: `public/js/telemetry.js` posts a tiny privacy-safe numeric beacon
 - **`public/audio/voice/manifest.json`** — generated clip manifest (paths, bytes, sha256, duration,
   text hash, engine/licence) read by the verification gate and tests.
 - **`shared/`** — pure modules used by both sides:
-  - `geometry.js` — icosahedron, hierarchical labels, child triangles, slerp, camera/picking.
+  - `geometry.js` — icosahedron, hierarchical labels, child triangles, slerp, `SphereCamera`, picking.
+  - `camera-contract.js` — the `CameraView` interface every renderer camera implements:
+    `project`, `unprojectView`, `viewAxis`, `unprojectScreen`, `setViewport`, units and invariants.
+  - `surface-camera.js` — `SurfaceCamera` on the same contract: legacy close-frame and carrier
+    framing (dolly 1.08…1.72, bounded tilt, screen inverse) selected by `?surface-camera`.
   - `sphere-interaction.js` — pure carrier frame/projection/unprojection/movement math.
   - `orbit-controls.js` — shared game drag/trackball/cursor-key primitives.
   - `planet.js` — seed-driven 3D noise terrain, biomes, geological deposit weights.
@@ -180,6 +184,11 @@ Authoritative rules live in [narimato-physics.md](narimato-physics.md):
 - Camera = carrier `pos` + parallel-transported `up` on a concentric sphere; always faces centre.
 - Cursor keys move the carrier along local Up/Right; wheel changes the carrier radius with fixed
   focal length (dolly, not optical zoom).
+- One camera interface: `public/js/shared/camera-contract.js` declares the members `IcosaRenderer`
+  reads (`project`, `viewAxis`, `distance`, `zoom`, `width`, `height`, `focalPx`, `nearPlane`,
+  `unprojectView`, `unprojectScreen`, `setViewport`); `z = dot(point, viewAxis())` for every camera.
+- Surface framing is a camera mode, not a second projection: `SurfaceCamera` reuses the same
+  contract and the same planet geometry.
 - Mouse rotates the **object**, not the camera, via exact surface-point unprojection + shortest-arc
   quaternion.
 - WebGL reference viewer renders the front sphere surface only (no hidden back faces/edges).

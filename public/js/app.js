@@ -23,6 +23,7 @@ import { createNarrator } from './narrator.js';
 import { createSupplyDrop } from './supply-drop.js';
 import { createSurfaceMode } from './surface-mode.js';
 import { SurfaceCamera } from './shared/surface-camera.js';
+import { cameraModeReport, parseSurfaceCameraMode } from './shared/camera-contract.js';
 import './telemetry.js';
 import { HELP_SECTIONS, captainLog } from './story-copy.js';
 
@@ -32,6 +33,11 @@ const TOKENS_KEY = 'icosa.tokens';
 const DEFAULT_THRESHOLD = 8;
 const DEFAULT_MAX_DEPTH = 24;
 const MAX_ZOOM = 16777216;
+// RND-01: `?surface-camera=legacy|carrier` selects the surface framing.
+// Production default is `legacy` until RND-06 proves carrier pixel parity.
+const SURFACE_CAMERA_MODE = parseSurfaceCameraMode(
+  typeof window !== 'undefined' ? window.location.search : '',
+);
 
 const canvas = document.getElementById('arena-canvas');
 const camera = new SphereCamera(window.innerWidth || 1, window.innerHeight || 1);
@@ -389,7 +395,11 @@ const ui = new UI({
 
 narrator = createNarrator();
 supplyDrop = createSupplyDrop();
-surfaceCamera = new SurfaceCamera(camera.width || window.innerWidth, camera.height || window.innerHeight);
+surfaceCamera = new SurfaceCamera(
+  camera.width || window.innerWidth,
+  camera.height || window.innerHeight,
+  { mode: SURFACE_CAMERA_MODE },
+);
 surface = createSurfaceMode({
   getStartPoint: () => (camera && typeof camera.viewAxis === 'function' ? camera.viewAxis() : { x: 0, y: 0, z: 1 }),
   getLeaves: () => leafList,
@@ -2668,6 +2678,7 @@ window.__ICOSA__ = {
   guide: () => openGuide(),
   surface: () => enterSurfaceMode(),
   surfaceMode: () => (surface ? { active: surface.active, phase: surface.phase } : null),
+  cameraMode: () => cameraModeReport(SURFACE_CAMERA_MODE),
   surfaceDebug: () => (surface ? surface.debug() : null),
   surfaceMineCount: () => (surface ? surface.mineCount() : 0),
   surfacePeers: () => [...surfacePeers.values()],
