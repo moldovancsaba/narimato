@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "devices": {
+    "desktop": {
+      "measuredAt": "2026-11-20T22:02:56.618Z",
+      "environment": {
+        "browser": "chromium 159.0.8154.6",
+        "platform": "darwin",
+        "arch": "arm64",
+        "headless": true,
+        "viewport": {
+          "width": 1440,
+          "height": 900
+        },
+        "dpr": 2,
+        "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M6, Unspecified Version)",
+        "cpuThrottle": 1,
+        "network": "none",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/159.0.8154.6 Safari/537.36",
+        "gpuClass": "hardware",
+        "quality": 0
+      },
+      "observed": {
+        "frameP95Ms": 16.7,
+        "frameMaxMs": 16.8,
+        "fps": 59.88,
+        "longTasksPer10s": 0,
+        "maxLongTaskMs": 0,
+        "inpMs": 0,
+        "cls": 0,
+        "lcpMs": 84,
+        "interactionMs": 47.5,
+        "interactionSamples": 9,
+        "drawUnitsPerFrame": 135,
+        "rebuildsPerSecond": 0,
+        "bundleKibGzip": 182.53,
+        "bundleFirstLoadKibGzip": 245.81,
+        "cssKibGzip": 63.28,
+        "islandKibGzip": 172.06
+      },
+      "bundle": {
+        "jsKibGzip": 182.53,
+        "firstLoadKibGzip": 245.81,
+        "islands": [
+          {
+            "name": "public/ui/island.js",
+            "file": "public/ui/island.js",
+            "kib": 172.06,
+            "modules": [
+              "public/ui/island.js"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "updatedAt": "2026-11-20T22:02:56.618Z",
+  "method": "scripts/perf-probe.mjs; Playwright Chromium; budgets from public/js/perf-budget.js"
+}

@@ -17,8 +17,8 @@ Architecture decisions are recorded as ADRs: [docs/adr/README.md](docs/adr/READM
 | Rendering | Canvas 2D + WebGL | game planet: Canvas 2D; spherical-icosahedron reference viewer: WebGL ray–sphere shader |
 | Simulation | Node.js ≥20 | authoritative game server, HTTP + Server-Sent Events |
 | Persistence | JSON files + atomic rename | one file per planet, one registry file |
-| Tests | `node:test` | <!-- test-count:380 -->380<!-- /test-count --> tests, no test dependencies; ownership map in [docs/TEST_MAP.md](docs/TEST_MAP.md) |
-| CI | GitHub Actions | Node 20 and 22, `npm test`; Node 22 GDS island build, contract gate and determinism proof |
+| Tests | `node:test` | <!-- test-count:400 -->400<!-- /test-count --> tests, no test dependencies; ownership map in [docs/TEST_MAP.md](docs/TEST_MAP.md) |
+| CI | GitHub Actions | Node 20 and 22, `npm test`; Node 22 GDS island build/contract/determinism; scheduled OPS-02 load/soak/chaos gate |
 | Deploy | `node server.js` behind any static/reverse proxy | Cloudflare tunnel used for the live build |
 
 Zero npm dependencies is intentional: the entire game ships as readable source and starts with
@@ -35,6 +35,8 @@ Browser
                          ├─ surface-controller.js (pose + harvest + surface entities; no canvas)
                          ├─ intro.js             (cockpit launch cine)
                          ├─ interlude.js         (interplanetary storm/meteor cine)
+                         ├─ telemetry.js         (privacy-safe numeric beacon; perf fields)
+                         ├─ perf-budget.js       (device budgets, frame ring, quality ladder)
                          └─ result-card.js
   icosahedron.html ── icosahedron-viewer.js (WebGL ray–sphere reference viewer)
              shared/     geometry.js · planet.js · resources.js · mission.js
@@ -55,6 +57,10 @@ Node server.js
 Recovery tooling: `scripts/backup-data.mjs` · `scripts/verify-data.mjs` · `scripts/restore-data.mjs`
 (shared logic in `lib/data-integrity.js`; runbook [docs/RECOVERY.md](docs/RECOVERY.md)).
 SLO tooling: `observability/slo.json` · `lib/slo.js` · `scripts/check-slo.mjs`.
+OPS-02 gate: `observability/load-scenarios.json` · `scripts/perf-gate.mjs` ·
+`scripts/load-test.mjs` / `scripts/chaos-test.mjs` (`--report`).
+PERF-01 probe: `public/js/perf-budget.js` · `scripts/perf-probe.mjs` ·
+`lib/perf-bundle.js` · `observability/perf-baseline.json`.
 
 Observability: `public/js/telemetry.js` posts a tiny privacy-safe numeric beacon to
 `/api/telemetry` (page hide + first spoken word); the server aggregates it and exposes
@@ -84,7 +90,13 @@ Observability: `public/js/telemetry.js` posts a tiny privacy-safe numeric beacon
   edges, biome underlay + ownership, hidden ore markers, labels-on-interaction, particles, starfield.
   It is the single renderer for both views: `setSurfaceMode({ active, entities, phase, progress })`
   turns on the surface entity pass (avatars, pins, beams, harvest FX, landing ship) on the same
-  `#arena-canvas`.
+  `#arena-canvas`. PERF-01 feeds every rAF delta into `perf-budget.js` and draws the full/medium/
+  coarse tessellation chosen by the quality ladder; tiers change only canvas work, never DOM/GDS.
+- **`perf-budget.js`** — pure, Node-importable client budgets: three device classes, 512-sample
+  frame ring, windowed p95, interaction ring, 2 s-hysteresis quality tier and `evaluatePerf()`.
+  `perf-probe.mjs` evaluates the same functions outside the browser, so budgets cannot drift.
+- **`lib/perf-bundle.js`** — first-load JavaScript and lazy-island gzip measurement used by the
+  probe; no bundler is added to the game.
 - **`surface-controller.js`** — surface mode as a control mode: pilot pose, movement, harvest
   targeting, peer resolution and the `SurfaceEntity[]` list consumed by the renderer. It owns no
   canvas, no RAF loop and no projection.
@@ -618,11 +630,13 @@ debounce 0.5 min + 5 min backup interval), RTO ≤ 15 min; retention is 7 daily 
 
 ## Testing
 
-The suite currently runs <!-- test-count:380 -->380<!-- /test-count --> tests. Behaviour ownership: [docs/TEST_MAP.md](docs/TEST_MAP.md).
+The suite currently runs <!-- test-count:400 -->400<!-- /test-count --> tests. Behaviour ownership: [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 ```bash
-npm test                 # node:test suite (380 tests)
+npm test                 # node:test suite (400 tests)
 npm run check:slo        # evaluate observability/slo.json against /api/metrics (0/1/2/3)
+npm run gate:load        # OPS-02 load/soak/chaos gate (ephemeral server, artifacts)
+npm run gate:perf        # PERF-01 client probe + 15% desktop baseline gate
 npm run recovery:test    # backup -> verify -> restore drill on throwaway data
 npm run docs:check       # R1-R6 repository SSOT gate
 npm run check:version    # version SSOT gate
@@ -656,6 +670,10 @@ node scripts/test-count.mjs  # documented count == executed count
   rate limiting, and the Node-safe client beacon module.
 - `test/slo-contract.test.js` — executable SLO contract: ruleset schema, path resolution, warm-up,
   growth maths, checker exit codes `0/1/2/3`, docs-vs-rules drift, privacy of rules/output.
+- `test/perf-budget.test.js` — device budgets, percentile/window maths, tier hysteresis, evaluator,
+  ring exclusions, interaction ring and the committed bundle budget.
+- `test/perf-gate.test.js` — scenario schema, ruleset resolution (no duplicate thresholds), flaky
+  verdict policy, RSS growth, latency/correctness classification and artifact redaction.
 - `test/rate-limit.test.js` — pure token bucket: refill, burst, `retryAfter`, clock injection,
   key isolation, eviction bound.
 - `test/security.test.js` — header matrix, exact-origin policy, join/action/telemetry limits, body

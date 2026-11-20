@@ -247,12 +247,14 @@ repository status documents. The repository owns durable technical knowledge and
 
 ## Development
 
-The node:test suite currently runs <!-- test-count:380 -->380<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
+The node:test suite currently runs <!-- test-count:400 -->400<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 ```
 npm test                 # node:test suite, no dependencies
 npm run docs:check       # markdown links, issue map and version consistency
 npm run check:slo        # SLO verdict from /api/metrics (exit 0/1/2/3)
+npm run gate:load        # OPS-02 smoke/load/soak/chaos gate + artifacts
+npm run gate:perf        # PERF-01 client probe + 15% desktop baseline gate
 npm run recovery:test    # backup -> verify -> restore drill on throwaway data
 npm run build:ui         # rebuild the committed GDS island from ui/src (dev only, needs npm ci)
 npm run verify:ui        # GDS island contract: content hash, budgets, mount rules, deploy safety
@@ -281,14 +283,17 @@ lib/slo.js                executable SLO ruleset evaluator (observability/slo.js
 lib/security.js           origin policy, CSP/header assembly, path safety (SEC-01)
 lib/rate-limit.js         pure token-bucket limiter with injectable clock
 lib/data-integrity.js     manifest, deterministic tar/gzip, path safety, reconciliation (OPS-03)
-observability/slo.json    threshold/owner/runbook SSOT for the SLO checker
+observability/slo.json    threshold/owner/runbook SSOT for the SLO checker + gate block
+observability/load-scenarios.json  fixed OPS-02 smoke/load/soak/chaos scenarios
+observability/perf-baseline.json   measured PERF-01 client baseline (15% p95 gate)
 public/index.html         shell + intro/interlude/HUD markup + GDS mount host
 public/js/app.js          client integration + game loop
 ui/src/                   GDS React island sources (dev-time only)
 public/ui/                committed GDS island bundle + manifest served by the server
 public/js/gds-adapter.js  UI flags, frozen-UI adapter, boot retry/fallback
 public/js/gds-boot.js     page boot for the GDS island
-public/js/renderer.js     Canvas 2D spherical game renderer
+public/js/renderer.js     Canvas 2D spherical game renderer (adaptive quality LOD)
+public/js/perf-budget.js  pure device budgets, frame ring and quality ladder (PERF-01)
 public/icosahedron.html   isolated spherical-icosahedron viewer
 public/js/icosahedron-viewer.js  WebGL ray–sphere front-surface viewer
 public/js/shared/sphere-interaction.js  carrier/unprojection/shortest-arc math
@@ -300,7 +305,8 @@ public/js/result-card.js  session report + share card
 public/js/shared/         geometry, planets, resources, mission, sphere interaction
 test/                     node:test suites
 docs/                     delivery SSOT: board contract, DoD, issue map, intake rules, RECOVERY.md
-scripts/                  operator tools: SLO check, backup/verify/restore, load/chaos, gates
+scripts/                  operator tools: SLO check, backup/verify/restore, load/chaos,
+                          perf-gate (OPS-02), perf-probe (PERF-01), performance gates
 media/                    screenshots used by docs
 ```
 

@@ -9,3 +9,6 @@ coverage/
 .env
 .env.*
 /tmp/
+
+# Generated performance/load artifacts (CI uploads these; never commit)
+artifacts/

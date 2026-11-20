@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "NARIMATO single-node SLO ruleset (OPS-01). The only mutable threshold source; OBSERVABILITY.md documents each rule, its owner and its runbook anchor. Evaluated by scripts/check-slo.mjs.",
+  "description": "NARIMATO single-node SLO ruleset (OPS-01). The only mutable threshold source; OBSERVABILITY.md documents each rule, its owner and its runbook anchor. Evaluated live by scripts/check-slo.mjs; the `gate` block below holds derived thresholds consumed by scripts/perf-gate.mjs (OPS-02).",
   "rules": [
     {
       "id": "http-p95",
@@ -31,7 +31,11 @@
       "severity": "page",
       "owner": "ops-on-call",
       "runbook": "#sse-drop",
-      "requires": { "path": "planets[].playersOnline", "op": "gt", "threshold": 0 }
+      "requires": {
+        "path": "planets[].playersOnline",
+        "op": "gt",
+        "threshold": 0
+      }
     },
     {
       "id": "sse-silence",
@@ -42,7 +46,11 @@
       "severity": "page",
       "owner": "ops-on-call",
       "runbook": "#sse-drop",
-      "requires": { "path": "planets[].playersOnline", "op": "gt", "threshold": 0 }
+      "requires": {
+        "path": "planets[].playersOnline",
+        "op": "gt",
+        "threshold": 0
+      }
     },
     {
       "id": "audio-first-word",
@@ -53,7 +61,11 @@
       "severity": "warn",
       "owner": "client-perf-on-call",
       "runbook": "#audio-first-word",
-      "requires": { "path": "telemetry.aggregates[\"audio.firstWordMs\"].count", "op": "gte", "threshold": 20 }
+      "requires": {
+        "path": "telemetry.aggregates[\"audio.firstWordMs\"].count",
+        "op": "gte",
+        "threshold": 20
+      }
     },
     {
       "id": "rss-growth",
@@ -66,5 +78,13 @@
       "owner": "ops-on-call",
       "runbook": "#rss-growth"
     }
-  ]
+  ],
+  "gate": {
+    "errors": 0,
+    "joinP95Ms": 25,
+    "clickP95Ms": 75,
+    "rssGrowthMiB": 96,
+    "reconnectMs": 5000,
+    "responseBodyMiB": 1
+  }
 }

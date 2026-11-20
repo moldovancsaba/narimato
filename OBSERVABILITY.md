@@ -99,6 +99,8 @@ ignored; numbers are clamped):
 | `audio.firstWordMs` | 0..120000 ms (cue-relative; see below) |
 | `audio.clipFailures` | 0..100000 |
 | `audio.resumeCount` | 0..100000 |
+| `perf.frameP95Ms` / `perf.frameMaxMs` | 0..60000 ms |
+| `perf.fps` | 0..240 |
 | `viewport.width` / `viewport.height` | 1..20000 |
 | `viewport.dpr` | 0.25..10 |
 | `sessionMs` | 0..86400000 |
@@ -149,7 +151,89 @@ interruption resumes; all three are numbers only, so no cue id, URL, profile id 
   `fetch(..., {keepalive:true})`.
 - Completely fails-safe: if `sendBeacon`/`fetch` are missing or the network is down it silently
   does nothing. No identifiers, cookies, tags, tokens or timestamps beyond the session duration.
+- PERF-01 adds three numeric performance fields (`perf.frameP95Ms`, `perf.frameMaxMs`,
+  `perf.fps`). The render loop updates them at most once per second through
+  `telemetry.recordPerf()`; they ride the same page-hide beacon and are clamped
+  server-side like every other field.
 - `buildTelemetryPayload()` / `createTelemetry({win})` are exported for tests and non-DOM hosts.
+
+## Client performance budgets (PERF-01)
+
+`public/js/perf-budget.js` is the pure, Node-importable budget and measurement module.
+The renderer feeds it one frame per rAF and applies the quality ladder; the probe
+evaluates the same numbers outside the browser.
+
+### Budgets
+
+| Device class | Viewport / dpr | Frame p95 | Frame max | FPS floor | Long tasks / 10 s | Max long task | INP | CLS | LCP | Interaction p95 | JS bundle gzip |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `desktop` | 1440×900 / 2 | 16.7 ms | 40 ms | 55 | 2 | 100 ms | 200 ms | 0.10 | 2500 ms | 100 ms | 180 KiB |
+| `mobile-mid` | 390×844 / 3 | 22.0 ms | 60 ms | 45 | 2 | 120 ms | 200 ms | 0.10 | 2500 ms | 100 ms | 180 KiB |
+| `mobile-low` | 360×640 / 2 | 33.3 ms | 80 ms | 30 | 2 | 160 ms | 200 ms | 0.10 | 2500 ms | 100 ms | 180 KiB |
+
+The game's first-load JavaScript graph gets the **180 KiB gzip** budget. The
+committed GDS island (`public/ui/island.js`) is measured as a lazy island against
+M1's **180 KiB** build budget (its CSS is reported separately); any *additional*
+lazy island gets **60 KiB gzip**. `bundleKibGzip` is the game JavaScript graph
+(entry + static imports); dynamic `import()` is excluded from first load. CSS is
+reported separately as `cssKibGzip` and is not part of the 180 KiB JavaScript
+budget. Frame-time and bundle budgets
+are compared with a documented **2 % measurement tolerance** (a 16.7 ms target
+routinely measures 16.8 ms at 60 Hz; gzip output varies by build); the budget
+values themselves do not move.
+
+### Frame percentile and quality ladder
+
+Frame time is the rAF delta. Percentiles are the 90th percentile of each 2 s window,
+then the 95th percentile across windows, so one 200 ms stall does not dominate p95
+but still fails `frameMaxMs`. The ring holds 512 samples; hidden-tab frames are
+discarded, the frame that rebuilds the surface mesh is excluded, and a dpr/viewport
+change resets the ring.
+
+The quality ladder drops a tier when recent p95 exceeds `1.35 ×` the budget and
+climbs when it falls below `0.7 ×`; changes are held for 2 s and pinned by
+`?quality=0|1|2`. Tiers reduce **canvas** work only: tier 2 draws the full
+tessellation, tier 1 a medium tessellation, tier 0 a coarse tessellation, plus fewer
+particles/scanlines/glass FX. GDS DOM, focus, labels and accessibility are untouched.
+
+### Reproducible probe
+
+```bash
+PLAYWRIGHT_MODULE=/path/to/playwright npm run perf:probe -- --device=desktop
+PLAYWRIGHT_MODULE=/path/to/playwright npm run gate:perf      # desktop, pinned quality 0, 15% baseline gate
+npm run perf:baseline                                        # record the pinned desktop baseline
+```
+
+`scripts/perf-probe.mjs` starts the real server on an ephemeral port, launches
+Chromium through the documented `PLAYWRIGHT_MODULE` path, applies the device
+viewport/DPR (mobile classes also get 4× CPU and Fast 3G; desktop stays on the
+host CPU/network so its LCP is not a proxy for uncompressed static transfer),
+waits 12 s for the adaptive tier to settle (the release gate pins
+`quality=0` so a host-contention tier change cannot masquerade as a renderer
+regression; adaptive behaviour is probed separately), exercises
+pointer/wheel/keyboard input, resets the frame ring while keeping interaction
+samples, then measures for 15 s. On macOS it requests the ANGLE/Metal backend; on CI
+without a GPU the artifact records `environment.gpuClass = "software"` and the
+baseline comparison is skipped unless the environment signature matches.
+
+Run the probe on a **quiet host**: `frameMaxMs` is deliberately strict and a
+concurrent build/browser on the same machine can add a GC-scale spike that is not
+a product regression. CI runners are isolated; a shared developer box should be
+idle for the measurement.
+
+Artifacts: `artifacts/perf/<device>.json` (`observed`, `budget`, `evaluation`,
+`regression`, environment, bundle). The committed reference is
+`observability/perf-baseline.json`. The gate fails when frame p95 regresses by more
+than **15 %** against a comparable baseline, or when any budget misses. The probe
+does not invent numbers: every field comes from the measured page, and
+`interactionSamples` is part of the artifact so input coverage is auditable.
+
+`--all` runs all three classes; `--cpu=<n>`, `--no-throttle`, `--quality=0|1|2`,
+`--seconds=<n>` and `--attempts=<1..5>` exist for calibration. The release gate
+(`npm run gate:perf`) runs **three attempts** and keeps the best clean attempt, with
+every attempt recorded in the artifact; this absorbs a one-off host/GC spike without
+weakening the budget per run. Real-device calibration is still required: emulation
+is a regression signal, not a phone.
 
 ## SLO ruleset (executable)
 
@@ -166,6 +250,10 @@ into a local verdict. The table below is checked against the ruleset by
 | `sse-silence` | `sse.active` | > 0 | 3 min | page | ops-on-call | [#sse-drop](#sse-drop) |
 | `audio-first-word` | `telemetry.aggregates["audio.firstWordMs"].avg` | ≤ 1000 ms | 15 min | warn | client-perf-on-call | [#audio-first-word](#audio-first-word) |
 | `rss-growth` | `process.rssBytes` (rate/min from `bootRssBytes`) | ≤ 6 MiB/min | 30 min | warn | ops-on-call | [#rss-growth](#rss-growth) |
+
+The ruleset also carries a non-live `gate` block (`errors`, `joinP95Ms`,
+`clickP95Ms`, `rssGrowthMiB`, `reconnectMs`, `responseBodyMiB`) consumed by the
+OPS-02 gate; `check-slo.mjs` ignores it.
 
 Rule semantics:
 

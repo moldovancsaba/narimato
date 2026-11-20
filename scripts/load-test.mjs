@@ -9,7 +9,43 @@
  *
  * Exits non-zero if an SLO gate fails or a request errors.
  */
+import { mkdir, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
+
+/** `--report <path>` is additive to the env-driven CLI (OPS-02). */
+function parseArgs(argv) {
+  const options = { report: null };
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === '--report') {
+      options.report = argv[index + 1];
+      if (!options.report) throw new Error('--report requires a path');
+      index += 1;
+    } else if (arg.startsWith('--report=')) options.report = arg.slice(9);
+    else if (arg === '--help' || arg === '-h') options.help = true;
+    else throw new Error(`unknown argument: ${arg}`);
+  }
+  return options;
+}
+
+let ARGS;
+try {
+  ARGS = parseArgs(process.argv.slice(2));
+} catch (error) {
+  console.error(`[load] ${error.message}`);
+  process.exit(2);
+}
+if (ARGS.help) {
+  console.error('usage: CLIENT_ENV... node scripts/load-test.mjs [--report <path>]');
+  process.exit(0);
+}
+
+async function writeReport(report) {
+  if (!ARGS.report) return;
+  await mkdir(path.dirname(path.resolve(ARGS.report)), { recursive: true });
+  await writeFile(ARGS.report, `${JSON.stringify(report, null, 2)}\n`);
+}
 
 const BASE = (process.env.BASE_URL || 'http://127.0.0.1:4173').replace(/\/+$/, '');
 const CLIENTS = Math.max(1, Math.min(500, Number(process.env.CLIENTS) || 50));
@@ -88,6 +124,8 @@ let errors = 0;
 let joinMs = 0;
 let clickMs = 0;
 let clickCount = 0;
+const joinSamples = [];
+const clickSamples = [];
 const start = performance.now();
 
 console.log(`[load] base=${BASE} clients=${CLIENTS} clicks=${CLICKS} sse=${SSE_CLIENTS} duration=${DURATION || 'until done'}s`);
@@ -103,6 +141,7 @@ for (let i = 0; i < CLIENTS; i += 1) {
     continue;
   }
   joinMs += result.ms;
+  joinSamples.push(result.ms);
   clients.push(result.body.token);
   if (sseStates.length < SSE_CLIENTS) {
     const state = { events: 0 };
@@ -125,6 +164,7 @@ const clickPromises = clients.map(async (token, i) => {
     } else {
       clickCount += 1;
       clickMs += result.ms;
+      clickSamples.push(result.ms);
     }
     if (CLICK_PAUSE) await delay(CLICK_PAUSE);
   }
@@ -148,7 +188,9 @@ const summary = {
   seconds: Number(elapsed.toFixed(2)),
   rps: Number((clickCount / Math.max(0.001, elapsed)).toFixed(1)),
   joinAvgMs: Number((joinMs / Math.max(1, clients.length)).toFixed(1)),
+  joinP95Ms: Number(percentile(joinSamples, 95).toFixed(2)),
   clickAvgMs: Number((clickMs / Math.max(1, clickCount)).toFixed(1)),
+  clickP95Ms: Number(percentile(clickSamples, 95).toFixed(2)),
   httpP95Ms: http.latencyMs?.p95Ms ?? null,
   loopP95Ms: loop.p95Ms ?? null,
   sseActive: sse.active ?? null,
@@ -165,6 +207,14 @@ if (errors > 0) failures.push(`${errors} request errors`);
 if (summary.httpP95Ms != null && summary.httpP95Ms > SLO.p95HttpMs) failures.push(`HTTP p95 ${summary.httpP95Ms}ms > ${SLO.p95HttpMs}ms`);
 if (summary.loopP95Ms != null && summary.loopP95Ms > SLO.p95LoopMs) failures.push(`event-loop p95 ${summary.loopP95Ms}ms > ${SLO.p95LoopMs}ms`);
 if ((summary.sseDropped || 0) > SLO.droppedSse) failures.push(`dropped SSE ${summary.sseDropped}`);
+await writeReport({
+  tool: 'load-test',
+  generatedAt: new Date().toISOString(),
+  scenario: process.env.SCENARIO || null,
+  ok: failures.length === 0,
+  summary,
+  failures,
+});
 if (failures.length) {
   console.error('[load] SLO FAIL:', failures.join('; '));
   process.exit(1);

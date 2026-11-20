@@ -56,6 +56,7 @@ import { BIOMES } from './shared/planet.js';
 import { LiveSurfaceStore } from './shared/live-surface-mesh.js';
 import { drawTetraShip } from './shared/tetra-ship.js';
 import { drawHumanoid3D } from './shared/humanoid-3d.js';
+import { createFrameBudget, detectDeviceClass, parsePinnedTier, qualityWorkScale } from './perf-budget.js';
 
 const TAU = Math.PI * 2;
 const HALF_PI = Math.PI / 2;
@@ -158,12 +159,40 @@ export class IcosaRenderer {
     this.height = 1;
     this.dpr = 1;
 
+    // --- PERF-01 frame budget / quality ladder ------------------------
+    // The renderer owns the rAF timestamp stream, so it can measure frame
+    // deltas without an extra clock read per frame. A pinned `?quality=0|1|2`
+    // disables adaptive tier changes for reproducible probes.
+    const perfHints = typeof window !== 'undefined'
+      ? {
+          width: window.innerWidth,
+          dpr: window.devicePixelRatio,
+          hardwareConcurrency: window.navigator && window.navigator.hardwareConcurrency,
+          deviceMemory: window.navigator && window.navigator.deviceMemory,
+        }
+      : {};
+    this.perf = createFrameBudget({
+      device: detectDeviceClass(perfHints),
+      pinnedTier: parsePinnedTier(typeof window !== 'undefined' && window.location ? window.location.search : ''),
+      now: () => (typeof performance !== 'undefined' && typeof performance.now === 'function' ? performance.now() : Date.now()),
+    });
+    this._perfLastRenderAt = 0;
+    this._perfDrawUnits = 0;
+    this._workStars = 0;
+    this._workMotes = 0;
+    this._workDust = 0;
+
     // --- infinite world state -----------------------------------------
     this.players = [];
     this.myPlayerId = null;
     this.myIndex = -1;
-    this.faces = []; // active leaf entries
+    this.faces = []; // full-quality leaf entries
     this.byLabel = new Map(); // label -> entry
+    // PERF-01 adaptive LOD: tier 1 draws a medium tessellation, tier 0 a
+    // coarse one. Both are built from the same live leaves and carry the
+    // source leaf label so owner/charge updates stay in sync.
+    this._lodFaces = { 0: [], 1: [] };
+    this._lodByLabel = { 0: new Map(), 1: new Map() };
     this.threshold = 8;
     this.maxDepth = 8;
     // Debug "show all ids" toggle (app L key). Off by default: ids are only
@@ -371,15 +400,35 @@ export class IcosaRenderer {
     this.opaqueSurface = !!enabled;
   }
 
-  setFaces(faces) {
+  /**
+   * Replace the render tessellation. `options.lod` optionally supplies
+   * `{0: coarseFaces, 1: mediumFaces}` used by the adaptive quality ladder.
+   * Entries are rebuilt per list so each LOD has its own projection buffers.
+   */
+  setFaces(faces, options = {}) {
+    const built = this._buildEntries(faces, this.byLabel);
+    this.faces = built.faces;
+    this.byLabel = built.map;
+    const lod = options && options.lod && typeof options.lod === 'object' ? options.lod : {};
+    for (const tier of [0, 1]) {
+      const lodBuilt = this._buildEntries(Array.isArray(lod[tier]) ? lod[tier] : [], null);
+      this._lodFaces[tier] = lodBuilt.faces;
+      this._lodByLabel[tier] = lodBuilt.map;
+    }
+    if (this.hoverLabel && !this.byLabel.has(this.hoverLabel)) this.hoverLabel = null;
+    this._ensureBuffers();
+  }
+
+  _buildEntries(faces, reuseMap) {
     const input = Array.isArray(faces) ? faces : [];
     const nextFaces = [];
     const nextMap = new Map();
     for (let i = 0; i < input.length; i++) {
       const f = input[i];
       if (!f || typeof f.label !== 'string') continue;
-      let entry = this.byLabel.get(f.label);
+      let entry = reuseMap ? reuseMap.get(f.label) : null;
       if (!entry) entry = this._createEntry(f);
+      entry.sourceLabel = typeof f.sourceLabel === 'string' ? f.sourceLabel : f.label;
       entry.ownerIndex = Number.isInteger(f.ownerIndex) ? f.ownerIndex : -1;
       entry.clicks = Number.isFinite(f.clicks) ? Math.max(0, Math.trunc(f.clicks)) : 0;
       entry.lastClickIndex = Number.isInteger(f.lastClickIndex) ? f.lastClickIndex : -1;
@@ -388,20 +437,36 @@ export class IcosaRenderer {
       nextFaces.push(entry);
       nextMap.set(f.label, entry);
     }
-    this.faces = nextFaces;
-    this.byLabel = nextMap;
-    if (this.hoverLabel && !nextMap.has(this.hoverLabel)) this.hoverLabel = null;
-    this._ensureBuffers();
+    return { faces: nextFaces, map: nextMap };
+  }
+
+  /** The tessellation the quality ladder currently draws. */
+  _activeFaces() {
+    const tier = this.perf.tier;
+    if (tier <= 0 && this._lodFaces[0].length) return this._lodFaces[0];
+    if (tier <= 1 && this._lodFaces[1].length) return this._lodFaces[1];
+    return this.faces;
+  }
+
+  _updateLodEntries(label, apply) {
+    for (const tier of [0, 1]) {
+      for (const entry of this._lodByLabel[tier].values()) {
+        if (entry.sourceLabel === label) apply(entry);
+      }
+    }
   }
 
   /** Lightweight owner/charge update (no geometry change). */
   updateCell(label, ownerIndex, clicks, lastClickIndex) {
     if (typeof label !== 'string') return;
+    const apply = (entry) => {
+      if (Number.isInteger(ownerIndex)) entry.ownerIndex = ownerIndex;
+      if (Number.isFinite(clicks)) entry.clicks = Math.max(0, Math.trunc(clicks));
+      if (Number.isInteger(lastClickIndex)) entry.lastClickIndex = lastClickIndex;
+    };
     const entry = this.byLabel.get(label);
-    if (!entry) return;
-    if (Number.isInteger(ownerIndex)) entry.ownerIndex = ownerIndex;
-    if (Number.isFinite(clicks)) entry.clicks = Math.max(0, Math.trunc(clicks));
-    if (Number.isInteger(lastClickIndex)) entry.lastClickIndex = lastClickIndex;
+    if (entry) apply(entry);
+    this._updateLodEntries(label, apply);
   }
 
   /**
@@ -439,6 +504,10 @@ export class IcosaRenderer {
       this.faces.push(...kids);
     }
     for (let i = 0; i < kids.length; i++) this.byLabel.set(kids[i].label, kids[i]);
+    // Geometry changed: the LOD lists are stale until the app rebuilds them.
+    // Falling back to the full list is always correct (just heavier).
+    this._lodFaces = { 0: [], 1: [] };
+    this._lodByLabel = { 0: new Map(), 1: new Map() };
     this._ensureBuffers();
   }
 
@@ -689,6 +758,10 @@ export class IcosaRenderer {
       this._seedStarfield();
       this._seedMotes();
       this._seedDust();
+      // Edge case 3: a dpr/viewport change resets the ring so mixed-DPR
+      // frames never contaminate the percentile.
+      this.perf.reset('resize');
+      this._perfLastRenderAt = 0;
     }
   }
 
@@ -702,6 +775,11 @@ export class IcosaRenderer {
     if (!ctx) return;
 
     const raw = Number.isFinite(timeMs) ? timeMs : (this.lastRaw || 0) + 16.7;
+    const perfFrameMs = this._perfLastRenderAt ? raw - this._perfLastRenderAt : 0;
+    this._perfLastRenderAt = raw;
+    this._workStars = 0;
+    this._workMotes = 0;
+    this._workDust = 0;
     if (!this.lastRaw) this.lastRaw = raw;
     let dt = (raw - this.lastRaw) / 1000;
     this.lastRaw = raw;
@@ -734,26 +812,27 @@ export class IcosaRenderer {
     if (this._stylesDirty || !this._styles) this._rebuildStyles();
     if (hasCamera) this._computeCameraFrame(camera, R);
     // One rebuild per frame maximum, only when the world revision changed.
-    this.liveSurface.prepare(this.t);
+    const rebuilt = this.liveSurface.prepare(this.t);
+    if (rebuilt) this.perf.recordRebuild(1);
 
     // Backdrop layers.
     this._drawBackdrop(ctx, W, H);
     this._drawStarfield(ctx, W, H, dt, hasCamera ? camera : null, rm);
     const gridFade = clamp(1 - (zoom - 10) / 10, 0, 1);
-    if (!this.surfaceView && gridFade > 0.01) this._drawFloorGrid(ctx, W, H, cx, rm, gridFade);
+    if (!this.surfaceView && gridFade > 0.01 && this.perf.tier > 0) this._drawFloorGrid(ctx, W, H, cx, rm, gridFade);
 
     // Zoom-aware decoration fades: sphere-scale glow must not wash a deep zoom.
     const haloFade = clamp(1 - (zoom - 2.5) / 4.5, 0, 1);
     const glassFade = clamp(1 - (zoom - 3) / 3, 0, 1);
     const cartoFade = clamp(1 - (zoom - 5) / 6, 0, 1);
 
-    if (!this.surfaceView && haloFade > 0.01) this._drawHalo(ctx, W, H, cx, cy, R, rm, haloFade);
+    if (!this.surfaceView && haloFade > 0.01 && this.perf.tier > 0) this._drawHalo(ctx, W, H, cx, cy, R, rm, haloFade);
 
     this._visCount = 0;
     if (this.surfaceView && hasCamera) {
       this._drawSurfaceProjected(ctx, camera, W, H);
     }
-    if (this.faces.length && hasCamera) {
+    if (this._activeFaces().length && hasCamera) {
       this._drawSphere(ctx, camera, cx, cy, R, rm, glassFade);
       this._drawResourceMarkers(ctx);
     }
@@ -765,7 +844,7 @@ export class IcosaRenderer {
 
     this._drawForegroundDust(ctx, W, H, dt, rm);
     this._drawVignette(ctx, W, H);
-    if (!rm) this._drawScanlines(ctx, W, H);
+    if (!rm && this.perf.tier > 1) this._drawScanlines(ctx, W, H);
 
     // Labels + charge arcs are drawn crisp above the vignette.
     if (hasCamera) {
@@ -778,6 +857,63 @@ export class IcosaRenderer {
     if (this.surfaceMode && hasCamera) this._drawSurfaceEntities(ctx, camera, rm);
 
     if (hasCamera) this._drawPulses(ctx, camera, rm);
+
+    this._finishPerfFrame(raw, perfFrameMs, rebuilt);
+  }
+
+  /* ================================================================ *
+   * PERF-01: frame budget, quality ladder, renderer work accounting
+   * ================================================================ */
+
+  /** Decorative work multiplier for the current quality tier. */
+  _qualityScale() {
+    return qualityWorkScale(this.perf.tier);
+  }
+
+  _starLimit() {
+    const total = Number(this._starCount) || 0;
+    return Math.max(20, Math.round(total * this._qualityScale()));
+  }
+
+  /**
+   * Record one frame in the preallocated ring and let the quality ladder move
+   * at most once per 2 s. Frame deltas come from the rAF `timeMs` stream; the
+   * frame after a surface rebuild is excluded, and hidden-tab frames are not
+   * measured at all.
+   */
+  _finishPerfFrame(at, frameMs, rebuilt) {
+    const hidden = typeof document !== 'undefined' && document.hidden === true;
+    let drawUnits = this._visCount + this._workStars + this._workMotes * 2 + this._workDust * 2;
+    if (this.supplyMarkers) drawUnits += this.supplyMarkers.size;
+    if (this.pulses) drawUnits += this.pulses.length;
+    if (this.surfaceEntities) drawUnits += this.surfaceEntities.length;
+    this._perfDrawUnits = drawUnits;
+    if (frameMs > 0) {
+      this.perf.recordFrame(frameMs, { at, draw: drawUnits, rebuild: rebuilt, hidden });
+    }
+    this.perf.maybeAdjustTier(at);
+  }
+
+  /** Reset the frame ring and skip the first frame after the reset. */
+  resetPerf(reason = 'manual', options = {}) {
+    this.perf.reset(reason, options);
+    this._perfLastRenderAt = 0;
+    return this.perf;
+  }
+
+  /** Input-to-next-frame latency, measured by the app's capture listeners. */
+  recordInteraction(ms) {
+    return this.perf.recordInteraction(ms);
+  }
+
+  /** Full budget report for the probe and `window.__ICOSA__.perf()`. */
+  perfSnapshot() {
+    return this.perf.snapshot();
+  }
+
+  /** The three numeric beacon fields (PERF-01). */
+  perfTelemetry() {
+    return this.perf.telemetry();
   }
 
   /* ================================================================ *
@@ -944,7 +1080,7 @@ export class IcosaRenderer {
   }
 
   _ensureBuffers() {
-    const nf = this.faces.length;
+    const nf = Math.max(this.faces.length, this._lodFaces[0].length, this._lodFaces[1].length);
     if (this._dotZ.length < nf) {
       this._dotZ = new Float32Array(Math.max(20, nf));
       this._visList = new Int32Array(Math.max(20, nf));
@@ -1535,7 +1671,7 @@ export class IcosaRenderer {
   _drawSphere(ctx, camera, cx, cy, R, rm, glassFade) {
     const W = this.width;
     const H = this.height;
-    const faces = this.faces;
+    const faces = this._activeFaces();
     const nf = faces.length;
     const styles = this._styles;
     const Kx = this._Kx;
@@ -2008,7 +2144,7 @@ export class IcosaRenderer {
 
     // --- Glass: rim light, sheen, sweep, scanlines (faded at deep zoom).
     // Surface mode must not draw a whole-planet glass dome over the crust.
-    if (!this.surfaceView && glassFade > 0.01) this._drawSphereFx(ctx, cx, cy, R, rm, nf, glassFade);
+    if (!this.surfaceView && glassFade > 0.01 && this.perf.tier > 0) this._drawSphereFx(ctx, cx, cy, R, rm, nf, glassFade);
 
     // --- Silhouette ring. -------------------------------------------
     if (!this.surfaceView && glassFade > 0.01 && R < Math.max(W, H) * 2.5) {
@@ -2112,7 +2248,7 @@ export class IcosaRenderer {
   _drawResourceMarkers(ctx) {
     const vc = this._visCount;
     if (!vc) return;
-    const faces = this.faces;
+    const faces = this._activeFaces();
     const vis = this._visList;
     const W = this.width;
     const H = this.height;
@@ -2191,12 +2327,12 @@ export class IcosaRenderer {
   }
 
   _drawLabels(ctx, camera) {
-    if (!this.faces.length) return;
+    if (!this._activeFaces().length) return;
     this._prunePulseLabels();
     const vc = this._visCount;
     if (!vc) return;
     const hoverLabel = this.hoverLabel;
-    const faces = this.faces;
+    const faces = this._activeFaces();
     const vis = this._visList;
     const W = this.width;
     const H = this.height;
@@ -2263,9 +2399,9 @@ export class IcosaRenderer {
 
   _drawChargeArcs(ctx) {
     const vc = this._visCount;
-    if (vc > 60 || !vc || !this.faces.length) return;
+    if (vc > 60 || !vc || !this._activeFaces().length) return;
     const thr = this.threshold > 0 ? this.threshold : 1;
-    const faces = this.faces;
+    const faces = this._activeFaces();
     const vis = this._visList;
     const hugeThreshold = Math.min(this.width, this.height) * 0.6;
     ctx.save();
@@ -2767,7 +2903,8 @@ export class IcosaRenderer {
   _drawStarfield(ctx, W, H, dt, camera, rm) {
     const stars = this._stars;
     if (!stars) return;
-    const count = this._starCount;
+    const count = Math.min(this._starCount, this._starLimit());
+    this._workStars = count;
 
     let yawDelta = 0;
     let pitchDelta = 0;
@@ -2820,7 +2957,9 @@ export class IcosaRenderer {
         }
       }
     }
-    for (let i = 0; i < this._motes.length; i++) {
+    const moteLimit = Math.round(this._motes.length * this._qualityScale());
+    this._workMotes = moteLimit;
+    for (let i = 0; i < moteLimit; i += 1) {
       const m = this._motes[i];
       m.x += m.vx * dt * drift;
       m.y += m.vy * dt * drift;
@@ -3031,10 +3170,12 @@ export class IcosaRenderer {
   _drawForegroundDust(ctx, W, H, dt, rm) {
     const dust = this._dust;
     if (!dust || !dust.length) return;
+    const limit = Math.round(dust.length * this._qualityScale());
+    this._workDust = limit;
     const drift = rm ? 0.2 : 1;
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
-    for (let i = 0; i < dust.length; i++) {
+    for (let i = 0; i < limit; i += 1) {
       const d = dust[i];
       d.x += d.vx * dt * drift;
       d.y += d.vy * dt * drift;

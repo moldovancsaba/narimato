@@ -3,7 +3,7 @@
   "version": "3.57.0",
   "private": false,
   "type": "module",
-  "description": "NARIMATO — the way back: persistent multiplayer mining, planet escape and deep-space progression on a spherical icosahedron",
+  "description": "NARIMATO \u2014 the way back: persistent multiplayer mining, planet escape and deep-space progression on a spherical icosahedron",
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
@@ -25,7 +25,11 @@
     "copy:check": "node scripts/sync-story-copy.mjs --check",
     "copy:write": "node scripts/sync-story-copy.mjs --write",
     "build:ui": "node scripts/build-ui.mjs",
-    "verify:ui": "node scripts/verify-gds-build.mjs"
+    "verify:ui": "node scripts/verify-gds-build.mjs",
+    "gate:load": "node scripts/perf-gate.mjs",
+    "perf:probe": "node scripts/perf-probe.mjs",
+    "gate:perf": "node scripts/perf-probe.mjs --device=desktop --quality=0 --attempts=3 --check-baseline",
+    "perf:baseline": "node scripts/perf-probe.mjs --device=desktop --quality=0 --attempts=3 --update-baseline"
   },
   "engines": {
     "node": ">=20"

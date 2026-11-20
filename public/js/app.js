@@ -29,6 +29,11 @@ import { telemetry } from './telemetry.js';
 import { HELP_SECTIONS, captainLog } from './story-copy.js';
 import { buildIncidentAnnouncement } from './shared/incident-announcements.js';
 
+// PERF-01 probe mode: no landing poll (its JSON/UI work is unrelated to the
+// renderer budget and would add a periodic long task to every measurement).
+const PERF_PROBE = typeof window !== 'undefined'
+  && typeof window.location !== 'undefined'
+  && new URLSearchParams(window.location.search).get('perf-probe') === '1';
 const TOKEN_KEY = 'icosa.token';
 const TAG_KEY = 'icosa.tag';
 const TOKENS_KEY = 'icosa.tokens';
@@ -532,10 +537,13 @@ interlude = createInterlude({ safeCall, safeAudio });
  * Boot
  * ------------------------------------------------------------------ */
 
-function buildPlanetRenderFaces() {
-  // ONE fixed render tessellation for the whole planet, identical in orbit and
-  // surface. The camera never changes triangle density.
-  const targetLevel = leafList.length <= 120 ? 4 : leafList.length <= 400 ? 3 : 2;
+function buildPlanetRenderFaces(levelOverride) {
+  // ONE render tessellation per quality tier for the whole planet, identical
+  // in orbit and surface. The camera never changes triangle density; the
+  // PERF-01 quality ladder selects full/medium/coarse before drawing.
+  const targetLevel = Number.isInteger(levelOverride)
+    ? clamp(levelOverride, 0, 4)
+    : leafList.length <= 120 ? 4 : leafList.length <= 400 ? 3 : 2;
   const out = [];
   const angle = (p, q) => Math.acos(clamp(p.x * q.x + p.y * q.y + p.z * q.z, -1, 1));
   for (const node of leafList) {
@@ -553,6 +561,7 @@ function buildPlanetRenderFaces() {
       const tri = tris[i];
       out.push({
         label: `~${node.label}.${i}`,
+        sourceLabel: node.label,
         a: tri.a, b: tri.b, c: tri.c,
         centroid: faceCentroid(tri.a, tri.b, tri.c),
         depth: node.depth,
@@ -569,7 +578,11 @@ function buildPlanetRenderFaces() {
 
 function refreshPlanetRenderFaces() {
   planetRenderFaces = buildPlanetRenderFaces();
-  renderer.setFaces(planetRenderFaces);
+  // PERF-01 LOD: tier 1 medium (2^2 triangles per leaf), tier 0 coarse
+  // (2^1). Both keep the exact live-leaf boundaries and ownership tint.
+  const mediumFaces = buildPlanetRenderFaces(2);
+  const coarseFaces = buildPlanetRenderFaces(1);
+  renderer.setFaces(planetRenderFaces, { lod: { 0: coarseFaces, 1: mediumFaces } });
 }
 
 function syncLiveSurface() {
@@ -604,7 +617,7 @@ function boot() {
   safeCall(ui, 'setConnection', 'connecting');
   safeCall(ui, 'hideReport');
   refreshPublicState();
-  startPolling();
+  if (!PERF_PROBE) startPolling();
 
   const reportParam = params.get('report');
   const autoTag = params.get('auto') === '1' && prefill ? prefill : null;
@@ -691,17 +704,21 @@ function boot() {
     if (!joined) refreshPublicState();
   });
   // Keep the audio context warm while the cockpit is active; this is a no-op
-  // when the player has not unlocked audio or has muted it.
-  const audioWatchdog = setInterval(() => {
-    if (document.hidden) return;
-    safeAudio('unlock');
-    safeAudio('resume');
-    if (narrator) narrator.resume();
-  }, 15000);
-  audioWatchdog.unref?.();
+  // when the player has not unlocked audio or has muted it. The PERF-01 probe
+  // skips it so an audio-context wake-up can never look like a renderer stall.
+  if (!PERF_PROBE) {
+    const audioWatchdog = setInterval(() => {
+      if (document.hidden) return;
+      safeAudio('unlock');
+      safeAudio('resume');
+      if (narrator) narrator.resume();
+    }, 15000);
+    audioWatchdog.unref?.();
+  }
 
   bindCanvasInput();
   bindKeyboard();
+  installPerfInputProbe();
   requestAnimationFrame(frame);
 }
 
@@ -2637,10 +2654,40 @@ function updateFocus(nowMs) {
 
 let lastFrame = performance.now();
 let zoomUiAt = 0;
+let pendingInputAt = 0;
+let lastPerfTelemetryAt = 0;
+
+/** Update the PERF-01 beacon fields at most once a second. */
+function syncPerfTelemetry(t) {
+  if (t - lastPerfTelemetryAt < 1000) return;
+  lastPerfTelemetryAt = t;
+  const perf = renderer.perfTelemetry();
+  if (perf) telemetry?.recordPerf(perf);
+}
+
+/**
+ * PERF-01 interaction latency: the first trusted pointer/key/wheel event sets
+ * a timestamp, and the next rendered frame records input-to-frame time. The
+ * listener is capture-phase and passive, so it never changes input behaviour.
+ */
+function installPerfInputProbe() {
+  if (typeof window === 'undefined') return;
+  const mark = (event) => {
+    if (!event || event.isTrusted === false) return;
+    pendingInputAt = Number.isFinite(event.timeStamp) && event.timeStamp > 0 ? event.timeStamp : now();
+  };
+  for (const type of ['pointerdown', 'keydown', 'wheel']) {
+    window.addEventListener(type, mark, { capture: true, passive: true });
+  }
+}
 
 function frame(t) {
   const dt = Math.min(64, Math.max(0, t - lastFrame));
   lastFrame = t;
+  if (pendingInputAt) {
+    renderer.recordInteraction(Math.max(0, t - pendingInputAt));
+    pendingInputAt = 0;
+  }
 
   // EVT-02/EVT-03: while the full-screen incident overlay is open it owns the
   // visible frame. Keep this loop alive (state stays consistent) but do not
@@ -2661,6 +2708,7 @@ function frame(t) {
         console.warn('[icosa] render failed', err);
       }
     }
+    syncPerfTelemetry(t);
     requestAnimationFrame(frame);
     return;
   }
@@ -2687,6 +2735,7 @@ function frame(t) {
         console.warn('[icosa] surface render failed', err);
       }
     }
+    syncPerfTelemetry(t);
     requestAnimationFrame(frame);
     return;
   }
@@ -2718,6 +2767,7 @@ function frame(t) {
       console.warn('[icosa] render failed', err);
     }
   }
+  syncPerfTelemetry(t);
   requestAnimationFrame(frame);
 }
 
@@ -2833,6 +2883,7 @@ window.__ICOSA__ = {
   getReport: () => currentReport,
   leavesSnapshot: () => refreshLeafList().map((n) => [n.label, n.ownerIndex, n.clicks, n.resourceId || null]),
   worldRevision: () => world.revision,
+  perf: () => safeCall(renderer, 'perfSnapshot'),
   surfaceMeshStats: () => safeCall(renderer, 'surfaceMeshStats'),
   surfaceMeshHash: () => {
     const stats = safeCall(renderer, 'surfaceMeshStats');
