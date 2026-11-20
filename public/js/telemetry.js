@@ -23,6 +23,8 @@ const HUD_KEYS = ['longTasks', 'maxLongTask'];
 const AUDIO_KEYS = ['firstWordMs', 'clipFailures', 'resumeCount'];
 const VIEWPORT_KEYS = ['width', 'height', 'dpr'];
 const ERROR_KEYS = ['js', 'network', 'unhandled'];
+// PERF-01: the only performance fields that leave the browser. Numeric only.
+const PERF_KEYS = ['frameP95Ms', 'frameMaxMs', 'fps'];
 
 const asNumber = (value) => (typeof value === 'number' && Number.isFinite(value) ? value : undefined);
 
@@ -52,6 +54,8 @@ export function buildTelemetryPayload(state = {}) {
   if (Object.keys(viewport).length) payload.viewport = viewport;
   const errors = pickNumbers(state.errors, ERROR_KEYS);
   if (Object.keys(errors).length) payload.errors = errors;
+  const perf = pickNumbers(state.perf, PERF_KEYS);
+  if (Object.keys(perf).length) payload.perf = perf;
   const sessionMs = asNumber(state.sessionMs);
   if (sessionMs !== undefined) payload.sessionMs = sessionMs;
   return payload;
@@ -76,6 +80,7 @@ export function createTelemetry(options = {}) {
     audio: {},
     viewport: {},
     errors: { js: 0, network: 0, unhandled: 0 },
+    perf: {},
   };
 
   const readViewport = () => {
@@ -94,6 +99,7 @@ export function createTelemetry(options = {}) {
       audio: metrics.audio,
       viewport: metrics.viewport,
       errors: metrics.errors,
+      perf: metrics.perf,
       sessionMs: Math.max(0, now() - sessionStart),
       ...extra,
     };
@@ -161,6 +167,25 @@ export function createTelemetry(options = {}) {
   const recordError = (kind = 'js') => {
     const key = kind === 'network' || kind === 'unhandled' ? kind : 'js';
     if (metrics.errors[key] < 1_000_000) metrics.errors[key] += 1;
+  };
+
+  /**
+   * Update the performance beacon fields. Called at most once per second by
+   * the render loop; the values are the renderer's windowed measurements.
+   * Never retries: if the page-hide beacon is dropped, the sample is gone.
+   */
+  const recordPerf = (values = {}) => {
+    if (!values || typeof values !== 'object') return false;
+    let changed = false;
+    for (const key of PERF_KEYS) {
+      const value = asNumber(values[key]);
+      if (value === undefined) continue;
+      const max = key === 'fps' ? 240 : 60000;
+      const min = 0;
+      metrics.perf[key] = Math.min(max, Math.max(min, value));
+      changed = true;
+    }
+    return changed;
   };
 
   const onHidden = () => {
@@ -242,6 +267,7 @@ export function createTelemetry(options = {}) {
     markAudioClipFailure,
     markAudioResume,
     recordError,
+    recordPerf,
     getPayload: currentPayload,
     get sentReasons() {
       return [...sent];

@@ -22,6 +22,8 @@ real count.
 | `test/narration-manifest.test.js` | Cue matrix completeness (40 cues/115 units/345 clips), manifest schema, hashes, content-derived version, cache-bust, licence guard, caption/voice sync | `scripts/voice-lib.mjs`, `public/js/audio-version.js` | STR-01 |
 | `test/observability.test.js` | Metrics shape/aggregates, SSE counters, telemetry privacy/clamps, beacon | `lib/metrics.js`, `public/js/telemetry.js` | OPS-01 |
 | `test/orbit-controls.test.js` | Shared drag/travel direction primitives | `public/js/shared/orbit-controls.js` | CTL-01 |
+| `test/perf-budget.test.js` | Device budgets, windowed frame percentiles, tier hysteresis, evaluator, ring exclusions, bundle gzip budget | `public/js/perf-budget.js`, `lib/perf-bundle.js` | PERF-01 |
+| `test/perf-gate.test.js` | Scenario schema, ruleset threshold resolution, flaky policy, RSS/correctness evaluation, artifact redaction | `observability/load-scenarios.json`, `observability/slo.json`, `scripts/perf-gate.mjs` | OPS-02 |
 | `test/planet-theme.test.js` | Planet palette/theme identity | `public/js/shared/planet.js`, CSS | — (delivered) |
 | `test/planet.test.js` | Deterministic terrain, biomes, deposits, client/server parity | `public/js/shared/planet.js` | — (delivered) |
 | `test/rate-limit.test.js` | Token bucket: refill, burst, retryAfter, clock injection, eviction | `lib/rate-limit.js` | SEC-01 |

@@ -95,6 +95,7 @@ test('observability: telemetry whitelist + route normalisation primitives', () =
   const normalized = normalizeTelemetryPayload({
     webVitals: { lcp: 1234.5, cls: 'PII-STRING', inp: -5, ttfb: 999999999 },
     hud: { longTasks: 4, maxLongTask: 250 },
+    perf: { frameP95Ms: 16.7, frameMaxMs: 120, fps: 300 },
     audio: { firstWordMs: 320 },
     viewport: { width: 1280, height: 720, dpr: 100 },
     sessionMs: 9000,
@@ -108,6 +109,9 @@ test('observability: telemetry whitelist + route normalisation primitives', () =
   assert.equal(normalized.fields['webVitals.cls'], undefined, 'strings are ignored');
   assert.equal(normalized.fields['webVitals.inp'], 0, 'clamped to >= 0');
   assert.equal(normalized.fields['webVitals.ttfb'], 60000, 'clamped to max');
+  assert.equal(normalized.fields['perf.frameP95Ms'], 16.7);
+  assert.equal(normalized.fields['perf.frameMaxMs'], 120);
+  assert.equal(normalized.fields['perf.fps'], 240, 'fps clamped to 240');
   assert.equal(normalized.fields['viewport.dpr'], 10, 'dpr clamped');
   assert.equal(normalized.fields.sessionMs, 9000);
   assert.equal(normalized.fields['errors.network'], undefined);
@@ -121,6 +125,7 @@ test('observability: client telemetry module is node-safe and numeric-only', () 
   const payload = buildTelemetryPayload({
     webVitals: { lcp: 100, cls: 0.1, inp: 22 },
     hud: { longTasks: 1, maxLongTask: 50 },
+    perf: { frameP95Ms: 14.2, frameMaxMs: 41, fps: 58 },
     audio: { firstWordMs: 280 },
     viewport: { width: 390, height: 844, dpr: 3 },
     sessionMs: 1234,
@@ -131,6 +136,7 @@ test('observability: client telemetry module is node-safe and numeric-only', () 
   assert.deepEqual(payload, {
     webVitals: { lcp: 100, cls: 0.1, inp: 22 },
     hud: { longTasks: 1, maxLongTask: 50 },
+    perf: { frameP95Ms: 14.2, frameMaxMs: 41, fps: 58 },
     audio: { firstWordMs: 280 },
     viewport: { width: 390, height: 844, dpr: 3 },
     sessionMs: 1234,
@@ -143,6 +149,9 @@ test('observability: client telemetry module is node-safe and numeric-only', () 
   assert.equal(controller.send('session'), false);
   assert.doesNotThrow(() => controller.markAudioFirstWord(100));
   assert.doesNotThrow(() => controller.recordError('js'));
+  assert.equal(controller.recordPerf({ frameP95Ms: 16.7, frameMaxMs: 40, fps: 240 }), true);
+  assert.equal(controller.recordPerf({ frameP95Ms: 'ignore' }), false);
+  assert.deepEqual(controller.getPayload().perf, { frameP95Ms: 16.7, frameMaxMs: 40, fps: 240 });
   assert.equal(controller.getPayload().hud.longTasks, 0);
 });
 
@@ -268,6 +277,7 @@ test('observability: /api/telemetry accepts whitelisted numeric metrics, clamps 
     webVitals: { lcp: 1234.5, cls: 0.1, inp: 20, ttfb: 150 },
     hud: { longTasks: 2, maxLongTask: 120 },
     audio: { firstWordMs: 280 },
+    perf: { frameP95Ms: 15.5, frameMaxMs: 60, fps: 59 },
     viewport: { width: 390, height: 844, dpr: 3 },
     sessionMs: 12_000,
     errors: { js: 1, network: 2, unhandled: 0 },
@@ -285,6 +295,8 @@ test('observability: /api/telemetry accepts whitelisted numeric metrics, clamps 
   assert.equal(aggregate.aggregates['webVitals.lcp'].count, 2);
   assert.equal(aggregate.aggregates['webVitals.lcp'].max, 120_000, 'clamped to the schema maximum');
   assert.equal(aggregate.aggregates['viewport.dpr'].max, 10);
+  assert.equal(aggregate.aggregates['perf.frameP95Ms'].avg, 15.5);
+  assert.equal(aggregate.aggregates['perf.fps'].count, 1);
   assert.equal(JSON.stringify(aggregate).includes('SECRET-TOKEN'), false);
   assert.equal(JSON.stringify(aggregate).includes('PRIVATETAG'), false);
 

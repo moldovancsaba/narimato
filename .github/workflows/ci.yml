@@ -4,6 +4,20 @@ on:
   push:
     branches: [main]
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
+  schedule:
+    # Nightly OPS-02 gate: smoke + load (3 runs) + chaos on an ephemeral server.
+    - cron: '0 3 * * *'
+    # Weekly OPS-02 soak: the 1–2 h release prerequisite.
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: 'OPS-02 scenario set to run'
+        required: false
+        default: 'gate'
+        type: choice
+        options: [gate, soak]
 
 jobs:
   docs:
@@ -58,3 +72,49 @@ jobs:
           sha256sum public/ui/island.js public/ui/island.css > /tmp/gds-build-1.sha
           npm run build:ui
           sha256sum -c /tmp/gds-build-1.sha
+
+  perf-gate:
+    # Scheduled nightly gate, explicit dispatch, or a PR labelled `perf-gate`.
+    # The gate starts its own ephemeral server with SECURITY_MODE=enforce.
+    if: |
+      (github.event_name == 'schedule' && github.event.schedule == '0 3 * * *') ||
+      (github.event_name == 'workflow_dispatch' && inputs.scenario != 'soak') ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'perf-gate'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: OPS-02 gate (smoke + load x3 + chaos, SECURITY_MODE=enforce)
+        run: node scripts/perf-gate.mjs --only=smoke,load,chaos
+      - name: Upload gate artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-gate-${{ github.run_id }}
+          path: artifacts/gate
+          retention-days: 30
+
+  soak:
+    # Weekly 2 h soak, or `workflow_dispatch` with scenario=soak before release.
+    if: |
+      (github.event_name == 'schedule' && github.event.schedule == '0 2 * * 0') ||
+      (github.event_name == 'workflow_dispatch' && inputs.scenario == 'soak')
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: OPS-02 soak (40 clients / 20 SSE / 120 min, SECURITY_MODE=enforce)
+        run: node scripts/perf-gate.mjs --only=soak
+      - name: Upload soak artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-soak-${{ github.run_id }}
+          path: artifacts/gate
+          retention-days: 30
