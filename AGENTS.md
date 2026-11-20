@@ -42,6 +42,7 @@ npm run audit:a11y       # axe accessibility audit (requires PLAYWRIGHT_MODULE +
 npm run load:test        # load/soak harness
 npm run chaos:test       # restart/reconnect chaos test
 npm run check:slo        # SLO verdict from /api/metrics (0 healthy, 1 breach, 2 contract, 3 unreachable)
+npm run check:scale      # sharding decision record vs observability/slo.json and the measured capture
 npm run recovery:test    # backup -> verify -> restore drill on throwaway data
 npm run backup:data      # checksummed DATA_DIR archive + manifest (see docs/RECOVERY.md)
 ```

@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "id": "fixture-hold-200-80",
+  "source": "test fixture",
+  "recordedAt": "2026-11-20",
+  "commit": "deadbee",
+  "hardware": "fixture host",
+  "production": true,
+  "durationMinutes": 15,
+  "clients": 200,
+  "sseClients": 80,
+  "httpP95Ms": 20,
+  "loopP95Ms": 25,
+  "droppedSse": 0,
+  "errors": 0,
+  "rssGrowthMiB": 5
+}

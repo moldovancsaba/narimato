@@ -23,6 +23,7 @@ real count.
 | `test/observability.test.js` | Metrics shape/aggregates, SSE counters, telemetry privacy/clamps, beacon | `lib/metrics.js`, `public/js/telemetry.js` | OPS-01 |
 | `test/perf-budget.test.js` | Device budgets, windowed frame percentiles, tier hysteresis, evaluator, ring exclusions, bundle gzip budget | `public/js/perf-budget.js`, `lib/perf-bundle.js` | PERF-01 |
 | `test/perf-gate.test.js` | Scenario schema, ruleset threshold resolution, flaky policy, RSS/correctness evaluation, artifact redaction | `observability/load-scenarios.json`, `observability/slo.json`, `scripts/perf-gate.mjs` | OPS-02 |
+| `test/sharding-decision.test.js` | Sharding gate thresholds/verdicts, two-capture rule, stale/reset evidence, decision-record drift | `scripts/scale-gate.mjs`, `scripts/check-scale-decision.mjs`, `observability/scale-profile.json` | OPS-05 |
 | `test/planet-theme.test.js` | Planet palette/theme identity | `public/js/shared/planet.js`, CSS | — (delivered) |
 | `test/planet.test.js` | Deterministic terrain, biomes, deposits, client/server parity | `public/js/shared/planet.js` | — (delivered) |
 | `test/rate-limit.test.js` | Token bucket: refill, burst, retryAfter, clock injection, eviction | `lib/rate-limit.js` | SEC-01 |

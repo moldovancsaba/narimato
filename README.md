@@ -224,6 +224,8 @@ repository status documents. The repository owns durable technical knowledge and
 - [docs/SSOT.md](docs/SSOT.md) — two-source delivery model and non-negotiable rules.
 - [docs/ISSUE_MAP.md](docs/ISSUE_MAP.md) — every issue and the documents it relates to.
 - [docs/DEFINITION_OF_DONE.md](docs/DEFINITION_OF_DONE.md) — the only definition of done.
+- [docs/SHARDING_DECISION.md](docs/SHARDING_DECISION.md) — measured scale headroom, numeric
+  sharding triggers, evidence gate, migration and rollback.
 - [narimato-physics.md](narimato-physics.md) — authoritative camera/rendering solution, failure
   history and acceptance tests.
 - [GUIDE.md](GUIDE.md) — shareable new-pilot guide.
@@ -247,13 +249,14 @@ repository status documents. The repository owns durable technical knowledge and
 
 ## Development
 
-The node:test suite currently runs <!-- test-count:516 -->516<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
+The node:test suite currently runs <!-- test-count:527 -->527<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 ```
 npm test                 # node:test suite, no dependencies
 npm run verify:single-scene   # RND-06 browser gate (PLAYWRIGHT_MODULE required)
 npm run docs:check       # markdown links, issue map and version consistency
 npm run check:slo        # SLO verdict from /api/metrics (exit 0/1/2/3)
+npm run check:scale      # sharding decision record vs slo.json and the measured capture
 npm run gate:load        # OPS-02 smoke/load/soak/chaos gate + artifacts
 npm run gate:perf        # PERF-01 client probe + 15% desktop baseline gate
 npm run recovery:test    # backup -> verify -> restore drill on throwaway data

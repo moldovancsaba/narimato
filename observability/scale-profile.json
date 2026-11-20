@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "id": "ops-05-sharding-decision",
+  "description": "OPS-05 scale decision input. Numeric SLO thresholds live only in observability/slo.json; this file names the rules the gate reads and the decision-only window/ratio parameters. scripts/scale-gate.mjs resolves every rule id against slo.json at run time.",
+  "sloRefs": {
+    "httpP95Ms": "http-p95",
+    "loopP95Ms": "loop-p95",
+    "droppedSse": "sse-drop",
+    "errors": "gate.errors",
+    "rssGrowthMiB": "gate.rssGrowthMiB"
+  },
+  "triggerRatio": 0.6,
+  "launchConcurrency": {
+    "clients": 200,
+    "sseClients": 80
+  },
+  "minimumSustainedMinutes": 15,
+  "soakMinutes": 120,
+  "independentCaptures": 2,
+  "review": {
+    "ownerRole": "platform-ops",
+    "ownerIssue": "OPS-05",
+    "reviewDate": "2027-02-21"
+  }
+}

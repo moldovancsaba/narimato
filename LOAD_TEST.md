@@ -144,6 +144,16 @@ Re-run the gate on production-like hardware before revisiting. The gate is a
 regression signal, not a capacity proof; a real-network soak remains a release
 prerequisite.
 
+The durable decision, numeric trigger thresholds, required evidence set,
+migration outline and rollback plan are in
+[docs/SHARDING_DECISION.md](docs/SHARDING_DECISION.md). The measured OPS-02
+capture resolves to **HOLD**; the record is the authority for the current
+`NOT NOW` decision. `npm run check:scale` fails if the record drifts from
+[`observability/slo.json`](observability/slo.json) or the measured capture, and
+`node scripts/scale-gate.mjs` evaluates any capture as `HOLD`, `WATCH`, `SPLIT`
+or `MORE_EVIDENCE`. Both are read-only: neither starts, stops or splits a
+process.
+
 ## Client frame budget (RND-06)
 
 `scripts/verify-single-scene.mjs` owns the client frame budget; it is not a load
