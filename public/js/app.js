@@ -100,6 +100,7 @@ let firstGuideTimer = 0;
 let guideNarrationTimer = 0;
 let guideNarrationToken = 0;
 let pendingAutoJoin = null;
+let pendingSupplyFocus = null;
 const missionReadyNotified = new Set();
 const GUIDE_CUE_IDS = Object.freeze(['guide-what', 'guide-how', 'guide-where', 'guide-leave']);
 
@@ -793,6 +794,7 @@ async function join(rawTag) {
   resetSession();
 
   applySnapshot(data.state, data.leaves);
+  if (data.focus) handleSupplyFocusEvent(data.focus);
   const joinedProgress = refreshMission();
   startDistressTimer();
   chooseNavTarget();
@@ -889,6 +891,7 @@ function scheduleReconnect() {
       authToken = data.token;
       storeSession(authToken, myPlayer.tag);
       applySnapshot(data.state, data.leaves);
+      if (data.focus) handleSupplyFocusEvent(data.focus);
       connectEvents();
     } else if (reconnectAttempts < 999) {
       scheduleReconnect();
@@ -904,6 +907,7 @@ function handleEvent(msg) {
   switch (msg.type) {
     case 'snapshot':
       applySnapshot(msg.state, msg.leaves);
+      if (msg.focus) handleSupplyFocusEvent(msg.focus);
       break;
     case 'state':
       applyState(msg.state);
@@ -919,6 +923,9 @@ function handleEvent(msg) {
       break;
     case 'supply':
       handleSupplyEvent(msg);
+      break;
+    case 'supply_focus':
+      handleSupplyFocusEvent(msg);
       break;
     case 'surface':
     case 'surface_leave':
@@ -1252,6 +1259,32 @@ function handleSupplyEvent(msg) {
     supplyDeadline = Date.now() + 120000;
     startDistressTimer();
   }, 3500);
+}
+
+/**
+ * SRV-04: the server's `supply_focus` frame carries one authoritative placement
+ * per online human. Adopt our own placement; the legacy `supply` centroid focus
+ * remains the fallback for older frames.
+ */
+function handleSupplyFocusEvent(msg) {
+  if (!msg || !Array.isArray(msg.placements)) return;
+  if (msg.expiresAt && Date.now() > msg.expiresAt) return;
+  pendingSupplyFocus = msg;
+  applySupplyFocus();
+}
+
+function applySupplyFocus() {
+  const focus = pendingSupplyFocus;
+  if (!focus || !surface || !surface.active || !myPlayer) return false;
+  if (focus.expiresAt && Date.now() > focus.expiresAt) {
+    pendingSupplyFocus = null;
+    return false;
+  }
+  const placement = focus.placements.find((entry) => entry && entry.playerId === myPlayer.id);
+  if (!placement) return false;
+  const applied = safeCall(surface, 'applyPlacement', placement);
+  if (applied) pendingSupplyFocus = null;
+  return !!applied;
 }
 
 function setCaptainLogMessage(text, holdMs = 22000) {
@@ -2362,6 +2395,7 @@ function enterSurfaceMode() {
   const planet = planetInfoFromState();
   if (!surface.start({ planetName: planet.planetName, seed: planet.planetSeed, depth: planet.planetDepth })) return;
   refreshSurfaceLiveFaces();
+  applySupplyFocus();
   safeAudio('introWhoosh');
 }
 
