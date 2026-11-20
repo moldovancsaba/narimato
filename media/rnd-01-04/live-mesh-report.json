@@ -1,0 +1,230 @@
+{
+  "ok": true,
+  "checks": [
+    {
+      "name": "a base cell label is available",
+      "ok": true,
+      "detail": "1"
+    },
+    {
+      "name": "A revision equals world revision",
+      "ok": true,
+      "detail": {
+        "stats": {
+          "revision": 1,
+          "seed": 2150348717,
+          "triangles": 5120,
+          "buckets": 1,
+          "hash": "585b3f78",
+          "skipped": 2,
+          "rebuilds": 3,
+          "lastRebuildMs": 2.700000047683716,
+          "lastRebuildAt": 0.9915333333333333,
+          "lastError": null
+        },
+        "worldRevision": 1
+      }
+    },
+    {
+      "name": "B revision equals world revision",
+      "ok": true,
+      "detail": {
+        "stats": {
+          "revision": 1,
+          "seed": 2150348717,
+          "triangles": 5120,
+          "buckets": 1,
+          "hash": "585b3f78",
+          "skipped": 2,
+          "rebuilds": 3,
+          "lastRebuildMs": 4.799999952316284,
+          "lastRebuildAt": 1.3250333333333333,
+          "lastError": null
+        },
+        "worldRevision": 1
+      }
+    },
+    {
+      "name": "both clients start from the same mesh hash",
+      "ok": true,
+      "detail": {
+        "a": "585b3f78",
+        "b": "585b3f78"
+      }
+    },
+    {
+      "name": "mesh triangles are budget-bounded",
+      "ok": true,
+      "detail": 5120
+    },
+    {
+      "name": "the clicked base cell broke into children",
+      "ok": true,
+      "detail": {
+        "threshold": 4,
+        "clicks": 4,
+        "lockedOut": 0
+      }
+    },
+    {
+      "name": "A converged to the new revision",
+      "ok": true,
+      "detail": {
+        "stats": {
+          "revision": 8,
+          "seed": 2150348717,
+          "triangles": 5888,
+          "buckets": 2,
+          "hash": "02527dcc",
+          "skipped": 4,
+          "rebuilds": 7,
+          "lastRebuildMs": 2.299999952316284,
+          "lastRebuildAt": 5.357833333333331,
+          "lastError": null
+        },
+        "worldRevision": 8
+      }
+    },
+    {
+      "name": "B received the remote rebuild without reload",
+      "ok": true,
+      "detail": {
+        "before": 1,
+        "after": 7
+      }
+    },
+    {
+      "name": "both clients share the rebuilt mesh hash",
+      "ok": true,
+      "detail": {
+        "a": "02527dcc",
+        "b": "02527dcc"
+      }
+    },
+    {
+      "name": "the break changed the triangle count",
+      "ok": true,
+      "detail": {
+        "before": 5120,
+        "after": 5888
+      }
+    },
+    {
+      "name": "the triangle total stays within the 6000 budget",
+      "ok": true,
+      "detail": 5888
+    },
+    {
+      "name": "surface output is not seed-keyed (no planet copy)",
+      "ok": true,
+      "detail": {
+        "revision": 7
+      }
+    },
+    {
+      "name": "surface mode runs on the single renderer",
+      "ok": true,
+      "detail": {
+        "active": true,
+        "phase": "walking",
+        "entities": 3,
+        "canvasCount": 1
+      }
+    }
+  ],
+  "before": {
+    "a": {
+      "stats": {
+        "revision": 1,
+        "seed": 2150348717,
+        "triangles": 5120,
+        "buckets": 1,
+        "hash": "585b3f78",
+        "skipped": 2,
+        "rebuilds": 3,
+        "lastRebuildMs": 2.700000047683716,
+        "lastRebuildAt": 0.9915333333333333,
+        "lastError": null
+      },
+      "worldRevision": 1
+    },
+    "b": {
+      "stats": {
+        "revision": 1,
+        "seed": 2150348717,
+        "triangles": 5120,
+        "buckets": 1,
+        "hash": "585b3f78",
+        "skipped": 2,
+        "rebuilds": 3,
+        "lastRebuildMs": 4.799999952316284,
+        "lastRebuildAt": 1.3250333333333333,
+        "lastError": null
+      },
+      "worldRevision": 1
+    },
+    "label": "1"
+  },
+  "after": {
+    "a": {
+      "stats": {
+        "revision": 8,
+        "seed": 2150348717,
+        "triangles": 5888,
+        "buckets": 2,
+        "hash": "02527dcc",
+        "skipped": 4,
+        "rebuilds": 7,
+        "lastRebuildMs": 2.299999952316284,
+        "lastRebuildAt": 5.357833333333331,
+        "lastError": null
+      },
+      "worldRevision": 8
+    },
+    "b": {
+      "stats": {
+        "revision": 7,
+        "seed": 2150348717,
+        "triangles": 5888,
+        "buckets": 2,
+        "hash": "02527dcc",
+        "skipped": 4,
+        "rebuilds": 7,
+        "lastRebuildMs": 2,
+        "lastRebuildAt": 4.008133333333334,
+        "lastError": null
+      },
+      "worldRevision": 7
+    }
+  },
+  "screenshots": {
+    "a": "media/rnd-01-04/live-mesh-client-a.png",
+    "b": "media/rnd-01-04/live-mesh-client-b.png"
+  },
+  "errors": [],
+  "break": {
+    "threshold": 4,
+    "clicks": 4,
+    "lockedOut": 0
+  },
+  "surface": {
+    "scene": {
+      "active": true,
+      "phase": "walking",
+      "entities": 3,
+      "canvasCount": 1
+    },
+    "stats": {
+      "revision": 9,
+      "seed": 2150348717,
+      "triangles": 5888,
+      "buckets": 2,
+      "hash": "b3c1dad0",
+      "skipped": 5,
+      "rebuilds": 9,
+      "lastRebuildMs": 2.100000023841858,
+      "lastRebuildAt": 7.791333333333327,
+      "lastError": null
+    }
+  }
+}

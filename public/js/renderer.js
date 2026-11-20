@@ -52,7 +52,10 @@ import {
   getMesh,
 } from './shared/geometry.js';
 import { resourceById } from './shared/resources.js';
-import { BIOMES, terrainAt, SEA_LEVEL } from './shared/planet.js';
+import { BIOMES } from './shared/planet.js';
+import { LiveSurfaceStore } from './shared/live-surface-mesh.js';
+import { drawTetraShip } from './shared/tetra-ship.js';
+import { drawHumanoid3D } from './shared/humanoid-3d.js';
 
 const TAU = Math.PI * 2;
 const HALF_PI = Math.PI / 2;
@@ -167,9 +170,18 @@ export class IcosaRenderer {
     // rendered for interactive/pulsed faces.
     this.labelsVisible = false;
     this.poleLabelsVisible = false;
-    this.surface = null;
-    this.surfaceSeed = null;
+    // RND-04: surface geometry is derived from the live World leaf list through
+    // a revision-gated store; there is no cached seed-keyed globe.
+    this.liveSurface = new LiveSurfaceStore({ colourOf: (leaf) => this._liveLeafColour(leaf) });
+    this.liveSurfaceStats = null;
     this.surfaceView = false;
+    // RND-02 single-scene surface mode: the renderer owns the entity pass and
+    // the landing/leaving ship; the surface controller owns only pose + labels.
+    this.surfaceMode = false;
+    this.surfaceEntities = [];
+    this.surfaceEffects = [];
+    this.surfacePhase = 'walking';
+    this.surfaceProgress = 1;
     this.opaqueSurface = false;
     this.planetTheme = null;
     this._surfaceCanvas = null;
@@ -286,93 +298,73 @@ export class IcosaRenderer {
    * boundary tessellation is only computed once per label.
    * @param {Array<{label:string,a:object,b:object,c:object,ownerIndex:number,clicks:number,depth:number}>} faces
    */
-  /**
-   * Build the dense procedural geography surface for a planet seed.
-   * Uses a high-res icosphere mesh coloured once, then drawn behind the game
-   * cells every frame. No per-frame noise work.
-   */
   /** Apply a per-planet palette (from shared/planet-theme.js). */
   setPlanetTheme(theme) {
     this.planetTheme = theme && typeof theme === 'object' ? theme : null;
-    this.surfaceSeed = null;
-    this.surface = null;
-    this._surfacePaths = null;
+    // Colour is derived per leaf; invalidate so the next sync rebuilds the mesh.
+    this.liveSurface.invalidate();
   }
 
-  setPlanetSurface(seed) {
-    const next = Number(seed) >>> 0;
-    if (this.surfaceSeed === next && this.surface) return;
-    this.surfaceSeed = next;
-    const theme = this.planetTheme;
-    const landTint = theme && theme.land ? hexRgb(theme.land) : null;
-    const oceanTint = theme && theme.ocean ? hexRgb(theme.ocean) : null;
-    const level = (this.width || 0) < 760 ? 2 : 3;
-    const mesh = getMesh(level);
-    const snow = { r: 232, g: 244, b: 255 };
-    const sand = { r: 186, g: 168, b: 118 };
-    const rock = { r: 112, g: 110, b: 104 };
-    const deep = { r: 2, g: 10, b: 28 };
-    const shallow = { r: 18, g: 92, b: 132 };
-    const buckets = new Map();
-    const faces = mesh.faces.map((face) => {
-      const terrain = terrainAt(next, face.centroid);
-      const elevation = terrain.elevation;
-      const temperature = terrain.temperature;
-      const moisture = terrain.moisture;
-      const isOcean = !terrain.biome.mineable;
-      let rgb;
-      if (isOcean) {
-        const depth = clamp((SEA_LEVEL - elevation) / 0.4, 0, 1);
-        rgb = mixRgb(shallow, deep, Math.pow(depth, 0.78));
-        if (oceanTint) rgb = mixRgb(rgb, oceanTint, 0.55);
-      } else {
-        // Continuous climate/elevation ramp: coast sand → lowland green →
-        // highland rock → snow, with dry basins shifting toward ochre.
-        const alt = clamp((elevation - SEA_LEVEL) / 0.55, 0, 1);
-        const dry = clamp((0.46 - moisture) / 0.34, 0, 1) * clamp((temperature - 0.38) / 0.4, 0, 1);
-        const wetGreen = { r: 38, g: 92, b: 58 };
-        const forest = { r: 28, g: 72, b: 48 };
-        const ochre = { r: 148, g: 128, b: 78 };
-        rgb = mixRgb(mixRgb(forest, wetGreen, clamp(moisture, 0, 1)), ochre, dry * 0.78);
-        rgb = mixRgb(rgb, rock, alt * 0.7);
-        const coastal = 1 - clamp((elevation - SEA_LEVEL) / 0.035, 0, 1);
-        rgb = mixRgb(rgb, sand, coastal * 0.65);
-        const cold = clamp((0.24 - temperature) / 0.24, 0, 1);
-        const snowLine = clamp((elevation - 0.48) / 0.26, 0, 1);
-        const snowAmt = clamp(Math.max(snowLine, cold * 0.9), 0, 1);
-        rgb = mixRgb(rgb, snow, snowAmt * 0.88);
-        if (landTint) rgb = mixRgb(rgb, landTint, 0.4);
-      }
-      // Quantize colour into ~a few hundred buckets; the frame loop groups
-      // triangles into one Path2D per colour so 5k facets cost ~100 fills, not 5k.
-      const qr = rgb.r & 0xf0;
-      const qg = rgb.g & 0xf0;
-      const qb = rgb.b & 0xf0;
-      const key = (qr << 8) | (qg << 4) | qb;
-      let bucket = buckets.get(key);
-      if (!bucket) {
-        bucket = {
-          index: buckets.size,
-          fill: `rgb(${qr},${qg},${qb})`,
-        };
-        buckets.set(key, bucket);
-      }
-      return {
-        a: face.a,
-        b: face.b,
-        c: face.c,
-        centroid: face.centroid,
-        bucket: bucket.index,
-        isOcean,
-        elevation,
-      };
+  /**
+   * RND-04: pass the authoritative live leaf list. Geometry is rebuilt at
+   * frame preparation only when the world revision or planet seed changed.
+   * @param {{leaves?:Array, revision?:number, seed?:number}} input
+   */
+  setLiveSurface(input = {}) {
+    const next = input && typeof input === 'object' ? input : {};
+    return this.liveSurface.setInput({
+      leaves: Array.isArray(next.leaves) ? next.leaves : [],
+      revision: Number.isInteger(next.revision) ? next.revision : 0,
+      seed: Number(next.seed) >>> 0,
     });
-    this.surface = { seed: next, level, faces, buckets: [...buckets.values()] };
+  }
+
+  /** Rebuild metrics for QA: revision, triangles, buckets, rebuild time, skips. */
+  surfaceMeshStats() {
+    this.liveSurfaceStats = this.liveSurface.stats();
+    return this.liveSurfaceStats;
+  }
+
+  /** Colour of one leaf for the live mesh: terrain (same as the cell pass) + owner tint. */
+  _liveLeafColour(entry) {
+    if (!entry) return { r: 42, g: 92, b: 116 };
+    let rgb = entry.terrainRgb || null;
+    if (!rgb) {
+      const terrain = entry.terrain;
+      rgb = terrain && terrain.rgb ? terrain.rgb : { r: 42, g: 92, b: 116 };
+    }
+    if (entry.ownerIndex >= 0 && Array.isArray(this.players) && this.players[entry.ownerIndex]) {
+      const ownerRgb = parseColor(this.players[entry.ownerIndex].color);
+      rgb = mixRgb(rgb, ownerRgb, 0.22);
+    }
+    return rgb;
   }
 
   /** Use the existing cell/material pipeline from a close surface camera. */
   setSurfaceView(enabled) {
     this.surfaceView = !!enabled;
+    if (!this.surfaceView) {
+      this.surfaceMode = false;
+      this.surfaceEntities = [];
+      this.surfaceEffects = [];
+    }
+  }
+
+  /**
+   * Surface mode is a camera + control mode on this same renderer (RND-02).
+   * The planet, cells, markers and labels keep their orbit pipeline; the
+   * surface adds only the entity pass and the landing/leaving ship.
+   * @param {{active?:boolean, entities?:Array, phase?:string, progress?:number, effects?:Array}} options
+   */
+  setSurfaceMode(options = {}) {
+    const next = options && typeof options === 'object' ? options : {};
+    this.surfaceMode = !!next.active;
+    this.surfaceView = this.surfaceMode;
+    this.surfaceEntities = this.surfaceMode && Array.isArray(next.entities) ? next.entities : [];
+    this.surfaceEffects = this.surfaceMode && Array.isArray(next.effects) ? next.effects : [];
+    this.surfacePhase = typeof next.phase === 'string' && next.phase ? next.phase : 'walking';
+    this.surfaceProgress = Number.isFinite(next.progress) ? clamp(next.progress, 0, 1) : 1;
+    return this;
   }
 
   setOpaqueSurface(enabled) {
@@ -741,6 +733,8 @@ export class IcosaRenderer {
 
     if (this._stylesDirty || !this._styles) this._rebuildStyles();
     if (hasCamera) this._computeCameraFrame(camera, R);
+    // One rebuild per frame maximum, only when the world revision changed.
+    this.liveSurface.prepare(this.t);
 
     // Backdrop layers.
     this._drawBackdrop(ctx, W, H);
@@ -780,6 +774,8 @@ export class IcosaRenderer {
       this._drawWaypoint(ctx, camera);
       this._drawSupplyMarkers(ctx, camera);
     }
+
+    if (this.surfaceMode && hasCamera) this._drawSurfaceEntities(ctx, camera, rm);
 
     if (hasCamera) this._drawPulses(ctx, camera, rm);
   }
@@ -1256,148 +1252,284 @@ export class IcosaRenderer {
     ctx.restore();
   }
 
-  /** Draw the cached high-res geography mesh behind the game grid. */
-  _drawSurface(ctx, camera, cx, cy, R, W, H) {
-    const surface = this.surface;
-    if (!surface) return;
-    const theme = this.planetTheme;
-    const Kx = this._Kx;
-    const Ky = this._Ky;
-    const Kz = this._Kz;
-    const tmp = this._tmpV;
-    // Render the geography mesh into a lower-res offscreen globe, then upscale
-    // with smoothing. This both hides low-poly facets and keeps path-fill cost
-    // bounded at deep zoom.
-    const offSize = Math.round(clamp(R * 1.5, 380, 768));
-    if (!this._surfaceCanvas || this._surfaceCanvas.width !== offSize) {
-      this._surfaceCanvas = document.createElement('canvas');
-      this._surfaceCanvas.width = offSize;
-      this._surfaceCanvas.height = offSize;
-      this._surfaceCtx = this._surfaceCanvas.getContext('2d');
-    }
-    const sctx = this._surfaceCtx;
-    const scale = offSize / Math.min(W, H);
-    sctx.save();
-    sctx.setTransform(1, 0, 0, 1, 0, 0);
-    sctx.clearRect(0, 0, offSize, offSize);
-    sctx.setTransform(scale, 0, 0, scale, offSize / 2 - cx * scale, offSize / 2 - cy * scale);
-    sctx.beginPath();
-    sctx.arc(cx, cy, Math.max(1, R), 0, TAU);
-    sctx.clip();
-    sctx.fillStyle = theme && theme.ocean ? theme.ocean : 'rgb(6,28,52)';
-    sctx.fillRect(cx - R, cy - R, R * 2, R * 2);
-    // Group facets into one Path2D per quantized geography colour.
-    const nBuckets = surface.buckets.length;
-    const paths = this._surfacePaths && this._surfacePaths.length === nBuckets
-      ? this._surfacePaths
-      : (this._surfacePaths = new Array(nBuckets));
-    for (let i = 0; i < nBuckets; i += 1) paths[i] = null;
-    for (const f of surface.faces) {
-      const c = f.centroid;
-      if (c.x * Kx + c.y * Ky + c.z * Kz <= 0.015) continue;
-      tmp.x = f.a.x; tmp.y = f.a.y; tmp.z = f.a.z;
-      const pa = camera.project(tmp);
-      tmp.x = f.b.x; tmp.y = f.b.y; tmp.z = f.b.z;
-      const pb = camera.project(tmp);
-      tmp.x = f.c.x; tmp.y = f.c.y; tmp.z = f.c.z;
-      const pc = camera.project(tmp);
-      if (pa.z <= 0 || pb.z <= 0 || pc.z <= 0) continue;
-      const minX = Math.min(pa.x, pb.x, pc.x);
-      const maxX = Math.max(pa.x, pb.x, pc.x);
-      const minY = Math.min(pa.y, pb.y, pc.y);
-      const maxY = Math.max(pa.y, pb.y, pc.y);
-      if (maxX < -2 || minX > W + 2 || maxY < -2 || minY > H + 2) continue;
-      let path = paths[f.bucket];
-      if (!path) path = paths[f.bucket] = new Path2D();
-      path.moveTo(pa.x, pa.y);
-      path.lineTo(pb.x, pb.y);
-      path.lineTo(pc.x, pc.y);
-      path.closePath();
-    }
-    // A slight global blur of the surface would soften facet edges, but plain
-    // grouped fills keep 60fps; the atmosphere/shading pass hides hard seams.
-    for (let i = 0; i < nBuckets; i += 1) {
-      const path = paths[i];
-      if (!path) continue;
-      const fill = surface.buckets[i].fill;
-      sctx.fillStyle = fill;
-      sctx.fill(path);
-      // Same-colour hairline closes antialiased cracks between buckets.
-      sctx.strokeStyle = fill;
-      sctx.lineWidth = 0.8;
-      sctx.stroke(path);
-    }
-    sctx.restore();
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(cx, cy, Math.max(1, R), 0, TAU);
-    ctx.clip();
-    ctx.imageSmoothingEnabled = true;
-    ctx.filter = 'blur(1.1px)';
-    ctx.drawImage(this._surfaceCanvas, 0, 0, offSize, offSize, cx - R, cy - R, R * 2, R * 2);
-    ctx.filter = 'none';
-    // Soft directional shading + rim to make the sphere read as a world.
-    const shade = ctx.createRadialGradient(cx - R * 0.34, cy - R * 0.4, R * 0.12, cx, cy, R * 1.02);
-    shade.addColorStop(0, 'rgba(195,235,255,0.16)');
-    shade.addColorStop(0.45, 'rgba(0,0,0,0)');
-    shade.addColorStop(0.82, 'rgba(2,6,20,0.18)');
-    shade.addColorStop(1, 'rgba(1,3,12,0.52)');
-    ctx.fillStyle = shade;
-    ctx.fillRect(cx - R, cy - R, R * 2, R * 2);
-    // A faint atmosphere rim over the ocean edge.
-    const rimRgb = theme && theme.atmosphere ? hexRgb(theme.atmosphere) : { r: 100, g: 220, b: 255 };
-    const rim = ctx.createRadialGradient(cx, cy, R * 0.9, cx, cy, R * 1.005);
-    rim.addColorStop(0, `rgba(${rimRgb.r},${rimRgb.g},${rimRgb.b},0)`);
-    rim.addColorStop(0.82, `rgba(${rimRgb.r},${rimRgb.g},${rimRgb.b},0.18)`);
-    rim.addColorStop(1, `rgba(${rimRgb.r},${rimRgb.g},${rimRgb.b},0.38)`);
-    ctx.fillStyle = rim;
-    ctx.beginPath();
-    ctx.arc(cx, cy, R, 0, TAU);
-    ctx.fill();
-    ctx.restore();
-  }
-
-  /** Surface camera underlay: the same cached planet mesh used by orbit. */
+  /**
+   * Surface underlay: the live leaf mesh (RND-04), rebuilt from World.leaves on
+   * revision/seed change and drawn in quantised colour buckets.
+   */
   _drawSurfaceProjected(ctx, camera, W, H) {
-    const surface = this.surface;
-    if (!surface || !surface.faces || !surface.faces.length) return;
-    const origin = camera && camera.origin;
-    const paths = new Map();
+    const mesh = this.liveSurface.mesh;
+    if (!mesh || !mesh.triangles || !mesh.triangleCount) return;
+    const tris = mesh.triangles;
+    const buckets = mesh.buckets;
+    const origin = camera && camera.origin ? camera.origin : camera.viewAxis();
     const tmp = this._tmpV;
-    for (const face of surface.faces) {
-      if (origin && face.centroid.x * origin.x + face.centroid.y * origin.y + face.centroid.z * origin.z < -0.05) continue;
-      tmp.x = face.a.x; tmp.y = face.a.y; tmp.z = face.a.z;
-      const pa = camera.project(tmp);
-      if (!pa.visible) continue;
-      tmp.x = face.b.x; tmp.y = face.b.y; tmp.z = face.b.z;
-      const pb = camera.project(tmp);
-      if (!pb.visible) continue;
-      tmp.x = face.c.x; tmp.y = face.c.y; tmp.z = face.c.z;
-      const pc = camera.project(tmp);
-      if (!pc.visible) continue;
-      const minX = Math.min(pa.x, pb.x, pc.x);
-      const maxX = Math.max(pa.x, pb.x, pc.x);
-      const minY = Math.min(pa.y, pb.y, pc.y);
-      const maxY = Math.max(pa.y, pb.y, pc.y);
-      if (maxX < -4 || minX > W + 4 || maxY < -4 || minY > H + 4) continue;
-      let path = paths.get(face.bucket);
-      if (!path) { path = new Path2D(); paths.set(face.bucket, path); }
-      path.moveTo(pa.x, pa.y);
-      path.lineTo(pb.x, pb.y);
-      path.lineTo(pc.x, pc.y);
-      path.closePath();
+    const near = Number.isFinite(camera.nearPlane) ? camera.nearPlane : 0;
+    const paths = new Map();
+    for (let b = 0; b < buckets.length; b += 1) {
+      const bucket = buckets[b];
+      const start = bucket.start * 9;
+      const end = (bucket.start + bucket.count) * 9;
+      let path = null;
+      for (let o = start; o < end; o += 9) {
+        tmp.x = tris[o]; tmp.y = tris[o + 1]; tmp.z = tris[o + 2];
+        const pa = camera.project(tmp);
+        if (!pa.visible || pa.depth <= near) continue;
+        tmp.x = tris[o + 3]; tmp.y = tris[o + 4]; tmp.z = tris[o + 5];
+        const pb = camera.project(tmp);
+        if (!pb.visible || pb.depth <= near) continue;
+        tmp.x = tris[o + 6]; tmp.y = tris[o + 7]; tmp.z = tris[o + 8];
+        const pc = camera.project(tmp);
+        if (!pc.visible || pc.depth <= near) continue;
+        // Cheap back-face/horizon cull: the centroid must face the camera.
+        const cx = (tris[o] + tris[o + 3] + tris[o + 6]) / 3;
+        const cy = (tris[o + 1] + tris[o + 4] + tris[o + 7]) / 3;
+        const cz = (tris[o + 2] + tris[o + 5] + tris[o + 8]) / 3;
+        if (cx * origin.x + cy * origin.y + cz * origin.z < -0.02) continue;
+        const minX = Math.min(pa.x, pb.x, pc.x);
+        const maxX = Math.max(pa.x, pb.x, pc.x);
+        const minY = Math.min(pa.y, pb.y, pc.y);
+        const maxY = Math.max(pa.y, pb.y, pc.y);
+        if (maxX < -4 || minX > W + 4 || maxY < -4 || minY > H + 4) continue;
+        if (!path) {
+          path = new Path2D();
+          paths.set(b, path);
+        }
+        path.moveTo(pa.x, pa.y);
+        path.lineTo(pb.x, pb.y);
+        path.lineTo(pc.x, pc.y);
+        path.closePath();
+      }
     }
-    for (const [bucket, path] of paths) {
-      const color = surface.buckets[bucket] && surface.buckets[bucket].fill;
-      if (!color) continue;
-      ctx.fillStyle = color;
+    for (const [index, path] of paths) {
+      const fill = buckets[index].fill;
+      ctx.fillStyle = fill;
       ctx.globalAlpha = 0.98;
       ctx.fill(path);
-      ctx.strokeStyle = color;
+      ctx.strokeStyle = fill;
       ctx.lineWidth = 0.8;
       ctx.stroke(path);
     }
     ctx.globalAlpha = 1;
+  }
+
+  /* ================================================================ *
+   * Surface entity pass (RND-02)
+   * ================================================================ */
+
+  /**
+   * Draw the surface entities inside the single renderer: avatars, target and
+   * supply pins, mining beams, harvest effects, and the landing/leaving ship.
+   * Entities reference cells by label, never by copied geometry.
+   */
+  _drawSurfaceEntities(ctx, camera, rm) {
+    const W = this.width;
+    const H = this.height;
+    if (W < 2 || H < 2) return;
+    const list = this.surfaceEntities || [];
+    for (let i = 0; i < list.length; i += 1) {
+      const entity = list[i];
+      if (!entity || !entity.pos) continue;
+      if (entity.kind === 'self' || entity.kind === 'peer') {
+        this._drawSurfaceAvatar(ctx, camera, entity);
+      } else if (entity.kind === 'pin') {
+        this._drawSurfacePin(ctx, camera, entity);
+      } else if (entity.kind === 'beam') {
+        this._drawSurfaceBeam(ctx, camera, entity);
+      }
+    }
+    this._drawSurfaceHarvest(ctx, W, H);
+    this._drawSurfaceShip(ctx, W, H, rm);
+  }
+
+  _drawSurfaceAvatar(ctx, camera, entity) {
+    const isSelf = entity.kind === 'self';
+    const forward = entity.forward && Number.isFinite(entity.forward.x)
+      ? entity.forward
+      : { x: 1, y: 0, z: 0 };
+    drawHumanoid3D(ctx, camera, entity.pos, forward, {
+      scale: isSelf ? 0.013 : 0.012,
+      walkPhase: Number.isFinite(entity.walk) ? entity.walk : 0,
+      tint: entity.tint || (isSelf ? '#67ddff' : '#a78bfa'),
+      skin: isSelf ? '#f2ffff' : '#dffcff',
+    });
+    const head = camera.project(mul(entity.pos, 1.016));
+    if (head && head.visible && entity.label) {
+      ctx.fillStyle = 'rgba(225,250,255,0.82)';
+      ctx.font = `8px ${FONT_STACK}`;
+      ctx.textAlign = 'center';
+      ctx.fillText(String(entity.label).toUpperCase().slice(0, 14), head.x, head.y - 10);
+    }
+    if (entity.mine) {
+      const foot = camera.project(entity.pos);
+      if (!foot || !foot.visible) return;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = entity.tint || '#8afcff';
+      ctx.beginPath();
+      ctx.moveTo(foot.x - 2, foot.y - 190);
+      ctx.lineTo(foot.x + 2, foot.y - 190);
+      ctx.lineTo(foot.x + 32, foot.y);
+      ctx.lineTo(foot.x - 32, foot.y);
+      ctx.closePath();
+      ctx.fill();
+      for (let i = 0; i < 5; i += 1) {
+        const a = (i / 5) * Math.PI * 2 + this.t * 2;
+        ctx.fillRect(foot.x + Math.cos(a) * 20, foot.y + Math.sin(a) * 8, 2, 2);
+      }
+      ctx.restore();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  _drawSurfacePin(ctx, camera, entity) {
+    const anchor = camera.project(mul(entity.pos, 1.001));
+    if (!anchor || !anchor.visible) return;
+    const color = entity.tint || (entity.variant === 'supply' ? '#ffd166' : '#22ff88');
+    const supply = entity.variant === 'supply';
+    const height = supply ? 52 : 22;
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = supply ? 1.2 : 1.4;
+    ctx.beginPath();
+    ctx.moveTo(anchor.x, anchor.y);
+    ctx.lineTo(anchor.x, anchor.y - height);
+    ctx.stroke();
+    const tip = anchor.y - height - 10;
+    ctx.beginPath();
+    ctx.moveTo(anchor.x, tip - 6);
+    ctx.lineTo(anchor.x + 6, tip + 1);
+    ctx.lineTo(anchor.x, tip + 8);
+    ctx.lineTo(anchor.x - 6, tip + 1);
+    ctx.closePath();
+    ctx.fill();
+    if (supply && entity.label) {
+      ctx.fillStyle = '#f3ffff';
+      ctx.font = `8px ${FONT_STACK}`;
+      ctx.textAlign = 'center';
+      ctx.fillText(String(entity.label).toUpperCase(), anchor.x, tip - 8);
+    }
+    ctx.restore();
+  }
+
+  _drawSurfaceBeam(ctx, camera, entity) {
+    const anchor = camera.project(mul(entity.pos, 1.003));
+    if (!anchor || !anchor.visible) return;
+    const k = clamp(Number.isFinite(entity.progress) ? entity.progress : 0, 0, 1);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.5 * (1 - k);
+    ctx.fillStyle = entity.tint || '#8afcff';
+    ctx.beginPath();
+    ctx.moveTo(anchor.x - 2, anchor.y - 180);
+    ctx.lineTo(anchor.x + 2, anchor.y - 180);
+    ctx.lineTo(anchor.x + 34, anchor.y);
+    ctx.lineTo(anchor.x - 34, anchor.y);
+    ctx.closePath();
+    ctx.fill();
+    for (let i = 0; i < 6; i += 1) {
+      const a = (i / 6) * Math.PI * 2 + this.t * 3;
+      ctx.fillRect(anchor.x + Math.cos(a) * (10 + k * 30), anchor.y + Math.sin(a) * 7, 2, 2);
+    }
+    ctx.restore();
+    if (entity.label) {
+      ctx.globalAlpha = 0.8 * (1 - k);
+      ctx.fillStyle = '#f3ffff';
+      ctx.font = `8px ${FONT_STACK}`;
+      ctx.textAlign = 'center';
+      ctx.fillText(String(entity.label), anchor.x, anchor.y - 30);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  /** Tractor cone + ore sparks for an authoritative harvest success. */
+  _drawSurfaceHarvest(ctx, W, H) {
+    const effects = this.surfaceEffects;
+    if (!effects || !effects.length) return;
+    for (let i = 0; i < effects.length; i += 1) {
+      const effect = effects[i];
+      const k = clamp(Number.isFinite(effect.age) ? effect.age : 0, 0, 1);
+      const x = W / 2;
+      const y = H * 0.69;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = `rgba(120,255,190,${0.18 * (1 - k)})`;
+      ctx.beginPath();
+      ctx.moveTo(x - 18, 0);
+      ctx.lineTo(x + 18, 0);
+      ctx.lineTo(x + 90, y);
+      ctx.lineTo(x - 90, y);
+      ctx.closePath();
+      ctx.fill();
+      for (let j = 0; j < 22; j += 1) {
+        const a = (j / 22) * Math.PI * 2 + k * 2;
+        const r = 18 + k * 130 + (j % 4) * 9;
+        ctx.globalAlpha = 0.8 * (1 - k);
+        ctx.fillStyle = effect.color || '#ffe066';
+        ctx.beginPath();
+        ctx.moveTo(x + Math.cos(a) * r, y + Math.sin(a) * r * 0.45 - 20);
+        ctx.lineTo(x + Math.cos(a + 0.18) * (r + 9), y + Math.sin(a + 0.18) * (r + 9) * 0.45 - 20);
+        ctx.lineTo(x + Math.cos(a - 0.18) * (r + 9), y + Math.sin(a - 0.18) * (r + 9) * 0.45 - 20);
+        ctx.closePath();
+        ctx.fill();
+      }
+      if (effect.value > 0) {
+        ctx.globalAlpha = 0.9 * (1 - k);
+        ctx.fillStyle = effect.color || '#ffe066';
+        ctx.font = `700 14px ${FONT_STACK}`;
+        ctx.textAlign = 'center';
+        ctx.fillText(`+${effect.value} ${effect.name}`, x, y - 52 - k * 42);
+      }
+      ctx.restore();
+      drawTetraShip(ctx, {
+        x: W / 2,
+        y: H * 0.07 + Math.sin(k * Math.PI) * 8,
+        scale: 0.55,
+        yaw: 0.6 + k,
+        pitch: -0.4,
+        hull: '#e8fbff',
+        fin: effect.color || '#ffe066',
+        edge: '#bffaff',
+        glow: effect.color || '#ffe066',
+        alpha: 0.55 * (1 - k),
+        engine: false,
+        shadow: false,
+      });
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /** The landing/leaving ship is part of the same surface draw path. */
+  _drawSurfaceShip(ctx, W, H, rm) {
+    const phase = this.surfacePhase;
+    if (phase === 'landing') {
+      const k = clamp(this.surfaceProgress, 0, 1);
+      drawTetraShip(ctx, {
+        x: W / 2,
+        y: -80 + (H * 0.57 + 100) * k,
+        scale: 1.35 + k * 1.2,
+        yaw: 0.6 + k * 1.8,
+        pitch: -0.4,
+        roll: 0.2,
+        hull: '#e8fbff',
+        fin: '#52d9ff',
+        edge: '#bffaff',
+        glow: '#55eaff',
+        alpha: 0.95,
+      });
+    } else if (phase === 'leaving') {
+      const k = clamp(this.surfaceProgress, 0, 1);
+      drawTetraShip(ctx, {
+        x: W / 2 + k * 160,
+        y: H * 0.62 - k * H * 0.8,
+        scale: 1.2 + k * 1.8,
+        yaw: 0.7 + k * 2,
+        pitch: -0.4,
+        glow: '#55eaff',
+        alpha: 1 - k * 0.3,
+      });
+    }
   }
 
   _drawSphere(ctx, camera, cx, cy, R, rm, glassFade) {
@@ -1484,11 +1616,6 @@ export class IcosaRenderer {
           ctx.restore();
         }
       }
-    }
-
-    // --- Detailed procedural geography underlay. -------------------
-    if (!this.surfaceView && this.surface && this.surface.faces.length) {
-      this._drawSurface(ctx, camera, cx, cy, R, W, H);
     }
 
     // --- Cull + project front candidates. ---------------------------
@@ -1606,7 +1733,6 @@ export class IcosaRenderer {
       ctx.closePath();
 
       const terrain = e.terrain;
-      const detailedSurface = !this.surfaceView && !!(this.surface && this.surface.faces.length);
       ctx.globalAlpha = this.opaqueSurface ? 1 : lodAlpha;
       if (this.opaqueSurface && terrain && e.terrainRgb) {
         ctx.fillStyle = `rgb(${e.terrainRgb.r},${e.terrainRgb.g},${e.terrainRgb.b})`;
@@ -1621,18 +1747,6 @@ export class IcosaRenderer {
           ctx.fill();
           ctx.globalAlpha = lodAlpha;
         }
-      } else if (terrain && detailedSurface) {
-        // Geography is already painted by the high-res surface. Keep only a
-        // light ownership tint so the terrain reads through the grid.
-        if (e.ownerIndex >= 0) {
-          const owned = style.overlayC[fillIdx];
-          if (owned) {
-            ctx.globalAlpha = lodAlpha * 0.5;
-            ctx.fillStyle = owned;
-            ctx.fill();
-          }
-        }
-        ctx.globalAlpha = lodAlpha;
       } else if (terrain) {
         // Low-poly biome underlay: strong on unclaimed cells, translucent under
         // the player-colour claim tint so ownership stays readable.

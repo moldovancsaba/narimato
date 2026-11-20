@@ -1,0 +1,727 @@
+{
+  "ok": true,
+  "checks": [
+    {
+      "name": "desktop: parity P = 1.0",
+      "ok": true,
+      "detail": {
+        "P": 1,
+        "ok": true,
+        "missingDuring": [],
+        "missingAfter": [],
+        "addedDuring": [],
+        "unexpectedDuring": [],
+        "duplicates": []
+      }
+    },
+    {
+      "name": "desktop: no duplicate HUD ids",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "desktop: surface only adds surface nodes",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "desktop: one renderer before/after entry",
+      "ok": true,
+      "detail": true
+    },
+    {
+      "name": "desktop: no second planet canvas",
+      "ok": true,
+      "detail": {
+        "active": true,
+        "phase": "landing",
+        "entities": 2,
+        "canvasCount": 1
+      }
+    },
+    {
+      "name": "desktop: hud[data-mode] switches",
+      "ok": true,
+      "detail": {
+        "before": "orbit",
+        "during": "surface",
+        "after": "orbit"
+      }
+    },
+    {
+      "name": "desktop: target readout is a polite live region",
+      "ok": true,
+      "detail": "polite"
+    },
+    {
+      "name": "desktop: lap progressbar updates",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "name": "desktop: pads are named 44px targets",
+      "ok": true,
+      "detail": [
+        {
+          "label": "Run forward",
+          "ariaDisabled": "true",
+          "width": 48,
+          "height": 48
+        },
+        {
+          "label": "Turn left",
+          "ariaDisabled": "true",
+          "width": 48,
+          "height": 48
+        },
+        {
+          "label": "Run backward",
+          "ariaDisabled": "true",
+          "width": 48,
+          "height": 48
+        },
+        {
+          "label": "Turn right",
+          "ariaDisabled": "true",
+          "width": 48,
+          "height": 48
+        }
+      ]
+    },
+    {
+      "name": "desktop: focus placed in the strip on entry",
+      "ok": true,
+      "detail": "surface-forward"
+    },
+    {
+      "name": "desktop: focus restored to the orbit HUD on exit",
+      "ok": true,
+      "detail": "hud-zoom"
+    },
+    {
+      "name": "desktop: accessibility tree non-empty in both views",
+      "ok": true,
+      "detail": {
+        "before": 2387,
+        "during": 2339,
+        "after": 2027,
+        "error": null
+      }
+    },
+    {
+      "name": "mobile: parity P = 1.0",
+      "ok": true,
+      "detail": {
+        "P": 1,
+        "ok": true,
+        "missingDuring": [],
+        "missingAfter": [],
+        "addedDuring": [],
+        "unexpectedDuring": [],
+        "duplicates": []
+      }
+    },
+    {
+      "name": "mobile: no duplicate HUD ids",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "mobile: surface only adds surface nodes",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "mobile: one renderer before/after entry",
+      "ok": true,
+      "detail": true
+    },
+    {
+      "name": "mobile: no second planet canvas",
+      "ok": true,
+      "detail": {
+        "active": true,
+        "phase": "landing",
+        "entities": 2,
+        "canvasCount": 1
+      }
+    },
+    {
+      "name": "mobile: hud[data-mode] switches",
+      "ok": true,
+      "detail": {
+        "before": "orbit",
+        "during": "surface",
+        "after": "orbit"
+      }
+    },
+    {
+      "name": "mobile: target readout is a polite live region",
+      "ok": true,
+      "detail": "polite"
+    },
+    {
+      "name": "mobile: lap progressbar updates",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "name": "mobile: pads are named 44px targets",
+      "ok": true,
+      "detail": [
+        {
+          "label": "Run forward",
+          "ariaDisabled": "true",
+          "width": 48,
+          "height": 48
+        },
+        {
+          "label": "Turn left",
+          "ariaDisabled": "true",
+          "width": 48,
+          "height": 48
+        },
+        {
+          "label": "Run backward",
+          "ariaDisabled": "true",
+          "width": 48,
+          "height": 48
+        },
+        {
+          "label": "Turn right",
+          "ariaDisabled": "true",
+          "width": 48,
+          "height": 48
+        }
+      ]
+    },
+    {
+      "name": "mobile: focus placed in the strip on entry",
+      "ok": true,
+      "detail": "surface-forward"
+    },
+    {
+      "name": "mobile: focus restored to the orbit HUD on exit",
+      "ok": true,
+      "detail": "hud"
+    },
+    {
+      "name": "mobile: accessibility tree non-empty in both views",
+      "ok": true,
+      "detail": {
+        "before": 808,
+        "during": 776,
+        "after": 448,
+        "error": null
+      }
+    }
+  ],
+  "phases": {
+    "desktop": {
+      "before": {
+        "hud": {
+          "nodes": [
+            "hud",
+            "nav",
+            "world",
+            "planet",
+            "score",
+            "clicks",
+            "breaks",
+            "zoom",
+            "mission",
+            "mission-list",
+            "cargo",
+            "cargo-list",
+            "players",
+            "arcade",
+            "target",
+            "hint",
+            "surface-controls",
+            "surface-target",
+            "surface-lap",
+            "surface-lap-value",
+            "surface-auto",
+            "surface-pads",
+            "surface-forward",
+            "surface-left",
+            "surface-back",
+            "surface-right",
+            "surface-exit"
+          ],
+          "total": 27,
+          "unique": 27,
+          "duplicates": [],
+          "mode": "orbit",
+          "controlsHidden": true
+        },
+        "scene": {
+          "active": false,
+          "phase": "idle",
+          "entities": 0,
+          "canvasCount": 1
+        },
+        "renderer": true,
+        "mode": "orbit",
+        "activeElement": "btn-landing-brief-start",
+        "targetText": "TARGET: —",
+        "targetLive": "polite",
+        "lapNow": "0",
+        "pads": [
+          {
+            "label": "Run forward",
+            "ariaDisabled": null,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "label": "Turn left",
+            "ariaDisabled": null,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "label": "Run backward",
+            "ariaDisabled": null,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "label": "Turn right",
+            "ariaDisabled": null,
+            "width": 0,
+            "height": 0
+          }
+        ]
+      },
+      "during": {
+        "hud": {
+          "nodes": [
+            "hud",
+            "nav",
+            "world",
+            "planet",
+            "score",
+            "clicks",
+            "breaks",
+            "zoom",
+            "mission",
+            "mission-list",
+            "cargo",
+            "cargo-list",
+            "players",
+            "arcade",
+            "target",
+            "hint",
+            "surface-controls",
+            "surface-target",
+            "surface-lap",
+            "surface-lap-value",
+            "surface-auto",
+            "surface-pads",
+            "surface-forward",
+            "surface-left",
+            "surface-back",
+            "surface-right",
+            "surface-exit"
+          ],
+          "total": 27,
+          "unique": 27,
+          "duplicates": [],
+          "mode": "surface",
+          "controlsHidden": false
+        },
+        "scene": {
+          "active": true,
+          "phase": "landing",
+          "entities": 2,
+          "canvasCount": 1
+        },
+        "renderer": true,
+        "mode": "surface",
+        "activeElement": "surface-forward",
+        "targetText": "TARGET: —",
+        "targetLive": "polite",
+        "lapNow": "0",
+        "pads": [
+          {
+            "label": "Run forward",
+            "ariaDisabled": "true",
+            "width": 48,
+            "height": 48
+          },
+          {
+            "label": "Turn left",
+            "ariaDisabled": "true",
+            "width": 48,
+            "height": 48
+          },
+          {
+            "label": "Run backward",
+            "ariaDisabled": "true",
+            "width": 48,
+            "height": 48
+          },
+          {
+            "label": "Turn right",
+            "ariaDisabled": "true",
+            "width": 48,
+            "height": 48
+          }
+        ]
+      },
+      "after": {
+        "hud": {
+          "nodes": [
+            "hud",
+            "nav",
+            "world",
+            "planet",
+            "score",
+            "clicks",
+            "breaks",
+            "zoom",
+            "mission",
+            "mission-list",
+            "cargo",
+            "cargo-list",
+            "players",
+            "arcade",
+            "target",
+            "hint",
+            "surface-controls",
+            "surface-target",
+            "surface-lap",
+            "surface-lap-value",
+            "surface-auto",
+            "surface-pads",
+            "surface-forward",
+            "surface-left",
+            "surface-back",
+            "surface-right",
+            "surface-exit"
+          ],
+          "total": 27,
+          "unique": 27,
+          "duplicates": [],
+          "mode": "orbit",
+          "controlsHidden": true
+        },
+        "scene": {
+          "active": false,
+          "phase": "leaving",
+          "entities": 0,
+          "canvasCount": 1
+        },
+        "renderer": true,
+        "mode": "orbit",
+        "activeElement": "hud-zoom",
+        "targetText": "TARGET 8 // GREEN // HARVEST",
+        "targetLive": "polite",
+        "lapNow": "0",
+        "pads": [
+          {
+            "label": "Run forward",
+            "ariaDisabled": "true",
+            "width": 0,
+            "height": 0
+          },
+          {
+            "label": "Turn left",
+            "ariaDisabled": "true",
+            "width": 0,
+            "height": 0
+          },
+          {
+            "label": "Run backward",
+            "ariaDisabled": "true",
+            "width": 0,
+            "height": 0
+          },
+          {
+            "label": "Turn right",
+            "ariaDisabled": "true",
+            "width": 0,
+            "height": 0
+          }
+        ]
+      }
+    },
+    "mobile": {
+      "before": {
+        "hud": {
+          "nodes": [
+            "hud",
+            "nav",
+            "world",
+            "planet",
+            "score",
+            "clicks",
+            "breaks",
+            "zoom",
+            "mission",
+            "mission-list",
+            "cargo",
+            "cargo-list",
+            "players",
+            "arcade",
+            "target",
+            "hint",
+            "surface-controls",
+            "surface-target",
+            "surface-lap",
+            "surface-lap-value",
+            "surface-auto",
+            "surface-pads",
+            "surface-forward",
+            "surface-left",
+            "surface-back",
+            "surface-right",
+            "surface-exit"
+          ],
+          "total": 27,
+          "unique": 27,
+          "duplicates": [],
+          "mode": "orbit",
+          "controlsHidden": true
+        },
+        "scene": {
+          "active": false,
+          "phase": "idle",
+          "entities": 0,
+          "canvasCount": 1
+        },
+        "renderer": true,
+        "mode": "orbit",
+        "activeElement": "btn-landing-brief-start",
+        "targetText": "TARGET: —",
+        "targetLive": "polite",
+        "lapNow": "0",
+        "pads": [
+          {
+            "label": "Run forward",
+            "ariaDisabled": null,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "label": "Turn left",
+            "ariaDisabled": null,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "label": "Run backward",
+            "ariaDisabled": null,
+            "width": 0,
+            "height": 0
+          },
+          {
+            "label": "Turn right",
+            "ariaDisabled": null,
+            "width": 0,
+            "height": 0
+          }
+        ]
+      },
+      "during": {
+        "hud": {
+          "nodes": [
+            "hud",
+            "nav",
+            "world",
+            "planet",
+            "score",
+            "clicks",
+            "breaks",
+            "zoom",
+            "mission",
+            "mission-list",
+            "cargo",
+            "cargo-list",
+            "players",
+            "arcade",
+            "target",
+            "hint",
+            "surface-controls",
+            "surface-target",
+            "surface-lap",
+            "surface-lap-value",
+            "surface-auto",
+            "surface-pads",
+            "surface-forward",
+            "surface-left",
+            "surface-back",
+            "surface-right",
+            "surface-exit"
+          ],
+          "total": 27,
+          "unique": 27,
+          "duplicates": [],
+          "mode": "surface",
+          "controlsHidden": false
+        },
+        "scene": {
+          "active": true,
+          "phase": "landing",
+          "entities": 2,
+          "canvasCount": 1
+        },
+        "renderer": true,
+        "mode": "surface",
+        "activeElement": "surface-forward",
+        "targetText": "TARGET: —",
+        "targetLive": "polite",
+        "lapNow": "0",
+        "pads": [
+          {
+            "label": "Run forward",
+            "ariaDisabled": "true",
+            "width": 48,
+            "height": 48
+          },
+          {
+            "label": "Turn left",
+            "ariaDisabled": "true",
+            "width": 48,
+            "height": 48
+          },
+          {
+            "label": "Run backward",
+            "ariaDisabled": "true",
+            "width": 48,
+            "height": 48
+          },
+          {
+            "label": "Turn right",
+            "ariaDisabled": "true",
+            "width": 48,
+            "height": 48
+          }
+        ]
+      },
+      "after": {
+        "hud": {
+          "nodes": [
+            "hud",
+            "nav",
+            "world",
+            "planet",
+            "score",
+            "clicks",
+            "breaks",
+            "zoom",
+            "mission",
+            "mission-list",
+            "cargo",
+            "cargo-list",
+            "players",
+            "arcade",
+            "target",
+            "hint",
+            "surface-controls",
+            "surface-target",
+            "surface-lap",
+            "surface-lap-value",
+            "surface-auto",
+            "surface-pads",
+            "surface-forward",
+            "surface-left",
+            "surface-back",
+            "surface-right",
+            "surface-exit"
+          ],
+          "total": 27,
+          "unique": 27,
+          "duplicates": [],
+          "mode": "orbit",
+          "controlsHidden": true
+        },
+        "scene": {
+          "active": false,
+          "phase": "leaving",
+          "entities": 0,
+          "canvasCount": 1
+        },
+        "renderer": true,
+        "mode": "orbit",
+        "activeElement": "hud",
+        "targetText": "TARGET 8 // GREEN // HARVEST",
+        "targetLive": "polite",
+        "lapNow": "0",
+        "pads": [
+          {
+            "label": "Run forward",
+            "ariaDisabled": "true",
+            "width": 0,
+            "height": 0
+          },
+          {
+            "label": "Turn left",
+            "ariaDisabled": "true",
+            "width": 0,
+            "height": 0
+          },
+          {
+            "label": "Run backward",
+            "ariaDisabled": "true",
+            "width": 0,
+            "height": 0
+          },
+          {
+            "label": "Turn right",
+            "ariaDisabled": "true",
+            "width": 0,
+            "height": 0
+          }
+        ]
+      }
+    }
+  },
+  "parity": {
+    "P": 1,
+    "ok": true,
+    "missingDuring": [],
+    "missingAfter": [],
+    "addedDuring": [],
+    "unexpectedDuring": [],
+    "duplicates": []
+  },
+  "accessibility": {
+    "desktop": {
+      "before": {
+        "aria": "- region \"World telemetry\":\n  - text: NAV\n  - button \"10 MOUNTAIN · 44% ORE\"\n  - button \"Choose another navigation target\": ↻\n  - text: NARIMATO INFINITE GRID WORLD D0 · 20 FACES\n  - status \"MAGRATHEA from HITCHHIKER'S GUIDE, planet 1, levels 2\": MAGRATHEA LEVELS 2\n  - text: YOUR SCORE 0 FACES 0 CLICKS 0 BREAKS 0 ZOOM ×1.0 FOCUS D0\n  - navigation \"HUD actions\":\n    - button \"REPORT\"\n  - dialog \"MAGRATHEA\":\n    - paragraph: SURFACE CONTACT // HITCHHIKER'S GUIDE\n    - heading \"MAGRATHEA\" [level=2]\n    - paragraph: LEVELS 2 // FIND WHAT SHE NEEDS TO FLY\n    - list:\n      - listitem: FUEL RODS FIND U URANIUM 0/1\n      - listitem: HULL PLATES FIND Au GOLD 0/1\n      - listitem: WARP CORE FIND My MYRTHIL · RARE 0/1\n    - button \"START MINING\"\n  - complementary \"Escape mission objectives\":\n    - heading \"THE WAY HOME\" [level=2]\n    - text: REFIT IN PROGRESS\n    - group \"Ship requirements, captain's log and cargo\":\n      - list:\n        - listitem:\n          - text: FUEL RODS STILL NEEDED\n          - list:\n            - 'listitem \"URANIUM: 0 of 1\"': URANIUM 0/1\n        - listitem:\n          - text: HULL PLATES STILL NEEDED\n          - list:\n            - 'listitem \"GOLD: 0 of 1\"': GOLD 0/1\n        - listitem:\n          - text: WARP CORE STILL NEEDED\n          - list:\n            - 'listitem \"MYRTHIL: 0 of 1\"': MYRTHIL · RARE 0/1\n      - paragraph: CAPTAIN'S LOG\n      - paragraph: We're grounded on MAGRATHEA — HITCHHIKER'S GUIDE. The drive still needs 1 Uranium, 1 Gold and 1 Myrthil. The crust can give it to us.\n      - text: WHAT WE'RE CARRYING 0\n      - list:\n        - listitem: The hold is empty. Pick a triangle and see what she's hiding.\n    - text: IF WE'RE STILL STUCK 02:00 a relief ship is on the way\n    - paragraph: FIND THE PARTS. LIGHT THE DRIVE.\n  - complementary \"Operators in the world\":\n    - heading \"PILOTS HERE\" [level=2]\n    - text: 1 ONLINE\n    - button \"Collapse operators panel\" [expanded]\n    - list:\n      - listitem \"PAR597639, 0 points, 0 faces, online\": PAR597639 YOU 0 0\n  - complementary \"All-time arcade top ten\":\n    - heading \"LEGENDS OF THE GRID\" [level=2]\n    - button \"Collapse arcade panel\" [expanded]\n    - list:\n      - 'listitem \"Rank 1: PAR597639, score 0, 0 faces held, 0 breaks\"': 01 PAR597639 0 0F\n  - status: CLICK // MINE · DRAG // ROTATE PLANET · ARROWS // TRAVEL · SHIFT // FASTER · I // REVERSE DRAG · DBL-CLICK // FOCUS",
+        "length": 2387,
+        "roles": 50
+      },
+      "during": {
+        "aria": "- region \"World telemetry\":\n  - text: NAV\n  - button \"10 MOUNTAIN · 44% ORE\"\n  - button \"Choose another navigation target\": ↻\n  - text: NARIMATO INFINITE GRID WORLD D0 · 20 FACES\n  - status \"MAGRATHEA from HITCHHIKER'S GUIDE, planet 1, levels 2\": MAGRATHEA LEVELS 2\n  - text: YOUR SCORE 0 FACES 0 CLICKS 0 BREAKS 0 ZOOM ×1.0 FOCUS D0\n  - navigation \"HUD actions\":\n    - button \"REPORT\"\n  - complementary \"Escape mission objectives\":\n    - heading \"THE WAY HOME\" [level=2]\n    - text: REFIT IN PROGRESS\n    - group \"Ship requirements, captain's log and cargo\":\n      - list:\n        - listitem:\n          - text: FUEL RODS STILL NEEDED\n          - list:\n            - 'listitem \"URANIUM: 0 of 1\"': URANIUM 0/1\n        - listitem:\n          - text: HULL PLATES STILL NEEDED\n          - list:\n            - 'listitem \"GOLD: 0 of 1\"': GOLD 0/1\n        - listitem:\n          - text: WARP CORE STILL NEEDED\n          - list:\n            - 'listitem \"MYRTHIL: 0 of 1\"': MYRTHIL · RARE 0/1\n      - paragraph: CAPTAIN'S LOG\n      - paragraph: We're grounded on MAGRATHEA — HITCHHIKER'S GUIDE. The drive still needs 1 Uranium, 1 Gold and 1 Myrthil. The crust can give it to us.\n      - text: WHAT WE'RE CARRYING 0\n      - list:\n        - listitem: The hold is empty. Pick a triangle and see what she's hiding.\n    - text: IF WE'RE STILL STUCK 01:59 a relief ship is on the way\n    - paragraph: FIND THE PARTS. LIGHT THE DRIVE.\n  - complementary \"Operators in the world\":\n    - heading \"PILOTS HERE\" [level=2]\n    - text: 1 ONLINE\n    - button \"Collapse operators panel\" [expanded]\n    - list:\n      - listitem \"PAR597639, 0 points, 0 faces, online\": PAR597639 YOU 0 0\n  - complementary \"All-time arcade top ten\":\n    - heading \"LEGENDS OF THE GRID\" [level=2]\n    - button \"Collapse arcade panel\" [expanded]\n    - list:\n      - 'listitem \"Rank 1: PAR597639, score 0, 0 faces held, 0 breaks\"': 01 PAR597639 0 0F\n  - status: WASD / ARROWS RUN · A / D TURN · SHIFT SPRINT · ENTER TRIANGLES TO HARVEST · ESC // RETURN TO ORBIT\n  - group \"Surface controls\":\n    - paragraph: \"TARGET: —\"\n    - text: LAP\n    - progressbar \"Surface lap progress\"\n    - text: 0.00 —\n    - button \"Run forward\" [disabled]: ▲\n    - button \"Turn left\" [disabled]: ◀\n    - button \"Run backward\" [disabled]: ▼\n    - button \"Turn right\" [disabled]: ▶\n    - button \"RETURN TO ORBIT\"",
+        "length": 2339,
+        "roles": 51
+      },
+      "after": {
+        "aria": "- region \"World telemetry\":\n  - text: NAV\n  - button \"10 MOUNTAIN · 44% ORE\"\n  - button \"Choose another navigation target\": ↻\n  - text: NARIMATO INFINITE GRID WORLD D0 · 20 FACES\n  - status \"MAGRATHEA from HITCHHIKER'S GUIDE, planet 1, levels 2\": MAGRATHEA LEVELS 2\n  - text: YOUR SCORE 0 FACES 0 CLICKS 0 BREAKS 0 ZOOM ×1.0 FOCUS D0\n  - navigation \"HUD actions\":\n    - button \"REPORT\"\n  - complementary \"Escape mission objectives\":\n    - heading \"THE WAY HOME\" [level=2]\n    - text: REFIT IN PROGRESS\n    - group \"Ship requirements, captain's log and cargo\":\n      - list:\n        - listitem:\n          - text: FUEL RODS STILL NEEDED\n          - list:\n            - 'listitem \"URANIUM: 0 of 1\"': URANIUM 0/1\n        - listitem:\n          - text: HULL PLATES STILL NEEDED\n          - list:\n            - 'listitem \"GOLD: 0 of 1\"': GOLD 0/1\n        - listitem:\n          - text: WARP CORE STILL NEEDED\n          - list:\n            - 'listitem \"MYRTHIL: 0 of 1\"': MYRTHIL · RARE 0/1\n      - paragraph: CAPTAIN'S LOG\n      - paragraph: We're grounded on MAGRATHEA — HITCHHIKER'S GUIDE. The drive still needs 1 Uranium, 1 Gold and 1 Myrthil. The crust can give it to us.\n      - text: WHAT WE'RE CARRYING 0\n      - list:\n        - listitem: The hold is empty. Pick a triangle and see what she's hiding.\n    - text: IF WE'RE STILL STUCK 01:56 a relief ship is on the way\n    - paragraph: FIND THE PARTS. LIGHT THE DRIVE.\n  - complementary \"Operators in the world\":\n    - heading \"PILOTS HERE\" [level=2]\n    - text: 1 ONLINE\n    - button \"Collapse operators panel\" [expanded]\n    - list:\n      - listitem \"PAR597639, 0 points, 0 faces, online\": PAR597639 YOU 0 0\n  - complementary \"All-time arcade top ten\":\n    - heading \"LEGENDS OF THE GRID\" [level=2]\n    - button \"Collapse arcade panel\" [expanded]\n    - list:\n      - 'listitem \"Rank 1: PAR597639, score 0, 0 faces held, 0 breaks\"': 01 PAR597639 0 0F\n  - status: CLICK // MINE · DRAG // ROTATE PLANET · ARROWS // TRAVEL · SHIFT // FASTER · I // REVERSE DRAG · DBL-CLICK // FOCUS",
+        "length": 2027,
+        "roles": 41
+      }
+    },
+    "mobile": {
+      "before": {
+        "aria": "- region \"World telemetry\":\n  - text: NAV\n  - button \"10\"\n  - button \"Choose another navigation target\": ↻\n  - text: NARIMATO WORLD D0 · 20 FACES\n  - status \"MAGRATHEA from HITCHHIKER'S GUIDE, planet 1, levels 2\": MAGRATHEA LEVELS 2\n  - text: YOUR SCORE 0 FACES 0\n  - navigation \"HUD actions\":\n    - button \"SHIP 0/3\"\n    - button \"PILOTS HERE\"\n    - button \"ARCADE\"\n    - button \"Abandon run and return to main menu\": ABANDON\n    - button \"REPORT\"\n  - dialog \"MAGRATHEA\":\n    - paragraph: SURFACE CONTACT // HITCHHIKER'S GUIDE\n    - heading \"MAGRATHEA\" [level=2]\n    - paragraph: LEVELS 2 // FIND WHAT SHE NEEDS TO FLY\n    - list:\n      - listitem: FUEL RODS FIND U URANIUM 0/1\n      - listitem: HULL PLATES FIND Au GOLD 0/1\n      - listitem: WARP CORE FIND My MYRTHIL · RARE 0/1\n    - button \"START MINING\"",
+        "length": 808,
+        "roles": 22
+      },
+      "during": {
+        "aria": "- region \"World telemetry\":\n  - text: NAV\n  - button \"10\"\n  - button \"Choose another navigation target\": ↻\n  - text: NARIMATO WORLD D0 · 20 FACES\n  - status \"MAGRATHEA from HITCHHIKER'S GUIDE, planet 1, levels 2\": MAGRATHEA LEVELS 2\n  - text: YOUR SCORE 0 FACES 0\n  - navigation \"HUD actions\":\n    - button \"SHIP 0/3\"\n    - button \"PILOTS HERE\"\n    - button \"ARCADE\"\n    - button \"Abandon run and return to main menu\": ABANDON\n    - button \"REPORT\"\n  - group \"Surface controls\":\n    - paragraph: \"TARGET: —\"\n    - text: LAP\n    - progressbar \"Surface lap progress\"\n    - text: 0.00 —\n    - button \"Run forward\" [disabled]: ▲\n    - button \"Turn left\" [disabled]: ◀\n    - button \"Run backward\" [disabled]: ▼\n    - button \"Turn right\" [disabled]: ▶\n    - button \"RETURN TO ORBIT\"",
+        "length": 776,
+        "roles": 23
+      },
+      "after": {
+        "aria": "- region \"World telemetry\":\n  - text: NAV\n  - button \"10\"\n  - button \"Choose another navigation target\": ↻\n  - text: NARIMATO WORLD D0 · 20 FACES\n  - status \"MAGRATHEA from HITCHHIKER'S GUIDE, planet 1, levels 2\": MAGRATHEA LEVELS 2\n  - text: YOUR SCORE 0 FACES 0\n  - navigation \"HUD actions\":\n    - button \"SHIP 0/3\"\n    - button \"PILOTS HERE\"\n    - button \"ARCADE\"\n    - button \"Abandon run and return to main menu\": ABANDON\n    - button \"REPORT\"",
+        "length": 448,
+        "roles": 13
+      }
+    }
+  },
+  "errors": []
+}

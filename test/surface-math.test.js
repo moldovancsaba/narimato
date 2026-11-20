@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { advanceSurface, tangentAt, turnSurface } from '../public/js/surface-mode.js';
+import { advanceSurface, tangentAt, turnSurface } from '../public/js/surface-controller.js';
 
 const dot = (a, b) => a.x * b.x + a.y * b.y + a.z * b.z;
 const len = (v) => Math.hypot(v.x, v.y, v.z);

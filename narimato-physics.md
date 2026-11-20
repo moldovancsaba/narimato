@@ -4,7 +4,7 @@
 > **Delivery SSOT:** [NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80) · [Definition of Done](docs/DEFINITION_OF_DONE.md) · [Issue index](docs/ISSUE_MAP.md).
 > This document owns durable knowledge; it does not track delivery status.
 >
-> **Related delivery issues:** [QA-01](https://github.com/moldovancsaba/narimato/issues/5) · [DOC-01](https://github.com/moldovancsaba/narimato/issues/6) · [RND-01](https://github.com/moldovancsaba/narimato/issues/14) · [CTL-01](https://github.com/moldovancsaba/narimato/issues/26) · [CTL-02](https://github.com/moldovancsaba/narimato/issues/27)
+> **Related delivery issues:** [QA-01](https://github.com/moldovancsaba/narimato/issues/5) · [DOC-01](https://github.com/moldovancsaba/narimato/issues/6) · [RND-01](https://github.com/moldovancsaba/narimato/issues/14) · [RND-02](https://github.com/moldovancsaba/narimato/issues/15) · [RND-03](https://github.com/moldovancsaba/narimato/issues/16) · [RND-04](https://github.com/moldovancsaba/narimato/issues/17) · [CTL-01](https://github.com/moldovancsaba/narimato/issues/26) · [CTL-02](https://github.com/moldovancsaba/narimato/issues/27)
 <!-- delivery-ssot:end -->
 
 > Authoritative record of the final working model, why it works, and the models that were wrong.
@@ -133,6 +133,8 @@ shaded, and edge bands are tested on that surface point. There is no hidden geom
 |---|---|
 | `public/js/shared/geometry.js` | icosahedron vertices/faces, `SphereCamera` projection primitives |
 | `public/js/shared/sphere-interaction.js` | `carrierFrame`, `carrierProject`, `carrierUnproject`, `moveCarrier`, `shortestArcQuat` |
+| `public/js/shared/camera-contract.js` | `CameraView` member list, `assertCameraView`, `focalPxFor`, dolly/tilt helpers, `?surface-camera` parser |
+| `public/js/shared/surface-camera.js` | `SurfaceCamera` (legacy third-person frame and carrier framing) on the shared contract |
 | `public/js/icosahedron-viewer.js` | WebGL ray–sphere shader, carrier controls, object drag, fixed-focal dolly |
 | `public/js/shared/orbit-controls.js` | shared game mouse/trackball/cursor primitives |
 | `test/sphere-interaction.test.js` | pure carrier/unprojection/shortest-arc tests |
@@ -176,3 +178,103 @@ Measured on live viewport 1200×1200:
 - Do not use optical zoom or scale the projection.
 - Do not draw a generated surface mesh or hidden back edges.
 - Do not call a pixel-coverage test “visual proof” by itself.
+
+## 10. Camera interface contract (RND-01)
+
+`IcosaRenderer` draws one planet through one interface. Both cameras implement
+`public/js/shared/camera-contract.js` (`CAMERA_CONTRACT_VERSION = 1`), so the
+renderer never branches on camera identity.
+
+| Member | Unit / meaning |
+|---|---|
+| `width`, `height` | CSS pixels of the viewport |
+| `zoom` | positive scalar; dolly/magnification state |
+| `distance` | camera radius from the planet centre, in sphere radii |
+| `focalPx` | projection focal length in CSS pixels |
+| `nearPlane` | forward-depth bound in sphere radii |
+| `project(p)` | → `{ x, y, z, depth, visible }` |
+| `unprojectView(v)` | view-space vector → world vector (orthonormal) |
+| `viewAxis()` | unit world direction planet-centre → camera (culling axis) |
+| `unprojectScreen(x, y)` | pixel ray → `{ point }` or `null` |
+| `setViewport(w, h)` | resize the projection |
+
+Invariants: `z === dot(point, viewAxis())`; `depth` is the forward depth and may
+be negative behind the camera; `visible` means the point is drawable inside the
+camera's near bound; `project()` never mutates camera state.
+
+The orbital `SphereCamera` keeps its quaternion view and pixels; the contract
+members are additive (`depth`, `focalPx`, `nearPlane`, `unprojectScreen`).
+
+### Surface carrier framing
+
+`SurfaceCamera` composes the proven carrier primitives (section 2) for the
+surface view:
+
+```
+pos     = normalize(anchor)                 // pilot ground point
+fwd     = tangent(pos, heading)             // pilot heading
+right   = normalize(cross(fwd, pos))
+forward = normalize(−cos(tilt)·pos + sin(tilt)·fwd)
+cam     = pos · distance
+up      = normalize(cross(right, forward))
+
+depth = dot(v − cam, forward)
+z     = dot(v, pos)                          // front-hemisphere coordinate
+x     = W/2 + focalPx · dot(v − cam, right) / depth
+y     = H/2 − focalPx · dot(v − cam, up) / depth
+```
+
+- `focalPx = focalPxFor(W, H) = max(W, H) / 2` — fixed for the viewport.
+- `tilt` is clamped to `[0.95, 1.30]` rad from the inward normal (54.4° … 74.5°).
+- Dolly: `d(z) = 1.08 · (1.72 / 1.08)^z`, `z = clamp(0.5 + 0.5·log2(zoom), 0, 1)`;
+  `zoom = 0.25 → 1.08`, `zoom = 1 → 1.363`, `zoom = 4 → 1.72`.
+- Screen inverse casts the pixel ray from `cam` and returns the near root
+  `(−b − √(b² − 4c)) / 2`.
+
+Near-plane proof: the fixed focal makes the largest on-screen ray angle 45°,
+so any point projecting inside the viewport has
+`depth ≥ (d − 1)·cos 45° ≥ 0.08 · 0.7071 = 0.0566 > 0.05` for every
+`d ∈ [1.08, 1.72]`. Only points behind the camera or beyond the rendered field
+of view fall below the near plane.
+
+Framing selector: `?surface-camera=legacy|carrier` (default `legacy`). The
+legacy third-person frame (eye `1 + 0.024` radii, fixed focal `height × 1.36`)
+is the production surface framing until RND-06 proves carrier pixel parity; the
+carrier framing is the opt-in, contract-complete implementation.
+`window.__ICOSA__.cameraMode()` returns `{ surface, contractVersion }`.
+
+Known limitation of the carrier framing (flag-only): because the camera sits on
+the carrier point directly above the anchor (`cam = pos · distance`), the pilot
+anchor projects below the shipped viewport at `tilt ∈ [0.95, 1.30]`. The camera
+is correct for contract and math use, but production surface framing stays
+legacy until RND-06 evaluates the anchor offset and pixel parity.
+
+The surface camera never reads tokens, tags or player ids: it consumes only
+unit-sphere geometry and the server-validated surface pose.
+
+## 11. Surface mode is a camera change (RND-02)
+
+Surface mode draws the same planet object through the same `IcosaRenderer` on
+the same `#arena-canvas`. There is no second canvas, second RAF loop, second
+projection or second HUD:
+
+- `app.js` owns `view ∈ {orbit, surface}` and the single `requestAnimationFrame`
+  loop.
+- Entering stores `{ yaw, pitch, zoom, distance }` and switches the camera to
+  `SurfaceCamera` plus the control mode; exiting restores the stored orbit
+  exactly (one frame).
+- `surface-controller.js` advances the pilot pose, resolves the harvest target
+  through `shared/harvest.js`, and produces `SurfaceEntity[]`
+  (`self`, `peer`, `pin`, `beam`). Entities reference cells by `cellLabel`.
+- The renderer draws backdrop → planet → cells → markers → labels → entity pass
+  (avatars, pins, beams, harvest FX, landing/leaving ship).
+- `World.leaves` is the only client tree; surface entities never copy `a`/`b`/`c`.
+- The surface underlay is the live leaf mesh (RND-04): it is derived from
+  `World.leaves` on every revision change, budget-clamped to 6000 triangles and
+  rebuilt at most once per frame. There is no cached seed-keyed globe.
+- Canvas terrain keeps its accessible equivalent in the HUD: the surface target
+  readout reports the cell label and harvest state, and `#surface-controls` is a
+  labelled `role="group"` with 44 px targets.
+
+Rollback: `?surface-renderer=overlay` is parsed but fails closed to the single
+scene; the only real rollback is reverting the RND-02 commit.

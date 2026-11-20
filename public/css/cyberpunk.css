@@ -6891,219 +6891,111 @@ body.is-guide .hud { pointer-events: none; }
   .guide-actions .btn { flex: 1 1 100%; }
 }
 
-/* Surface mode — landing, third-person run and auto-harvest */
-.surface-overlay {
+/* Surface mode — the same HUD tree, plus one control strip.
+   RND-02 removed the second overlay renderer and its separate canvas; surface mode is a camera and
+   control mode on #arena-canvas, so no body visibility hacks remain. */
+#surface-controls {
   position: fixed;
-  inset: 0;
-  z-index: 120;
-  overflow: hidden;
-  background: #060411;
-  color: #e8fbff;
-  font-family: var(--font-mono, monospace);
-  pointer-events: auto;
-}
-.surface-overlay.is-hidden { display: none; }
-.surface-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.surface-vignette {
-  position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(ellipse at 50% 58%, transparent 35%, rgba(1,0,8,0.62) 100%);
-}
-.surface-head {
-  position: absolute; top: max(18px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
-  text-align: center; pointer-events: none; text-shadow: 0 2px 18px rgba(0,0,0,0.8);
-}
-.surface-kicker { margin: 0 0 5px; color: #8ef9ff; font-size: 9px; letter-spacing: 0.2em; }
-.surface-title { margin: 0; font: 800 clamp(23px, 4vw, 42px)/1 var(--font-display, sans-serif); letter-spacing: 0.06em; }
-.surface-planet { margin: 7px 0 0; color: rgba(220,245,255,0.72); font-size: 10px; letter-spacing: 0.14em; }
-.surface-stats {
-  position: absolute; top: max(18px, env(safe-area-inset-top)); left: max(16px, env(safe-area-inset-left));
-  display: grid; gap: 6px; padding: 9px 11px;
-  border: 1px solid rgba(122,244,255,0.28); background: rgba(4,8,18,0.74);
-  font-size: 10px; letter-spacing: 0.12em; color: rgba(220,245,255,0.74);
-}
-.surface-stats b { color: #d4ff3f; font-weight: 700; }
-.surface-hint {
-  position: absolute; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%);
-  max-width: min(94vw, 760px); text-align: center; color: rgba(220,245,255,0.66);
-  font-size: 9px; letter-spacing: 0.1em; line-height: 1.6; pointer-events: none;
-}
-.surface-exit {
-  position: absolute; top: max(18px, env(safe-area-inset-top)); right: max(16px, env(safe-area-inset-right));
-  min-height: 44px; padding: 0 14px; border: 1px solid rgba(255,179,71,0.5);
-  background: rgba(10,8,20,0.8); color: #ffd36b; font: 700 9px/1 var(--font-mono, monospace);
-  letter-spacing: 0.12em; cursor: pointer;
-}
-.surface-pads { display: none; position: absolute; right: max(16px, env(safe-area-inset-right)); bottom: max(54px, env(safe-area-inset-bottom)); gap: 6px; grid-template-columns: repeat(3, 48px); grid-template-rows: repeat(2, 48px); }
-.surface-pads [data-surface-hold] {
-  width: 48px; height: 48px; border: 1px solid rgba(122,244,255,0.38);
-  background: rgba(4,8,18,0.8); color: #dffaff; font-size: 15px; touch-action: none;
-}
-.surface-pads [data-surface-hold="KeyW"] { grid-column: 2; grid-row: 1; }
-.surface-pads [data-surface-hold="KeyA"] { grid-column: 1; grid-row: 2; }
-.surface-pads [data-surface-hold="KeyS"] { grid-column: 2; grid-row: 2; }
-.surface-pads [data-surface-hold="KeyD"] { grid-column: 3; grid-row: 2; }
-.surface-pads [data-surface-hold].is-held { background: rgba(0,240,255,0.22); border-color: #8ef9ff; }
-@media (max-width: 760px), (pointer: coarse) {
-  .surface-pads { display: grid; }
-  .surface-hint { bottom: max(108px, calc(env(safe-area-inset-bottom) + 108px)); max-width: 66vw; font-size: 8px; }
-  .surface-stats { top: auto; bottom: max(18px, env(safe-area-inset-bottom)); left: max(12px, env(safe-area-inset-left)); }
-}
-
-/* Surface mission info + harvest colour legend */
-.surface-mission {
-  position: absolute;
-  top: max(94px, calc(env(safe-area-inset-top) + 94px));
-  left: max(16px, env(safe-area-inset-left));
-  width: min(260px, 40vw);
-  padding: 10px 12px;
-  border: 1px solid rgba(122,244,255,0.24);
-  background: rgba(4,8,18,0.76);
-  color: rgba(220,245,255,0.82);
-  font: 500 9px/1.45 var(--font-mono, monospace);
-  letter-spacing: 0.03em;
-  pointer-events: none;
-}
-.surface-mission h3 {
-  margin: 0 0 7px;
-  color: #8ef9ff;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-}
-.surface-mission ul { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
-.surface-mission li {
+  left: 50%;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
   display: grid;
-  grid-template-columns: 34px minmax(0,1fr) auto;
-  gap: 4px;
-  align-items: baseline;
-  padding-bottom: 3px;
-  border-bottom: 1px solid rgba(122,244,255,0.08);
-}
-.surface-mission li span { color: rgba(150,220,240,0.55); font-size: 7px; }
-.surface-mission li b { color: #e9fbff; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.surface-mission li i { color: var(--acid, #d4ff3f); font-style: normal; }
-.surface-mission li em { color: #ffb347; font-style: normal; font-size: 7px; }
-.surface-mission li.is-done b { color: #7dffb0; }
-.surface-mission li.is-done i { color: #7dffb0; }
-.surface-mission li.is-ready { display: block; color: #d4ff3f; font-weight: 700; }
-.surface-legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; color: rgba(210,235,245,0.55); font-size: 7px; letter-spacing: 0.06em; align-items: center; }
-.surface-legend i { width: 8px; height: 8px; display: inline-block; }
-.surface-legend i.is-open { background: #20d87a; }
-.surface-legend i.is-red { background: #ff2d55; }
-@media (max-width: 760px), (pointer: coarse) {
-  .surface-mission { top: max(84px, calc(env(safe-area-inset-top) + 84px)); width: min(230px, 56vw); }
-}
-
-/* Surface mode owns the screen; orbital HUD must never bleed through. */
-body.is-surface > *:not(#surface-overlay) {
-  visibility: hidden !important;
-  pointer-events: none !important;
-}
-body.is-surface #surface-overlay,
-body.is-surface #surface-overlay * {
-  visibility: visible !important;
-}
-body.is-surface #surface-overlay { pointer-events: auto !important; }
-
-/* Keep surface HUD inside the visible viewport at any zoom/crop. */
-body.is-surface { overflow: hidden !important; }
-.surface-overlay {
-  left: 0 !important; top: 0 !important;
-  width: 100% !important; height: 100dvh !important;
-  max-width: 100vw !important; max-height: 100dvh !important;
-}
-.surface-stats { left: clamp(10px, 2vw, 22px) !important; top: clamp(8px, 2vh, 18px) !important; }
-.surface-mission {
-  left: clamp(10px, 2vw, 22px) !important;
-  top: clamp(78px, 12vh, 104px) !important;
-  width: min(240px, calc(100vw - 20px)) !important;
+  justify-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid rgba(122, 244, 255, 0.28);
+  background: rgba(4, 8, 18, 0.86);
+  color: rgba(220, 245, 255, 0.82);
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  z-index: 60;
+  max-width: min(96vw, 720px);
   box-sizing: border-box;
 }
-.surface-head { max-width: calc(100vw - 24px); }
-.surface-title { font-size: clamp(20px, 3.4vw, 38px) !important; }
-.surface-goal {
-  margin: 6px 0 0;
-  color: rgba(220,245,255,0.72);
-  font-size: 9px;
-  letter-spacing: 0.08em;
-}
-.surface-exit {
-  top: auto !important;
-  right: auto !important;
-  left: 50% !important;
-  bottom: clamp(42px, 6vh, 58px) !important;
-  transform: translateX(-50%);
-  z-index: 2;
-}
-.surface-hint { bottom: clamp(12px, 2.5vh, 20px) !important; max-width: min(92vw, 760px); }
-@media (max-width: 760px), (pointer: coarse) {
-  .surface-mission { top: clamp(72px, 12vh, 100px) !important; width: min(220px, 52vw) !important; }
-  .surface-exit { bottom: auto !important; top: clamp(8px, 2vh, 18px) !important; left: auto !important; right: max(10px, env(safe-area-inset-right)) !important; transform: none; }
-  .surface-stats { bottom: max(10px, env(safe-area-inset-bottom)) !important; top: auto !important; }
-}
-
+#surface-controls[hidden] { display: none; }
 .surface-target {
-  margin: 7px 0 0;
-  color: rgba(220,245,255,0.7);
-  font-size: 8px;
-  letter-spacing: 0.1em;
+  margin: 0;
+  padding: 2px 6px;
+  color: rgba(220, 245, 255, 0.76);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-align: center;
 }
 .surface-target[data-state="can"] { color: #22ff88; }
 .surface-target[data-state="locked"] { color: #ff5577; }
-
-/* External-renderer surface: same planet/HUD, transparent control overlay. */
-body.is-surface > *:not(#surface-overlay) {
-  visibility: visible !important;
-  pointer-events: auto !important;
+.surface-lap-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(84vw, 560px);
 }
-.surface-overlay--external {
-  background: transparent !important;
-  pointer-events: none !important;
+.surface-lap-label { color: #8ef9ff; font-weight: 700; }
+.surface-lap-bar {
+  position: relative;
+  flex: 1 1 auto;
+  height: 6px;
+  border: 1px solid rgba(122, 244, 255, 0.35);
+  background: rgba(0, 240, 255, 0.08);
+  overflow: hidden;
 }
-.surface-overlay--external .surface-canvas { pointer-events: none !important; background: transparent !important; }
-.surface-overlay--external .surface-vignette,
-.surface-overlay--external .surface-mission,
-.surface-overlay--external .surface-goal { display: none !important; }
-.surface-overlay--external .surface-head,
-.surface-overlay--external .surface-stats,
-.surface-overlay--external .surface-target,
-.surface-overlay--external .surface-hint,
-.surface-overlay--external .surface-exit,
-.surface-overlay--external .surface-pads { pointer-events: auto !important; }
-
-/* External surface: same orbit HUD, minimal controls at bottom centre. */
-.surface-overlay--external .surface-head,
-.surface-overlay--external .surface-stats,
-.surface-overlay--external .surface-goal,
-.surface-overlay--external .surface-mission { display: none !important; }
-body.is-surface #target-panel { visibility: hidden !important; }
-.surface-overlay--external .surface-target {
-  display: block !important;
-  position: absolute;
-  left: 50%;
-  bottom: 154px;
-  transform: translateX(-50%);
-  margin: 0;
-  padding: 5px 10px;
-  border: 1px solid rgba(122,244,255,0.25);
-  background: rgba(4,8,18,0.78);
-  white-space: nowrap;
-  z-index: 3;
+.surface-lap-bar > i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #00f0ff, #d4ff3f);
+  transition: width 180ms linear;
 }
-.surface-overlay--external .surface-exit {
-  position: absolute !important;
-  left: 50% !important;
-  right: auto !important;
-  top: auto !important;
-  bottom: 96px !important;
-  transform: translateX(-50%);
-  z-index: 3;
+.surface-lap-value, .surface-auto { color: #d4ff3f; font-variant-numeric: tabular-nums; }
+.surface-auto { color: rgba(150, 220, 240, 0.7); }
+.surface-pads {
+  display: grid;
+  grid-template-columns: repeat(3, 48px);
+  grid-template-rows: repeat(2, 48px);
+  gap: 6px;
 }
-.surface-overlay--external .surface-hint { bottom: 12px !important; z-index: 3; }
-.surface-overlay--external .surface-pads { z-index: 3; }
-body.is-surface #hud-hint { display: none !important; }
-.surface-overlay--external .surface-target {
-  font-size: 10px !important;
+.surface-pad {
+  width: 48px;
+  height: 48px;
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid rgba(122, 244, 255, 0.38);
+  background: rgba(4, 8, 18, 0.8);
+  color: #dffaff;
+  font-size: 15px;
+  touch-action: none;
+  cursor: pointer;
+}
+.surface-pad--forward { grid-column: 2; grid-row: 1; }
+.surface-pads [data-surface-hold="KeyA"] { grid-column: 1; grid-row: 2; }
+.surface-pads [data-surface-hold="KeyS"] { grid-column: 2; grid-row: 2; }
+.surface-pads [data-surface-hold="KeyD"] { grid-column: 3; grid-row: 2; }
+.surface-pad.is-held { background: rgba(0, 240, 255, 0.22); border-color: #8ef9ff; }
+.surface-pad.is-disabled, .surface-pad[aria-disabled="true"] { opacity: 0.45; cursor: default; }
+.surface-pad:focus-visible, .surface-exit:focus-visible {
+  outline: 2px solid #d4ff3f;
+  outline-offset: 2px;
+}
+.surface-exit {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 179, 71, 0.5);
+  background: rgba(10, 8, 20, 0.8);
+  color: #ffd36b;
+  font: 700 10px/1 var(--font-mono, monospace);
   letter-spacing: 0.12em;
-  padding: 7px 14px !important;
+  cursor: pointer;
+}
+.surface-exit:hover { border-color: #ffd36b; }
+#hud[data-mode="surface"] #hud-zoom { opacity: 0.45; }
+#hud[data-mode="surface"] .hud-side--left .mission-panel,
+#hud[data-mode="surface"] .players-panel { --surface-keep: 1; }
+#hud-zoom:focus-visible { outline: 2px solid #d4ff3f; outline-offset: 2px; }
+@media (max-width: 760px), (pointer: coarse) {
+  .surface-pads { display: grid; }
+  .surface-lap-row { width: min(86vw, 420px); }
+  #surface-controls { gap: 6px; padding: 8px 10px; font-size: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .surface-lap-bar > i { transition: none; }
 }

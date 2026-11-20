@@ -26,6 +26,7 @@ import { RESOURCE_MARKET, resourceById } from './shared/resources.js';
 import { isRareResource, missionForPlanet, missionProgress, planetName, planetSource } from './shared/mission.js';
 import { BIOMES } from './shared/planet.js';
 import { guideStepBody } from './story-copy.js';
+import { lapPercent, modeAttributes, snapshotFromIds, targetReadout } from './shared/hud-parity.js';
 
 const CONNECTIONS = new Set(['connected', 'connecting', 'reconnecting', 'offline']);
 const CONNECTION_TEXT = {
@@ -142,8 +143,10 @@ class UI {
     this._reportResult = null;
     this._playersOrderSig = null;
     this._playerRows = new Map();
+    this._surfaceMode = 'orbit';
 
     this._bind();
+    this._bindSurface();
     this._renderMarket();
     this._renderBiomeLegend();
     this.updateMission(DEFAULT_MISSION);
@@ -1509,6 +1512,127 @@ class UI {
    * Internals — rendering
    * ================================================================ */
 
+  /* ================================================================ *
+   * Surface mode — same HUD tree, mode attribute only (RND-03)
+   * ================================================================ */
+
+  _bindSurface() {
+    const exit = this._el.btnSurfaceExit;
+    if (exit) {
+      exit.addEventListener('click', () => {
+        if (typeof this.opts.onSurfaceExit === 'function') this.opts.onSurfaceExit();
+      });
+    }
+    for (const pad of this._el.surfacePads || []) {
+      const code = pad.getAttribute('data-surface-hold');
+      const press = (event) => {
+        if (event && typeof event.preventDefault === 'function') event.preventDefault();
+        pad.classList.add('is-held');
+        if (typeof this.opts.onSurfaceHold === 'function') this.opts.onSurfaceHold(code, true);
+      };
+      const release = () => {
+        pad.classList.remove('is-held');
+        if (typeof this.opts.onSurfaceHold === 'function') this.opts.onSurfaceHold(code, false);
+      };
+      pad.addEventListener('pointerdown', press);
+      pad.addEventListener('pointerup', release);
+      pad.addEventListener('pointercancel', release);
+      pad.addEventListener('pointerleave', release);
+      pad.addEventListener('blur', release);
+    }
+  }
+
+  /** Show the surface control strip without remounting any orbital node. */
+  enterSurface() {
+    const mode = modeAttributes('surface');
+    this._surfaceMode = 'surface';
+    if (this._el.hud) {
+      this._el.hud.dataset.mode = mode.hudMode;
+      this._el.hud.removeAttribute('aria-hidden');
+      this._el.hud.inert = false;
+    }
+    if (this._el.surfaceControls) this._el.surfaceControls.hidden = mode.controlsHidden;
+    const hint = this._el.hudHint;
+    if (hint) {
+      if (this._orbitHintText == null) this._orbitHintText = hint.textContent;
+      const surfaceHint = 'WASD / ARROWS RUN · A / D TURN · SHIFT SPRINT · ENTER TRIANGLES TO HARVEST · ESC // RETURN TO ORBIT';
+      if (hint.textContent !== surfaceHint) hint.textContent = surfaceHint;
+    }
+    this.updateSurfaceHud({ phase: 'landing', targetLabel: null, targetHarvestable: false, lapFraction: 0 });
+    const first = this._el.surfaceFirst;
+    if (first && typeof first.focus === 'function') first.focus({ preventScroll: true });
+  }
+
+  /** Hide the surface strip and restore focus to the orbit zoom control. */
+  exitSurface() {
+    const mode = modeAttributes('orbit');
+    this._surfaceMode = 'orbit';
+    for (const pad of this._el.surfacePads || []) pad.classList.remove('is-held');
+    if (this._el.hud) this._el.hud.dataset.mode = mode.hudMode;
+    if (this._el.surfaceControls) this._el.surfaceControls.hidden = mode.controlsHidden;
+    if (this._el.hudHint && this._orbitHintText != null) this._el.hudHint.textContent = this._orbitHintText;
+    // Restore focus to the orbit zoom control; on narrow viewports it is
+    // display:none, so fall back to the always-mounted HUD region.
+    const zoom = this._el.hudZoom;
+    const zoomVisible = !!zoom && typeof zoom.getClientRects === 'function' && zoom.getClientRects().length > 0;
+    const focusTarget = zoomVisible ? zoom : this._el.hud;
+    if (focusTarget && typeof focusTarget.focus === 'function') focusTarget.focus({ preventScroll: true });
+  }
+
+  /**
+   * Surface readouts ride the existing `ui` path (one HUD owner).
+   * @param {{targetLabel?:string|null, targetHarvestable?:boolean, lapFraction?:number, autoLabel?:string|null, phase?:string}} state
+   */
+  updateSurfaceHud(state = {}) {
+    const data = state && typeof state === 'object' ? state : {};
+    const readout = data.targetLabel ? targetReadout(data.targetLabel, !!data.targetHarvestable) : targetReadout(null, false);
+    const target = this._el.surfaceTarget;
+    if (target) {
+      if (target.textContent !== readout.text) target.textContent = readout.text;
+      if (target.dataset.state !== readout.state) target.dataset.state = readout.state;
+    }
+    const pct = lapPercent(data.lapFraction);
+    const bar = this._el.surfaceLap;
+    if (bar && bar.getAttribute('aria-valuenow') !== String(pct)) bar.setAttribute('aria-valuenow', String(pct));
+    const fill = this._el.surfaceLapFill;
+    if (fill) fill.style.width = `${pct}%`;
+    const lapFraction = Math.max(0, Math.min(1, Number(data.lapFraction) || 0));
+    const lapText = lapFraction.toFixed(2);
+    if (this._el.surfaceLapValue && this._el.surfaceLapValue.textContent !== lapText) {
+      this._el.surfaceLapValue.textContent = lapText;
+    }
+    const auto = this._el.surfaceAuto;
+    if (auto) {
+      const autoText = data.autoLabel ? `AUTO ${data.autoLabel}` : '—';
+      if (auto.hidden) auto.hidden = false;
+      if (auto.textContent !== autoText) auto.textContent = autoText;
+    }
+    const phase = typeof data.phase === 'string' ? data.phase : 'walking';
+    const disabled = phase === 'landing' || phase === 'leaving';
+    for (const pad of this._el.surfacePads || []) {
+      if (pad.getAttribute('aria-disabled') !== String(disabled)) pad.setAttribute('aria-disabled', String(disabled));
+      pad.classList.toggle('is-disabled', disabled);
+    }
+    const exit = this._el.btnSurfaceExit;
+    if (exit) exit.disabled = false;
+  }
+
+  /** Ordered `data-hud-node` snapshot for the parity test (RND-03). */
+  hudSnapshot() {
+    const hud = this._el.hud;
+    if (!hud) return { nodes: [], total: 0, unique: 0, duplicates: [], mode: 'orbit', controlsHidden: true };
+    const ids = [];
+    const rootId = hud.getAttribute('data-hud-node');
+    if (rootId) ids.push(rootId);
+    for (const node of hud.querySelectorAll('[data-hud-node]')) ids.push(node.getAttribute('data-hud-node'));
+    const snapshot = snapshotFromIds(ids);
+    return {
+      ...snapshot,
+      mode: hud.dataset.mode === 'surface' ? 'surface' : 'orbit',
+      controlsHidden: this._el.surfaceControls ? !!this._el.surfaceControls.hidden : true,
+    };
+  }
+
   _setText(node, text) {
     if (!node) return;
     const value = String(text);
@@ -2229,6 +2353,16 @@ function resolveElements(doc) {
     worldBreaks: byId('world-breaks'),
     worldRule: byId('world-rule'),
     hud: byId('hud'),
+    hudHint: byId('hud-hint'),
+    surfaceControls: byId('surface-controls'),
+    surfaceTarget: byId('surface-target'),
+    surfaceLap: byId('surface-lap'),
+    surfaceLapFill: byId('surface-lap-fill'),
+    surfaceLapValue: byId('surface-lap-value'),
+    surfaceAuto: byId('surface-auto'),
+    btnSurfaceExit: byId('btn-surface-exit'),
+    surfacePads: [...doc.querySelectorAll('[data-surface-hold]')],
+    surfaceFirst: doc.querySelector('[data-surface-first]'),
     hudWorld: byId('hud-world'),
     hudScore: byId('hud-score'),
     hudFaces: byId('hud-faces'),

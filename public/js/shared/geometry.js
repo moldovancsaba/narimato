@@ -464,6 +464,16 @@ export class SphereCamera {
     return this;
   }
 
+  /** Camera contract: fixed-per-view focal length in CSS pixels for this zoom. */
+  get focalPx() {
+    return Math.min(this.width, this.height) * SPHERE_SCREEN_FRACTION * this.zoom * this.distance;
+  }
+
+  /** Camera contract: front-hemisphere bound (z > 0 is drawable). */
+  get nearPlane() {
+    return 0;
+  }
+
   /** Legacy Euler access: setting either property resets a clean yaw/pitch view. */
   get yaw() { return this._yaw; }
   set yaw(value) {
@@ -608,8 +618,39 @@ export class SphereCamera {
       x: this.width / 2 + x1 * scale,
       y: this.height / 2 - y2 * scale,
       z: z2,
+      depth: denom,
       visible: z2 > 0,
     };
+  }
+
+  /**
+   * Screen pixel → nearest visible unit-sphere point (CameraView contract).
+   * Inverse of `project()`: the ray is built in view space and rotated out by
+   * `unprojectView()`. Returns `{ point }` or null when the ray misses.
+   */
+  unprojectScreen(xPx, yPx) {
+    const x = Number(xPx);
+    const y = Number(yPx);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    const scale = this.focalPx;
+    if (!(scale > 0)) return null;
+    let dx = (x - this.width / 2) / scale;
+    let dy = (this.height / 2 - y) / scale;
+    let dz = -1;
+    const len = Math.hypot(dx, dy, dz);
+    if (!(len > 0)) return null;
+    dx /= len;
+    dy /= len;
+    dz /= len;
+    const d = this.distance;
+    const b = d * dz;
+    const c = d * d - 1;
+    const disc = b * b - c;
+    if (disc < 0) return null;
+    const t = -b - Math.sqrt(disc);
+    if (!(t > 0)) return null;
+    const pv = { x: t * dx, y: t * dy, z: d + t * dz };
+    return { point: normalize(this.unprojectView(pv)) };
   }
 }
 

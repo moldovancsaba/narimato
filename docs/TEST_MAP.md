@@ -12,7 +12,8 @@ real count.
 | Test file | Owns | Module | Issue |
 |---|---|---|---|
 | `test/adr.test.js` | ADR numbering, front matter, index coverage, key existence | `docs/adr/` | DOC-01 |
-| `test/camera-controls.test.js` | Camera control semantics (invert, focus, zoom guards) | `public/js/app.js`, `public/js/shared/orbit-controls.js` | CTL-01 |
+| `test/camera-contract.test.js` | `CameraView` conformance for both cameras, units, orthonormal basis, malformed rejection | `public/js/shared/camera-contract.js` | RND-01 |
+| `test/camera-controls.test.js` | Camera control semantics (invert, focus, zoom guards) and the unchanged orbital pixel fixture | `public/js/app.js`, `public/js/shared/orbit-controls.js`, `public/js/shared/geometry.js` | CTL-01, RND-01 |
 | `test/data-integrity.test.js` | Manifest/tar determinism, path safety, checksums, reconciliation, retention, exit codes | `lib/data-integrity.js` | OPS-03 |
 | `test/docs-check.test.js` | R1–R6 docs gate, link/anchor/placeholder/key rules | `scripts/check-docs.mjs` | SSOT-02 |
 | `test/geometry.test.js` | Regular spherical icosahedron, subdivision, labels, picking, projection | `public/js/shared/geometry.js` | RND-01 |
@@ -30,7 +31,10 @@ real count.
 | `test/slo-contract.test.js` | SLO ruleset schema, path resolution, warm-up, checker exit codes, docs drift, privacy | `lib/slo.js`, `observability/slo.json` | OPS-01 |
 | `test/story-copy.test.js` | Copy SSOT: plural/naming table, Captain's Log grammar, threshold rendering, incident copy, doc-block sync and drift failure, guide card DOM contract | `public/js/story-copy.js`, `scripts/sync-story-copy.mjs` | STR-02 |
 | `test/sphere-interaction.test.js` | Carrier frame, projection/unprojection, point-follow, shortest arc | `public/js/shared/sphere-interaction.js` | RND-01, CTL-01 |
-| `test/surface-camera.test.js` | Surface camera framing and carrier math | `public/js/shared/surface-camera.js` | RND-01 |
+| `test/surface-camera.test.js` | Surface camera framing, carrier dolly/tilt, round-trip, near plane, resize | `public/js/shared/surface-camera.js` | RND-01 |
+| `test/surface-render.test.js` | Surface view state machine, orbit restore, entity mapping, rollback flag | `public/js/surface-controller.js`, `public/js/shared/view-state.js` | RND-02 |
+| `test/hud-parity.test.js` | HUD snapshot parity, duplicate detection, target/lap fallbacks, static markup contract | `public/js/shared/hud-parity.js`, `public/index.html` | RND-03 |
+| `test/live-mesh.test.js` | World revision, live mesh level formula, budget clamp, determinism, break delta, no-op path | `public/js/shared/live-surface-mesh.js`, `public/js/world.js` | RND-04 |
 | `test/surface-math.test.js` | Surface tangent/down-angle and projection helpers | `public/js/shared/sphere-interaction.js` | RND-01 |
 | `test/test-count.test.js` | TAP summary parsing, marker verification, failure propagation | `scripts/test-count.mjs` | QA-01 |
 | `test/tetra-ship.test.js` | Five-tetrahedron ship geometry and incident models | `public/js/shared/tetra-ship.js` | EVT-02 |

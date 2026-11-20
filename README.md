@@ -247,7 +247,7 @@ repository status documents. The repository owns durable technical knowledge and
 
 ## Development
 
-The node:test suite currently runs <!-- test-count:260 -->260<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
+The node:test suite currently runs <!-- test-count:311 -->311<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 ```
 npm test                 # node:test suite, no dependencies

@@ -1,0 +1,331 @@
+{
+  "ok": true,
+  "checks": [
+    {
+      "name": "renderer exists before entry",
+      "ok": true,
+      "detail": true
+    },
+    {
+      "name": "no separate surface canvas at boot",
+      "ok": true,
+      "detail": 0
+    },
+    {
+      "name": "one planet canvas",
+      "ok": true,
+      "detail": 1
+    },
+    {
+      "name": "surface inactive at boot",
+      "ok": true,
+      "detail": {
+        "active": false,
+        "phase": "idle",
+        "entities": 0,
+        "canvasCount": 1
+      }
+    },
+    {
+      "name": "HUD has no duplicate ids at boot",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "camera contract version",
+      "ok": true,
+      "detail": {
+        "surface": "legacy",
+        "contractVersion": 1
+      }
+    },
+    {
+      "name": "one renderer across entry",
+      "ok": true,
+      "detail": true
+    },
+    {
+      "name": "no surface-canvas during surface",
+      "ok": true,
+      "detail": 0
+    },
+    {
+      "name": "hud data-mode is surface",
+      "ok": true,
+      "detail": "surface"
+    },
+    {
+      "name": "surface controls visible",
+      "ok": true,
+      "detail": false
+    },
+    {
+      "name": "surface target readout live",
+      "ok": true,
+      "detail": "TARGET 8 // RED // LOCKED"
+    },
+    {
+      "name": "lap progressbar present",
+      "ok": true,
+      "detail": "0"
+    },
+    {
+      "name": "pads are 44px+ targets",
+      "ok": true,
+      "detail": [
+        {
+          "label": "Run forward",
+          "disabled": "false",
+          "w": 48,
+          "h": 48
+        },
+        {
+          "label": "Turn left",
+          "disabled": "false",
+          "w": 48,
+          "h": 48
+        },
+        {
+          "label": "Run backward",
+          "disabled": "false",
+          "w": 48,
+          "h": 48
+        },
+        {
+          "label": "Turn right",
+          "disabled": "false",
+          "w": 48,
+          "h": 48
+        }
+      ]
+    },
+    {
+      "name": "no duplicate ids during surface",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "HUD parity P = 1.0",
+      "ok": true,
+      "detail": {
+        "P": 1,
+        "missingDuring": [],
+        "missingAfter": [],
+        "addedDuring": [],
+        "duplicates": []
+      }
+    },
+    {
+      "name": "no duplicate HUD ids across phases",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "surface adds only surface nodes",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "leaf tree survives the mode switch",
+      "ok": true,
+      "detail": {
+        "before": 20,
+        "after": 20
+      }
+    },
+    {
+      "name": "orbit restored",
+      "ok": true,
+      "detail": {
+        "hud": {
+          "nodes": [
+            "hud",
+            "nav",
+            "world",
+            "planet",
+            "score",
+            "clicks",
+            "breaks",
+            "zoom",
+            "mission",
+            "mission-list",
+            "cargo",
+            "cargo-list",
+            "players",
+            "arcade",
+            "target",
+            "hint",
+            "surface-controls",
+            "surface-target",
+            "surface-lap",
+            "surface-lap-value",
+            "surface-auto",
+            "surface-pads",
+            "surface-forward",
+            "surface-left",
+            "surface-back",
+            "surface-right",
+            "surface-exit"
+          ],
+          "total": 27,
+          "unique": 27,
+          "duplicates": [],
+          "mode": "orbit",
+          "controlsHidden": true
+        },
+        "leaves": [
+          [
+            "1",
+            -1,
+            0,
+            null
+          ],
+          [
+            "2",
+            -1,
+            0,
+            null
+          ],
+          [
+            "3",
+            -1,
+            0,
+            null
+          ],
+          [
+            "4",
+            2,
+            1,
+            null
+          ],
+          [
+            "5",
+            -1,
+            0,
+            null
+          ],
+          [
+            "6",
+            -1,
+            0,
+            null
+          ],
+          [
+            "7",
+            0,
+            1,
+            null
+          ],
+          [
+            "8",
+            1,
+            1,
+            null
+          ],
+          [
+            "9",
+            -1,
+            0,
+            null
+          ],
+          [
+            "10",
+            -1,
+            0,
+            null
+          ],
+          [
+            "11",
+            -1,
+            0,
+            null
+          ],
+          [
+            "12",
+            2,
+            1,
+            null
+          ],
+          [
+            "13",
+            -1,
+            0,
+            null
+          ],
+          [
+            "14",
+            -1,
+            0,
+            null
+          ],
+          [
+            "15",
+            -1,
+            0,
+            null
+          ],
+          [
+            "16",
+            -1,
+            0,
+            null
+          ],
+          [
+            "17",
+            -1,
+            0,
+            null
+          ],
+          [
+            "18",
+            -1,
+            0,
+            null
+          ],
+          [
+            "19",
+            -1,
+            0,
+            null
+          ],
+          [
+            "20",
+            -1,
+            0,
+            null
+          ]
+        ],
+        "scene": {
+          "active": false,
+          "phase": "leaving",
+          "entities": 0,
+          "canvasCount": 1
+        },
+        "canvasCount": 1,
+        "hudMode": "orbit",
+        "controlsHidden": true
+      }
+    },
+    {
+      "name": "one planet canvas after exit",
+      "ok": true,
+      "detail": 1
+    },
+    {
+      "name": "controls hidden after exit",
+      "ok": true,
+      "detail": true
+    },
+    {
+      "name": "carrier flag page serves",
+      "ok": true,
+      "detail": true
+    }
+  ],
+  "errors": [],
+  "screenshots": {
+    "shot0": "/tmp/narimato-wt-render/media/rnd-01-04/surface-enter-t0.png",
+    "shotWalk": "/tmp/narimato-wt-render/media/rnd-01-04/surface-walking.png",
+    "shotExit": "/tmp/narimato-wt-render/media/rnd-01-04/surface-exit.png"
+  }
+}

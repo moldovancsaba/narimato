@@ -51,7 +51,7 @@ const result = await page.evaluate(async () => {
   renderer.resize();
   renderer.setFaces(faces); // ONLY 20 faces
   renderer.setOpaqueSurface(true);
-  // Deliberately do NOT call setPlanetSurface: the only triangles are these 20.
+  // Deliberately do NOT feed a live surface mesh: the only triangles are these 20.
 
   const norm = (v) => { const l = Math.hypot(v.x, v.y, v.z) || 1; return { x:v.x/l, y:v.y/l, z:v.z/l }; };
   const dot = (a,b) => a.x*b.x+a.y*b.y+a.z*b.z;

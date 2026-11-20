@@ -4,7 +4,7 @@
 > **Delivery SSOT:** [NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80) · [Definition of Done](docs/DEFINITION_OF_DONE.md) · [Issue index](docs/ISSUE_MAP.md).
 > This document owns durable knowledge; it does not track delivery status.
 >
-> **Related delivery issues:** [SSOT-01](https://github.com/moldovancsaba/narimato/issues/1) · [SSOT-03](https://github.com/moldovancsaba/narimato/issues/3) · [QA-01](https://github.com/moldovancsaba/narimato/issues/5) · [DOC-01](https://github.com/moldovancsaba/narimato/issues/6) · [UI-01](https://github.com/moldovancsaba/narimato/issues/7) · [RND-06](https://github.com/moldovancsaba/narimato/issues/19) · [SRV-01](https://github.com/moldovancsaba/narimato/issues/20) · [TST-01](https://github.com/moldovancsaba/narimato/issues/25) · [EVT-01](https://github.com/moldovancsaba/narimato/issues/32) · [STR-01](https://github.com/moldovancsaba/narimato/issues/35) · [STR-02](https://github.com/moldovancsaba/narimato/issues/36) · [OPS-03](https://github.com/moldovancsaba/narimato/issues/40) · [OPS-05](https://github.com/moldovancsaba/narimato/issues/42) · [SEC-01](https://github.com/moldovancsaba/narimato/issues/43) · [PERF-01](https://github.com/moldovancsaba/narimato/issues/44)
+> **Related delivery issues:** [SSOT-01](https://github.com/moldovancsaba/narimato/issues/1) · [SSOT-03](https://github.com/moldovancsaba/narimato/issues/3) · [QA-01](https://github.com/moldovancsaba/narimato/issues/5) · [DOC-01](https://github.com/moldovancsaba/narimato/issues/6) · [UI-01](https://github.com/moldovancsaba/narimato/issues/7) · [RND-01](https://github.com/moldovancsaba/narimato/issues/14) · [RND-02](https://github.com/moldovancsaba/narimato/issues/15) · [RND-03](https://github.com/moldovancsaba/narimato/issues/16) · [RND-04](https://github.com/moldovancsaba/narimato/issues/17) · [RND-06](https://github.com/moldovancsaba/narimato/issues/19) · [SRV-01](https://github.com/moldovancsaba/narimato/issues/20) · [TST-01](https://github.com/moldovancsaba/narimato/issues/25) · [EVT-01](https://github.com/moldovancsaba/narimato/issues/32) · [STR-01](https://github.com/moldovancsaba/narimato/issues/35) · [STR-02](https://github.com/moldovancsaba/narimato/issues/36) · [OPS-03](https://github.com/moldovancsaba/narimato/issues/40) · [OPS-05](https://github.com/moldovancsaba/narimato/issues/42) · [SEC-01](https://github.com/moldovancsaba/narimato/issues/43) · [PERF-01](https://github.com/moldovancsaba/narimato/issues/44)
 <!-- delivery-ssot:end -->
 
 Architecture decisions are recorded as ADRs: [docs/adr/README.md](docs/adr/README.md).
@@ -17,7 +17,7 @@ Architecture decisions are recorded as ADRs: [docs/adr/README.md](docs/adr/READM
 | Rendering | Canvas 2D + WebGL | game planet: Canvas 2D; spherical-icosahedron reference viewer: WebGL ray–sphere shader |
 | Simulation | Node.js ≥20 | authoritative game server, HTTP + Server-Sent Events |
 | Persistence | JSON files + atomic rename | one file per planet, one registry file |
-| Tests | `node:test` | <!-- test-count:260 -->260<!-- /test-count --> tests, no test dependencies; ownership map in [docs/TEST_MAP.md](docs/TEST_MAP.md) |
+| Tests | `node:test` | <!-- test-count:311 -->311<!-- /test-count --> tests, no test dependencies; ownership map in [docs/TEST_MAP.md](docs/TEST_MAP.md) |
 | CI | GitHub Actions | Node 20 and 22, `npm test` |
 | Deploy | `node server.js` behind any static/reverse proxy | Cloudflare tunnel used for the live build |
 
@@ -29,11 +29,12 @@ third-party runtime requests.
 
 ```
 Browser
-  index.html ── app.js ──┬─ renderer.js  (Canvas 2D game planet)
-                         ├─ world.js     (client adaptive tree)
-                         ├─ ui.js        (responsive HUD/DOM)
-                         ├─ intro.js     (cockpit launch cine)
-                         ├─ interlude.js (interplanetary storm/meteor cine)
+  index.html ── app.js ──┬─ renderer.js          (one Canvas 2D game planet + surface entities)
+                         ├─ world.js             (client adaptive tree)
+                         ├─ ui.js                (responsive HUD/DOM, one tree for both views)
+                         ├─ surface-controller.js (pose + harvest + surface entities; no canvas)
+                         ├─ intro.js             (cockpit launch cine)
+                         ├─ interlude.js         (interplanetary storm/meteor cine)
                          └─ result-card.js
   icosahedron.html ── icosahedron-viewer.js (WebGL ray–sphere reference viewer)
              shared/     geometry.js · planet.js · resources.js · mission.js
@@ -75,16 +76,27 @@ Observability: `public/js/telemetry.js` posts a tiny privacy-safe numeric beacon
 
 ### Client
 
-- **`app.js`** — orchestrates boot, intro, join/reconnect, camera, input, render loop, actions,
-  mission progress, escape transit, meteor reset, reports/shares, abandon/new-pilot.
+- **`app.js`** — orchestrates boot, intro, join/reconnect, camera, input, the single render loop,
+  actions, mission progress, escape transit, meteor reset, reports/shares, abandon/new-pilot. It owns
+  the `orbit`/`surface` view state: entering stores the orbital camera and switches camera + input;
+  exiting restores it exactly.
 - **`renderer.js`** — mixed-depth spherical Canvas renderer for the game: projected/slerp-tessellated
   edges, biome underlay + ownership, hidden ore markers, labels-on-interaction, particles, starfield.
+  It is the single renderer for both views: `setSurfaceMode({ active, entities, phase, progress })`
+  turns on the surface entity pass (avatars, pins, beams, harvest FX, landing ship) on the same
+  `#arena-canvas`.
+- **`surface-controller.js`** — surface mode as a control mode: pilot pose, movement, harvest
+  targeting, peer resolution and the `SurfaceEntity[]` list consumed by the renderer. It owns no
+  canvas, no RAF loop and no projection.
 - **`icosahedron-viewer.js`** — WebGL reference viewer: a full-screen ray–sphere shader draws the
   front surface only; analytic great-circle icosahedron edge bands; no back faces/edges.
 - **`world.js`** — client-side adaptive tree mirror of the server leaves; label parsing, cell
-  updates, terrain cache, per-cell lock state.
+  updates, terrain cache, per-cell lock state, and the monotonic `revision` that gates surface
+  geometry rebuilds (RND-04).
 - **`ui.js`** — all DOM: landing/tag, HUD, mission/planet badge, drawers, target sheet, toasts,
-  confirm dialog, report overlay, responsive layout switching.
+  confirm dialog, report overlay, responsive layout switching. It is the only HUD writer: orbit
+  nodes stay mounted across view changes, and surface mode only toggles `#hud[data-mode]` plus the
+  `#surface-controls` strip (target, lap, movement pads, exit).
 - **`intro.js`** — launch cinematic state machine: wormhole → drift/gravity lock → descent; camera
   dolly, cockpit fade, steering (WASD/arrows/touch), skip/replay, reduced-motion.
 - **`interlude.js`** — escape transit: launch burn → random story event → hull damage/shake →
@@ -110,7 +122,13 @@ Observability: `public/js/telemetry.js` posts a tiny privacy-safe numeric beacon
 - **`public/audio/voice/manifest.json`** — generated clip manifest (paths, bytes, sha256, duration,
   text hash, engine/licence) read by the verification gate and tests.
 - **`shared/`** — pure modules used by both sides:
-  - `geometry.js` — icosahedron, hierarchical labels, child triangles, slerp, camera/picking.
+  - `geometry.js` — icosahedron, hierarchical labels, child triangles, slerp, `SphereCamera`, picking.
+  - `camera-contract.js` — the `CameraView` interface every renderer camera implements:
+    `project`, `unprojectView`, `viewAxis`, `unprojectScreen`, `setViewport`, units and invariants.
+  - `surface-camera.js` — `SurfaceCamera` on the same contract: legacy close-frame and carrier
+    framing (dolly 1.08…1.72, bounded tilt, screen inverse) selected by `?surface-camera`.
+  - `live-surface-mesh.js` — `LiveSurfaceMesh` / `LiveSurfaceStore`: the surface triangle buffer
+    derived from the live leaf list, revision-gated, budget-clamped and hash-deterministic.
   - `sphere-interaction.js` — pure carrier frame/projection/unprojection/movement math.
   - `orbit-controls.js` — shared game drag/trackball/cursor-key primitives.
   - `planet.js` — seed-driven 3D noise terrain, biomes, geological deposit weights.
@@ -180,11 +198,56 @@ Authoritative rules live in [narimato-physics.md](narimato-physics.md):
 - Camera = carrier `pos` + parallel-transported `up` on a concentric sphere; always faces centre.
 - Cursor keys move the carrier along local Up/Right; wheel changes the carrier radius with fixed
   focal length (dolly, not optical zoom).
+- One camera interface: `public/js/shared/camera-contract.js` declares the members `IcosaRenderer`
+  reads (`project`, `viewAxis`, `distance`, `zoom`, `width`, `height`, `focalPx`, `nearPlane`,
+  `unprojectView`, `unprojectScreen`, `setViewport`); `z = dot(point, viewAxis())` for every camera.
+- Surface framing is a camera mode, not a second projection: `SurfaceCamera` reuses the same
+  contract and the same planet geometry.
 - Mouse rotates the **object**, not the camera, via exact surface-point unprojection + shortest-arc
   quaternion.
 - WebGL reference viewer renders the front sphere surface only (no hidden back faces/edges).
 - Object rotation and camera carrier are separate transforms.
 - Full rationale and failure history: [narimato-physics.md](narimato-physics.md).
+
+## Single-scene surface mode
+
+There is one planet, one renderer, one canvas and one HUD. Surface mode is a camera and control
+mode change, not a second scene:
+
+```
+enterSurfaceMode():
+  savedOrbit = saveOrbit(camera)            // {yaw, pitch, zoom, distance}
+  controller.start({planetName, seed, depth})
+  view = "surface"
+  renderer.setSurfaceMode({active: true, entities: []})
+
+frame():
+  if view == "surface":
+    controller.update(dt)
+    surfaceCamera.setPose(controller.pose())
+    renderer.setSurfaceMode({active: true, entities: controller.entities(),
+                             phase, progress, effects})
+    renderer.render(surfaceCamera, t)
+  else:
+    renderer.setSurfaceMode({active: false})
+    renderer.render(camera, t)
+
+exitSurfaceMode():
+  controller.stop(); renderer.setSurfaceMode({active: false})
+  restoreOrbit(camera, savedOrbit); view = "orbit"
+```
+
+- `#arena-canvas` is the only planet canvas; `#surface-canvas` and the overlay RAF loop were deleted.
+- Entities reference cells by label (`cellLabel`), never by copied `a`/`b`/`c` geometry.
+- Surface entities: `kind` is `self`, `peer`, `pin` or `beam`; one `byLabel` map serves both views.
+- `window.__ICOSA__.surfaceMode()` returns `{ active, phase, entities, canvasCount }`.
+- Surface geometry is live: `renderer.setLiveSurface({ leaves, revision, seed })` rebuilds at most
+  once per frame when `World.revision` (or the planet seed/theme) changes. No seed-keyed globe and
+  no `setPlanetSurface()` remain; `renderer.surfaceMeshStats()` reports revision, triangles,
+  buckets, hash, rebuild time and no-op skips.
+- `window.__ICOSA__.renderer` is the same instance before, during and after surface entry.
+- Rollback `?surface-renderer=overlay` is recognised but fails closed to the single-scene renderer
+  (the overlay module was removed); a full rollback is `git revert` of the RND-02 commit.
 
 ## Multiplayer model
 
@@ -494,7 +557,6 @@ path is documented and executable in [docs/RECOVERY.md](docs/RECOVERY.md):
 A corrupt `world.json` is quarantined to `world.json.corrupt-<UTC stamp>` and startup is refused
 unless `ALLOW_EMPTY_WORLD=1`; a newer `PERSIST_VERSION` is never downgraded. RPO ≤ 5.5 min (save
 debounce 0.5 min + 5 min backup interval), RTO ≤ 15 min; retention is 7 daily + 24 hourly.
->>>>>>> 39246d1 (Delivery: OPS-01 observability SSOT, OPS-03 persistence recovery, SEC-01 hardening)
 
 ## Configuration
 
@@ -520,10 +582,10 @@ debounce 0.5 min + 5 min backup interval), RTO ≤ 15 min; retention is 7 daily 
 
 ## Testing
 
-The suite currently runs <!-- test-count:260 -->260<!-- /test-count --> tests. Behaviour ownership: [docs/TEST_MAP.md](docs/TEST_MAP.md).
+The suite currently runs <!-- test-count:311 -->311<!-- /test-count --> tests. Behaviour ownership: [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 ```bash
-npm test                 # node:test suite (260 tests)
+npm test                 # node:test suite (311 tests)
 npm run check:slo        # evaluate observability/slo.json against /api/metrics (0/1/2/3)
 npm run recovery:test    # backup -> verify -> restore drill on throwaway data
 npm run docs:check       # R1-R6 repository SSOT gate
@@ -535,6 +597,11 @@ node scripts/test-count.mjs  # documented count == executed count
 - `test/sphere-interaction.test.js` — carrier projection/unprojection, point-follow, infinite local direction.
 - Accept live browser checks: `scripts/verify-icosahedron-controls.mjs`,
   `scripts/verify-camera-carrier.mjs`, `scripts/verify-icosahedron-visual.mjs`.
+- `test/camera-contract.test.js`, `test/surface-camera.test.js`, `test/surface-render.test.js` — the
+  shared camera contract, carrier surface framing, and the single-scene view state machine.
+- `test/hud-parity.test.js` — one mounted HUD tree, stable `data-hud-node` ids and surface-only additions.
+- `test/live-mesh.test.js` — world revision monotonicity, level formula, budget clamp, determinism hash,
+  break delta and the no-op fast path.
 - `test/planet.test.js` — deterministic terrain, poles ice, biome distribution, ocean non-mineable,
   terrain deposit weights, client/server parity.
 - `test/mission.test.js` — requirements, per-planet scaling, depth progression, sanitization.
