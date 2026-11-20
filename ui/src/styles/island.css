@@ -1,0 +1,31 @@
+/**
+ * NARIMATO — island-owned layout for the GDS mount host (issue UI-01).
+ *
+ * Everything visual is composed from GDS components, tokens and props. This
+ * file only positions the mount host the page owns; it never styles a control.
+ * `#gds-root` is inert while no surface is mounted, so the game is untouched.
+ */
+#gds-root {
+  position: absolute;
+  inset: 0;
+  z-index: var(--mantine-z-index-max);
+  pointer-events: none;
+}
+
+/* The proof surface is the only mounted surface in UI-01; it takes the viewport
+ * so operators can inspect it at every viewport and zoom the issue names. */
+#gds-root[data-surface='proof'] {
+  position: fixed;
+  inset: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  pointer-events: auto;
+  background: var(--mantine-color-body);
+  color: var(--mantine-color-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #gds-root[data-surface='proof'] {
+    scroll-behavior: auto;
+  }
+}
