@@ -12,14 +12,14 @@
       "detail": {
         "stats": {
           "revision": 1,
-          "seed": 582487449,
+          "seed": 3683554735,
           "triangles": 5120,
           "buckets": 1,
           "hash": "585b3f78",
           "skipped": 2,
           "rebuilds": 3,
-          "lastRebuildMs": 1.899999976158142,
-          "lastRebuildAt": 1.2583333333333333,
+          "lastRebuildMs": 2,
+          "lastRebuildAt": 1.2414713333333331,
           "lastError": null
         },
         "worldRevision": 1
@@ -31,14 +31,14 @@
       "detail": {
         "stats": {
           "revision": 1,
-          "seed": 582487449,
+          "seed": 3683554735,
           "triangles": 5120,
           "buckets": 1,
           "hash": "585b3f78",
           "skipped": 2,
           "rebuilds": 3,
-          "lastRebuildMs": 3.0999999046325684,
-          "lastRebuildAt": 0.6749333333333333,
+          "lastRebuildMs": 2.899999976158142,
+          "lastRebuildAt": 1.324833333333333,
           "lastError": null
         },
         "worldRevision": 1
@@ -62,7 +62,8 @@
       "ok": true,
       "detail": {
         "threshold": 4,
-        "clicks": 4
+        "clicks": 4,
+        "lockedOut": 0
       }
     },
     {
@@ -71,14 +72,14 @@
       "detail": {
         "stats": {
           "revision": 8,
-          "seed": 582487449,
+          "seed": 3683554735,
           "triangles": 5888,
           "buckets": 2,
           "hash": "02527dcc",
           "skipped": 4,
           "rebuilds": 7,
-          "lastRebuildMs": 1.600000023841858,
-          "lastRebuildAt": 5.024333333333331,
+          "lastRebuildMs": 2,
+          "lastRebuildAt": 5.723971333333332,
           "lastError": null
         },
         "worldRevision": 8
@@ -135,14 +136,14 @@
     "a": {
       "stats": {
         "revision": 1,
-        "seed": 582487449,
+        "seed": 3683554735,
         "triangles": 5120,
         "buckets": 1,
         "hash": "585b3f78",
         "skipped": 2,
         "rebuilds": 3,
-        "lastRebuildMs": 1.899999976158142,
-        "lastRebuildAt": 1.2583333333333333,
+        "lastRebuildMs": 2,
+        "lastRebuildAt": 1.2414713333333331,
         "lastError": null
       },
       "worldRevision": 1
@@ -150,14 +151,14 @@
     "b": {
       "stats": {
         "revision": 1,
-        "seed": 582487449,
+        "seed": 3683554735,
         "triangles": 5120,
         "buckets": 1,
         "hash": "585b3f78",
         "skipped": 2,
         "rebuilds": 3,
-        "lastRebuildMs": 3.0999999046325684,
-        "lastRebuildAt": 0.6749333333333333,
+        "lastRebuildMs": 2.899999976158142,
+        "lastRebuildAt": 1.324833333333333,
         "lastError": null
       },
       "worldRevision": 1
@@ -168,14 +169,14 @@
     "a": {
       "stats": {
         "revision": 8,
-        "seed": 582487449,
+        "seed": 3683554735,
         "triangles": 5888,
         "buckets": 2,
         "hash": "02527dcc",
         "skipped": 4,
         "rebuilds": 7,
-        "lastRebuildMs": 1.600000023841858,
-        "lastRebuildAt": 5.024333333333331,
+        "lastRebuildMs": 2,
+        "lastRebuildAt": 5.723971333333332,
         "lastError": null
       },
       "worldRevision": 8
@@ -183,14 +184,14 @@
     "b": {
       "stats": {
         "revision": 7,
-        "seed": 582487449,
+        "seed": 3683554735,
         "triangles": 5888,
         "buckets": 2,
         "hash": "02527dcc",
         "skipped": 4,
         "rebuilds": 7,
-        "lastRebuildMs": 2.8000000715255737,
-        "lastRebuildAt": 3.4582333333333355,
+        "lastRebuildMs": 1.8000000715255737,
+        "lastRebuildAt": 4.057733333333334,
         "lastError": null
       },
       "worldRevision": 7
@@ -203,7 +204,8 @@
   "errors": [],
   "break": {
     "threshold": 4,
-    "clicks": 4
+    "clicks": 4,
+    "lockedOut": 0
   },
   "surface": {
     "scene": {
@@ -214,14 +216,14 @@
     },
     "stats": {
       "revision": 9,
-      "seed": 582487449,
+      "seed": 3683554735,
       "triangles": 5888,
       "buckets": 2,
       "hash": "b3c1dad0",
-      "skipped": 4,
+      "skipped": 5,
       "rebuilds": 9,
-      "lastRebuildMs": 3.5,
-      "lastRebuildAt": 7.224833333333332,
+      "lastRebuildMs": 1.600000023841858,
+      "lastRebuildAt": 7.807633333333327,
       "lastError": null
     }
   }

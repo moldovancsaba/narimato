@@ -108,21 +108,40 @@ try {
     check('mesh triangles are budget-bounded', beforeA.stats.triangles > 0 && beforeA.stats.triangles <= 6000, beforeA.stats.triangles);
 
     // Two clients alternate clicks to satisfy the contest lock and break the
-    // cell through the authoritative click path.
+    // cell through the authoritative click path. A client waits until its own
+    // optimistic lock is cleared by the other operator's state update.
     const threshold = await pages[0].evaluate(() => window.__ICOSA__.threshold || 8);
     let clicks = 0;
-    for (let i = 0; i < threshold + 6; i += 1) {
+    let lockedOut = 0;
+    for (let i = 0; i < (threshold + 2) * 3; i += 1) {
       const page = pages[i % 2];
       // eslint-disable-next-line no-await-in-loop
-      await page.evaluate((cellLabel) => window.__ICOSA__.clickFace(cellLabel), label);
-      clicks += 1;
+      const result = await page.evaluate(async (cellLabel) => {
+        const app = window.__ICOSA__;
+        for (let attempt = 0; attempt < 40; attempt += 1) {
+          const node = app.world.get(cellLabel);
+          if (!node) return 'gone';
+          const myIndex = app.state.players.findIndex((player) => player.id === app.player.id);
+          const locked = node.ownerIndex === myIndex && node.lastClickIndex === myIndex;
+          if (!locked) {
+            app.clickFace(cellLabel);
+            return 'clicked';
+          }
+          // Wait for the other operator's SSE cell event to clear the lock.
+          // eslint-disable-next-line no-await-in-loop
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+        return 'locked';
+      }, label);
+      if (result === 'clicked') clicks += 1;
+      else if (result === 'locked') lockedOut += 1;
       // eslint-disable-next-line no-await-in-loop
-      await delay(150);
+      await delay(180);
       // eslint-disable-next-line no-await-in-loop
       const gone = await pages[0].evaluate((cellLabel) => !window.__ICOSA__.world.activeLeaves().some((leaf) => leaf.label === cellLabel), label);
       if (gone) break;
     }
-    const breakResult = { threshold, clicks };
+    const breakResult = { threshold, clicks, lockedOut };
     report.break = breakResult;
     const broken = await pages[0].waitForFunction(
       (cellLabel) => !window.__ICOSA__.world.activeLeaves().some((leaf) => leaf.label === cellLabel),
@@ -132,8 +151,18 @@ try {
     check('the clicked base cell broke into children', broken, breakResult);
     await delay(1200);
 
-    const afterA = await stats(pages[0]);
-    const afterB = await stats(pages[1]);
+    // Wait for both renderers to prepare the last revision (one rebuild/frame).
+    async function waitConverged(page) {
+      for (let attempt = 0; attempt < 40; attempt += 1) {
+        const value = await stats(page);
+        if (value.stats.revision === value.worldRevision) return value;
+        // eslint-disable-next-line no-await-in-loop
+        await delay(100);
+      }
+      return stats(page);
+    }
+    const afterA = await waitConverged(pages[0]);
+    const afterB = await waitConverged(pages[1]);
     report.after = { a: afterA, b: afterB };
     check('A converged to the new revision', afterA.stats.revision === afterA.worldRevision, afterA);
     check('B received the remote rebuild without reload', afterB.stats.revision === afterB.worldRevision && afterB.stats.revision > beforeB.stats.revision, { before: beforeB.stats.revision, after: afterB.stats.revision });

@@ -557,7 +557,6 @@ path is documented and executable in [docs/RECOVERY.md](docs/RECOVERY.md):
 A corrupt `world.json` is quarantined to `world.json.corrupt-<UTC stamp>` and startup is refused
 unless `ALLOW_EMPTY_WORLD=1`; a newer `PERSIST_VERSION` is never downgraded. RPO ≤ 5.5 min (save
 debounce 0.5 min + 5 min backup interval), RTO ≤ 15 min; retention is 7 daily + 24 hourly.
->>>>>>> 39246d1 (Delivery: OPS-01 observability SSOT, OPS-03 persistence recovery, SEC-01 hardening)
 
 ## Configuration
 
