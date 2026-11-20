@@ -28,9 +28,9 @@ export class SurfaceCamera {
     this.zoom = 1;
     this.distance = 1;
     this.surfaceMode = true;
-    this.eyeHeight = Number(options.eyeHeight) || 0.03;
-    this.behind = Number(options.behind) || 0.16;
-    this.focal = Number(options.focal) || 1.35;
+    this.eyeHeight = Number(options.eyeHeight) || 0.024;
+    this.behind = Number(options.behind) || 0.15;
+    this.focal = Number(options.focal) || 1.36;
     this._pos = { x: 0, y: 0, z: 1 };
     this._forward = { x: 1, y: 0, z: 0 };
     this._view = null;
@@ -59,7 +59,7 @@ export class SurfaceCamera {
     const up = this._pos;
     const fwd = this._forward;
     const cam = add(mul(up, 1 + this.eyeHeight), mul(fwd, -this.behind));
-    const target = add(add(up, mul(fwd, 0.46)), mul(up, -0.14));
+    const target = add(add(up, mul(fwd, 0.58)), mul(up, -0.18));
     const f = norm(sub(target, cam));
     const r = norm(cross(f, up));
     const u = norm(cross(r, f));

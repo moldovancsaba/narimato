@@ -617,7 +617,7 @@ export function createSurfaceMode({
           ? peer.forward
           : tangentAt(peerPos, { x: 1, y: 0, z: 0 }));
       drawHumanoid3D(ctx, camera, peerPos, peerForward, {
-        scale: 0.020,
+        scale: 0.012,
         walkPhase: now * 0.004,
         tint: peer.color || '#a78bfa',
         skin: '#dffcff',
@@ -652,7 +652,7 @@ export function createSurfaceMode({
     const me = players[getMyIndex()];
     const themeColor = (me && me.color) || '#67ddff';
     drawHumanoid3D(ctx, camera, pos, headingVec, {
-      scale: 0.022,
+      scale: 0.013,
       walkPhase: travel * 2600,
       tint: themeColor,
       skin: '#f2ffff',

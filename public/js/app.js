@@ -2209,7 +2209,7 @@ function buildSurfaceLiveFaces() {
   for (const node of leafList) {
     if (!node || !node.a) continue;
     const edge = Math.max(angle(node.a, node.b), angle(node.b, node.c), angle(node.c, node.a));
-    const level = clamp(Math.ceil(Math.log2(Math.max(1e-4, edge / 0.055))), 0, 4);
+    const level = clamp(Math.ceil(Math.log2(Math.max(1e-4, edge / 0.03))), 0, 5);
     let tris = [{ a: node.a, b: node.b, c: node.c }];
     for (let i = 0; i < level; i += 1) {
       const next = [];

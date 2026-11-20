@@ -1,5 +1,16 @@
 # NARIMATO — Release Notes
 
+## v3.51.0 — “Surface Framing” (2026-11-20)
+
+- Reduced ownership wash on surface biome terrain to 4%.
+- Smaller 3D humanoids and a slightly farther/lower third-person camera.
+- Finer live surface mesh (up to subdivision level 5).
+- Verified 106/106 tests.
+
+Release: https://github.com/moldovancsaba/narimato/releases/tag/v3.51.0
+
+---
+
 ## v3.50.0 — “Crust Fix” (2026-11-20)
 
 ### Fixed

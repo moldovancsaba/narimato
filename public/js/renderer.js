@@ -1556,7 +1556,7 @@ export class IcosaRenderer {
         ctx.fillStyle = e.terrainFill;
         ctx.fill();
         if (e.ownerIndex >= 0 && style.overlayC[fillIdx]) {
-          ctx.globalAlpha = lodAlpha * 0.10;
+          ctx.globalAlpha = lodAlpha * 0.04;
           ctx.fillStyle = style.overlayC[fillIdx];
           ctx.fill();
           ctx.globalAlpha = lodAlpha;
