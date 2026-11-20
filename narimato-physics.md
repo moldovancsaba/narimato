@@ -26,8 +26,7 @@ One camera. It always sits on a **concentric orbit sphere** around the object ce
 
 - The camera is fixed to a carrier point on that outer sphere.
 - **Zoom changes the carrier sphere radius** (`camera.distance`), not optical field of view.
-- The camera may orbit (change yaw/pitch) and zoom optically, but it never changes the centre
-  distance for zoom.
+- The camera orbits freely and always faces the centre; zoom changes the carrier radius.
 - “Space”, “flight”, “building” and “surface” are **the same object viewed by the same camera
   orbit at a chosen orientation**, not different cameras with different distances.
 
@@ -137,7 +136,7 @@ Measured acceptance (1200×1200):
 ### Do
 
 - Split object rotation and camera orbit.
-- Keep camera centre distance fixed; zoom is optical.
+- Keep the carrier on the orbit; zoom changes its radius.
 - Use `z = -focal` in unprojection.
 - Rotate the object with the shortest quaternion from `P0` to `P1`.
 - Test the actual projected numbers, not just “it feels right”.
