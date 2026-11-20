@@ -1,46 +1,69 @@
 /**
- * Interactive spherical icosahedron with the game's quaternion camera physics.
- * Exactly 20 great-circle face edges; solid sphere; no stars/halo/HUD.
+ * Interactive spherical icosahedron.
+ * - Mouse drag: the grabbed SURFACE POINT follows the cursor exactly.
+ * - Cursor keys: the camera moves on a fixed-radius orbit; Up flies straight down.
+ * - Wheel/pinch: optical zoom.
  */
-import { SphereCamera, SPHERE_SCREEN_FRACTION, baseIcosahedron } from './shared/geometry.js';
-import { beginTrackball, dragTrackball, applyArrowKey } from './shared/orbit-controls.js';
+import { SphereCamera, SPHERE_SCREEN_FRACTION, CAMERA_DISTANCE, baseIcosahedron } from './shared/geometry.js';
 
 const canvas = document.getElementById('icosa-canvas');
 const ctx = canvas.getContext('2d');
-const width0 = window.innerWidth;
-const height0 = window.innerHeight;
-// Three independent transforms:
-// objectCam = mouse-rotated object
-// orbitCam  = cursor-keyed camera orbit around the object
-// renderCam = composed view used only for projection
-const objectCam = new SphereCamera(width0, height0);
-const orbitCam = new SphereCamera(width0, height0);
-const renderCam = new SphereCamera(width0, height0);
-objectCam.reset();
-orbitCam.reset();
-renderCam.reset();
 const { vertices, faces } = baseIcosahedron();
 
-const qMul = (a, b) => ({
-  x: a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y,
-  y: a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x,
-  z: a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w,
-  w: a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z,
-});
-const qNormalize = (q) => {
-  const l = Math.hypot(q.x, q.y, q.z, q.w) || 1;
-  return { x: q.x / l, y: q.y / l, z: q.z / l, w: q.w / l };
-};
+const W0 = window.innerWidth;
+const H0 = window.innerHeight;
+const camera = new SphereCamera(W0, H0);
+camera.reset();
+const OBJECT_DISTANCE = CAMERA_DISTANCE;
+
+// Object rotation (mouse) as a world-space quaternion.
+let objectQ = { x: 0, y: 0, z: 0, w: 1 };
+
+// Camera orbit angles (cursor keys) around the fixed-radius sphere.
+let orbitYaw = camera.yaw;
+let orbitPitch = camera.pitch;
+const HALF_PI = Math.PI / 2;
+const ORBIT_STEP = 0.05;
 
 let dpr = 1;
 let W = 1;
 let H = 1;
 let raf = 0;
-let last = performance.now();
-let spin = { x: 0, y: 0 };
 let pointer = null;
+let grab = null; // { p0world, q0 }
 const pointers = new Map();
 let pinch = 0;
+
+const qNorm = (q) => { const l = Math.hypot(q.x, q.y, q.z, q.w) || 1; return { x: q.x/l, y: q.y/l, z: q.z/l, w: q.w/l }; };
+const qMul = (a, b) => ({
+  x: a.w*b.x + a.x*b.w + a.y*b.z - a.z*b.y,
+  y: a.w*b.y - a.x*b.z + a.y*b.w + a.z*b.x,
+  z: a.w*b.z + a.x*b.y - a.y*b.x + a.z*b.w,
+  w: a.w*b.w - a.x*b.x - a.y*b.y - a.z*b.z,
+});
+const qAxisAngle = (axis, angle) => {
+  const l = Math.hypot(axis.x, axis.y, axis.z) || 1;
+  const s = Math.sin(angle / 2);
+  return { x: axis.x / l * s, y: axis.y / l * s, z: axis.z / l * s, w: Math.cos(angle / 2) };
+};
+const qRotateVec = (q, v) => {
+  const x = q.x, y = q.y, z = q.z, w = q.w;
+  const vx = v.x, vy = v.y, vz = v.z;
+  const tx = 2 * (y * vz - z * vy);
+  const ty = 2 * (z * vx - x * vz);
+  const tz = 2 * (x * vy - y * vx);
+  return {
+    x: vx + w * tx + (y * tz - z * ty),
+    y: vy + w * ty + (z * tx - x * tz),
+    z: vz + w * tz + (x * ty - y * tx),
+  };
+};
+const vecSub = (a, b) => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
+const vecCross = (a, b) => ({ x: a.y*b.z - a.z*b.y, y: a.z*b.x - a.x*b.z, z: a.x*b.y - a.y*b.x });
+const vecDot = (a, b) => a.x*b.x + a.y*b.y + a.z*b.z;
+const vecNorm = (v) => { const l = Math.hypot(v.x, v.y, v.z) || 1; return { x: v.x/l, y: v.y/l, z: v.z/l }; };
+const vecAdd = (a, b) => ({ x: a.x+b.x, y: a.y+b.y, z: a.z+b.z });
+const vecMul = (a, k) => ({ x: a.x*k, y: a.y*k, z: a.z*k });
 
 function resize() {
   dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -50,30 +73,38 @@ function resize() {
   canvas.height = Math.max(1, Math.round(H * dpr));
   canvas.style.width = `${W}px`;
   canvas.style.height = `${H}px`;
-  objectCam.setViewport(W, H);
-  orbitCam.setViewport(W, H);
-  renderCam.setViewport(W, H);
+  camera.setViewport(W, H);
 }
 window.addEventListener('resize', resize);
 resize();
 
-function slerp(a, b, t) {
-  const d = Math.max(-1, Math.min(1, a.x * b.x + a.y * b.y + a.z * b.z));
-  const theta = Math.acos(d) * t;
-  const rx = b.x - a.x * d;
-  const ry = b.y - a.y * d;
-  const rz = b.z - a.z * d;
-  const rl = Math.hypot(rx, ry, rz) || 1;
-  const c = Math.cos(theta);
-  const s = Math.sin(theta) / rl;
-  return { x: a.x * c + rx * s, y: a.y * c + ry * s, z: a.z * c + rz * s };
+/** Screen point to a point on the visible unit-sphere surface. */
+function unprojectSphere(xPx, yPx) {
+  const radius = Math.min(W, H) * SPHERE_SCREEN_FRACTION * camera.zoom;
+  const focal = radius * OBJECT_DISTANCE;
+  const X = xPx - W / 2;
+  const Y = H / 2 - yPx;
+  // Camera-space ray direction: X/Z = px, Y/Z = py with focal length radius*distance.
+  const dirCam = vecNorm({ x: X, y: Y, z: -focal });
+  const dirWorld = camera.unprojectView(dirCam);
+  const origin = vecMul(vecNorm(camera.viewAxis()), OBJECT_DISTANCE);
+  const b = 2 * vecDot(origin, dirWorld);
+  const c = vecDot(origin, origin) - 1;
+  const disc = b * b - 4 * c;
+  if (disc < 0) return null;
+  const t = (-b - Math.sqrt(disc)) / 2;
+  if (!(t > 0)) return null;
+  return vecNorm(vecAdd(origin, vecMul(dirWorld, t)));
+}
+
+function updateCameraOrbit() {
+  orbitPitch = Math.max(-HALF_PI + 0.002, Math.min(HALF_PI - 0.002, orbitPitch));
+  camera.yaw = orbitYaw;
+  camera.pitch = orbitPitch;
 }
 
 function draw() {
-  // Compose camera orbit with object rotation. Rendered view = orbit * object.
-  renderCam._q = qNormalize(qMul(orbitCam._q, objectCam._q));
-  renderCam.zoom = orbitCam.zoom;
-  renderCam.width = W; renderCam.height = H;
+  updateCameraOrbit();
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, W, H);
   ctx.fillStyle = '#0b0d12';
@@ -81,7 +112,7 @@ function draw() {
 
   const cx = W / 2;
   const cy = H / 2;
-  const radius = Math.min(W, H) * SPHERE_SCREEN_FRACTION * orbitCam.zoom;
+  const radius = Math.min(W, H) * SPHERE_SCREEN_FRACTION * camera.zoom;
   const sphere = ctx.createRadialGradient(cx - radius * 0.36, cy - radius * 0.36, radius * 0.08, cx, cy, radius);
   sphere.addColorStop(0, 'rgb(126,210,230)');
   sphere.addColorStop(0.68, 'rgb(57,132,162)');
@@ -96,17 +127,23 @@ function draw() {
   ctx.arc(cx, cy, radius, 0, Math.PI * 2);
   ctx.clip();
   ctx.strokeStyle = 'rgba(7,20,30,0.92)';
-  ctx.lineWidth = 2.4;
+  ctx.lineWidth = 2.6;
   for (const [ia, ib, ic] of faces) {
-    const a = vertices[ia];
-    const b = vertices[ib];
-    const c = vertices[ic];
-    for (const [p, q] of [[a, b], [b, c], [c, a]]) {
+    const A = vecNorm(qRotateVec(objectQ, vertices[ia]));
+    const B = vecNorm(qRotateVec(objectQ, vertices[ib]));
+    const C = vecNorm(qRotateVec(objectQ, vertices[ic]));
+    for (const [p, q] of [[A, B], [B, C], [C, A]]) {
       ctx.beginPath();
       let drawing = false;
       for (let i = 0; i <= 30; i += 1) {
-        const v = slerp(p, q, i / 30);
-        const pr = renderCam.project(v);
+        const t = i / 30;
+        const d = Math.max(-1, Math.min(1, vecDot(p, q)));
+        const theta = Math.acos(d) * t;
+        const sin = Math.sin(theta);
+        const r = vecSub(q, vecMul(p, d));
+        const rl = Math.hypot(r.x, r.y, r.z) || 1;
+        const v = vecAdd(vecMul(p, Math.cos(theta)), vecMul(r, sin / rl));
+        const pr = camera.project(vecNorm(v));
         if (!pr.visible) { drawing = false; continue; }
         if (!drawing) { ctx.moveTo(pr.x, pr.y); drawing = true; }
         else ctx.lineTo(pr.x, pr.y);
@@ -118,34 +155,21 @@ function draw() {
 }
 
 function frame(now) {
-  const dt = Math.min(0.05, Math.max(0.001, (now - last) / 1000));
-  last = now;
-  if (!pointer) {
-    if (Math.abs(spin.x) + Math.abs(spin.y) > 0.001) {
-      objectCam.rotate(spin.x * dt, spin.y * dt);
-      const decay = Math.exp(-5.5 * dt);
-      spin.x *= decay;
-      spin.y *= decay;
-    }
-  }
   draw();
   raf = requestAnimationFrame(frame);
 }
-
-function pointOf(event) {
-  return { x: event.clientX - renderCam.width / 2, y: event.clientY - renderCam.height / 2 };
-}
+requestAnimationFrame(frame);
 
 canvas.addEventListener('pointerdown', (event) => {
   canvas.setPointerCapture?.(event.pointerId);
   pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
   if (pointers.size === 1) {
-    pointer = { id: event.pointerId, lastX: event.clientX, lastY: event.clientY, lastT: performance.now() };
-    spin.x = 0; spin.y = 0;
-    const p = pointOf(event);
-    beginTrackball(objectCam, p.x, -p.y, Math.min(W, H) * 0.45);
+    pointer = { id: event.pointerId };
+    const p0 = unprojectSphere(event.clientX, event.clientY);
+    if (p0) grab = { p0, q0: { ...objectQ } };
   } else if (pointers.size === 2) {
     pointer = null;
+    grab = null;
     const [p, q] = [...pointers.values()];
     pinch = Math.hypot(p.x - q.x, p.y - q.y);
   }
@@ -157,44 +181,47 @@ canvas.addEventListener('pointermove', (event) => {
   if (pointers.size >= 2) {
     const [p, q] = [...pointers.values()];
     const dist = Math.hypot(p.x - q.x, p.y - q.y);
-    if (pinch > 0 && dist > 0) orbitCam.zoom = Math.max(0.55, Math.min(7, orbitCam.zoom * (dist / pinch)));
+    if (pinch > 0 && dist > 0) camera.zoom = Math.max(0.55, Math.min(7, camera.zoom * (dist / pinch)));
     pinch = dist;
     return;
   }
-  if (!pointer || pointer.id !== event.pointerId) return;
-  const p = pointOf(event);
-  dragTrackball(objectCam, p.x, -p.y, Math.min(W, H) * 0.45);
-  pointer.lastX = event.clientX;
-  pointer.lastY = event.clientY;
-  pointer.lastT = performance.now();
+  if (!pointer || pointer.id !== event.pointerId || !grab) return;
+  const p1 = unprojectSphere(event.clientX, event.clientY);
+  if (!p1) return;
+  // Shortest rotation taking the grabbed surface point to the cursor point.
+  const axis = vecCross(grab.p0, p1);
+  const angle = Math.acos(Math.max(-1, Math.min(1, vecDot(grab.p0, p1))));
+  if (angle < 1e-6 || Math.hypot(axis.x, axis.y, axis.z) < 1e-9) return;
+  const delta = qAxisAngle(vecNorm(axis), angle);
+  objectQ = qNorm(qMul(delta, grab.q0));
 });
 
 function endPointer(event) {
   pointers.delete(event.pointerId);
+  grab = null;
   if (pointers.size === 0) pointer = null;
   else if (pointers.size === 1) {
-    const [p] = [...pointers.values()];
-    pointer = { id: [...pointers.keys()][0], lastX: p.x, lastY: p.y, lastT: performance.now() };
+    const [id, p] = [...pointers.entries()][0];
+    pointer = { id };
     pinch = 0;
   }
 }
 canvas.addEventListener('pointerup', endPointer);
 canvas.addEventListener('pointercancel', endPointer);
-canvas.addEventListener('pointerleave', (event) => { if (!canvas.hasPointerCapture?.(event.pointerId)) endPointer(event); });
 
 window.addEventListener('keydown', (event) => {
-  const keys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
-  if (keys.includes(event.key)) {
-    applyArrowKey(orbitCam, event.key);
-    event.preventDefault();
+  switch (event.key) {
+    case 'ArrowLeft': orbitYaw -= ORBIT_STEP; event.preventDefault(); break;
+    case 'ArrowRight': orbitYaw += ORBIT_STEP; event.preventDefault(); break;
+    case 'ArrowUp': orbitPitch -= ORBIT_STEP; event.preventDefault(); break; // fly straight down
+    case 'ArrowDown': orbitPitch += ORBIT_STEP; event.preventDefault(); break;
+    default: break;
   }
 });
 
 canvas.addEventListener('wheel', (event) => {
   event.preventDefault();
-  orbitCam.zoom = Math.max(0.55, Math.min(7, orbitCam.zoom * Math.exp(-event.deltaY * 0.0012)));
+  camera.zoom = Math.max(0.55, Math.min(7, camera.zoom * Math.exp(-event.deltaY * 0.0012)));
 }, { passive: false });
 
-requestAnimationFrame(frame);
-
-window.__ICOSA_VIEW__ = { objectCam, orbitCam, renderCam, vertices, project: (v) => renderCam.project(v) };
+window.__ICOSA_VIEW__ = { camera, objectQ: () => objectQ, vertices, unprojectSphere, project: (v) => camera.project(qRotateVec(objectQ, v)), orbit: () => ({ yaw: orbitYaw, pitch: orbitPitch }), setOrbit: (y, p) => { orbitYaw = y; orbitPitch = p; }, setObjectQ: (q) => { objectQ = qNorm(q); } };
