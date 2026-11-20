@@ -4,7 +4,7 @@
 > **Delivery SSOT:** [NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80) · [Definition of Done](docs/DEFINITION_OF_DONE.md) · [Issue index](docs/ISSUE_MAP.md).
 > This document owns durable knowledge; it does not track delivery status.
 >
-> **Related delivery issues:** [OPS-02](https://github.com/moldovancsaba/narimato/issues/39) · [OPS-05](https://github.com/moldovancsaba/narimato/issues/42) · [REL-01](https://github.com/moldovancsaba/narimato/issues/45)
+> **Related delivery issues:** [OPS-01](https://github.com/moldovancsaba/narimato/issues/38) · [OPS-02](https://github.com/moldovancsaba/narimato/issues/39) · [OPS-05](https://github.com/moldovancsaba/narimato/issues/42) · [REL-01](https://github.com/moldovancsaba/narimato/issues/45)
 <!-- delivery-ssot:end -->
 
 Zero-dependency workload generator: `scripts/load-test.mjs` (`npm run load:test`).
@@ -20,6 +20,15 @@ BASE_URL=http://127.0.0.1:4401 CLIENTS=100 CLICKS=5 SSE_CLIENTS=40 \
 
 Environment: `BASE_URL`, `CLIENTS`, `CLICKS`, `SSE_CLIENTS`, `DURATION_SECONDS`,
 `CLICK_PAUSE_MS`, `TAG_PREFIX`.
+
+Against a `SECURITY_MODE=enforce` server the default join bucket (10/minute per address) throttles
+the generator's own joins. Raise it for the workload instead of disabling hardening, e.g.:
+
+```sh
+PORT=4401 HOST=127.0.0.1 DATA_DIR=/tmp/narimato-load BOTS=0 CLICK_COOLDOWN_MS=0 \
+  SECURITY_MODE=enforce LIMIT_JOIN_MAX=500 LIMIT_JOIN_WINDOW_MS=60000 LIMIT_JOIN_BURST=500 \
+  LIMIT_ACTION_IP_MAX=100000 LIMIT_ACTION_IP_BURST=100000 node server.js &
+```
 
 ## Result — 2026-11-18, single Node process, Apple arm64
 
@@ -40,7 +49,9 @@ capacity signals; the generator deliberately exercises the real lock/break path.
 ## Gate decision
 
 Per the delivery plan, **B2 (authoritative sharding) is not started** while these SLOs are
-healthy on one process:
+healthy on one process. The thresholds are executable in `observability/slo.json`; the gate is
+`npm run check:slo` against a running server (`BASE_URL=... npm run check:slo`, exit `0` healthy,
+`1` breach, `2` contract break, `3` unreachable):
 
 - HTTP p95 < 150 ms
 - event-loop p95 < 50 ms
@@ -55,6 +66,8 @@ a sustained 1–2 h soak with real network conditions is still recommended befor
 
 - `npm run chaos:test` kills the process with live SSE, restarts on the same data dir, and
   verifies pilots/tokens/world survive and reconnect. Latest run: **clean**.
+- `npm run recovery:test` rehearses backup -> verify -> restore on throwaway data after a
+  destructive chaos run; the runbook is [docs/RECOVERY.md](docs/RECOVERY.md).
 - Restart while clicks are in flight: join tokens remain valid; snapshot recovers.
 - Network partition: SSE reconnect backoff; `/api/metrics` active/dropped counters.
 - Canary: one process with planet rooms; rollback = single process (current topology).

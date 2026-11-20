@@ -41,6 +41,9 @@ npm run audit:ui         # Playwright viewport audit (requires PLAYWRIGHT_MODULE
 npm run audit:a11y       # axe accessibility audit (requires PLAYWRIGHT_MODULE + AXE_PATH)
 npm run load:test        # load/soak harness
 npm run chaos:test       # restart/reconnect chaos test
+npm run check:slo        # SLO verdict from /api/metrics (0 healthy, 1 breach, 2 contract, 3 unreachable)
+npm run recovery:test    # backup -> verify -> restore drill on throwaway data
+npm run backup:data      # checksummed DATA_DIR archive + manifest (see docs/RECOVERY.md)
 ```
 
 ## Pull requests

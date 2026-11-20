@@ -15,6 +15,8 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PORT = Number(process.env.NARIMATO_CHAOS_PORT || 4404);
 const BASE = `http://127.0.0.1:${PORT}`;
+/** Same-origin writes so the chaos drill also works against SECURITY_MODE=enforce. */
+const WRITE_HEADERS = { 'content-type': 'application/json', origin: BASE };
 const CLIENTS = Math.max(2, Math.min(50, Number(process.env.CLIENTS) || 10));
 const dataDir = await mkdtemp(path.join(os.tmpdir(), 'narimato-chaos-'));
 
@@ -37,7 +39,7 @@ async function waitUp() {
   throw new Error('chaos server did not start');
 }
 async function join(tag, token) {
-  const res = await fetch(`${BASE}/api/join`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ tag, token }) });
+  const res = await fetch(`${BASE}/api/join`, { method: 'POST', headers: WRITE_HEADERS, body: JSON.stringify({ tag, token }) });
   return { status: res.status, body: await res.json() };
 }
 async function openSse(token) {
@@ -63,7 +65,7 @@ const streams = [];
 for (const p of players.slice(0, Math.min(5, players.length))) streams.push(await openSse(p.token));
 for (let i = 0; i < 20; i += 1) {
   const p = players[i % players.length];
-  await fetch(`${BASE}/api/action`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token: p.token, type: 'click', label: String(1 + (i % 8)) }) }).catch(() => {});
+  await fetch(`${BASE}/api/action`, { method: 'POST', headers: WRITE_HEADERS, body: JSON.stringify({ token: p.token, type: 'click', label: String(1 + (i % 8)) }) }).catch(() => {});
 }
 const before = (await (await fetch(`${BASE}/api/state`)).json()).state;
 await delay(400);
@@ -88,7 +90,7 @@ for (const p of players) {
 }
 await delay(500);
 for (const s of reconnected) s.stop();
-await fetch(`${BASE}/api/action`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token: players[0].token, type: 'click', label: '1' }) }).catch(() => {});
+await fetch(`${BASE}/api/action`, { method: 'POST', headers: WRITE_HEADERS, body: JSON.stringify({ token: players[0].token, type: 'click', label: '1' }) }).catch(() => {});
 await delay(200);
 const final = (await (await fetch(`${BASE}/api/state`)).json()).state;
 
