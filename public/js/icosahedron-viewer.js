@@ -215,8 +215,8 @@ canvas.addEventListener('pointercancel', end);
 
 window.addEventListener('keydown', (event) => {
   switch (event.key) {
-    case 'ArrowLeft': carrier = moveCarrier(carrier, -1, 0, ORBIT_STEP); event.preventDefault(); break;
-    case 'ArrowRight': carrier = moveCarrier(carrier, 1, 0, ORBIT_STEP); event.preventDefault(); break;
+    case 'ArrowLeft': carrier = moveCarrier(carrier, 1, 0, ORBIT_STEP); event.preventDefault(); break;
+    case 'ArrowRight': carrier = moveCarrier(carrier, -1, 0, ORBIT_STEP); event.preventDefault(); break;
     case 'ArrowUp': carrier = moveCarrier(carrier, 0, 1, ORBIT_STEP); event.preventDefault(); break;
     case 'ArrowDown': carrier = moveCarrier(carrier, 0, -1, ORBIT_STEP); event.preventDefault(); break;
     default: break;
