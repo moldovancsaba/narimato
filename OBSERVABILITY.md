@@ -263,6 +263,15 @@ The ruleset also carries a non-live `gate` block (`errors`, `joinP95Ms`,
 `clickP95Ms`, `rssGrowthMiB`, `reconnectMs`, `responseBodyMiB`) consumed by the
 OPS-02 gate; `check-slo.mjs` ignores it.
 
+The OPS-05 scale decision gate reads the same rules through
+[`observability/scale-profile.json`](observability/scale-profile.json), which
+stores rule ids only, and evaluates a measured capture with
+`scripts/scale-gate.mjs`. Its numeric triggers, evidence set and rollback plan
+are in [docs/SHARDING_DECISION.md](docs/SHARDING_DECISION.md). The fields it
+reads are `http.latencyMs.p95Ms`, `eventLoopDelay.p95Ms`, `sse.dropped`,
+`http.errors` and process RSS growth; it copies no threshold value and makes no
+runtime change.
+
 Rule semantics:
 
 - **Warm-up.** In-memory metrics reset on restart, so a rule whose `windowMs` has not elapsed since

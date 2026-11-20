@@ -11,6 +11,7 @@
     "docs:check": "node scripts/check-docs.mjs",
     "check:version": "node scripts/check-version.mjs",
     "check:slo": "node scripts/check-slo.mjs",
+    "check:scale": "node scripts/check-scale-decision.mjs",
     "test:count": "node scripts/test-count.mjs --print",
     "backup:data": "node scripts/backup-data.mjs",
     "verify:data": "node scripts/verify-data.mjs",

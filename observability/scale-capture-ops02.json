@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "id": "ops-02-load-2026-11-20",
+  "source": "PR #57 / LOAD_TEST.md measured results",
+  "recordedAt": "2026-11-20",
+  "commit": "32e7f5b",
+  "hardware": "Apple arm64 laptop (M-series), Node v26.13.0, loopback",
+  "production": false,
+  "durationMinutes": 1,
+  "clients": 100,
+  "sseClients": 40,
+  "httpP95Ms": 2,
+  "loopP95Ms": 22.135,
+  "droppedSse": 0,
+  "errors": 0,
+  "joinP95Ms": 3.08,
+  "clickP95Ms": 24.2,
+  "rssGrowthMiB": 13.48,
+  "runs": [
+    {
+      "run": 1,
+      "httpP95Ms": 2,
+      "loopP95Ms": 22.135,
+      "droppedSse": 0,
+      "errors": 0,
+      "joinP95Ms": 2.73,
+      "clickP95Ms": 24.2,
+      "rssGrowthMiB": 0
+    },
+    {
+      "run": 2,
+      "httpP95Ms": 2,
+      "loopP95Ms": 22.118,
+      "droppedSse": 0,
+      "errors": 0,
+      "joinP95Ms": 3.08,
+      "clickP95Ms": 21.57,
+      "rssGrowthMiB": 13.48
+    },
+    {
+      "run": 3,
+      "httpP95Ms": 1,
+      "loopP95Ms": 22.102,
+      "droppedSse": 0,
+      "errors": 0,
+      "joinP95Ms": 2.42,
+      "clickP95Ms": 20.16,
+      "rssGrowthMiB": 4.83
+    }
+  ],
+  "chaos": {
+    "reconnectMaxMs": 24,
+    "playersSurvived": 10,
+    "sseStreamsReconnected": 10,
+    "sseStreamsExpected": 10
+  },
+  "soak": {
+    "executed": false,
+    "minutes": 0,
+    "note": "The 120-minute soak is the release prerequisite; OPS-02 did not run it and this record claims no soak result."
+  }
+}
