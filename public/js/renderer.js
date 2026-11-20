@@ -55,8 +55,14 @@ import { resourceById } from './shared/resources.js';
 import { BIOMES } from './shared/planet.js';
 import { LiveSurfaceStore } from './shared/live-surface-mesh.js';
 import { drawTetraShip } from './shared/tetra-ship.js';
-import { drawHumanoid3D } from './shared/humanoid-3d.js';
 import { createFrameBudget, detectDeviceClass, parsePinnedTier, qualityWorkScale } from './perf-budget.js';
+
+/**
+ * RND-05 humanoid rig module, loaded lazily (PERF-01 first-load budget): the
+ * figures only exist on the surface, so the closed-triangle rig is a dynamic
+ * import set through `setHumanoidModule()` instead of first-load JavaScript.
+ */
+let HUMAN_MODULE = null;
 
 const TAU = Math.PI * 2;
 const HALF_PI = Math.PI / 2;
@@ -70,6 +76,20 @@ const ACID = { r: 215, g: 255, b: 0 };
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const rgba = (c, a) => `rgba(${c.r},${c.g},${c.b},${a})`;
+// Vector helpers shared by the surface visual pass (RND-05/07).
+const vnorm = (v) => {
+  const len = Math.hypot(v.x, v.y, v.z) || 1;
+  return { x: v.x / len, y: v.y / len, z: v.z / len };
+};
+const vadd = (a, b) => ({ x: a.x + b.x, y: a.y + b.y, z: a.z + b.z });
+const vsub = (a, b) => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
+const vmul = (a, k) => ({ x: a.x * k, y: a.y * k, z: a.z * k });
+const vdot = (a, b) => a.x * b.x + a.y * b.y + a.z * b.z;
+const norm = vnorm;
+const add = vadd;
+const sub = vsub;
+const mul = vmul;
+const dot = vdot;
 const hexRgb = (hex) => {
   const v = String(hex || '').replace('#', '');
   if (v.length !== 6) return { r: 120, g: 120, b: 120 };
@@ -144,6 +164,28 @@ const MAX_PULSES = 36;
 const PULSE_DUR = { claim: 0.9, steal: 1.05, reinforce: 0.75, break: 1.3, resource: 1.5 };
 const CHARGE_TIERS = 5;
 
+/* ------------------------------------------------------------------ *
+ * Surface visual contract (RND-07)
+ * ------------------------------------------------------------------ */
+/** Fixed interpolation delay: twice the 10 Hz surface broadcast period. */
+const INTERP_DELAY_MS = 120;
+/** Bound on drift for a peer that stops publishing. */
+const MAX_EXTRAPOLATION_MS = 250;
+const BEAM_TTL_MS = { mine: 900, break: 1400 };
+const PEER_STALE_MS = 5000;
+const PEER_FADE_MS = 300;
+const MAX_PEER_SAMPLES = 8;
+const MAX_BEAMS = 24;
+const MAX_RESOURCE_PINS = 64;
+const MINE_LIFT_MS = 140;
+const MINE_HOLD_MS = 900;
+/** Production rig scales: figure height stays inside 12–90 CSS px at L0. */
+const SELF_RIG_SCALE = 0.0115;
+const PEER_RIG_SCALE = 0.0105;
+
+const nowLocal = () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
+const slerpPos = (a, b, k) => (typeof slerp === 'function' ? slerp(a, b, k) : a);
+
 export class IcosaRenderer {
   /** @param {HTMLCanvasElement} canvas fixed full-viewport #arena-canvas */
   constructor(canvas) {
@@ -212,6 +254,30 @@ export class IcosaRenderer {
     this.surfacePhase = 'walking';
     this.surfaceProgress = 1;
     this.opaqueSurface = false;
+    // RND-07 surface visual state: authoritative peers, beams, pins. The
+    // renderer owns interpolation and fades; app.js only forwards events.
+    this.peerVisuals = new Map();
+    this.beams = [];
+    this.resourcePins = [];
+    this._leafLabels = new Set();
+    this._surfaceClock = { server: 0, local: 0 };
+    this._renderLocalNow = 0;
+    this._selfMineAt = null;
+    this._avatarRig = null;
+    this._peerRig = null;
+    this._rigCounts = { l0: 0, l1: 0, l2: 0 };
+    this.avatarScale = 1;
+    this._surfaceVisual = {
+      peers: 0,
+      beams: 0,
+      droppedBeams: 0,
+      pins: 0,
+      markers: 0,
+      avatars: 0,
+      interpolated: 0,
+      triangles: 0,
+    };
+    this.materialProbe = false;
     this.planetTheme = null;
     this._surfaceCanvas = null;
     this._surfaceCtx = null;
@@ -341,6 +407,12 @@ export class IcosaRenderer {
    */
   setLiveSurface(input = {}) {
     const next = input && typeof input === 'object' ? input : {};
+    if (Array.isArray(next.leaves)) {
+      this._leafLabels = new Set();
+      for (const leaf of next.leaves) {
+        if (leaf && typeof leaf.label === 'string') this._leafLabels.add(leaf.label);
+      }
+    }
     return this.liveSurface.setInput({
       leaves: Array.isArray(next.leaves) ? next.leaves : [],
       revision: Number.isInteger(next.revision) ? next.revision : 0,
@@ -438,6 +510,382 @@ export class IcosaRenderer {
       nextMap.set(f.label, entry);
     }
     return { faces: nextFaces, map: nextMap };
+  }
+
+  /** Attach the lazily loaded RND-05 rig module; builds the shared rigs once. */
+  setHumanoidModule(module) {
+    if (!module || typeof module.buildRig !== 'function' || typeof module.drawRig !== 'function') return false;
+    HUMAN_MODULE = module;
+    this._rigCounts = {
+      l0: module.TRIANGLE_COUNTS.L0,
+      l1: module.TRIANGLE_COUNTS.L1,
+      l2: module.TRIANGLE_COUNTS.L2,
+    };
+    this._avatarRig = module.buildRig(SELF_RIG_SCALE);
+    this._peerRig = module.buildRig(PEER_RIG_SCALE);
+    return true;
+  }
+
+  /**
+   * RND-06 single-scene parity probe. When enabled, `render()` draws only the
+   * live cell material (opaque biome fill, no post-processing) so the same cell
+   * can be sampled in orbit and surface phases under identical conditions.
+   * It is a measurement mode: production rendering is unchanged when off.
+   */
+  setMaterialProbe(enabled) {
+    this.materialProbe = !!enabled;
+    return this.materialProbe;
+  }
+
+  /** Draw the opaque cell material for the parity probe (back → front). */
+  _drawMaterialProbe(ctx, camera, W, H) {
+    const axis = typeof camera.viewAxis === 'function' ? camera.viewAxis() : null;
+    const origin = camera && camera.origin ? camera.origin : axis;
+    const surface = this.surfaceView;
+    const candidates = this._probeList || (this._probeList = []);
+    candidates.length = 0;
+    for (let i = 0; i < this.faces.length; i += 1) {
+      const entry = this.faces[i];
+      if (!entry || !entry.terrainRgb) continue;
+      const c = entry.centroid;
+      if (!axis) {
+        candidates.push(entry);
+        continue;
+      }
+      const facing = c.x * axis.x + c.y * axis.y + c.z * axis.z;
+      if (facing <= 0) continue;
+      if (surface && origin) {
+        const local = c.x * origin.x + c.y * origin.y + c.z * origin.z;
+        if (local < 0.35) continue;
+      }
+      candidates.push(entry);
+    }
+    // Painter order far → near so a sampled centroid shows its own material.
+    if (axis) {
+      candidates.sort((left, right) => {
+        const a = left.centroid;
+        const b = right.centroid;
+        return (a.x * axis.x + a.y * axis.y + a.z * axis.z) - (b.x * axis.x + b.y * axis.y + b.z * axis.z);
+      });
+    }
+    for (let i = 0; i < candidates.length; i += 1) {
+      const entry = candidates[i];
+      if (!this._projectEntry(entry, camera, W, H)) continue;
+      let np;
+      if (entry.allFront) {
+        np = entry.n;
+      } else {
+        np = this._clipEntryPoly(entry, camera, this._polyX, this._polyY);
+      }
+      if (np < 3) continue;
+      ctx.beginPath();
+      if (entry.allFront) {
+        const px = entry.px;
+        const py = entry.py;
+        ctx.moveTo(px[0], py[0]);
+        for (let k = 1; k < np; k += 1) ctx.lineTo(px[k], py[k]);
+      } else {
+        ctx.moveTo(this._polyX[0], this._polyY[0]);
+        for (let k = 1; k < np; k += 1) ctx.lineTo(this._polyX[k], this._polyY[k]);
+      }
+      ctx.closePath();
+      ctx.fillStyle = `rgb(${entry.terrainRgb.r},${entry.terrainRgb.g},${entry.terrainRgb.b})`;
+      ctx.fill();
+    }
+  }
+
+  /* ================================================================ *
+   * Surface visual API (RND-07)
+   * ================================================================ */
+
+  /** Local monotonic clock (RAF time base) for surface visuals. */
+  _localNow() {
+    return nowLocal();
+  }
+
+  /** Renderer-owned server clock estimate from the last `setPeers` sample. */
+  _serverNowAt(localNow) {
+    const clock = this._surfaceClock;
+    if (!(clock.server > 0)) return this.t * 1000;
+    return clock.server + (localNow - clock.local);
+  }
+
+  _serverNow() {
+    const local = this._renderLocalNow > 0 ? this._renderLocalNow : this._localNow();
+    return this._serverNowAt(local);
+  }
+
+  /** First render-tessellation entry for a leaf label (`~<label>.0`). */
+  _leafEntry(label) {
+    if (typeof label !== 'string' || !label) return null;
+    return this.byLabel.get(`~${label}.0`) || this.byLabel.get(label) || null;
+  }
+
+  /** Centroid of a live leaf, or null when the label no longer exists. */
+  _leafCentroid(label) {
+    if (typeof label !== 'string' || !label) return null;
+    if (this._leafLabels.size && !this._leafLabels.has(label)) return null;
+    const entry = this._leafEntry(label);
+    return entry && entry.centroid ? entry.centroid : null;
+  }
+
+  hasLeaf(label) {
+    if (typeof label !== 'string' || !label) return false;
+    if (this._leafLabels.size) return this._leafLabels.has(label);
+    return !!this._leafEntry(label);
+  }
+
+  /**
+   * Authoritative peer poses from `surface` frames (`state.players[].surface`).
+   * Samples are inserted in server-time order, de-duplicated and capped, so a
+   * late/out-of-order frame can never rewind the body.
+   * @param {Array<object>} peers
+   * @param {number} [serverNow] server clock at the call (ms)
+   * @returns {number} number of live peers
+   */
+  setPeers(peers, serverNow) {
+    const list = Array.isArray(peers) ? peers : [];
+    const server = Number.isFinite(serverNow) ? serverNow : Date.now();
+    this._surfaceClock = { server, local: this._localNow() };
+    let live = 0;
+    for (const peer of list) {
+      if (!peer) continue;
+      const playerId = String(peer.playerId || peer.id || '');
+      if (!playerId) continue;
+      const surface = peer.surface && peer.surface.pos ? peer.surface : peer;
+      const pos = surface.pos;
+      if (!pos || !Number.isFinite(pos.x) || !Number.isFinite(pos.y) || !Number.isFinite(pos.z)) continue;
+      const state = typeof surface.state === 'string' ? surface.state : (peer.state || 'idle');
+      const updatedAt = Number.isFinite(surface.updatedAt) ? surface.updatedAt : server;
+      let visual = this.peerVisuals.get(playerId);
+      if (!visual) {
+        visual = {
+          playerId,
+          tag: String(peer.tag || playerId).slice(0, 14),
+          color: typeof peer.color === 'string' ? peer.color : '#a78bfa',
+          samples: [],
+          lastSeenAt: 0,
+          leaving: false,
+          leaveAt: 0,
+          mineAt: null,
+          mineLabel: null,
+        };
+        this.peerVisuals.set(playerId, visual);
+      }
+      if (typeof peer.tag === 'string' && peer.tag) visual.tag = peer.tag.slice(0, 14);
+      if (typeof peer.color === 'string' && peer.color) visual.color = peer.color;
+      visual.leaving = false;
+      visual.leaveAt = 0;
+      visual.lastSeenAt = server;
+      const heading = surface.heading && Number.isFinite(surface.heading.x)
+        ? { x: Number(surface.heading.x), y: Number(surface.heading.y), z: Number(surface.heading.z) }
+        : null;
+      const sample = {
+        pos: { x: Number(pos.x), y: Number(pos.y), z: Number(pos.z) },
+        heading,
+        state,
+        moving: !!surface.moving,
+        updatedAt,
+      };
+      const samples = visual.samples;
+      if (samples.length && samples[samples.length - 1].updatedAt === updatedAt) {
+        samples[samples.length - 1] = sample;
+      } else if (!samples.length || samples[samples.length - 1].updatedAt < updatedAt) {
+        samples.push(sample);
+        if (samples.length > MAX_PEER_SAMPLES) samples.splice(0, samples.length - MAX_PEER_SAMPLES);
+      } else {
+        // Out-of-order frame: insert at the right index, ignore exact dupes.
+        let index = samples.length - 1;
+        while (index > 0 && samples[index].updatedAt > updatedAt) index -= 1;
+        if (samples[index].updatedAt !== updatedAt) samples.splice(index + 1, 0, sample);
+        if (samples.length > MAX_PEER_SAMPLES) samples.splice(0, samples.length - MAX_PEER_SAMPLES);
+      }
+      live += 1;
+    }
+    this._surfaceVisual.peers = live;
+    return live;
+  }
+
+  /** Fade a peer out on `surface_leave`; the visual is removed after 300 ms. */
+  removePeer(playerId, serverNow) {
+    const visual = this.peerVisuals.get(String(playerId || ''));
+    if (!visual) return false;
+    visual.leaving = true;
+    visual.leaveAt = Number.isFinite(serverNow) ? serverNow : Date.now();
+    return true;
+  }
+
+  /**
+   * Authoritative mining beam from `surface_mine`. Returns false (and counts a
+   * dropped beam) when the target leaf is absent from the live world, so no
+   * line is ever drawn to a cell the server never changed.
+   * @param {{playerId?:string,tag?:string,color?:string,toLeaf?:string,label?:string,
+   *          pos?:object,kind?:'mine'|'break',startAt?:number,ttlMs?:number}} beam
+   * @returns {boolean}
+   */
+  mineBeam(beam) {
+    if (!beam || typeof beam !== 'object') return false;
+    const toLeaf = typeof beam.toLeaf === 'string' ? beam.toLeaf : beam.label;
+    if (!this.hasLeaf(toLeaf)) {
+      this._surfaceVisual.droppedBeams += 1;
+      return false;
+    }
+    const server = this._serverNow();
+    const startAt = Number.isFinite(beam.startAt) ? beam.startAt : server;
+    const kind = beam.kind === 'break' ? 'break' : 'mine';
+    const ttlMs = Number.isFinite(beam.ttlMs) && beam.ttlMs > 0
+      ? beam.ttlMs
+      : (kind === 'break' ? BEAM_TTL_MS.break : BEAM_TTL_MS.mine);
+    const playerId = beam.playerId ? String(beam.playerId) : null;
+    const visual = playerId ? this.peerVisuals.get(playerId) : null;
+    let from = null;
+    if (visual) {
+      const sample = this.samplePeer(visual, startAt);
+      from = sample ? sample.pos : null;
+    }
+    if (!from && beam.pos && Number.isFinite(beam.pos.x)) {
+      from = { x: Number(beam.pos.x), y: Number(beam.pos.y), z: Number(beam.pos.z) };
+    }
+    if (!from) {
+      this._surfaceVisual.droppedBeams += 1;
+      return false;
+    }
+    this.beams.push({
+      playerId,
+      tag: String(beam.tag || (visual && visual.tag) || 'ROBOT').slice(0, 14),
+      color: typeof beam.color === 'string' ? beam.color : (visual ? visual.color : '#8afcff'),
+      from: { x: from.x, y: from.y, z: from.z },
+      toLeaf,
+      kind,
+      startAt,
+      ttlMs,
+    });
+    if (this.beams.length > MAX_BEAMS) this.beams.splice(0, this.beams.length - MAX_BEAMS);
+    if (visual) {
+      visual.mineAt = startAt;
+      visual.mineLabel = toLeaf;
+    }
+    return true;
+  }
+
+  /**
+   * Discovered resource pins: only entries carrying a non-null `resourceId` from
+   * the wire are accepted, so a hidden deposit can never become a client pin.
+   */
+  setResourcePins(pins) {
+    const list = Array.isArray(pins) ? pins : [];
+    const next = [];
+    for (const pin of list) {
+      if (!pin || typeof pin.resourceId !== 'string' || !pin.resourceId) continue;
+      const label = typeof pin.label === 'string' ? pin.label : null;
+      if (!label || !this.hasLeaf(label)) continue;
+      next.push({ label, resourceId: pin.resourceId });
+      if (next.length >= MAX_RESOURCE_PINS) break;
+    }
+    this.resourcePins = next;
+    this._surfaceVisual.pins = next.length;
+    return next.length;
+  }
+
+  /** Forget every surface visual (planet change / surface exit). */
+  clearSurfaceVisuals() {
+    this.peerVisuals.clear();
+    this.beams = [];
+    this.resourcePins = [];
+    this._selfMineAt = null;
+    this._surfaceVisual.peers = 0;
+    this._surfaceVisual.beams = 0;
+    this._surfaceVisual.pins = 0;
+    this._surfaceVisual.avatars = 0;
+    this._surfaceVisual.triangles = 0;
+    return true;
+  }
+
+  /** QA: authoritative surface visual counters (never gameplay state). */
+  surfaceVisualStats() {
+    return { ...this._surfaceVisual, samples: [...this.peerVisuals.values()].reduce((sum, peer) => sum + peer.samples.length, 0) };
+  }
+
+  /** QA: tri-count and source report for `window.__ICOSA__.avatarStats()`. */
+  avatarStats() {
+    return {
+      l0: this._rigCounts.l0,
+      l1: this._rigCounts.l1,
+      l2: this._rigCounts.l2,
+      tris: this._surfaceVisual.triangles,
+      avatars: this._surfaceVisual.avatars,
+      sources: {
+        rig: 'shared/humanoid-3d.js',
+        self: 'surface-controller pose',
+        peers: 'surface frames',
+        mining: 'surface_mine frames',
+      },
+    };
+  }
+
+  /** QA-only figure scale multiplier (evidence close-ups; default 1). */
+  setAvatarScale(multiplier) {
+    const value = Number(multiplier);
+    this.avatarScale = Number.isFinite(value) && value > 0 ? Math.min(4, Math.max(0.25, value)) : 1;
+    return this.avatarScale;
+  }
+
+  /** Local tool swing on a successful authoritative click. */
+  setSelfMine(serverNow) {
+    this._selfMineAt = Number.isFinite(serverNow) ? serverNow : Date.now();
+    return this._selfMineAt;
+  }
+
+  /**
+   * Interpolated authoritative pose at `renderServerNow`. Holds the newest
+   * sample (never extrapolates past it) and returns `interpolated: false` for a
+   * single-sample peer.
+   * @param {object} peer a `peerVisuals` entry
+   * @param {number} renderServerNow
+   */
+  samplePeer(peer, renderServerNow) {
+    if (!peer || !Array.isArray(peer.samples) || !peer.samples.length) return null;
+    const samples = peer.samples;
+    const t = (Number.isFinite(renderServerNow) ? renderServerNow : this._serverNow()) - INTERP_DELAY_MS;
+    if (samples.length === 1 || t <= samples[0].updatedAt) {
+      return { pos: samples[0].pos, heading: samples[0].heading, state: samples[0].state, moving: samples[0].moving, interpolated: false };
+    }
+    let index = -1;
+    for (let i = samples.length - 1; i >= 0; i -= 1) {
+      if (samples[i].updatedAt <= t) { index = i; break; }
+    }
+    if (index < 0) return { pos: samples[0].pos, heading: samples[0].heading, state: samples[0].state, moving: samples[0].moving, interpolated: false };
+    if (index >= samples.length - 1) {
+      // Hold the newest sample; never extrapolate past it.
+      const last = samples[samples.length - 1];
+      return { pos: last.pos, heading: last.heading, state: last.state, moving: last.moving, interpolated: false };
+    }
+    const a = samples[index];
+    const b = samples[index + 1];
+    const span = Math.max(1, b.updatedAt - a.updatedAt);
+    const k = clamp((t - a.updatedAt) / span, 0, 1);
+    const pos = slerpPos(a.pos, b.pos, k);
+    let heading = a.heading || b.heading;
+    if (a.heading && b.heading) {
+      heading = slerpPos(a.heading, b.heading, k);
+    }
+    return {
+      pos,
+      heading,
+      state: b.moving ? 'walk' : b.state,
+      moving: !!b.moving,
+      interpolated: true,
+    };
+  }
+
+  /** Mining lift phase in [0,1] for a peer, driven by its `surface_mine` event. */
+  peerMinePhase(playerId, serverNow) {
+    const visual = this.peerVisuals.get(String(playerId || ''));
+    if (!visual || !Number.isFinite(visual.mineAt)) return 0;
+    const server = Number.isFinite(serverNow) ? serverNow : this._serverNow();
+    const elapsed = Math.max(0, server - visual.mineAt);
+    if (elapsed <= MINE_LIFT_MS) return clamp(elapsed / MINE_LIFT_MS, 0, 1);
+    return clamp(1 - (elapsed - MINE_LIFT_MS) / MINE_HOLD_MS, 0, 1);
   }
 
   /** The tessellation the quality ladder currently draws. */
@@ -649,7 +1097,7 @@ export class IcosaRenderer {
     }
     const pulse = 0.5 + 0.5 * Math.sin(this.t * 4.2);
     for (const [label, info] of this.supplyMarkers) {
-      const entry = this.byLabel.get(label);
+      const entry = this._leafEntry(label);
       if (!entry) continue;
       const p = camera.project(entry.centroid);
       if (!p || p.z <= 0.01) continue;
@@ -780,6 +1228,7 @@ export class IcosaRenderer {
     this._workStars = 0;
     this._workMotes = 0;
     this._workDust = 0;
+    this._renderLocalNow = raw;
     if (!this.lastRaw) this.lastRaw = raw;
     let dt = (raw - this.lastRaw) / 1000;
     this.lastRaw = raw;
@@ -814,6 +1263,16 @@ export class IcosaRenderer {
     // One rebuild per frame maximum, only when the world revision changed.
     const rebuilt = this.liveSurface.prepare(this.t);
     if (rebuilt) this.perf.recordRebuild(1);
+
+    // RND-06 material probe: draw the cell material only, opaque and without
+    // screen-space post-processing, so the acceptance suite can compare the
+    // same cell's colour across camera modes. Off in production.
+    if (this.materialProbe) {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, W, H);
+      if (hasCamera && this.faces.length) this._drawMaterialProbe(ctx, camera, W, H);
+      return;
+    }
 
     // Backdrop layers.
     this._drawBackdrop(ctx, W, H);
@@ -1453,69 +1912,142 @@ export class IcosaRenderer {
    * ================================================================ */
 
   /**
-   * Draw the surface entities inside the single renderer: avatars, target and
-   * supply pins, mining beams, harvest effects, and the landing/leaving ship.
-   * Entities reference cells by label, never by copied geometry.
+   * Draw the surface entity pass inside the single renderer: the local pilot,
+   * authoritative peers/robots (interpolated), beams, resource pins, supply
+   * markers, harvest effects and the landing/leaving ship. Entities reference
+   * cells by label, never by copied geometry.
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {object} camera
+   * @param {boolean} rm reduced motion
    */
   _drawSurfaceEntities(ctx, camera, rm) {
     const W = this.width;
     const H = this.height;
     if (W < 2 || H < 2) return;
+    const serverNow = this._serverNow();
+    if (!(this._surfaceClock.server > 0)) {
+      // No peer frame yet: keep the local clock as the server estimate.
+      this._surfaceClock = { server: Date.now(), local: this._localNow() };
+    }
+    this._surfaceVisual.avatars = 0;
+    this._surfaceVisual.triangles = 0;
+    this._surfaceVisual.beams = 0;
+    this._surfaceVisual.markers = this.supplyMarkers.size;
+    this._pruneSurfaceBeams(serverNow);
+    const avatars = [];
     const list = this.surfaceEntities || [];
     for (let i = 0; i < list.length; i += 1) {
       const entity = list[i];
       if (!entity || !entity.pos) continue;
-      if (entity.kind === 'self' || entity.kind === 'peer') {
-        this._drawSurfaceAvatar(ctx, camera, entity);
-      } else if (entity.kind === 'pin') {
-        this._drawSurfacePin(ctx, camera, entity);
-      } else if (entity.kind === 'beam') {
-        this._drawSurfaceBeam(ctx, camera, entity);
-      }
+      if (entity.kind === 'pin') this._drawSurfacePin(ctx, camera, entity);
+      else if (entity.kind === 'self') avatars.push({ kind: 'self', entity, depth: 1e9 });
     }
+    for (const visual of this.peerVisuals.values()) {
+      if (!visual || !visual.samples.length) continue;
+      let alpha = 1;
+      if (visual.leaving) {
+        const age = serverNow - visual.leaveAt;
+        if (age >= PEER_FADE_MS) continue;
+        alpha = clamp(1 - age / PEER_FADE_MS, 0, 1);
+      }
+      const stale = serverNow - visual.lastSeenAt > PEER_STALE_MS;
+      const sample = this.samplePeer(visual, serverNow);
+      if (!sample || !sample.pos) continue;
+      const projected = camera.project(sample.pos);
+      // Far bodies are drawn first so near bodies occlude them.
+      const depth = projected && Number.isFinite(projected.depth) ? projected.depth : 0;
+      avatars.push({ kind: 'peer', visual, sample, alpha, stale, depth });
+    }
+    // Painter order for figures: far → near (deterministic for equal depths).
+    avatars.sort((left, right) => right.depth - left.depth);
+    // Local harvest FX and the landing ship sit under the shared world visuals,
+    // so an authoritative beam is never hidden by the pilot's own mining cone.
     this._drawSurfaceHarvest(ctx, W, H);
     this._drawSurfaceShip(ctx, W, H, rm);
+    this._drawSurfaceBeams(ctx, camera, rm, serverNow);
+    this._drawResourcePins(ctx, camera);
+    for (let i = 0; i < avatars.length; i += 1) {
+      const avatar = avatars[i];
+      if (avatar.kind === 'self') this._drawSurfaceSelf(ctx, camera, avatar.entity, rm);
+      else this._drawSurfacePeer(ctx, camera, avatar, rm, serverNow);
+    }
   }
 
-  _drawSurfaceAvatar(ctx, camera, entity) {
-    const isSelf = entity.kind === 'self';
-    const forward = entity.forward && Number.isFinite(entity.forward.x)
-      ? entity.forward
-      : { x: 1, y: 0, z: 0 };
-    drawHumanoid3D(ctx, camera, entity.pos, forward, {
-      scale: isSelf ? 0.013 : 0.012,
-      walkPhase: Number.isFinite(entity.walk) ? entity.walk : 0,
-      tint: entity.tint || (isSelf ? '#67ddff' : '#a78bfa'),
-      skin: isSelf ? '#f2ffff' : '#dffcff',
+  /** Local pilot: a full L0 rig driven by the controller pose and local clicks. */
+  _drawSurfaceSelf(ctx, camera, entity, rm) {
+    const selfRig = this._avatarRig;
+    if (!selfRig || !HUMAN_MODULE) return;
+    const walkPhase = Number.isFinite(entity.walk) ? entity.walk : 0;
+    const serverNow = this._serverNow();
+    let minePhase = 0;
+    if (Number.isFinite(this._selfMineAt)) {
+      const elapsed = Math.max(0, serverNow - this._selfMineAt);
+      minePhase = elapsed <= MINE_LIFT_MS
+        ? clamp(elapsed / MINE_LIFT_MS, 0, 1)
+        : clamp(1 - (elapsed - MINE_LIFT_MS) / MINE_HOLD_MS, 0, 1);
+    }
+    const stats = HUMAN_MODULE.drawRig(ctx, camera, selfRig, {
+      walkPhase,
+      minePhase,
+      moving: minePhase <= 0,
+      lean: 0.06,
+    }, {
+      anchor: entity.pos,
+      forward: entity.forward,
+      level: 'L0',
+      tint: entity.tint || '#67ddff',
+      skin: '#f2ffff',
+      scale: this.avatarScale,
+      reducedMotion: rm,
     });
-    const head = camera.project(mul(entity.pos, 1.016));
-    if (head && head.visible && entity.label) {
-      ctx.fillStyle = 'rgba(225,250,255,0.82)';
-      ctx.font = `8px ${FONT_STACK}`;
-      ctx.textAlign = 'center';
-      ctx.fillText(String(entity.label).toUpperCase().slice(0, 14), head.x, head.y - 10);
-    }
-    if (entity.mine) {
-      const foot = camera.project(entity.pos);
-      if (!foot || !foot.visible) return;
-      ctx.save();
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.globalAlpha = 0.5;
-      ctx.fillStyle = entity.tint || '#8afcff';
-      ctx.beginPath();
-      ctx.moveTo(foot.x - 2, foot.y - 190);
-      ctx.lineTo(foot.x + 2, foot.y - 190);
-      ctx.lineTo(foot.x + 32, foot.y);
-      ctx.lineTo(foot.x - 32, foot.y);
-      ctx.closePath();
-      ctx.fill();
-      for (let i = 0; i < 5; i += 1) {
-        const a = (i / 5) * Math.PI * 2 + this.t * 2;
-        ctx.fillRect(foot.x + Math.cos(a) * 20, foot.y + Math.sin(a) * 8, 2, 2);
-      }
-      ctx.restore();
-      ctx.globalAlpha = 1;
-    }
+    this._surfaceVisual.avatars += 1;
+    this._surfaceVisual.triangles += stats.drawn;
+    this._drawAvatarLabel(ctx, camera, entity.pos, entity.label, 0.024);
+  }
+
+  /** Peer/robot: interpolated authoritative pose + walk + mining lift. */
+  _drawSurfacePeer(ctx, camera, avatar, rm, serverNow) {
+    if (!this._peerRig || !HUMAN_MODULE) return;
+    const visual = avatar.visual;
+    const sample = avatar.sample;
+    const angle = HUMAN_MODULE.angleFromAxis(sample.pos, camera);
+    const level = HUMAN_MODULE.lodForDistance(angle, visual.lod || null);
+    visual.lod = level;
+    const moving = !!sample.moving && !avatar.stale;
+    const walkPhase = moving ? serverNow * 0.006 + (visual.playerId.length % 7) : 0;
+    const minePhase = this.peerMinePhase(visual.playerId, serverNow);
+    const stats = HUMAN_MODULE.drawRig(ctx, camera, this._peerRig, {
+      walkPhase,
+      minePhase,
+      moving,
+      lean: moving ? 0.05 : 0,
+    }, {
+      anchor: sample.pos,
+      forward: sample.heading,
+      level,
+      angle,
+      currentLod: level,
+      tint: avatar.stale ? '#7f8c99' : visual.color,
+      skin: '#dffcff',
+      alpha: avatar.alpha * (avatar.stale ? 0.62 : 1),
+      scale: this.avatarScale,
+      reducedMotion: rm,
+    });
+    this._surfaceVisual.avatars += 1;
+    this._surfaceVisual.triangles += stats.drawn;
+    if (!visual.leaving) this._drawAvatarLabel(ctx, camera, sample.pos, visual.tag, 0.026);
+  }
+
+  /** Tag above a figure, clamped to the viewport. */
+  _drawAvatarLabel(ctx, camera, anchor, label, lift) {
+    if (!label) return;
+    const head = camera.project(mul(anchor, 1 + lift));
+    if (!head || !head.visible) return;
+    if (head.x < 10 || head.x > this.width - 10 || head.y < 10 || head.y > this.height - 10) return;
+    ctx.fillStyle = 'rgba(225,250,255,0.82)';
+    ctx.font = `8px ${FONT_STACK}`;
+    ctx.textAlign = 'center';
+    ctx.fillText(String(label).toUpperCase().slice(0, 14), head.x, head.y - 10);
   }
 
   _drawSurfacePin(ctx, camera, entity) {
@@ -1549,34 +2081,163 @@ export class IcosaRenderer {
     ctx.restore();
   }
 
-  _drawSurfaceBeam(ctx, camera, entity) {
-    const anchor = camera.project(mul(entity.pos, 1.003));
-    if (!anchor || !anchor.visible) return;
-    const k = clamp(Number.isFinite(entity.progress) ? entity.progress : 0, 0, 1);
+  /** Expire beams past their TTL and drop beams whose cell disappeared. */
+  _pruneSurfaceBeams(serverNow) {
+    if (!this.beams.length) return;
+    const kept = [];
+    for (const beam of this.beams) {
+      // A beam created between two frames can look slightly "younger" than the
+      // frame clock; clamp to zero instead of dropping it as out of range.
+      const age = Math.max(0, serverNow - beam.startAt);
+      if (age > beam.ttlMs) continue;
+      if (!this._leafCentroid(beam.toLeaf)) {
+        this._surfaceVisual.droppedBeams += 1;
+        continue;
+      }
+      kept.push(beam);
+    }
+    this.beams = kept;
+  }
+
+  /**
+   * Beams are rendered strictly from `surface_mine` frames: an arc from the
+   * peer's authoritative pose to the exact leaf the server changed, with an
+   * impact ring and an off-screen chevron when the cell is not in view.
+   */
+  _drawSurfaceBeams(ctx, camera, rm, serverNow) {
+    if (!this.beams.length) return;
+    const W = this.width;
+    const H = this.height;
+    for (const beam of this.beams) {
+      const target = this._leafCentroid(beam.toLeaf);
+      if (!target) {
+        this._surfaceVisual.droppedBeams += 1;
+        continue;
+      }
+      const age = Math.max(0, serverNow - beam.startAt);
+      const life = clamp(1 - age / beam.ttlMs, 0, 1);
+      if (life <= 0) continue;
+      const from = add(beam.from, mul(norm(beam.from), 0.0105));
+      const arc = [];
+      const steps = rm ? 3 : 8;
+      let offscreen = false;
+      for (let i = 0; i <= steps; i += 1) {
+        const k = i / steps;
+        const point = slerpPos(from, target, k);
+        // Gentle arc above the crust.
+        const lifted = add(point, mul(norm(point), Math.sin(k * Math.PI) * 0.012));
+        const projected = camera.project(lifted);
+        if (!projected || !projected.visible) {
+          offscreen = true;
+          break;
+        }
+        arc.push(projected);
+        if (projected.x < 8 || projected.y < 8 || projected.x > W - 8 || projected.y > H - 8) offscreen = true;
+      }
+      const color = parseColor(beam.color);
+      const impact = camera.project(mul(target, 1.002));
+      ctx.save();
+      if (life > 0 && arc.length > 2) {
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = rm ? 0.5 : 0.28 + 0.55 * life;
+        ctx.strokeStyle = rgba(color, 0.9);
+        ctx.lineWidth = rm ? 1.4 : 2.2;
+        ctx.beginPath();
+        ctx.moveTo(arc[0].x, arc[0].y);
+        for (let i = 1; i < arc.length; i += 1) ctx.lineTo(arc[i].x, arc[i].y);
+        ctx.stroke();
+        // Second faint pass gives the beam a soft edge without shadowBlur.
+        ctx.globalAlpha = (rm ? 0.22 : 0.18) * life;
+        ctx.lineWidth = rm ? 3 : 6;
+        ctx.stroke();
+      }
+      if (impact && impact.visible) {
+        const pulse = rm ? 0.5 : 0.5 + 0.5 * Math.sin(this.t * 6 + beam.startAt * 0.001);
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = clamp(life, 0, 1) * 0.85;
+        ctx.strokeStyle = rgba(color, 0.95);
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.arc(impact.x, impact.y, 4 + pulse * 9, 0, TAU);
+        ctx.stroke();
+        ctx.fillStyle = rgba(color, 0.9);
+        ctx.beginPath();
+        ctx.arc(impact.x, impact.y, 2.2, 0, TAU);
+        ctx.fill();
+      }
+      if (offscreen && !rm) this._drawOffscreenBeamIndicator(ctx, camera, beam, color, life);
+      ctx.restore();
+      this._surfaceVisual.beams += 1;
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /** Canvas edge chevron for a beam whose authoritative cell is out of view. */
+  _drawOffscreenBeamIndicator(ctx, camera, beam, color, life) {
+    const target = this._leafCentroid(beam.toLeaf);
+    if (!target) return;
+    const axis = typeof camera.viewAxis === 'function' ? camera.viewAxis() : null;
+    let dx = target.x - (axis ? axis.x : 0);
+    let dy = target.y - (axis ? axis.y : 0);
+    let dz = target.z - (axis ? axis.z : 0);
+    const right = typeof camera.unprojectView === 'function' ? camera.unprojectView({ x: 1, y: 0, z: 0 }) : { x: 1, y: 0, z: 0 };
+    const upv = typeof camera.unprojectView === 'function' ? camera.unprojectView({ x: 0, y: 1, z: 0 }) : { x: 0, y: 1, z: 0 };
+    const sx = dx * right.x + dy * right.y + dz * right.z;
+    const sy = -(dx * upv.x + dy * upv.y + dz * upv.z);
+    const len = Math.hypot(sx, sy) || 1;
+    const W = this.width;
+    const H = this.height;
+    const cx = W / 2;
+    const cy = H / 2;
+    const radius = Math.min(W, H) * 0.44;
+    const ex = clamp(cx + (sx / len) * radius, 18, W - 18);
+    const ey = clamp(cy + (sy / len) * radius, 18, H - 18);
+    const angle = Math.atan2(sy / len, sx / len);
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
-    ctx.globalAlpha = 0.5 * (1 - k);
-    ctx.fillStyle = entity.tint || '#8afcff';
+    ctx.globalAlpha = 0.35 + 0.5 * life;
+    ctx.translate(ex, ey);
+    ctx.rotate(angle);
+    ctx.fillStyle = rgba(color, 0.95);
     ctx.beginPath();
-    ctx.moveTo(anchor.x - 2, anchor.y - 180);
-    ctx.lineTo(anchor.x + 2, anchor.y - 180);
-    ctx.lineTo(anchor.x + 34, anchor.y);
-    ctx.lineTo(anchor.x - 34, anchor.y);
+    ctx.moveTo(9, 0);
+    ctx.lineTo(-5, 5);
+    ctx.lineTo(-5, -5);
     ctx.closePath();
     ctx.fill();
-    for (let i = 0; i < 6; i += 1) {
-      const a = (i / 6) * Math.PI * 2 + this.t * 3;
-      ctx.fillRect(anchor.x + Math.cos(a) * (10 + k * 30), anchor.y + Math.sin(a) * 7, 2, 2);
-    }
     ctx.restore();
-    if (entity.label) {
-      ctx.globalAlpha = 0.8 * (1 - k);
-      ctx.fillStyle = '#f3ffff';
-      ctx.font = `8px ${FONT_STACK}`;
-      ctx.textAlign = 'center';
-      ctx.fillText(String(entity.label), anchor.x, anchor.y - 30);
-      ctx.globalAlpha = 1;
+    ctx.globalAlpha = 1;
+  }
+
+  /** Discovered resource pins: a small diamond per authoritative resourceId. */
+  _drawResourcePins(ctx, camera) {
+    if (!this.resourcePins.length) return;
+    for (const pin of this.resourcePins) {
+      const centroid = this._leafCentroid(pin.label);
+      if (!centroid) continue;
+      const p = camera.project(mul(centroid, 1.002));
+      if (!p || !p.visible) continue;
+      const resource = resourceById(pin.resourceId);
+      const color = parseColor(resource ? resource.color : '#ffd166');
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = rgba(color, 0.95);
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y - 5);
+      ctx.lineTo(p.x + 4, p.y);
+      ctx.lineTo(p.x, p.y + 5);
+      ctx.lineTo(p.x - 4, p.y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = rgba(color, 0.5);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 8, 0, TAU);
+      ctx.stroke();
+      ctx.restore();
     }
+    ctx.globalAlpha = 1;
   }
 
   /** Tractor cone + ore sparks for an authoritative harvest success. */

@@ -4,7 +4,7 @@
 > **Delivery SSOT:** [NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80) · [Definition of Done](docs/DEFINITION_OF_DONE.md) · [Issue index](docs/ISSUE_MAP.md).
 > This document owns durable knowledge; it does not track delivery status.
 >
-> **Related delivery issues:** [SSOT-01](https://github.com/moldovancsaba/narimato/issues/1) · [SSOT-03](https://github.com/moldovancsaba/narimato/issues/3) · [QA-01](https://github.com/moldovancsaba/narimato/issues/5) · [DOC-01](https://github.com/moldovancsaba/narimato/issues/6) · [UI-01](https://github.com/moldovancsaba/narimato/issues/7) · [RND-01](https://github.com/moldovancsaba/narimato/issues/14) · [RND-02](https://github.com/moldovancsaba/narimato/issues/15) · [RND-03](https://github.com/moldovancsaba/narimato/issues/16) · [RND-04](https://github.com/moldovancsaba/narimato/issues/17) · [RND-06](https://github.com/moldovancsaba/narimato/issues/19) · [SRV-01](https://github.com/moldovancsaba/narimato/issues/20) · [TST-01](https://github.com/moldovancsaba/narimato/issues/25) · [EVT-01](https://github.com/moldovancsaba/narimato/issues/32) · [STR-01](https://github.com/moldovancsaba/narimato/issues/35) · [STR-02](https://github.com/moldovancsaba/narimato/issues/36) · [OPS-03](https://github.com/moldovancsaba/narimato/issues/40) · [OPS-05](https://github.com/moldovancsaba/narimato/issues/42) · [SEC-01](https://github.com/moldovancsaba/narimato/issues/43) · [PERF-01](https://github.com/moldovancsaba/narimato/issues/44)
+> **Related delivery issues:** [SSOT-01](https://github.com/moldovancsaba/narimato/issues/1) · [SSOT-03](https://github.com/moldovancsaba/narimato/issues/3) · [QA-01](https://github.com/moldovancsaba/narimato/issues/5) · [DOC-01](https://github.com/moldovancsaba/narimato/issues/6) · [UI-01](https://github.com/moldovancsaba/narimato/issues/7) · [RND-01](https://github.com/moldovancsaba/narimato/issues/14) · [RND-02](https://github.com/moldovancsaba/narimato/issues/15) · [RND-03](https://github.com/moldovancsaba/narimato/issues/16) · [RND-04](https://github.com/moldovancsaba/narimato/issues/17) · [RND-05](https://github.com/moldovancsaba/narimato/issues/18) · [RND-06](https://github.com/moldovancsaba/narimato/issues/19) · [RND-07](https://github.com/moldovancsaba/narimato/issues/24) · [TST-01](https://github.com/moldovancsaba/narimato/issues/25) · [SRV-01](https://github.com/moldovancsaba/narimato/issues/20) · [TST-01](https://github.com/moldovancsaba/narimato/issues/25) · [EVT-01](https://github.com/moldovancsaba/narimato/issues/32) · [STR-01](https://github.com/moldovancsaba/narimato/issues/35) · [STR-02](https://github.com/moldovancsaba/narimato/issues/36) · [OPS-03](https://github.com/moldovancsaba/narimato/issues/40) · [OPS-05](https://github.com/moldovancsaba/narimato/issues/42) · [SEC-01](https://github.com/moldovancsaba/narimato/issues/43) · [PERF-01](https://github.com/moldovancsaba/narimato/issues/44)
 <!-- delivery-ssot:end -->
 
 Architecture decisions are recorded as ADRs: [docs/adr/README.md](docs/adr/README.md).
@@ -17,7 +17,7 @@ Architecture decisions are recorded as ADRs: [docs/adr/README.md](docs/adr/READM
 | Rendering | Canvas 2D + WebGL | game planet: Canvas 2D; spherical-icosahedron reference viewer: WebGL ray–sphere shader |
 | Simulation | Node.js ≥20 | authoritative game server, HTTP + Server-Sent Events |
 | Persistence | JSON files + atomic rename | one file per planet, one registry file |
-| Tests | `node:test` | <!-- test-count:400 -->400<!-- /test-count --> tests, no test dependencies; ownership map in [docs/TEST_MAP.md](docs/TEST_MAP.md) |
+| Tests | `node:test` | <!-- test-count:431 -->431<!-- /test-count --> tests, no test dependencies; ownership map in [docs/TEST_MAP.md](docs/TEST_MAP.md) |
 | CI | GitHub Actions | Node 20 and 22, `npm test`; Node 22 GDS island build/contract/determinism; scheduled OPS-02 load/soak/chaos gate |
 | Deploy | `node server.js` behind any static/reverse proxy | Cloudflare tunnel used for the live build |
 
@@ -151,6 +151,11 @@ Observability: `public/js/telemetry.js` posts a tiny privacy-safe numeric beacon
     framing (dolly 1.08…1.72, bounded tilt, screen inverse) selected by `?surface-camera`.
   - `live-surface-mesh.js` — `LiveSurfaceMesh` / `LiveSurfaceStore`: the surface triangle buffer
     derived from the live leaf list, revision-gated, budget-clamped and hash-deterministic.
+  - `humanoid-3d.js` — the single closed-triangle humanoid rig (RND-05): `buildRig()`,
+    `poseRig()`, `poseJoints()`, `projectRig()` and `drawRig()`. Eleven L0 volumes (132
+    triangles) with nine named joints, six merged L1 volumes (72) and a two-triangle L2
+    silhouette, deterministic walk/mining poses, hysteretic distance LOD, painter sorting
+    and back-face culling. Pure ESM, no DOM and no allocation after warm-up.
   - `sphere-interaction.js` — pure carrier frame/projection/unprojection/movement math.
   - `orbit-controls.js` — shared game drag/trackball/cursor-key primitives.
   - `planet.js` — seed-driven 3D noise terrain, biomes, geological deposit weights.
@@ -262,6 +267,33 @@ exitSurfaceMode():
 - `#arena-canvas` is the only planet canvas; `#surface-canvas` and the overlay RAF loop were deleted.
 - Entities reference cells by label (`cellLabel`), never by copied `a`/`b`/`c` geometry.
 - Surface entities: `kind` is `self`, `peer`, `pin` or `beam`; one `byLabel` map serves both views.
+- **Figures are bodies, not sprites (RND-05).** The local pilot, peers and robots all draw through
+  `shared/humanoid-3d.js` in the renderer's entity pass: head + visor face group, torso, pelvis,
+  upper/lower arms and thighs/shins connected at the neck, shoulders, elbows, hips and knees. Pose
+  is deterministic from `(walkPhase, minePhase, moving, lean)`; LOD is hysteretic (132/72/2
+  triangles at ≤0.35/≤0.80/above radians from the camera axis). There is no `drawAvatar` sprite
+  path left in `public/`, and the single-scene guard fails if it returns.
+- **Surface visuals are renderer-owned (RND-07).** `app.js` forwards events only:
+  `renderer.setPeers(peers, serverNow)` from `surface` frames and `state.players[].surface`,
+  `renderer.mineBeam({ playerId, toLeaf, ... })` from `surface_mine`,
+  `renderer.removePeer(playerId)` from `surface_leave`, and
+  `renderer.setSupplyMarkers(cells)` / `renderer.setResourcePins(pins)` from `supply_focus` and
+  discovered `resourceId` values. The renderer interpolates peer poses on a fixed
+  `INTERP_DELAY_MS = 120` (holds the newest sample, never extrapolates), draws a peer's mining lift
+  from its `surface_mine` frame, drops a beam whose `toLeaf` is not a live leaf (and counts it),
+  strokes beams from the interpolated pose to the exact authoritative cell, and shows a canvas edge
+  chevron for a beam whose cell is off screen. `surface-controller.js` keeps no effect list and no
+  mine counter. `window.__ICOSA__.surfaceVisualStats()` and `avatarStats()` expose the counters and
+  the 132/72/2 budget; `window.__ICOSA__.eventLog()` is a bounded 200-frame SSE ring used by
+  acceptance to prove beam ordering.
+- **Single-scene acceptance (RND-06).** `scripts/verify-single-scene.mjs` is the executable M2 gate:
+  one renderer instance, one planet canvas, a camera-only transition, same-cell material/pixel
+  parity (renderer material probe, Δ ≤ 6 per channel), HUD node identity and a 600-frame budget
+  (`p95 ≤ 16.7 ms`, dropped < 5%), with axe serious/critical = 0 on both views and focus entry /
+  restore. It writes `media/single-scene/report.json` plus orbit/surface/mobile screenshots and
+  exits `0` pass, `1` assertion, `2` harness. `--self-test` proves the checks fail under a local
+  second-canvas / duplicate-HUD / divergent-cell mutation. `test/single-scene-guard.test.js` fails
+  the static repository scan if `surface-canvas`, `drawAvatar` or `setPlanetSurface` reappear.
 - `window.__ICOSA__.surfaceMode()` returns `{ active, phase, entities, canvasCount }`.
 - Surface geometry is live: `renderer.setLiveSurface({ leaves, revision, seed })` rebuilds at most
   once per frame when `World.revision` (or the planet seed/theme) changes. No seed-keyed globe and
@@ -617,6 +649,7 @@ debounce 0.5 min + 5 min backup interval), RTO ≤ 15 min; retention is 7 daily 
 | `MAX_DEPTH` | 24 | safety cap (planet manager sets per-planet depth) |
 | `BOTS` | 1 | robots per loaded planet |
 | `BOT_*_MS` | see defaults | robot lifetime/gap/click timings |
+| `SUPPLY_MIN_AGE_MS` | 120000 | minimum age before another emergency supply drop; the acceptance harness shortens it |
 | `DEPOSIT_CHANCE` | unset | optional override of biome deposit chance (mineable only) |
 | `ALLOW_EMPTY_WORLD` | `0` | boot a fresh world after a corrupt world file was quarantined (OPS-03) |
 | `SECURITY_MODE` | `compat` (`enforce` when `NODE_ENV=production`) | `compat`/`enforce` browser policy (SEC-01) |
@@ -630,10 +663,10 @@ debounce 0.5 min + 5 min backup interval), RTO ≤ 15 min; retention is 7 daily 
 
 ## Testing
 
-The suite currently runs <!-- test-count:400 -->400<!-- /test-count --> tests. Behaviour ownership: [docs/TEST_MAP.md](docs/TEST_MAP.md).
+The suite currently runs <!-- test-count:431 -->431<!-- /test-count --> tests. Behaviour ownership: [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 ```bash
-npm test                 # node:test suite (400 tests)
+npm test                 # node:test suite (431 tests)
 npm run check:slo        # evaluate observability/slo.json against /api/metrics (0/1/2/3)
 npm run gate:load        # OPS-02 load/soak/chaos gate (ephemeral server, artifacts)
 npm run gate:perf        # PERF-01 client probe + 15% desktop baseline gate
@@ -645,6 +678,17 @@ node scripts/test-count.mjs  # documented count == executed count
 
 - `test/geometry.test.js` — regular icosahedron, spherical coverage, labels, camera/picking.
 - `test/sphere-interaction.test.js` — carrier projection/unprojection, point-follow, infinite local direction.
+- Browser acceptance (real Chromium through `PLAYWRIGHT_MODULE`; each run starts its own server on
+  an ephemeral port with a throwaway `DATA_DIR`):
+  - `scripts/verify-single-scene.mjs` — the M2 gate above (`npm run verify:single-scene`).
+  - `scripts/acceptance-two-client-surface.mjs` — TST-01: two humans plus a robot, mutual poses,
+    an authoritative robot beam, a real supply relocation and a live break seen by the peer
+    without reload; writes `media/acceptance/<runId>/report.json`.
+  - `scripts/acceptance-surface-truth.mjs` — HUD harvest verdict vs the API click and beam ordering.
+  - `scripts/acceptance-supply-focus.mjs` — a real drop focuses the orbit camera and carries one
+    placement per human.
+  - `scripts/lib/acceptance-harness.mjs` — shared server/browser lifecycle, condition waits, artifact
+    and report writer for the three acceptance scripts.
 - Accept live browser checks: `scripts/verify-icosahedron-controls.mjs`,
   `scripts/verify-camera-carrier.mjs`, `scripts/verify-icosahedron-visual.mjs`.
 - `test/camera-contract.test.js`, `test/surface-camera.test.js`, `test/surface-render.test.js` — the
@@ -652,6 +696,15 @@ node scripts/test-count.mjs  # documented count == executed count
 - `test/hud-parity.test.js` — one mounted HUD tree, stable `data-hud-node` ids and surface-only additions.
 - `test/live-mesh.test.js` — world revision monotonicity, level formula, budget clamp, determinism hash,
   break delta and the no-op fast path.
+- `test/humanoid-rig.test.js` — closed-manifold volumes (V − E + F = 2), joint coincidence ≤ 1e-9,
+  deterministic pose hashes, walk/knee/tool-arm angles, 132/72/2 triangle budget, LOD hysteresis,
+  pole anchors, back-face culling, painter order, reduced motion and the no-sprite guard.
+- `test/renderer-surface.test.js` — the RND-07 renderer API: beam drop/count on a missing leaf,
+  fixed-delay peer interpolation that holds the newest sample, out-of-order/duplicate poses, the
+  150 ms mining lift, resource pins only for a non-null `resourceId`, peer fade/clear, and the
+  event-forwarding contract.
+- `test/single-scene-guard.test.js` — RND-06 thresholds, report schema, reviewer summary, the static
+  repository scan, `index.html` canvas inventory and the committed acceptance report.
 - `test/planet.test.js` — deterministic terrain, poles ice, biome distribution, ocean non-mineable,
   terrain deposit weights, client/server parity.
 - `test/mission.test.js` — requirements, per-planet scaling, depth progression, sanitization.

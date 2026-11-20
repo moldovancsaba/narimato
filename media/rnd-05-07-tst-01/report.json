@@ -1,0 +1,254 @@
+{
+  "runId": "avatar-evidence-20261120-222018-51e4",
+  "baseUrl": "http://localhost:59284",
+  "planetSeed": null,
+  "planetIndex": null,
+  "startedAt": "2026-11-20T22:20:18.683Z",
+  "finishedAt": "2026-11-20T22:20:45.533Z",
+  "durationMs": 26850,
+  "tags": [],
+  "checks": [
+    {
+      "id": "tri-budget",
+      "ok": true,
+      "detail": {
+        "l0": 132,
+        "l1": 72,
+        "l2": 2,
+        "tris": 126,
+        "avatars": 2,
+        "sources": {
+          "rig": "shared/humanoid-3d.js",
+          "self": "surface-controller pose",
+          "peers": "surface frames",
+          "mining": "surface_mine frames"
+        }
+      }
+    },
+    {
+      "id": "views-captured",
+      "ok": true,
+      "detail": [
+        "media/rnd-05-07-tst-01/avatar-front-normal.png",
+        "media/rnd-05-07-tst-01/avatar-front-close.png",
+        "media/rnd-05-07-tst-01/avatar-back-normal.png",
+        "media/rnd-05-07-tst-01/avatar-back-close.png",
+        "media/rnd-05-07-tst-01/avatar-side-normal.png",
+        "media/rnd-05-07-tst-01/avatar-side-close.png"
+      ]
+    },
+    {
+      "id": "rig-rendered",
+      "ok": true,
+      "detail": [
+        126,
+        126,
+        126,
+        126,
+        124,
+        126
+      ]
+    },
+    {
+      "id": "beam-and-pin-visuals",
+      "ok": true,
+      "detail": {
+        "beamsAtMining": 1,
+        "renderedBeamsAtMining": 1,
+        "pinCount": 1,
+        "droppedBeams": 0,
+        "peerMinePhase": 0.8811111111111111
+      }
+    },
+    {
+      "id": "no-page-errors",
+      "ok": true,
+      "detail": {
+        "count": 0,
+        "expectedRefusals": 0
+      }
+    }
+  ],
+  "peers": [],
+  "beams": [],
+  "supply": null,
+  "liveMutation": null,
+  "artifacts": [
+    "media/rnd-05-07-tst-01/avatar-front-detail.png",
+    "media/rnd-05-07-tst-01/avatar-back-detail.png",
+    "media/rnd-05-07-tst-01/avatar-side-detail.png",
+    "media/rnd-05-07-tst-01/avatar-walk.png",
+    "media/rnd-05-07-tst-01/avatar-mining-beam.png",
+    "media/rnd-05-07-tst-01/avatar-mining-beam-detail.png",
+    "media/rnd-05-07-tst-01/avatar-mining-beam-late.png"
+  ],
+  "errors": [],
+  "ok": true,
+  "avatar": {
+    "l0": 132,
+    "l1": 72,
+    "l2": 2,
+    "tris": 126,
+    "avatars": 2,
+    "sources": {
+      "rig": "shared/humanoid-3d.js",
+      "self": "surface-controller pose",
+      "peers": "surface frames",
+      "mining": "surface_mine frames"
+    }
+  },
+  "visuals": {
+    "peers": 0,
+    "beams": 0,
+    "droppedBeams": 0,
+    "pins": 1,
+    "markers": 0,
+    "avatars": 2,
+    "interpolated": 0,
+    "triangles": 126,
+    "samples": 8
+  },
+  "visualsAtMining": {
+    "stats": {
+      "peers": 1,
+      "beams": 1,
+      "droppedBeams": 0,
+      "pins": 1,
+      "markers": 0,
+      "avatars": 2,
+      "interpolated": 0,
+      "triangles": 126,
+      "samples": 8
+    },
+    "minePhase": 0.8811111111111111,
+    "beams": 1
+  },
+  "views": [
+    {
+      "view": "front",
+      "distance": "normal",
+      "shot": "media/rnd-05-07-tst-01/avatar-front-normal.png",
+      "avatarStats": {
+        "l0": 132,
+        "l1": 72,
+        "l2": 2,
+        "tris": 126,
+        "avatars": 2,
+        "sources": {
+          "rig": "shared/humanoid-3d.js",
+          "self": "surface-controller pose",
+          "peers": "surface frames",
+          "mining": "surface_mine frames"
+        }
+      }
+    },
+    {
+      "view": "front",
+      "distance": "close",
+      "shot": "media/rnd-05-07-tst-01/avatar-front-close.png",
+      "avatarStats": {
+        "l0": 132,
+        "l1": 72,
+        "l2": 2,
+        "tris": 126,
+        "avatars": 2,
+        "sources": {
+          "rig": "shared/humanoid-3d.js",
+          "self": "surface-controller pose",
+          "peers": "surface frames",
+          "mining": "surface_mine frames"
+        }
+      }
+    },
+    {
+      "view": "back",
+      "distance": "normal",
+      "shot": "media/rnd-05-07-tst-01/avatar-back-normal.png",
+      "avatarStats": {
+        "l0": 132,
+        "l1": 72,
+        "l2": 2,
+        "tris": 126,
+        "avatars": 2,
+        "sources": {
+          "rig": "shared/humanoid-3d.js",
+          "self": "surface-controller pose",
+          "peers": "surface frames",
+          "mining": "surface_mine frames"
+        }
+      }
+    },
+    {
+      "view": "back",
+      "distance": "close",
+      "shot": "media/rnd-05-07-tst-01/avatar-back-close.png",
+      "avatarStats": {
+        "l0": 132,
+        "l1": 72,
+        "l2": 2,
+        "tris": 126,
+        "avatars": 2,
+        "sources": {
+          "rig": "shared/humanoid-3d.js",
+          "self": "surface-controller pose",
+          "peers": "surface frames",
+          "mining": "surface_mine frames"
+        }
+      }
+    },
+    {
+      "view": "side",
+      "distance": "normal",
+      "shot": "media/rnd-05-07-tst-01/avatar-side-normal.png",
+      "avatarStats": {
+        "l0": 132,
+        "l1": 72,
+        "l2": 2,
+        "tris": 124,
+        "avatars": 2,
+        "sources": {
+          "rig": "shared/humanoid-3d.js",
+          "self": "surface-controller pose",
+          "peers": "surface frames",
+          "mining": "surface_mine frames"
+        }
+      }
+    },
+    {
+      "view": "side",
+      "distance": "close",
+      "shot": "media/rnd-05-07-tst-01/avatar-side-close.png",
+      "avatarStats": {
+        "l0": 132,
+        "l1": 72,
+        "l2": 2,
+        "tris": 126,
+        "avatars": 2,
+        "sources": {
+          "rig": "shared/humanoid-3d.js",
+          "self": "surface-controller pose",
+          "peers": "surface frames",
+          "mining": "surface_mine frames"
+        }
+      }
+    }
+  ],
+  "mining": {
+    "preview": {
+      "pos": {
+        "x": -0.4662002146540177,
+        "y": 0.33791360330252307,
+        "z": 0.8176012209871343
+      },
+      "heading": {
+        "x": -0.8790299339460967,
+        "y": -0.28120870621381133,
+        "z": -0.3850039464424687
+      },
+      "spread": 0.03,
+      "angle": 3.455751918948773
+    },
+    "pinLeaf": "1",
+    "toLeaf": null
+  }
+}

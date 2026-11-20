@@ -247,10 +247,11 @@ repository status documents. The repository owns durable technical knowledge and
 
 ## Development
 
-The node:test suite currently runs <!-- test-count:400 -->400<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
+The node:test suite currently runs <!-- test-count:431 -->431<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 ```
 npm test                 # node:test suite, no dependencies
+npm run verify:single-scene   # RND-06 browser gate (PLAYWRIGHT_MODULE required)
 npm run docs:check       # markdown links, issue map and version consistency
 npm run check:slo        # SLO verdict from /api/metrics (exit 0/1/2/3)
 npm run gate:load        # OPS-02 smoke/load/soak/chaos gate + artifacts
@@ -267,7 +268,8 @@ DOM UI is composed from the Sovereign Squad General Design System through the co
 feature flags, budgets and rollback: [docs/GDS_INTEGRATION.md](docs/GDS_INTEGRATION.md).
 
 Environment: `PORT`, `HOST`, `DATA_DIR`, `BREAK_CLICKS`, `MAX_DEPTH`, `BOTS`, `DEPOSIT_CHANCE`,
-the bot timing variables, `ALLOW_EMPTY_WORLD` (safe empty-boot guard) and `SECURITY_MODE`
+`SUPPLY_MIN_AGE_MS` (emergency-drop gate), the bot timing variables, `ALLOW_EMPTY_WORLD` (safe
+empty-boot guard) and `SECURITY_MODE`
 (`compat` locally, `enforce` with `NODE_ENV=production`). See
 [ARCHITECTURE.md](ARCHITECTURE.md#configuration), the SLO contract in [OBSERVABILITY.md](OBSERVABILITY.md)
 and the recovery runbook in [docs/RECOVERY.md](docs/RECOVERY.md).

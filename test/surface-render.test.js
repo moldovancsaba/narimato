@@ -114,16 +114,15 @@ test('surface render: entities are mapped from the live world, not copied geomet
   }
 });
 
-test('surface render: peers and mining beams resolve through the entity pass', () => {
+test('surface render: controller owns only the local body and target pin (RND-07 moved peers/beams to the renderer)', () => {
   const world = new World();
   world.setPlanetSeed(9);
   const leaves = world.activeLeaves();
-  const target = leaves[Math.floor(leaves.length / 2)];
   const peers = [{
     playerId: 'p_peer',
     tag: 'PEER',
     color: '#ff2bd6',
-    surface: { pos: { ...target.centroid }, heading: { x: 1, y: 0, z: 0 } },
+    surface: { pos: { ...leaves[0].centroid }, heading: { x: 1, y: 0, z: 0 } },
   }];
   const controller = createSurfaceController({
     getStartPoint: () => leaves[0].centroid,
@@ -139,15 +138,15 @@ test('surface render: peers and mining beams resolve through the entity pass', (
   controller.start({ planetName: 'MAGRATHEA', seed: 9, depth: 2 });
   controller.update(2400);
   const entities = controller.entities();
-  const peer = entities.find((entity) => entity.kind === 'peer');
-  assert.ok(peer, 'peer entity exists');
-  assert.equal(peer.label, 'PEER');
-  assert.equal(typeof peer.mine, 'boolean', 'peer mining cycle is derived from the timestamp');
-  controller.showMine({ label: target.label, tag: 'PEER', playerId: 'p_peer', color: '#8afcff' });
-  const beam = controller.entities().find((entity) => entity.kind === 'beam');
-  assert.ok(beam, 'authoritative mine event produces a beam entity');
-  assert.equal(beam.cellLabel, target.label);
-  assert.equal(beam.kind, 'beam');
+  assert.deepEqual(entities.map((entity) => entity.kind).sort(), ['pin', 'self']);
+  assert.equal(entities.some((entity) => entity.kind === 'peer'), false, 'peers are renderer-owned');
+  assert.equal(entities.some((entity) => entity.kind === 'beam'), false, 'beams are renderer-owned');
+  // No effect state remains in the controller (RND-07 §10).
+  const source = fs.readFileSync(path.join(ROOT, 'public/js/surface-controller.js'), 'utf8');
+  for (const banned of ['mineEffects', 'mineTotal', 'showMine', 'virtualPeerPosition']) {
+    assert.equal(source.includes(banned), false, `surface-controller.js must not keep ${banned}`);
+  }
+  assert.equal(typeof controller.mineCount, 'undefined', 'no mine counter in the controller');
 });
 
 test('surface render: held movement keys advance the pilot along the sphere', () => {

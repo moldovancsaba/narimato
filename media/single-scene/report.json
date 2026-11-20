@@ -1,0 +1,212 @@
+{
+  "ok": true,
+  "reportVersion": 1,
+  "version": "3.57.0",
+  "startedAt": "2026-11-20T22:18:04.608Z",
+  "finishedAt": "2026-11-20T22:19:53.225Z",
+  "durationMs": 108617,
+  "checks": [
+    {
+      "id": "one-renderer",
+      "ok": true,
+      "observed": {
+        "before": true,
+        "during": true,
+        "after": true,
+        "instance": true
+      }
+    },
+    {
+      "id": "no-surface-canvas",
+      "ok": true,
+      "observed": {
+        "before": {
+          "ids": [
+            "arena-canvas",
+            "intro-fx",
+            "interlude-fx",
+            "meteor-fx",
+            "supply-fx",
+            "report-card-preview"
+          ],
+          "total": 6,
+          "planet": 1,
+          "surfaceCanvas": 0
+        },
+        "during": {
+          "ids": [
+            "arena-canvas",
+            "intro-fx",
+            "interlude-fx",
+            "meteor-fx",
+            "supply-fx",
+            "report-card-preview"
+          ],
+          "total": 6,
+          "planet": 1,
+          "surfaceCanvas": 0
+        },
+        "after": {
+          "ids": [
+            "arena-canvas",
+            "intro-fx",
+            "interlude-fx",
+            "meteor-fx",
+            "supply-fx",
+            "report-card-preview"
+          ],
+          "total": 6,
+          "planet": 1,
+          "surfaceCanvas": 0
+        }
+      }
+    },
+    {
+      "id": "camera-only",
+      "ok": true,
+      "observed": {
+        "changed": [],
+        "view": [
+          "orbit",
+          "surface",
+          "orbit"
+        ],
+        "cameraRestored": true,
+        "leavesStable": true,
+        "transitionExact": true,
+        "cellStateChangesAfterTransition": [
+          {
+            "label": "8",
+            "before": "[\"8\",-1,0,null]",
+            "during": "[\"8\",-1,0,null]",
+            "after": "[\"8\",0,1,null]"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cell-parity",
+      "ok": true,
+      "observed": {
+        "cells": 8,
+        "maxDelta": 0,
+        "styleMismatch": 0,
+        "samples": {
+          "orbit": 81,
+          "surface": 8
+        }
+      },
+      "detail": {
+        "mismatches": [],
+        "method": "material probe: opaque cell material in both phases, 25-cell sample"
+      }
+    },
+    {
+      "id": "hud-identity",
+      "ok": true,
+      "observed": {
+        "P": 1,
+        "duplicates": [],
+        "nodes": 27,
+        "modes": [
+          "orbit",
+          "surface",
+          "orbit"
+        ]
+      },
+      "detail": {
+        "parity": {
+          "P": 1,
+          "ok": true,
+          "missingDuring": [],
+          "missingAfter": [],
+          "addedDuring": [],
+          "unexpectedDuring": [],
+          "duplicates": []
+        }
+      }
+    },
+    {
+      "id": "frame-budget",
+      "ok": true,
+      "observed": {
+        "frames": 600,
+        "p95Ms": 1,
+        "droppedRatio": 0.0017,
+        "frameMode": "work",
+        "rafP50Ms": 33.3,
+        "passes": [
+          {
+            "p95": 1
+          },
+          {
+            "p95": 1.1
+          },
+          {
+            "p95": 1.8
+          }
+        ],
+        "viewport": "1200x800",
+        "view": "surface"
+      }
+    },
+    {
+      "id": "a11y",
+      "ok": true,
+      "observed": {
+        "orbit": {
+          "violations": 0,
+          "serious": []
+        },
+        "surface": {
+          "violations": 0,
+          "serious": []
+        },
+        "focusEntry": {
+          "id": null,
+          "pad": "KeyW"
+        },
+        "focusRestored": {
+          "id": "hud-zoom",
+          "tag": "DIV"
+        }
+      }
+    },
+    {
+      "id": "focus-return",
+      "ok": true,
+      "observed": {
+        "entry": {
+          "id": null,
+          "pad": "KeyW"
+        },
+        "restored": {
+          "id": "hud-zoom",
+          "tag": "DIV"
+        }
+      }
+    },
+    {
+      "id": "self-test",
+      "ok": true,
+      "observed": {
+        "secondCanvasDetected": true,
+        "duplicateHudDetected": true,
+        "cellColourDetected": true
+      }
+    }
+  ],
+  "artifacts": [
+    "media/single-scene/orbit.png",
+    "media/single-scene/surface.png",
+    "media/single-scene/surface-mobile.png"
+  ],
+  "errors": [],
+  "selfTest": {
+    "secondCanvasDetected": true,
+    "duplicateHudDetected": true,
+    "cellColourDetected": true
+  },
+  "tag": "SCENE6385",
+  "baseUrl": "http://localhost:58247"
+}

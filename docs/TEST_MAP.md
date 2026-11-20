@@ -36,6 +36,9 @@ real count.
 | `test/surface-camera.test.js` | Surface camera framing, carrier dolly/tilt, round-trip, near plane, resize | `public/js/shared/surface-camera.js` | RND-01 |
 | `test/surface-render.test.js` | Surface view state machine, orbit restore, entity mapping, rollback flag | `public/js/surface-controller.js`, `public/js/shared/view-state.js` | RND-02 |
 | `test/hud-parity.test.js` | HUD snapshot parity, duplicate detection, target/lap fallbacks, static markup contract | `public/js/shared/hud-parity.js`, `public/index.html` | RND-03 |
+| `test/humanoid-rig.test.js` | Closed-manifold volumes, joint coincidence, deterministic poses, walk/mining angles, 132/72/2 LOD hysteresis, culling, no sprite path | `public/js/shared/humanoid-3d.js` | RND-05 |
+| `test/renderer-surface.test.js` | Renderer peer interpolation, beam drop/count, resource pins, peer fade/clear, event forwarding | `public/js/renderer.js` | RND-07 |
+| `test/single-scene-guard.test.js` | RND-06 thresholds, report schema, static guard scan, canvas inventory, committed report | `scripts/lib/single-scene-checks.mjs`, `scripts/verify-single-scene.mjs` | RND-06 |
 | `test/live-mesh.test.js` | World revision, live mesh level formula, budget clamp, determinism, break delta, no-op path | `public/js/shared/live-surface-mesh.js`, `public/js/world.js` | RND-04 |
 | `test/surface-math.test.js` | Surface tangent/down-angle and projection helpers | `public/js/shared/sphere-interaction.js` | RND-01 |
 | `test/test-count.test.js` | TAP summary parsing, marker verification, failure propagation | `scripts/test-count.mjs` | QA-01 |

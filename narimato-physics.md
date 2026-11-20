@@ -4,7 +4,7 @@
 > **Delivery SSOT:** [NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80) · [Definition of Done](docs/DEFINITION_OF_DONE.md) · [Issue index](docs/ISSUE_MAP.md).
 > This document owns durable knowledge; it does not track delivery status.
 >
-> **Related delivery issues:** [QA-01](https://github.com/moldovancsaba/narimato/issues/5) · [DOC-01](https://github.com/moldovancsaba/narimato/issues/6) · [RND-01](https://github.com/moldovancsaba/narimato/issues/14) · [RND-02](https://github.com/moldovancsaba/narimato/issues/15) · [RND-03](https://github.com/moldovancsaba/narimato/issues/16) · [RND-04](https://github.com/moldovancsaba/narimato/issues/17) · [CTL-01](https://github.com/moldovancsaba/narimato/issues/26) · [CTL-02](https://github.com/moldovancsaba/narimato/issues/27)
+> **Related delivery issues:** [QA-01](https://github.com/moldovancsaba/narimato/issues/5) · [DOC-01](https://github.com/moldovancsaba/narimato/issues/6) · [RND-01](https://github.com/moldovancsaba/narimato/issues/14) · [RND-02](https://github.com/moldovancsaba/narimato/issues/15) · [RND-03](https://github.com/moldovancsaba/narimato/issues/16) · [RND-04](https://github.com/moldovancsaba/narimato/issues/17) · [CTL-01](https://github.com/moldovancsaba/narimato/issues/26) · [CTL-02](https://github.com/moldovancsaba/narimato/issues/27) · [RND-05](https://github.com/moldovancsaba/narimato/issues/18) · [RND-07](https://github.com/moldovancsaba/narimato/issues/24) · [TST-01](https://github.com/moldovancsaba/narimato/issues/25)
 <!-- delivery-ssot:end -->
 
 > Authoritative record of the final working model, why it works, and the models that were wrong.
@@ -275,6 +275,46 @@ projection or second HUD:
 - Canvas terrain keeps its accessible equivalent in the HUD: the surface target
   readout reports the cell label and harvest state, and `#surface-controls` is a
   labelled `role="group"` with 44 px targets.
+
+Rollback: `?surface-renderer=overlay` is parsed but fails closed to the single
+scene; the only real rollback is reverting the RND-02 commit.
+
+## 12. Surface figures and event visuals (RND-05, RND-07)
+
+Pilots and robots are closed-triangle bodies placed in the tangent frame of their
+authoritative surface pose; they are never billboards and never a second
+projection:
+
+```
+up      = normalize(anchor)                       // unit sphere point
+forward = tangent(pos, heading)                   // parallel-transported heading
+right   = normalize(cross(up, forward))
+world   = anchor + up·v_y + right·v_x + forward·v_z   // v = posed rig vertex × scale
+screen  = camera.project(world)
+```
+
+- **Projection is the shared camera contract.** The rig consumes only
+  `project()`/`viewAxis()`; orbit and surface camera maths do not change for
+  figures. A figure's screen height is `focalPx · worldHeight / depth`; the
+  production scale maps a 0.95-unit figure to 12–90 CSS px at the legacy
+  surface depth.
+- **Depth order and culling.** Faces are painter-sorted far → near by mean
+  projected depth (stable sort for equal depths) and back-face culled against
+  the camera eye; a figure anchored behind the camera's surface horizon is
+  skipped entirely, so a far-side peer never projects a mirrored silhouette.
+- **Distance LOD is hysteretic.** `d = acos(clamp(dot(anchor, viewAxis)))`;
+  L0 ≤ 0.35 rad (132 triangles), L1 ≤ 0.80 rad (72), L2 beyond (2-triangle
+  silhouette). A level is retained 0.03 rad outside its boundary and only
+  restored 0.03 rad inside it, so a figure on the edge cannot flicker.
+- **Mining visuals are server events.** `surface_mine` carries the awarded cell
+  label plus the click-time pose; the renderer interpolates peer poses on a
+  fixed 120 ms delay (twice the 10 Hz surface broadcast, holding the newest
+  sample and never extrapolating past it), starts a beam at the peer's tool arm
+  and ends it on that leaf's centroid with `alpha = 1 − age/ttlMs`. A beam whose
+  target leaf is absent is dropped and counted; a beam whose cell is off screen
+  is indicated by a canvas-edge chevron, never a new DOM surface. Under
+  `prefers-reduced-motion` the walk freezes and the beam renders as a static
+  marker.
 
 Rollback: `?surface-renderer=overlay` is parsed but fails closed to the single
 scene; the only real rollback is reverting the RND-02 commit.

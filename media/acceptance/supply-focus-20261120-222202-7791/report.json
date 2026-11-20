@@ -1,0 +1,64 @@
+{
+  "runId": "supply-focus-20261120-222202-7791",
+  "baseUrl": "http://localhost:60963",
+  "planetSeed": null,
+  "planetIndex": null,
+  "startedAt": "2026-11-20T22:22:02.195Z",
+  "finishedAt": "2026-11-20T22:22:09.834Z",
+  "durationMs": 7639,
+  "tags": [],
+  "checks": [
+    {
+      "id": "supply-focus-zoom",
+      "ok": true,
+      "detail": {
+        "beforeZoom": 1,
+        "afterZoom": 4
+      }
+    },
+    {
+      "id": "supply-placement",
+      "ok": true,
+      "detail": {
+        "cells": [
+          "17",
+          "18",
+          "20"
+        ],
+        "placements": 1,
+        "ownLeaf": "17"
+      }
+    },
+    {
+      "id": "no-page-errors",
+      "ok": true,
+      "detail": {
+        "count": 0,
+        "expectedRefusals": 0,
+        "errors": []
+      }
+    }
+  ],
+  "peers": [],
+  "beams": [],
+  "supply": {
+    "impactLabel": "17",
+    "cells": [
+      "17",
+      "18",
+      "20"
+    ],
+    "placements": [
+      {
+        "playerId": "p_hpgzal",
+        "leaf": "17"
+      }
+    ]
+  },
+  "liveMutation": null,
+  "artifacts": [
+    "media/acceptance/supply-focus-20261120-222202-7791/supply-focus.png"
+  ],
+  "errors": [],
+  "ok": true
+}

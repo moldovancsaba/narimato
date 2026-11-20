@@ -125,6 +125,7 @@ let guideNarrationTimer = 0;
 let guideNarrationToken = 0;
 let pendingAutoJoin = null;
 let pendingSupplyFocus = null;
+let lastSupplyFocus = null;
 const missionReadyNotified = new Set();
 const GUIDE_CUE_IDS = Object.freeze(['guide-what', 'guide-how', 'guide-where', 'guide-leave']);
 
@@ -453,6 +454,24 @@ surface = createSurfaceController({
   onHud: (surfaceState) => safeCall(ui, 'updateSurfaceHud', surfaceState),
   onExit: () => exitSurfaceMode(),
 });
+
+/**
+ * RND-05 (PERF-01 friendly): the humanoid rig is a lazy chunk. Prefetch it at
+ * boot so the surface never shows an unrigged figure after the landing
+ * animation, without adding it to the first-load JavaScript graph.
+ */
+let humanoidRigPromise = null;
+function loadHumanoidRig() {
+  if (!humanoidRigPromise) {
+    humanoidRigPromise = import('./shared/humanoid-3d.js')
+      .then((module) => safeCall(renderer, 'setHumanoidModule', module) === true)
+      .catch((err) => {
+        console.warn('[icosa] humanoid rig unavailable', err);
+        return false;
+      });
+  }
+  return humanoidRigPromise;
+}
 
 function loadSeenTips() {
   try {
@@ -939,7 +958,29 @@ function scheduleReconnect() {
  * Server events
  * ------------------------------------------------------------------ */
 
+/** Bounded ring of received SSE frames for acceptance ordering evidence (TST-01). */
+const EVENT_LOG_LIMIT = 200;
+const eventLog = [];
+function recordEvent(msg) {
+  if (!msg || typeof msg.type !== 'string') return;
+  // `cell` frames carry the label as cell[0]; `supply_focus` as impactLabel.
+  const label = typeof msg.label === 'string'
+    ? msg.label
+    : (Array.isArray(msg.cell) && typeof msg.cell[0] === 'string')
+      ? msg.cell[0]
+      : (typeof msg.impactLabel === 'string' ? msg.impactLabel : null);
+  eventLog.push({
+    type: msg.type,
+    playerId: msg.playerId || null,
+    label,
+    at: Date.now(),
+    ...(Array.isArray(msg.children) ? { children: msg.children.length } : {}),
+  });
+  if (eventLog.length > EVENT_LOG_LIMIT) eventLog.splice(0, eventLog.length - EVENT_LOG_LIMIT);
+}
+
 function handleEvent(msg) {
+  recordEvent(msg);
   switch (msg.type) {
     case 'snapshot':
       applySnapshot(msg.state, msg.leaves);
@@ -968,7 +1009,18 @@ function handleEvent(msg) {
       handleSurfaceEvent(msg);
       break;
     case 'surface_mine':
-      if (surface && surface.active) safeCall(surface, 'showMine', msg);
+      // RND-07: the renderer owns the beam; app.js only forwards the frame.
+      if (surface && surface.active) {
+        safeCall(renderer, 'mineBeam', {
+          playerId: msg.playerId,
+          tag: msg.tag,
+          color: msg.color,
+          toLeaf: msg.label,
+          pos: msg.pos,
+          kind: msg.broke ? 'break' : 'mine',
+          startAt: Number.isFinite(msg.updatedAt) ? msg.updatedAt : Date.now(),
+        });
+      }
       break;
     case 'incident':
       handleIncidentEvent(msg);
@@ -993,6 +1045,7 @@ function applySnapshot(nextState, leaves) {
   refreshLeafList();
   syncRenderFaces();
   applyState(nextState);
+  syncSurfaceResourcePins();
   refreshMission();
   refreshNavTarget();
   renderer.setHover(null);
@@ -1015,6 +1068,7 @@ function applyState(next) {
     return;
   }
   renderer.setPlayers(next.players, myPlayer ? myPlayer.id : null);
+  syncSurfacePeerVisuals();
   renderer.setConfig({ threshold: next.threshold, maxDepth: next.maxDepth });
   safeCall(ui, 'updateHud', next, myPlayer ? myPlayer.id : null, {
     zoom: camera.zoom,
@@ -1054,6 +1108,7 @@ function handleBreakEvent(msg) {
   renderer.replaceFace(msg.label, children);
   refreshPlanetRenderFaces();
   syncLiveSurface();
+  syncSurfaceResourcePins();
   for (const child of children) renderer.pulse(child.label, { color: '#d7ff00', kind: 'break', text: '' });
   safeAudio('breakShatter');
   safeCall(ui, 'toast', `CELL ${msg.label} FRACTURED // 4 NEW NODES`, 'good');
@@ -1089,6 +1144,7 @@ function applyDiscoveredResource(label, resource, playerId) {
       console.warn('[icosa] resource marker failed', err);
     }
   }
+  syncSurfaceResourcePins();
   const value = Number(resource.value) || 0;
   renderer.pulse(label, { color: resource.color || '#ffd166', kind: 'resource', text: `+${value} ${resource.name}` });
   safeCall(ui, 'setLastFind', resource, value);
@@ -1321,6 +1377,7 @@ function handleSupplyEvent(msg) {
 function handleSupplyFocusEvent(msg) {
   if (!msg || !Array.isArray(msg.placements)) return;
   if (msg.expiresAt && Date.now() > msg.expiresAt) return;
+  lastSupplyFocus = { ...msg, receivedAt: Date.now() };
   pendingSupplyFocus = msg;
   applySupplyFocus();
 }
@@ -1832,6 +1889,8 @@ function attemptClick(label) {
       if (node) renderer.updateCell(node.label, node.ownerIndex, node.clicks, node.lastClickIndex);
     }
     if (data.resource) applyDiscoveredResource(data.cell ? data.cell[0] : label, data.resource, myPlayer.id);
+    // RND-05/07: a successful authoritative click raises the local tool arm.
+    if (surface && surface.active) safeCall(renderer, 'setSelfMine', Date.now());
     const kind = data.kind || 'claim';
     const points = Number(data.points) || 0;
     session.clicks += 1;
@@ -2439,11 +2498,12 @@ function sendSurfaceLeave() {
 
 function handleSurfaceEvent(msg) {
   if (!msg || !msg.playerId) return;
-  if (myPlayer && msg.playerId === myPlayer.id) return;
   if (msg.type === 'surface_leave') {
     surfacePeers.delete(msg.playerId);
+    safeCall(renderer, 'removePeer', msg.playerId, Date.now());
     return;
   }
+  if (myPlayer && msg.playerId === myPlayer.id) return;
   const pos = msg.pos;
   if (!pos || !Number.isFinite(pos.x) || !Number.isFinite(pos.y) || !Number.isFinite(pos.z)) return;
   surfacePeers.set(msg.playerId, {
@@ -2451,10 +2511,61 @@ function handleSurfaceEvent(msg) {
     tag: String(msg.tag || 'PILOT').slice(0, 12),
     color: typeof msg.color === 'string' ? msg.color : '#a78bfa',
     pos: { x: Number(pos.x), y: Number(pos.y), z: Number(pos.z) },
+    // Vector heading from SRV-01 plus the authoritative leaf the server resolved
+    // for the pose (TST-01 compares peer tags and leaves).
+    headingVec: msg.heading && Number.isFinite(msg.heading.x) ? { ...msg.heading } : null,
     heading: Number(msg.heading) || 0,
+    leaf: typeof msg.leaf === 'string' ? msg.leaf : null,
+    state: typeof msg.state === 'string' ? msg.state : null,
     moving: !!msg.moving,
-    updatedAt: Date.now(),
+    updatedAt: Number.isFinite(msg.updatedAt) ? msg.updatedAt : Date.now(),
   });
+  syncSurfacePeerVisuals();
+}
+
+/**
+ * RND-07: forward the authoritative peer list (live `surface` frames plus the
+ * last known pose on `state.players`) into the renderer. The renderer owns
+ * interpolation, fading and mining pose; app.js keeps no visual state.
+ */
+function syncSurfacePeerVisuals() {
+  if (!renderer) return 0;
+  const now = Date.now();
+  const peers = [...surfacePeers.values()]
+    .filter((peer) => now - (peer.updatedAt || 0) < 5000)
+    .map((peer) => ({
+      playerId: peer.playerId,
+      tag: peer.tag,
+      color: peer.color,
+      surface: {
+        pos: peer.pos,
+        heading: peer.headingVec || null,
+        state: peer.moving ? 'walk' : 'idle',
+        moving: !!peer.moving,
+        updatedAt: peer.updatedAt,
+      },
+    }));
+  const ids = new Set(peers.map((peer) => peer.playerId));
+  for (const player of (state && Array.isArray(state.players) ? state.players : [])) {
+    if (!player || !player.online || !player.surface || ids.has(player.id)) continue;
+    if (myPlayer && player.id === myPlayer.id) continue;
+    peers.push({ playerId: player.id, tag: player.tag, color: player.color, surface: player.surface });
+  }
+  return safeCall(renderer, 'setPeers', peers, now) || 0;
+}
+
+/**
+ * RND-07: forward discovered resource ids (never hidden deposits) as surface
+ * pins. Only leaves that already carry a `resourceId` from the wire qualify.
+ */
+function syncSurfaceResourcePins() {
+  if (!renderer || view !== 'surface') return 0;
+  const pins = [];
+  for (const node of leafList) {
+    if (!node || !node.label || !node.resourceId) continue;
+    pins.push({ label: node.label, resourceId: node.resourceId });
+  }
+  return safeCall(renderer, 'setResourcePins', pins) || 0;
 }
 
 function enterSurfaceMode() {
@@ -2471,6 +2582,7 @@ function enterSurfaceMode() {
   safeCall(ui, 'hideGuide');
   safeCall(ui, 'hideManual');
   safeCall(ui, 'hideLandingBrief');
+  loadHumanoidRig();
   // Store the orbit camera so exiting restores it exactly (RND-02).
   savedOrbit = saveOrbit(camera);
   const planet = planetInfoFromState();
@@ -2480,6 +2592,8 @@ function enterSurfaceMode() {
   }
   view = 'surface';
   renderer.setSurfaceMode({ active: true, entities: [], phase: surface.phase, progress: surface.progress() });
+  syncSurfacePeerVisuals();
+  syncSurfaceResourcePins();
   safeCall(ui, 'enterSurface', { planet });
   refreshSurfaceLiveFaces();
   applySupplyFocus();
@@ -2492,6 +2606,7 @@ function exitSurfaceMode() {
   if (surface) surface.stop();
   renderer.setSurfaceMode({ active: false });
   renderer.setSurfaceView(false);
+  safeCall(renderer, 'clearSurfaceVisuals');
   syncRenderFaces();
   sendSurfaceLeave();
   // Restore the exact pre-entry orbit (RND-02); CTL-04 owns the later
@@ -2689,6 +2804,13 @@ function frame(t) {
     pendingInputAt = 0;
   }
 
+  // QA measurement pause (RND-06 frame budget): schedule RAF but draw nothing,
+  // so the acceptance harness can time renderer frames in isolation.
+  if (window.__ICOSA_RENDER_PAUSED__) {
+    requestAnimationFrame(frame);
+    return;
+  }
+
   // EVT-02/EVT-03: while the full-screen incident overlay is open it owns the
   // visible frame. Keep this loop alive (state stays consistent) but do not
   // compete with the FX canvas for the software-rendered frame budget; the
@@ -2833,6 +2955,83 @@ window.__ICOSA__ = {
   manual: () => safeCall(ui, 'showManual', HELP_SECTIONS),
   guide: () => openGuide(),
   surface: () => enterSurfaceMode(),
+  /**
+   * QA-only avatar preview (RND-05 evidence): injects one synthetic peer into
+   * the renderer's real entity pass so front/back/side and mining poses can be
+   * captured deterministically. Never gameplay state and never a second
+   * renderer; the preview is removed by `clearSurfaceVisuals()` on exit.
+   */
+  avatarPreview: (options = {}) => {
+    if (!surface || !surface.active) return null;
+    const opts = options && typeof options === 'object' ? options : {};
+    const pose = surface.pose();
+    const forward = pose.forward;
+    const anchor = pose.pos;
+    const spread = Number.isFinite(opts.spread) ? opts.spread : 0.055;
+    const lateral = Number.isFinite(opts.lateral) ? opts.lateral : 0;
+    const angle = Number.isFinite(opts.heading) ? opts.heading : 0;
+    const len = Math.hypot(forward.x, forward.y, forward.z) || 1;
+    const f = { x: forward.x / len, y: forward.y / len, z: forward.z / len };
+    // Move `spread` radians forward and `lateral` radians sideways, then
+    // normalize to the sphere. Lateral separation keeps the preview beside the
+    // local pilot instead of directly along the camera's view direction.
+    const right = {
+      x: anchor.y * f.z - anchor.z * f.y,
+      y: anchor.z * f.x - anchor.x * f.z,
+      z: anchor.x * f.y - anchor.y * f.x,
+    };
+    const rlen = Math.hypot(right.x, right.y, right.z) || 1;
+    let px = anchor.x + f.x * spread + (right.x / rlen) * lateral;
+    let py = anchor.y + f.y * spread + (right.y / rlen) * lateral;
+    let pz = anchor.z + f.z * spread + (right.z / rlen) * lateral;
+    const plen = Math.hypot(px, py, pz) || 1;
+    px /= plen; py /= plen; pz /= plen;
+    const up = { x: px, y: py, z: pz };
+    // Rotate the heading tangent around the surface normal for front/back/side.
+    let t = { x: f.x, y: f.y, z: f.z };
+    const td = t.x * up.x + t.y * up.y + t.z * up.z;
+    t = { x: t.x - up.x * td, y: t.y - up.y * td, z: t.z - up.z * td };
+    const tl = Math.hypot(t.x, t.y, t.z) || 1;
+    t.x /= tl; t.y /= tl; t.z /= tl;
+    const cross = {
+      x: up.y * t.z - up.z * t.y,
+      y: up.z * t.x - up.x * t.z,
+      z: up.x * t.y - up.y * t.x,
+    };
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    const dir = {
+      x: t.x * cos + cross.x * sin,
+      y: t.y * cos + cross.y * sin,
+      z: t.z * cos + cross.z * sin,
+    };
+    const now = Date.now();
+    safeCall(renderer, 'setPeers', [{
+      playerId: 'p_preview',
+      tag: String(opts.label || 'PREVIEW').slice(0, 14),
+      color: typeof opts.tint === 'string' ? opts.tint : '#63dfff',
+      surface: {
+        pos: { x: px, y: py, z: pz },
+        heading: dir,
+        state: opts.moving === false ? 'idle' : 'walk',
+        moving: opts.moving !== false,
+        updatedAt: now,
+      },
+    }], now);
+    if (opts.mining) {
+      const cell = surface.target();
+      safeCall(renderer, 'mineBeam', {
+        playerId: 'p_preview',
+        tag: 'PREVIEW',
+        color: '#8afcff',
+        toLeaf: typeof opts.toLeaf === 'string' && opts.toLeaf ? opts.toLeaf : (cell && cell.label) || null,
+        pos: { x: px, y: py, z: pz },
+        kind: 'mine',
+        startAt: now,
+      });
+    }
+    return { pos: { x: px, y: py, z: pz }, heading: dir, spread, angle };
+  },
   surfaceMode: () => ({
     active: view === 'surface' && !!surface && surface.active,
     phase: surface ? surface.phase : 'idle',
@@ -2847,7 +3046,34 @@ window.__ICOSA__ = {
   cameraMode: () => cameraModeReport(SURFACE_CAMERA_MODE),
   surfaceCamera: () => surfaceCamera,
   surfaceDebug: () => (surface ? surface.debug() : null),
-  surfaceMineCount: () => (surface ? surface.mineCount() : 0),
+  surfaceMineCount: () => {
+    const stats = safeCall(renderer, 'surfaceVisualStats');
+    return stats ? stats.beams : 0;
+  },
+  surfaceVisualStats: () => safeCall(renderer, 'surfaceVisualStats'),
+  avatarStats: () => safeCall(renderer, 'avatarStats'),
+  setMaterialProbe: (enabled) => safeCall(renderer, 'setMaterialProbe', !!enabled),
+  setAvatarScale: (multiplier) => safeCall(renderer, 'setAvatarScale', multiplier),
+  setRenderPaused: (paused) => {
+    window.__ICOSA_RENDER_PAUSED__ = !!paused;
+    return window.__ICOSA_RENDER_PAUSED__;
+  },
+  surfacePose: () => (surface ? surface.pose() : null),
+  supplyFocus: () => {
+    if (!lastSupplyFocus) return null;
+    return {
+      impactLabel: lastSupplyFocus.impactLabel,
+      cells: lastSupplyFocus.cells,
+      placements: lastSupplyFocus.placements,
+      ownPlacement: myPlayer
+        ? (lastSupplyFocus.placements || []).find((entry) => entry && entry.playerId === myPlayer.id) || null
+        : null,
+      rev: lastSupplyFocus.rev,
+      expiresAt: lastSupplyFocus.expiresAt,
+      receivedAt: lastSupplyFocus.receivedAt,
+    };
+  },
+  eventLog: () => eventLog.slice(),
   surfacePeers: () => [...surfacePeers.values()],
   surfaceEffect: (name = 'ORE', value = 90, color = '#ffd166') => safeCall(surface, 'harvestEffect', { resource: { name, color }, value }),
   projectFace: (label) => {

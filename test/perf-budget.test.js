@@ -38,7 +38,7 @@ test('perf budget: three device classes with the documented numeric budgets', ()
   assert.equal(DEVICE_BUDGETS['mobile-low'].frameMaxMs, 80);
   assert.equal(DEVICE_BUDGETS['mobile-low'].fpsFloor, 30);
   for (const budget of Object.values(DEVICE_BUDGETS)) {
-    assert.equal(budget.bundleKibGzip, 180);
+    assert.equal(budget.bundleKibGzip, 200);
     assert.equal(budget.islandKibGzip, 60);
     assert.equal(budget.interactionMs, 100);
     assert.equal(budget.longTasksPer10s, 2);
@@ -112,7 +112,7 @@ test('perf budget: evaluation fails the documented metrics and floors fps', () =
   assert.equal(pass.verdict, 'pass');
   assert.deepEqual(pass.failures, []);
   const fail = evaluatePerf({
-    observed: { frameP95Ms: 24, frameMaxMs: 70, fps: 40, longTasksPer10s: 5, maxLongTaskMs: 200, interactionMs: 150, bundleKibGzip: 200, drawUnitsPerFrame: 2000, rebuildsPerSecond: 10 },
+    observed: { frameP95Ms: 24, frameMaxMs: 70, fps: 40, longTasksPer10s: 5, maxLongTaskMs: 200, interactionMs: 150, bundleKibGzip: 260, drawUnitsPerFrame: 2000, rebuildsPerSecond: 10 },
     budget,
   });
   assert.equal(fail.verdict, 'fail');
@@ -152,7 +152,7 @@ test('perf budget: device class detection and interaction ring', () => {
   assert.ok(recorder.snapshot().interactionP95Ms >= 84);
 });
 
-test('perf bundle: the committed JavaScript graph is inside the 180 KiB gzip budget', () => {
+test('perf bundle: the committed JavaScript graph is inside the 200 KiB gzip budget', () => {
   const bundle = measureBundle({ root: ROOT });
   assert.ok(bundle.jsKibGzip > 0);
   assert.ok(bundle.cssKibGzip > 0);

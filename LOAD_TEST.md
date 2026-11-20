@@ -144,6 +144,30 @@ Re-run the gate on production-like hardware before revisiting. The gate is a
 regression signal, not a capacity proof; a real-network soak remains a release
 prerequisite.
 
+## Client frame budget (RND-06)
+
+`scripts/verify-single-scene.mjs` owns the client frame budget; it is not a load
+generator, so it runs on the reference viewport with a throwaway world:
+
+```sh
+PLAYWRIGHT_MODULE=/path/to/playwright node scripts/verify-single-scene.mjs
+```
+
+- **Viewport:** 1200×800 CSS px, one headless Chromium page, surface view (the
+  heavier view: live mesh + cell pass + entity pass). The budget is measured over
+  600 frames after the transition, with `requestAnimationFrame` deltas.
+- **Reference thresholds:** renderer work `p95 ≤ 16.7 ms` (60 Hz) and dropped
+  frames above 33.4 ms `< 5%` of the sample. `media/single-scene/report.json`
+  records `p95Ms`, `droppedRatio`, the sampled view and `rafP50Ms`.
+- **Headless CI note:** a virtual/occluded display can throttle rAF to ~10 Hz
+  regardless of renderer cost (observed as `rafP50Ms ≥ 20`). In that case the
+  suite measures the same 600 frames as synchronous renderer work time, records
+  `frameMode: "work"`, and keeps the same pass thresholds; pacing is attributed
+  to the environment, not to the renderer. A healthy display uses the rAF path
+  (`frameMode: "raf"`).
+- The number is a local reference measurement, not a device-farm proof; PERF-01
+  owns field telemetry and long-task enforcement.
+
 ## Chaos / rollout checklist
 
 - `npm run chaos:test` kills the process with live SSE, restarts on the same data
