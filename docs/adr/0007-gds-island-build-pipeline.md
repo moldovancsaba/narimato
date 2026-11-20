@@ -58,7 +58,7 @@ Adopt a dev-time Vite library build with deterministic post-processing and commi
 - The CSS budget is met (38.32 KiB gzip) by pruning unused Mantine component CSS rather than forking
   or weakening the mandated GDS stylesheet import. New components used by UI-02…UI-05 are kept
   automatically because pruning is computed from the final bundle on every build.
-- The JavaScript hard budget is met (172.28 KiB gzip); the 140 KiB target is not, because of the
+- The JavaScript hard budget is met (172.45 KiB gzip); the 140 KiB target is not, because of the
   provider's Mantine theme/notifications/modals/i18n runtime. This is documented as a known
   limitation rather than hidden by a weaker budget.
 - A broken build blocks release; a broken runtime boot does not block the game.

@@ -118,7 +118,7 @@ the commit.
 
 | Asset | Measured at delivery | Hard budget | Target |
 |---|---|---|---|
-| `island.js` gzip | 172.28 KiB | ≤ 180 KiB | ≤ 140 KiB |
+| `island.js` gzip | 172.45 KiB | ≤ 180 KiB | ≤ 140 KiB |
 | `island.css` gzip | 38.32 KiB | ≤ 40 KiB | — |
 
 The JavaScript hard budget passes. The 140 KiB target is **not met**: React 19 plus one `GdsProvider`
