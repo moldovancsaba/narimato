@@ -81,7 +81,9 @@ resize();
 
 /** Screen point to a point on the visible unit-sphere surface. */
 function unprojectSphere(xPx, yPx) {
-  const radius = Math.min(W, H) * SPHERE_SCREEN_FRACTION; // optical zoom is fixed; radius changes via camera.distance
+  // Exact projected silhouette radius for a unit sphere at camera.distance.
+  const d = camera.distance;
+  const radius = Math.min(W, H) * SPHERE_SCREEN_FRACTION * (d / Math.sqrt(Math.max(1e-6, d * d - 1)));
   const focal = radius * camera.distance;
   const X = xPx - W / 2;
   const Y = H / 2 - yPx;
@@ -106,7 +108,9 @@ function draw() {
 
   const cx = W / 2;
   const cy = H / 2;
-  const radius = Math.min(W, H) * SPHERE_SCREEN_FRACTION; // optical zoom is fixed; radius changes via camera.distance
+  // Exact projected silhouette radius for a unit sphere at camera.distance.
+  const d = camera.distance;
+  const radius = Math.min(W, H) * SPHERE_SCREEN_FRACTION * (d / Math.sqrt(Math.max(1e-6, d * d - 1)));
   const sphere = ctx.createRadialGradient(cx - radius * 0.36, cy - radius * 0.36, radius * 0.08, cx, cy, radius);
   sphere.addColorStop(0, 'rgb(126,210,230)');
   sphere.addColorStop(0.68, 'rgb(57,132,162)');
