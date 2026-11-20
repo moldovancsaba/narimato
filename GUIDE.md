@@ -48,16 +48,21 @@ The **THE WAY HOME** panel lists every part the ship still needs.
 Scroll one notch past the deepest zoom (or pinch outward) to land. The ship descends, then you run
 the small planet in third person. A lap takes **60 seconds** at normal speed. The surface view draws
 only the live cell triangles; mining/breaks update them and other surface pilots appear and walk in
-the same view. Green triangles can be harvested; red ones are locked or empty. Your footprint
-harvests every cell under the avatar. Use `WASD`/arrows to run, `A/D` to turn, `Shift` to sprint,
-and **RETURN TO ORBIT** or Escape to leave.
+the same view. The target chip says **GREEN** when the server will accept your next click and
+**RED** with the reason when it will not: `LOCKED` (another operator must contest it), `COOLDOWN`
+(you clicked too recently) or `STALE` (the cell changed). Deep cells stay green and keep scoring.
+Your footprint harvests every cell under the avatar; the touch pads capture your thumb, so keep
+holding while you slide. Use `WASD`/arrows to run, `A/D` to turn, `Shift` to sprint, and
+**RETURN TO ORBIT** or Escape to leave — you always return at **maximum zoom-out**.
 
 ## If you get stuck
 
-- **Mouse drag** rotates the planet with your cursor (drag left → planet left), even upside down.
+- **Mouse/touch drag** grabs the surface: the point you grabbed stays under the pointer, even
+  upside down.
 - **Arrow keys** travel around the planet in the opposite direction (left arrow → planet right);
   **Shift** speeds up travel.
-- Press **I** to reverse mouse drag.
+- The HUD shows the current control mode and the drag direction. Press **I** or the visible
+  `DRAG:` toggle to reverse pointer drag only; the choice survives a reload.
 - **? / GUIDE** opens this card again; **OPEN FIELD MANUAL** has the full story and controls.
 - **Catastrophe overlay:** press **Escape** or activate **DISMISS** to close it early; mining
   resumes when the crust reset finishes. With reduced motion enabled the overlay is a single static

@@ -103,6 +103,34 @@ show is also text in the DOM.
   (`media/evt-01-03-aud-01/acceptance-incident-a11y.json`); `npm run audit:a11y` includes the
   incident overlay and reports 0 serious/critical violations.
 
+## Controls, touch and mode state (CTL-05, CTL-06)
+
+- **Control-mode indicator** (`#control-mode`): `role="group"` with visible text
+  (`OFFLINE|ORBIT|DESCENT|SURFACE|LEAVING` plus `DRAG: FOLLOW CURSOR|REVERSE`), a real
+  `#btn-drag-mode` toggle with `aria-pressed` and `aria-describedby="control-mode-reason"`, and a
+  `#btn-control-mode` action with `aria-disabled` during transitions. One polite announcement per
+  transition through `#control-mode-live` (`role="status"`, `aria-atomic="true"`); no announcement
+  on first render and no focus movement on change. Both buttons are ≥ 44 × 44 px with a 3:1 focus
+  ring; the indicator stays visible at 390 × 844 and 792 × 302 without overlapping score/NAV/badge.
+- **Pointer router**: capture makes a hold start on a pad survive the finger leaving the pad.
+  `pointercancel`, `lostpointercapture`, window `blur`, `visibilitychange=hidden` and
+  `orientationchange` all clear every role, so no steering can stick. Pinch is two-pointer only; a
+  third finger is ignored until the count returns to two.
+- **Touch matrix** (`scripts/acceptance-touch-parity.mjs`, real CDP `Input.dispatchTouchEvent`
+  with `hasTouch`): pad hold + slide-off + release, cancel, blur, orientation, pinch in/out, and nine
+  viewports for 44 px targets and safe-area clearance. Screenshots:
+  `media/ctl/touch-mobile.jpg`, `media/ctl/touch-landscape.jpg`. `npm run audit:ui` additionally
+  measures the surface pads, exit button and mode buttons at mobile and landscape touch contexts.
+- **Surface harvest chip**: colour is never the only signal — the chip reads
+  `GREEN // HARVEST` or `RED // LOCKED|COOLDOWN|STALE` with the same reason the server returns,
+  and a maximum-depth cell is still green (depth shown as informational text).
+- Reduced motion: the chip ring and zoom/lap transitions are suppressed; the mode label is static
+  text and remains accurate.
+
+Automated evidence: `media/ctl/control-mode-*.jpg`, `media/ctl/touch-*.jpg`,
+`media/ctl/exit-*.jpg`, `media/ctl/surface-truth-*.jpg`; JSON reports are printed by the
+`scripts/acceptance-*.mjs` runs.
+
 ## Manual real-device gate (pending)
 
 Cannot be executed in this headless environment; run before calling A4 fully closed:

@@ -8,7 +8,39 @@
  */
 
 import { SphereCamera, pickFace, childTriangles, faceCentroid } from './shared/geometry.js';
-import { beginTrackball, dragTrackball } from './shared/orbit-controls.js';
+import {
+  beginSurfaceDrag,
+  dragSurfaceTo,
+  applyArrowTravelFrame,
+  normalizeMode,
+  toggleMode as toggleOrbitMode,
+} from './shared/orbit-controls.js';
+import { loadPrefs, writePrefs, modeFromPrefs, prefsWithMode } from './control-prefs.js';
+import {
+  deriveControlMode,
+  modeSentence,
+  canToggle,
+  actionReason,
+  modeLabel as controlModeLabel,
+  dragLabel as controlDragLabel,
+  actionLabel as controlActionLabel,
+} from './shared/control-mode.js';
+import {
+  ORBIT_FAR_ZOOM,
+  SURFACE_ENTER_LEVEL,
+  MAX_ZOOM,
+  zoomForLevel,
+  zoomLevelForZoom as zoomLevelFromLadder,
+  applyOrbitFarZoom,
+} from './shared/zoom-levels.js';
+import {
+  createPointerRouter,
+  attachPointerRouter,
+  watchPointerEnvironment,
+  capturePointer,
+  releasePointer,
+} from './shared/pointer-router.js';
+import { harvestStatus, reasonForServerError } from './shared/harvest.js';
 import { World } from './world.js';
 import { IcosaRenderer } from './renderer.js';
 import { UI } from './ui.js';
@@ -24,7 +56,7 @@ import { createSupplyDrop } from './supply-drop.js';
 import { createSurfaceController } from './surface-controller.js';
 import { SurfaceCamera } from './shared/surface-camera.js';
 import { cameraModeReport, parseSurfaceCameraMode } from './shared/camera-contract.js';
-import { parseSurfaceRenderer, restoreOrbit, saveOrbit } from './shared/view-state.js';
+import { parseSurfaceRenderer } from './shared/view-state.js';
 import { telemetry } from './telemetry.js';
 import { HELP_SECTIONS, captainLog } from './story-copy.js';
 import { buildIncidentAnnouncement } from './shared/incident-announcements.js';
@@ -39,7 +71,6 @@ const TAG_KEY = 'icosa.tag';
 const TOKENS_KEY = 'icosa.tokens';
 const DEFAULT_THRESHOLD = 8;
 const DEFAULT_MAX_DEPTH = 24;
-const MAX_ZOOM = 16777216;
 // RND-01: `?surface-camera=legacy|carrier` selects the surface framing.
 // Production default is `legacy` until RND-06 proves carrier pixel parity.
 const SURFACE_CAMERA_MODE = parseSurfaceCameraMode(
@@ -84,15 +115,26 @@ let spinVel = { x: 0, y: 0 }; // radians/sec after releasing a drag
 let zoomTarget = null; // eased zoom target (null = no movement)
 let zoomAnim = null; // fast cubic-bezier step to a cell level
 let zoomUiPending = false;
-let pointerDown = null;
-let pointers = new Map();
 const navKeys = new Set();
-const navVel = { x: 0, y: 0 };
-let keyboardYaw = 0;
-let keyboardPitch = 0;
-let keyboardSyncNeeded = true;
-let invertDrag = readStoredInvertDrag();
-let pinchDist = 0;
+// CTL-05: all control persistence flows through control-prefs.js.
+const controlPrefsLoad = loadPrefs(readControlStorage());
+let controlPrefs = controlPrefsLoad.prefs;
+let dragMode = modeFromPrefs(controlPrefs); // pointer polarity only ('follow'|'reverse')
+// CTL-01: one absolute surface-point/arrow input implementation.
+let activePointerDrag = null; // { cameraDrag, x0, y0 } for the pointer gesture
+let pointerRouter = null;
+let detachPointerRouter = null;
+let detachPointerEnvironment = null;
+// CTL-03: server clock/self + leaf epoch feed the one harvest predicate.
+let serverSelf = null;
+let serverClock = { local: 0, server: 0 };
+let lastClickAtClient = null;
+let leafEpoch = 0;
+// CTL-04: exit is single-flight and history-aware.
+let exitingSurface = false;
+let surfaceExitState = null;
+let surfaceHistoryPushed = false;
+let lastEmptyFrameCheck = 0;
 let lastMouse = null;
 let hoverRaf = false;
 let hoverNeedsRefresh = false;
@@ -107,7 +149,6 @@ let supplyDrop = null;
 let surface = null;
 // RND-02: one renderer, two views. `view` is the only mode switch.
 let view = 'orbit';
-let savedOrbit = null;
 const surfacePeers = new Map();
 let surfaceSupplyCells = [];
 let surfaceCamera = null;
@@ -227,14 +268,16 @@ function scheduleFirstGuide(delayMs = 700) {
   }, Math.max(0, delayMs));
 }
 
-function readStoredInvertDrag() {
+/** Storage handle for control preferences; `null` in private mode. */
+function readControlStorage() {
   try {
-    // New key: existing pilots get direct drag by default, even if they had the
-    // old reverse-drag experiment enabled.
-    const raw = localStorage.getItem('icosa.dragInvert.v2');
-    return raw === '1';
+    if (typeof localStorage === 'undefined') return null;
+    const probe = '__icosa_probe__';
+    localStorage.setItem(probe, '1');
+    localStorage.removeItem(probe);
+    return localStorage;
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -338,7 +381,7 @@ function base64UrlDecode(value) {
 
 function refreshLeafList() {
   leafList = world.activeLeaves();
-  return leafList;
+  return stampLeafEpoch();
 }
 
 function threshold() {
@@ -374,7 +417,7 @@ function faceInfo(label) {
     ownerIndex: node.ownerIndex,
     isMine: node.ownerIndex === myIndex,
     isFinal: node.depth >= maxDepth(),
-    locked: cellLockedForMe(node),
+    locked: harvestStatus(node, { index: myIndex }, harvestContext()).reason === 'own_lock',
     terrain: (() => {
       const terrain = world.terrainFor(node);
       if (!terrain) return null;
@@ -411,8 +454,10 @@ const ui = new UI({
     if (surface) surface.hold(code, down);
   },
   onSurfaceExit: () => {
-    if (surface && surface.active) surface.stop();
+    requestExitSurface();
   },
+  onDragModeToggle: () => toggleDragMode(),
+  onControlModeToggle: () => toggleSurfaceFromControl(),
 });
 
 /* ------------------------------------------------------------------ *
@@ -438,6 +483,7 @@ surface = createSurfaceController({
   getMyIndex: () => myIndex,
   getMaxDepth: () => maxDepth(),
   getSupplyCells: () => surfaceSupplyCells,
+  getHarvestContext: () => harvestContext(),
   getPeers: () => {
     const synced = [...surfacePeers.values()].filter((peer) => Date.now() - (peer.updatedAt || 0) < 5000);
     const ids = new Set(synced.map((peer) => peer.playerId));
@@ -451,7 +497,10 @@ surface = createSurfaceController({
     if (!joined || !label) return;
     attemptClick(label);
   },
-  onHud: (surfaceState) => safeCall(ui, 'updateSurfaceHud', surfaceState),
+  onHud: (surfaceState) => {
+    safeCall(ui, 'updateSurfaceHud', surfaceState);
+    applyControlModeUi();
+  },
   onExit: () => exitSurfaceMode(),
 });
 
@@ -511,7 +560,6 @@ intro = createIntro({
   safeAudio,
   onStart: () => {
     focusAnim = null;
-    keyboardSyncNeeded = true;
     safeCall(renderer, 'setPoleLabelsVisible', false);
     hoveredLabel = null;
     safeCall(ui, 'setHoverFace', null);
@@ -738,6 +786,8 @@ function boot() {
   bindCanvasInput();
   bindKeyboard();
   installPerfInputProbe();
+  bindControlModeUi();
+  applyControlModeUi(true);
   requestAnimationFrame(frame);
 }
 
@@ -1038,6 +1088,7 @@ function handleEvent(msg) {
 
 function applySnapshot(nextState, leaves) {
   if (!nextState) return;
+  leafEpoch += 1;
   if (nextState.planetSeed != null) {
     world.setPlanetSeed(nextState.planetSeed);
   }
@@ -1056,6 +1107,20 @@ function applySnapshot(nextState, leaves) {
 function applyState(next) {
   if (!next || !Array.isArray(next.players)) return;
   state = next;
+  // CTL-03: server clock + the pilot's own click timing power harvest truth.
+  if (Number.isFinite(next.serverTime)) {
+    serverClock = { local: performance.now(), server: next.serverTime };
+  }
+  if (next.self && Number.isInteger(next.self.index)) {
+    serverSelf = {
+      index: next.self.index,
+      lastClickAtMs: Number.isFinite(next.self.lastClickAtMs) ? next.self.lastClickAtMs : null,
+      clickCooldownMs: Number.isFinite(next.self.clickCooldownMs) ? next.self.clickCooldownMs : 0,
+    };
+    if (serverSelf.lastClickAtMs != null && lastClickAtClient == null) {
+      lastClickAtClient = serverSelf.lastClickAtMs;
+    }
+  }
   if (next.planetSeed != null && world.planetSeed !== (Number(next.planetSeed) >>> 0)) {
     world.setPlanetSeed(next.planetSeed);
     refreshLeafList();
@@ -1087,13 +1152,19 @@ function applyState(next) {
     }
   }
   updateZoomUi();
+  applyControlModeUi();
 }
 
 function handleCellEvent(msg) {
   if (!Array.isArray(msg.cell)) return;
+  // A cell update never changes the leaf set; the epoch only moves on snapshot
+  // and break, so untouched leaves cannot be branded stale by a neighbour.
   const [label, ownerIndex, clicks, , lastClickIndex] = msg.cell;
   const node = world.applyCell(label, ownerIndex, clicks, lastClickIndex);
   if (!node) return;
+  node.leafEpoch = leafEpoch;
+  // The authoritative click landed; our own cooldown starts from it.
+  if (Number.isInteger(lastClickIndex) && lastClickIndex === myIndex) lastClickAtClient = serverNow();
   renderer.updateCell(label, node.ownerIndex, node.clicks, node.lastClickIndex);
   refreshPlanetRenderFaces();
   syncLiveSurface();
@@ -1102,6 +1173,7 @@ function handleCellEvent(msg) {
 
 function handleBreakEvent(msg) {
   if (!msg || typeof msg.label !== 'string') return;
+  leafEpoch += 1;
   const children = world.applyBreak(msg.label, msg.children);
   if (!children) return;
   refreshLeafList();
@@ -1301,7 +1373,6 @@ function turnViewToSupply(label) {
     fromZoom: camera.zoom,
     toZoom: targetZoom,
   };
-  keyboardSyncNeeded = true;
   lastInteraction = now();
   return true;
 }
@@ -1820,20 +1891,31 @@ function attemptClick(label) {
   }
   if (!label) return;
   const node = world.get(label);
-  if (!node) return;
-  if (cellLockedForMe(node)) {
-    maybeTip('tip-lock', { delay: 250 });
-    const stampLock = now();
-    if (stampLock - lastLockToastAt > 1200) {
-      lastLockToastAt = stampLock;
-      safeCall(ui, 'toast', 'CELL LOCKED // ANOTHER OPERATOR MUST CONTEST IT FIRST', 'warn');
-      safeAudio('error');
+  if (!node) {
+    reloadWorld();
+    return;
+  }
+  // CTL-03: exactly one predicate decides whether the server would accept now.
+  const status = targetHarvestStatus(node);
+  if (!status.can) {
+    if (status.reason === 'own_lock') {
+      maybeTip('tip-lock', { delay: 250 });
+      const stampLock = now();
+      if (stampLock - lastLockToastAt > 1200) {
+        lastLockToastAt = stampLock;
+        safeCall(ui, 'toast', 'CELL LOCKED // ANOTHER OPERATOR MUST CONTEST IT FIRST', 'warn');
+        safeAudio('error');
+      }
+    } else if (status.reason === 'stale_leaf') {
+      reloadWorld();
     }
+    // `cooldown` is silent by design: the auto-harvest retries on the next tick.
     return;
   }
   const stamp = now();
   if (stamp - lastClickSentAt < 45) return;
   lastClickSentAt = stamp;
+  lastClickAtClient = serverNow();
 
   const before = { ownerIndex: world.get(label).ownerIndex, clicks: world.get(label).clicks };
   optimisticClick(label);
@@ -2095,7 +2177,7 @@ function applyHover(label) {
 }
 
 function refreshHoverFromPointer() {
-  if (!lastMouse || pointers.size > 0) return;
+  if (!lastMouse || (pointerRouter && pointerRouter.activeCount() > 0)) return;
   const rect = canvas.getBoundingClientRect();
   applyHover(pickFace({ faces: leafList }, camera, lastMouse.x - rect.left, lastMouse.y - rect.top));
 }
@@ -2129,17 +2211,13 @@ function maxZoomLevel() {
 }
 
 /** Surface landing happens after the fourth zoom rung (D0..D3), not maxDepth. */
-const SURFACE_ENTER_LEVEL = 3;
 function maxOrbitZoomLevel() {
   return Math.max(maxZoomLevel(), SURFACE_ENTER_LEVEL);
 }
 
-function zoomForLevel(level) {
-  return clamp(2 ** clamp(Math.round(Number(level) || 0), 0, 12), 0.4, MAX_ZOOM);
-}
-
+/** Ladder wrappers: the constants and maths live in shared/zoom-levels.js (CTL-04). */
 function zoomLevelForZoom(value) {
-  return clamp(Math.round(Math.log2(Math.max(1, Number(value) || 1))), 0, maxOrbitZoomLevel());
+  return zoomLevelFromLadder(value, maxOrbitZoomLevel());
 }
 
 function startZoom(target, duration = 260) {
@@ -2251,6 +2329,8 @@ function initSequence() {
 
 function bindCanvasInput() {
   if (!canvas) return;
+  // CTL-06: the router owns roles, capture and cancellation for every pointer.
+  canvas.setAttribute('data-pointer-role', 'orbit-drag');
 
   const localPoint = (event) => {
     const rect = canvas.getBoundingClientRect();
@@ -2269,146 +2349,33 @@ function bindCanvasInput() {
     hoverRaf = true;
     requestAnimationFrame(() => {
       hoverRaf = false;
-      if (!lastMouse || pointers.size > 0) return;
-      const { x, y } = localPoint({ clientX: lastMouse.x, clientY: lastMouse.y });
-      setHover(pickAt(x, y));
+      if (!lastMouse || (pointerRouter && pointerRouter.activeCount() > 0)) return;
+      const p = localPoint({ clientX: lastMouse.x, clientY: lastMouse.y });
+      setHover(pickAt(p.x, p.y));
     });
   };
 
-  canvas.addEventListener('pointerdown', (event) => {
-    safeAudio('unlock');
-    keyboardSyncNeeded = true;
-    navVel.x = 0;
-    navVel.y = 0;
-    initSequence();
-    cancelFocus();
-    spinVel.x = 0;
-    spinVel.y = 0;
-    zoomTarget = null;
-    pointers.set(event.pointerId, localPoint(event));
-    lastInteraction = now();
-    if (pointers.size === 1) {
-      pointerDown = {
-        id: event.pointerId,
-        startX: event.clientX,
-        startY: event.clientY,
-        lastX: event.clientX,
-        lastY: event.clientY,
-        moved: 0,
-        time: now(),
-        lastMoveAt: now(),
-      };
-      canvas.setPointerCapture && canvas.setPointerCapture(event.pointerId);
-      const start = localPoint(event);
-      beginTrackball(camera, start.x - camera.width / 2, -(start.y - camera.height / 2), Math.min(camera.width, camera.height) * 0.45);
-      setHover(null);
-    } else if (pointers.size === 2) {
-      pointerDown = null;
-      const pts = [...pointers.values()];
-      pinchDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
-    }
-  });
-
-  canvas.addEventListener('pointermove', (event) => {
-    if (pointers.has(event.pointerId)) pointers.set(event.pointerId, localPoint(event));
-    lastInteraction = now();
-
-    if (pointers.size >= 2) {
-      const pts = [...pointers.values()];
-      const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
-      if (pinchDist > 0 && dist > 0) {
-        const base = zoomTarget === null ? camera.zoom : zoomTarget;
-        if (dist > pinchDist * 1.25 && zoomLevelForZoom(base) >= SURFACE_ENTER_LEVEL) {
-          enterSurfaceMode();
-          return;
-        }
-        startZoom(clamp(base * (dist / pinchDist), 0.4, MAX_ZOOM), 90);
-      }
-      pinchDist = dist;
-      hoverNeedsRefresh = true;
-      return;
-    }
-
-    if (pointerDown && pointerDown.id === event.pointerId) {
-      const dx = event.clientX - pointerDown.lastX;
-      const dy = event.clientY - pointerDown.lastY;
-      pointerDown.lastX = event.clientX;
-      pointerDown.lastY = event.clientY;
-      pointerDown.moved += Math.abs(dx) + Math.abs(dy);
-      if (pointerDown.moved > 2) {
-        // Absolute virtual trackball: the grabbed surface point follows the
-        // pointer; quaternion rotation has no pole/gimbal lock. I inverts.
-        const p = localPoint(event);
-        dragTrackball(camera, p.x - camera.width / 2, -(p.y - camera.height / 2), Math.min(camera.width, camera.height) * 0.45, invertDrag);
-        const stamp = now();
-        pointerDown.lastMoveAt = stamp;
-        // A direct grab is deterministic; no residual spin can reverse it.
-        spinVel.x = 0;
-        spinVel.y = 0;
-        canvas.style.cursor = 'grabbing';
-      }
-      return;
-    }
-    scheduleHover(event);
-  });
-
-  canvas.addEventListener('pointerup', (event) => {
-    const wasDown = pointerDown && pointerDown.id === event.pointerId;
-    const clickLike =
-      wasDown && !event._cancelled && pointerDown.moved <= 7 && now() - pointerDown.time < 900;
-    pointers.delete(event.pointerId);
-    if (wasDown) {
-      const dragged = pointerDown.moved > 2;
-      const sinceMove = now() - (pointerDown.lastMoveAt || pointerDown.time);
-      if (dragged) {
-        // Direct arcball drag ends where the cursor left it; no post-release
-        // spin that could make the planet keep moving in a different direction.
-        spinVel.x = 0;
-        spinVel.y = 0;
-        canvas.style.cursor = 'grab';
-        hoverNeedsRefresh = true;
-      } else {
-        spinVel.x = 0;
-        spinVel.y = 0;
-      }
-      pointerDown = null;
-      if (camera && camera._arc) camera._arc = null;
-      if (clickLike) {
-        const rect = canvas.getBoundingClientRect();
-        const label = pickAt(event.clientX - rect.left, event.clientY - rect.top);
-        if (label) attemptClick(label);
-      }
-    }
-    if (pointers.size < 2) snapZoomToLevel();
-    if (pointers.size === 1) {
-      const [id, p] = [...pointers.entries()][0];
-      pointerDown = {
-        id,
-        startX: p.x,
-        startY: p.y,
-        lastX: p.x,
-        lastY: p.y,
-        moved: 0,
-        time: now(),
-      };
-    }
-    if (pointers.size === 0) pinchDist = 0;
-    lastMouse = { x: event.clientX, y: event.clientY };
-  });
-
-  canvas.addEventListener('pointercancel', (event) => {
-    pointers.delete(event.pointerId);
-    pointerDown = null;
-    if (camera && camera._arc) camera._arc = null;
-    pinchDist = 0;
-    spinVel.x = 0;
-    spinVel.y = 0;
-    zoomTarget = null;
-  });
-
+  canvas.addEventListener('pointermove', scheduleHover);
   canvas.addEventListener('pointerleave', () => {
-    if (pointers.size === 0) setHover(null);
+    if (!pointerRouter || pointerRouter.activeCount() === 0) setHover(null);
   });
+
+  const router = createPointerRouter({
+    canvas,
+    capture: (element, pointerId) => capturePointer(element, pointerId),
+    release: (element, pointerId) => releasePointer(element, pointerId),
+    onIntent: (intent) => {
+      try {
+        handlePointerIntent(intent);
+      } catch (err) {
+        console.error('[icosa] pointer intent failed', err);
+      }
+    },
+  });
+  pointerRouter = router;
+  const attached = attachPointerRouter(canvas, { router });
+  detachPointerRouter = attached.detach;
+  detachPointerEnvironment = watchPointerEnvironment(router, { win: window, doc: document });
 
   canvas.addEventListener(
     'wheel',
@@ -2427,49 +2394,102 @@ function bindCanvasInput() {
   });
 }
 
-function syncKeyboardEuler() {
-  if (!keyboardSyncNeeded) return;
-  const e = camera.viewEuler ? camera.viewEuler() : { yaw: camera.yaw, pitch: camera.pitch };
-  keyboardYaw = e.yaw;
-  keyboardPitch = e.pitch;
-  keyboardSyncNeeded = false;
+/* ------------------------------------------------------------------ *
+ * Pointer intents (CTL-01 absolute drag, CTL-06 pinch/router)
+ * ------------------------------------------------------------------ */
+
+let pinchBaseZoom = 0;
+let pinchAccum = 1;
+
+function pointerLocal(intent) {
+  const rect = canvas.getBoundingClientRect();
+  return { x: Number(intent.x) - rect.left, y: Number(intent.y) - rect.top };
 }
 
+function handlePointerIntent(intent) {
+  if (!intent || !intent.kind) return;
+  if (intent.kind === 'orbit-drag') {
+    if (intent.phase === 'start') {
+      safeAudio('unlock');
+      initSequence();
+      cancelFocus();
+      spinVel.x = 0;
+      spinVel.y = 0;
+      zoomTarget = null;
+      lastInteraction = now();
+      applyHover(null);
+      const p = pointerLocal(intent);
+      activePointerDrag = beginSurfaceDrag(camera, p.x, p.y, camera.width || window.innerWidth, camera.height || window.innerHeight);
+      if (activePointerDrag) activePointerDrag.mode = dragMode;
+      canvas.style.cursor = 'grabbing';
+    } else if (intent.phase === 'move') {
+      if (!activePointerDrag) return;
+      const p = pointerLocal(intent);
+      dragSurfaceTo(camera, activePointerDrag, p.x, p.y);
+      activePointerDrag.mode = dragMode;
+      spinVel.x = 0;
+      spinVel.y = 0;
+      lastInteraction = now();
+    } else {
+      activePointerDrag = null;
+      spinVel.x = 0;
+      spinVel.y = 0;
+      canvas.style.cursor = 'grab';
+      hoverNeedsRefresh = true;
+    }
+    return;
+  }
+  if (intent.kind === 'tap') {
+    const p = pointerLocal(intent);
+    const label = pickFace({ faces: leafList }, camera, p.x, p.y);
+    if (label) attemptClick(label);
+    return;
+  }
+  if (intent.kind === 'pinch') {
+    if (intent.phase === 'start') {
+      pinchBaseZoom = zoomTarget === null ? camera.zoom : zoomTarget;
+      pinchAccum = 1;
+      return;
+    }
+    if (intent.phase === 'move') {
+      const scale = Number(intent.scale) || 1;
+      pinchAccum *= scale;
+      if (pinchAccum > 1.25 && zoomLevelForZoom(pinchBaseZoom) >= SURFACE_ENTER_LEVEL) {
+        enterSurfaceMode();
+        return;
+      }
+      startZoom(clamp(pinchBaseZoom * pinchAccum, ORBIT_FAR_ZOOM, MAX_ZOOM), 90);
+      return;
+    }
+    snapZoomToLevel();
+    return;
+  }
+  if (intent.kind === 'cancel-all') {
+    activePointerDrag = null;
+    pinchBaseZoom = 0;
+    pinchAccum = 1;
+    cancelZoom();
+    spinVel.x = 0;
+    spinVel.y = 0;
+    canvas.style.cursor = 'grab';
+    return;
+  }
+}
+
+/**
+ * CTL-01 arrow travel: carrier movement on the concentric sphere with a
+ * parallel-transported up. No Euler yaw/pitch is assigned here, so travel never
+ * reverses across a pole; Shift scales the angular rate by SHIFT_BOOST.
+ */
 function updateKeyboardNavigation(dt) {
   if (!dt || (intro && intro.active) || (interlude && interlude.active)) return;
   const dtSec = dt / 1000;
   const hasInput = navKeys.has('ArrowLeft') || navKeys.has('ArrowRight') || navKeys.has('ArrowUp') || navKeys.has('ArrowDown');
-  if (hasInput) {
-    syncKeyboardEuler();
-    // Cursor steering is a natural upright orbit: it travels the globe rather
-    // than tumbling it with the mouse trackball.
-    const boost = navKeys.has('Shift') ? 2.1 : 1;
-    const yawInput = (navKeys.has('ArrowRight') ? 1 : 0) - (navKeys.has('ArrowLeft') ? 1 : 0);
-    const pitchInput = (navKeys.has('ArrowUp') ? 1 : 0) - (navKeys.has('ArrowDown') ? 1 : 0);
-    // Travel is deliberately inverse to mouse drag: pressing left rotates the
-    // planet right while dragging left moves the grabbed surface left.
-    const yawTarget = -yawInput * 1.55 * boost;
-    const pitchTarget = pitchInput * 1.05 * boost;
-    const ease = 1 - Math.exp(-16 * dtSec);
-    navVel.x += (yawTarget - navVel.x) * ease;
-    navVel.y += (pitchTarget - navVel.y) * ease;
-    spinVel.x = 0;
-    spinVel.y = 0;
-    lastInteraction = now();
-  } else {
-    const decay = Math.exp(-9 * dtSec);
-    navVel.x *= decay;
-    navVel.y *= decay;
-    if (Math.abs(navVel.x) < 0.0005) navVel.x = 0;
-    if (Math.abs(navVel.y) < 0.0005) navVel.y = 0;
-  }
-  if (!navVel.x && !navVel.y) return;
-  if (keyboardSyncNeeded) syncKeyboardEuler();
-  keyboardYaw += navVel.x * dtSec;
-  keyboardPitch += navVel.y * dtSec;
-  // Set an upright yaw/pitch orientation: keyboard travel carries no roll.
-  camera.yaw = keyboardYaw;
-  camera.pitch = keyboardPitch;
+  if (!hasInput) return;
+  lastInteraction = now();
+  spinVel.x = 0;
+  spinVel.y = 0;
+  applyArrowTravelFrame(camera, navKeys, dtSec, navKeys.has('Shift'));
 }
 
 let lastSurfacePoseSent = 0;
@@ -2571,6 +2591,7 @@ function syncSurfaceResourcePins() {
 function enterSurfaceMode() {
   if (!joined || !surface || surface.active || view === 'surface') return;
   if (interlude && interlude.active) return;
+  if (exitingSurface) return;
   if (intro && intro.active) intro.skip();
   cancelFocus();
   cancelZoom();
@@ -2583,46 +2604,178 @@ function enterSurfaceMode() {
   safeCall(ui, 'hideManual');
   safeCall(ui, 'hideLandingBrief');
   loadHumanoidRig();
-  // Store the orbit camera so exiting restores it exactly (RND-02).
-  savedOrbit = saveOrbit(camera);
+  // CTL-04 supersedes RND-02's exact-restore policy: every exit returns to the
+  // farthest orbit, so no pre-entry camera pose is stored.
   const planet = planetInfoFromState();
   if (!surface.start({ planetName: planet.planetName, seed: planet.planetSeed, depth: planet.planetDepth })) {
-    savedOrbit = null;
     return;
   }
   view = 'surface';
+  surfaceExitState = null;
+  // CTL-04: one history entry marks the surface so browser/mobile back exits
+  // the game mode instead of leaving the page.
+  try {
+    if (typeof history !== 'undefined' && typeof history.pushState === 'function') {
+      history.pushState({ surface: true }, '', location.href);
+      surfaceHistoryPushed = true;
+    }
+  } catch {
+    surfaceHistoryPushed = false;
+  }
   renderer.setSurfaceMode({ active: true, entities: [], phase: surface.phase, progress: surface.progress() });
   syncSurfacePeerVisuals();
   syncSurfaceResourcePins();
   safeCall(ui, 'enterSurface', { planet });
   refreshSurfaceLiveFaces();
   applySupplyFocus();
+  applyControlModeUi(true);
   safeAudio('introWhoosh');
 }
 
+/**
+ * CTL-04: every exit path (RETURN TO ORBIT, Escape, popstate/mobile back) funnels
+ * here. Single-flight: a repeat call changes nothing and returns false.
+ */
+function requestExitSurface() {
+  if (exitingSurface) return false;
+  if (view !== 'surface' && !(surface && surface.active)) return false;
+  exitingSurface = true;
+  if (surface && surface.active) {
+    // The controller runs its fly-out, then calls onExit -> finishSurfaceExit().
+    surface.stop();
+    return true;
+  }
+  finishSurfaceExit();
+  return true;
+}
+
+/** Legacy alias: the surface controller calls this through `onExit`. */
 function exitSurfaceMode() {
-  if (view !== 'surface') return;
+  return finishSurfaceExit();
+}
+
+/** Apply the deterministic exit state, then propagate it to the acceptance hook. */
+function finishSurfaceExit() {
+  if (view !== 'surface') {
+    exitingSurface = false;
+    return surfaceExitState;
+  }
   view = 'orbit';
-  if (surface) surface.stop();
   renderer.setSurfaceMode({ active: false });
   renderer.setSurfaceView(false);
   safeCall(renderer, 'clearSurfaceVisuals');
   syncRenderFaces();
   sendSurfaceLeave();
-  // Restore the exact pre-entry orbit (RND-02); CTL-04 owns the later
-  // "exit to farthest orbit" policy change.
-  if (savedOrbit) {
-    cancelFocus();
-    cancelZoom();
-    restoreOrbit(camera, savedOrbit);
-    savedOrbit = null;
-  }
-  zoomTarget = null;
-  zoomAnim = null;
-  keyboardSyncNeeded = true;
+  cancelFocus();
+  cancelZoom();
+  // CTL-04: farthest orbit through the one exported exit policy.
+  const zoom = applyOrbitFarZoom(camera);
   updateZoomUi();
+  renderer.resetEmptyFrames && renderer.resetEmptyFrames();
+  applyControlModeUi(true);
   safeCall(ui, 'exitSurface');
-  safeCall(ui, 'toast', 'ORBIT VIEW // CAMERA RESTORED', 'info');
+  safeCall(ui, 'toast', 'ORBIT VIEW // MAXIMUM ZOOM OUT', 'info');
+  const overlayRemoved = typeof document === 'undefined' || !document.getElementById('surface-overlay');
+  const hudVisible = typeof document === 'undefined'
+    || !document.getElementById('hud')
+    || document.getElementById('hud').getAttribute('aria-hidden') !== 'true';
+  const focusTarget = safeCall(ui, 'focusOrbitControl') || null;
+  const overlay = typeof document !== 'undefined' ? document.getElementById('surface-overlay') : null;
+  if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+  if (typeof document !== 'undefined' && document.body) document.body.classList.remove('is-surface');
+  surfaceExitState = {
+    zoom: camera.zoom,
+    overlayRemoved: overlayRemoved && !overlay,
+    hudVisible: !!hudVisible,
+    focusTarget,
+    historyDepth: surfaceHistoryPushed ? 1 : 0,
+  };
+  // Consume the pushed history entry so a second back gesture cannot exit twice.
+  if (surfaceHistoryPushed) {
+    surfaceHistoryPushed = false;
+    surfaceExitState.historyDepth = 0;
+    try {
+      // Only consume an entry that is still ours; a popstate-driven exit has
+      // already restored the pre-surface depth.
+      if (typeof history !== 'undefined'
+        && history.state && history.state.surface === true
+        && typeof history.back === 'function') {
+        history.back();
+      }
+    } catch {
+      /* history is advisory */
+    }
+  }
+  exitingSurface = false;
+  return surfaceExitState;
+}
+
+/* ------------------------------------------------------------------ *
+ * Control mode (CTL-05)
+ * ------------------------------------------------------------------ */
+
+let lastControlMode = null;
+
+function controlModeState() {
+  return deriveControlMode({
+    joined,
+    surfaceActive: view === 'surface' || !!(surface && surface.active),
+    surfacePhase: surface ? surface.phase : 'idle',
+  });
+}
+
+/** Pure derivation -> one HUD render + one polite announcement per transition. */
+function applyControlModeUi(force = false) {
+  const mode = controlModeState();
+  const announce = force === true ? lastControlMode !== null && mode !== lastControlMode : mode !== lastControlMode;
+  lastControlMode = mode;
+  safeCall(ui, 'setControlMode', {
+    mode,
+    label: controlModeLabel(mode),
+    dragInvert: dragMode === 'reverse',
+    dragLabel: controlDragLabel(dragMode === 'reverse'),
+    actionLabel: controlActionLabel(mode),
+    canToggle: canToggle(mode) && !exitingSurface,
+    reason: actionReason(mode),
+    announce,
+    sentence: modeSentence(mode, dragMode === 'reverse'),
+  });
+  return mode;
+}
+
+/** `I`, the drag toggle and the acceptance hook all share this transition. */
+function setDragMode(next, { persist = true } = {}) {
+  const mode = normalizeMode(next);
+  if (mode === dragMode) return dragMode;
+  dragMode = mode;
+  controlPrefs = prefsWithMode(controlPrefs, mode);
+  const saved = persist ? writePrefs(readControlStorage(), controlPrefs) : false;
+  safeCall(ui, 'setControlMode', {
+    mode: controlModeState(),
+    label: controlModeLabel(controlModeState()),
+    dragInvert: dragMode === 'reverse',
+    dragLabel: controlDragLabel(dragMode === 'reverse'),
+    actionLabel: controlActionLabel(controlModeState()),
+    canToggle: canToggle(controlModeState()) && !exitingSurface,
+    reason: actionReason(controlModeState()),
+    announce: true,
+    sentence: modeSentence(controlModeState(), dragMode === 'reverse'),
+    persistFailed: !saved && !!readControlStorage(),
+  });
+  if (activePointerDrag) activePointerDrag.mode = dragMode; // applies to the next gesture
+  return dragMode;
+}
+
+function toggleDragMode() {
+  return setDragMode(toggleOrbitMode(dragMode));
+}
+
+function toggleSurfaceFromControl() {
+  const mode = controlModeState();
+  if (!canToggle(mode) || exitingSurface) return false;
+  if (mode === 'surface') return requestExitSurface();
+  enterSurfaceMode();
+  return true;
 }
 
 function bindKeyboard() {
@@ -2664,7 +2817,7 @@ function bindKeyboard() {
       }
       case 'i':
       case 'I':
-        setInvertDrag(!invertDrag);
+        toggleDragMode();
         break;
       default:
         return;
@@ -2679,14 +2832,70 @@ function bindKeyboard() {
   navKeys.clear();
 }
 
-function setInvertDrag(next) {
-  invertDrag = !!next;
-  try {
-    localStorage.setItem('icosa.dragInvert.v2', invertDrag ? '1' : '0');
-  } catch {
-    /* private mode */
+/**
+ * CTL-05: HUD controls + CTL-04 history entry. One listener set for the two
+ * visible mode actions; nothing here writes DOM directly (ui.js renders).
+ */
+function bindControlModeUi() {
+  if (typeof window === 'undefined') return;
+  window.addEventListener('popstate', () => {
+    // Browser/mobile back consumes the surface entry: leave the surface, never
+    // the page. A back gesture outside surface mode is left to the browser.
+    if (view === 'surface' || (surface && surface.active)) {
+      // The browser already consumed the pushed entry; finish must not go back
+      // again or it would leave the game.
+      surfaceHistoryPushed = false;
+      requestExitSurface();
+    }
+  });
+  const prefs = readControlStorage();
+  if (prefs) {
+    try {
+      // Private-mode storage failure keeps the session value; the HUD says so.
+      writePrefs(prefs, controlPrefs);
+    } catch {
+      /* ignore */
+    }
   }
-  safeCall(ui, 'toast', invertDrag ? 'DRAG: REVERSE — press I for direct drag' : 'DRAG: FOLLOW CURSOR — press I to reverse', 'info');
+}
+
+/* ------------------------------------------------------------------ *
+ * Harvest truth (CTL-03)
+ * ------------------------------------------------------------------ */
+
+/** Best estimate of the server clock from the last state frame. */
+function serverNow() {
+  if (!serverClock.local) return Date.now();
+  return serverClock.server + (performance.now() - serverClock.local);
+}
+
+/**
+ * One context for the predicate: viewer index, server clock, the pilot's own
+ * last click, the server's cooldown and the leaf epoch.
+ */
+function harvestContext() {
+  const cooldown = serverSelf && Number.isFinite(serverSelf.clickCooldownMs)
+    ? Math.max(0, serverSelf.clickCooldownMs)
+    : 0;
+  return {
+    myIndex,
+    maxDepth: maxDepth(),
+    serverTimeMs: serverNow(),
+    lastClickAtMs: lastClickAtClient,
+    clickCooldownMs: cooldown,
+    leafEpoch,
+  };
+}
+
+/** The chip/queue/highlight single source of truth. */
+function targetHarvestStatus(node) {
+  return harvestStatus(node, { index: myIndex }, harvestContext());
+}
+
+/** Stamp freshly materialized leaves with the leaf epoch. */
+function stampLeafEpoch() {
+  for (const node of leafList) node.leafEpoch = leafEpoch;
+  return leafList;
 }
 
 /* ------------------------------------------------------------------ *
@@ -2702,7 +2911,6 @@ function focusFace(label) {
   const node = world.get(label);
   if (!node) return;
   cancelZoom();
-  keyboardSyncNeeded = true;
   const c = node.centroid;
   let targetYaw = Math.atan2(-c.x, c.z);
   const horizontal = Math.hypot(c.x, c.z);
@@ -2890,6 +3098,18 @@ function frame(t) {
     }
   }
   syncPerfTelemetry(t);
+  // CTL-02: an empty frame is surfaced once as a GDS status line, then the
+  // camera is recovered and the counter is reset so the message cannot loop.
+  if (joined && t - lastEmptyFrameCheck > 1000) {
+    lastEmptyFrameCheck = t;
+    const stats = renderer && typeof renderer.frameStats === 'function' ? renderer.frameStats() : null;
+    if (stats && stats.emptyFrames > 0) {
+      safeCall(ui, 'announceStatus', 'VIEW RECOVERY');
+      camera.reset();
+      if (typeof renderer.resetEmptyFrames === 'function') renderer.resetEmptyFrames();
+      updateZoomUi();
+    }
+  }
   requestAnimationFrame(frame);
 }
 
@@ -3074,6 +3294,15 @@ window.__ICOSA__ = {
     };
   },
   eventLog: () => eventLog.slice(),
+  surfaceFocus: (label) => (surface ? surface.focusLabel(label) : false),
+  surfaceAutoHarvest: (enabled) => (surface ? surface.setAutoHarvest(enabled) : false),
+  harvestContext: () => harvestContext(),
+  harvestStatusFor: (label) => {
+    const node = label ? world.get(label) : null;
+    if (!node) return null;
+    const status = targetHarvestStatus(node);
+    return { label: node.label, depth: node.depth, can: status.can, reason: status.reason, waitMs: status.waitMs || 0, exhausted: !!status.exhausted };
+  },
   surfacePeers: () => [...surfacePeers.values()],
   surfaceEffect: (name = 'ORE', value = 90, color = '#ffd166') => safeCall(surface, 'harvestEffect', { resource: { name, color }, value }),
   projectFace: (label) => {
@@ -3082,15 +3311,34 @@ window.__ICOSA__ = {
     const projected = camera.project(node.centroid);
     return { x: projected.x, y: projected.y, z: projected.z, visible: projected.visible };
   },
-  cameraInertia: () => ({ spin: { ...spinVel }, zoomTarget, zoomAnim, invertDrag, nav: { ...navVel }, keyboard: { yaw: keyboardYaw, pitch: keyboardPitch, synced: !keyboardSyncNeeded } }),
+  cameraInertia: () => ({
+    spin: { ...spinVel },
+    zoomTarget,
+    zoomAnim,
+    dragMode,
+    dragInvert: dragMode === 'reverse',
+    pointerDragging: !!activePointerDrag,
+    pointerDrag: activePointerDrag ? { hasStart: !!activePointerDrag.start, mode: activePointerDrag.mode } : null,
+    pointerRoles: pointerRouter ? pointerRouter.roles() : [],
+    keyboard: { up: camera.carrierUp(), axis: camera.viewAxis() },
+  }),
   zoomLevel: () => ({
     level: zoomLevelForZoom(zoomTarget === null ? camera.zoom : zoomTarget),
     maxLevel: maxZoomLevel(),
     target: zoomTarget,
     animating: !!zoomAnim,
   }),
-  invertDrag: () => invertDrag,
-  setInvertDrag: (value) => setInvertDrag(value),
+  dragMode: () => dragMode,
+  setDragMode: (value) => setDragMode(value),
+  invertDrag: () => dragMode === 'reverse',
+  setInvertDrag: (value) => setDragMode(value === true ? 'reverse' : 'follow'),
+  controlMode: () => ({ mode: controlModeState(), dragMode, canToggle: canToggle(controlModeState()) }),
+  renderStats: () => (renderer && typeof renderer.frameStats === 'function' ? renderer.frameStats() : null),
+  exitSurface: () => requestExitSurface(),
+  surfaceExitResult: () => surfaceExitState,
+  pointerRoles: () => (pointerRouter ? pointerRouter.roles() : []),
+  surfacePointerRoles: () => safeCall(ui, 'surfacePointerRoles') || [],
+  cancelPointers: (reason = 'manual') => (pointerRouter ? pointerRouter.cancelAll(reason) : false),
   navTarget: () => (navLabel ? faceInfo(navLabel) : null),
   nextNavTarget: () => chooseNavTarget({ cycle: true }),
   meteor: (message) => handleIncidentEvent({ kind: 'meteor', title: 'METEOR IMPACT', message }),

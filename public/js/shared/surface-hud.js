@@ -7,7 +7,12 @@
  */
 
 export const SURFACE_PHASES = Object.freeze(['landing', 'running', 'leaving', 'idle']);
-export const TARGET_STATES = Object.freeze(['idle', 'can', 'locked', 'depleted']);
+/**
+ * Target states. CTL-03 adds the server-matching red reasons (`cooldown`,
+ * `stale`, `syncing`) and keeps depth informational: a maximum-depth but
+ * eligible cell stays `can`. `depleted` remains for the UI-04 slice contract.
+ */
+export const TARGET_STATES = Object.freeze(['idle', 'can', 'locked', 'depleted', 'cooldown', 'stale', 'syncing']);
 
 /** `data-surface-hold` intent names stay stable for the controller. */
 export const MOVE_KEYS = Object.freeze({
@@ -79,7 +84,14 @@ export function mapSurfaceSlice(input = {}) {
   const active = src.active === true;
   const targetLabel = src.targetLabel == null || src.targetLabel === '' ? null : String(src.targetLabel);
   let targetState = 'idle';
-  if (src.depleted === true) targetState = 'depleted';
+  // CTL-03 reasons win when supplied; otherwise keep the UI-04 legacy mapping.
+  const reason = typeof src.targetReason === 'string' ? src.targetReason : null;
+  if (reason === 'not_joined') targetState = 'syncing';
+  else if (reason === 'cooldown') targetState = 'cooldown';
+  else if (reason === 'stale_leaf') targetState = 'stale';
+  else if (reason === 'own_lock') targetState = 'locked';
+  else if (reason === 'ok') targetState = 'can';
+  else if (src.depleted === true) targetState = 'depleted';
   else if (targetLabel && src.targetHarvestable === true) targetState = 'can';
   else if (targetLabel) targetState = 'locked';
   if (!TARGET_STATES.includes(targetState)) targetState = 'idle';
@@ -111,6 +123,9 @@ export function targetStateText(state, label) {
   if (state === 'can') return `TARGET ${label} // GREEN // HARVEST`;
   if (state === 'depleted') return `TARGET ${label} // RED // DEPLETED`;
   if (state === 'locked') return `TARGET ${label} // RED // LOCKED`;
+  if (state === 'cooldown') return `TARGET ${label} // RED // COOLDOWN`;
+  if (state === 'stale') return `TARGET ${label} // RED // STALE`;
+  if (state === 'syncing') return `TARGET ${label} // SYNCING`;
   return `TARGET ${label} // —`;
 }
 
@@ -118,6 +133,9 @@ export function targetStateBadge(state) {
   if (state === 'can') return { status: 'success', text: 'GREEN // HARVEST' };
   if (state === 'depleted') return { status: 'danger', text: 'RED // DEPLETED' };
   if (state === 'locked') return { status: 'warning', text: 'RED // LOCKED' };
+  if (state === 'cooldown') return { status: 'warning', text: 'RED // COOLDOWN' };
+  if (state === 'stale') return { status: 'warning', text: 'RED // STALE' };
+  if (state === 'syncing') return { status: 'neutral', text: 'SYNCING' };
   return { status: 'neutral', text: 'NO TARGET' };
 }
 

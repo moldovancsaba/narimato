@@ -16,7 +16,7 @@
  * the server's surface frames.
  */
 
-import { canHarvestCell } from './shared/harvest.js';
+import { harvestStatus } from './shared/harvest.js';
 
 const LAP_SECONDS = 60;
 const ANGULAR_SPEED = (Math.PI * 2) / LAP_SECONDS;
@@ -103,9 +103,14 @@ function faceContains(node, p) {
   return true;
 }
 
-/** Harvest rule shared with the HUD and the renderer (CTL-03). */
-function harvestable(node, myIndex, maxDepth) {
-  return canHarvestCell(node, myIndex, maxDepth);
+function hashString(value) {
+  let hash = 2166136261;
+  const text = String(value == null ? '' : value);
+  for (let i = 0; i < text.length; i += 1) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
 }
 
 /**
@@ -119,6 +124,8 @@ function harvestable(node, myIndex, maxDepth) {
  * @param {()=>number} [options.getMaxDepth]
  * @param {()=>Array} [options.getSupplyCells] legacy: renderer owns supply markers (RND-07)
  * @param {()=>Array} [options.getPeers] peers are resolved by the renderer (RND-07)
+ * @param {()=>object|null} [options.getHarvestContext] CTL-03 viewer/cooldown/epoch
+ * @param {boolean} [options.autoHarvest] footprint auto-harvest (QA can pause it)
  * @param {(pose:object)=>void} [options.onPose]
  * @param {(label:string)=>void} [options.onHarvest]
  * @param {()=>void} [options.onExit]
@@ -134,6 +141,8 @@ export function createSurfaceController({
   getMaxDepth = () => SURFACE_SUBDIV,
   getSupplyCells = () => [],
   getPeers = () => [],
+  getHarvestContext = null,
+  autoHarvest = true,
   onPose = () => {},
   onHarvest = () => {},
   onExit = () => {},
@@ -160,6 +169,33 @@ export function createSurfaceController({
   let debug = {};
   let effects = [];
 
+  /**
+   * CTL-03: the one harvest predicate. The context (viewer index, cooldown, leaf
+   * epoch) comes from the app so the chip colour and `/api/action` cannot disagree.
+   */
+  function harvestContext() {
+    const supplied = typeof getHarvestContext === 'function' ? getHarvestContext() : null;
+    const ctx = supplied && typeof supplied === 'object' ? supplied : {};
+    return {
+      myIndex: Number.isInteger(ctx.myIndex) ? ctx.myIndex : getMyIndex(),
+      maxDepth: Number.isInteger(ctx.maxDepth) ? ctx.maxDepth : getMaxDepth(),
+      serverTimeMs: Number.isFinite(ctx.serverTimeMs) ? ctx.serverTimeMs : now(),
+      lastClickAtMs: Number.isFinite(ctx.lastClickAtMs) ? ctx.lastClickAtMs : null,
+      clickCooldownMs: Math.max(0, Number(ctx.clickCooldownMs) || 0),
+      leafEpoch: ctx.leafEpoch,
+    };
+  }
+
+  function harvestStatusFor(node) {
+    const ctx = harvestContext();
+    return harvestStatus(node, { index: ctx.myIndex }, ctx);
+  }
+
+  function harvestable(node) {
+    return harvestStatusFor(node).can;
+  }
+
+
   function findCell(point) {
     const leaves = getLeaves();
     for (const node of leaves) {
@@ -181,8 +217,16 @@ export function createSurfaceController({
 
   function target() {
     const node = findCell(pos);
-    if (!node) return { label: null, harvestable: false };
-    return { label: node.label, harvestable: harvestable(node, getMyIndex(), getMaxDepth()) };
+    if (!node) return { label: null, harvestable: false, can: false, reason: 'not_joined', waitMs: 0, exhausted: false };
+    const status = harvestStatusFor(node);
+    return {
+      label: node.label,
+      harvestable: status.can,
+      can: status.can,
+      reason: status.reason,
+      waitMs: status.waitMs || 0,
+      exhausted: !!status.exhausted,
+    };
   }
 
   function cellsUnderFoot() {
@@ -194,17 +238,16 @@ export function createSurfaceController({
       samples.push([Math.cos(a) * FOOTPRINT_RADIUS, Math.sin(a) * FOOTPRINT_RADIUS]);
     }
     const found = new Map();
-    const myIndex = getMyIndex();
-    const maxDepth = getMaxDepth();
     for (const [x, z] of samples) {
       const point = norm(add(pos, add(mul(right, x), mul(fwd, z))));
       const cell = findCell(point);
-      if (cell && harvestable(cell, myIndex, maxDepth)) found.set(cell.label, cell);
+      if (cell && harvestable(cell)) found.set(cell.label, cell);
     }
     return [...found.values()];
   }
 
   function harvestTick(dtMs) {
+    if (!autoHarvest) return;
     if (phase !== 'walking') return;
     harvestCheck += dtMs;
     if (harvestCheck < HARVEST_CHECK_MS) return;
@@ -247,6 +290,10 @@ export function createSurfaceController({
     onHud({
       targetLabel: current.label,
       targetHarvestable: current.harvestable,
+      targetCan: current.can,
+      targetReason: current.reason,
+      targetWaitMs: current.waitMs,
+      targetExhausted: current.exhausted,
       lapFraction: clamp01(travel / (Math.PI * 2)),
       autoLabel: lastHarvestLabel,
       phase,
@@ -357,7 +404,11 @@ export function createSurfaceController({
       entities: out.length,
       phase,
       targetLabel: current.label,
-      targetCan: current.harvestable,
+      targetCan: current.can,
+      targetHarvestable: current.can,
+      targetReason: current.reason,
+      targetWaitMs: current.waitMs || 0,
+      targetExhausted: !!current.exhausted,
     };
     return out;
   }
@@ -478,6 +529,12 @@ export function createSurfaceController({
     return true;
   }
 
+  /** QA/acceptance hook: pause the footprint auto-harvest without leaving play. */
+  function setAutoHarvest(enabled) {
+    autoHarvest = enabled !== false;
+    return autoHarvest;
+  }
+
   function harvestEffect(effect = {}) {
     if (!active) return;
     effects.push({
@@ -513,6 +570,7 @@ export function createSurfaceController({
     applyPlacement,
     focusLabel,
     harvestEffect,
+    setAutoHarvest,
     debug: () => debug,
     peers: () => getPeers().length,
     target,

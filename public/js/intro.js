@@ -13,6 +13,7 @@
 import { drawTetraShip } from './shared/tetra-ship.js';
 import { publish } from './gds-bridge.js';
 import { introCopy, mapCineSlice, shouldCaptureCineKey } from './shared/cine-chrome.js';
+import { createPointerRouter, attachPointerRouter, watchPointerEnvironment, capturePointer, releasePointer } from './shared/pointer-router.js';
 
 const INTRO_SEEN_KEY = 'icosa.introSeen';
 const INTRO_START = { yaw: 1.18, pitch: 0.34, zoom: 0.16 };
@@ -81,6 +82,9 @@ export function createIntro({
   let skipVisible = false;
   const steer = { x: 0, y: 0, keys: new Set() };
   const pointerPads = new Map();
+  const PAD_VECTORS = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] };
+  let introRouter = null;
+  let detachIntroRouter = null;
   let bound = false;
 
   function readSeen() {
@@ -186,25 +190,40 @@ export function createIntro({
     window.addEventListener('keydown', onKeyDown, { passive: false });
     window.addEventListener('keyup', onKeyUp);
     window.addEventListener('resize', resize);
+    window.addEventListener('blur', () => {
+      pointerPads.clear();
+      steer.keys.clear();
+    });
     if (els['btn-skip-intro']) {
       els['btn-skip-intro'].addEventListener('click', (event) => {
         event.preventDefault();
         skip();
       });
     }
-    for (const [id, dx, dy] of [
-      ['steer-left', -1, 0], ['steer-right', 1, 0],
-      ['steer-up', 0, -1], ['steer-down', 0, 1],
-    ]) {
-      const el = els[id];
-      if (!el) continue;
-      el.addEventListener('pointerdown', (event) => {
-        event.preventDefault();
-        pointerPads.set(id, { dx, dy });
+    // CTL-06: the intro pads are `steer` roles handled by the shared router, so
+    // capture keeps the thrust held when a thumb slides off the button.
+    const strip = els['intro-steer'] || document.getElementById('intro-steer');
+    if (strip) {
+      strip.setAttribute('data-pointer-role', 'steer');
+      introRouter = createPointerRouter({
+        capture: (element, pointerId) => capturePointer(element, pointerId),
+        release: (element, pointerId) => releasePointer(element, pointerId),
+        onIntent: (intent) => {
+          if (!intent || intent.kind !== 'steer' || !intent.hold) return;
+          const vector = PAD_VECTORS[intent.hold];
+          if (!vector) return;
+          const el = els[`steer-${intent.hold}`];
+          if (el) el.classList.toggle('is-held', intent.phase === 'start' || intent.phase === 'move');
+          if (intent.phase === 'start' || intent.phase === 'move') {
+            pointerPads.set(intent.hold, { dx: vector[0], dy: vector[1] });
+          } else {
+            pointerPads.delete(intent.hold);
+          }
+        },
       });
-      for (const type of ['pointerup', 'pointercancel', 'pointerleave']) {
-        el.addEventListener(type, () => pointerPads.delete(id));
-      }
+      const attached = attachPointerRouter(strip, { router: introRouter });
+      watchPointerEnvironment(introRouter, { win: window, doc: document });
+      detachIntroRouter = attached.detach;
     }
   }
 
@@ -364,6 +383,10 @@ export function createIntro({
     starts = { ...INTRO_START };
     steer.keys.clear();
     pointerPads.clear();
+    for (const id of ['steer-up', 'steer-left', 'steer-right', 'steer-down']) {
+      const el = els[id];
+      if (el) el.classList.remove('is-held');
+    }
     els['intro-overlay'].hidden = false;
     els['intro-overlay'].classList.remove('is-hidden', 'is-descending');
     els['intro-overlay'].classList.add('is-active', 'is-wormhole');
@@ -411,8 +434,17 @@ export function createIntro({
     camera.zoom = INTRO_END.zoom;
     camera.yaw = INTRO_END.yaw;
     camera.pitch = INTRO_END.pitch;
+    if (detachIntroRouter) {
+      detachIntroRouter();
+      detachIntroRouter = null;
+      introRouter = null;
+    }
     steer.keys.clear();
     pointerPads.clear();
+    for (const id of ['steer-up', 'steer-left', 'steer-right', 'steer-down']) {
+      const el = els[id];
+      if (el) el.classList.remove('is-held');
+    }
     safeCall(ui, 'setInputLocked', false);
     skipVisible = false;
     progressPct = 100;

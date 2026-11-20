@@ -82,4 +82,10 @@ export const IDS = Object.freeze({
   surfaceLap: 'surface-lap',
   surfaceLapValue: 'surface-lap-value',
   surfaceExit: 'btn-surface-exit',
+  controlMode: 'control-mode',
+  controlModeLabel: 'control-mode-label',
+  controlModeDrag: 'btn-drag-mode',
+  controlModeAction: 'btn-control-mode',
+  controlModeReason: 'control-mode-reason',
+  controlModeLive: 'control-mode-live',
 });

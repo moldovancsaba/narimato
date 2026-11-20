@@ -28,6 +28,14 @@ import { BIOMES } from './shared/planet.js';
 import { guideStepBody } from './story-copy.js';
 import { lapPercent, modeAttributes, snapshotFromIds, targetReadout } from './shared/hud-parity.js';
 import { publish } from './gds-bridge.js';
+import { harvestReadout } from './shared/harvest.js';
+import {
+  createPointerRouter,
+  attachPointerRouter,
+  watchPointerEnvironment,
+  capturePointer,
+  releasePointer,
+} from './shared/pointer-router.js';
 
 const TOAST_KINDS = new Set(['info', 'good', 'bad', 'warn']);
 const TOAST_GLYPH = { info: '▸', good: '+', bad: '×', warn: '!' };
@@ -212,6 +220,16 @@ class UI {
     this._playersOrderSig = null;
     this._playerRows = new Map();
     this._surfaceMode = 'orbit';
+    this._controlMode = null;
+    this._controlDragInvert = null;
+    this._controlModeAnnounced = null;
+    this._controlModeSeq = 0;
+    this._controlModeSlice = {
+      mode: 'offline', label: 'OFFLINE', dragInvert: false, dragLabel: 'DRAG: FOLLOW CURSOR',
+      actionLabel: 'ENTER SURFACE', canToggle: false, reason: 'Join a world to control the camera.',
+      sentence: '', seq: 0,
+    };
+    this._statusTimer = 0;
 
     // UI-02…UI-05: the GDS presentation layer. In legacy mode (`?gds=0`) every
     // one of these fields is still maintained but nothing is published.
@@ -258,6 +276,7 @@ class UI {
 
     this._bind();
     this._bindSurface();
+    this._bindControlMode();
     this._renderMarket();
     this._renderBiomeLegend();
     this.updateMission(DEFAULT_MISSION);
@@ -1543,7 +1562,7 @@ class UI {
       'showGuide', 'hideGuide', 'setGuideThreshold', 'showManual', 'hideManual', 'setEscapeReady',
       'showEscapeCta', 'hideEscapeCta', 'dismissEscapeCta', 'showLandingBrief', 'hideLandingBrief',
       'showInterlude', 'setInterlude', 'setInterludeProgress', 'showMeteor', 'confirm', 'setCine', 'setCaptions', 'setVoice',
-      'setLastFind', 'enterSurface', 'exitSurface', 'updateSurfaceHud',
+      'setLastFind', 'enterSurface', 'exitSurface', 'updateSurfaceHud', 'setControlMode',
     ];
     for (const name of methods) {
       const original = this[name];
@@ -1581,6 +1600,7 @@ class UI {
       : `${String(Math.floor(distressTotal / 60)).padStart(2, '0')}:${String(distressTotal % 60).padStart(2, '0')}`;
     return {
       mode: this._surfaceMode,
+      controlMode: this._controlModeSlice,
       connection: this._connection,
       soundMuted: this._soundMuted,
       drawer: this._drawerName,
@@ -1753,6 +1773,12 @@ class UI {
         const button = this.doc ? this.doc.querySelector(`[data-voice-profile="${this._voiceProfile}"]`) : null;
         return click(button);
       }
+      case 'drag-mode-toggle':
+        if (typeof this.opts.onDragModeToggle === 'function') this.opts.onDragModeToggle();
+        return true;
+      case 'control-mode-action':
+        if (typeof this.opts.onControlModeToggle === 'function') this.opts.onControlModeToggle();
+        return true;
       case 'drawer':
         this.toggleDrawer(String(intent.name || 'mission'), intent.force);
         return true;
@@ -2129,23 +2155,186 @@ class UI {
         if (typeof this.opts.onSurfaceExit === 'function') this.opts.onSurfaceExit();
       });
     }
-    for (const pad of this._el.surfacePads || []) {
-      const code = pad.getAttribute('data-surface-hold');
-      const press = (event) => {
-        if (event && typeof event.preventDefault === 'function') event.preventDefault();
-        pad.classList.add('is-held');
-        if (typeof this.opts.onSurfaceHold === 'function') this.opts.onSurfaceHold(code, true);
-      };
-      const release = () => {
-        pad.classList.remove('is-held');
-        if (typeof this.opts.onSurfaceHold === 'function') this.opts.onSurfaceHold(code, false);
-      };
-      pad.addEventListener('pointerdown', press);
-      pad.addEventListener('pointerup', release);
-      pad.addEventListener('pointercancel', release);
-      pad.addEventListener('pointerleave', release);
-      pad.addEventListener('blur', release);
+    // CTL-06: every pad is a `steer` role; the shared router captures the
+    // pointer so a finger sliding off the pad keeps steering until release.
+    const pads = this._el.surfacePads || [];
+    const padByHold = new Map();
+    for (const pad of pads) {
+      pad.setAttribute('data-pointer-role', 'steer');
+      const hold = pad.getAttribute('data-surface-hold');
+      if (hold) padByHold.set(hold, pad);
+      pad.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        this._setPadHeld(pad, true);
+        if (typeof this.opts.onSurfaceHold === 'function') this.opts.onSurfaceHold(hold, true);
+      });
+      pad.addEventListener('keyup', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        this._setPadHeld(pad, false);
+        if (typeof this.opts.onSurfaceHold === 'function') this.opts.onSurfaceHold(hold, false);
+      });
+      pad.addEventListener('blur', () => {
+        this._setPadHeld(pad, false);
+        if (typeof this.opts.onSurfaceHold === 'function') this.opts.onSurfaceHold(hold, false);
+      });
     }
+    // One router for the whole pad grid: it owns pointer capture and cleanup.
+    this._surfaceRouters = this._surfaceRouters || [];
+    const containers = new Set(pads.map((pad) => pad.parentNode).filter(Boolean));
+    for (const container of containers) {
+      if (container.getAttribute) container.setAttribute('data-pointer-role', 'steer');
+      const router = createPointerRouter({
+        capture: (element, pointerId) => capturePointer(element, pointerId),
+        release: (element, pointerId) => releasePointer(element, pointerId),
+        onIntent: (intent) => {
+          if (!intent || intent.kind !== 'steer') return;
+          const pad = padByHold.get(intent.hold);
+          if (!pad) return;
+          const down = intent.phase === 'start' || intent.phase === 'move';
+          this._setPadHeld(pad, down);
+          if (typeof this.opts.onSurfaceHold === 'function') this.opts.onSurfaceHold(intent.hold, down);
+        },
+      });
+      attachPointerRouter(container, { router });
+      watchPointerEnvironment(router, {
+        win: (this.doc && this.doc.defaultView) || (typeof window !== 'undefined' ? window : null),
+        doc: this.doc,
+      });
+      this._surfaceRouters.push(router);
+    }
+  }
+
+  /** Active touch roles owned by the surface pad router (QA/acceptance). */
+  surfacePointerRoles() {
+    const out = [];
+    for (const router of this._surfaceRouters || []) out.push(...router.roles());
+    return out;
+  }
+
+  _setPadHeld(pad, held) {
+    if (!pad) return;
+    pad.classList.toggle('is-held', !!held);
+    if (pad.getAttribute('aria-pressed') !== String(!!held)) pad.setAttribute('aria-pressed', String(!!held));
+  }
+
+  /**
+   * CTL-05: render the one control-mode indicator. `app.js` owns derivation;
+   * this method only renders and announces transitions once.
+   */
+  _bindControlMode() {
+    const drag = this._el.btnDragMode;
+    if (drag) {
+      drag.addEventListener('click', () => {
+        if (typeof this.opts.onDragModeToggle === 'function') this.opts.onDragModeToggle();
+      });
+    }
+    const action = this._el.btnControlMode;
+    if (action) {
+      action.addEventListener('click', () => {
+        if (action.getAttribute('aria-disabled') === 'true') return;
+        if (typeof this.opts.onControlModeToggle === 'function') this.opts.onControlModeToggle();
+      });
+    }
+  }
+
+  /**
+   * @param {{mode:string,label:string,dragInvert:boolean,dragLabel:string,
+   *          actionLabel:string,canToggle:boolean,reason:string,
+   *          announce?:boolean,sentence?:string,persistFailed?:boolean}} state
+   */
+  setControlMode(state) {
+    const data = state && typeof state === 'object' ? state : {};
+    const mode = String(data.mode || 'offline');
+    const changed = mode !== this._controlMode;
+    const dragChanged = !!data.dragInvert !== this._controlDragInvert;
+    this._controlMode = mode;
+    this._controlDragInvert = !!data.dragInvert;
+    // Publish the same state to the GDS island (UI-02..05): one derivation, two
+    // presentations; the island component only renders this slice.
+    this._controlModeSlice = {
+      mode,
+      label: data.label || mode.toUpperCase(),
+      dragInvert: !!data.dragInvert,
+      dragLabel: data.dragLabel || 'DRAG: FOLLOW CURSOR',
+      actionLabel: data.actionLabel || 'ENTER SURFACE',
+      canToggle: !!data.canToggle,
+      reason: data.reason || (data.canToggle ? 'Press to switch between orbit and surface.' : 'Controls are locked during a transition.'),
+      sentence: '',
+      seq: this._controlModeSeq || 0,
+    };
+    if ((changed || dragChanged) && data.announce) {
+      this._controlModeSeq = (this._controlModeSeq || 0) + 1;
+      this._controlModeSlice.seq = this._controlModeSeq;
+      this._controlModeSlice.sentence = data.sentence || `${data.label || mode} controls.`;
+    }
+    if (this._el.controlMode) this._el.controlMode.dataset.mode = mode;
+    this._setText(this._el.controlModeLabel, data.label || mode.toUpperCase());
+    const drag = this._el.btnDragMode;
+    if (drag) {
+      this._setText(drag, data.dragLabel || 'DRAG: FOLLOW CURSOR');
+      const pressed = String(!!data.dragInvert);
+      if (drag.getAttribute('aria-pressed') !== pressed) drag.setAttribute('aria-pressed', pressed);
+    }
+    const action = this._el.btnControlMode;
+    if (action) {
+      this._setText(action, data.actionLabel || 'ENTER SURFACE');
+      const disabled = String(!data.canToggle);
+      if (action.getAttribute('aria-disabled') !== disabled) action.setAttribute('aria-disabled', disabled);
+    }
+    const reason = this._el.controlModeReason;
+    if (reason) {
+      const text = data.reason || (data.canToggle
+        ? 'Press to switch between orbit and surface.'
+        : 'Controls are locked during a transition.');
+      this._setText(reason, text);
+    }
+    // Exactly one polite announcement per transition (mode or drag polarity),
+    // never on the first render.
+    if ((changed || dragChanged) && data.announce && this._el.controlModeLive) {
+      const sentence = data.sentence || `${data.label || mode} controls.`;
+      const announced = `${this._controlModeAnnounced || ''} ${sentence}`.trim();
+      this._controlModeAnnounced = sentence;
+      this._el.controlModeLive.textContent = announced.slice(-220);
+    }
+    return mode;
+  }
+
+  /** Focus the orbit control after a surface exit (CTL-04); returns its id. */
+  focusOrbitControl() {
+    const doc = this.doc;
+    const live = doc && typeof doc.getElementById === 'function' ? doc.getElementById('btn-control-mode') : null;
+    const candidates = [live, this._el.btnControlMode, this._el.hudZoom, this._el.hud];
+    for (const node of candidates) {
+      if (!node) continue;
+      const visible = typeof node.getClientRects === 'function' ? node.getClientRects().length > 0 : true;
+      if (!visible || typeof node.focus !== 'function') continue;
+      try {
+        node.focus({ preventScroll: true });
+        return node.id || null;
+      } catch {
+        /* try the next candidate */
+      }
+    }
+    return null;
+  }
+
+  /** Polite status line on the existing hint region (CTL-02 recovery text). */
+  announceStatus(text) {
+    const hint = this._el.hudHint;
+    if (!hint) return false;
+    if (this._orbitHintText == null) this._orbitHintText = hint.textContent;
+    hint.textContent = String(text);
+    if (this._statusTimer) clearTimeout(this._statusTimer);
+    this._statusTimer = setTimeout(() => {
+      this._statusTimer = 0;
+      if (!this._el.hudHint) return;
+      this._el.hudHint.textContent = this._surfaceMode === 'surface'
+        ? 'WASD / ARROWS RUN · A / D TURN · SHIFT SPRINT · ESC // RETURN TO ORBIT'
+        : this._orbitHintText;
+    }, 3000);
+    return true;
   }
 
   /** Show the surface control strip without remounting any orbital node. */
@@ -2179,12 +2368,9 @@ class UI {
     if (this._el.hud) this._el.hud.dataset.mode = mode.hudMode;
     if (this._el.surfaceControls) this._el.surfaceControls.hidden = mode.controlsHidden;
     if (this._el.hudHint && this._orbitHintText != null) this._el.hudHint.textContent = this._orbitHintText;
-    // Restore focus to the orbit zoom control; on narrow viewports it is
-    // display:none, so fall back to the always-mounted HUD region.
-    const zoom = this._el.hudZoom;
-    const zoomVisible = !!zoom && typeof zoom.getClientRects === 'function' && zoom.getClientRects().length > 0;
-    const focusTarget = zoomVisible ? zoom : this._el.hud;
-    if (focusTarget && typeof focusTarget.focus === 'function') focusTarget.focus({ preventScroll: true });
+    // Restore focus to the orbit control (CTL-04); the mode action is the
+    // primary target and the zoom indicator is the narrow-viewport fallback.
+    this.focusOrbitControl();
   }
 
   /**
@@ -2193,11 +2379,19 @@ class UI {
    */
   updateSurfaceHud(state = {}) {
     const data = state && typeof state === 'object' ? state : {};
+    const status = {
+      can: data.targetCan != null ? !!data.targetCan : !!data.targetHarvestable,
+      reason: data.targetReason || (data.targetHarvestable ? 'ok' : 'own_lock'),
+      waitMs: Number(data.targetWaitMs) || 0,
+      exhausted: !!data.targetExhausted,
+    };
     this._surfaceHud = mapSurfaceSlice({
       active: this._surfaceMode === 'surface',
       phase: data.phase,
       targetLabel: data.targetLabel,
-      targetHarvestable: data.targetHarvestable,
+      targetHarvestable: status.can,
+      targetReason: data.targetReason,
+      targetExhausted: status.exhausted,
       depleted: data.depleted,
       lapFraction: data.lapFraction,
       lapSeconds: data.lapSeconds,
@@ -2207,11 +2401,16 @@ class UI {
       missionReady: data.missionReady != null ? data.missionReady : !!(this._mission && this._mission.ready),
       keyboardMode: this._surfaceKeyboardMode || 'canvas',
     });
-    const readout = data.targetLabel ? targetReadout(data.targetLabel, !!data.targetHarvestable) : targetReadout(null, false);
+    const readout = harvestReadout(data.targetLabel, status, true);
     const target = this._el.surfaceTarget;
     if (target) {
       if (target.textContent !== readout.text) target.textContent = readout.text;
       if (target.dataset.state !== readout.state) target.dataset.state = readout.state;
+      const exhausted = String(!!readout.exhausted);
+      if (target.dataset.exhausted !== exhausted) target.dataset.exhausted = exhausted;
+      // Colour is never the only signal: the text names the reason.
+      const label = readout.exhausted ? `${readout.text} // MAX DEPTH` : readout.text;
+      if (target.getAttribute('aria-label') !== label) target.setAttribute('aria-label', label);
     }
     const pct = lapPercent(data.lapFraction);
     const bar = this._el.surfaceLap;
@@ -3019,6 +3218,12 @@ function resolveElements(doc) {
     btnSurfaceExit: byId('btn-surface-exit'),
     surfacePads: [...doc.querySelectorAll('[data-surface-hold]')],
     surfaceFirst: doc.querySelector('[data-surface-first]'),
+    controlMode: byId('control-mode'),
+    controlModeLabel: byId('control-mode-label'),
+    btnDragMode: byId('btn-drag-mode'),
+    btnControlMode: byId('btn-control-mode'),
+    controlModeReason: byId('control-mode-reason'),
+    controlModeLive: byId('control-mode-live'),
     hudWorld: byId('hud-world'),
     hudScore: byId('hud-score'),
     hudFaces: byId('hud-faces'),

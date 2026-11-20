@@ -13,15 +13,14 @@ real count.
 |---|---|---|---|
 | `test/adr.test.js` | ADR numbering, front matter, index coverage, key existence | `docs/adr/` | DOC-01 |
 | `test/camera-contract.test.js` | `CameraView` conformance for both cameras, units, orthonormal basis, malformed rejection | `public/js/shared/camera-contract.js` | RND-01 |
-| `test/camera-controls.test.js` | Camera control semantics (invert, focus, zoom guards) and the unchanged orbital pixel fixture | `public/js/app.js`, `public/js/shared/orbit-controls.js`, `public/js/shared/geometry.js` | CTL-01, RND-01 |
+| `test/camera-controls.test.js` | Camera control semantics, unchanged orbital pixel fixture, 720-step two-pole loop, pole/roll face sweep, culling bounds, frame stats | `public/js/shared/geometry.js`, `public/js/renderer.js` | CTL-01, CTL-02, RND-01 |
 | `test/data-integrity.test.js` | Manifest/tar determinism, path safety, checksums, reconciliation, retention, exit codes | `lib/data-integrity.js` | OPS-03 |
 | `test/docs-check.test.js` | R1–R6 docs gate, link/anchor/placeholder/key rules | `scripts/check-docs.mjs` | SSOT-02 |
 | `test/geometry.test.js` | Regular spherical icosahedron, subdivision, labels, picking, projection | `public/js/shared/geometry.js` | RND-01 |
-| `test/harvest.test.js` | Can-harvest predicate (own lock, cooldown, depth) | `public/js/shared/harvest.js` | CTL-03 |
+| `test/harvest.test.js` | Harvest truth table: joined/stale/cooldown/lock precedence, deep-cell informational, server error mapping, chip text | `public/js/shared/harvest.js` | CTL-03 |
 | `test/mission.test.js` | Per-planet requirements, depth progression, sanitization | `public/js/shared/mission.js` | — (delivered) |
 | `test/narration-manifest.test.js` | Cue matrix completeness (40 cues/115 units/345 clips), manifest schema, hashes, content-derived version, cache-bust, licence guard, caption/voice sync | `scripts/voice-lib.mjs`, `public/js/audio-version.js` | STR-01 |
 | `test/observability.test.js` | Metrics shape/aggregates, SSE counters, telemetry privacy/clamps, beacon | `lib/metrics.js`, `public/js/telemetry.js` | OPS-01 |
-| `test/orbit-controls.test.js` | Shared drag/travel direction primitives | `public/js/shared/orbit-controls.js` | CTL-01 |
 | `test/perf-budget.test.js` | Device budgets, windowed frame percentiles, tier hysteresis, evaluator, ring exclusions, bundle gzip budget | `public/js/perf-budget.js`, `lib/perf-bundle.js` | PERF-01 |
 | `test/perf-gate.test.js` | Scenario schema, ruleset threshold resolution, flaky policy, RSS/correctness evaluation, artifact redaction | `observability/load-scenarios.json`, `observability/slo.json`, `scripts/perf-gate.mjs` | OPS-02 |
 | `test/planet-theme.test.js` | Planet palette/theme identity | `public/js/shared/planet.js`, CSS | — (delivered) |
@@ -32,7 +31,7 @@ real count.
 | `test/server.test.js` | HTTP/SSE protocol, rooms, escape, persistence, static safety, health, surface pose/leave/mine frames, supply focus | `server.js`, `lib/planet-manager.js` | SRV-01, SRV-03, SRV-04, TST-01, OPS-03, SEC-01 |
 | `test/slo-contract.test.js` | SLO ruleset schema, path resolution, warm-up, checker exit codes, docs drift, privacy | `lib/slo.js`, `observability/slo.json` | OPS-01 |
 | `test/story-copy.test.js` | Copy SSOT: plural/naming table, Captain's Log grammar, threshold rendering, incident copy, doc-block sync and drift failure, guide card DOM contract | `public/js/story-copy.js`, `scripts/sync-story-copy.mjs` | STR-02 |
-| `test/sphere-interaction.test.js` | Carrier frame, projection/unprojection, point-follow, shortest arc | `public/js/shared/sphere-interaction.js` | RND-01, CTL-01 |
+| `test/sphere-interaction.test.js` | Carrier frame, projection/unprojection, point-follow, shortest arc, 720-step two-pole carrier loop | `public/js/shared/sphere-interaction.js` | RND-01, CTL-01, CTL-02 |
 | `test/surface-camera.test.js` | Surface camera framing, carrier dolly/tilt, round-trip, near plane, resize | `public/js/shared/surface-camera.js` | RND-01 |
 | `test/surface-render.test.js` | Surface view state machine, orbit restore, entity mapping, rollback flag | `public/js/surface-controller.js`, `public/js/shared/view-state.js` | RND-02 |
 | `test/hud-parity.test.js` | HUD snapshot parity, duplicate detection, target/lap fallbacks, static markup contract | `public/js/shared/hud-parity.js`, `public/index.html` | RND-03 |
@@ -44,6 +43,11 @@ real count.
 | `test/test-count.test.js` | TAP summary parsing, marker verification, failure propagation | `scripts/test-count.mjs` | QA-01 |
 | `test/tetra-ship.test.js` | Five-tetrahedron ship geometry and incident models | `public/js/shared/tetra-ship.js` | EVT-02 |
 | `test/version.test.js` | Version slots, lineages, fix/bump, semver ordering | `scripts/check-version.mjs` | SSOT-03 |
+| `test/orbit-controls.test.js` | Orbit input SSOT: four arrow signs, drag/arrow inverse relation, absolute drag ≤1 px at eight orientations, Shift ratio, dt clamp, 10 000 seeded steps, polarity vocabulary | `public/js/shared/orbit-controls.js` | CTL-01 |
+| `test/zoom-levels.test.js` | Ladder constants, floor/rounding invariants, idempotent `applyOrbitFarZoom` | `public/js/shared/zoom-levels.js` | CTL-04 |
+| `test/control-mode.test.js` | Five-state control-mode derivation over every input combination, labels, toggle gating, announcements | `public/js/shared/control-mode.js` | CTL-05 |
+| `test/control-prefs.test.js` | Defaults, corrupt-record repair, legacy migration, write isolation, blocked storage | `public/js/control-prefs.js` | CTL-05 |
+| `test/pointer-router.test.js` | Pointer roles/precedence, capture and capture failure, pinch demotion/scale/dead zone, third finger, cancel-all, tap slop, capture-ownership grep | `public/js/shared/pointer-router.js` | CTL-06 |
 | `test/world-core.test.js` | Authoritative world: players, scoring, breaks, locks, resources, robots, persistence, incidents, surface poses, seeded routes, resolver mining, supply placements | `lib/world-core.js` | SRV-01, SRV-02, SRV-03, SRV-04, EVT-01, OPS-03 |
 
 ## Rules

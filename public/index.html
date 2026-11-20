@@ -70,11 +70,11 @@
 
       <button id="btn-skip-intro" class="btn btn--primary intro-skip" type="button">SKIP INTRO ▸</button>
 
-      <div id="intro-steer" class="intro-steer" aria-label="Touch steering">
-        <button id="steer-up" class="steer-pad" type="button" aria-label="Thrust up">▲</button>
-        <button id="steer-left" class="steer-pad" type="button" aria-label="Thrust left">◀</button>
-        <button id="steer-right" class="steer-pad" type="button" aria-label="Thrust right">▶</button>
-        <button id="steer-down" class="steer-pad" type="button" aria-label="Thrust down">▼</button>
+      <div id="intro-steer" class="intro-steer" aria-label="Touch steering" data-pointer-role="steer">
+        <button id="steer-up" class="steer-pad" type="button" data-pointer-role="steer" data-hold="up" aria-label="Thrust up">▲</button>
+        <button id="steer-left" class="steer-pad" type="button" data-pointer-role="steer" data-hold="left" aria-label="Thrust left">◀</button>
+        <button id="steer-right" class="steer-pad" type="button" data-pointer-role="steer" data-hold="right" aria-label="Thrust right">▶</button>
+        <button id="steer-down" class="steer-pad" type="button" data-pointer-role="steer" data-hold="down" aria-label="Thrust down">▼</button>
       </div>
       <p class="intro-steer-hint">WASD / ARROWS TO STEER · TOUCH PADS ON MOBILE · GRAVITY DOMINATES</p>
     </section>
@@ -333,6 +333,15 @@
         </div>
 
         <div class="hud-cluster hud-right">
+          <!-- CTL-05: one control-mode indicator. Mode is derived from server
+               state; the drag action is the visible, persistent `I` toggle. -->
+          <div id="control-mode" class="control-mode" data-hud-node="control-mode" data-gds-component="control-mode" data-mode="offline" role="group" aria-label="Control mode" aria-describedby="control-mode-reason">
+            <span id="control-mode-label" class="control-mode-label" data-hud-node="control-mode-label">OFFLINE</span>
+            <button id="btn-drag-mode" class="control-mode-drag" type="button" data-hud-node="control-mode-drag" aria-pressed="false" aria-describedby="control-mode-reason">DRAG: FOLLOW CURSOR</button>
+            <button id="btn-control-mode" class="control-mode-action" type="button" data-hud-node="control-mode-action" aria-disabled="true" aria-describedby="control-mode-reason">ENTER SURFACE</button>
+            <p id="control-mode-reason" class="control-mode-reason" data-hud-node="control-mode-reason">Join a world to control the camera.</p>
+            <p id="control-mode-live" class="control-mode-live sr-only" data-hud-node="control-mode-live" role="status" aria-live="polite" aria-atomic="true"></p>
+          </div>
           <div id="hud-zoom" class="zoom-indicator" data-hud-node="zoom" tabindex="-1" data-zoom="1">
             <div class="zoom-head">
               <span class="zoom-label">ZOOM</span>
@@ -530,11 +539,11 @@
           <span id="surface-lap-value" class="surface-lap-value" data-hud-node="surface-lap-value">0.00</span>
           <span id="surface-auto" class="surface-auto" data-hud-node="surface-auto" hidden>—</span>
         </div>
-        <div class="surface-pads" data-hud-node="surface-pads" aria-label="Surface movement controls">
-          <button type="button" class="surface-pad surface-pad--forward" data-surface-hold="KeyW" data-surface-first data-hud-node="surface-forward" aria-label="Run forward">▲</button>
-          <button type="button" class="surface-pad" data-surface-hold="KeyA" data-hud-node="surface-left" aria-label="Turn left">◀</button>
-          <button type="button" class="surface-pad" data-surface-hold="KeyS" data-hud-node="surface-back" aria-label="Run backward">▼</button>
-          <button type="button" class="surface-pad" data-surface-hold="KeyD" data-hud-node="surface-right" aria-label="Turn right">▶</button>
+        <div class="surface-pads" data-hud-node="surface-pads" data-pointer-role="steer" aria-label="Surface movement controls">
+          <button type="button" class="surface-pad surface-pad--forward" data-surface-hold="KeyW" data-pointer-role="steer" data-surface-first data-hud-node="surface-forward" aria-label="Run forward">▲</button>
+          <button type="button" class="surface-pad" data-surface-hold="KeyA" data-pointer-role="steer" data-hud-node="surface-left" aria-label="Turn left">◀</button>
+          <button type="button" class="surface-pad" data-surface-hold="KeyS" data-pointer-role="steer" data-hud-node="surface-back" aria-label="Run backward">▼</button>
+          <button type="button" class="surface-pad" data-surface-hold="KeyD" data-pointer-role="steer" data-hud-node="surface-right" aria-label="Turn right">▶</button>
         </div>
         <button id="btn-surface-exit" class="btn btn--ghost surface-exit" type="button" data-hud-node="surface-exit">RETURN TO ORBIT</button>
       </div>

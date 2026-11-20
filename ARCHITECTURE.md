@@ -17,7 +17,7 @@ Architecture decisions are recorded as ADRs: [docs/adr/README.md](docs/adr/READM
 | Rendering | Canvas 2D + WebGL | game planet: Canvas 2D; spherical-icosahedron reference viewer: WebGL ray–sphere shader |
 | Simulation | Node.js ≥20 | authoritative game server, HTTP + Server-Sent Events |
 | Persistence | JSON files + atomic rename | one file per planet, one registry file |
-| Tests | `node:test` | <!-- test-count:468 -->468<!-- /test-count --> tests, no test dependencies; ownership map in [docs/TEST_MAP.md](docs/TEST_MAP.md) |
+| Tests | `node:test` | <!-- test-count:516 -->516<!-- /test-count --> tests, no test dependencies; ownership map in [docs/TEST_MAP.md](docs/TEST_MAP.md) |
 | CI | GitHub Actions | Node 20 and 22, `npm test`; Node 22 GDS island build/contract/determinism; scheduled OPS-02 load/soak/chaos gate |
 | Deploy | `node server.js` behind any static/reverse proxy | Cloudflare tunnel used for the live build |
 
@@ -84,8 +84,10 @@ Observability: `public/js/telemetry.js` posts a tiny privacy-safe numeric beacon
 
 - **`app.js`** — orchestrates boot, intro, join/reconnect, camera, input, the single render loop,
   actions, mission progress, escape transit, meteor reset, reports/shares, abandon/new-pilot. It owns
-  the `orbit`/`surface` view state: entering stores the orbital camera and switches camera + input;
-  exiting restores it exactly.
+  the `orbit`/`surface` view state: entering pushes one history entry and switches camera + input;
+  every exit path (button, Escape, popstate) funnels through one single-flight function that applies
+  `ORBIT_FAR_ZOOM` (CTL-04). Input maths is delegated to `shared/orbit-controls.js`, pointer roles to
+  `shared/pointer-router.js` and all control persistence to `control-prefs.js`.
 - **`renderer.js`** — mixed-depth spherical Canvas renderer for the game: projected/slerp-tessellated
   edges, biome underlay + ownership, hidden ore markers, labels-on-interaction, particles, starfield.
   It is the single renderer for both views: `setSurfaceMode({ active, entities, phase, progress })`
@@ -99,7 +101,24 @@ Observability: `public/js/telemetry.js` posts a tiny privacy-safe numeric beacon
   probe; no bundler is added to the game.
 - **`surface-controller.js`** — surface mode as a control mode: pilot pose, movement, harvest
   targeting, peer resolution and the `SurfaceEntity[]` list consumed by the renderer. It owns no
-  canvas, no RAF loop and no projection.
+  canvas, no RAF loop and no projection. Harvest colour comes from one predicate
+  (`shared/harvest.js`); `setAutoHarvest(false)` is the QA hook the acceptance scripts use to own
+  every click.
+- **`shared/orbit-controls.js`** — orbit input SSOT (CTL-01): absolute surface-point drag through a
+  frozen view + shortest-arc quaternion, carrier arrow travel with parallel transport, `Shift`
+  boost, and the `follow|reverse` polarity. DOM-free and storage-free.
+- **`shared/pointer-router.js`** — the only module that calls `setPointerCapture` (CTL-06). It maps
+  pointer ids to roles (`steer|orbit-drag|pinch|ui`), emits intents, demotes a second canvas
+  pointer to pinch and fires `cancel-all` on blur, visibility and orientation changes.
+- **`shared/control-mode.js`** — one pure derivation of `offline|orbit|descending|surface|leaving`
+  plus labels, action gating and the polite announcement sentence (CTL-05).
+- **`control-prefs.js`** — the single persisted control record `icosa.controls.v1`
+  (`{v:1,dragInvert,modeChipCollapsed}`); migrates and deletes `icosa.dragInvert.v2` and the CTL-01
+  draft key once, repairs corrupt JSON, degrades to session-only in private mode.
+- **`shared/zoom-levels.js`** — ladder constants and maths (`ORBIT_FAR_ZOOM = 0.4`,
+  `SURFACE_ENTER_LEVEL = 3`, `zoomForLevel`, `zoomLevelForZoom`, `applyOrbitFarZoom`) (CTL-04).
+- **`shared/harvest.js`** — one reason-carrying harvest predicate whose reasons map 1:1 onto the
+  server click errors (CTL-03).
 - **`icosahedron-viewer.js`** — WebGL reference viewer: a full-screen ray–sphere shader draws the
   front surface only; analytic great-circle icosahedron edge bands; no back faces/edges.
 - **`world.js`** — client-side adaptive tree mirror of the server leaves; label parsing, cell
@@ -446,6 +465,42 @@ surviving supply cell. The focus arrives as `snapshot.focus`, on the join respon
 { "version": 1, "createdAt": 1794939691251, "tokens": { "<token>": 0 } }
 ```
 
+### Zoom ladder and exit policy (CTL-04)
+
+```text
+zoomForLevel(L)      = clamp(2 ** L, 0.4, 16777216)      L clamped to 0..12
+zoomLevelForZoom(z)  = round(log2(max(1, z)))            clamped to 0..maxOrbitZoomLevel()
+ORBIT_FAR_ZOOM       = 0.4   // exit state, one rung beyond level 0
+SURFACE_ENTER_LEVEL  = 3     // fourth rung triggers landing
+```
+
+`applyOrbitFarZoom(camera)` resets then assigns `zoom = ORBIT_FAR_ZOOM`, so correctness never
+depends on statement order. `zoomForLevel(0)` is the whole-sphere view (1); `ORBIT_FAR_ZOOM` sits
+one rung farther out and is applied on every surface exit, with `zoomLevelForZoom(0.4) = 0`.
+
+### Control state and storage (CTL-05)
+
+| Key | Content | Writer |
+|---|---|---|
+| `icosa.controls.v1` | `{"v":1,"dragInvert":boolean,"modeChipCollapsed":boolean}` | `control-prefs.js` only |
+| `icosa.dragInvert.v2` | legacy `'1'`/`'0'` — migrated once, then deleted | migration only |
+| `icosa.orbitInputMode.v1` | CTL-01 draft `'reverse'`/`'follow'` — migrated once, then deleted | migration only |
+
+The control **mode** is never persisted: it derives from server state. The HUD group
+`#control-mode[data-mode]` contains `#control-mode-label`, `#btn-drag-mode` (`aria-pressed`),
+`#btn-control-mode` (the enter/return action) and `#control-mode-reason` (referenced by
+`aria-describedby`); transitions announce once through `role="status"`. The DOM reuses the existing
+HUD markup and tokens; the UI-01 GDS island foundation is on `main`, and moving the control inside it is
+UI-02/UI-03 work (the island currently ships no shipped toggle for this control), so CTL-05 keeps the
+same accessible DOM contract and can be adopted without a behaviour change.
+
+### Frame statistics (CTL-02)
+
+`IcosaRenderer.frameStats()` returns `{visCount, culled, nearSkipped, emptyFrames, axis}` and
+`window.__ICOSA__.renderStats()` mirrors it for acceptance. `emptyFrames` is cumulative until
+`resetEmptyFrames()`; the app announces `VIEW RECOVERY`, resets the camera and clears the counter so
+the message cannot loop.
+
 ## Protocols
 
 | Method | Route | Purpose |
@@ -673,10 +728,10 @@ debounce 0.5 min + 5 min backup interval), RTO ≤ 15 min; retention is 7 daily 
 
 ## Testing
 
-The suite currently runs <!-- test-count:468 -->468<!-- /test-count --> tests. Behaviour ownership: [docs/TEST_MAP.md](docs/TEST_MAP.md).
+The suite currently runs <!-- test-count:516 -->516<!-- /test-count --> tests. Behaviour ownership: [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 ```bash
-npm test                 # node:test suite (468 tests)
+npm test                 # node:test suite (516 tests)
 npm run check:slo        # evaluate observability/slo.json against /api/metrics (0/1/2/3)
 npm run gate:load        # OPS-02 load/soak/chaos gate (ephemeral server, artifacts)
 npm run gate:perf        # PERF-01 client probe + 15% desktop baseline gate

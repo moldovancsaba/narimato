@@ -166,10 +166,14 @@ the second level.
   the hull takes damage with screen shake, and you land on the next planet. The cinematic is fully
   procedural (CSS/Canvas, no assets). On touchdown, a centered **landing briefing** lists every ore
   required to leave the new planet and your collected/required counts; press START MINING to dismiss.
-- **Camera feel:** mouse drag follows the cursor directly — drag left, the planet rotates left,
-  even when the planet is upside down. Release leaves the view where you left it. Arrow-key travel
-  is deliberately inverse: press left and the planet rotates right. Wheel/pinch zoom glides into
-  its target instead of snapping, so fine control at deep zoom is easier.
+- **Camera feel:** mouse/touch drag is an absolute grab — the point you grabbed stays under the
+  pointer, even when the planet is upside down, and release leaves the view where you let go.
+  Arrow-key travel is deliberately inverse: press left and the planet rotates right. **Shift**
+  accelerates travel. The HUD always states the mode (`ORBIT`, `DESCENT`, `SURFACE`, `LEAVING`,
+  `OFFLINE`) and the drag direction (`DRAG: FOLLOW CURSOR` or `DRAG: REVERSE`). **I** (or the
+  visible drag toggle) reverses pointer drag only; arrows never change. The preference survives a
+  reload. Wheel/pinch zoom glides into its target instead of snapping, so deep zoom stays fine.
+  Leaving the surface always returns to **maximum zoom-out**, never the depth you entered from.
 
 ## Leaving / starting over
 
@@ -249,16 +253,23 @@ URL. Reports include the current planet and arcade context.
 | Input | Action |
 |---|---|
 | Click/tap triangle | claim / steal / reinforce + charge |
-| Drag | rotate |
+| Drag / touch drag | absolute grab: the surface point follows the pointer |
+| `I` or the HUD drag toggle | reverse pointer drag (arrows unchanged) |
 | Wheel / pinch | zoom |
 | Double-click | focus/drill |
 | `L` | all face ids (debug) |
 | WASD / arrows / touch pads | steer during intro |
 | `Escape` | skip intro / close dialogs |
 | `R` | reset camera |
+| `Shift` + arrows | faster carrier travel |
+| `Escape` (on the surface) | return to orbit at maximum zoom-out |
+| Touch pads (surface) | hold to run/turn; release or cancel stops |
 
-- Intro and interlude respect `prefers-reduced-motion`.
-- Mobile/tablet layouts use larger touch targets, safe-area insets, drawers and a tap target sheet.
+- Intro and interlude respect `prefers-reduced-motion`; the mode indicator is text, never colour
+  alone, and announces each change politely.
+- Mobile/tablet layouts use larger touch targets (≥ 44 px), safe-area insets, drawers and a tap
+  target sheet. Touch pads capture the pointer, so a thumb sliding off a pad keeps steering until
+  release or a system cancel; pinch zooms with two fingers and returns near the previous level.
 - Face ids are shown only on hover/tap and briefly after a click (`L` toggles all).
 
 ## Tips

@@ -68,6 +68,15 @@ const TAU = Math.PI * 2;
 const HALF_PI = Math.PI / 2;
 const FONT_STACK = '"SF Mono", "JetBrains Mono", "Fira Code", ui-monospace, monospace';
 
+/**
+ * CTL-02: renderer truth bounds. Every projected sample is clamped to
+ * ±OVERSCAN·max(W,H) so a silhouette point can never produce an unbounded
+ * bbox/streak, and samples closer than NEAR_EPS to the camera are skipped
+ * instead of being mirrored as a fake back band.
+ */
+export const NEAR_EPS = 1e-3;
+export const OVERSCAN = 4;
+
 const CYAN = { r: 0, g: 240, b: 255 };
 const MAGENTA = { r: 255, g: 43, b: 214 };
 const WHITE = { r: 255, g: 255, b: 255 };
@@ -321,6 +330,14 @@ export class IcosaRenderer {
     this._visList = new Int32Array(0);
     this._dotZ = new Float32Array(0);
     this._visCount = 0;
+    // CTL-02 frame statistics (read-only mirror for tests/acceptance).
+    this._stats = {
+      visCount: 0,
+      culled: 0,
+      nearSkipped: 0,
+      emptyFrames: 0,
+      axis: [0, 0, 1],
+    };
     this._tmpV = { x: 0, y: 0, z: 0 };
     this._scrPX = new Float32Array(64);
     this._scrPY = new Float32Array(64);
@@ -1218,6 +1235,26 @@ export class IcosaRenderer {
    * @param {import('./shared/geometry.js').SphereCamera} camera
    * @param {number} timeMs monotonic clock
    */
+  /**
+   * CTL-02 read-only frame statistics. `renderStats()` mirrors this through
+   * `window.__ICOSA__`; the acceptance script asserts `emptyFrames === 0`.
+   */
+  frameStats() {
+    return {
+      visCount: this._stats.visCount,
+      culled: this._stats.culled,
+      nearSkipped: this._stats.nearSkipped,
+      emptyFrames: this._stats.emptyFrames,
+      axis: [...this._stats.axis],
+    };
+  }
+
+  /** Clear the cumulative empty-frame counter (used by the HUD recovery line). */
+  resetEmptyFrames() {
+    this._stats.emptyFrames = 0;
+    return this;
+  }
+
   render(camera, timeMs) {
     const ctx = this.ctx;
     if (!ctx) return;
@@ -1236,6 +1273,9 @@ export class IcosaRenderer {
     if (dt > 0.1) dt = 0.1;
     this.t += dt;
     this.frame++;
+    this._stats.visCount = 0;
+    this._stats.culled = 0;
+    this._stats.nearSkipped = 0;
 
     if (this._mq) this.reducedMotion = !!this._mq.matches;
     const rm = this.reducedMotion;
@@ -1294,6 +1334,9 @@ export class IcosaRenderer {
     if (this._activeFaces().length && hasCamera) {
       this._drawSphere(ctx, camera, cx, cy, R, rm, glassFade);
       this._drawResourceMarkers(ctx);
+      // CTL-02: an empty frame is a signal, not a silent blank planet.
+      this._stats.visCount = this._visCount;
+      if (this._visCount === 0) this._stats.emptyFrames += 1;
     }
 
     if (!this.surfaceView && !this.opaqueSurface && hasCamera && cartoFade > 0.01) {
@@ -1621,24 +1664,21 @@ export class IcosaRenderer {
    * ================================================================ */
 
   _computeCameraFrame(camera, R) {
+    // CTL-02: the cull axis may only come from the real camera orientation.
+    // There is deliberately no Euler fallback here (narimato-physics.md §6).
+    if (!camera || typeof camera.viewAxis !== 'function') {
+      throw new Error('IcosaRenderer: camera.viewAxis() is required for culling');
+    }
     const d = Number(camera.distance) || CAMERA_DISTANCE;
-    // The quaternion camera can roll, so derive the culling axis from the real
-    // orientation rather than reconstructing it from clamped Euler yaw/pitch.
-    const axis = camera && typeof camera.viewAxis === 'function'
-      ? camera.viewAxis()
-      : (() => {
-          const yaw = Number(camera && camera.yaw) || 0;
-          const pitch = Number(camera && camera.pitch) || 0;
-          return {
-            x: -Math.sin(yaw) * Math.cos(pitch),
-            y: Math.sin(pitch),
-            z: Math.cos(yaw) * Math.cos(pitch),
-          };
-        })();
+    const axis = camera.viewAxis();
+    if (!axis || !Number.isFinite(axis.x) || !Number.isFinite(axis.y) || !Number.isFinite(axis.z)) {
+      throw new Error('IcosaRenderer: camera.viewAxis() must return a finite unit axis');
+    }
     this._d = d;
     this._Kx = axis.x;
     this._Ky = axis.y;
     this._Kz = axis.z;
+    this._stats.axis = [axis.x, axis.y, axis.z];
 
     const D = Math.hypot(this.width / 2, this.height / 2) + 28;
     let cosA = 0;
@@ -1677,7 +1717,12 @@ export class IcosaRenderer {
     this._sinGB = sinGB;
   }
 
-  /** Project one entry's boundary; returns true when its bbox can touch the view. */
+  /**
+   * Project one entry's boundary; returns true when its bbox can touch the view.
+   * CTL-02: samples nearer than NEAR_EPS are skipped, and every projected
+   * coordinate is clamped to ±OVERSCAN·max(W,H), so the silhouette math can
+   * never feed an unbounded coordinate into a path or a bbox.
+   */
   _projectEntry(entry, camera, W, H) {
     const wx = entry.wx;
     const px = entry.px;
@@ -1685,30 +1730,53 @@ export class IcosaRenderer {
     const pz = entry.pz;
     const n = entry.n;
     const tmp = this._tmpV;
+    const bound = OVERSCAN * Math.max(W, H);
     let minX = Infinity;
     let minY = Infinity;
     let maxX = -Infinity;
     let maxY = -Infinity;
     let allFront = true;
+    let usable = 0;
     for (let k = 0; k < n; k++) {
       const o = k * 3;
       tmp.x = wx[o];
       tmp.y = wx[o + 1];
       tmp.z = wx[o + 2];
       const pr = camera.project(tmp);
-      const X = pr.x;
-      const Y = pr.y;
+      const depth = Number.isFinite(pr.depth) ? pr.depth : camera.distance - pr.z;
+      if (!(depth >= NEAR_EPS)) {
+        // Too close to the camera plane to project honestly: mark the boundary
+        // as back-facing and clamp, never mirror an infinite coordinate.
+        allFront = false;
+        this._stats.nearSkipped += 1;
+        px[k] = clamp(pr.x, -bound, bound);
+        py[k] = clamp(pr.y, -bound, bound);
+        pz[k] = pr.z;
+        continue;
+      }
+      const X = clamp(pr.x, -bound, bound);
+      const Y = clamp(pr.y, -bound, bound);
       const Z = pr.z;
       px[k] = X;
       py[k] = Y;
       pz[k] = Z;
-      if (Z <= 0.0005) allFront = false;
+      usable += 1;
+      if (Z <= NEAR_EPS) allFront = false;
       if (X < minX) minX = X;
       if (X > maxX) maxX = X;
       if (Y < minY) minY = Y;
       if (Y > maxY) maxY = Y;
     }
     entry.allFront = allFront;
+    if (!usable) {
+      entry.minX = 0;
+      entry.minY = 0;
+      entry.maxX = 0;
+      entry.maxY = 0;
+      entry.sr = 0;
+      this._stats.culled += 1;
+      return false;
+    }
     entry.minX = minX;
     entry.minY = minY;
     entry.maxX = maxX;
@@ -2425,7 +2493,7 @@ export class IcosaRenderer {
         const origin = camera && camera.origin;
         if (origin && e.centroid.x * origin.x + e.centroid.y * origin.y + e.centroid.z * origin.z < 0.35) continue;
         if (this.opaqueSurface && origin && e.centroid.x * origin.x + e.centroid.y * origin.y + e.centroid.z * origin.z <= 0) continue;
-        if (!this._projectEntry(e, camera, W, H)) continue;
+        if (!this._projectEntry(e, camera, W, H)) { this._stats.culled += 1; continue; }
         let sumZ = 0;
         for (let k = 0; k < e.n; k += 1) sumZ += e.pz[k];
         dotZ[i] = sumZ / Math.max(1, e.n);
@@ -2438,7 +2506,7 @@ export class IcosaRenderer {
       const ct = e.cosTheta;
       const st = e.sinTheta;
       if (dotc >= cosA * ct - sinA * st) {
-        if (!this._projectEntry(e, camera, W, H)) continue;
+        if (!this._projectEntry(e, camera, W, H)) { this._stats.culled += 1; continue; }
         dotZ[i] = dotc;
         vis[vc++] = i;
       }
