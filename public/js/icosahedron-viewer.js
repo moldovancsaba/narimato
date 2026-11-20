@@ -21,7 +21,7 @@ const MAX_DISTANCE = 8.0;
 const ORBIT_STEP = 0.12;
 let objectQ = { x: 0, y: 0, z: 0, w: 1 };
 let W = 1, H = 1, dpr = 1;
-let view = lookFrame(carrier.pos, carrier.up, 0);
+let view = lookFrame(carrier.pos, carrier.up, carrier.up, 0);
 
 const qNorm = (q) => { const l = Math.hypot(q.x, q.y, q.z, q.w) || 1; return { x: q.x/l, y: q.y/l, z: q.z/l, w: q.w/l }; };
 const qMul = (a, b) => ({
@@ -31,6 +31,14 @@ const qMul = (a, b) => ({
   w: a.w*b.w - a.x*b.x - a.y*b.y - a.z*b.z,
 });
 const qInv = (q) => ({ x: -q.x, y: -q.y, z: -q.z, w: q.w });
+const slerpVec = (a, b, t) => {
+  const dot = Math.max(-1, Math.min(1, a.x*b.x + a.y*b.y + a.z*b.z));
+  const theta = Math.acos(dot);
+  const s = Math.sin(theta) || 1e-9;
+  const ka = Math.sin((1 - t) * theta) / s;
+  const kb = Math.sin(t * theta) / s;
+  return { x: a.x*ka + b.x*kb, y: a.y*ka + b.y*kb, z: a.z*ka + b.z*kb };
+};
 const qRotateVec = (q, v) => {
   const tx = 2 * (q.y * v.z - q.z * v.y);
   const ty = 2 * (q.z * v.x - q.x * v.z);
@@ -68,6 +76,12 @@ vec3 qrot(vec4 q, vec3 v) {
 void main() {
   vec2 s = gl_FragCoord.xy - uRes * 0.5;
   vec3 dir = normalize(uRight * s.x + uUp * s.y + uForward * uFocal);
+  // Sky cull: from outside a convex sphere, rays pointing away from the centre
+  // can never hit the surface; this removes the top cap / back-side ghost.
+  if (dot(dir, uPos) > 0.0) {
+    gl_FragColor = vec4(0.043, 0.051, 0.071, 1.0);
+    return;
+  }
   vec3 O = uPos * uDist;
   float b = 2.0 * dot(O, dir);
   float c = uDist * uDist - 1.0;
@@ -176,7 +190,7 @@ window.addEventListener('resize', resize);
 resize();
 
 function draw() {
-  const lookDown = carrierDistance > 1.001 ? Math.acos(Math.min(1, 1 / carrierDistance)) : 1.4;
+  const lookDown = carrierDistance > 1.001 ? Math.acos(Math.min(1, 1 / carrierDistance)) + 0.02 : 1.4;
   view = lookFrame(carrier.pos, carrier.up, surfaceTilt(), lookDown);
   gl.viewport(0, 0, canvas.width, canvas.height);
   gl.clearColor(0.043, 0.051, 0.071, 1);
@@ -187,7 +201,7 @@ function draw() {
   gl.uniform2f(u.res, canvas.width, canvas.height);
   gl.uniform1f(u.dist, carrierDistance);
   gl.uniform1f(u.focal, focalPixels() * dpr);
-  gl.uniform3f(u.pos, carrier.pos.x, carrier.pos.y, carrier.pos.z);
+  gl.uniform3f(u.pos, view.pos.x, view.pos.y, view.pos.z);
   gl.uniform3f(u.right, view.right.x, view.right.y, view.right.z);
   gl.uniform3f(u.up, view.up.x, view.up.y, view.up.z);
   gl.uniform3f(u.forward, view.forward.x, view.forward.y, view.forward.z);

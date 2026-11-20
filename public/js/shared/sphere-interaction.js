@@ -118,21 +118,19 @@ function rotateAroundAxis(v, axis, angle) {
 }
 
 /** Camera look frame: 0 = look at centre, 1 = tangent/horizon view. */
-export function lookFrame(pos, up, t, downAngle = 0) {
+export function lookFrame(pos, tangentUp, screenUp, t, downAngle = 0) {
   const p = norm(pos);
-  let u = norm(up);
-  u = norm(sub(u, mul(p, dot(u, p))));
-  if (Math.hypot(u.x, u.y, u.z) < 1e-9) {
-    const seed = Math.abs(p.y) < 0.9 ? { x: 0, y: 1, z: 0 } : { x: 0, y: 0, z: 1 };
-    u = norm(sub(seed, mul(p, dot(seed, p))));
-  }
-  const tangent = norm(cross(u, p)); // horizontal horizon tangent
+  // Forward tangent comes from the tangent-up reference, not the screen-up.
+  let tangent = norm(cross(tangentUp, p));
+  if (Math.hypot(tangent.x, tangent.y, tangent.z) < 1e-9) tangent = { x: 1, y: 0, z: 0 };
   const centre = mul(p, -1);          // straight down toward planet centre
   const horizon = norm(add(mul(centre, 1 - t), mul(tangent, t)));
-  // As the camera nears the surface, pitch down toward the centre so the
-  // horizon stays at the top and the ground fills the lower screen.
   const down = downAngle * t;
   const forward = norm(add(mul(horizon, Math.cos(down)), mul(centre, Math.sin(down))));
+  // Screen-up is world-up orthogonalized only against forward.
+  let u = norm(screenUp);
+  u = norm(sub(u, mul(forward, dot(u, forward))));
+  if (Math.hypot(u.x, u.y, u.z) < 1e-9) u = { x: 0, y: 1, z: 0 };
   const right = norm(cross(forward, u));
   const vup = norm(cross(right, forward));
   return { pos: p, up: vup, right, forward };
