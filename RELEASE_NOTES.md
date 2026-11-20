@@ -7,6 +7,49 @@
 > **Related delivery issues:** [QA-01](https://github.com/moldovancsaba/narimato/issues/5) · [REL-01](https://github.com/moldovancsaba/narimato/issues/45) · [REL-02](https://github.com/moldovancsaba/narimato/issues/46)
 <!-- delivery-ssot:end -->
 
+## Unreleased — M6 operations, recovery & security (2026-11-20)
+
+### Observability SSOT (OPS-01)
+
+- `observability/slo.json` is the executable threshold source (six rules with severity, owner,
+  runbook anchor and warm-up window); `lib/slo.js` evaluates it and `scripts/check-slo.mjs`
+  (`npm run check:slo`) prints one PASS/FAIL line per rule with exit `0/1/2/3`.
+- `/api/metrics` gains additive `metricsVersion`, `http.latencyMs.windowSamples`,
+  `process.bootRssBytes` and the IP-free `security` counter block.
+- `OBSERVABILITY.md` documents the ruleset, owners, warm-up rule, scrape interval and the five
+  runbook entries; `test/slo-contract.test.js` prevents documentation drift and asserts privacy.
+
+### Persistence recovery (OPS-03)
+
+- `lib/data-integrity.js`, `scripts/backup-data.mjs`, `scripts/verify-data.mjs`,
+  `scripts/restore-data.mjs`, `scripts/recovery-test.mjs` and `docs/RECOVERY.md`.
+- Deterministic checksummed archives (0700 dir / 0600 files), read-only verification with a stable
+  exit-code contract, staged restore with digest verification and a two-rename swap, retention
+  plan (7 daily + 24 hourly), registry/world reconciliation and `ALLOW_EMPTY_WORLD` quarantine
+  semantics with a `PERSIST_VERSION` guard.
+
+### Security hardening (SEC-01)
+
+- `lib/security.js` (mode resolution, exact-origin allowlist, CSP/HSTS/referrer/permissions
+  headers, path safety) and `lib/rate-limit.js` (pure token bucket with injectable clock).
+- Enforce mode: same-origin policy for join/action/telemetry/SSE, per-IP and per-token buckets,
+  body caps, dotfile/symlink denial, 4/2000 SSE admission with per-token replacement, failed-token
+  rate limiting and IP-free abuse counters. `SECURITY_MODE=compat` rolls the policy back.
+
+### Recovery drill evidence (OPS-03)
+
+- `node scripts/recovery-test.mjs` on 2026-11-20, single Node process: `drill: PASS` — three pilots,
+  both planets, all tokens and click counters survived backup → verify → restore and the restored
+  world booted with token-based rejoin identity intact.
+- `test/recovery.test.js` additionally proves a failed restore leaves live data byte-identical, a
+  corrupt `world.json` is quarantined and refused until `ALLOW_EMPTY_WORLD=1`, and a deleted planet
+  route is repaired on startup.
+
+### Gates
+
+- `npm test`: 260 tests pass; `npm run docs:check`; `npm run check:version`; `node scripts/test-count.mjs`.
+- No runtime dependency added; no wire-frame, scoring, tree or schema change.
+
 ## v3.57.0 — “Spherical Viewer Solution” (2026-11-20)
 
 ### What was wrong

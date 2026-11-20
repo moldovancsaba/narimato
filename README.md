@@ -247,24 +247,35 @@ repository status documents. The repository owns durable technical knowledge and
 
 ## Development
 
-The node:test suite currently runs <!-- test-count:202 -->202<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
+The node:test suite currently runs <!-- test-count:260 -->260<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 ```
 npm test                 # node:test suite, no dependencies
 npm run docs:check       # markdown links, issue map and version consistency
+npm run check:slo        # SLO verdict from /api/metrics (exit 0/1/2/3)
+npm run recovery:test    # backup -> verify -> restore drill on throwaway data
 npm start                # serve on PORT (default 4173), DATA_DIR (default ./data)
 npm run dev              # alias
 ```
 
 Environment: `PORT`, `HOST`, `DATA_DIR`, `BREAK_CLICKS`, `MAX_DEPTH`, `BOTS`, `DEPOSIT_CHANCE`,
-and the bot timing variables. See [ARCHITECTURE.md](ARCHITECTURE.md#configuration).
+the bot timing variables, `ALLOW_EMPTY_WORLD` (safe empty-boot guard) and `SECURITY_MODE`
+(`compat` locally, `enforce` with `NODE_ENV=production`). See
+[ARCHITECTURE.md](ARCHITECTURE.md#configuration), the SLO contract in [OBSERVABILITY.md](OBSERVABILITY.md)
+and the recovery runbook in [docs/RECOVERY.md](docs/RECOVERY.md).
 
 ### Repository layout
 
 ```
 server.js                 HTTP/SSE server + static files
 lib/world-core.js         authoritative planet world, players, mining, persistence
-lib/planet-manager.js     multi-planet rooms, routing, escape, meteor, stories
+lib/planet-manager.js     multi-planet rooms, routing, escape, meteor, registry reconcile
+lib/metrics.js            HTTP/SSE/event-loop/telemetry aggregates (/api/metrics)
+lib/slo.js                executable SLO ruleset evaluator (observability/slo.json)
+lib/security.js           origin policy, CSP/header assembly, path safety (SEC-01)
+lib/rate-limit.js         pure token-bucket limiter with injectable clock
+lib/data-integrity.js     manifest, deterministic tar/gzip, path safety, reconciliation (OPS-03)
+observability/slo.json    threshold/owner/runbook SSOT for the SLO checker
 public/index.html         shell + intro/interlude/HUD markup
 public/js/app.js          client integration + game loop
 public/js/renderer.js     Canvas 2D spherical game renderer
@@ -278,7 +289,8 @@ public/js/interlude.js    interplanetary transit + meteor cinematic
 public/js/result-card.js  session report + share card
 public/js/shared/         geometry, planets, resources, mission, sphere interaction
 test/                     node:test suites
-docs/                     delivery SSOT: board contract, DoD, issue map, intake rules
+docs/                     delivery SSOT: board contract, DoD, issue map, intake rules, RECOVERY.md
+scripts/                  operator tools: SLO check, backup/verify/restore, load/chaos, gates
 media/                    screenshots used by docs
 ```
 

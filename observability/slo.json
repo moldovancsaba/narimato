@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "description": "NARIMATO single-node SLO ruleset (OPS-01). The only mutable threshold source; OBSERVABILITY.md documents each rule, its owner and its runbook anchor. Evaluated by scripts/check-slo.mjs.",
+  "rules": [
+    {
+      "id": "http-p95",
+      "path": "http.latencyMs.p95Ms",
+      "op": "lte",
+      "threshold": 150,
+      "windowMs": 300000,
+      "severity": "warn",
+      "owner": "ops-on-call",
+      "runbook": "#http-p95"
+    },
+    {
+      "id": "loop-p95",
+      "path": "eventLoopDelay.p95Ms",
+      "op": "lte",
+      "threshold": 50,
+      "windowMs": 300000,
+      "severity": "page",
+      "owner": "ops-on-call",
+      "runbook": "#loop-p95"
+    },
+    {
+      "id": "sse-drop",
+      "path": "sse.dropped",
+      "op": "eq",
+      "threshold": 0,
+      "windowMs": 120000,
+      "severity": "page",
+      "owner": "ops-on-call",
+      "runbook": "#sse-drop",
+      "requires": { "path": "planets[].playersOnline", "op": "gt", "threshold": 0 }
+    },
+    {
+      "id": "sse-silence",
+      "path": "sse.active",
+      "op": "gt",
+      "threshold": 0,
+      "windowMs": 180000,
+      "severity": "page",
+      "owner": "ops-on-call",
+      "runbook": "#sse-drop",
+      "requires": { "path": "planets[].playersOnline", "op": "gt", "threshold": 0 }
+    },
+    {
+      "id": "audio-first-word",
+      "path": "telemetry.aggregates[\"audio.firstWordMs\"].avg",
+      "op": "lte",
+      "threshold": 1000,
+      "windowMs": 900000,
+      "severity": "warn",
+      "owner": "client-perf-on-call",
+      "runbook": "#audio-first-word",
+      "requires": { "path": "telemetry.aggregates[\"audio.firstWordMs\"].count", "op": "gte", "threshold": 20 }
+    },
+    {
+      "id": "rss-growth",
+      "path": "process.rssBytes",
+      "derived": "ratePerMinuteFromBoot",
+      "op": "lte",
+      "threshold": 6291456,
+      "windowMs": 1800000,
+      "severity": "warn",
+      "owner": "ops-on-call",
+      "runbook": "#rss-growth"
+    }
+  ]
+}

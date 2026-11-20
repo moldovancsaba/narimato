@@ -9,7 +9,7 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
+import { mkdtemp, readdir, rm, readFile, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -807,12 +807,29 @@ test('persistence: missing/corrupt world files start fresh (players salvaged fro
   assert.equal(fresh.getState().players.length, 0);
   assert.deepEqual(fresh.getLeaves().map(([label]) => label), Array.from({ length: 20 }, (_, i) => String(i + 1)));
 
-  // Garbage JSON -> fresh world.
+  // Garbage JSON -> quarantined; startup refused so the last good copy survives (OPS-03).
   const garbageDir = await tempDir(t);
-  await writeFile(path.join(garbageDir, 'world.json'), 'this is not json {', 'utf8');
-  const garbage = await WorldCore.open({ dataDir: garbageDir, quiet: true });
-  assert.equal(garbage.getState().faces, 20);
-  assert.equal(garbage.getState().players.length, 0);
+  const garbageFile = path.join(garbageDir, 'world.json');
+  await writeFile(garbageFile, 'this is not json {', 'utf8');
+  await assert.rejects(
+    () => WorldCore.open({ dataDir: garbageDir, quiet: true }),
+    (error) => error.code === 'WORLD_CORRUPT',
+  );
+  const quarantined = (await readdir(garbageDir)).filter((name) => name.startsWith('world.json.corrupt-'));
+  assert.equal(quarantined.length, 1, 'corrupt world.json is quarantined');
+  assert.equal(await readFile(garbageFile, 'utf8').catch(() => null), null, 'corrupt file moved aside, never overwritten');
+  // Explicit ALLOW_EMPTY_WORLD=1 is the only way to boot an empty world.
+  const allowed = await WorldCore.open({ dataDir: garbageDir, quiet: true, config: { allowEmptyWorld: true } });
+  assert.equal(allowed.getState().faces, 20);
+  assert.equal(allowed.getState().players.length, 0);
+
+  // A world with no players array is corruption, not an empty world.
+  const noPlayersDir = await tempDir(t);
+  await writeFile(path.join(noPlayersDir, 'world.json'), JSON.stringify({ version: 2, totalClicks: 5 }), 'utf8');
+  await assert.rejects(
+    () => WorldCore.open({ dataDir: noPlayersDir, quiet: true }),
+    (error) => error.code === 'WORLD_CORRUPT',
+  );
 
   // Tree corrupt but players valid -> players kept, grid reset to level 0.
   const salvageDir = await tempDir(t);

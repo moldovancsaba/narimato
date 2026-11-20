@@ -95,7 +95,7 @@ console.log(`[load] base=${BASE} clients=${CLIENTS} clicks=${CLICKS} sse=${SSE_C
 for (let i = 0; i < CLIENTS; i += 1) {
   const result = await json('/api/join', {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', origin: BASE },
     body: JSON.stringify({ tag: tagFor() }),
   });
   if (!result.res.ok || !result.body?.ok) {
@@ -116,7 +116,7 @@ const clickPromises = clients.map(async (token, i) => {
     const label = LABELS[(i + c) % LABELS.length];
     const result = await json('/api/action', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', origin: BASE },
       body: JSON.stringify({ token, type: 'click', label }),
     });
     if (!result.res.ok) {

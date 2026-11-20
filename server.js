@@ -25,6 +25,17 @@ import { fileURLToPath } from 'node:url';
 import { resolveConfig } from './lib/world-core.js';
 import { PlanetManager } from './lib/planet-manager.js';
 import { Metrics } from './lib/metrics.js';
+import { RateLimiter } from './lib/rate-limit.js';
+import {
+  checkOrigin,
+  checkTelemetryOrigin,
+  clientIp,
+  hasDotfileSegment,
+  isPathInside,
+  requestIsHttps,
+  resolveSecurityConfig,
+  securityHeadersFor,
+} from './lib/security.js';
 
 const MODULE_FILE = fileURLToPath(import.meta.url);
 export const PUBLIC_DIR = path.join(path.dirname(MODULE_FILE), 'public');
@@ -48,7 +59,8 @@ const HEARTBEAT_MS = 15_000;
 const SSE_BACKPRESSURE_BYTES = 1024 * 1024;
 /** Strict body cap for client telemetry beacons (tiny numeric payloads only). */
 export const TELEMETRY_BODY_BYTES = 4096;
-const TELEMETRY_RATE = Object.freeze({ max: 30, windowMs: 60_000 });
+/** Retry-After advertised when SSE admission refuses a stream (SEC-01). */
+export const SSE_REFUSED_RETRY_AFTER_SECONDS = 30;
 
 const MIME_TYPES = Object.freeze({
   '.html': 'text/html; charset=utf-8',
@@ -170,15 +182,28 @@ function safeDecode(value) {
 
 /** HTTP + SSE application around a WorldCore instance. */
 export class InfiniteServerApp {
-  constructor({ manager, config, publicDir = PUBLIC_DIR, now = Date.now, quiet = false, metrics = null, assetBaseUrl = '', appVersion = '0.0.0' } = {}) {
+  constructor({
+    manager,
+    config,
+    publicDir = PUBLIC_DIR,
+    now = Date.now,
+    quiet = false,
+    metrics = null,
+    assetBaseUrl = '',
+    appVersion = '0.0.0',
+    security = null,
+  } = {}) {
     this.manager = manager;
     this.config = config;
     this.appVersion = typeof appVersion === 'string' && appVersion ? appVersion : '0.0.0';
     this.assetBaseUrl = typeof assetBaseUrl === 'string' ? assetBaseUrl.replace(/\/+$/, '') : '';
     this.metrics = metrics || new Metrics({ now });
-    this._telemetryBuckets = new Map();
+    this.security = security || resolveSecurityConfig({});
     this.publicDir = publicDir;
     this.now = typeof now === 'function' ? now : Date.now;
+    this.limiter = new RateLimiter({ now: this.now });
+    /** @type {Map<string, number>} per-address SSE stream counts (memory only, never exported) */
+    this._ssePerIp = new Map();
     this.quiet = !!quiet;
     this.startedAt = this.now();
     /** @type {Set<{res: import('node:http').ServerResponse, playerId: string, dead: boolean}>} */
@@ -251,6 +276,10 @@ export class InfiniteServerApp {
         return;
       }
       const pathname = url.pathname;
+      const ip = clientIp(req, this.security);
+      // Header policy runs before routing so every response (including 403/413/429
+      // and static errors) carries the same security headers.
+      this._applySecurityHeaders(req, res);
 
       if (pathname === '/api/health') {
         if (!this._allow(method, res, ['GET', 'HEAD'], true)) return;
@@ -277,17 +306,24 @@ export class InfiniteServerApp {
       }
       if (pathname === '/api/join') {
         if (!this._allow(method, res, ['POST'], true)) return;
+        if (!this._guardOrigin(req, res, 'write')) return;
+        if (!this._guardLimit(req, res, ip, 'join')) return;
         await this._handleJoin(req, res);
         return;
       }
       if (pathname === '/api/action') {
         if (!this._allow(method, res, ['POST'], true)) return;
+        if (!this._guardOrigin(req, res, 'write')) return;
+        // The per-address bucket runs before body parsing; the per-token bucket
+        // runs in `_handleAction` once the token is known.
+        if (!this._guardLimit(req, res, ip, 'actionIp')) return;
         await this._handleAction(req, res);
         return;
       }
       if (pathname === '/api/events') {
         if (!this._allow(method, res, ['GET'], true)) return;
-        await this._handleEvents(req, res, url);
+        if (!this._guardOrigin(req, res, 'read')) return;
+        await this._handleEvents(req, res, url, ip);
         return;
       }
 
@@ -299,7 +335,8 @@ export class InfiniteServerApp {
       if (pathname === '/api/telemetry') {
         if (!this._allow(method, res, ['GET', 'HEAD', 'POST'], true)) return;
         if (method === 'POST') {
-          await this._handleTelemetry(req, res);
+          if (!this._guardOrigin(req, res, 'telemetry')) return;
+          await this._handleTelemetry(req, res, ip);
           return;
         }
         sendJson(res, 200, { ok: true, telemetry: this.metrics.telemetrySnapshot() });
@@ -314,6 +351,7 @@ export class InfiniteServerApp {
       await this._serveStatic(req, res, pathname);
     } catch (err) {
       if (err && err.code === 'PAYLOAD_TOO_LARGE') {
+        this.metrics.recordSecurity('bodyTooLarge');
         sendJson(res, 413, { ok: false, error: 'PAYLOAD_TOO_LARGE', message: err.message });
         return;
       }
@@ -341,6 +379,89 @@ export class InfiniteServerApp {
     return false;
   }
 
+  // ------------------------------------------------------------ security policy
+
+  /** Attach the header policy (CSP/HSTS/referrer/permissions) to this response. */
+  _applySecurityHeaders(req, res) {
+    const headers = securityHeadersFor(this.security, {
+      assetBaseUrl: this.assetBaseUrl,
+      https: requestIsHttps(req, this.security),
+    });
+    for (const [name, value] of Object.entries(headers)) res.setHeader(name, value);
+  }
+
+  /**
+   * Origin policy. `kind` is `write` (join/action), `read` (SSE) or `telemetry`.
+   * Rejections are counted as `crossOrigin` and never echo the received Origin.
+   */
+  _guardOrigin(req, res, kind) {
+    if (kind === 'telemetry') {
+      const verdict = checkTelemetryOrigin({ origin: req.headers.origin, host: req.headers.host });
+      if (verdict.ok) return true;
+      this.metrics.recordSecurity('crossOrigin');
+      sendJson(res, 403, { ok: false, error: 'CROSS_ORIGIN', message: 'Telemetry must be same-origin.' });
+      return false;
+    }
+    const verdict = checkOrigin({
+      origin: req.headers.origin,
+      host: req.headers.host,
+      method: req.method,
+      config: this.security,
+    });
+    if (verdict.ok) return true;
+    this.metrics.recordSecurity('crossOrigin');
+    sendJson(res, 403, { ok: false, error: 'CROSS_ORIGIN', message: 'Cross-origin request refused.' });
+    return false;
+  }
+
+  /** Apply one named limiter rule to `key`; enforce mode only (telemetry is separate). */
+  _guardLimit(req, res, key, ruleName) {
+    if (this.security.mode !== 'enforce') return true;
+    const rule = this.security.limits[ruleName];
+    const verdict = this.limiter.allow(rule, key);
+    if (verdict.ok) return true;
+    this.metrics.recordSecurity('rateLimited');
+    this._sendRateLimited(res, verdict.retryAfterMs);
+    return false;
+  }
+
+  _sendRateLimited(res, retryAfterMs) {
+    const waitMs = Number.isFinite(retryAfterMs) ? Math.max(1, retryAfterMs) : 1000;
+    sendJson(
+      res,
+      429,
+      { ok: false, error: 'RATE_LIMITED', message: 'Too many requests — retry shortly.', retryAfterMs: waitMs },
+      { 'Retry-After': String(Math.max(1, Math.ceil(waitMs / 1000))) },
+    );
+  }
+
+  /**
+   * SSE admission (enforce mode): one stream per token replaces the previous
+   * connection; otherwise per-IP and global caps apply. Refusals are 429 with a
+   * 30 s Retry-After so clients stop auto-retrying.
+   */
+  _admitSse(req, res, token, ip) {
+    if (this.security.mode !== 'enforce') return true;
+    for (const client of [...this.clients]) {
+      if (client.token !== token) continue;
+      this._removeClient(client, { end: true });
+      this.metrics.recordSecurity('sseReplaced');
+    }
+    const perIp = this._ssePerIp.get(ip) || 0;
+    const refuse =
+      (this.security.maxSsePerIp > 0 && perIp >= this.security.maxSsePerIp) ||
+      (this.security.maxSseGlobal > 0 && this.clients.size >= this.security.maxSseGlobal);
+    if (!refuse) return true;
+    this.metrics.recordSecurity('sseRefused');
+    sendJson(
+      res,
+      429,
+      { ok: false, error: 'RATE_LIMITED', message: 'Too many event streams — retry shortly.', retryAfterMs: SSE_REFUSED_RETRY_AFTER_SECONDS * 1000 },
+      { 'Retry-After': String(SSE_REFUSED_RETRY_AFTER_SECONDS) },
+    );
+    return false;
+  }
+
   // ------------------------------------------------------------------- routes
 
   async _handleJoin(req, res) {
@@ -357,6 +478,7 @@ export class InfiniteServerApp {
   async _handleAction(req, res) {
     const body = await readJsonBody(req);
     const type = typeof body.type === 'string' ? body.type.trim().toLowerCase() : '';
+    if (!this._guardLimit(req, res, `token:${typeof body.token === 'string' ? body.token : ''}`, 'action')) return;
 
     if (type === 'escape') {
       const result = await this.manager.escape({ token: body.token });
@@ -505,51 +627,22 @@ export class InfiniteServerApp {
       maxDepthReached: core.maxDepthReached,
       revision: core.revision,
     }));
-    return this.metrics.snapshot({
+    const snapshot = this.metrics.snapshot({
       planets,
       uptimeMs: this.now() - this.startedAt,
       generatedAt: this.now(),
     });
+    snapshot.security.mode = this.security.mode;
+    return snapshot;
   }
 
-  _sameOrigin(req) {
-    const origin = req.headers.origin;
-    if (!origin) return true; // curl / same-process beacons without Origin
-    try {
-      return new URL(origin).host === req.headers.host;
-    } catch {
-      return false;
-    }
-  }
-
-  _telemetryAllowed(ip) {
-    const limit = this.metrics.telemetryLimit || TELEMETRY_RATE;
-    const now = this.now();
-    let bucket = this._telemetryBuckets.get(ip);
-    if (!bucket || now >= bucket.resetAt) {
-      bucket = { count: 0, resetAt: now + limit.windowMs };
-      this._telemetryBuckets.set(ip, bucket);
-      // Bound memory if a lot of addresses report.
-      if (this._telemetryBuckets.size > 2048) {
-        for (const [key, entry] of this._telemetryBuckets) {
-          if (now >= entry.resetAt && this._telemetryBuckets.size > 1024) this._telemetryBuckets.delete(key);
-        }
-      }
-    }
-    bucket.count += 1;
-    return bucket.count <= limit.max;
-  }
-
-  async _handleTelemetry(req, res) {
-    if (!this._sameOrigin(req)) {
-      sendJson(res, 403, { ok: false, error: 'CROSS_ORIGIN', message: 'Telemetry must be same-origin.' });
-      return;
-    }
+  async _handleTelemetry(req, res, ip) {
     let body;
     try {
       body = await readJsonBody(req, TELEMETRY_BODY_BYTES);
     } catch (err) {
       const status = err && err.code === 'PAYLOAD_TOO_LARGE' ? 413 : 400;
+      if (status === 413) this.metrics.recordSecurity('bodyTooLarge');
       sendJson(res, status, {
         ok: false,
         error: err && err.code ? err.code : 'INVALID_JSON',
@@ -557,9 +650,11 @@ export class InfiniteServerApp {
       });
       return;
     }
-    const ip = (req.socket && req.socket.remoteAddress) || 'unknown';
-    if (!this._telemetryAllowed(ip)) {
-      sendJson(res, 429, { ok: false, error: 'RATE_LIMITED', message: 'Too many telemetry reports.' });
+    // The telemetry bucket keeps its per-IP cap in every mode (compat parity).
+    const verdict = this.limiter.allow(this.security.limits.telemetry, `ip:${ip}`);
+    if (!verdict.ok) {
+      this.metrics.recordSecurity('rateLimited');
+      this._sendRateLimited(res, verdict.retryAfterMs);
       return;
     }
     const result = this.metrics.recordTelemetry(body);
@@ -568,11 +663,22 @@ export class InfiniteServerApp {
 
   // --------------------------------------------------------------------- SSE
 
-  async _handleEvents(req, res, url) {
+  async _handleEvents(req, res, url, ip) {
     const token = url.searchParams.get('token');
     const { index, core } = await this.manager.coreForToken(token);
     const playerId = core.getPlayerIdByToken(token);
     if (!playerId) {
+      // Token guessing resistance: failed attempts are counted and rate limited
+      // per address (enforce mode). The response never reveals which part failed.
+      if (this.security.mode === 'enforce') {
+        const verdict = this.limiter.allow(this.security.limits.auth, `auth:${ip}`);
+        if (!verdict.ok) {
+          this.metrics.recordSecurity('rateLimited');
+          this._sendRateLimited(res, verdict.retryAfterMs);
+          return;
+        }
+      }
+      this.metrics.recordSecurity('authFailures');
       sendJson(res, 401, {
         ok: false,
         error: 'INVALID_TOKEN',
@@ -580,6 +686,7 @@ export class InfiniteServerApp {
       });
       return;
     }
+    if (!this._admitSse(req, res, token, ip)) return;
 
     this.metrics.recordRoute('/api/events');
     res.writeHead(200, {
@@ -590,8 +697,9 @@ export class InfiniteServerApp {
     });
     res.write('retry: 1500\n\n');
 
-    const client = { res, playerId, token, planetIndex: index, dead: false, metricsCounted: false };
+    const client = { res, playerId, token, ip, planetIndex: index, dead: false, metricsCounted: false };
     this.clients.add(client);
+    this._ssePerIp.set(ip, (this._ssePerIp.get(ip) || 0) + 1);
     this.metrics.sseOpened(index);
     core.setOnline(playerId, true);
 
@@ -635,6 +743,9 @@ export class InfiniteServerApp {
     if (!client || client.dead) return;
     client.dead = true;
     this.clients.delete(client);
+    const perIp = (this._ssePerIp.get(client.ip) || 0) - 1;
+    if (perIp > 0) this._ssePerIp.set(client.ip, perIp);
+    else this._ssePerIp.delete(client.ip);
     if (!client.metricsCounted) {
       client.metricsCounted = true;
       this.metrics.sseClosed(client.planetIndex, { dropped: !!end });
@@ -770,51 +881,69 @@ export class InfiniteServerApp {
     const method = (req.method || 'GET').toUpperCase();
     if (!this._allow(method, res, ['GET', 'HEAD'], false)) return;
 
+    const denied = () => {
+      this.metrics.recordSecurity('traversalBlocked');
+      sendText(res, 404, 'Not found');
+    };
     const decoded = safeDecode(pathname);
     if (decoded === null || decoded.includes('\0') || decoded.includes('\\')) {
-      sendText(res, 404, 'Not found');
+      denied();
       return;
     }
-    if (decoded.split('/').includes('..')) {
-      sendText(res, 404, 'Not found');
+    // Dotfiles (`.env`, `.git`, `.DS_Store`, …) are never served.
+    if (decoded.split('/').includes('..') || hasDotfileSegment(decoded)) {
+      denied();
       return;
     }
 
     const root = path.resolve(this.publicDir);
+    let realRoot;
+    try {
+      realRoot = await fsp.realpath(root);
+    } catch {
+      realRoot = root;
+    }
     let rel = path.posix.normalize(decoded).replace(/^\/+/, '');
     if (rel === '' || rel === '.' || rel.endsWith('/')) rel = `${rel}index.html`;
-    let resolved = path.resolve(root, rel);
-    if (resolved !== root && !resolved.startsWith(root + path.sep)) {
-      sendText(res, 404, 'Not found');
+    const resolved = path.resolve(root, rel);
+    if (!isPathInside(root, resolved)) {
+      denied();
       return;
     }
 
+    let filePath;
     let stat;
     try {
-      stat = await fsp.stat(resolved);
-    } catch {
-      sendText(res, 404, 'Not found');
-      return;
-    }
-    if (stat.isDirectory()) {
-      resolved = path.join(resolved, 'index.html');
-      try {
-        stat = await fsp.stat(resolved);
-      } catch {
-        sendText(res, 404, 'Not found');
+      // realpath containment: a symlink inside public/ must not escape it.
+      filePath = await fsp.realpath(resolved);
+      if (!isPathInside(realRoot, filePath)) {
+        denied();
         return;
       }
+      stat = await fsp.stat(filePath);
+      if (stat.isDirectory()) {
+        filePath = await fsp.realpath(path.join(filePath, 'index.html'));
+        if (!isPathInside(realRoot, filePath)) {
+          denied();
+          return;
+        }
+        stat = await fsp.stat(filePath);
+      }
+    } catch {
+      // Missing files are a plain 404, not an attack signature.
+      sendText(res, 404, 'Not found');
+      return;
     }
     if (!stat.isFile()) {
       sendText(res, 404, 'Not found');
       return;
     }
 
-    const ext = path.extname(resolved).toLowerCase();
+    const ext = path.extname(filePath).toLowerCase();
     const mime = MIME_TYPES[ext] || 'application/octet-stream';
     // Optional CDN asset base: rewrite the asset-base meta tag at serve time.
     if (ext === '.html' && this.assetBaseUrl) {
-      const html = await fsp.readFile(resolved, 'utf8');
+      const html = await fsp.readFile(filePath, 'utf8');
       const escaped = this.assetBaseUrl.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       const body = html.replace(
         /(<meta name="narimato-asset-base" content=")[^"]*(")/,
@@ -846,7 +975,7 @@ export class InfiniteServerApp {
       res.end();
       return;
     }
-    const stream = fs.createReadStream(resolved);
+    const stream = fs.createReadStream(filePath);
     stream.on('error', () => {
       try {
         res.destroy();
@@ -888,8 +1017,23 @@ export async function startServer(options = {}) {
     now,
     eventLoop: options.metricsEventLoop !== false,
     eventLoopResolutionMs: options.metricsEventLoopResolutionMs || 20,
-    telemetryLimit: options.telemetryRateLimit || undefined,
   });
+
+  // SEC-01: resolve the header/origin/limit policy once at boot. `SECURITY_MODE`
+  // and the other env vars are honoured; tests may inject `options.security`.
+  const securityOverrides = {
+    ...(options.security && typeof options.security === 'object' ? options.security : {}),
+    clickCooldownMs: config.clickCooldownMs,
+  };
+  if (options.securityMode !== undefined) securityOverrides.mode = options.securityMode;
+  if (options.telemetryRateLimit) {
+    securityOverrides.limits = {
+      ...(securityOverrides.limits || {}),
+      telemetry: { ...((securityOverrides.limits || {}).telemetry || {}), ...options.telemetryRateLimit },
+    };
+  }
+  const security = resolveSecurityConfig(env, securityOverrides);
+
   const appVersion = typeof options.appVersion === 'string' ? options.appVersion : await readAppVersion();
   const app = new InfiniteServerApp({
     manager,
@@ -900,6 +1044,7 @@ export async function startServer(options = {}) {
     metrics,
     assetBaseUrl: options.assetBaseUrl ?? env.ASSET_BASE_URL ?? '',
     appVersion,
+    security,
   });
 
   const server = http.createServer((req, res) => {
@@ -936,6 +1081,7 @@ export async function startServer(options = {}) {
     manager,
     app,
     metrics,
+    security,
     config,
     dataDir: config.dataDir,
     port,

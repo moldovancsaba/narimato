@@ -13,6 +13,7 @@ real count.
 |---|---|---|---|
 | `test/adr.test.js` | ADR numbering, front matter, index coverage, key existence | `docs/adr/` | DOC-01 |
 | `test/camera-controls.test.js` | Camera control semantics (invert, focus, zoom guards) | `public/js/app.js`, `public/js/shared/orbit-controls.js` | CTL-01 |
+| `test/data-integrity.test.js` | Manifest/tar determinism, path safety, checksums, reconciliation, retention, exit codes | `lib/data-integrity.js` | OPS-03 |
 | `test/docs-check.test.js` | R1–R6 docs gate, link/anchor/placeholder/key rules | `scripts/check-docs.mjs` | SSOT-02 |
 | `test/geometry.test.js` | Regular spherical icosahedron, subdivision, labels, picking, projection | `public/js/shared/geometry.js` | RND-01 |
 | `test/harvest.test.js` | Can-harvest predicate (own lock, cooldown, depth) | `public/js/shared/harvest.js` | CTL-03 |
@@ -22,7 +23,11 @@ real count.
 | `test/orbit-controls.test.js` | Shared drag/travel direction primitives | `public/js/shared/orbit-controls.js` | CTL-01 |
 | `test/planet-theme.test.js` | Planet palette/theme identity | `public/js/shared/planet.js`, CSS | — (delivered) |
 | `test/planet.test.js` | Deterministic terrain, biomes, deposits, client/server parity | `public/js/shared/planet.js` | — (delivered) |
+| `test/rate-limit.test.js` | Token bucket: refill, burst, retryAfter, clock injection, eviction | `lib/rate-limit.js` | SEC-01 |
+| `test/recovery.test.js` | Backup -> verify -> restore drill, quarantine, ALLOW_EMPTY_WORLD, reconciliation, failed-restore safety | `lib/data-integrity.js`, `scripts/*-data.mjs`, `lib/world-core.js` | OPS-03 |
+| `test/security.test.js` | Header matrix, origin policy, limits, body caps, static safety, SSE admission, compat rollback | `lib/security.js`, `server.js` | SEC-01 |
 | `test/server.test.js` | HTTP/SSE protocol, rooms, escape, persistence, static safety, health, surface pose/leave/mine frames, supply focus | `server.js`, `lib/planet-manager.js` | SRV-01, SRV-03, SRV-04, TST-01, OPS-03, SEC-01 |
+| `test/slo-contract.test.js` | SLO ruleset schema, path resolution, warm-up, checker exit codes, docs drift, privacy | `lib/slo.js`, `observability/slo.json` | OPS-01 |
 | `test/story-copy.test.js` | Copy SSOT: plural/naming table, Captain's Log grammar, threshold rendering, incident copy, doc-block sync and drift failure, guide card DOM contract | `public/js/story-copy.js`, `scripts/sync-story-copy.mjs` | STR-02 |
 | `test/sphere-interaction.test.js` | Carrier frame, projection/unprojection, point-follow, shortest arc | `public/js/shared/sphere-interaction.js` | RND-01, CTL-01 |
 | `test/surface-camera.test.js` | Surface camera framing and carrier math | `public/js/shared/surface-camera.js` | RND-01 |

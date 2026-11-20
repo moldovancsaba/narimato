@@ -17,7 +17,7 @@ Architecture decisions are recorded as ADRs: [docs/adr/README.md](docs/adr/READM
 | Rendering | Canvas 2D + WebGL | game planet: Canvas 2D; spherical-icosahedron reference viewer: WebGL ray–sphere shader |
 | Simulation | Node.js ≥20 | authoritative game server, HTTP + Server-Sent Events |
 | Persistence | JSON files + atomic rename | one file per planet, one registry file |
-| Tests | `node:test` | <!-- test-count:202 -->202<!-- /test-count --> tests, no test dependencies; ownership map in [docs/TEST_MAP.md](docs/TEST_MAP.md) |
+| Tests | `node:test` | <!-- test-count:260 -->260<!-- /test-count --> tests, no test dependencies; ownership map in [docs/TEST_MAP.md](docs/TEST_MAP.md) |
 | CI | GitHub Actions | Node 20 and 22, `npm test` |
 | Deploy | `node server.js` behind any static/reverse proxy | Cloudflare tunnel used for the live build |
 
@@ -50,6 +50,10 @@ Node server.js
         ├─ Planet 1 WorldCore   DATA_DIR/planets/p1/world.json
         └─ Planet n WorldCore   on demand · per-planet robots · per-planet SSE rooms
 ```
+
+Recovery tooling: `scripts/backup-data.mjs` · `scripts/verify-data.mjs` · `scripts/restore-data.mjs`
+(shared logic in `lib/data-integrity.js`; runbook [docs/RECOVERY.md](docs/RECOVERY.md)).
+SLO tooling: `observability/slo.json` · `lib/slo.js` · `scripts/check-slo.mjs`.
 
 Observability: `public/js/telemetry.js` posts a tiny privacy-safe numeric beacon to
 `/api/telemetry` (page hide + first spoken word); the server aggregates it and exposes
@@ -420,17 +424,77 @@ Three deliberate layouts, not just scaling:
   controls; touch steering pads in the intro.
 - **Landscape phone:** vertical side dock/drawers, planet centered.
 
-## Security & limits
+## Security headers and abuse limits
 
-- Tags are arcade identities, not authentication. Tokens are random UUIDs; the client stores one
-  token per callsign locally.
-- Hidden resources are server-only; no secret deposit data is transmitted.
-- JSON bodies capped at 16 KiB; static paths sanitized (no traversal/backslash/NUL); no-store HTML
-  and JS; no external assets.
-- Hard depth ceiling 32; planet level cap 8 (break cap 7); bot counts limited; per-planet saves.
-- Server is authoritative for scoring, ownership, locks, mining, escape, meteor, surface poses,
-  robot routes, robot click targets and supply placements. Clients may describe where they think
-  they are, never who they are or which cell they own; hidden deposits stay server-only.
+Server authority: tags are arcade identities, not authentication; tokens are random UUIDs and the
+client stores one per callsign locally. Hidden resources are server-only. Hard depth ceiling 32;
+planet level cap 8 (break cap 7); bot counts limited; per-planet saves. The server is authoritative
+for scoring, ownership, locks, mining, escape, meteor, surface poses, robot routes, robot click
+targets and supply placements — clients may describe where they think they are, never who they are
+or which cell they own.
+
+`SECURITY_MODE=compat|enforce` controls the browser-facing policy (`lib/security.js`,
+`lib/rate-limit.js`). The default is `enforce` when `NODE_ENV=production` and `compat` otherwise, so
+local development and the test suite reproduce the pre-hardening surface until hardening is
+requested. `compat` sends no security headers and keeps origin checks off for join/action/SSE (the
+telemetry same-origin check stays on in both modes); limits stay off except the telemetry bucket.
+Static path safety (dotfiles, traversal, symlink containment) is **unconditional** because serving
+`.env` or a symlink escape is a vulnerability, not a tunable.
+
+Request pipeline: `headerPolicy → originPolicy → limiter → bodyCap → route`. Rejections are
+`403 CROSS_ORIGIN` (before body parsing), `429 RATE_LIMITED` with `Retry-After`/`retryAfterMs`, and
+`413 PAYLOAD_TOO_LARGE`; SSE refusals are `429` with `Retry-After: 30`.
+
+| Header | Value |
+|---|---|
+| `Content-Security-Policy` | `default-src 'self'`; `script-src 'self'`; `style-src 'self'`; `img-src 'self' data: blob:`; `font-src 'self'`; `media-src`/`connect-src` `'self'` plus the exact `ASSET_BASE_URL` origin; `worker-src`/`manifest-src 'self'`; `object-src 'none'`; `frame-ancestors 'none'`; `base-uri 'none'`; `form-action 'self'` |
+| `Referrer-Policy` | `no-referrer` |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=(), payment=(), usb=(), accelerometer=(), gyroscope=()` |
+| `X-Frame-Options` | `DENY` |
+| `X-Content-Type-Options` | `nosniff` |
+| `Cross-Origin-Resource-Policy` | `same-origin` |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` — **HTTPS only** (`req.socket.encrypted`, or `X-Forwarded-Proto: https` when `TRUST_PROXY=1`) |
+
+| Limit | Default | Scope |
+|---|---|---|
+| join | 10 / 60 s, burst 10 | per IP |
+| action | `ceil(1000 / CLICK_COOLDOWN_MS) * 2` (50/s at 40 ms) | per token |
+| action (address) | 4× the per-token ceiling (200/s at 40 ms) | per IP |
+| telemetry | 30 / 60 s | per IP |
+| failed token attempts | 30 / 60 s (SSE `401`s) | per IP |
+| SSE streams | 4 per IP, 2000 global; one stream per token replaces the previous | per IP / process |
+
+Surface pose frames are client-pushed through the same `action` route at roughly 10 Hz, so they
+consume the per-token and per-IP action buckets; the defaults leave headroom (10 Hz vs the derived
+50/s token and 200/s address ceilings) and every limit is env-tunable for shared-address (NAT)
+deployments: `LIMIT_<JOIN|ACTION|ACTION_IP|TELEMETRY|AUTH>_{MAX,WINDOW_MS,BURST}`.
+SSE admission counts one stream per tab, so the per-IP cap bounds tabs per address.
+
+Origin allowlisting is exact scheme+host (`ALLOWED_ORIGINS` or the request `Host`), never a suffix
+match or `*`. Missing `Origin` is allowed only for safe methods and telemetry; writes need a match
+in enforce mode. `X-Forwarded-For`/`-Proto` are ignored unless `TRUST_PROXY=1`. No IP, token or
+header is logged; abuse is counted in `/api/metrics` `security` (`rateLimited`, `bodyTooLarge`,
+`crossOrigin`, `sseRefused`, `traversalBlocked`, `authFailures`, `sseReplaced`).
+
+Rollback: set `SECURITY_MODE=compat` and restart (no data/schema change), or `git revert` the
+delivery commit. `SECURITY_HEADERS=off` disables the header set while leaving limits on.
+
+## Persistence recovery
+
+`DATA_DIR` holds the only copy of players, callsigns and the token→planet registry. The recovery
+path is documented and executable in [docs/RECOVERY.md](docs/RECOVERY.md):
+
+- `scripts/backup-data.mjs` — deterministic checksummed `.tar.gz` + manifest beside it (0700
+  directory, 0600 files).
+- `scripts/verify-data.mjs` — read-only integrity verdict (exit `0/3/4/5/7`).
+- `scripts/restore-data.mjs` — staged extract → digest verify → registry/world reconcile → two-rename
+  swap; the previous directory is retained as `DATA_DIR.pre-restore-<UTC stamp>`.
+- `scripts/recovery-test.mjs` (`npm run recovery:test`) — rehearses the drill on throwaway data.
+
+A corrupt `world.json` is quarantined to `world.json.corrupt-<UTC stamp>` and startup is refused
+unless `ALLOW_EMPTY_WORLD=1`; a newer `PERSIST_VERSION` is never downgraded. RPO ≤ 5.5 min (save
+debounce 0.5 min + 5 min backup interval), RTO ≤ 15 min; retention is 7 daily + 24 hourly.
+>>>>>>> 39246d1 (Delivery: OPS-01 observability SSOT, OPS-03 persistence recovery, SEC-01 hardening)
 
 ## Configuration
 
@@ -444,10 +508,28 @@ Three deliberate layouts, not just scaling:
 | `BOTS` | 1 | robots per loaded planet |
 | `BOT_*_MS` | see defaults | robot lifetime/gap/click timings |
 | `DEPOSIT_CHANCE` | unset | optional override of biome deposit chance (mineable only) |
+| `ALLOW_EMPTY_WORLD` | `0` | boot a fresh world after a corrupt world file was quarantined (OPS-03) |
+| `SECURITY_MODE` | `compat` (`enforce` when `NODE_ENV=production`) | `compat`/`enforce` browser policy (SEC-01) |
+| `ALLOWED_ORIGINS` | unset (self-host match) | comma-separated exact origins allowed for writes |
+| `MAX_SSE_PER_IP` | 4 | per-address SSE stream cap (enforce) |
+| `MAX_SSE_GLOBAL` | 2000 | process-wide SSE stream cap (enforce) |
+| `TRUST_PROXY` | `0` | honour `X-Forwarded-For`/`-Proto` from a trusted proxy |
+| `LIMIT_<RULE>_MAX` / `_WINDOW_MS` / `_BURST` | per-rule defaults above | tune `JOIN`, `ACTION`, `ACTION_IP`, `TELEMETRY`, `AUTH` buckets without a code change |
+| `SECURITY_HEADERS` | unset | `off` disables the header set while leaving limits on |
+| `BACKUP_DIR` | `DATA_DIR-backups` | backup output directory for the operator scripts |
 
 ## Testing
 
-The suite currently runs <!-- test-count:202 -->202<!-- /test-count --> tests. Behaviour ownership: [docs/TEST_MAP.md](docs/TEST_MAP.md).
+The suite currently runs <!-- test-count:260 -->260<!-- /test-count --> tests. Behaviour ownership: [docs/TEST_MAP.md](docs/TEST_MAP.md).
+
+```bash
+npm test                 # node:test suite (260 tests)
+npm run check:slo        # evaluate observability/slo.json against /api/metrics (0/1/2/3)
+npm run recovery:test    # backup -> verify -> restore drill on throwaway data
+npm run docs:check       # R1-R6 repository SSOT gate
+npm run check:version    # version SSOT gate
+node scripts/test-count.mjs  # documented count == executed count
+```
 
 - `test/geometry.test.js` — regular icosahedron, spherical coverage, labels, camera/picking.
 - `test/sphere-interaction.test.js` — carrier projection/unprojection, point-follow, infinite local direction.
@@ -465,6 +547,17 @@ The suite currently runs <!-- test-count:202 -->202<!-- /test-count --> tests. B
 - `test/observability.test.js` — `/api/metrics` shape/aggregates, SSE counters, privacy (no
   tokens/tags/ids/hidden deposits), telemetry whitelist/clamping, 4 KB body cap, same-origin,
   rate limiting, and the Node-safe client beacon module.
+- `test/slo-contract.test.js` — executable SLO contract: ruleset schema, path resolution, warm-up,
+  growth maths, checker exit codes `0/1/2/3`, docs-vs-rules drift, privacy of rules/output.
+- `test/rate-limit.test.js` — pure token bucket: refill, burst, `retryAfter`, clock injection,
+  key isolation, eviction bound.
+- `test/security.test.js` — header matrix, exact-origin policy, join/action/telemetry limits, body
+  caps, static dotfile/symlink denial, SSE admission/replacement/global cap, token guessing, IP-free
+  counters, compat rollback.
+- `test/data-integrity.test.js` — manifest/tar determinism and safety, reconciliation, retention,
+  exit codes, staging extraction.
+- `test/recovery.test.js` — real backup → verify → restore drill, corruption quarantine,
+  `ALLOW_EMPTY_WORLD`, registry reconciliation, failed-restore safety.
 - QA: Playwright viewport suites (desktop/tablet/mobile/landscape), intro/interlude/meteor,
   report/card, abandon/new-pilot.
 
@@ -480,6 +573,8 @@ DATA_DIR=/var/lib/narimato PORT=4173 node server.js
   preserved, but the grid is reset to the new 2-level planet (20 + 80). Existing worlds whose tree
   is deeper than the configured level cap are also rebuilt on load. Fresh/reset planets guarantee
   enough hidden deposits of each refit ore to make the mission completable.
-- Back up `DATA_DIR` before upgrades. Static assets are served no-store by the game server.
+- Back up `DATA_DIR` before upgrades with `node scripts/backup-data.mjs --data-dir <dir> --out <backupDir>`
+  and verify it with `node scripts/verify-data.mjs --archive <file>` (see [docs/RECOVERY.md](docs/RECOVERY.md)).
+  Static assets are served no-store by the game server.
 - Any reverse proxy/tunnel can front the HTTP port; SSE needs buffering disabled
   (`X-Accel-Buffering: no` is already sent).
