@@ -136,9 +136,11 @@ shaded, and edge bands are tested on that surface point. There is no hidden geom
 | `public/js/shared/camera-contract.js` | `CameraView` member list, `assertCameraView`, `focalPxFor`, dolly/tilt helpers, `?surface-camera` parser |
 | `public/js/shared/surface-camera.js` | `SurfaceCamera` (legacy third-person frame and carrier framing) on the shared contract |
 | `public/js/icosahedron-viewer.js` | WebGL ray–sphere shader, carrier controls, object drag, fixed-focal dolly |
-| `public/js/shared/orbit-controls.js` | shared game mouse/trackball/cursor primitives |
-| `test/sphere-interaction.test.js` | pure carrier/unprojection/shortest-arc tests |
-| `test/orbit-controls.test.js` | shared game control direction tests |
+| `public/js/shared/orbit-controls.js` | orbit input SSOT: absolute surface-point drag, carrier arrow travel, mode polarity (CTL-01) |
+| `public/js/shared/pointer-router.js` | pointer roles, capture, cancellation and pinch intents (CTL-06) |
+| `public/js/shared/zoom-levels.js` | ladder constants, `zoomForLevel`, `zoomLevelForZoom`, `applyOrbitFarZoom` (CTL-04) |
+| `test/sphere-interaction.test.js` | pure carrier/unprojection/shortest-arc tests, 720-step two-pole loop |
+| `test/orbit-controls.test.js` | per-key sign table, drag/arrow inverse relation, Shift, dt clamp, 10 000 seeded steps |
 | `scripts/verify-icosahedron-controls.mjs` | live numeric gesture acceptance |
 | `scripts/verify-camera-carrier.mjs` | live camera/object separation and radius acceptance |
 | `scripts/verify-icosahedron-visual.mjs` | live WebGL screenshot/coverage acceptance |
@@ -175,9 +177,58 @@ Measured on live viewport 1200×1200:
 - Do not use Euler/clamped camera pitch or accumulate camera roll.
 - Do not merge object and camera transforms.
 - Do not use incremental screen rotation for the dragged surface point.
+- Do not compose the drag arc on the left of the captured transform (use `q0 · delta`).
+- Do not assign Euler yaw/pitch from keyboard travel; move the carrier frame instead.
+- Do not add a second input path beside `shared/orbit-controls.js`.
 - Do not use optical zoom or scale the projection.
 - Do not draw a generated surface mesh or hidden back edges.
 - Do not call a pixel-coverage test “visual proof” by itself.
+
+## 9b. Orbit input SSOT (CTL-01)
+
+There is exactly one input→camera contract; `public/js/shared/orbit-controls.js` owns it.
+`app.js` forwards events and never computes an orientation itself.
+
+### Sign table
+
+| Input | Carrier tangent | Screen delta of a fixed surface point |
+|---|---|---|
+| `ArrowRight` / `ArrowLeft` | `+right` / `−right` | `Δx < 0` / `Δx > 0` |
+| `ArrowUp` / `ArrowDown` | `+up` / `−up` | `Δy > 0` / `Δy < 0` |
+| drag right / drag down | absolute (grabbed point follows) | `Δx > 0` / `Δy > 0` |
+
+- Arrow travel is **inverse to drag** by construction: arrows move the carrier, drag moves
+  the object.
+- `KEY_RATE_RAD_S = 1.05`, `SHIFT_BOOST = 2.1`, `MAX_STEP_DT = 0.05` (a tab-switch frame
+  cannot jump a hemisphere).
+- No Euler yaw/pitch is assigned in the input path. `SphereCamera.setCarrier(pos, up)` rebuilds
+  the object quaternion from the parallel-transported carrier frame.
+
+### Absolute drag
+
+At pointer-down the grabbed world point `P0` and the object quaternion `q0` are captured, with the
+focal length frozen for the gesture. Every move unprojects the pointer against that frozen view to
+`P1`, then applies the world-space shortest arc on the **right** of the captured transform:
+
+```text
+delta = shortestArcQuat(P0, P1)      // world space
+q     = normalize(q0 · delta)        // grabbed point follows the pointer
+```
+
+Composing on the left (`delta · q0`) is the same-family mistake the v3.57 rewrite made: the
+grabbed point drifts instead of following (measured 144 px over a 120×80 px drag; the right-side
+composition measures 0 px). `reverse` mode negates the arc; arrows are unchanged.
+
+## 9c. Culling bounds and frame truth (CTL-02)
+
+- `_computeCameraFrame` takes its axis **only** from `camera.viewAxis()` and throws when it is
+  absent or non-finite. There is no Euler fallback anywhere in the renderer.
+- `NEAR_EPS = 1e-3` — samples nearer than this to the camera plane are skipped, never mirrored.
+- `OVERSCAN = 4` — projected coordinates clamp to `±4·max(W, H)` so a silhouette sample cannot
+  produce an unbounded bbox or streak.
+- `frameStats()` returns `{ visCount, culled, nearSkipped, emptyFrames, axis }` and is mirrored as
+  `window.__ICOSA__.renderStats()`. `emptyFrames` counts a frame that drew zero faces while the
+  world has faces; the app surfaces `VIEW RECOVERY` once and resets the camera.
 
 ## 10. Camera interface contract (RND-01)
 

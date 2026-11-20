@@ -11,6 +11,8 @@
  */
 
 /** Nodes owned by the always-mounted orbital HUD. */
+import { harvestReadout } from './harvest.js';
+
 export const ORBIT_HUD_NODES = Object.freeze([
   'hud',
   'nav',
@@ -28,6 +30,12 @@ export const ORBIT_HUD_NODES = Object.freeze([
   'arcade',
   'target',
   'hint',
+  'control-mode',
+  'control-mode-label',
+  'control-mode-drag',
+  'control-mode-action',
+  'control-mode-reason',
+  'control-mode-live',
 ]);
 
 /** Nodes surface mode adds to the same tree. */
@@ -108,14 +116,17 @@ export function parity(before, during, after) {
   };
 }
 
-/** Target readout text and state for the shared `#surface-target` node. */
+/**
+ * Legacy two-state readout kept for compatibility. Prefer `harvestReadout`
+ * from `shared/harvest.js`, which carries the server-matching reason (CTL-03).
+ */
 export function targetReadout(label, harvestable) {
-  const id = label == null ? '' : String(label);
-  if (!id) return { text: 'TARGET: —', state: 'idle' };
-  return {
-    text: `TARGET ${id} // ${harvestable ? 'GREEN // HARVEST' : 'RED // LOCKED'}`,
-    state: harvestable ? 'can' : 'locked',
-  };
+  const readout = harvestReadout(label, {
+    can: !!harvestable,
+    reason: harvestable ? 'ok' : 'own_lock',
+    exhausted: false,
+  });
+  return { text: readout.text, state: readout.state };
 }
 
 /** Lap progress as an integer percent 0..100 (progressbar aria-valuenow). */

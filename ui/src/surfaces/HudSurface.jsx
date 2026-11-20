@@ -38,6 +38,7 @@ import {
   zoomPercent,
 } from '../../../public/js/shared/hud-contract.js';
 import SurfaceStrip from './SurfaceStrip.jsx';
+import ControlMode from './ControlMode.jsx';
 
 const intent = (type, detail) => dispatchIntent(type, detail);
 
@@ -508,6 +509,7 @@ export default function HudSurface({ ui, surface, cineActive }) {
           </GdsStack>
 
           <GdsStack gap="xs" padding="sm" w={{ base: '10rem', md: '14rem' }} className="gds-hud-right">
+            <ControlMode slice={ui.controlMode} />
             <GdsBox
               id={IDS.zoom}
               className="gds-zoom"

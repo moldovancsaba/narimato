@@ -33,14 +33,14 @@
         "interactionSamples": 9,
         "drawUnitsPerFrame": 135,
         "rebuildsPerSecond": 0,
-        "bundleKibGzip": 182.53,
-        "bundleFirstLoadKibGzip": 245.81,
-        "cssKibGzip": 63.28,
+        "bundleKibGzip": 223.79,
+        "bundleFirstLoadKibGzip": 289.7,
+        "cssKibGzip": 65.91,
         "islandKibGzip": 172.06
       },
       "bundle": {
-        "jsKibGzip": 182.53,
-        "firstLoadKibGzip": 245.81,
+        "jsKibGzip": 223.79,
+        "firstLoadKibGzip": 289.7,
         "islands": [
           {
             "name": "public/ui/island.js",
@@ -54,6 +54,6 @@
       }
     }
   },
-  "updatedAt": "2026-11-20T22:02:56.618Z",
-  "method": "scripts/perf-probe.mjs; Playwright Chromium; budgets from public/js/perf-budget.js"
+  "updatedAt": "2026-11-20T23:25:00.000Z",
+  "method": "scripts/perf-probe.mjs; Playwright Chromium; budgets from public/js/perf-budget.js; CTL-01..06 bundle re-measure via lib/perf-bundle.js measureBundle on f06360e (measured 223.79 KiB, first load 289.70 KiB; frame metrics unchanged)"
 }

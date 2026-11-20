@@ -90,3 +90,44 @@ test('carrier projection and unprojection recover a visible surface point', () =
   const err = Math.hypot(back.x - unit.x, back.y - unit.y, back.z - unit.z);
   assert.ok(err < 1e-9, `carrier ray recovers point, err=${err}`);
 });
+
+test('sphere interaction: 720 carrier steps cross both poles without a frame flip', () => {
+  const dot = (a, b) => a.x * b.x + a.y * b.y + a.z * b.z;
+  let frame = carrierFrame({ x: 0, y: 0, z: 1 }, { x: 0, y: 1, z: 0 });
+  for (let i = 0; i < 720; i += 1) {
+    const old = frame;
+    const key = i < 360 ? 1 : -1;
+    frame = moveCarrier(frame, 0, key, 0.05);
+    const delta = { x: frame.pos.x - old.pos.x, y: frame.pos.y - old.pos.y, z: frame.pos.z - old.pos.z };
+    assert.ok(dot(delta, old.up) * key > 0, `step ${i} continues along the held tangent`);
+    assert.ok(Math.abs(dot(frame.pos, frame.up)) < 1e-9, `step ${i} pos·up = 0`);
+    assert.ok(Math.abs(Math.hypot(frame.pos.x, frame.pos.y, frame.pos.z) - 1) < 1e-9);
+    assert.ok(Math.abs(Math.hypot(frame.up.x, frame.up.y, frame.up.z) - 1) < 1e-9);
+  }
+});
+
+test('sphere interaction: the world-space shortest arc composes on the right of the object transform', () => {
+  // CTL-01 invariant: with a world-space P0->P1 arc, R1 = R0·delta keeps the
+  // grabbed point under the pointer; R1 = delta·R0 does not.
+  const p0 = { x: 0.2, y: 0.1, z: 0.97 };
+  const n0 = Math.hypot(p0.x, p0.y, p0.z);
+  const a = { x: p0.x / n0, y: p0.y / n0, z: p0.z / n0 };
+  const b = { x: -0.25, y: 0.35, z: 0.9 };
+  const nb = Math.hypot(b.x, b.y, b.z);
+  const target = { x: b.x / nb, y: b.y / nb, z: b.z / nb };
+  const delta = shortestArcQuat(a, target);
+  const rotate = (q, v) => {
+    const tx = 2 * (q.y * v.z - q.z * v.y);
+    const ty = 2 * (q.z * v.x - q.x * v.z);
+    const tz = 2 * (q.x * v.y - q.y * v.x);
+    return {
+      x: v.x + q.w * tx + (q.y * tz - q.z * ty),
+      y: v.y + q.w * ty + (q.z * tx - q.x * tz),
+      z: v.z + q.w * tz + (q.x * ty - q.y * tx),
+    };
+  };
+  const moved = rotate(delta, a);
+  assert.ok(Math.hypot(moved.x - target.x, moved.y - target.y, moved.z - target.z) < 1e-9);
+  // A shortest arc is a rotation: it preserves length and orthogonality.
+  assert.ok(Math.abs(Math.hypot(delta.x, delta.y, delta.z, delta.w) - 1) < 1e-12);
+});

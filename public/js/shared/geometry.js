@@ -391,29 +391,29 @@ export function getMesh(level) {
  * and arrow input rotate around the camera's local axes, so the view keeps
  * going in every direction (a trackball, not an orbit clamp).
  * ------------------------------------------------------------------ */
-const qIdentity = () => ({ x: 0, y: 0, z: 0, w: 1 });
-const qMul = (a, b) => ({
+export const qIdentity = () => ({ x: 0, y: 0, z: 0, w: 1 });
+export const qMul = (a, b) => ({
   x: a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y,
   y: a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x,
   z: a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w,
   w: a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z,
 });
-const qFromAxis = (axis, angle) => {
+export const qFromAxis = (axis, angle) => {
   const h = angle / 2;
   const s = Math.sin(h);
   return { x: axis.x * s, y: axis.y * s, z: axis.z * s, w: Math.cos(h) };
 };
-const qNormalize = (q) => {
+export const qNormalize = (q) => {
   const len = Math.hypot(q.x, q.y, q.z, q.w) || 1;
   return { x: q.x / len, y: q.y / len, z: q.z / len, w: q.w / len };
 };
-const qFromYawPitch = (yaw, pitch) => {
+export const qFromYawPitch = (yaw, pitch) => {
   // Matches the legacy view matrix Rx(pitch) * Ry(yaw).
   const qy = qFromAxis({ x: 0, y: 1, z: 0 }, yaw || 0);
   const qx = qFromAxis({ x: 1, y: 0, z: 0 }, pitch || 0);
   return qNormalize(qMul(qx, qy));
 };
-const qRotate = (q, v) => {
+export const qRotate = (q, v) => {
   // v' = q * v * q^-1, expanded without allocating a quaternion per point.
   const tx = 2 * (q.y * v.z - q.z * v.y);
   const ty = 2 * (q.z * v.x - q.x * v.z);
@@ -424,7 +424,46 @@ const qRotate = (q, v) => {
     z: v.z + q.w * tz + (q.x * ty - q.y * tx),
   };
 };
-const qRotateInverse = (q, v) => qRotate(qNormalize({ x: -q.x, y: -q.y, z: -q.z, w: q.w }), v);
+export const qRotateInverse = (q, v) => qRotate(qNormalize({ x: -q.x, y: -q.y, z: -q.z, w: q.w }), v);
+
+/**
+ * Rotation quaternion for an orthonormal frame `(right, up, viewAxis)` whose
+ * rows are the world→view basis. Used to rebuild the object transform from a
+ * parallel-transported carrier frame (CTL-01) without an Euler round-trip.
+ */
+export const quatFromBasis = (right, up, viewAxis) => {
+  const m00 = right.x; const m01 = right.y; const m02 = right.z;
+  const m10 = up.x; const m11 = up.y; const m12 = up.z;
+  const m20 = viewAxis.x; const m21 = viewAxis.y; const m22 = viewAxis.z;
+  const trace = m00 + m11 + m22;
+  let x = 0; let y = 0; let z = 0; let w = 1;
+  if (trace > 0) {
+    const s = Math.sqrt(trace + 1) * 2;
+    w = 0.25 * s;
+    x = (m21 - m12) / s;
+    y = (m02 - m20) / s;
+    z = (m10 - m01) / s;
+  } else if (m00 > m11 && m00 > m22) {
+    const s = Math.sqrt(1 + m00 - m11 - m22) * 2;
+    w = (m21 - m12) / s;
+    x = 0.25 * s;
+    y = (m01 + m10) / s;
+    z = (m02 + m20) / s;
+  } else if (m11 > m22) {
+    const s = Math.sqrt(1 + m11 - m00 - m22) * 2;
+    w = (m02 - m20) / s;
+    x = (m01 + m10) / s;
+    y = 0.25 * s;
+    z = (m12 + m21) / s;
+  } else {
+    const s = Math.sqrt(1 + m22 - m00 - m11) * 2;
+    w = (m10 - m01) / s;
+    x = (m02 + m20) / s;
+    y = (m12 + m21) / s;
+    z = 0.25 * s;
+  }
+  return qNormalize({ x, y, z, w });
+};
 const arcballVector = (xPx, yPx, radius) => {
   // Bell/Shoemake virtual trackball: project onto a hemisphere, and onto a
   // hyperbolic sheet outside the ball so the pointer never clamps/flips.
@@ -528,6 +567,57 @@ export class SphereCamera {
   /** Invert the camera rotation for screen-ray picking. */
   unprojectView(v) {
     return qRotateInverse(this._q, v);
+  }
+
+  /** Read-only copy of the object rotation quaternion (pointer drag start). */
+  viewQuaternion() {
+    return { x: this._q.x, y: this._q.y, z: this._q.z, w: this._q.w };
+  }
+
+  /**
+   * Replace the object rotation from a quaternion (CTL-01 absolute drag).
+   * Derived Euler fields are kept in sync for the legacy focus animation so no
+   * caller has to rebuild the frame itself.
+   */
+  setOrientation(q) {
+    if (!q || !Number.isFinite(q.w) || !Number.isFinite(q.x) || !Number.isFinite(q.y) || !Number.isFinite(q.z)) return this;
+    this._q = qNormalize(q);
+    this._viewAxis = qRotateInverse(this._q, { x: 0, y: 0, z: 1 });
+    const e = this.viewEuler();
+    this._yaw = e.yaw;
+    this._pitch = e.pitch;
+    return this;
+  }
+
+  /** World-space carrier up: the object's local +Y after the inverse view rotation. */
+  carrierUp() {
+    return qRotateInverse(this._q, { x: 0, y: 1, z: 0 });
+  }
+
+  /**
+   * Set the carrier frame from a parallel-transported `pos`/`up` pair (CTL-01
+   * arrow travel). The quaternion is rebuilt from the orthonormal frame, so no
+   * Euler yaw/pitch is applied and roll survives pole crossings.
+   */
+  setCarrier(pos, up) {
+    if (!pos || !up) return this;
+    const p = normalize(pos);
+    let u = normalize(up);
+    // Re-orthogonalise the transported up against the new carrier point.
+    const d = u.x * p.x + u.y * p.y + u.z * p.z;
+    u = normalize({ x: u.x - p.x * d, y: u.y - p.y * d, z: u.z - p.z * d });
+    if (!(Math.hypot(u.x, u.y, u.z) > 1e-9)) return this;
+    const right = normalize({
+      x: u.y * p.z - u.z * p.y,
+      y: u.z * p.x - u.x * p.z,
+      z: u.x * p.y - u.y * p.x,
+    });
+    this._q = quatFromBasis(right, u, p);
+    this._viewAxis = p;
+    const e = this.viewEuler();
+    this._yaw = e.yaw;
+    this._pitch = e.pitch;
+    return this;
   }
 
   /** Start a stable screen-space drag: remember the orientation at grab time. */

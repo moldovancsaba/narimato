@@ -753,7 +753,7 @@ export class InfiniteServerApp {
 
     const snapshot = {
       type: 'snapshot',
-      state: this.manager.decorateState(core.getState(), index),
+      state: this.manager.decorateState(core.getState(), index, core, token),
       leaves: core.getLeaves(),
       focus: core.getFocus(),
     };

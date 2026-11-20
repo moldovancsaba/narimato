@@ -67,3 +67,141 @@ test('camera: no camera module depends on the retired v3.58 frame helpers', () =
     assert.equal(retired.test(source), false, `${file} references a retired v3.58 helper`);
   }
 });
+
+/* ------------------------------------------------------------------ *
+ * CTL-02: pole continuity, cull axis truth and frame bounds
+ * ------------------------------------------------------------------ */
+
+import { qMul, qNormalize, qFromAxis } from '../public/js/shared/geometry.js';
+import { applyArrowTravelFrame } from '../public/js/shared/orbit-controls.js';
+import { IcosaRenderer, NEAR_EPS, OVERSCAN } from '../public/js/renderer.js';
+import { baseIcosahedron as icoFaces } from '../public/js/shared/geometry.js';
+
+function rendererWithFaces(width = 1200, height = 900) {
+  const renderer = new IcosaRenderer(null);
+  renderer.width = width;
+  renderer.height = height;
+  const { vertices, faces: triples } = icoFaces();
+  const faces = triples.map(([ia, ib, ic], index) => ({
+    label: `f${index}`,
+    a: vertices[ia],
+    b: vertices[ib],
+    c: vertices[ic],
+    depth: 0,
+    ownerIndex: -1,
+    clicks: 0,
+    lastClickIndex: -1,
+  }));
+  renderer.setFaces(faces);
+  return renderer;
+}
+
+/** Count faces the front cull loop would actually project (the `_visCount` mirror). */
+function visibleFaces(renderer, camera) {
+  const W = renderer.width;
+  const H = renderer.height;
+  const R = Math.min(W, H) * 0.4 * (Number(camera.zoom) || 1);
+  renderer._computeCameraFrame(camera, R);
+  const Kx = renderer._Kx;
+  const Ky = renderer._Ky;
+  const Kz = renderer._Kz;
+  const cosA = renderer._cosA;
+  const sinA = renderer._sinA;
+  let count = 0;
+  for (const entry of renderer.faces) {
+    const c = entry.centroid;
+    const dotc = c.x * Kx + c.y * Ky + c.z * Kz;
+    const ct = entry.cosTheta;
+    const st = entry.sinTheta;
+    if (dotc >= cosA * ct - sinA * st) {
+      if (renderer._projectEntry(entry, camera, W, H)) count += 1;
+    }
+  }
+  return count;
+}
+
+test('CTL-02: a 720-step two-pole loop never flips travel and never empties the view', () => {
+  const camera = new SphereCamera({ width: 1200, height: 900 });
+  camera.reset();
+  const renderer = rendererWithFaces(1200, 900);
+  const dot = (a, b) => a.x * b.x + a.y * b.y + a.z * b.z;
+  const upSteps = 400;
+  for (let i = 0; i < 720; i += 1) {
+    const key = i < upSteps ? 'ArrowUp' : 'ArrowDown';
+    const oldPos = camera.viewAxis();
+    const oldUp = camera.carrierUp();
+    applyArrowTravelFrame(camera, new Set([key]), 0.05);
+    const nextPos = camera.viewAxis();
+    const delta = { x: nextPos.x - oldPos.x, y: nextPos.y - oldPos.y, z: nextPos.z - oldPos.z };
+    const alongUp = dot(delta, oldUp);
+    // Holding a key always moves along its own tangent (Up -> +up, Down -> -up);
+    // the sign must never flip while the key is held, including across a pole.
+    assert.ok(key === 'ArrowUp' ? alongUp > 0 : alongUp < 0, `step ${i} (${key}) travels along its tangent across the pole`);
+    assert.ok(Math.abs(dot(nextPos, camera.carrierUp())) < 1e-9, `step ${i} carrier stays orthonormal`);
+    assert.ok(Math.abs(Math.hypot(nextPos.x, nextPos.y, nextPos.z) - 1) < 1e-9);
+    assert.ok(visibleFaces(renderer, camera) > 0, `step ${i} draws at least one face`);
+  }
+  assert.equal(renderer.frameStats().emptyFrames, 0);
+});
+
+test('CTL-02: both poles with five roll angles still draw at least 12 faces', () => {
+  const renderer = rendererWithFaces(1200, 900);
+  for (const pitch of [Math.PI / 2, -Math.PI / 2]) {
+    for (const roll of [0, Math.PI / 4, Math.PI / 2, (3 * Math.PI) / 4, Math.PI]) {
+      const camera = new SphereCamera({ width: 1200, height: 900 });
+      const base = qFromAxis({ x: 1, y: 0, z: 0 }, pitch);
+      const rolled = qMul(qNormalize(qFromAxis({ x: 0, y: 0, z: 1 }, roll)), base);
+      camera.setOrientation(rolled);
+      const axis = camera.viewAxis();
+      assert.ok(Number.isFinite(axis.x) && Number.isFinite(axis.y) && Number.isFinite(axis.z));
+      const count = visibleFaces(renderer, camera);
+      assert.ok(count >= 12, `pitch=${pitch.toFixed(2)} roll=${roll.toFixed(2)} draws ${count} faces`);
+    }
+  }
+});
+
+test('CTL-02: culling has no Euler fallback and throws without viewAxis()', () => {
+  const renderer = rendererWithFaces();
+  assert.throws(() => renderer._computeCameraFrame({ distance: 3.2, yaw: 1, pitch: 1 }, 480), /viewAxis\(\) is required/);
+  assert.throws(() => renderer._computeCameraFrame({ distance: 3.2, viewAxis: () => ({ x: NaN, y: 0, z: 1 }) }, 480), /finite unit axis/);
+  const camera = new SphereCamera({ width: 1200, height: 900 });
+  camera.reset();
+  renderer._computeCameraFrame(camera, 480);
+  const stats = renderer.frameStats();
+  assert.equal(stats.axis.length, 3);
+  assert.ok(Math.abs(Math.hypot(...stats.axis) - 1) < 1e-12);
+});
+
+test('CTL-02: projected samples are near-plane skipped and overscan clamped', () => {
+  assert.equal(NEAR_EPS, 1e-3);
+  assert.equal(OVERSCAN, 4);
+  const renderer = new IcosaRenderer(null);
+  renderer.width = 1000;
+  renderer.height = 800;
+  const bound = OVERSCAN * 1000;
+  const makeEntry = () => ({ wx: new Float64Array([0.1, 0.2, 0.97, 0.2, 0.1, 0.9, 0.1, 0.1, 0.98]), n: 3, px: new Float64Array(3), py: new Float64Array(3), pz: new Float64Array(3), label: 'test' });
+  const nearCamera = { distance: 3.2, project: () => ({ x: 1e12, y: -1e12, z: 1, depth: 0, visible: true }) };
+  const nearEntry = makeEntry();
+  assert.equal(renderer._projectEntry(nearEntry, nearCamera, 1000, 800), false, 'near samples are skipped');
+  assert.equal(nearEntry.px[0], bound);
+  assert.equal(nearEntry.py[0], -bound);
+  assert.ok(renderer.frameStats().nearSkipped >= 3);
+  assert.ok(renderer.frameStats().culled >= 1);
+
+  const farCamera = { distance: 3.2, project: () => ({ x: 5e9, y: 5e9, z: 0.5, depth: 2.7, visible: true }) };
+  const farEntry = makeEntry();
+  assert.equal(renderer._projectEntry(farEntry, farCamera, 1000, 800), false, 'off-screen after clamping');
+  assert.equal(farEntry.maxX, bound, 'unbounded coordinates are clamped');
+  assert.ok(Number.isFinite(farEntry.sr));
+});
+
+test('CTL-02: frameStats exposes one read-only contraction of the counters', () => {
+  const renderer = rendererWithFaces();
+  const camera = new SphereCamera({ width: 1200, height: 900 });
+  camera.reset();
+  visibleFaces(renderer, camera);
+  const stats = renderer.frameStats();
+  assert.deepEqual(Object.keys(stats).sort(), ['axis', 'culled', 'emptyFrames', 'nearSkipped', 'visCount']);
+  assert.equal(renderer.resetEmptyFrames(), renderer);
+  assert.equal(renderer.frameStats().emptyFrames, 0);
+});

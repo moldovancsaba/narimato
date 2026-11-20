@@ -154,7 +154,7 @@ try {
     const unnamed = await page.evaluate(() => [...document.querySelectorAll('button')].filter((e) => e.offsetParent !== null && !(e.getAttribute('aria-label') || e.getAttribute('title') || e.textContent.trim())).map((e) => e.id || e.className));
     if (unnamed.length) failures.push(`${name}: visible buttons without accessible name: ${unnamed.slice(0, 3).join(', ')}`);
     if (w <= 760) {
-      const minTarget = await page.evaluate(() => [...document.querySelectorAll('#mobile-dock button, .status-cluster button, .manual-play')].filter((e) => e.offsetParent !== null).map((e) => { const r = e.getBoundingClientRect(); return { w: r.width, h: r.height, id: e.id }; }));
+      const minTarget = await page.evaluate(() => [...document.querySelectorAll('#mobile-dock button, .status-cluster button, .manual-play, #control-mode button, .surface-pad, .surface-exit')].filter((e) => e.offsetParent !== null).map((e) => { const r = e.getBoundingClientRect(); return { w: r.width, h: r.height, id: e.id || e.className }; }));
       if (minTarget.some((t) => t.w < 44 || t.h < 44)) failures.push(`${name}: primary touch targets below 44px`);
     }
     if (w <= 760) {
@@ -170,6 +170,44 @@ try {
       if (touch.some((t) => t.label === 'none')) failures.push(`${name}: visible mobile media controls have no visible label`);
     }
     console.log(`${name.padEnd(12)} viewport=${w}x${h} score-overlap=${Math.round(scoreHit)} target-sub-overlap=${Math.round(snap.target && snap.subtitle ? hit(snap.target, snap.subtitle) : 0)} errors=${consoleErrors.length}`);
+    await context.close();
+  }
+
+  // CTL-06: real touch semantics — surface pads keep 44 px and stay in view.
+  for (const [w, h, name] of [[390, 844, 'mobile'], [844, 390, 'landscape']]) {
+    const context = await browser.newContext({ viewport: { width: w, height: h }, hasTouch: true });
+    const page = await context.newPage();
+    await page.goto(`${BASE}/?intro=0`, { waitUntil: 'domcontentloaded' });
+    await delay(400);
+    await page.fill('#tag-input', `AUD${w}`.slice(0, 12));
+    await page.click('#btn-join');
+    await page.waitForFunction(() => window.__ICOSA__?.joined === true, null, { timeout: 15000 });
+    await delay(800);
+    await page.evaluate(() => {
+      const brief = document.getElementById('btn-landing-brief-start');
+      if (brief && brief.getClientRects().length) brief.click();
+      const guide = document.getElementById('btn-guide-close');
+      const overlay = document.getElementById('guide-overlay');
+      if (guide && overlay && !overlay.classList.contains('is-hidden')) guide.click();
+    });
+    await page.evaluate(() => window.__ICOSA__.surface());
+    await page.waitForFunction(() => window.__ICOSA__.surfaceMode().phase === 'walking', null, { timeout: 12000 });
+    await delay(400);
+    const pads = await page.evaluate(() => [...document.querySelectorAll('[data-surface-hold]')].filter((e) => e.offsetParent !== null).map((e) => {
+      const r = e.getBoundingClientRect();
+      return { hold: e.getAttribute('data-surface-hold'), w: r.width, h: r.height, left: r.left, top: r.top, right: r.right, bottom: r.bottom };
+    }));
+    if (!pads.length) failures.push(`${name}: surface pads are not mounted`);
+    if (pads.some((pad) => pad.w < 44 || pad.h < 44)) failures.push(`${name}: surface pad below 44px`);
+    if (pads.some((pad) => pad.right > w + 1 || pad.bottom > h + 1 || pad.left < 0 || pad.top < 0)) failures.push(`${name}: surface pad outside the viewport`);
+    const exit = await page.evaluate(() => {
+      const el = document.getElementById('btn-surface-exit');
+      if (!el || !el.offsetParent) return null;
+      const r = el.getBoundingClientRect();
+      return { w: r.width, h: r.height };
+    });
+    if (!exit || exit.h < 44) failures.push(`${name}: surface exit below 44px`);
+    console.log(`surface-${name.padEnd(8)} pads=${pads.length} min=${pads.length ? Math.min(...pads.map((p) => Math.min(p.w, p.h))) : 0}px exit=${exit ? Math.round(exit.h) : 'none'}px`);
     await context.close();
   }
 

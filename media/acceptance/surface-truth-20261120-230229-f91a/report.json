@@ -1,0 +1,80 @@
+{
+  "runId": "surface-truth-20261120-230229-f91a",
+  "baseUrl": "http://localhost:52023",
+  "planetSeed": null,
+  "planetIndex": null,
+  "startedAt": "2026-11-20T23:02:29.377Z",
+  "finishedAt": "2026-11-20T23:02:36.072Z",
+  "durationMs": 6695,
+  "tags": [],
+  "checks": [
+    {
+      "id": "target-available",
+      "ok": true,
+      "detail": {
+        "targetLabel": "8",
+        "targetCan": false
+      }
+    },
+    {
+      "id": "hud-truth",
+      "ok": false,
+      "detail": {
+        "hud": {
+          "text": "RED // LOCKEDTARGET 8",
+          "state": "locked"
+        },
+        "targetCan": false,
+        "status": 200,
+        "clickOk": true,
+        "expected": "refused"
+      }
+    },
+    {
+      "id": "beam-ordering",
+      "ok": true,
+      "detail": {
+        "frames": 3,
+        "valid": 3
+      }
+    },
+    {
+      "id": "no-page-errors",
+      "ok": false,
+      "detail": {
+        "count": 1,
+        "expectedRefusals": 0,
+        "errors": [
+          "http 409 http://localhost:52023/api/action NOT_A_LEAF"
+        ]
+      }
+    }
+  ],
+  "peers": [],
+  "beams": [
+    {
+      "playerId": "p_4q4anf",
+      "label": "14",
+      "precededByCell": true
+    },
+    {
+      "playerId": "p_yweqsk",
+      "label": "8",
+      "precededByCell": true
+    },
+    {
+      "playerId": "p_yweqsk",
+      "label": "8.1",
+      "precededByCell": true
+    }
+  ],
+  "supply": null,
+  "liveMutation": null,
+  "artifacts": [
+    "media/acceptance/surface-truth-20261120-230229-f91a/surface-truth.png"
+  ],
+  "errors": [
+    "http 409 http://localhost:52023/api/action NOT_A_LEAF"
+  ],
+  "ok": false
+}

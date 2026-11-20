@@ -507,7 +507,12 @@ export function createNarrator() {
         a.currentTime = 0;
         const p = a.play();
         if (p && typeof p.catch === 'function') {
-          p.catch((err) => onClipStalled(cueId, sequence.index, classifyPlaybackError(err)));
+          p.catch((err) => {
+            // A stop/advance can null `sequence` before the play promise
+            // settles; the rejection is then no longer this cue's to report.
+            if (!sequence) return;
+            onClipStalled(cueId, sequence.index, classifyPlaybackError(err));
+          });
         }
         // Warm only a segment that exists: warming past the last sentence used
         // to request a missing `__s(N+1)` clip (a 404 on every final segment).
