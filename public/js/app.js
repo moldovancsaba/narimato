@@ -455,6 +455,24 @@ surface = createSurfaceController({
   onExit: () => exitSurfaceMode(),
 });
 
+/**
+ * RND-05 (PERF-01 friendly): the humanoid rig is a lazy chunk. Prefetch it at
+ * boot so the surface never shows an unrigged figure after the landing
+ * animation, without adding it to the first-load JavaScript graph.
+ */
+let humanoidRigPromise = null;
+function loadHumanoidRig() {
+  if (!humanoidRigPromise) {
+    humanoidRigPromise = import('./shared/humanoid-3d.js')
+      .then((module) => safeCall(renderer, 'setHumanoidModule', module) === true)
+      .catch((err) => {
+        console.warn('[icosa] humanoid rig unavailable', err);
+        return false;
+      });
+  }
+  return humanoidRigPromise;
+}
+
 function loadSeenTips() {
   try {
     const raw = JSON.parse(localStorage.getItem('icosa.tips') || '{}');
@@ -2564,6 +2582,7 @@ function enterSurfaceMode() {
   safeCall(ui, 'hideGuide');
   safeCall(ui, 'hideManual');
   safeCall(ui, 'hideLandingBrief');
+  loadHumanoidRig();
   // Store the orbit camera so exiting restores it exactly (RND-02).
   savedOrbit = saveOrbit(camera);
   const planet = planetInfoFromState();

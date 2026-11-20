@@ -1,11 +1,11 @@
 {
-  "runId": "surface-truth-20261120-220650-a70a",
-  "baseUrl": "http://localhost:53471",
+  "runId": "surface-truth-20261120-222155-2999",
+  "baseUrl": "http://localhost:60747",
   "planetSeed": null,
   "planetIndex": null,
-  "startedAt": "2026-11-20T22:06:50.041Z",
-  "finishedAt": "2026-11-20T22:06:55.371Z",
-  "durationMs": 5330,
+  "startedAt": "2026-11-20T22:21:55.339Z",
+  "finishedAt": "2026-11-20T22:22:02.128Z",
+  "durationMs": 6789,
   "tags": [],
   "checks": [
     {
@@ -51,15 +51,15 @@
   "peers": [],
   "beams": [
     {
-      "playerId": "p_ekypvb",
-      "label": "13",
+      "playerId": "p_blv2o4",
+      "label": "7",
       "precededByCell": true
     }
   ],
   "supply": null,
   "liveMutation": null,
   "artifacts": [
-    "media/acceptance/surface-truth-20261120-220650-a70a/surface-truth.png"
+    "media/acceptance/surface-truth-20261120-222155-2999/surface-truth.png"
   ],
   "errors": [],
   "ok": true

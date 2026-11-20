@@ -55,17 +55,14 @@ import { resourceById } from './shared/resources.js';
 import { BIOMES } from './shared/planet.js';
 import { LiveSurfaceStore } from './shared/live-surface-mesh.js';
 import { drawTetraShip } from './shared/tetra-ship.js';
-import {
-  TRIANGLE_COUNTS,
-  angleFromAxis,
-  buildRig,
-  drawRig,
-  lodForDistance,
-  poseHash,
-  poseRig,
-  toolPoint,
-} from './shared/humanoid-3d.js';
 import { createFrameBudget, detectDeviceClass, parsePinnedTier, qualityWorkScale } from './perf-budget.js';
+
+/**
+ * RND-05 humanoid rig module, loaded lazily (PERF-01 first-load budget): the
+ * figures only exist on the surface, so the closed-triangle rig is a dynamic
+ * import set through `setHumanoidModule()` instead of first-load JavaScript.
+ */
+let HUMAN_MODULE = null;
 
 const TAU = Math.PI * 2;
 const HALF_PI = Math.PI / 2;
@@ -266,8 +263,9 @@ export class IcosaRenderer {
     this._surfaceClock = { server: 0, local: 0 };
     this._renderLocalNow = 0;
     this._selfMineAt = null;
-    this._avatarRig = buildRig(SELF_RIG_SCALE);
-    this._peerRig = buildRig(PEER_RIG_SCALE);
+    this._avatarRig = null;
+    this._peerRig = null;
+    this._rigCounts = { l0: 0, l1: 0, l2: 0 };
     this.avatarScale = 1;
     this._surfaceVisual = {
       peers: 0,
@@ -512,6 +510,20 @@ export class IcosaRenderer {
       nextMap.set(f.label, entry);
     }
     return { faces: nextFaces, map: nextMap };
+  }
+
+  /** Attach the lazily loaded RND-05 rig module; builds the shared rigs once. */
+  setHumanoidModule(module) {
+    if (!module || typeof module.buildRig !== 'function' || typeof module.drawRig !== 'function') return false;
+    HUMAN_MODULE = module;
+    this._rigCounts = {
+      l0: module.TRIANGLE_COUNTS.L0,
+      l1: module.TRIANGLE_COUNTS.L1,
+      l2: module.TRIANGLE_COUNTS.L2,
+    };
+    this._avatarRig = module.buildRig(SELF_RIG_SCALE);
+    this._peerRig = module.buildRig(PEER_RIG_SCALE);
+    return true;
   }
 
   /**
@@ -797,9 +809,9 @@ export class IcosaRenderer {
   /** QA: tri-count and source report for `window.__ICOSA__.avatarStats()`. */
   avatarStats() {
     return {
-      l0: TRIANGLE_COUNTS.L0,
-      l1: TRIANGLE_COUNTS.L1,
-      l2: TRIANGLE_COUNTS.L2,
+      l0: this._rigCounts.l0,
+      l1: this._rigCounts.l1,
+      l2: this._rigCounts.l2,
       tris: this._surfaceVisual.triangles,
       avatars: this._surfaceVisual.avatars,
       sources: {
@@ -1964,6 +1976,7 @@ export class IcosaRenderer {
   /** Local pilot: a full L0 rig driven by the controller pose and local clicks. */
   _drawSurfaceSelf(ctx, camera, entity, rm) {
     const selfRig = this._avatarRig;
+    if (!selfRig || !HUMAN_MODULE) return;
     const walkPhase = Number.isFinite(entity.walk) ? entity.walk : 0;
     const serverNow = this._serverNow();
     let minePhase = 0;
@@ -1973,7 +1986,7 @@ export class IcosaRenderer {
         ? clamp(elapsed / MINE_LIFT_MS, 0, 1)
         : clamp(1 - (elapsed - MINE_LIFT_MS) / MINE_HOLD_MS, 0, 1);
     }
-    const stats = drawRig(ctx, camera, selfRig, {
+    const stats = HUMAN_MODULE.drawRig(ctx, camera, selfRig, {
       walkPhase,
       minePhase,
       moving: minePhase <= 0,
@@ -1994,15 +2007,16 @@ export class IcosaRenderer {
 
   /** Peer/robot: interpolated authoritative pose + walk + mining lift. */
   _drawSurfacePeer(ctx, camera, avatar, rm, serverNow) {
+    if (!this._peerRig || !HUMAN_MODULE) return;
     const visual = avatar.visual;
     const sample = avatar.sample;
-    const angle = angleFromAxis(sample.pos, camera);
-    const level = lodForDistance(angle, visual.lod || null);
+    const angle = HUMAN_MODULE.angleFromAxis(sample.pos, camera);
+    const level = HUMAN_MODULE.lodForDistance(angle, visual.lod || null);
     visual.lod = level;
     const moving = !!sample.moving && !avatar.stale;
     const walkPhase = moving ? serverNow * 0.006 + (visual.playerId.length % 7) : 0;
     const minePhase = this.peerMinePhase(visual.playerId, serverNow);
-    const stats = drawRig(ctx, camera, this._peerRig, {
+    const stats = HUMAN_MODULE.drawRig(ctx, camera, this._peerRig, {
       walkPhase,
       minePhase,
       moving,

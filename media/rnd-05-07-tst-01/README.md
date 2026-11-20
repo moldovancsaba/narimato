@@ -84,10 +84,18 @@ is broken.
 
 - **GDS HUD dependency.** The GDS island foundation (UI-01, PR #55) is on
   `main`; the game HUD migration (UI-02/UI-04) is still pending, so this
-  delivery reuses the existing HUD and adds no DOM. The peer roster therefore
-  has an accessible label but not yet `aria-live="polite"`; the acceptance
-  report records `rosterLiveRegion: null` with the dependency. No non-GDS
-  control was added.
+  delivery reuses the existing HUD and adds no DOM component. The peer roster
+  therefore has an accessible label but not yet `aria-live="polite"`; the
+  acceptance report records `rosterLiveRegion: null` with the dependency.
+- **GDS mount-host fix (found on the rebased build).** The island provider box
+  inside `#gds-root` painted the opaque Mantine page background while no GDS
+  surface was mounted (`data-gds-idle`, `aria-hidden`), covering the whole game
+  canvas; the EVT evidence committed in PR #55 is blank for the same reason.
+  `public/css/cyberpunk.css` now keeps the idle mount host transparent at the
+  canvas/DOM boundary (`#gds-root:not([data-surface]) > div`); the proof
+  surface keeps its own background. No GDS component, provider or React island
+  source was changed and the committed `public/ui/island.js` bundle is
+  untouched. This is reported to the UI-01 owner as a main-branch regression.
 - **Carrier framing is flag-only.** Production surface framing stays the shipped
   legacy third-person camera; `?surface-camera=carrier` remains opt-in and is
   not used by the acceptance runs (documented in `narimato-physics.md`).

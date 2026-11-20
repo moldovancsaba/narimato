@@ -2,9 +2,9 @@
   "ok": true,
   "reportVersion": 1,
   "version": "3.57.0",
-  "startedAt": "2026-11-20T22:02:36.017Z",
-  "finishedAt": "2026-11-20T22:03:48.467Z",
-  "durationMs": 72450,
+  "startedAt": "2026-11-20T22:18:04.608Z",
+  "finishedAt": "2026-11-20T22:19:53.225Z",
+  "durationMs": 108617,
   "checks": [
     {
       "id": "one-renderer",
@@ -131,10 +131,21 @@
       "ok": true,
       "observed": {
         "frames": 600,
-        "p95Ms": 5.8,
-        "droppedRatio": 0.0417,
+        "p95Ms": 1,
+        "droppedRatio": 0.0017,
         "frameMode": "work",
-        "rafP50Ms": 66.7,
+        "rafP50Ms": 33.3,
+        "passes": [
+          {
+            "p95": 1
+          },
+          {
+            "p95": 1.1
+          },
+          {
+            "p95": 1.8
+          }
+        ],
         "viewport": "1200x800",
         "view": "surface"
       }
@@ -196,6 +207,6 @@
     "duplicateHudDetected": true,
     "cellColourDetected": true
   },
-  "tag": "SCENE9305",
-  "baseUrl": "http://localhost:50815"
+  "tag": "SCENE6385",
+  "baseUrl": "http://localhost:58247"
 }

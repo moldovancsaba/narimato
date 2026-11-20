@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import { IcosaRenderer } from '../public/js/renderer.js';
 import { World } from '../public/js/world.js';
-import { TRIANGLE_COUNTS } from '../public/js/shared/humanoid-3d.js';
+import * as humanoidRig from '../public/js/shared/humanoid-3d.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ROOT_FILES = ['public/js/app.js', 'public/js/surface-controller.js', 'public/js/renderer.js'];
@@ -183,10 +183,12 @@ test('renderer surface api: removePeer fades and clearSurfaceVisuals empties eve
 
 test('renderer surface api: avatarStats reports the rig triangle budget and event sources', () => {
   const { renderer } = makeRenderer();
+  // The rig is a lazy chunk (PERF-01): attach it as the app does on surface entry.
+  assert.equal(renderer.setHumanoidModule(humanoidRig), true);
   const stats = renderer.avatarStats();
-  assert.equal(stats.l0, TRIANGLE_COUNTS.L0);
-  assert.equal(stats.l1, TRIANGLE_COUNTS.L1);
-  assert.equal(stats.l2, TRIANGLE_COUNTS.L2);
+  assert.equal(stats.l0, humanoidRig.TRIANGLE_COUNTS.L0);
+  assert.equal(stats.l1, humanoidRig.TRIANGLE_COUNTS.L1);
+  assert.equal(stats.l2, humanoidRig.TRIANGLE_COUNTS.L2);
   assert.equal(stats.sources.rig, 'shared/humanoid-3d.js');
   assert.equal(stats.sources.peers, 'surface frames');
   assert.equal(stats.sources.mining, 'surface_mine frames');

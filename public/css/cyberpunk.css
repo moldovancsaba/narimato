@@ -7071,3 +7071,18 @@ body.is-guide .hud { pointer-events: none; }
   min-height: 44px;
   min-width: 44px;
 }
+
+/* ------------------------------------------------------------------ *
+ * Canvas/DOM boundary (UI-01 integration, consumed by RND-06/TST-01)
+ *
+ * The GDS island mounts into `#gds-root`, which sits above the game canvas and
+ * is `pointer-events: none`. The island provider box paints the Mantine page
+ * background even when no surface is mounted (`data-gds-idle`, aria-hidden),
+ * which covered the canvas with an opaque dark layer on the rebased build.
+ * The mount host is game-page owned: keep the idle island transparent so the
+ * canvas stays visible, while the proof surface keeps its own background.
+ * ------------------------------------------------------------------ */
+#gds-root:not([data-surface]) > div {
+  background: transparent !important;
+  color: inherit !important;
+}

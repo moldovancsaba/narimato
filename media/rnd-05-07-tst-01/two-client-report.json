@@ -1,14 +1,14 @@
 {
-  "runId": "surface-20261120-220722-be9c",
-  "baseUrl": "http://localhost:53595",
-  "planetSeed": 3463000432,
+  "runId": "surface-20261120-222104-c3f7",
+  "baseUrl": "http://localhost:59796",
+  "planetSeed": 2955819574,
   "planetIndex": 0,
-  "startedAt": "2026-11-20T22:07:22.884Z",
-  "finishedAt": "2026-11-20T22:07:38.180Z",
-  "durationMs": 15296,
+  "startedAt": "2026-11-20T22:21:04.412Z",
+  "finishedAt": "2026-11-20T22:21:18.501Z",
+  "durationMs": 14089,
   "tags": [
-    "D1612",
-    "D2612"
+    "D1529",
+    "D2529"
   ],
   "checks": [
     {
@@ -23,9 +23,9 @@
       "id": "robot-online",
       "ok": true,
       "detail": {
-        "id": "p_4ghkmg",
-        "tag": "MIMIC79",
-        "leaf": "9",
+        "id": "p_ch3wts",
+        "tag": "0X4BE1",
+        "leaf": "8",
         "state": "idle",
         "moved": true
       }
@@ -34,12 +34,12 @@
       "id": "beam-authoritative",
       "ok": true,
       "detail": {
-        "frames": 2,
-        "valid": 2,
+        "frames": 3,
+        "valid": 3,
         "invalid": 0,
         "robotBeam": true,
         "robotIds": [
-          "p_4ghkmg"
+          "p_ch3wts"
         ],
         "rendererDropped": 0
       }
@@ -48,11 +48,11 @@
       "id": "supply-focus",
       "ok": true,
       "detail": {
-        "impactLabel": "15",
+        "impactLabel": "11",
         "cells": [
-          "15",
-          "6",
-          "14"
+          "11",
+          "10",
+          "8.2"
         ],
         "placements": 2,
         "mined": {
@@ -122,27 +122,27 @@
   ],
   "peers": [
     {
-      "from": "D1612",
+      "from": "D1529",
       "sees": [
         {
-          "tag": "MIMIC79",
-          "leaf": "9"
+          "tag": "0X4BE1",
+          "leaf": "8"
         },
         {
-          "tag": "D2612",
-          "leaf": "8"
+          "tag": "D2529",
+          "leaf": "8.3"
         }
       ]
     },
     {
-      "from": "D2612",
+      "from": "D2529",
       "sees": [
         {
-          "tag": "MIMIC79",
-          "leaf": "9"
+          "tag": "D1529",
+          "leaf": "8.3"
         },
         {
-          "tag": "D1612",
+          "tag": "0X4BE1",
           "leaf": "8"
         }
       ]
@@ -150,31 +150,36 @@
   ],
   "beams": [
     {
-      "playerId": "p_4ghkmg",
-      "label": "9",
+      "playerId": "p_ch3wts",
+      "label": "2",
       "precededByCell": true
     },
     {
-      "playerId": "p_4ghkmg",
-      "label": "10",
+      "playerId": "p_c3phtz",
+      "label": "17",
+      "precededByCell": true
+    },
+    {
+      "playerId": "p_ch3wts",
+      "label": "8",
       "precededByCell": true
     }
   ],
   "supply": {
-    "impactLabel": "15",
+    "impactLabel": "11",
     "cells": [
-      "15",
-      "6",
-      "14"
+      "11",
+      "10",
+      "8.2"
     ],
     "placements": [
       {
-        "playerId": "p_47ahy8",
-        "leaf": "15"
+        "playerId": "p_oapwn6",
+        "leaf": "11"
       },
       {
-        "playerId": "p_qsq7rw",
-        "leaf": "6"
+        "playerId": "p_8p0fsw",
+        "leaf": "10"
       }
     ],
     "mined": {
@@ -214,27 +219,27 @@
     "peerJoinedWithoutReload": true
   },
   "artifacts": [
-    "media/acceptance/surface-20261120-220722-be9c/client-a-surface.png",
-    "media/acceptance/surface-20261120-220722-be9c/client-b-surface.png"
+    "media/acceptance/surface-20261120-222104-c3f7/client-a-surface.png",
+    "media/acceptance/surface-20261120-222104-c3f7/client-b-surface.png"
   ],
   "errors": [],
   "ok": true,
   "players": [
     {
-      "id": "p_47ahy8",
-      "tag": "D1612"
+      "id": "p_oapwn6",
+      "tag": "D1529"
     },
     {
-      "id": "p_qsq7rw",
-      "tag": "D2612"
+      "id": "p_8p0fsw",
+      "tag": "D2529"
     }
   ],
   "planetName": "MAGRATHEA",
   "robot": {
-    "id": "p_4ghkmg",
-    "tag": "MIMIC79",
-    "leaf": "9",
-    "updatedAt": 1795212448406,
+    "id": "p_ch3wts",
+    "tag": "0X4BE1",
+    "leaf": "8",
+    "updatedAt": 1795213270045,
     "state": "idle",
     "moved": true
   },
@@ -271,9 +276,9 @@
   "refusals": [
     {
       "status": 409,
-      "url": "http://localhost:53595/api/action",
+      "url": "http://localhost:59796/api/action",
       "error": "POSE_RATE_LIMIT"
     }
   ],
-  "runLog": "run surface-20261120-220722-be9c at http://localhost:53595 with tags D1612/D2612"
+  "runLog": "run surface-20261120-222104-c3f7 at http://localhost:59796 with tags D1529/D2529"
 }
