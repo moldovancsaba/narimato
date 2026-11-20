@@ -126,7 +126,7 @@ export function lookFrame(pos, up, t, downAngle = 0) {
     const seed = Math.abs(p.y) < 0.9 ? { x: 0, y: 1, z: 0 } : { x: 0, y: 0, z: 1 };
     u = norm(sub(seed, mul(p, dot(seed, p))));
   }
-  const tangent = u; // look toward the planet's top (along local up)
+  const tangent = norm(cross(u, p)); // horizontal horizon tangent
   const centre = mul(p, -1);          // straight down toward planet centre
   const horizon = norm(add(mul(centre, 1 - t), mul(tangent, t)));
   // As the camera nears the surface, pitch down toward the centre so the
