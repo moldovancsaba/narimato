@@ -46,10 +46,11 @@ const orbit = await page.evaluate(() => window.__ICOSA_VIEW__.orbit());
 console.log(JSON.stringify({ shots, distanceBefore, distanceAfter, orbit, errors }, null, 2));
 await browser.close();
 let failed = errors.length > 0;
-for (const key of ['default', 'close', 'upside']) {
-  if (shots[key].colored < 10000) failed = true;
-  if (shots[key].corner[0] > 30) failed = true;
-}
+if (shots.default.colored < 10000) failed = true;
+if (shots.default.corner[0] > 30) failed = true;
+// Close dolly legitimately fills the whole viewport, so the corner is sphere.
+if (shots.close.colored < 1000000) failed = true;
+if (shots.upside.colored < 1000000) failed = true;
 if (!(distanceAfter < distanceBefore)) failed = true;
 if (Math.abs(Math.hypot(orbit.q.x, orbit.q.y, orbit.q.z, orbit.q.w) - 1) > 1e-9) failed = true;
 if (failed) process.exitCode = 1;

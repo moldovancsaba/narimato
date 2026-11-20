@@ -12,10 +12,9 @@ const mul = (a, k) => ({ x: a.x * k, y: a.y * k, z: a.z * k });
 const cross = (a, b) => ({ x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x });
 
 /** Screen point -> visible unit-sphere surface point, or null. */
-export function unprojectSphere(camera, xPx, yPx, width, height) {
+export function unprojectSphere(camera, xPx, yPx, width, height, focalPx = null) {
   if (!camera || typeof camera.project !== 'function') return null;
-  const radius = Math.min(width, height) * SPHERE_SCREEN_FRACTION;
-  const focal = radius * camera.distance;
+  const focal = Number.isFinite(focalPx) ? focalPx : Math.min(width, height) * SPHERE_SCREEN_FRACTION * camera.distance;
   const X = xPx - width / 2;
   const Y = height / 2 - yPx;
   const dirCam = norm({ x: X, y: Y, z: -focal }); // negative Z: into the scene

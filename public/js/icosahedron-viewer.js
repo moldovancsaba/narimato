@@ -2,7 +2,7 @@
  * Interactive spherical icosahedron.
  * - Mouse drag: the grabbed SURFACE POINT follows the cursor exactly.
  * - Cursor keys: the camera carrier moves on a free orbit; Up continues up locally.
- * - Wheel/pinch: changes the carrier sphere radius (dolly).
+ * - Wheel/pinch: changes the carrier sphere radius with fixed focal length (true dolly).
  */
 import { SphereCamera, SPHERE_SCREEN_FRACTION, CAMERA_DISTANCE, baseIcosahedron } from './shared/geometry.js';
 import { unprojectSphere as unprojectSurface, shortestArcQuat } from './shared/sphere-interaction.js';
@@ -80,8 +80,26 @@ window.addEventListener('resize', resize);
 resize();
 
 /** Screen point -> visible unit-sphere surface point. */
+function focalPixels() {
+  // Fixed focal length: moving the carrier must change perspective, not scale.
+  return Math.min(W, H) * SPHERE_SCREEN_FRACTION * CAMERA_DISTANCE;
+}
+
+function projectPoint(v) {
+  const f = focalPixels();
+  const pv = qRotateVec(camera._q, v);
+  const depth = camera.distance - pv.z;
+  if (!(depth > 1e-9)) return { x: 0, y: 0, z: pv.z, visible: false };
+  return {
+    x: W / 2 + (f * pv.x) / depth,
+    y: H / 2 - (f * pv.y) / depth,
+    z: pv.z,
+    visible: pv.z > 0,
+  };
+}
+
 function unprojectSphere(xPx, yPx) {
-  return unprojectSurface(camera, xPx, yPx, W, H);
+  return unprojectSurface(camera, xPx, yPx, W, H, focalPixels());
 }
 
 function draw() {
@@ -93,7 +111,7 @@ function draw() {
   const cx = W / 2;
   const cy = H / 2;
   const d = camera.distance;
-  const radius = Math.min(W, H) * SPHERE_SCREEN_FRACTION * (d / Math.sqrt(Math.max(1e-6, d * d - 1)));
+  const radius = focalPixels() / Math.sqrt(Math.max(1e-6, d * d - 1));
   const sphere = ctx.createRadialGradient(cx - radius * 0.36, cy - radius * 0.36, radius * 0.08, cx, cy, radius);
   sphere.addColorStop(0, 'rgb(126,210,230)');
   sphere.addColorStop(0.68, 'rgb(57,132,162)');
@@ -115,7 +133,7 @@ function draw() {
     if (vecDot(normal, centroid) < 0) normal = vecMul(normal, -1);
     // Back-face culling in world space; skip faces that cross the silhouette.
     if (vecDot(normal, vecSub(camPos, centroid)) <= 0) continue;
-    if (!camera.project(A).visible || !camera.project(B).visible || !camera.project(C).visible) continue;
+    if (!projectPoint(A).visible || !projectPoint(B).visible || !projectPoint(C).visible) continue;
     const points = [];
     for (const [p, q] of [[A, B], [B, C], [C, A]]) {
       for (let i = 0; i < 32; i += 1) {
@@ -126,10 +144,10 @@ function draw() {
         const r = vecSub(q, vecMul(p, dot));
         const rl = Math.hypot(r.x, r.y, r.z) || 1;
         const v = vecNorm(vecAdd(vecMul(p, Math.cos(theta)), vecMul(r, sin / rl)));
-        points.push(camera.project(v));
+        points.push(projectPoint(v));
       }
     }
-    const depth = camera.project(centroid).z;
+    const depth = projectPoint(centroid).z;
     const light = 0.55 + 0.45 * Math.max(0, Math.min(1, vecDot(normal, vecNorm({ x: -0.35, y: 0.55, z: 0.76 }))));
     drawFaces.push({ points, depth, fi, light });
   }
@@ -230,4 +248,4 @@ canvas.addEventListener('wheel', (event) => {
   camera.distance = carrierDistance;
 }, { passive: false });
 
-window.__ICOSA_VIEW__ = { camera, objectQ: () => objectQ, vertices, unprojectSphere, project: (v) => camera.project(qRotateVec(objectQ, v)), orbit: () => ({ yaw: camera._yaw, pitch: camera._pitch, q: camera._q, viewAxis: camera.viewAxis() }), setObjectQ: (q) => { objectQ = qNorm(q); } };
+window.__ICOSA_VIEW__ = { camera, objectQ: () => objectQ, vertices, unprojectSphere, project: (v) => projectPoint(qRotateVec(objectQ, v)), orbit: () => ({ yaw: camera._yaw, pitch: camera._pitch, q: camera._q, viewAxis: camera.viewAxis() }), setObjectQ: (q) => { objectQ = qNorm(q); } };

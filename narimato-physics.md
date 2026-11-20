@@ -25,7 +25,8 @@
 One camera. It always sits on a **concentric orbit sphere** around the object centre.
 
 - The camera is fixed to a carrier point on that outer sphere.
-- **Zoom changes the carrier sphere radius** (`camera.distance`), not optical field of view.
+- **Zoom changes the carrier sphere radius** (`camera.distance`) with a **fixed focal length**;
+  moving the carrier changes perspective/size like a real dolly, not a projection zoom.
 - The camera orbits freely and always faces the centre; zoom changes the carrier radius.
 - “Space”, “flight”, “building” and “surface” are **the same object viewed by the same camera
   orbit at a chosen orientation**, not different cameras with different distances.
@@ -45,6 +46,7 @@ Cursor keys move the camera, not the object.
 - The orbit is a **free quaternion**: repeated `Up` keeps moving the camera up and loops over the
   pole; there is no pitch clamp.
 - Wheel/pinch changes the carrier sphere radius (`camera.distance`) within `[1.3, 8.0]`.
+- Projection focal length is fixed; the carrier moving is a real dolly, not projection zoom.
 
 ## 3. Object rotation (mouse)
 
@@ -71,8 +73,9 @@ screen-axis rotation for the object; do not use an abstract arcball vector when 
 Screen → ray → sphere intersection:
 
 ```
-radius = min(W,H) * SPHERE_SCREEN_FRACTION
-focal  = radius * camera.distance
+focal  = min(W,H) * SPHERE_SCREEN_FRACTION * CAMERA_DISTANCE  // fixed
+screenX = W/2 + focal * pv.x / (camera.distance - pv.z)
+screenY = H/2 - focal * pv.y / (camera.distance - pv.z)
 X = x - W/2
 Y = H/2 - y                      // screen Y is down; camera Y is up
 
@@ -132,6 +135,7 @@ Measured acceptance (1200×1200):
 - point-follow error X: `5.061e-7 px`
 - point-follow error Y: `7.054e-7 px`
 - visual acceptance: default/close/upside-down screenshots pass coverage/background checks
+- zoom: carrier `3.2 → 1.756` on wheel-up
 - cursor Up: view-axis Y `0.2667 → 0.4004` (camera up), yaw unchanged
 - 41× Up: quaternion norm `1.0`, no clamp/flip
 
