@@ -91,7 +91,8 @@ Observability: `public/js/telemetry.js` posts a tiny privacy-safe numeric beacon
 - **`icosahedron-viewer.js`** — WebGL reference viewer: a full-screen ray–sphere shader draws the
   front surface only; analytic great-circle icosahedron edge bands; no back faces/edges.
 - **`world.js`** — client-side adaptive tree mirror of the server leaves; label parsing, cell
-  updates, terrain cache, per-cell lock state.
+  updates, terrain cache, per-cell lock state, and the monotonic `revision` that gates surface
+  geometry rebuilds (RND-04).
 - **`ui.js`** — all DOM: landing/tag, HUD, mission/planet badge, drawers, target sheet, toasts,
   confirm dialog, report overlay, responsive layout switching. It is the only HUD writer: orbit
   nodes stay mounted across view changes, and surface mode only toggles `#hud[data-mode]` plus the
@@ -126,6 +127,8 @@ Observability: `public/js/telemetry.js` posts a tiny privacy-safe numeric beacon
     `project`, `unprojectView`, `viewAxis`, `unprojectScreen`, `setViewport`, units and invariants.
   - `surface-camera.js` — `SurfaceCamera` on the same contract: legacy close-frame and carrier
     framing (dolly 1.08…1.72, bounded tilt, screen inverse) selected by `?surface-camera`.
+  - `live-surface-mesh.js` — `LiveSurfaceMesh` / `LiveSurfaceStore`: the surface triangle buffer
+    derived from the live leaf list, revision-gated, budget-clamped and hash-deterministic.
   - `sphere-interaction.js` — pure carrier frame/projection/unprojection/movement math.
   - `orbit-controls.js` — shared game drag/trackball/cursor-key primitives.
   - `planet.js` — seed-driven 3D noise terrain, biomes, geological deposit weights.
@@ -238,6 +241,10 @@ exitSurfaceMode():
 - Entities reference cells by label (`cellLabel`), never by copied `a`/`b`/`c` geometry.
 - Surface entities: `kind` is `self`, `peer`, `pin` or `beam`; one `byLabel` map serves both views.
 - `window.__ICOSA__.surfaceMode()` returns `{ active, phase, entities, canvasCount }`.
+- Surface geometry is live: `renderer.setLiveSurface({ leaves, revision, seed })` rebuilds at most
+  once per frame when `World.revision` (or the planet seed/theme) changes. No seed-keyed globe and
+  no `setPlanetSurface()` remain; `renderer.surfaceMeshStats()` reports revision, triangles,
+  buckets, hash, rebuild time and no-op skips.
 - `window.__ICOSA__.renderer` is the same instance before, during and after surface entry.
 - Rollback `?surface-renderer=overlay` is recognised but fails closed to the single-scene renderer
   (the overlay module was removed); a full rollback is `git revert` of the RND-02 commit.
@@ -591,6 +598,11 @@ node scripts/test-count.mjs  # documented count == executed count
 - `test/sphere-interaction.test.js` — carrier projection/unprojection, point-follow, infinite local direction.
 - Accept live browser checks: `scripts/verify-icosahedron-controls.mjs`,
   `scripts/verify-camera-carrier.mjs`, `scripts/verify-icosahedron-visual.mjs`.
+- `test/camera-contract.test.js`, `test/surface-camera.test.js`, `test/surface-render.test.js` — the
+  shared camera contract, carrier surface framing, and the single-scene view state machine.
+- `test/hud-parity.test.js` — one mounted HUD tree, stable `data-hud-node` ids and surface-only additions.
+- `test/live-mesh.test.js` — world revision monotonicity, level formula, budget clamp, determinism hash,
+  break delta and the no-op fast path.
 - `test/planet.test.js` — deterministic terrain, poles ice, biome distribution, ocean non-mineable,
   terrain deposit weights, client/server parity.
 - `test/mission.test.js` — requirements, per-planet scaling, depth progression, sanitization.

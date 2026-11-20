@@ -164,3 +164,32 @@ base face p (depth 0)
   from labels with `childTriangles`, so the world is exact across restarts.
 - Camera zoom (`0.4 … 16777216`) plus double-click focus lets players go from the whole sphere down
   to the deepest leaf; labels (`9.2.1`) identify every cell at any zoom.
+
+## Live surface mesh (RND-04)
+
+The surface underlay is a function of the authoritative `World.leaves`, not of
+the planet seed. `public/js/shared/live-surface-mesh.js` owns the derivation:
+
+```
+L(leaf)    = clamp(ceil(log2(e / 0.055)), 0, 4)      // e = longest spherical edge
+F_total    = Σ_leaves 4^L(leaf)                       // hard cap 6000 triangles
+bucket     = (r & 0xF0) << 8 | (g & 0xF0) << 4 | (b & 0xF0)
+
+setLiveSurface({leaves, revision, seed}):
+  if revision == mesh.revision and seed == mesh.seed: skipped++, return
+  pending = input                   // coalesce: last input in a frame wins
+
+prepareFrame():
+  while F_total > 6000: lower the largest L by one (earliest index breaks ties)
+  pack [ax,ay,az,bx,by,bz,cx,cy,cz] floats into contiguous bucket runs
+  mesh = { revision, seed, triangles, buckets, hash, skipped }
+```
+
+- A break replaces one leaf with four children; with a fixed level `L` the
+  triangle delta is `4 · 4^L − 4^L = 3 · 4^L` (verified in `test/live-mesh.test.js`).
+- Degenerate triangles are skipped and counted in `stats.skipped`.
+- Identical `(leaves, seed)` inputs produce an identical FNV-1a buffer hash.
+- `World.revision` is a non-negative integer, strictly increasing on cell,
+  break, resource and seed mutations, and reset only by `World.reset()`.
+- Surface colour reuses `_setEntryTerrain` output (terrain RGB) plus the public
+  owner tint, so the mesh and the cell pass cannot disagree.

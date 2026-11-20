@@ -263,6 +263,9 @@ projection or second HUD:
 - The renderer draws backdrop → planet → cells → markers → labels → entity pass
   (avatars, pins, beams, harvest FX, landing/leaving ship).
 - `World.leaves` is the only client tree; surface entities never copy `a`/`b`/`c`.
+- The surface underlay is the live leaf mesh (RND-04): it is derived from
+  `World.leaves` on every revision change, budget-clamped to 6000 triangles and
+  rebuilt at most once per frame. There is no cached seed-keyed globe.
 - Canvas terrain keeps its accessible equivalent in the HUD: the surface target
   readout reports the cell label and harvest state, and `#surface-controls` is a
   labelled `role="group"` with 44 px targets.

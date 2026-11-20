@@ -12,10 +12,19 @@ import { terrainAt } from './shared/planet.js';
 export class World {
   constructor() {
     this.planetSeed = 0;
+    /** RND-04: monotonic revision; reset only by `reset()`. */
+    this.revision = 0;
     this.reset();
   }
 
+  /** Bump the world revision after any mutation that can change geometry. */
+  _bumpRevision() {
+    this.revision += 1;
+    return this.revision;
+  }
+
   reset() {
+    this.revision = 0;
     this.nodes = new Map(); // label -> node (internal + leaves)
     this.leaves = new Map(); // label -> active leaf
     this.roots = [];
@@ -65,6 +74,7 @@ export class World {
   /** Replace the whole tree from the server's compact leaf snapshot. */
   loadLeaves(leafEntries) {
     this.reset();
+    this._bumpRevision();
     if (!Array.isArray(leafEntries)) return;
     for (const entry of leafEntries) {
       if (!Array.isArray(entry) || typeof entry[0] !== 'string') continue;
@@ -109,6 +119,7 @@ export class World {
     const next = Number(seed) >>> 0;
     if (this.planetSeed === next) return;
     this.planetSeed = next;
+    this._bumpRevision();
     this.terrainCache.clear();
     for (const node of this.nodes.values()) node.terrain = null;
   }
@@ -138,6 +149,7 @@ export class World {
     const node = this.leaves.get(label);
     if (!node || !resourceId) return null;
     node.resourceId = resourceId;
+    this._bumpRevision();
     return node;
   }
 
@@ -147,6 +159,7 @@ export class World {
     if (Number.isInteger(ownerIndex)) node.ownerIndex = ownerIndex;
     if (Number.isFinite(clicks)) node.clicks = Math.max(0, Math.trunc(clicks));
     if (Number.isInteger(lastClickIndex)) node.lastClickIndex = lastClickIndex;
+    this._bumpRevision();
     return node;
   }
 
@@ -190,6 +203,7 @@ export class World {
     node.children = children;
     this.leaves.delete(label);
     for (const child of children) this.leaves.set(child.label, child);
+    this._bumpRevision();
     return children;
   }
 

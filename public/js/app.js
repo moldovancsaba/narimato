@@ -571,8 +571,19 @@ function refreshPlanetRenderFaces() {
   renderer.setFaces(planetRenderFaces);
 }
 
+function syncLiveSurface() {
+  // RND-04: geometry derives from the live World leaf list only; the store
+  // coalesces events within a frame and rebuilds on revision/seed change.
+  safeCall(renderer, 'setLiveSurface', {
+    leaves: leafList,
+    revision: world.revision,
+    seed: world.planetSeed,
+  });
+}
+
 function syncRenderFaces() {
   refreshPlanetRenderFaces();
+  syncLiveSurface();
 }
 
 function boot() {
@@ -724,7 +735,6 @@ async function refreshPublicState() {
     safeCall(ui, 'setConnection', 'connected');
     if (data.state.planetSeed != null && world.planetSeed !== (Number(data.state.planetSeed) >>> 0)) {
       world.setPlanetSeed(data.state.planetSeed);
-      safeCall(renderer, 'setPlanetSurface', data.state.planetSeed);
       refreshLeafList();
       syncRenderFaces();
     }
@@ -960,7 +970,6 @@ function applySnapshot(nextState, leaves) {
   if (!nextState) return;
   if (nextState.planetSeed != null) {
     world.setPlanetSeed(nextState.planetSeed);
-    safeCall(renderer, 'setPlanetSurface', nextState.planetSeed);
   }
   world.loadLeaves(leaves);
   refreshLeafList();
@@ -978,7 +987,6 @@ function applyState(next) {
   state = next;
   if (next.planetSeed != null && world.planetSeed !== (Number(next.planetSeed) >>> 0)) {
     world.setPlanetSeed(next.planetSeed);
-    safeCall(renderer, 'setPlanetSurface', next.planetSeed);
     refreshLeafList();
     syncRenderFaces();
   }
@@ -1016,6 +1024,7 @@ function handleCellEvent(msg) {
   if (!node) return;
   renderer.updateCell(label, node.ownerIndex, node.clicks, node.lastClickIndex);
   refreshPlanetRenderFaces();
+  syncLiveSurface();
   if (hoveredLabel === label) safeCall(ui, 'setHoverFace', faceInfo(label));
 }
 
@@ -1026,6 +1035,7 @@ function handleBreakEvent(msg) {
   refreshLeafList();
   renderer.replaceFace(msg.label, children);
   refreshPlanetRenderFaces();
+  syncLiveSurface();
   for (const child of children) renderer.pulse(child.label, { color: '#d7ff00', kind: 'break', text: '' });
   safeAudio('breakShatter');
   safeCall(ui, 'toast', `CELL ${msg.label} FRACTURED // 4 NEW NODES`, 'good');
@@ -1056,6 +1066,7 @@ function applyDiscoveredResource(label, resource, playerId) {
     try {
       if (typeof renderer.discoverResource === 'function') renderer.discoverResource(label, resource.id);
       else syncRenderFaces();
+      syncLiveSurface();
     } catch (err) {
       console.warn('[icosa] resource marker failed', err);
     }
@@ -1112,7 +1123,8 @@ function applyPlanetTheme(planet) {
     document.body.dataset.planetTheme = theme.id;
   }
   safeCall(renderer, 'setPlanetTheme', theme);
-  safeCall(renderer, 'setPlanetSurface', seed);
+  // Colour derivation changed: re-sync so the live mesh rebuilds from the leaves.
+  syncRenderFaces();
 }
 
 function planetInfoFromState() {
@@ -1680,6 +1692,7 @@ function optimisticClick(label) {
   if (myIndex >= 0) node.lastClickIndex = myIndex;
   renderer.updateCell(label, node.ownerIndex, node.clicks, node.lastClickIndex);
   refreshPlanetRenderFaces();
+  syncLiveSurface();
   const color = myPlayer ? myPlayer.color : '#00f0ff';
   const info = faceInfo(label);
   renderer.pulse(label, {
@@ -1731,6 +1744,7 @@ function attemptClick(label) {
           node.clicks = before.clicks;
           renderer.updateCell(label, node.ownerIndex, node.clicks, node.lastClickIndex);
   refreshPlanetRenderFaces();
+  syncLiveSurface();
           if (hoveredLabel === label) safeCall(ui, 'setHoverFace', faceInfo(label));
         }
       } else if (err === 'NOT_JOINED') {
@@ -1743,6 +1757,7 @@ function attemptClick(label) {
           if (myIndex >= 0) node.lastClickIndex = myIndex; // remember locally: no more optimistic pulses
           renderer.updateCell(label, node.ownerIndex, node.clicks, node.lastClickIndex);
   refreshPlanetRenderFaces();
+  syncLiveSurface();
           if (hoveredLabel === label) safeCall(ui, 'setHoverFace', faceInfo(label));
         }
         safeCall(ui, 'toast', 'CELL LOCKED // ANOTHER OPERATOR MUST CONTEST IT FIRST', 'warn');
@@ -1754,6 +1769,7 @@ function attemptClick(label) {
           node.clicks = before.clicks;
           renderer.updateCell(label, node.ownerIndex, node.clicks, node.lastClickIndex);
   refreshPlanetRenderFaces();
+  syncLiveSurface();
         }
         safeCall(ui, 'toast', (data && data.message) || 'GRID REJECTED THE CLICK', 'warn');
         safeAudio('error');
@@ -2734,6 +2750,7 @@ window.__ICOSA__ = {
   surfaceRenderer: () => SURFACE_RENDERER,
   hudSnapshot: () => safeCall(ui, 'hudSnapshot'),
   cameraMode: () => cameraModeReport(SURFACE_CAMERA_MODE),
+  surfaceCamera: () => surfaceCamera,
   surfaceDebug: () => (surface ? surface.debug() : null),
   surfaceMineCount: () => (surface ? surface.mineCount() : 0),
   surfacePeers: () => [...surfacePeers.values()],
@@ -2770,6 +2787,12 @@ window.__ICOSA__ = {
   report: () => openReport(),
   getReport: () => currentReport,
   leavesSnapshot: () => refreshLeafList().map((n) => [n.label, n.ownerIndex, n.clicks, n.resourceId || null]),
+  worldRevision: () => world.revision,
+  surfaceMeshStats: () => safeCall(renderer, 'surfaceMeshStats'),
+  surfaceMeshHash: () => {
+    const stats = safeCall(renderer, 'surfaceMeshStats');
+    return stats ? stats.hash : null;
+  },
   renderFaces: () => planetRenderFaces,
 };
 
