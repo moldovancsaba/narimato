@@ -6,6 +6,18 @@ on:
   pull_request:
 
 jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Repository SSOT documentation gate (R1-R6)
+        run: npm run docs:check
+      - name: Version SSOT gate
+        run: npm run check:version
+
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -16,7 +28,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-      - name: Check repository SSOT documentation
-        run: npm run docs:check
       - name: Run test suite
-        run: npm test
+        shell: bash
+        run: |
+          set -o pipefail
+          npm test 2>&1 | tee /tmp/narimato-test.log
+      - name: Verify generated test count
+        run: node scripts/test-count.mjs --log /tmp/narimato-test.log

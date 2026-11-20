@@ -153,7 +153,8 @@ Measured on live viewport 1200×1200:
 - Mouse drag changes `objectQ`, camera delta = `0`.
 - Wheel-up changes carrier radius `3.2 → 1.756` (dolly in).
 - WebGL visual acceptance passes default, close and upside-down screenshots.
-- **116/116 tests pass.**
+- **116/116 tests passed at the v3.57.0 delivery.** The current suite total is generated into
+  `ARCHITECTURE.md`/`README.md` and enforced by `scripts/test-count.mjs`; see `docs/TEST_MAP.md`.
 
 ## 9. Rules
 

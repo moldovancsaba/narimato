@@ -20,6 +20,7 @@ Canonical issue standard: [sovereignsquad/general-design-system#81](https://gith
 | Is this issue done? | [DEFINITION_OF_DONE.md](DEFINITION_OF_DONE.md) |
 | How to write an issue | [ISSUE_INTAKE.md](ISSUE_INTAKE.md) |
 | Which issue covers which doc/backlog item | [ISSUE_MAP.md](ISSUE_MAP.md) |
+| Architecture decisions (ADRs) | [adr/README.md](adr/README.md) |
 | Machine-readable issue index | [issues.json](issues.json) |
 | Current technical architecture | [../ARCHITECTURE.md](../ARCHITECTURE.md) |
 | Spherical physics/camera solution | [../narimato-physics.md](../narimato-physics.md) |
@@ -78,6 +79,25 @@ Living technical and product documents stay at the repository root; delivery doc
 - `A11Y_CHECKLIST.md`, `UX_AUDIT.md` — accessibility and UX evidence/gates.
 - `RELEASE_NOTES.md` — shipped-release ledger.
 - `docs/` — SSOT governance, issue map, ADRs.
+
+## Repository quality gate (R1–R6)
+
+`npm run docs:check` (`scripts/check-docs.mjs`) is the deterministic repository gate run in CI:
+
+- **R1** relative links resolve to an existing file with exact path case.
+- **R2** link anchors exist in the target markdown document.
+- **R3** no local absolute path (`/Users/…`, `file://`) leaks into documentation.
+- **R4** issue keys match the canonical pattern and exist in [ISSUE_MAP.md](ISSUE_MAP.md).
+- **R5** no unresolved placeholder token (`TODO`, `TBD`, `FIXME`, `PLACEHOLDER`, `<sha>`-style).
+- **R6** issue forms, `ISSUE_TEMPLATE/config.yml` and the PR template exist and are non-empty.
+
+Exit codes: `0` clean, `1` findings, `2` internal error. `--json` emits the report contract;
+`--root` targets another checkout. The rule set is owned by SSOT-02 and must not be weakened by
+editing the checker to fit a broken tree.
+
+The version gate (`node scripts/check-version.mjs`, SSOT-03) validates one app version and one
+audio-lineage version across every declared slot, and can fix or bump them. The test-count gate
+(`node scripts/test-count.mjs`, QA-01) proves the documented suite size equals the executed suite.
 
 ## Change policy
 

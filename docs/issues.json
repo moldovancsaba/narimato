@@ -140,7 +140,8 @@
         "public/js/shared/sphere-interaction.js",
         "ARCHITECTURE.md",
         "RELEASE_NOTES.md",
-        "narimato-physics.md"
+        "narimato-physics.md",
+        "docs/TEST_MAP.md"
       ]
     },
     {
@@ -168,7 +169,8 @@
         "ARCHITECTURE.md",
         "ALGORITHM.md",
         "narimato-physics.md",
-        "docs/SSOT.md"
+        "docs/SSOT.md",
+        "docs/adr/README.md"
       ]
     },
     {

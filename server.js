@@ -27,6 +27,17 @@ import { Metrics } from './lib/metrics.js';
 
 const MODULE_FILE = fileURLToPath(import.meta.url);
 export const PUBLIC_DIR = path.join(path.dirname(MODULE_FILE), 'public');
+const PACKAGE_JSON_URL = new URL('./package.json', import.meta.url);
+
+/** Read the single app version declaration once at boot (never per request). */
+export async function readAppVersion() {
+  try {
+    const pkg = JSON.parse(await fsp.readFile(PACKAGE_JSON_URL, 'utf8'));
+    return typeof pkg.version === 'string' && pkg.version ? pkg.version : '0.0.0';
+  } catch {
+    return '0.0.0';
+  }
+}
 
 /** Hard cap for JSON request bodies (~16KB). */
 export const MAX_BODY_BYTES = 16 * 1024;
@@ -158,9 +169,10 @@ function safeDecode(value) {
 
 /** HTTP + SSE application around a WorldCore instance. */
 export class InfiniteServerApp {
-  constructor({ manager, config, publicDir = PUBLIC_DIR, now = Date.now, quiet = false, metrics = null, assetBaseUrl = '' } = {}) {
+  constructor({ manager, config, publicDir = PUBLIC_DIR, now = Date.now, quiet = false, metrics = null, assetBaseUrl = '', appVersion = '0.0.0' } = {}) {
     this.manager = manager;
     this.config = config;
+    this.appVersion = typeof appVersion === 'string' && appVersion ? appVersion : '0.0.0';
     this.assetBaseUrl = typeof assetBaseUrl === 'string' ? assetBaseUrl.replace(/\/+$/, '') : '';
     this.metrics = metrics || new Metrics({ now });
     this._telemetryBuckets = new Map();
@@ -241,7 +253,7 @@ export class InfiniteServerApp {
 
       if (pathname === '/api/health') {
         if (!this._allow(method, res, ['GET', 'HEAD'], true)) return;
-        sendJson(res, 200, { ok: true, ...this.manager.health() });
+        sendJson(res, 200, { ok: true, appVersion: this.appVersion, ...this.manager.health() });
         return;
       }
       if (pathname === '/api/state') {
@@ -802,6 +814,7 @@ export async function startServer(options = {}) {
     eventLoopResolutionMs: options.metricsEventLoopResolutionMs || 20,
     telemetryLimit: options.telemetryRateLimit || undefined,
   });
+  const appVersion = typeof options.appVersion === 'string' ? options.appVersion : await readAppVersion();
   const app = new InfiniteServerApp({
     manager,
     config,
@@ -810,6 +823,7 @@ export async function startServer(options = {}) {
     quiet: options.quiet === true,
     metrics,
     assetBaseUrl: options.assetBaseUrl ?? env.ASSET_BASE_URL ?? '',
+    appVersion,
   });
 
   const server = http.createServer((req, res) => {

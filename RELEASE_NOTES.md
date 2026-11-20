@@ -1703,7 +1703,7 @@ Release: https://github.com/moldovancsaba/narimato/releases/tag/v3.51.0
 ### Verification
 
 - Playwright: desktop/mobile landing briefing centered and dismissible (4 required rows on
-  ICOSA-10); drag inertia measured continuing after release and decaying to zero; wheel zoom eases
+  ICOSA planet 10); drag inertia measured continuing after release and decaying to zero; wheel zoom eases
   from 1.0 → 1.117 within 30 ms → 1.410 within 430 ms → settled; zero console errors.
 - 67/67 `node:test` tests.
 
@@ -1892,7 +1892,7 @@ First public release of **NARIMATO**, the infinite planet-escape mining game.
 - Playwright QA: desktop/tablet/mobile/landscape layouts, intro phases and skip/replay, mission
   progress, escape-ready → interplanetary interlude → planet 2 depth 3, abandon confirm → main,
   new-pilot identity clear → fresh mission, meteor overlay, report/card, zero console errors.
-- E2E escape against the real multi-planet server: mission complete → ICOSA-10 depth 3, identity
+- E2E escape against the real multi-planet server: mission complete → ICOSA planet 10 depth 3, identity
   and score carried, ore run reset, mission 0/18, old planet remains for other players.
 
 ### Known limitations
