@@ -1,5 +1,12 @@
 # NARIMATO — Architecture
 
+<!-- delivery-ssot:start -->
+> **Delivery SSOT:** [NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80) · [Definition of Done](docs/DEFINITION_OF_DONE.md) · [Issue index](docs/ISSUE_MAP.md).
+> This document owns durable knowledge; it does not track delivery status.
+>
+> **Related delivery issues:** [SSOT-01](https://github.com/moldovancsaba/narimato/issues/1) · [SSOT-03](https://github.com/moldovancsaba/narimato/issues/3) · [QA-01](https://github.com/moldovancsaba/narimato/issues/5) · [DOC-01](https://github.com/moldovancsaba/narimato/issues/6) · [UI-01](https://github.com/moldovancsaba/narimato/issues/7) · [RND-06](https://github.com/moldovancsaba/narimato/issues/19) · [SRV-01](https://github.com/moldovancsaba/narimato/issues/20) · [TST-01](https://github.com/moldovancsaba/narimato/issues/25) · [EVT-01](https://github.com/moldovancsaba/narimato/issues/32) · [OPS-03](https://github.com/moldovancsaba/narimato/issues/40) · [OPS-05](https://github.com/moldovancsaba/narimato/issues/42) · [SEC-01](https://github.com/moldovancsaba/narimato/issues/43) · [PERF-01](https://github.com/moldovancsaba/narimato/issues/44)
+<!-- delivery-ssot:end -->
+
 ## Stack
 
 | Layer | Technology | Notes |

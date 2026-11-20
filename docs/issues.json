@@ -1,0 +1,1460 @@
+{
+  "board": "https://github.com/users/moldovancsaba/projects/80",
+  "canonicalStandard": "https://github.com/sovereignsquad/general-design-system/issues/81",
+  "issues": [
+    {
+      "key": "SSOT-01",
+      "number": 1,
+      "url": "https://github.com/moldovancsaba/narimato/issues/1",
+      "title": "Governance: Delivery SSOT - board, issue templates, labels, and doc-to-issue map",
+      "milestone": "M0 — SSOT & repository foundation",
+      "executionOrder": 10,
+      "track": "Foundation",
+      "priority": "P0",
+      "labels": [
+        "type:docs",
+        "area:docs",
+        "priority:P0",
+        "size:L"
+      ],
+      "readiness": "Ready",
+      "status": "Todo (NEXT)",
+      "blockedBy": [],
+      "unlocks": [
+        "SSOT-02",
+        "SSOT-03",
+        "SSOT-04",
+        "QA-01",
+        "DOC-01",
+        "UI-01"
+      ],
+      "relatedDocuments": [
+        "README.md",
+        "ARCHITECTURE.md",
+        "docs/ISSUE_MAP.md"
+      ]
+    },
+    {
+      "key": "SSOT-02",
+      "number": 2,
+      "url": "https://github.com/moldovancsaba/narimato/issues/2",
+      "title": "CI: Repository quality gate - docs link check, issue-reference lint, and test matrix",
+      "milestone": "M0 — SSOT & repository foundation",
+      "executionOrder": 20,
+      "track": "Foundation",
+      "priority": "P1",
+      "labels": [
+        "type:chore",
+        "area:docs",
+        "priority:P1",
+        "size:M"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "SSOT-01"
+      ],
+      "unlocks": [
+        "REL-01"
+      ],
+      "relatedDocuments": [
+        ".github/workflows/ci.yml",
+        "docs/SSOT.md",
+        "README.md"
+      ]
+    },
+    {
+      "key": "SSOT-03",
+      "number": 3,
+      "url": "https://github.com/moldovancsaba/narimato/issues/3",
+      "title": "Release: Version SSOT - single version source and cache-bust synchronization",
+      "milestone": "M0 — SSOT & repository foundation",
+      "executionOrder": 30,
+      "track": "Release",
+      "priority": "P1",
+      "labels": [
+        "type:chore",
+        "area:ops",
+        "priority:P1",
+        "size:S"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "SSOT-01"
+      ],
+      "unlocks": [
+        "REL-01"
+      ],
+      "relatedDocuments": [
+        "package.json",
+        "public/index.html",
+        "public/icosahedron.html",
+        "README.md",
+        "ARCHITECTURE.md"
+      ]
+    },
+    {
+      "key": "SSOT-04",
+      "number": 4,
+      "url": "https://github.com/moldovancsaba/narimato/issues/4",
+      "title": "Docs: Legacy delivery-doc retirement - migrate status backlogs into the issue SSOT",
+      "milestone": "M0 — SSOT & repository foundation",
+      "executionOrder": 15,
+      "track": "Foundation",
+      "priority": "P0",
+      "labels": [
+        "type:docs",
+        "area:docs",
+        "priority:P0",
+        "size:M"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "SSOT-01"
+      ],
+      "unlocks": [
+        "REL-01"
+      ],
+      "relatedDocuments": [
+        "docs/ISSUE_MAP.md",
+        "README.md"
+      ]
+    },
+    {
+      "key": "QA-01",
+      "number": 5,
+      "url": "https://github.com/moldovancsaba/narimato/issues/5",
+      "title": "Quality: Test-suite SSOT - dead-code removal, coverage map, and documentation count sync",
+      "milestone": "M0 — SSOT & repository foundation",
+      "executionOrder": 35,
+      "track": "Quality",
+      "priority": "P1",
+      "labels": [
+        "type:test",
+        "area:quality",
+        "priority:P1",
+        "size:M"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "SSOT-01"
+      ],
+      "unlocks": [
+        "REL-01"
+      ],
+      "relatedDocuments": [
+        "test/sphere-interaction.test.js",
+        "public/js/shared/sphere-interaction.js",
+        "ARCHITECTURE.md",
+        "RELEASE_NOTES.md",
+        "narimato-physics.md"
+      ]
+    },
+    {
+      "key": "DOC-01",
+      "number": 6,
+      "url": "https://github.com/moldovancsaba/narimato/issues/6",
+      "title": "Docs: Architecture ADR and technical-doc maintenance - durable knowledge links to issues",
+      "milestone": "M0 — SSOT & repository foundation",
+      "executionOrder": 40,
+      "track": "Foundation",
+      "priority": "P2",
+      "labels": [
+        "type:docs",
+        "area:docs",
+        "priority:P2",
+        "size:M"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "SSOT-01"
+      ],
+      "unlocks": [
+        "REL-01"
+      ],
+      "relatedDocuments": [
+        "ARCHITECTURE.md",
+        "ALGORITHM.md",
+        "narimato-physics.md",
+        "docs/SSOT.md"
+      ]
+    },
+    {
+      "key": "UI-01",
+      "number": 7,
+      "url": "https://github.com/moldovancsaba/narimato/issues/7",
+      "title": "UI: GDS integration foundation - React island build, GdsProvider, and canvas/DOM boundary",
+      "milestone": "M1 — GDS UI foundation & accessible surfaces",
+      "executionOrder": 100,
+      "track": "UI",
+      "priority": "P0",
+      "labels": [
+        "type:feature",
+        "area:ui",
+        "priority:P0",
+        "size:L",
+        "gds",
+        "accessibility"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "SSOT-01"
+      ],
+      "unlocks": [
+        "UI-02",
+        "UI-03",
+        "UI-04",
+        "UI-05",
+        "A11Y-01"
+      ],
+      "relatedDocuments": [
+        "ARCHITECTURE.md",
+        "public/index.html",
+        "public/js/ui.js",
+        ".github/workflows/ci.yml",
+        "README.md"
+      ]
+    },
+    {
+      "key": "UI-02",
+      "number": 8,
+      "url": "https://github.com/moldovancsaba/narimato/issues/8",
+      "title": "UI: HUD migration - GDS mission, cargo, players, score, and target panels",
+      "milestone": "M1 — GDS UI foundation & accessible surfaces",
+      "executionOrder": 110,
+      "track": "UI",
+      "priority": "P0",
+      "labels": [
+        "type:feature",
+        "area:ui",
+        "priority:P0",
+        "size:L",
+        "gds",
+        "accessibility"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "UI-01"
+      ],
+      "unlocks": [
+        "A11Y-01",
+        "A11Y-02",
+        "RND-03"
+      ],
+      "relatedDocuments": [
+        "public/js/ui.js",
+        "public/index.html",
+        "public/css/cyberpunk.css",
+        "UX_AUDIT.md",
+        "SPEC.md"
+      ]
+    },
+    {
+      "key": "UI-03",
+      "number": 9,
+      "url": "https://github.com/moldovancsaba/narimato/issues/9",
+      "title": "UI: Overlay migration - landing, Field Manual, Guide, Report, and confirm dialogs",
+      "milestone": "M1 — GDS UI foundation & accessible surfaces",
+      "executionOrder": 120,
+      "track": "UI",
+      "priority": "P0",
+      "labels": [
+        "type:feature",
+        "area:ui",
+        "priority:P0",
+        "size:L",
+        "gds",
+        "accessibility"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "UI-01"
+      ],
+      "unlocks": [
+        "A11Y-02",
+        "CTL-05"
+      ],
+      "relatedDocuments": [
+        "public/js/ui.js",
+        "public/js/result-card.js",
+        "GUIDE.md",
+        "public/index.html",
+        "A11Y_CHECKLIST.md"
+      ]
+    },
+    {
+      "key": "UI-04",
+      "number": 10,
+      "url": "https://github.com/moldovancsaba/narimato/issues/10",
+      "title": "UI: Surface HUD migration - GDS controls, target, lap, and exit surfaces",
+      "milestone": "M1 — GDS UI foundation & accessible surfaces",
+      "executionOrder": 130,
+      "track": "UI",
+      "priority": "P1",
+      "labels": [
+        "type:feature",
+        "area:ui",
+        "priority:P1",
+        "size:M",
+        "gds",
+        "accessibility"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "UI-01",
+        "RND-02"
+      ],
+      "unlocks": [
+        "A11Y-02",
+        "CTL-06"
+      ],
+      "relatedDocuments": [
+        "public/js/surface-mode.js",
+        "public/js/ui.js",
+        "A11Y_CHECKLIST.md",
+        "docs/ISSUE_MAP.md"
+      ]
+    },
+    {
+      "key": "UI-05",
+      "number": 11,
+      "url": "https://github.com/moldovancsaba/narimato/issues/11",
+      "title": "UI: Intro and interlude chrome migration - accessible cockpit cine controls",
+      "milestone": "M1 — GDS UI foundation & accessible surfaces",
+      "executionOrder": 140,
+      "track": "UI",
+      "priority": "P1",
+      "labels": [
+        "type:feature",
+        "area:ui",
+        "priority:P1",
+        "size:M",
+        "gds",
+        "accessibility"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "UI-01"
+      ],
+      "unlocks": [
+        "A11Y-02",
+        "EVT-02"
+      ],
+      "relatedDocuments": [
+        "public/js/intro.js",
+        "public/js/interlude.js",
+        "public/css/cyberpunk.css",
+        "A11Y_CHECKLIST.md"
+      ]
+    },
+    {
+      "key": "A11Y-01",
+      "number": 12,
+      "url": "https://github.com/moldovancsaba/narimato/issues/12",
+      "title": "Accessibility: GDS conformance gate - axe, keyboard, focus, contrast, zoom, motion in CI",
+      "milestone": "M1 — GDS UI foundation & accessible surfaces",
+      "executionOrder": 150,
+      "track": "Accessibility",
+      "priority": "P0",
+      "labels": [
+        "type:test",
+        "area:a11y",
+        "priority:P0",
+        "size:L",
+        "accessibility",
+        "gds"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "UI-01",
+        "UI-02"
+      ],
+      "unlocks": [
+        "A11Y-02",
+        "REL-01"
+      ],
+      "relatedDocuments": [
+        "A11Y_CHECKLIST.md",
+        "scripts/audit-a11y.mjs",
+        "scripts/audit-ui.mjs",
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "key": "A11Y-02",
+      "number": 13,
+      "url": "https://github.com/moldovancsaba/narimato/issues/13",
+      "title": "Accessibility: Real-device gate - iPhone, Android, screen readers, audio, and 200% zoom",
+      "milestone": "M1 — GDS UI foundation & accessible surfaces",
+      "executionOrder": 700,
+      "track": "Accessibility",
+      "priority": "P1",
+      "labels": [
+        "type:test",
+        "area:a11y",
+        "priority:P1",
+        "size:M",
+        "accessibility"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "A11Y-01",
+        "UI-02",
+        "UI-03",
+        "UI-04",
+        "UI-05",
+        "CTL-06",
+        "AUD-01",
+        "STR-01",
+        "EVT-03"
+      ],
+      "unlocks": [
+        "REL-01"
+      ],
+      "relatedDocuments": [
+        "A11Y_CHECKLIST.md",
+        "UX_AUDIT.md",
+        "VOICE.md",
+        "GAMEPLAY.md"
+      ]
+    },
+    {
+      "key": "RND-01",
+      "number": 14,
+      "url": "https://github.com/moldovancsaba/narimato/issues/14",
+      "title": "Renderer: Surface camera contract - shared projection interface for IcosaRenderer",
+      "milestone": "M2 — Single-scene renderer",
+      "executionOrder": 200,
+      "track": "Renderer",
+      "priority": "P0",
+      "labels": [
+        "type:feature",
+        "area:renderer",
+        "priority:P0",
+        "size:M"
+      ],
+      "readiness": "Ready",
+      "status": "Todo (NEXT)",
+      "blockedBy": [],
+      "unlocks": [
+        "RND-02"
+      ],
+      "relatedDocuments": [
+        "public/js/renderer.js",
+        "public/js/shared/geometry.js",
+        "public/js/shared/sphere-interaction.js",
+        "narimato-physics.md",
+        "ALGORITHM.md"
+      ]
+    },
+    {
+      "key": "RND-02",
+      "number": 15,
+      "url": "https://github.com/moldovancsaba/narimato/issues/15",
+      "title": "Renderer: Single-scene surface mode - remove the second renderer and switch camera only",
+      "milestone": "M2 — Single-scene renderer",
+      "executionOrder": 210,
+      "track": "Renderer",
+      "priority": "P0",
+      "labels": [
+        "type:feature",
+        "area:renderer",
+        "priority:P0",
+        "size:L"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "RND-01"
+      ],
+      "unlocks": [
+        "UI-04",
+        "RND-03",
+        "RND-04",
+        "RND-05",
+        "RND-06",
+        "RND-07",
+        "CTL-03",
+        "CTL-04"
+      ],
+      "relatedDocuments": [
+        "public/js/surface-mode.js",
+        "public/js/renderer.js",
+        "public/js/app.js",
+        "public/index.html",
+        "docs/ISSUE_MAP.md",
+        "SPEC_PLANET.md"
+      ]
+    },
+    {
+      "key": "RND-03",
+      "number": 16,
+      "url": "https://github.com/moldovancsaba/narimato/issues/16",
+      "title": "Renderer: HUD parity - one live DOM tree for orbit and surface",
+      "milestone": "M2 — Single-scene renderer",
+      "executionOrder": 220,
+      "track": "Renderer",
+      "priority": "P0",
+      "labels": [
+        "type:feature",
+        "area:renderer",
+        "priority:P0",
+        "size:M",
+        "gds",
+        "accessibility"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "RND-02",
+        "UI-02"
+      ],
+      "unlocks": [
+        "RND-06"
+      ],
+      "relatedDocuments": [
+        "public/js/ui.js",
+        "public/js/surface-mode.js",
+        "public/index.html",
+        "SPEC.md"
+      ]
+    },
+    {
+      "key": "RND-04",
+      "number": 17,
+      "url": "https://github.com/moldovancsaba/narimato/issues/17",
+      "title": "Renderer: Live leaf mesh - rebuild surface geometry from authoritative cells",
+      "milestone": "M2 — Single-scene renderer",
+      "executionOrder": 230,
+      "track": "Renderer",
+      "priority": "P0",
+      "labels": [
+        "type:feature",
+        "area:renderer",
+        "priority:P0",
+        "size:M"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "RND-02"
+      ],
+      "unlocks": [
+        "RND-06",
+        "TST-01"
+      ],
+      "relatedDocuments": [
+        "public/js/renderer.js",
+        "public/js/world.js",
+        "public/js/surface-mode.js",
+        "lib/world-core.js",
+        "SPEC_PLANET.md"
+      ]
+    },
+    {
+      "key": "RND-05",
+      "number": 18,
+      "url": "https://github.com/moldovancsaba/narimato/issues/18",
+      "title": "Renderer: 3D humanoid avatars - closed-triangle rigs with peer walk and mining animation",
+      "milestone": "M2 — Single-scene renderer",
+      "executionOrder": 240,
+      "track": "Renderer",
+      "priority": "P0",
+      "labels": [
+        "type:feature",
+        "area:renderer",
+        "priority:P0",
+        "size:L"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "RND-02"
+      ],
+      "unlocks": [
+        "RND-06"
+      ],
+      "relatedDocuments": [
+        "public/js/shared/humanoid-3d.js",
+        "public/js/surface-mode.js",
+        "public/js/renderer.js",
+        "docs/ISSUE_MAP.md",
+        "PLANET_RESEARCH.md"
+      ]
+    },
+    {
+      "key": "RND-06",
+      "number": 19,
+      "url": "https://github.com/moldovancsaba/narimato/issues/19",
+      "title": "Testing: Single-scene acceptance - camera-only proof, pixel parity, and performance",
+      "milestone": "M2 — Single-scene renderer",
+      "executionOrder": 250,
+      "track": "Renderer",
+      "priority": "P0",
+      "labels": [
+        "type:test",
+        "area:renderer",
+        "priority:P0",
+        "size:M"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "RND-02",
+        "RND-03",
+        "RND-04",
+        "RND-05"
+      ],
+      "unlocks": [
+        "REL-01"
+      ],
+      "relatedDocuments": [
+        "scripts/verify-icosahedron-visual.mjs",
+        "scripts/verify-camera-carrier.mjs",
+        "test/camera-controls.test.js",
+        "ARCHITECTURE.md"
+      ]
+    },
+    {
+      "key": "SRV-01",
+      "number": 20,
+      "url": "https://github.com/moldovancsaba/narimato/issues/20",
+      "title": "Server: Surface pose authority - persist and broadcast human and robot poses",
+      "milestone": "M3 — Authoritative surface multiplayer",
+      "executionOrder": 300,
+      "track": "Multiplayer",
+      "priority": "P0",
+      "labels": [
+        "type:feature",
+        "area:multiplayer",
+        "priority:P0",
+        "size:L"
+      ],
+      "readiness": "Ready",
+      "status": "Todo (NEXT)",
+      "blockedBy": [],
+      "unlocks": [
+        "SRV-02",
+        "SRV-03",
+        "SRV-04"
+      ],
+      "relatedDocuments": [
+        "server.js",
+        "lib/planet-manager.js",
+        "lib/world-core.js",
+        "SPEC_INFINITE.md",
+        "ARCHITECTURE.md",
+        "SPEC_PLANETS.md"
+      ]
+    },
+    {
+      "key": "SRV-02",
+      "number": 21,
+      "url": "https://github.com/moldovancsaba/narimato/issues/21",
+      "title": "Server: Robot surface routing - server-generated waypoints and turns",
+      "milestone": "M3 — Authoritative surface multiplayer",
+      "executionOrder": 310,
+      "track": "Multiplayer",
+      "priority": "P0",
+      "labels": [
+        "type:feature",
+        "area:multiplayer",
+        "priority:P0",
+        "size:M"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "SRV-01"
+      ],
+      "unlocks": [
+        "SRV-03"
+      ],
+      "relatedDocuments": [
+        "lib/world-core.js",
+        "lib/planet-manager.js",
+        "GAMEPLAY.md"
+      ]
+    },
+    {
+      "key": "SRV-03",
+      "number": 22,
+      "url": "https://github.com/moldovancsaba/narimato/issues/22",
+      "title": "Server: Robot cell mapping - authoritative click and surface_mine events",
+      "milestone": "M3 — Authoritative surface multiplayer",
+      "executionOrder": 320,
+      "track": "Multiplayer",
+      "priority": "P0",
+      "labels": [
+        "type:feature",
+        "area:multiplayer",
+        "priority:P0",
+        "size:M"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "SRV-01",
+        "SRV-02"
+      ],
+      "unlocks": [
+        "RND-07",
+        "TST-01"
+      ],
+      "relatedDocuments": [
+        "lib/world-core.js",
+        "server.js",
+        "public/js/surface-mode.js",
+        "SPEC_INFINITE.md"
+      ]
+    },
+    {
+      "key": "SRV-04",
+      "number": 23,
+      "url": "https://github.com/moldovancsaba/narimato/issues/23",
+      "title": "Server: Supply focus relocation - place every human at the impact footprint",
+      "milestone": "M3 — Authoritative surface multiplayer",
+      "executionOrder": 330,
+      "track": "Multiplayer",
+      "priority": "P1",
+      "labels": [
+        "type:feature",
+        "area:multiplayer",
+        "priority:P1",
+        "size:M"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "SRV-01"
+      ],
+      "unlocks": [
+        "TST-01"
+      ],
+      "relatedDocuments": [
+        "server.js",
+        "lib/planet-manager.js",
+        "lib/world-core.js",
+        "GAMEPLAY.md"
+      ]
+    },
+    {
+      "key": "RND-07",
+      "number": 24,
+      "url": "https://github.com/moldovancsaba/narimato/issues/24",
+      "title": "Renderer: Authoritative robot and resource visuals - beams and markers from events",
+      "milestone": "M3 — Authoritative surface multiplayer",
+      "executionOrder": 340,
+      "track": "Renderer",
+      "priority": "P0",
+      "labels": [
+        "type:feature",
+        "area:renderer",
+        "priority:P0",
+        "size:M"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "SRV-03",
+        "RND-02"
+      ],
+      "unlocks": [],
+      "relatedDocuments": [
+        "public/js/surface-mode.js",
+        "public/js/renderer.js",
+        "public/js/world.js",
+        "GAMEPLAY.md"
+      ]
+    },
+    {
+      "key": "TST-01",
+      "number": 25,
+      "url": "https://github.com/moldovancsaba/narimato/issues/25",
+      "title": "Testing: Two-client surface acceptance - pose, mine, supply, and live mutation",
+      "milestone": "M3 — Authoritative surface multiplayer",
+      "executionOrder": 350,
+      "track": "Multiplayer",
+      "priority": "P0",
+      "labels": [
+        "type:test",
+        "area:multiplayer",
+        "priority:P0",
+        "size:M"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "SRV-03",
+        "SRV-04",
+        "RND-04"
+      ],
+      "unlocks": [
+        "REL-01"
+      ],
+      "relatedDocuments": [
+        "scripts/acceptance-two-client-surface.mjs",
+        "scripts/acceptance-surface-truth.mjs",
+        "scripts/acceptance-supply-focus.mjs",
+        "ARCHITECTURE.md"
+      ]
+    },
+    {
+      "key": "CTL-01",
+      "number": 26,
+      "url": "https://github.com/moldovancsaba/narimato/issues/26",
+      "title": "Controls: Orbit input SSOT - absolute drag, inverse travel, and explicit mode toggle",
+      "milestone": "M4 — Controls & camera correctness",
+      "executionOrder": 400,
+      "track": "Controls",
+      "priority": "P0",
+      "labels": [
+        "type:feature",
+        "area:controls",
+        "priority:P0",
+        "size:L"
+      ],
+      "readiness": "Ready",
+      "status": "Todo (NEXT)",
+      "blockedBy": [],
+      "unlocks": [
+        "CTL-02",
+        "CTL-05",
+        "CTL-06"
+      ],
+      "relatedDocuments": [
+        "public/js/shared/orbit-controls.js",
+        "public/js/shared/sphere-interaction.js",
+        "public/js/icosahedron-viewer.js",
+        "narimato-physics.md"
+      ]
+    },
+    {
+      "key": "CTL-02",
+      "number": 27,
+      "url": "https://github.com/moldovancsaba/narimato/issues/27",
+      "title": "Controls: Pole continuity and visibility - no direction flip or empty frame",
+      "milestone": "M4 — Controls & camera correctness",
+      "executionOrder": 410,
+      "track": "Controls",
+      "priority": "P1",
+      "labels": [
+        "type:bug",
+        "area:controls",
+        "priority:P1",
+        "size:M"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "CTL-01"
+      ],
+      "unlocks": [
+        "REL-01"
+      ],
+      "relatedDocuments": [
+        "public/js/renderer.js",
+        "public/js/shared/sphere-interaction.js",
+        "test/camera-controls.test.js",
+        "docs/ISSUE_MAP.md",
+        "narimato-physics.md"
+      ]
+    },
+    {
+      "key": "CTL-03",
+      "number": 28,
+      "url": "https://github.com/moldovancsaba/narimato/issues/28",
+      "title": "Controls: Harvest truth - one canHarvest predicate with green/red and API round-trip",
+      "milestone": "M4 — Controls & camera correctness",
+      "executionOrder": 420,
+      "track": "Controls",
+      "priority": "P1",
+      "labels": [
+        "type:bug",
+        "area:controls",
+        "priority:P1",
+        "size:M"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "RND-02"
+      ],
+      "unlocks": [
+        "REL-01"
+      ],
+      "relatedDocuments": [
+        "public/js/shared/",
+        "lib/world-core.js",
+        "scripts/acceptance-surface-truth.mjs",
+        "docs/ISSUE_MAP.md",
+        "SPEC_RESOURCES.md"
+      ]
+    },
+    {
+      "key": "CTL-04",
+      "number": 29,
+      "url": "https://github.com/moldovancsaba/narimato/issues/29",
+      "title": "Controls: Exit to farthest orbit - ORBIT_FAR_ZOOM and HUD restoration",
+      "milestone": "M4 — Controls & camera correctness",
+      "executionOrder": 430,
+      "track": "Controls",
+      "priority": "P1",
+      "labels": [
+        "type:feature",
+        "area:controls",
+        "priority:P1",
+        "size:S"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "RND-02"
+      ],
+      "unlocks": [
+        "REL-01"
+      ],
+      "relatedDocuments": [
+        "public/js/app.js",
+        "public/js/surface-mode.js",
+        "ORBIT_FAR_ZOOM",
+        "GAMEPLAY.md"
+      ]
+    },
+    {
+      "key": "CTL-05",
+      "number": 30,
+      "url": "https://github.com/moldovancsaba/narimato/issues/30",
+      "title": "Controls: Mode indicator and persistence - visible current control mode",
+      "milestone": "M4 — Controls & camera correctness",
+      "executionOrder": 440,
+      "track": "Controls",
+      "priority": "P2",
+      "labels": [
+        "type:feature",
+        "area:controls",
+        "priority:P2",
+        "size:S"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "CTL-01",
+        "UI-03"
+      ],
+      "unlocks": [
+        "REL-01"
+      ],
+      "relatedDocuments": [
+        "public/js/ui.js",
+        "GAMEPLAY.md",
+        "GUIDE.md"
+      ]
+    },
+    {
+      "key": "CTL-06",
+      "number": 31,
+      "url": "https://github.com/moldovancsaba/narimato/issues/31",
+      "title": "Controls: Touch parity - pads, pinch, surface steering, and safe areas",
+      "milestone": "M4 — Controls & camera correctness",
+      "executionOrder": 450,
+      "track": "Controls",
+      "priority": "P1",
+      "labels": [
+        "type:feature",
+        "area:controls",
+        "priority:P1",
+        "size:M",
+        "accessibility"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "CTL-01",
+        "UI-04"
+      ],
+      "unlocks": [
+        "A11Y-02"
+      ],
+      "relatedDocuments": [
+        "public/js/intro.js",
+        "public/js/app.js",
+        "public/css/cyberpunk.css",
+        "A11Y_CHECKLIST.md"
+      ]
+    },
+    {
+      "key": "EVT-01",
+      "number": 32,
+      "url": "https://github.com/moldovancsaba/narimato/issues/32",
+      "title": "Events: Incident scheduler - deterministic reachability and test trigger",
+      "milestone": "M5 — Events, story & audio",
+      "executionOrder": 500,
+      "track": "Events",
+      "priority": "P1",
+      "labels": [
+        "type:feature",
+        "area:events",
+        "priority:P1",
+        "size:M"
+      ],
+      "readiness": "Ready",
+      "status": "Todo (NEXT)",
+      "blockedBy": [],
+      "unlocks": [
+        "EVT-02",
+        "EVT-03"
+      ],
+      "relatedDocuments": [
+        "lib/planet-manager.js",
+        "lib/world-core.js",
+        "test/world-core.test.js",
+        "docs/ISSUE_MAP.md",
+        "ARCHITECTURE.md"
+      ]
+    },
+    {
+      "key": "EVT-02",
+      "number": 33,
+      "url": "https://github.com/moldovancsaba/narimato/issues/33",
+      "title": "Events: Five-tetra ship and incident visuals - consistent FX across all kinds",
+      "milestone": "M5 — Events, story & audio",
+      "executionOrder": 510,
+      "track": "Events",
+      "priority": "P1",
+      "labels": [
+        "type:feature",
+        "area:events",
+        "priority:P1",
+        "size:M"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "EVT-01",
+        "UI-05"
+      ],
+      "unlocks": [
+        "REL-01"
+      ],
+      "relatedDocuments": [
+        "public/js/shared/tetra-ship.js",
+        "public/js/interlude.js",
+        "public/js/renderer.js",
+        "GAMEPLAY.md"
+      ]
+    },
+    {
+      "key": "EVT-03",
+      "number": 34,
+      "url": "https://github.com/moldovancsaba/narimato/issues/34",
+      "title": "Accessibility: Incident feedback - announced outcomes, captions, and reduced motion",
+      "milestone": "M5 — Events, story & audio",
+      "executionOrder": 520,
+      "track": "Accessibility",
+      "priority": "P1",
+      "labels": [
+        "type:feature",
+        "area:a11y",
+        "priority:P1",
+        "size:M",
+        "accessibility",
+        "gds"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "EVT-01"
+      ],
+      "unlocks": [
+        "A11Y-02",
+        "REL-01"
+      ],
+      "relatedDocuments": [
+        "public/js/interlude.js",
+        "public/js/ui.js",
+        "A11Y_CHECKLIST.md",
+        "GAMEPLAY.md"
+      ]
+    },
+    {
+      "key": "STR-01",
+      "number": 35,
+      "url": "https://github.com/moldovancsaba/narimato/issues/35",
+      "title": "Story: Voice cue pipeline - new beats, sentence clips, and cache-bust",
+      "milestone": "M5 — Events, story & audio",
+      "executionOrder": 530,
+      "track": "Story",
+      "priority": "P1",
+      "labels": [
+        "type:feature",
+        "area:story",
+        "priority:P1",
+        "size:M"
+      ],
+      "readiness": "Ready",
+      "status": "Todo (NEXT)",
+      "blockedBy": [],
+      "unlocks": [
+        "A11Y-02",
+        "AUD-01"
+      ],
+      "relatedDocuments": [
+        "public/js/narrative-data.js",
+        "public/js/narrator.js",
+        "scripts/generate-voice.mjs",
+        "VOICE.md"
+      ]
+    },
+    {
+      "key": "STR-02",
+      "number": 36,
+      "url": "https://github.com/moldovancsaba/narimato/issues/36",
+      "title": "Story: Content SSOT - Guide, Field Manual, and Captain's Log copy contract",
+      "milestone": "M5 — Events, story & audio",
+      "executionOrder": 540,
+      "track": "Story",
+      "priority": "P2",
+      "labels": [
+        "type:docs",
+        "area:story",
+        "priority:P2",
+        "size:M"
+      ],
+      "readiness": "Ready",
+      "status": "Todo (NEXT)",
+      "blockedBy": [],
+      "unlocks": [
+        "REL-01"
+      ],
+      "relatedDocuments": [
+        "GUIDE.md",
+        "GAMEPLAY.md",
+        "public/js/narrative-data.js",
+        "public/js/ui.js"
+      ]
+    },
+    {
+      "key": "AUD-01",
+      "number": 37,
+      "url": "https://github.com/moldovancsaba/narimato/issues/37",
+      "title": "Audio: Playback resilience - autoplay, interruption, watchdog, and prefetch",
+      "milestone": "M5 — Events, story & audio",
+      "executionOrder": 550,
+      "track": "Audio",
+      "priority": "P1",
+      "labels": [
+        "type:feature",
+        "area:audio",
+        "priority:P1",
+        "size:M"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "STR-01"
+      ],
+      "unlocks": [
+        "A11Y-02"
+      ],
+      "relatedDocuments": [
+        "public/js/narrator.js",
+        "public/js/audio.js",
+        "VOICE.md",
+        "OBSERVABILITY.md"
+      ]
+    },
+    {
+      "key": "OPS-01",
+      "number": 38,
+      "url": "https://github.com/moldovancsaba/narimato/issues/38",
+      "title": "Ops: Observability SSOT - metrics, SLO alerts, and runbook",
+      "milestone": "M6 — Operations, scale & security",
+      "executionOrder": 600,
+      "track": "Ops",
+      "priority": "P0",
+      "labels": [
+        "type:feature",
+        "area:ops",
+        "priority:P0",
+        "size:M"
+      ],
+      "readiness": "Ready",
+      "status": "Todo (NEXT)",
+      "blockedBy": [],
+      "unlocks": [
+        "OPS-02",
+        "OPS-04",
+        "PERF-01"
+      ],
+      "relatedDocuments": [
+        "OBSERVABILITY.md",
+        "server.js",
+        "lib/metrics.js",
+        "public/js/telemetry.js"
+      ]
+    },
+    {
+      "key": "OPS-02",
+      "number": 39,
+      "url": "https://github.com/moldovancsaba/narimato/issues/39",
+      "title": "Ops: Load, soak, and chaos gate - measured SLO thresholds in CI",
+      "milestone": "M6 — Operations, scale & security",
+      "executionOrder": 610,
+      "track": "Ops",
+      "priority": "P1",
+      "labels": [
+        "type:test",
+        "area:ops",
+        "priority:P1",
+        "size:M"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "OPS-01"
+      ],
+      "unlocks": [
+        "OPS-05",
+        "REL-01"
+      ],
+      "relatedDocuments": [
+        "LOAD_TEST.md",
+        "scripts/load-test.mjs",
+        "scripts/chaos-test.mjs",
+        ".github/workflows/ci.yml"
+      ]
+    },
+    {
+      "key": "OPS-03",
+      "number": 40,
+      "url": "https://github.com/moldovancsaba/narimato/issues/40",
+      "title": "Ops: Persistence recovery - backup, restore, and rollback runbook",
+      "milestone": "M6 — Operations, scale & security",
+      "executionOrder": 620,
+      "track": "Ops",
+      "priority": "P0",
+      "labels": [
+        "type:feature",
+        "area:ops",
+        "priority:P0",
+        "size:M"
+      ],
+      "readiness": "Ready",
+      "status": "Todo (NEXT)",
+      "blockedBy": [],
+      "unlocks": [
+        "REL-01"
+      ],
+      "relatedDocuments": [
+        "ARCHITECTURE.md",
+        "server.js",
+        "lib/world-core.js",
+        "data/"
+      ]
+    },
+    {
+      "key": "OPS-04",
+      "number": 41,
+      "url": "https://github.com/moldovancsaba/narimato/issues/41",
+      "title": "Ops: Edge/CDN activation - asset base, cache policy, and rollback",
+      "milestone": "M6 — Operations, scale & security",
+      "executionOrder": 630,
+      "track": "Ops",
+      "priority": "P2",
+      "labels": [
+        "type:feature",
+        "area:ops",
+        "priority:P2",
+        "size:M"
+      ],
+      "readiness": "Later",
+      "status": "Roadmap (LATER)",
+      "blockedBy": [
+        "OPS-01"
+      ],
+      "unlocks": [
+        "REL-01"
+      ],
+      "relatedDocuments": [
+        "EDGE_DEPLOYMENT.md",
+        "server.js",
+        "public/index.html"
+      ]
+    },
+    {
+      "key": "OPS-05",
+      "number": 42,
+      "url": "https://github.com/moldovancsaba/narimato/issues/42",
+      "title": "Ops: Sharding decision gate - only on measured SLO breach",
+      "milestone": "M6 — Operations, scale & security",
+      "executionOrder": 640,
+      "track": "Ops",
+      "priority": "P2",
+      "labels": [
+        "type:feature",
+        "area:ops",
+        "priority:P2",
+        "size:S"
+      ],
+      "readiness": "Later",
+      "status": "Roadmap (LATER)",
+      "blockedBy": [
+        "OPS-02"
+      ],
+      "unlocks": [],
+      "relatedDocuments": [
+        "LOAD_TEST.md",
+        "OBSERVABILITY.md",
+        "ARCHITECTURE.md"
+      ]
+    },
+    {
+      "key": "SEC-01",
+      "number": 43,
+      "url": "https://github.com/moldovancsaba/narimato/issues/43",
+      "title": "Security: Abuse and header hardening - origin policy, rate limits, and body caps",
+      "milestone": "M6 — Operations, scale & security",
+      "executionOrder": 650,
+      "track": "Security",
+      "priority": "P1",
+      "labels": [
+        "type:feature",
+        "area:security",
+        "priority:P1",
+        "size:M"
+      ],
+      "readiness": "Ready",
+      "status": "Todo (NEXT)",
+      "blockedBy": [],
+      "unlocks": [
+        "REL-01"
+      ],
+      "relatedDocuments": [
+        "server.js",
+        "lib/metrics.js",
+        "OBSERVABILITY.md",
+        "ARCHITECTURE.md"
+      ]
+    },
+    {
+      "key": "PERF-01",
+      "number": 44,
+      "url": "https://github.com/moldovancsaba/narimato/issues/44",
+      "title": "Performance: Client budgets - frame timing, long tasks, and telemetry enforcement",
+      "milestone": "M7 — Performance & release quality",
+      "executionOrder": 660,
+      "track": "Performance",
+      "priority": "P1",
+      "labels": [
+        "type:feature",
+        "area:renderer",
+        "priority:P1",
+        "size:M"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "OPS-01"
+      ],
+      "unlocks": [
+        "REL-01"
+      ],
+      "relatedDocuments": [
+        "OBSERVABILITY.md",
+        "public/js/telemetry.js",
+        "public/js/renderer.js",
+        "ARCHITECTURE.md"
+      ]
+    },
+    {
+      "key": "REL-01",
+      "number": 45,
+      "url": "https://github.com/moldovancsaba/narimato/issues/45",
+      "title": "Release: Acceptance gate - version, cache-bust, test matrix, and rollback proof",
+      "milestone": "M7 — Performance & release quality",
+      "executionOrder": 800,
+      "track": "Release",
+      "priority": "P0",
+      "labels": [
+        "type:chore",
+        "area:release",
+        "priority:P0",
+        "size:M"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "SSOT-02",
+        "SSOT-03",
+        "SSOT-04",
+        "QA-01",
+        "DOC-01",
+        "A11Y-01",
+        "A11Y-02",
+        "RND-06",
+        "TST-01",
+        "CTL-02",
+        "CTL-03",
+        "CTL-04",
+        "CTL-05",
+        "EVT-02",
+        "EVT-03",
+        "STR-02",
+        "OPS-02",
+        "OPS-03",
+        "OPS-04",
+        "SEC-01",
+        "PERF-01"
+      ],
+      "unlocks": [
+        "REL-02"
+      ],
+      "relatedDocuments": [
+        "package.json",
+        "RELEASE_NOTES.md",
+        ".github/workflows/ci.yml",
+        "A11Y_CHECKLIST.md",
+        "LOAD_TEST.md"
+      ]
+    },
+    {
+      "key": "REL-02",
+      "number": 46,
+      "url": "https://github.com/moldovancsaba/narimato/issues/46",
+      "title": "Docs: Release evidence ledger - shipped claims backed by commits, tests, and smoke",
+      "milestone": "M7 — Performance & release quality",
+      "executionOrder": 810,
+      "track": "Release",
+      "priority": "P2",
+      "labels": [
+        "type:docs",
+        "area:release",
+        "priority:P2",
+        "size:S"
+      ],
+      "readiness": "Blocked",
+      "status": "Backlog (SOONER)",
+      "blockedBy": [
+        "REL-01"
+      ],
+      "unlocks": [],
+      "relatedDocuments": [
+        "RELEASE_NOTES.md",
+        "README.md",
+        "docs/SSOT.md"
+      ]
+    }
+  ]
+}

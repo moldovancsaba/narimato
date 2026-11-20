@@ -1,5 +1,12 @@
 # PLANET SURFACE — research & algorithm choice
 
+<!-- delivery-ssot:start -->
+> **Delivery SSOT:** [NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80) · [Definition of Done](docs/DEFINITION_OF_DONE.md) · [Issue index](docs/ISSUE_MAP.md).
+> This document owns durable knowledge; it does not track delivery status.
+>
+> **Related delivery issues:** [RND-05](https://github.com/moldovancsaba/narimato/issues/18)
+<!-- delivery-ssot:end -->
+
 Goal: a whole explorable planet surface (oceans, coasts, hills, mountains, forests, deserts,
 both ice caps) with **low data requirements**, plus geologically plausible resource placement and
 a hard rule that deep-water deposits cannot be mined from the surface.

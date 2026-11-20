@@ -1,0 +1,88 @@
+name: Engineering issue (GDS #81 standard)
+description: Production-grade, independently executable issue. Follow the canonical standard.
+title: "[Domain]: [Capability] - [Technical Outcome]"
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Read the canonical standard **before** submitting:
+        https://github.com/sovereignsquad/general-design-system/issues/81
+
+        This issue is a delivery specification, not a note. Board 80 is the delivery SSOT:
+        https://github.com/users/moldovancsaba/projects/80. One issue = one independently
+        executable outcome. No umbrella tasks.
+
+        All UI/UX/frontend work must use only the Sovereign Squad General Design System
+        (`@sovereignsquad/gds`). Accessibility is mandatory.
+  - type: input
+    id: milestone
+    attributes:
+      label: Milestone / execution order
+      description: "M0–M7 milestone and the topological execution order (e.g. M2, 210)."
+      placeholder: "M2 — Single-scene renderer · 210"
+    validations:
+      required: true
+  - type: input
+    id: dependencies
+    attributes:
+      label: Blocked by (issue keys)
+      description: Issue keys that must close first. Native blocked-by links are authoritative.
+      placeholder: "SRV-01, RND-01"
+    validations:
+      required: true
+  - type: input
+    id: related_docs
+    attributes:
+      label: Related repository documents
+      description: Exact paths (e.g. ARCHITECTURE.md, narimato-physics.md, public/js/renderer.js).
+      placeholder: "ARCHITECTURE.md, public/js/renderer.js"
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Executive summary and problem
+      description: What is built, why it matters, the measurable engineering problem, and the technical outcome.
+      placeholder: Capability, current limitation, expected outcome.
+    validations:
+      required: true
+  - type: textarea
+    id: architecture
+    attributes:
+      label: Architecture, contracts, runtime flow
+      description: Ownership boundaries, state transitions, data/API/event contracts, deterministic pseudo-code.
+    validations:
+      required: true
+  - type: textarea
+    id: ux_a11y
+    attributes:
+      label: UX states and accessibility
+      description: Loading/empty/error/disabled/success, keyboard, screen reader, focus, contrast, reduced motion, 200% zoom, touch targets.
+    validations:
+      required: true
+  - type: textarea
+    id: operations
+    attributes:
+      label: Observability, retries/timeouts, rollback
+      description: Signals to watch, thresholds, failure/recovery behavior, rollback plan.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Binary acceptance criteria
+      description: Checkbox list a reviewer can verify without asking the author. Include tests and documentation paths.
+    validations:
+      required: true
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Non-negotiable checks
+      options:
+        - label: All UI/UX/frontend work uses only the Sovereign Squad General Design System and passes accessibility requirements (or this issue changes no UI surface).
+          required: true
+        - label: Server remains authoritative; no client-fabricated resources, scores, ownership or locks (or this issue changes no server/game state).
+          required: true
+        - label: The issue has one outcome, native dependency links, and evidence-based acceptance criteria.
+          required: true

@@ -1,5 +1,12 @@
 # NARIMATO — Load / Soak / Chaos (Track B3)
 
+<!-- delivery-ssot:start -->
+> **Delivery SSOT:** [NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80) · [Definition of Done](docs/DEFINITION_OF_DONE.md) · [Issue index](docs/ISSUE_MAP.md).
+> This document owns durable knowledge; it does not track delivery status.
+>
+> **Related delivery issues:** [OPS-02](https://github.com/moldovancsaba/narimato/issues/39) · [OPS-05](https://github.com/moldovancsaba/narimato/issues/42) · [REL-01](https://github.com/moldovancsaba/narimato/issues/45)
+<!-- delivery-ssot:end -->
+
 Zero-dependency workload generator: `scripts/load-test.mjs` (`npm run load:test`).
 
 ## Local run

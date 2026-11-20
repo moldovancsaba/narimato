@@ -1,9 +1,16 @@
 # NARIMATO — Observability (Track B0)
 
+<!-- delivery-ssot:start -->
+> **Delivery SSOT:** [NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80) · [Definition of Done](docs/DEFINITION_OF_DONE.md) · [Issue index](docs/ISSUE_MAP.md).
+> This document owns durable knowledge; it does not track delivery status.
+>
+> **Related delivery issues:** [AUD-01](https://github.com/moldovancsaba/narimato/issues/37) · [OPS-01](https://github.com/moldovancsaba/narimato/issues/38) · [OPS-05](https://github.com/moldovancsaba/narimato/issues/42) · [SEC-01](https://github.com/moldovancsaba/narimato/issues/43) · [PERF-01](https://github.com/moldovancsaba/narimato/issues/44)
+<!-- delivery-ssot:end -->
+
 Zero-dependency, aggregation-only observability for the single-node authoritative server plus a
 privacy-safe client beacon. **No npm packages, no external services, no PII.**
 
-Measured before considering any sharding (see `DELIVERY_PLAN.md` Track B0 gate).
+Measured before considering any sharding (see the load/scale gate in [LOAD_TEST.md](LOAD_TEST.md) and the delivery issues in [ISSUE_MAP.md](docs/ISSUE_MAP.md)).
 
 ## Endpoints
 
@@ -115,7 +122,7 @@ telemetry?.markAudioFirstWord(performance.now() - startedAt); // beacon once aft
   does nothing. No identifiers, cookies, tags, tokens or timestamps beyond the session duration.
 - `buildTelemetryPayload()` / `createTelemetry({win})` are exported for tests and non-DOM hosts.
 
-## SLOs / alert thresholds (from `DELIVERY_PLAN.md` B0)
+## SLOs / alert thresholds
 
 | Signal | Target |
 |---|---|

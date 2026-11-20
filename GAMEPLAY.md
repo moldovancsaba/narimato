@@ -1,5 +1,12 @@
 # NARIMATO — Gameplay Guide
 
+<!-- delivery-ssot:start -->
+> **Delivery SSOT:** [NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80) · [Definition of Done](docs/DEFINITION_OF_DONE.md) · [Issue index](docs/ISSUE_MAP.md).
+> This document owns durable knowledge; it does not track delivery status.
+>
+> **Related delivery issues:** [A11Y-02](https://github.com/moldovancsaba/narimato/issues/13) · [SRV-02](https://github.com/moldovancsaba/narimato/issues/21) · [SRV-04](https://github.com/moldovancsaba/narimato/issues/23) · [RND-07](https://github.com/moldovancsaba/narimato/issues/24) · [CTL-04](https://github.com/moldovancsaba/narimato/issues/29) · [CTL-05](https://github.com/moldovancsaba/narimato/issues/30) · [EVT-02](https://github.com/moldovancsaba/narimato/issues/33) · [EVT-03](https://github.com/moldovancsaba/narimato/issues/34) · [STR-02](https://github.com/moldovancsaba/narimato/issues/36)
+<!-- delivery-ssot:end -->
+
 ## The story
 
 You are a pilot. A wormhole accident throws your ship to the far side of the universe. The game

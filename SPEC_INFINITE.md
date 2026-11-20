@@ -1,5 +1,12 @@
 # NARIMATO — INFINITE GRID (v2 spec, supersedes round mode)
 
+<!-- delivery-ssot:start -->
+> **Delivery SSOT:** [NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80) · [Definition of Done](docs/DEFINITION_OF_DONE.md) · [Issue index](docs/ISSUE_MAP.md).
+> This document owns durable knowledge; it does not track delivery status.
+>
+> **Related delivery issues:** [SRV-01](https://github.com/moldovancsaba/narimato/issues/20) · [SRV-03](https://github.com/moldovancsaba/narimato/issues/22)
+<!-- delivery-ssot:end -->
+
 Persistent, never-ending, multiplayer sphere. No rounds, no lobby wait, no timer, no end.
 Players join and play immediately; the same world keeps every change forever (across visits and
 server restarts). Every triangle charges with clicks and **breaks individually** into its four

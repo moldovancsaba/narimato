@@ -1,5 +1,12 @@
 # NARIMATO — Quick Guide
 
+<!-- delivery-ssot:start -->
+> **Delivery SSOT:** [NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80) · [Definition of Done](docs/DEFINITION_OF_DONE.md) · [Issue index](docs/ISSUE_MAP.md).
+> This document owns durable knowledge; it does not track delivery status.
+>
+> **Related delivery issues:** [UI-03](https://github.com/moldovancsaba/narimato/issues/9) · [CTL-05](https://github.com/moldovancsaba/narimato/issues/30) · [STR-02](https://github.com/moldovancsaba/narimato/issues/36)
+<!-- delivery-ssot:end -->
+
 Share this with a new pilot. In game, press **GUIDE** (or open `?guide=1`) for the same card.
 
 ## 1. What to mine

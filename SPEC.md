@@ -3,6 +3,13 @@
 
 # NARIMATO — Build Spec & Interface Contract
 
+<!-- delivery-ssot:start -->
+> **Delivery SSOT:** [NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80) · [Definition of Done](docs/DEFINITION_OF_DONE.md) · [Issue index](docs/ISSUE_MAP.md).
+> This document owns durable knowledge; it does not track delivery status.
+>
+> **Related delivery issues:** [UI-02](https://github.com/moldovancsaba/narimato/issues/8) · [RND-03](https://github.com/moldovancsaba/narimato/issues/16)
+<!-- delivery-ssot:end -->
+
 Neon geodesic arena. A real-time multiplayer territory game played on a **spherical icosahedron**
 (12 cartographic points, 20 spherical triangles, 4-way spherical subdivision). Tag in, click
 triangles to claim them, steal rival turf, survive automatic grid SURGEs, climb the arcade

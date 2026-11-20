@@ -1,5 +1,12 @@
 # NARIMATO — Accessibility / Device Checklist (A4)
 
+<!-- delivery-ssot:start -->
+> **Delivery SSOT:** [NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80) · [Definition of Done](docs/DEFINITION_OF_DONE.md) · [Issue index](docs/ISSUE_MAP.md).
+> This document owns durable knowledge; it does not track delivery status.
+>
+> **Related delivery issues:** [UI-03](https://github.com/moldovancsaba/narimato/issues/9) · [UI-04](https://github.com/moldovancsaba/narimato/issues/10) · [UI-05](https://github.com/moldovancsaba/narimato/issues/11) · [A11Y-01](https://github.com/moldovancsaba/narimato/issues/12) · [A11Y-02](https://github.com/moldovancsaba/narimato/issues/13) · [CTL-06](https://github.com/moldovancsaba/narimato/issues/31) · [EVT-03](https://github.com/moldovancsaba/narimato/issues/34) · [REL-01](https://github.com/moldovancsaba/narimato/issues/45)
+<!-- delivery-ssot:end -->
+
 ## Automated (delivered)
 
 `npm run audit:ui` runs the nine-viewport matrix in **Chromium** and can run the same audit in

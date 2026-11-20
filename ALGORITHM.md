@@ -1,5 +1,12 @@
 # NARIMATO — Spherical Geometry & Face Numbering Algorithm
 
+<!-- delivery-ssot:start -->
+> **Delivery SSOT:** [NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80) · [Definition of Done](docs/DEFINITION_OF_DONE.md) · [Issue index](docs/ISSUE_MAP.md).
+> This document owns durable knowledge; it does not track delivery status.
+>
+> **Related delivery issues:** [DOC-01](https://github.com/moldovancsaba/narimato/issues/6) · [RND-01](https://github.com/moldovancsaba/narimato/issues/14)
+<!-- delivery-ssot:end -->
+
 > Current mode: **INFINITE GRID** (`SPEC_INFINITE.md`). The sphere is a persistent adaptive tree:
 > any active cell can break individually after `BREAK_CLICKS` clicks; children inherit owners.
 > Sections 1–3 below are the geometry/numbering foundation; section 5 explains the adaptive tree.

@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Delivery board (SSOT)
+    url: https://github.com/users/moldovancsaba/projects/80
+    about: Where NARIMATO delivery state, sequencing and evidence live.
+  - name: Canonical issue standard
+    url: https://github.com/sovereignsquad/general-design-system/issues/81
+    about: The production-grade issue format every issue must follow.
+  - name: Repository SSOT documentation
+    url: https://github.com/moldovancsaba/narimato/blob/main/docs/SSOT.md
+    about: Two-source model, Definition of Done and issue intake rules.

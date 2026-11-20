@@ -1,5 +1,12 @@
 # NARIMATO — Release Notes
 
+<!-- delivery-ssot:start -->
+> **Delivery SSOT:** [NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80) · [Definition of Done](docs/DEFINITION_OF_DONE.md) · [Issue index](docs/ISSUE_MAP.md).
+> This document owns durable knowledge; it does not track delivery status.
+>
+> **Related delivery issues:** [QA-01](https://github.com/moldovancsaba/narimato/issues/5) · [REL-01](https://github.com/moldovancsaba/narimato/issues/45) · [REL-02](https://github.com/moldovancsaba/narimato/issues/46)
+<!-- delivery-ssot:end -->
+
 ## v3.57.0 — “Spherical Viewer Solution” (2026-11-20)
 
 ### What was wrong
@@ -425,7 +432,7 @@ Release: https://github.com/moldovancsaba/narimato/releases/tag/v3.51.0
   hips, arms and legs built from closed triangles and depth-sorted through the same surface camera.
 - **Removed cached planet wording/behavior:** `surfaceLiveFaces` is rebuilt from the live leaf list
   on every authoritative cell/break/click.
-- Updated [REQUESTS_24H.md](REQUESTS_24H.md) with the new 3D-humanoid and no-cache requirements,
+- Updated REQUESTS_24H (retired; see [ISSUE_MAP.md](docs/ISSUE_MAP.md)) with the new 3D-humanoid and no-cache requirements,
   reordered priorities and honest partial/open statuses.
 
 ### Still open
@@ -453,7 +460,7 @@ Release: https://github.com/moldovancsaba/narimato/releases/tag/v3.51.0
 
 ### Added / fixed
 
-- **Delivery task contract** added: [DELIVERY_TASKS.md](DELIVERY_TASKS.md) defines the remaining work
+- **Delivery task contract** added: DELIVERY_TASKS (retired; see [ISSUE_MAP.md](docs/ISSUE_MAP.md)) defines the remaining work
   file-by-file with acceptance tests, including the single-scene renderer migration, authoritative
   robot surface mining, supply focus for every human, controls/pole regressions, colours and exit
   zoom.
@@ -485,7 +492,7 @@ Release: https://github.com/moldovancsaba/narimato/releases/tag/v3.51.0
   still completely decoupled from the local player's position/heading, plus their own mining beams.
 - **Footprint harvesting is much faster** (120 ms queue instead of 900 ms), so cells under the
   avatar change/charge/break sooner as the pilot walks.
-- **Explicit 24-hour request/status audit** added: [REQUESTS_24H.md](REQUESTS_24H.md).
+- **Explicit 24-hour request/status audit** added: REQUESTS_24H (retired; see [ISSUE_MAP.md](docs/ISSUE_MAP.md)).
 - Target-only green/red semantics, target/supply-only pins, surface HUD isolation, 4th-rung entry,
   pole crossing, spherical arcs, opaque shell and maximum orbit zoom-out retained.
 
@@ -527,7 +534,7 @@ Release: https://github.com/moldovancsaba/narimato/releases/tag/v3.51.0
 
 - Browser surface: no resource-pin forest; target HUD/status visible.
 - **97/97 tests**, Chromium + WebKit UI audits clean, axe clean.
-- [ROADMAP.md](ROADMAP.md) updated with this regression and open gaps.
+- ROADMAP (retired; see [ISSUE_MAP.md](docs/ISSUE_MAP.md)) updated with this regression and open gaps.
 
 ### Release artifact
 
@@ -547,7 +554,7 @@ Release: https://github.com/moldovancsaba/narimato/releases/tag/v3.51.0
   - RED TARGET = locked or depleted
   - target pin + explicit `TARGET … // GREEN/RED` HUD line
   - resource/supply pins are separate diamond markers, never status colours.
-- **Roadmap/audit document** added: [ROADMAP.md](ROADMAP.md) records delivered work, regressions,
+- **Roadmap/audit document** added: ROADMAP (retired; see [ISSUE_MAP.md](docs/ISSUE_MAP.md)) records delivered work, regressions,
   corrections, open gaps and acceptance criteria.
 - **README + release notes audited** against the last 24 hours.
 - **Code comments corrected** where they no longer described the system (world/bot wording,
@@ -571,7 +578,7 @@ Release: https://github.com/moldovancsaba/narimato/releases/tag/v3.51.0
 
 - **97/97 tests**, Chromium + WebKit UI audits clean, axe clean.
 - Color target HUD/status code comment and rules audited.
-- [ROADMAP.md](ROADMAP.md) is the current source of truth.
+- ROADMAP (retired; see [ISSUE_MAP.md](docs/ISSUE_MAP.md)) is the current source of truth.
 
 ### Release artifact
 
