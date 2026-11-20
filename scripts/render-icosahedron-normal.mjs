@@ -20,7 +20,7 @@ const dataUrl = await page.evaluate(async () => {
   const canvas = document.createElement('canvas');
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#080b16';
+  ctx.fillStyle = '#0b0d12';
   ctx.fillRect(0, 0, W, H);
 
   const rotY = 0.55, rotX = 0.28;
@@ -69,7 +69,7 @@ const dataUrl = await page.evaluate(async () => {
   return canvas.toDataURL('image/png');
 });
 await fs.mkdir('media', { recursive: true });
-await fs.writeFile('media/icosahedron-normal.png', Buffer.from(dataUrl.split(',')[1], 'base64'));
-console.log(JSON.stringify({ file: 'media/icosahedron-normal.png', errors }));
+await fs.writeFile('media/icosahedron-only.png', Buffer.from(dataUrl.split(',')[1], 'base64'));
+console.log(JSON.stringify({ file: 'media/icosahedron-only.png', errors }));
 await browser.close();
 if (errors.length) process.exitCode = 1;
