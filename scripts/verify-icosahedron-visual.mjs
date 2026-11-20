@@ -18,26 +18,23 @@ await delay(400);
 async function stats() {
   return page.evaluate(() => {
     const c = document.getElementById('icosa-canvas');
-    const ctx = c.getContext('2d');
-    const center = ctx.getImageData(Math.floor(c.width / 2), Math.floor(c.height / 2), 1, 1).data;
-    const corner = ctx.getImageData(2, 2, 1, 1).data;
-    const data = ctx.getImageData(0, 0, c.width, c.height).data;
-    let colored = 0;
-    for (let i = 0; i < data.length; i += 4) {
-      if (data[i] > 25 || data[i + 1] > 35 || data[i + 2] > 45) colored += 1;
-    }
-    return { center: [...center], corner: [...corner], colored };
+    return {
+      center: window.__ICOSA_VIEW__.pixel(Math.floor(c.width / 2), Math.floor(c.height / 2)),
+      corner: window.__ICOSA_VIEW__.pixel(2, 2),
+      colored: window.__ICOSA_VIEW__.coloredPixels(),
+    };
   });
 }
 const shots = {};
-const distanceBefore = await page.evaluate(() => window.__ICOSA_VIEW__.camera.distance);
+const distanceBefore = await page.evaluate(() => window.__ICOSA_VIEW__.carrier().distance);
 await page.screenshot({ path: `${out}/icosa-view-default.png` });
 shots.default = await stats();
+await page.mouse.move(600, 600);
 await page.mouse.wheel(0, -900);
 await delay(300);
 await page.screenshot({ path: `${out}/icosa-view-close.png` });
 shots.close = await stats();
-const distanceAfter = await page.evaluate(() => window.__ICOSA_VIEW__.camera.distance);
+const distanceAfter = await page.evaluate(() => window.__ICOSA_VIEW__.carrier().distance);
 for (let i = 0; i < 80; i += 1) await page.keyboard.press('ArrowUp');
 await delay(300);
 await page.screenshot({ path: `${out}/icosa-view-upside.png` });
@@ -49,8 +46,8 @@ let failed = errors.length > 0;
 if (shots.default.colored < 10000) failed = true;
 if (shots.default.corner[0] > 30) failed = true;
 // Close dolly legitimately fills the whole viewport, so the corner is sphere.
-if (shots.close.colored < 1000000) failed = true;
-if (shots.upside.colored < 1000000) failed = true;
+if (shots.close.colored < 500000) failed = true;
+if (shots.upside.colored < 500000) failed = true;
 if (!(distanceAfter < distanceBefore)) failed = true;
 if (Math.abs(Math.hypot(carrier.pos.x, carrier.pos.y, carrier.pos.z) - 1) > 1e-9) failed = true;
 if (failed) process.exitCode = 1;

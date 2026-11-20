@@ -50,10 +50,10 @@ const c = afterManyUp.carrier;
 const posNorm = Math.hypot(c.pos.x, c.pos.y, c.pos.z);
 const upNorm = Math.hypot(c.up.x, c.up.y, c.up.z);
 
-const beforeDistance = await page.evaluate(() => window.__ICOSA_VIEW__.camera.distance);
+const beforeDistance = await page.evaluate(() => window.__ICOSA_VIEW__.carrier().distance);
 await page.mouse.wheel(0, -500);
 await delay(150);
-const afterDistance = await page.evaluate(() => window.__ICOSA_VIEW__.camera.distance);
+const afterDistance = await page.evaluate(() => window.__ICOSA_VIEW__.carrier().distance);
 const result = { errX, errY, pointY, afterOneUp, afterManyUp: { y: afterManyUp.y, posNorm, upNorm }, beforeDistance, afterDistance, errors };
 console.log(JSON.stringify(result, null, 2));
 await browser.close();

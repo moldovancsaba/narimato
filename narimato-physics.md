@@ -46,7 +46,7 @@ Cursor keys move the camera, not the object.
 - `Up`/`Down` work in the camera's local frame and must not jump when crossing a pole.
 - The orbit is a **free quaternion**: repeated `Up` keeps moving the camera up and loops over the
   pole; there is no pitch clamp.
-- Wheel/pinch changes the carrier sphere radius (`camera.distance`) within `[1.3, 8.0]`.
+- Wheel/pinch changes the carrier sphere radius (`camera.distance`) within `[2.0, 8.0]`.
 - Projection focal length is fixed; the carrier moving is a real dolly, not projection zoom.
 
 ## 3. Object rotation (mouse)
@@ -120,7 +120,9 @@ grab returns `null` — dragging then does nothing.
   - `carrierFrame`, `carrierProject`, `carrierUnproject`, `moveCarrier`; pure and tested.
 - `public/js/icosahedron-viewer.js`
   - split `objectQ` (mouse) and carrier `pos`/`up` (cursor keys);
-  - exact point-follow via `carrierUnproject()`.
+  - exact point-follow via `carrierUnproject()`;
+  - WebGL ray–sphere shader draws the front surface only, with analytic visible geodesic edges
+    (no back faces/edges).
 - `public/js/app.js`
   - pointer input routes to the shared control primitives.
 
@@ -140,7 +142,7 @@ Measured acceptance (1200×1200):
 
 - point-follow error X: `5.061e-7 px`
 - point-follow error Y: `7.054e-7 px`
-- visual acceptance: default/close/upside-down screenshots pass coverage/background checks
+- visual acceptance: WebGL default/close/upside-down screenshots pass coverage/background checks
 - zoom: carrier `3.2 → 1.756` on wheel-up
 - carrier Up: 200 steps each move along previous local Up (`dot(delta, oldUp) > 0`), no reversals
 - carrier position/up remain unit length and tangent throughout
