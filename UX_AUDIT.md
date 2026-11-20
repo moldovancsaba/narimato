@@ -1,5 +1,12 @@
 # NARIMATO — Elephant–Goldfish UX Audit
 
+<!-- delivery-ssot:start -->
+> **Delivery SSOT:** [NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80) · [Definition of Done](docs/DEFINITION_OF_DONE.md) · [Issue index](docs/ISSUE_MAP.md).
+> This document owns durable knowledge; it does not track delivery status.
+>
+> **Related delivery issues:** [UI-02](https://github.com/moldovancsaba/narimato/issues/8) · [A11Y-02](https://github.com/moldovancsaba/narimato/issues/13)
+<!-- delivery-ssot:end -->
+
 **Date:** 2026-11-18 · **Build:** v3.8.0 · **Method:** headless Chromium, fresh throwaway
 world, nine viewports (1440×900, 1280×800, 1024×768, 900×600, 792×600, 844×390,
 792×302, 390×844, 360×740), full landing → intro → join → HUD → mission → target →

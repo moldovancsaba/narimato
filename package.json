@@ -8,6 +8,7 @@
     "start": "node server.js",
     "dev": "node server.js",
     "test": "node --test test/*.test.js",
+    "docs:check": "node scripts/check-docs.mjs",
     "audit:ui": "node scripts/audit-ui.mjs",
     "load:test": "node scripts/load-test.mjs",
     "audit:a11y": "node scripts/audit-a11y.mjs",

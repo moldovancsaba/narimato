@@ -1,5 +1,12 @@
 # NARIMATO — Edge / CDN Asset Delivery (Track B1)
 
+<!-- delivery-ssot:start -->
+> **Delivery SSOT:** [NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80) · [Definition of Done](docs/DEFINITION_OF_DONE.md) · [Issue index](docs/ISSUE_MAP.md).
+> This document owns durable knowledge; it does not track delivery status.
+>
+> **Related delivery issues:** [OPS-04](https://github.com/moldovancsaba/narimato/issues/41)
+<!-- delivery-ssot:end -->
+
 The authoritative game server stays the origin. Edge delivery applies only to **static,
 immutable assets** — narration audio, images and the client bundle. No game state is cached
 or served by the edge.

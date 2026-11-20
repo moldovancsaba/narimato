@@ -1,5 +1,12 @@
 # NARIMATO — Physics, Camera & Rendering Solution
 
+<!-- delivery-ssot:start -->
+> **Delivery SSOT:** [NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80) · [Definition of Done](docs/DEFINITION_OF_DONE.md) · [Issue index](docs/ISSUE_MAP.md).
+> This document owns durable knowledge; it does not track delivery status.
+>
+> **Related delivery issues:** [QA-01](https://github.com/moldovancsaba/narimato/issues/5) · [DOC-01](https://github.com/moldovancsaba/narimato/issues/6) · [RND-01](https://github.com/moldovancsaba/narimato/issues/14) · [CTL-01](https://github.com/moldovancsaba/narimato/issues/26) · [CTL-02](https://github.com/moldovancsaba/narimato/issues/27)
+<!-- delivery-ssot:end -->
+
 > Authoritative record of the final working model, why it works, and the models that were wrong.
 > If code and this document disagree, the code is a regression.
 

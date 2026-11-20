@@ -59,6 +59,11 @@ resets its crust and releases new resources. The game never ends.
 
 ## Documentation
 
+- **[Delivery SSOT](docs/SSOT.md)** — how work is planned, tracked and proven.
+  The board is the single delivery source of truth:
+  [NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80) ·
+  [issue index and doc map](docs/ISSUE_MAP.md) ·
+  [Definition of Done](docs/DEFINITION_OF_DONE.md).
 - [Gameplay guide](GAMEPLAY.md) — story, mission, planets, controls, tips.
 - [Architecture](ARCHITECTURE.md) — stack, modules, protocols, data model, algorithms.
 - [Release notes](RELEASE_NOTES.md) — what shipped in this release and migration notes.
@@ -200,15 +205,20 @@ resets its crust and releases new resources. The game never ends.
   back faces/edges, no stars/halo/HUD.
 - Rationale, failure history and acceptance numbers: [narimato-physics.md](narimato-physics.md).
 
-## Documentation & roadmap
+## Delivery & roadmap
 
-- [ROADMAP.md](ROADMAP.md)
-- [narimato-physics.md](narimato-physics.md) — authoritative solution: carrier camera, object drag, fixed-focal dolly, WebGL ray–sphere rendering, failure history and acceptance tests
-- [REQUESTS_24H.md](REQUESTS_24H.md) — request-by-request delivered/partial/open table.
-- [DELIVERY_TASKS.md](DELIVERY_TASKS.md) — file-level tasks, acceptance tests and delivery order.
+Delivery state, sequencing, dependencies and evidence live on the
+**[NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80)** — not in
+repository status documents. The repository owns durable technical knowledge and links its issues:
+
+- [docs/SSOT.md](docs/SSOT.md) — two-source delivery model and non-negotiable rules.
+- [docs/ISSUE_MAP.md](docs/ISSUE_MAP.md) — every issue and the documents it relates to.
+- [docs/DEFINITION_OF_DONE.md](docs/DEFINITION_OF_DONE.md) — the only definition of done.
+- [narimato-physics.md](narimato-physics.md) — authoritative camera/rendering solution, failure
+  history and acceptance tests.
 - [GUIDE.md](GUIDE.md) — shareable new-pilot guide.
 - [GAMEPLAY.md](GAMEPLAY.md) — controls, missions, surface mode and incidents.
-- [A11Y_CHECKLIST.md](A11Y_CHECKLIST.md) — manual real-device gate.
+- [A11Y_CHECKLIST.md](A11Y_CHECKLIST.md) — accessibility and manual real-device gate.
 
 ## Screenshots
 
@@ -228,7 +238,8 @@ resets its crust and releases new resources. The game never ends.
 ## Development
 
 ```
-npm test                 # 66 tests, node:test, no dependencies
+npm test                 # node:test suite, no dependencies
+npm run docs:check       # markdown links, issue map and version consistency
 npm start                # serve on PORT (default 4173), DATA_DIR (default ./data)
 npm run dev              # alias
 ```
@@ -255,6 +266,7 @@ public/js/interlude.js    interplanetary transit + meteor cinematic
 public/js/result-card.js  session report + share card
 public/js/shared/         geometry, planets, resources, mission, sphere interaction
 test/                     node:test suites
+docs/                     delivery SSOT: board contract, DoD, issue map, intake rules
 media/                    screenshots used by docs
 ```
 
@@ -262,3 +274,9 @@ media/                    screenshots used by docs
 
 Version **3.57.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.
+
+Delivery is tracked on the **[NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80)**
+using the [canonical GDS issue standard](https://github.com/sovereignsquad/general-design-system/issues/81).
+UI/UX/frontend work consumes only the
+[Sovereign Squad General Design System](https://github.com/sovereignsquad/general-design-system);
+accessibility is a release requirement.

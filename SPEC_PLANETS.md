@@ -1,5 +1,12 @@
 # INFINITE PLANET PROGRESSION — implementation contract
 
+<!-- delivery-ssot:start -->
+> **Delivery SSOT:** [NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80) · [Definition of Done](docs/DEFINITION_OF_DONE.md) · [Issue index](docs/ISSUE_MAP.md).
+> This document owns durable knowledge; it does not track delivery status.
+>
+> **Related delivery issues:** [SRV-01](https://github.com/moldovancsaba/narimato/issues/20)
+<!-- delivery-ssot:end -->
+
 Goal: after the escape mission is complete the pilot flies off the current planet, survives a
 random storm/interlude, and lands on the next planet. Every planet is its own multiplayer scene
 (players + robots only from that planet), has a bounded depth, finite mineral deposits, and a

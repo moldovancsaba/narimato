@@ -1,5 +1,12 @@
 # NARIMATO — PLANET SURFACE / TERRAIN LAYER (v4 addendum)
 
+<!-- delivery-ssot:start -->
+> **Delivery SSOT:** [NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80) · [Definition of Done](docs/DEFINITION_OF_DONE.md) · [Issue index](docs/ISSUE_MAP.md).
+> This document owns durable knowledge; it does not track delivery status.
+>
+> **Related delivery issues:** [RND-02](https://github.com/moldovancsaba/narimato/issues/15) · [RND-04](https://github.com/moldovancsaba/narimato/issues/17)
+<!-- delivery-ssot:end -->
+
 Research summary lives in `PLANET_RESEARCH.md`; implementation is
 `public/js/shared/planet.js` (Lead-owned, frozen for this pass).
 

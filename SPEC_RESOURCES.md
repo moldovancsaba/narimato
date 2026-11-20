@@ -1,5 +1,12 @@
 # NARIMATO — RESOURCES / MINING LAYER (v3 addendum)
 
+<!-- delivery-ssot:start -->
+> **Delivery SSOT:** [NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80) · [Definition of Done](docs/DEFINITION_OF_DONE.md) · [Issue index](docs/ISSUE_MAP.md).
+> This document owns durable knowledge; it does not track delivery status.
+>
+> **Related delivery issues:** [CTL-03](https://github.com/moldovancsaba/narimato/issues/28)
+<!-- delivery-ssot:end -->
+
 Story: humanity's seed ship reaches **ICOSA-9**, a rogue geodesic planet. Its crust is a lattice
 of triangle cells; hidden inside are ore veins and impossible materials. Operators mine the
 hidden deposits, contest the grid, and sell finds into the frontier market.

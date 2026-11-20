@@ -1,5 +1,12 @@
 # NARIMATO — Narration Voices
 
+<!-- delivery-ssot:start -->
+> **Delivery SSOT:** [NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80) · [Definition of Done](docs/DEFINITION_OF_DONE.md) · [Issue index](docs/ISSUE_MAP.md).
+> This document owns durable knowledge; it does not track delivery status.
+>
+> **Related delivery issues:** [A11Y-02](https://github.com/moldovancsaba/narimato/issues/13) · [STR-01](https://github.com/moldovancsaba/narimato/issues/35) · [AUD-01](https://github.com/moldovancsaba/narimato/issues/37)
+<!-- delivery-ssot:end -->
+
 Narration is prerecorded and shipped locally; the game never calls a cloud TTS
 service. Each cue is split into sentence clips, so subtitles and voice stay in
 sync and narration can pause between sentences.
