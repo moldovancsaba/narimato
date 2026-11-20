@@ -54,3 +54,16 @@ test('shared controls: vertical drag and arrow directions are direct', () => {
   const a2 = cam2.project(p);
   assert.ok(a2.y < b2.y, 'up cursor moves the view up');
 });
+
+test('camera orbit: cursor movement never changes the centre distance', () => {
+  const cam = new SphereCamera({ width: 1000, height: 800 });
+  cam.reset();
+  const distance = cam.distance;
+  applyArrowKey(cam, 'ArrowLeft');
+  applyArrowKey(cam, 'ArrowUp');
+  applyArrowKey(cam, 'ArrowRight');
+  applyArrowKey(cam, 'ArrowDown');
+  assert.equal(cam.distance, distance, 'camera stays on the fixed-radius orbit');
+  cam.zoom = 4;
+  assert.equal(cam.distance, distance, 'zoom is optical, not a radius change');
+});
