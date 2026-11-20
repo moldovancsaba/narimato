@@ -3,8 +3,8 @@
  * WebGL ray–sphere shader: one object, front surface only, analytic geodesic edges.
  * Mouse rotates objectQ. Cursor keys move the camera carrier pos/up. Wheel changes radius.
  */
-import { SPHERE_SCREEN_FRACTION, CAMERA_DISTANCE, baseIcosahedron } from './shared/geometry.js?v=3.57.0';
-import { shortestArcQuat, carrierFrame, lookFrame, frameProject, frameUnproject, moveCarrier } from './shared/sphere-interaction.js?v=3.57.0';
+import { SPHERE_SCREEN_FRACTION, CAMERA_DISTANCE, baseIcosahedron } from './shared/geometry.js?v=3.58.0';
+import { shortestArcQuat, carrierFrame, lookFrame, frameProject, frameUnproject, moveCarrier } from './shared/sphere-interaction.js?v=3.58.0';
 
 const canvas = document.getElementById('icosa-canvas');
 const gl = canvas.getContext('webgl', { antialias: true, preserveDrawingBuffer: true });
