@@ -17,8 +17,6 @@
         "priority:P0",
         "size:L"
       ],
-      "readiness": "Ready",
-      "status": "Todo (NEXT)",
       "blockedBy": [],
       "unlocks": [
         "SSOT-02",
@@ -49,8 +47,6 @@
         "priority:P1",
         "size:M"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "SSOT-01"
       ],
@@ -78,8 +74,6 @@
         "priority:P1",
         "size:S"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "SSOT-01"
       ],
@@ -109,8 +103,6 @@
         "priority:P0",
         "size:M"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "SSOT-01"
       ],
@@ -137,8 +129,6 @@
         "priority:P1",
         "size:M"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "SSOT-01"
       ],
@@ -168,8 +158,6 @@
         "priority:P2",
         "size:M"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "SSOT-01"
       ],
@@ -200,8 +188,6 @@
         "gds",
         "accessibility"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "SSOT-01"
       ],
@@ -237,8 +223,6 @@
         "gds",
         "accessibility"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "UI-01"
       ],
@@ -272,8 +256,6 @@
         "gds",
         "accessibility"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "UI-01"
       ],
@@ -306,8 +288,6 @@
         "gds",
         "accessibility"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "UI-01",
         "RND-02"
@@ -340,8 +320,6 @@
         "gds",
         "accessibility"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "UI-01"
       ],
@@ -373,8 +351,6 @@
         "accessibility",
         "gds"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "UI-01",
         "UI-02"
@@ -406,8 +382,6 @@
         "size:M",
         "accessibility"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "A11Y-01",
         "UI-02",
@@ -444,8 +418,6 @@
         "priority:P0",
         "size:M"
       ],
-      "readiness": "Ready",
-      "status": "Todo (NEXT)",
       "blockedBy": [],
       "unlocks": [
         "RND-02"
@@ -473,8 +445,6 @@
         "priority:P0",
         "size:L"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "RND-01"
       ],
@@ -514,8 +484,6 @@
         "gds",
         "accessibility"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "RND-02",
         "UI-02"
@@ -545,8 +513,6 @@
         "priority:P0",
         "size:M"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "RND-02"
       ],
@@ -577,8 +543,6 @@
         "priority:P0",
         "size:L"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "RND-02"
       ],
@@ -608,8 +572,6 @@
         "priority:P0",
         "size:M"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "RND-02",
         "RND-03",
@@ -641,8 +603,6 @@
         "priority:P0",
         "size:L"
       ],
-      "readiness": "Ready",
-      "status": "Todo (NEXT)",
       "blockedBy": [],
       "unlocks": [
         "SRV-02",
@@ -673,8 +633,6 @@
         "priority:P0",
         "size:M"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "SRV-01"
       ],
@@ -702,8 +660,6 @@
         "priority:P0",
         "size:M"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "SRV-01",
         "SRV-02"
@@ -734,8 +690,6 @@
         "priority:P1",
         "size:M"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "SRV-01"
       ],
@@ -764,8 +718,6 @@
         "priority:P0",
         "size:M"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "SRV-03",
         "RND-02"
@@ -793,8 +745,6 @@
         "priority:P0",
         "size:M"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "SRV-03",
         "SRV-04",
@@ -825,8 +775,6 @@
         "priority:P0",
         "size:L"
       ],
-      "readiness": "Ready",
-      "status": "Todo (NEXT)",
       "blockedBy": [],
       "unlocks": [
         "CTL-02",
@@ -855,8 +803,6 @@
         "priority:P1",
         "size:M"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "CTL-01"
       ],
@@ -886,8 +832,6 @@
         "priority:P1",
         "size:M"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "RND-02"
       ],
@@ -917,8 +861,6 @@
         "priority:P1",
         "size:S"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "RND-02"
       ],
@@ -947,8 +889,6 @@
         "priority:P2",
         "size:S"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "CTL-01",
         "UI-03"
@@ -978,8 +918,6 @@
         "size:M",
         "accessibility"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "CTL-01",
         "UI-04"
@@ -1009,8 +947,6 @@
         "priority:P1",
         "size:M"
       ],
-      "readiness": "Ready",
-      "status": "Todo (NEXT)",
       "blockedBy": [],
       "unlocks": [
         "EVT-02",
@@ -1039,8 +975,6 @@
         "priority:P1",
         "size:M"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "EVT-01",
         "UI-05"
@@ -1072,8 +1006,6 @@
         "accessibility",
         "gds"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "EVT-01"
       ],
@@ -1103,8 +1035,6 @@
         "priority:P1",
         "size:M"
       ],
-      "readiness": "Ready",
-      "status": "Todo (NEXT)",
       "blockedBy": [],
       "unlocks": [
         "A11Y-02",
@@ -1132,8 +1062,6 @@
         "priority:P2",
         "size:M"
       ],
-      "readiness": "Ready",
-      "status": "Todo (NEXT)",
       "blockedBy": [],
       "unlocks": [
         "REL-01"
@@ -1160,8 +1088,6 @@
         "priority:P1",
         "size:M"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "STR-01"
       ],
@@ -1190,8 +1116,6 @@
         "priority:P0",
         "size:M"
       ],
-      "readiness": "Ready",
-      "status": "Todo (NEXT)",
       "blockedBy": [],
       "unlocks": [
         "OPS-02",
@@ -1220,8 +1144,6 @@
         "priority:P1",
         "size:M"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "OPS-01"
       ],
@@ -1251,8 +1173,6 @@
         "priority:P0",
         "size:M"
       ],
-      "readiness": "Ready",
-      "status": "Todo (NEXT)",
       "blockedBy": [],
       "unlocks": [
         "REL-01"
@@ -1279,8 +1199,6 @@
         "priority:P2",
         "size:M"
       ],
-      "readiness": "Later",
-      "status": "Roadmap (LATER)",
       "blockedBy": [
         "OPS-01"
       ],
@@ -1308,8 +1226,6 @@
         "priority:P2",
         "size:S"
       ],
-      "readiness": "Later",
-      "status": "Roadmap (LATER)",
       "blockedBy": [
         "OPS-02"
       ],
@@ -1335,8 +1251,6 @@
         "priority:P1",
         "size:M"
       ],
-      "readiness": "Ready",
-      "status": "Todo (NEXT)",
       "blockedBy": [],
       "unlocks": [
         "REL-01"
@@ -1363,8 +1277,6 @@
         "priority:P1",
         "size:M"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "OPS-01"
       ],
@@ -1393,8 +1305,6 @@
         "priority:P0",
         "size:M"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "SSOT-02",
         "SSOT-03",
@@ -1444,8 +1354,6 @@
         "priority:P2",
         "size:S"
       ],
-      "readiness": "Blocked",
-      "status": "Backlog (SOONER)",
       "blockedBy": [
         "REL-01"
       ],
