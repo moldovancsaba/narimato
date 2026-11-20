@@ -170,6 +170,7 @@ export class IcosaRenderer {
     this.surface = null;
     this.surfaceSeed = null;
     this.surfaceView = false;
+    this.opaqueSurface = false;
     this.planetTheme = null;
     this._surfaceCanvas = null;
     this._surfaceCtx = null;
@@ -372,6 +373,10 @@ export class IcosaRenderer {
   /** Use the existing cell/material pipeline from a close surface camera. */
   setSurfaceView(enabled) {
     this.surfaceView = !!enabled;
+  }
+
+  setOpaqueSurface(enabled) {
+    this.opaqueSurface = !!enabled;
   }
 
   setFaces(faces) {
@@ -1600,8 +1605,11 @@ export class IcosaRenderer {
 
       const terrain = e.terrain;
       const detailedSurface = !this.surfaceView && !!(this.surface && this.surface.faces.length);
-      ctx.globalAlpha = lodAlpha;
-      if (terrain && this.surfaceView) {
+      ctx.globalAlpha = this.opaqueSurface ? 1 : lodAlpha;
+      if (this.opaqueSurface && terrain && e.terrainRgb) {
+        ctx.fillStyle = `rgb(${e.terrainRgb.r},${e.terrainRgb.g},${e.terrainRgb.b})`;
+        ctx.fill();
+      } else if (terrain && this.surfaceView) {
         // Crust view: show the biome, not a full-cell player-colour wash.
         ctx.fillStyle = e.terrainFill;
         ctx.fill();
