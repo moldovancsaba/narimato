@@ -3,7 +3,7 @@
  * Exactly 20 great-circle face edges; solid sphere; no stars/halo/HUD.
  */
 import { SphereCamera, SPHERE_SCREEN_FRACTION, baseIcosahedron } from './shared/geometry.js';
-import { applyScreenDrag, applyArrowKey } from './shared/orbit-controls.js';
+import { beginTrackball, dragTrackball, applyArrowKey } from './shared/orbit-controls.js';
 
 const canvas = document.getElementById('icosa-canvas');
 const ctx = canvas.getContext('2d');
@@ -115,6 +115,8 @@ canvas.addEventListener('pointerdown', (event) => {
   if (pointers.size === 1) {
     pointer = { id: event.pointerId, lastX: event.clientX, lastY: event.clientY, lastT: performance.now() };
     spin.x = 0; spin.y = 0;
+    const p = pointOf(event);
+    beginTrackball(camera, p.x, p.y, Math.min(W, H) * 0.45);
   } else if (pointers.size === 2) {
     pointer = null;
     const [p, q] = [...pointers.values()];
@@ -133,16 +135,11 @@ canvas.addEventListener('pointermove', (event) => {
     return;
   }
   if (!pointer || pointer.id !== event.pointerId) return;
-  const dx = event.clientX - pointer.lastX;
-  const dy = event.clientY - pointer.lastY;
-  const now = performance.now();
-  const dt = Math.max(0.001, (now - pointer.lastT) / 1000);
+  const p = pointOf(event);
+  dragTrackball(camera, p.x, p.y, Math.min(W, H) * 0.45);
   pointer.lastX = event.clientX;
   pointer.lastY = event.clientY;
-  pointer.lastT = now;
-  applyScreenDrag(camera, dx, dy);
-  spin.x = dx / dt;
-  spin.y = dy / dt;
+  pointer.lastT = performance.now();
 });
 
 function endPointer(event) {

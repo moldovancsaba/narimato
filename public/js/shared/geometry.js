@@ -426,15 +426,14 @@ const qRotate = (q, v) => {
 };
 const qRotateInverse = (q, v) => qRotate(qNormalize({ x: -q.x, y: -q.y, z: -q.z, w: q.w }), v);
 const arcballVector = (xPx, yPx, radius) => {
+  // Bell/Shoemake virtual trackball: project onto a hemisphere, and onto a
+  // hyperbolic sheet outside the ball so the pointer never clamps/flips.
   const r = Math.max(1, Number(radius) || 1);
-  let x = (Number(xPx) || 0) / r;
-  let y = (Number(yPx) || 0) / r;
-  const len = Math.hypot(x, y);
-  if (len > 1) {
-    x /= len;
-    y /= len;
-  }
-  const z = Math.sqrt(Math.max(0, 1 - x * x - y * y));
+  const x = (Number(xPx) || 0) / r;
+  const y = (Number(yPx) || 0) / r;
+  const l2 = x * x + y * y;
+  if (l2 <= 0.5) return { x, y, z: Math.sqrt(Math.max(0, 1 - l2)) };
+  const z = 0.5 / Math.sqrt(l2);
   return { x, y, z };
 };
 
@@ -550,6 +549,39 @@ export class SphereCamera {
     const axis = { x: cross.x / crossLen, y: cross.y / crossLen, z: cross.z / crossLen };
     const delta = qFromAxis(axis, invert ? -angle : angle);
     this._q = qNormalize(qMul(delta, this._arc.q0));
+    this._viewAxis = qRotateInverse(this._q, { x: 0, y: 0, z: 1 });
+    const e = this.viewEuler();
+    this._yaw = e.yaw;
+    this._pitch = e.pitch;
+    return this;
+  }
+
+  /** Begin a free virtual-trackball drag (quaternion, no gimbal/pole lock). */
+  beginVirtualTrackball(xPx, yPx, radius) {
+    this._track = {
+      q0: { ...this._q },
+      start: arcballVector(xPx, yPx, radius),
+    };
+    return this;
+  }
+
+  /** Absolute free rotation from the grabbed sphere point to the pointer. */
+  virtualTrackballTo(xPx, yPx, radius, invert = false) {
+    if (!this._track) return this;
+    const current = arcballVector(xPx, yPx, radius);
+    const a = this._track.start;
+    const cross = {
+      x: a.y * current.z - a.z * current.y,
+      y: a.z * current.x - a.x * current.z,
+      z: a.x * current.y - a.y * current.x,
+    };
+    const len = Math.hypot(cross.x, cross.y, cross.z);
+    const dot = clamp(a.x * current.x + a.y * current.y + a.z * current.z, -1, 1);
+    const angle = Math.atan2(len, dot);
+    if (!(angle > 1e-7)) return this;
+    const axis = { x: cross.x / len, y: cross.y / len, z: cross.z / len };
+    const delta = qFromAxis(axis, invert ? -angle : angle);
+    this._q = qNormalize(qMul(delta, this._track.q0));
     this._viewAxis = qRotateInverse(this._q, { x: 0, y: 0, z: 1 });
     const e = this.viewEuler();
     this._yaw = e.yaw;

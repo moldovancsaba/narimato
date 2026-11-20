@@ -8,7 +8,7 @@
  */
 
 import { SphereCamera, pickFace, childTriangles, faceCentroid } from './shared/geometry.js';
-import { applyScreenDrag } from './shared/orbit-controls.js';
+import { beginTrackball, dragTrackball } from './shared/orbit-controls.js';
 import { World } from './world.js';
 import { IcosaRenderer } from './renderer.js';
 import { UI } from './ui.js';
@@ -2062,7 +2062,7 @@ function bindCanvasInput() {
       };
       canvas.setPointerCapture && canvas.setPointerCapture(event.pointerId);
       const start = localPoint(event);
-      safeCall(camera, 'beginArcball', start.x - camera.width / 2, start.y - camera.height / 2, Math.min(camera.width, camera.height) * 0.45);
+      beginTrackball(camera, start.x - camera.width / 2, start.y - camera.height / 2, Math.min(camera.width, camera.height) * 0.45);
       setHover(null);
     } else if (pointers.size === 2) {
       pointerDown = null;
@@ -2098,10 +2098,10 @@ function bindCanvasInput() {
       pointerDown.lastY = event.clientY;
       pointerDown.moved += Math.abs(dx) + Math.abs(dy);
       if (pointerDown.moved > 2) {
-        // Incremental screen-space rotation: unlike an absolute trackball the
-        // direction cannot flip when the pointer leaves the virtual ball or the
-        // view crosses a pole. Mouse-direct; I flips the screen axes.
-        applyScreenDrag(camera, invertDrag ? -dx : dx, invertDrag ? -dy : dy);
+        // Absolute virtual trackball: the grabbed surface point follows the
+        // pointer; quaternion rotation has no pole/gimbal lock. I inverts.
+        const p = localPoint(event);
+        dragTrackball(camera, p.x - camera.width / 2, p.y - camera.height / 2, Math.min(camera.width, camera.height) * 0.45, invertDrag);
         const stamp = now();
         pointerDown.lastMoveAt = stamp;
         // A direct grab is deterministic; no residual spin can reverse it.

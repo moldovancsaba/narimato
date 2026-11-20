@@ -21,3 +21,13 @@ export function applyArrowKey(camera, key, step = 28) {
     default: break;
   }
 }
+
+/** Begin the shared absolute virtual-trackball gesture. */
+export function beginTrackball(camera, x, y, radius) {
+  if (camera && typeof camera.beginVirtualTrackball === 'function') camera.beginVirtualTrackball(x, y, radius);
+}
+
+/** Continue the absolute trackball gesture; the grabbed surface point follows. */
+export function dragTrackball(camera, x, y, radius, invert = false) {
+  if (camera && typeof camera.virtualTrackballTo === 'function') camera.virtualTrackballTo(x, y, radius, invert);
+}
