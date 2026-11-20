@@ -15,7 +15,7 @@ import http from 'node:http';
 import { setTimeout as delay } from 'node:timers/promises';
 
 import { startServer, MAX_BODY_BYTES } from '../server.js';
-import { WorldCore } from '../lib/world-core.js';
+import { WorldCore, POSE_STATES, STEP_RAD, ROUTE_MAX_ARC, SUPPLY_MIN_SEPARATION_RAD } from '../lib/world-core.js';
 import {
   robotTargetForOnlineHumans,
   randomEscapeDestination,
@@ -58,6 +58,56 @@ async function makeServer(t, config = {}) {
     await rm(dataDir, { recursive: true, force: true });
   });
   return { handle, dataDir, base: `http://127.0.0.1:${handle.port}` };
+}
+
+/** Server with an injectable fake clock: deterministic pose rate limits and TTLs. */
+async function makeClockServer(t, config = {}) {
+  const dataDir = await mkdtemp(path.join(os.tmpdir(), 'icosa-clock-'));
+  const clock = {
+    t: 1_700_000_000_000,
+    now() {
+      return this.t;
+    },
+    advance(ms) {
+      this.t += ms;
+      return this.t;
+    },
+  };
+  const handle = await startServer({
+    port: 0,
+    host: '127.0.0.1',
+    dataDir,
+    quiet: true,
+    now: () => clock.t,
+    config: { clickCooldownMs: 0, saveDebounceMs: 20, bots: 0, depositChance: 0, ...config },
+  });
+  t.after(async () => {
+    await handle.close();
+    await rm(dataDir, { recursive: true, force: true });
+  });
+  return { handle, dataDir, base: `http://127.0.0.1:${handle.port}`, clock };
+}
+
+/** Place a robot on a known leaf and make that leaf its route target (SRV-03). */
+function aimRobotAtLeaf(core, robot, label, now = Date.now()) {
+  const cell = core.getLeafMap().get(label);
+  core._applyRobotPose(robot, cell.centroid, null, 'idle', now);
+  robot.route = {
+    playerId: robot.playerId,
+    seed: 1,
+    serial: robot.serial,
+    waypoints: [{ leaf: label, pos: { ...cell.centroid }, arriveAt: now }],
+    index: 0,
+    state: 'idle',
+    stateSince: now,
+    stateUntil: now + 1_000_000,
+    intent: { kind: 'mine', leaf: label },
+    replans: 0,
+    plannedAt: now,
+    lastTickAt: now,
+  };
+  robot.nextClickAt = now;
+  return cell;
 }
 
 async function postJson(base, pathname, body) {
@@ -860,6 +910,11 @@ test('multi-planet: meteor reset + rooms + escape routing', async (t) => {
   assert.ok(dest >= 1 && dest <= 5, `destination +1..+5, got ${dest}`);
   assert.equal(escape.json.planetName, planetName(dest));
   assert.equal(escape.json.planetDepth, planetDepth(dest));
+  // The carried ore can already satisfy the destination refit; the first click
+  // would then legitimately fire a meteor and reseed the grid while this test
+  // asserts room isolation. Clear it so the isolation assertions observe the
+  // click itself (mission/incident behaviour is covered by its own tests).
+  handle.manager.planetCore(dest).findByToken(miner.json.token).oreCounts = {};
   // Old-room stream for the escaped token was closed by the server.
   await delay(80);
   const minerSse2 = await openSse(base, miner.json.token);
@@ -1090,11 +1145,29 @@ test('surface: pose and leave broadcasts reach every human in the planet room', 
   assert.equal(frameB.tag, 'SURFA');
   assert.equal(frameB.moving, true);
   assert.equal(JSON.stringify(frameB).includes(tokenA), false);
+  assert.equal(typeof frameA.leaf, 'string');
+  assert.ok(frameA.rev >= 1);
+  assert.equal(frameA.rev, frameB.rev, 'one revision reaches every client');
+  assert.equal(frameA.leaf, res.json.leaf, 'response and frame name the same leaf');
+  assert.deepEqual(frameA.heading, res.json.heading);
+  assert.equal(typeof frameA.bearingRad, 'number');
+  assert.ok(frameA.bearingRad >= 0 && frameA.bearingRad < Math.PI * 2);
+  assert.equal(frameA.state, 'walk');
+
+  // state (not only the transient frame) carries the authoritative surface pose.
+  const posedState = (await getJson(base, '/api/state')).json.state;
+  const posedPlayer = posedState.players.find((player) => player.id === joinA.json.player.id);
+  assert.deepEqual(posedPlayer.surface.pos, pose);
+  assert.equal(posedPlayer.surface.rev, res.json.rev);
+  assert.equal(posedPlayer.surface.leaf, res.json.leaf);
 
   const leave = await postJson(base, '/api/action', { token: tokenA, type: 'surface_leave' });
   assert.equal(leave.status, 200);
   const leaveB = await sseB.waitForEvent('surface_leave', (event) => event.playerId === joinA.json.player.id, { timeout: 3000 });
   assert.equal(leaveB.playerId, joinA.json.player.id);
+  assert.equal(leaveB.reason, 'leave');
+  const leftState = (await getJson(base, '/api/state')).json.state;
+  assert.equal(leftState.players.find((player) => player.id === joinA.json.player.id).surface, undefined);
 });
 
 // ------------------------------------------------------- emergency supply
@@ -1282,4 +1355,333 @@ test('supply: rejected when the refit is already complete, and available again o
   const repeat = await postJson(base, '/api/action', { token, type: 'supply' });
   assert.equal(repeat.status, 200);
   assert.ok(repeat.json.cells.length >= 1);
+});
+
+
+// --------------------------------------------- SRV-01 surface authority (HTTP)
+
+test('surface: invalid poses and the 60 ms rate limit reject without mutating state', async (t) => {
+  const { base, handle, clock } = await makeClockServer(t);
+  const join = await postJson(base, '/api/join', { tag: 'RATE1' });
+  assert.equal(join.status, 200);
+  const token = join.json.token;
+  const playerId = join.json.player.id;
+  const core = handle.manager.planetCore(0);
+
+  for (const pos of [
+    { x: 'not-a-number', y: 0, z: 1 },
+    { x: 0, y: 0, z: 0 },
+    { x: 0, y: 0, z: 0.01 },
+    { x: 0, y: 0, z: 12 },
+  ]) {
+    const res = await postJson(base, '/api/action', { token, type: 'surface', pos, moving: true });
+    assert.equal(res.status, 409, `rejects ${JSON.stringify(pos)}`);
+    assert.equal(res.json.error, 'INVALID_POSE');
+  }
+  const invalidState = await postJson(base, '/api/action', {
+    token,
+    type: 'surface',
+    pos: { x: 0, y: 0, z: 1 },
+    state: 'dance',
+  });
+  assert.equal(invalidState.status, 409);
+  assert.equal(invalidState.json.error, 'INVALID_STATE');
+  assert.equal(core.poseCount, 0, 'no rejected request created a pose');
+  assert.equal(core.poseRev, 0);
+  assert.equal((await getJson(base, '/api/state')).json.state.players[0].surface, undefined);
+
+  const first = await postJson(base, '/api/action', {
+    token,
+    type: 'surface',
+    pos: { x: 0, y: 0, z: 1 },
+    heading: 0.4,
+    moving: true,
+  });
+  assert.equal(first.status, 200);
+  assert.ok(first.json.rev >= 1);
+  assert.equal(typeof first.json.leaf, 'string');
+  assert.equal(typeof first.json.updatedAt, 'number');
+
+  clock.advance(59);
+  const limited = await postJson(base, '/api/action', { token, type: 'surface', pos: { x: 0, y: 0, z: 1 }, moving: true });
+  assert.equal(limited.status, 409);
+  assert.equal(limited.json.error, 'POSE_RATE_LIMIT');
+  assert.equal(core.poseRev, first.json.rev, 'rejection never advances the revision');
+  assert.equal(core.getPose(playerId).rev, first.json.rev);
+  assert.equal(core.getPose(playerId).updatedAt, first.json.updatedAt, 'last sample survives a rejection');
+
+  clock.advance(1);
+  const second = await postJson(base, '/api/action', { token, type: 'surface', pos: { x: 0, y: 0, z: 1 }, moving: true });
+  assert.equal(second.status, 200);
+  assert.ok(second.json.rev > first.json.rev, 'rev is monotonic');
+});
+
+test('surface: TTL expiry broadcasts one surface_leave with reason expire', async (t) => {
+  const { base, handle, clock } = await makeClockServer(t);
+  const join = await postJson(base, '/api/join', { tag: 'TTL1' });
+  const token = join.json.token;
+  const playerId = join.json.player.id;
+  const sse = await openSse(base, token);
+  t.after(async () => {
+    await sse.close();
+  });
+  await sse.waitForEvent('snapshot');
+  const res = await postJson(base, '/api/action', { token, type: 'surface', pos: { x: 0, y: 0, z: 1 }, moving: true });
+  assert.equal(res.status, 200);
+  await sse.waitForEvent('surface', (event) => event.playerId === playerId, { timeout: 3000 });
+
+  const stateFrom = sse.events.length;
+  clock.advance(5_001);
+  handle.app.pump();
+  const leave = await sse.waitForEvent('surface_leave', (event) => event.playerId === playerId, { timeout: 3000 });
+  assert.equal(leave.reason, 'expire');
+  const state = (await getJson(base, '/api/state')).json.state;
+  assert.equal(state.players.find((player) => player.id === playerId).surface, undefined, 'state clears within 5 s of silence');
+  assert.equal(handle.manager.planetCore(0).getPose(playerId), null);
+  const clearedFrame = await sse.waitForEvent(
+    'state',
+    (event) => !event.state.players.find((player) => player.id === playerId)?.surface,
+    { timeout: 3000, from: stateFrom },
+  );
+  assert.equal(clearedFrame.state.players.find((player) => player.id === playerId).surface, undefined);
+
+  const leavesBefore = sse.events.filter((event) => event.type === 'surface_leave').length;
+  handle.app.pump();
+  await delay(150);
+  assert.equal(sse.events.filter((event) => event.type === 'surface_leave').length, leavesBefore, 'exactly one leave');
+});
+
+test('surface: SSE disconnect clears the pose for the room', async (t) => {
+  const { base } = await makeServer(t, { bots: 0 });
+  const joinA = await postJson(base, '/api/join', { tag: 'DISA' });
+  const joinB = await postJson(base, '/api/join', { tag: 'DISB' });
+  const sseA = await openSse(base, joinA.json.token);
+  const sseB = await openSse(base, joinB.json.token);
+  t.after(async () => {
+    await sseA.close();
+    await sseB.close();
+  });
+  await Promise.all([sseA.waitForEvent('snapshot'), sseB.waitForEvent('snapshot')]);
+  const posed = await postJson(base, '/api/action', {
+    token: joinA.json.token,
+    type: 'surface',
+    pos: { x: 0, y: 0.1, z: 1 },
+    moving: true,
+  });
+  assert.equal(posed.status, 200);
+  await sseB.waitForEvent('surface', (event) => event.playerId === joinA.json.player.id, { timeout: 3000 });
+
+  const leavePromise = sseB.waitForEvent('surface_leave', (event) => event.playerId === joinA.json.player.id, { timeout: 6000 });
+  await sseA.close();
+  const leave = await leavePromise;
+  assert.equal(leave.reason, 'disconnect');
+  await waitFor(async () => {
+    const state = (await getJson(base, '/api/state')).json.state;
+    return state.players.find((player) => player.id === joinA.json.player.id).surface === undefined;
+  });
+});
+
+test('surface: room isolation keeps poses on their own planet', async (t) => {
+  const { base, handle } = await makeServer(t, { bots: 0, planetSeed: 424242 });
+  const joinA = await postJson(base, '/api/join', { tag: 'ROOMA' });
+  const joinB = await postJson(base, '/api/join', { tag: 'ROOMB' });
+  const core0 = handle.manager.planetCore(0);
+  const sseB = await openSse(base, joinB.json.token);
+  t.after(async () => {
+    await sseB.close();
+  });
+  await sseB.waitForEvent('snapshot');
+
+  grantMission(core0, joinA.json.token, 0);
+  const escape = await postJson(base, '/api/action', { token: joinA.json.token, type: 'escape' });
+  assert.equal(escape.status, 200);
+  const destination = escape.json.planetIndex;
+  const sseA = await openSse(base, joinA.json.token);
+  t.after(async () => {
+    await sseA.close();
+  });
+  await sseA.waitForEvent('snapshot');
+
+  const marker = sseB.events.length;
+  const posed = await postJson(base, '/api/action', {
+    token: joinA.json.token,
+    type: 'surface',
+    pos: { x: 0, y: 0.2, z: 1 },
+    moving: true,
+  });
+  assert.equal(posed.status, 200);
+  assert.equal(posed.json.planetIndex, destination);
+  await sseA.waitForEvent('surface', (event) => event.playerId === joinA.json.player.id, { timeout: 3000 });
+  await delay(400);
+
+  const leaked = sseB.events.slice(marker).filter((event) => event.type === 'surface' || event.type === 'surface_leave');
+  assert.deepEqual(leaked, [], 'the old planet room never receives the other planet pose');
+  const planet0State = (await getJson(base, '/api/state')).json.state;
+  assert.equal(planet0State.players.find((player) => player.id === joinA.json.player.id).surface, undefined);
+  const destinationCore = handle.manager.planetCore(destination);
+  assert.ok(destinationCore.getPose(joinA.json.player.id), 'the pose lives on the destination planet');
+  assert.equal(destinationCore.getPose(joinA.json.player.id).leaf, posed.json.leaf);
+});
+
+// --------------------------------------------- SRV-02 robot routing (SSE)
+
+test('robot routing: surface frames advance along planned waypoints', async (t) => {
+  const { base, handle, clock } = await makeClockServer(t, { bots: 1, clickCooldownMs: 0 });
+  // Deterministic pumping: one robot tick and one frame flush per fake 100 ms.
+  if (handle.app._pumpTimer) clearInterval(handle.app._pumpTimer);
+  handle.app._pumpTimer = null;
+  const join = await postJson(base, '/api/join', { tag: 'ROUTE1' });
+  const sse = await openSse(base, join.json.token);
+  t.after(async () => {
+    await sse.close();
+  });
+  await sse.waitForEvent('snapshot');
+  const core = handle.manager.planetCore(0);
+  const robot = await waitFor(() => core._robots[0] || null, { timeout: 5000 });
+  const from = sse.events.length;
+  for (let tick = 0; tick < 160; tick += 1) {
+    clock.advance(100);
+    handle.app.pump();
+  }
+  await delay(200); // let the SSE reader drain the frames written above
+  const frames = sse.events
+    .slice(from)
+    .filter((event) => event.type === 'surface' && event.playerId === robot.playerId);
+  assert.ok(frames.length >= 60, `captured ${frames.length} robot surface frames`);
+  let travelled = 0;
+  for (let index = 1; index < frames.length; index += 1) {
+    const a = frames[index - 1].pos;
+    const b = frames[index].pos;
+    const angle = Math.acos(Math.min(1, Math.max(-1, a.x * b.x + a.y * b.y + a.z * b.z)));
+    assert.ok(angle <= 2 * STEP_RAD + 1e-6, `no teleport between frames (${angle} <= ${2 * STEP_RAD})`);
+    travelled += angle;
+    assert.ok(frames[index].rev >= frames[index - 1].rev, 'revision never rewinds');
+  }
+  assert.ok(travelled > 0.05, `the robot walks along its route (${travelled} rad)`);
+  for (const frame of frames) {
+    assert.ok(Number.isFinite(frame.rev) && frame.rev > 0);
+    assert.ok(Math.abs(Math.hypot(frame.pos.x, frame.pos.y, frame.pos.z) - 1) < 1e-9);
+    assert.ok(POSE_STATES.includes(frame.state), `closed state vocabulary, got ${frame.state}`);
+    assert.equal(JSON.stringify(frame).includes(join.token), false, 'tokens never enter frames');
+  }
+});
+
+// --------------------------------------------- SRV-03 surface_mine ordering
+
+test('surface_mine ordering: cell frame precedes the beam frame', async (t) => {
+  const { base, handle } = await makeServer(t, { bots: 1, clickCooldownMs: 0 });
+  const join = await postJson(base, '/api/join', { tag: 'MINE1' });
+  const sse = await openSse(base, join.json.token);
+  t.after(async () => {
+    await sse.close();
+  });
+  await sse.waitForEvent('snapshot');
+  const core = handle.manager.planetCore(0);
+  const robot = await waitFor(() => core._robots[0] || null, { timeout: 5000 });
+  const label = core.getLeaves().find(([leafLabel, owner]) => owner !== robot.index)[0];
+  const from = sse.events.length;
+  aimRobotAtLeaf(core, robot, label, Date.now());
+  core._robotClick(robot, Date.now());
+  handle.app.pump();
+
+  const mine = await sse.waitForEvent('surface_mine', (event) => event.playerId === robot.playerId, { timeout: 3000, from });
+  const batch = sse.events.slice(from);
+  const mineIndex = batch.indexOf(mine);
+  assert.ok(mineIndex >= 0);
+  const cellIndex = batch.findIndex(
+    (event, index) => index < mineIndex && event.type === 'cell' && event.cell[0] === mine.label,
+  );
+  assert.ok(cellIndex >= 0, 'the changed cell frame precedes the beam in the drained batch');
+  assert.equal(mine.label, label, 'the beam names the cell under the robot pose');
+  assert.equal(core.resolveLeaf(core.getPose(robot.playerId).pos).label, mine.label);
+  assert.ok('resourceId' in mine && 'points' in mine && 'kind' in mine && 'broke' in mine, 'additive beam contract');
+});
+
+// --------------------------------------------- SRV-04 supply focus (SSE)
+
+test('supply focus: two clients receive placements and both mine on first click', async (t) => {
+  const { base, handle } = await makeServer(t, { bots: 0, depositChance: 1, clickCooldownMs: 0, planetSeed: 424242 });
+  const joinA = await postJson(base, '/api/join', { tag: 'SUPFOCA' });
+  const joinB = await postJson(base, '/api/join', { tag: 'SUPFOCB' });
+  const core0 = handle.manager.planetCore(0);
+  core0.findByToken(joinA.json.token).createdAt = Date.now() - SUPPLY_MIN_AGE_MS - 10_000;
+  const sseA = await openSse(base, joinA.json.token);
+  const sseB = await openSse(base, joinB.json.token);
+  t.after(async () => {
+    await sseA.close();
+    await sseB.close();
+  });
+  await Promise.all([sseA.waitForEvent('snapshot'), sseB.waitForEvent('snapshot')]);
+
+  const res = await postJson(base, '/api/action', { token: joinA.json.token, type: 'supply' });
+  assert.equal(res.status, 200);
+  assert.equal(res.json.placements.length, 2, 'one placement per online human');
+  const placedIds = new Set(res.json.placements.map((placement) => placement.playerId));
+  assert.ok(placedIds.has(joinA.json.player.id) && placedIds.has(joinB.json.player.id));
+  const labels = new Set(res.json.cells.map((cell) => cell.label));
+  for (const placement of res.json.placements) {
+    assert.ok(labels.has(placement.leaf), 'placement sits inside a supply cell');
+    assert.equal(core0.resolveLeaf(placement.pos).label, placement.leaf);
+    assert.ok(Math.abs(Math.hypot(placement.pos.x, placement.pos.y, placement.pos.z) - 1) < 1e-9);
+    assert.ok(Math.abs(placement.heading.x * placement.pos.x + placement.heading.y * placement.pos.y + placement.heading.z * placement.pos.z) < 1e-9);
+  }
+  for (let i = 0; i < res.json.placements.length; i += 1) {
+    for (let j = i + 1; j < res.json.placements.length; j += 1) {
+      const a = res.json.placements[i].pos;
+      const b = res.json.placements[j].pos;
+      assert.ok(a.x * b.x + a.y * b.y + a.z * b.z < Math.cos(SUPPLY_MIN_SEPARATION_RAD), 'placements keep separation');
+    }
+  }
+
+  const [frameA, frameB] = await Promise.all([
+    sseA.waitForEvent('supply_focus', () => true, { timeout: 3000 }),
+    sseB.waitForEvent('supply_focus', () => true, { timeout: 3000 }),
+  ]);
+  assert.equal(frameA.impactLabel, res.json.impactLabel);
+  assert.deepEqual(frameA.placements, res.json.placements);
+  assert.deepEqual(frameB.placements, res.json.placements);
+  assert.equal(frameA.rev, res.json.rev);
+  assert.equal(frameB.rev, res.json.rev);
+  assert.equal(frameA.expiresAt, res.json.expiresAt);
+  assert.ok(frameA.expiresAt > Date.now());
+  assert.equal(JSON.stringify(frameB).includes(joinA.json.token), false);
+  assert.equal(JSON.stringify(frameB).includes(joinB.json.token), false);
+
+  // Every pilot was actually relocated in the authoritative state.
+  const state = (await getJson(base, '/api/state')).json.state;
+  for (const placement of res.json.placements) {
+    const player = state.players.find((entry) => entry.id === placement.playerId);
+    assert.deepEqual(player.surface.pos, placement.pos);
+    assert.equal(player.surface.leaf, placement.leaf);
+  }
+
+  // Both humans can harvest the marked cells on their first click.
+  const firstCell = res.json.cells[0];
+  const mineB = await postJson(base, '/api/action', { token: joinB.json.token, type: 'click', label: firstCell.label });
+  assert.equal(mineB.status, 200);
+  assert.equal(mineB.json.resource.id, firstCell.resourceId, 'first click mines the supplied unit');
+});
+
+test('supply focus: join during the TTL returns the same placements', async (t) => {
+  const { base, handle } = await makeServer(t, { bots: 0, depositChance: 1, clickCooldownMs: 0, planetSeed: 424242 });
+  const joinA = await postJson(base, '/api/join', { tag: 'SUPJOINA' });
+  const core0 = handle.manager.planetCore(0);
+  core0.findByToken(joinA.json.token).createdAt = Date.now() - SUPPLY_MIN_AGE_MS - 10_000;
+
+  const res = await postJson(base, '/api/action', { token: joinA.json.token, type: 'supply' });
+  assert.equal(res.status, 200);
+  assert.equal(res.json.placements.length, 1);
+
+  const late = await postJson(base, '/api/join', { tag: 'SUPJOINC' });
+  assert.equal(late.status, 200);
+  assert.ok(late.json.focus, 'the join response carries the advisory focus');
+  assert.deepEqual(late.json.focus.placements, res.json.placements, 'same placements inside the TTL');
+  assert.equal(late.json.focus.rev, res.json.rev);
+  assert.equal(late.json.focus.expiresAt, res.json.expiresAt);
+
+  // The late joiner can mine the marked cells on its first click.
+  const firstCell = res.json.cells[0];
+  const mine = await postJson(base, '/api/action', { token: late.json.token, type: 'click', label: firstCell.label });
+  assert.equal(mine.status, 200);
+  assert.equal(mine.json.resource.id, firstCell.resourceId);
 });

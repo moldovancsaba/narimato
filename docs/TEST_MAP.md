@@ -22,7 +22,7 @@ real count.
 | `test/orbit-controls.test.js` | Shared drag/travel direction primitives | `public/js/shared/orbit-controls.js` | CTL-01 |
 | `test/planet-theme.test.js` | Planet palette/theme identity | `public/js/shared/planet.js`, CSS | — (delivered) |
 | `test/planet.test.js` | Deterministic terrain, biomes, deposits, client/server parity | `public/js/shared/planet.js` | — (delivered) |
-| `test/server.test.js` | HTTP/SSE protocol, rooms, escape, persistence, static safety, health | `server.js`, `lib/planet-manager.js` | SRV-01, TST-01, OPS-03, SEC-01 |
+| `test/server.test.js` | HTTP/SSE protocol, rooms, escape, persistence, static safety, health, surface pose/leave/mine frames, supply focus | `server.js`, `lib/planet-manager.js` | SRV-01, SRV-03, SRV-04, TST-01, OPS-03, SEC-01 |
 | `test/story-copy.test.js` | Copy SSOT: plural/naming table, Captain's Log grammar, threshold rendering, incident copy, doc-block sync and drift failure, guide card DOM contract | `public/js/story-copy.js`, `scripts/sync-story-copy.mjs` | STR-02 |
 | `test/sphere-interaction.test.js` | Carrier frame, projection/unprojection, point-follow, shortest arc | `public/js/shared/sphere-interaction.js` | RND-01, CTL-01 |
 | `test/surface-camera.test.js` | Surface camera framing and carrier math | `public/js/shared/surface-camera.js` | RND-01 |
@@ -30,7 +30,7 @@ real count.
 | `test/test-count.test.js` | TAP summary parsing, marker verification, failure propagation | `scripts/test-count.mjs` | QA-01 |
 | `test/tetra-ship.test.js` | Five-tetrahedron ship geometry and incident models | `public/js/shared/tetra-ship.js` | EVT-02 |
 | `test/version.test.js` | Version slots, lineages, fix/bump, semver ordering | `scripts/check-version.mjs` | SSOT-03 |
-| `test/world-core.test.js` | Authoritative world: players, scoring, breaks, locks, resources, robots, persistence, incidents | `lib/world-core.js` | SRV-01, SRV-03, EVT-01, OPS-03 |
+| `test/world-core.test.js` | Authoritative world: players, scoring, breaks, locks, resources, robots, persistence, incidents, surface poses, seeded routes, resolver mining, supply placements | `lib/world-core.js` | SRV-01, SRV-02, SRV-03, SRV-04, EVT-01, OPS-03 |
 
 ## Rules
 

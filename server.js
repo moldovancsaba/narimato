@@ -5,8 +5,9 @@
  *   - static serving of `public/` (traversal-safe, MIME, no-store html/js/css)
  *   - REST: /api/join, /api/action, /api/state, /api/world, /api/leaderboard,
  *     /api/health, /api/metrics (observability), /api/telemetry (privacy-safe client beacons)
- *   - SSE: /api/events?token=… (snapshot{state,leaves}, throttled state ~1/s +
- *     on player changes, cell, break, toast, `:hb` heartbeat every 15s)
+ *   - SSE: /api/events?token=… (snapshot{state,leaves,focus}, throttled state ~1/s +
+ *     on player changes, cell, break, resource, surface <= 10 Hz, surface_leave,
+ *     surface_mine, supply, supply_focus, toast, `:hb` heartbeat every 15s)
  *   - persistent world in DATA_DIR/world.json (via lib/world-core.js), saved
  *     debounced and flushed on shutdown
  *   - graceful SIGINT/SIGTERM shutdown
@@ -378,22 +379,38 @@ export class InfiniteServerApp {
 
     if (type === 'surface' || type === 'surface_leave') {
       const result = type === 'surface'
-        ? await this.manager.surfacePose({ token: body.token, pos: body.pos, heading: body.heading, moving: body.moving })
+        ? await this.manager.surfacePose({
+            token: body.token,
+            pos: body.pos,
+            heading: body.heading,
+            state: body.state,
+            moving: body.moving,
+          })
         : await this.manager.surfaceLeave({ token: body.token });
       if (!result.ok) {
         sendJson(res, 409, { ok: false, error: result.error, message: result.message });
         return;
       }
-      this._broadcastToRoom(result.planetIndex, {
-        type: type === 'surface' ? 'surface' : 'surface_leave',
+      // The pump owns both the coalesced `surface` frame (<= 10 Hz per player)
+      // and the one-shot `surface_leave`; never fan out directly from the request.
+      this.pump();
+      if (type === 'surface_leave') {
+        sendJson(res, 200, { ok: true, planetIndex: result.planetIndex, playerId: result.playerId });
+        return;
+      }
+      sendJson(res, 200, {
+        ok: true,
+        planetIndex: result.planetIndex,
         playerId: result.playerId,
-        tag: result.tag,
-        color: result.color,
+        leaf: result.leaf,
         pos: result.pos,
         heading: result.heading,
+        bearingRad: result.bearingRad,
+        state: result.state,
         moving: result.moving,
+        rev: result.rev,
+        updatedAt: result.updatedAt,
       });
-      sendJson(res, 200, { ok: true, planetIndex: result.planetIndex });
       return;
     }
 
@@ -417,6 +434,21 @@ export class InfiniteServerApp {
         message: result.message,
         playerId: result.playerId,
       });
+      // SRV-04: the additive focus frame carries one placement per online human
+      // and converges reconnect via `snapshot.focus` / the join response.
+      if (result.focus) {
+        this._broadcastSupplyFocus(result.planetIndex, {
+          type: 'supply_focus',
+          impactLabel: result.impactLabel,
+          impactPos: result.focus.impactPos,
+          cells: result.focus.cells,
+          resources: result.focus.resources,
+          placements: result.focus.placements,
+          rev: result.focus.rev,
+          expiresAt: result.focus.expiresAt,
+          message: result.focus.message,
+        });
+      }
       this.pump();
       sendJson(res, 200, {
         ok: true,
@@ -426,6 +458,10 @@ export class InfiniteServerApp {
         resources: result.resources,
         message: result.message,
         playerId: result.playerId,
+        placements: result.placements,
+        rev: result.rev,
+        expiresAt: result.expiresAt,
+        focus: result.focus,
         mission: result.mission,
         state: result.state,
         leaves: result.leaves,
@@ -459,6 +495,10 @@ export class InfiniteServerApp {
       playersOnline: core.onlineHumanCount(),
       playersTotal: core.players.length,
       robots: core.robotInfos().length,
+      posesLive: core.poseCount,
+      robotReplans: core.robotReplanCount,
+      robotMineRejected: core.robotMineRejectedCount,
+      supplyDrops: core.supplyDropCount,
       faces: core.leafCount,
       clicks: core.totalClicks,
       breaks: core.totalBreaks,
@@ -559,6 +599,7 @@ export class InfiniteServerApp {
       type: 'snapshot',
       state: this.manager.decorateState(core.getState(), index),
       leaves: core.getLeaves(),
+      focus: core.getFocus(),
     };
     this._writeClient(client, `data: ${JSON.stringify(snapshot)}\n\n`);
 
@@ -611,7 +652,11 @@ export class InfiniteServerApp {
     );
     if (!stillConnected) {
       const core = this.manager.planetCore(client.planetIndex);
-      if (core && core.setOnline(client.playerId, false)) this.pump();
+      if (core && core.setOnline(client.playerId, false)) {
+        // SRV-01: a closed tab leaves no ghost body in `state`.
+        core.clearSurfacePose(client.playerId, 'disconnect');
+        this.pump();
+      }
     }
   }
 
@@ -628,9 +673,31 @@ export class InfiniteServerApp {
 
   _broadcastToRoom(index, payloadObject) {
     const clients = this._roomClients(index);
-    if (!clients.length) return;
+    if (!clients.length) return { sent: 0, failed: 0 };
     const payload = `data: ${JSON.stringify(payloadObject)}\n\n`;
-    for (const client of clients) this._writeClient(client, payload);
+    let sent = 0;
+    let failed = 0;
+    for (const client of clients) {
+      if (this._writeClient(client, payload)) sent += 1;
+      else failed += 1;
+    }
+    return { sent, failed };
+  }
+
+  /**
+   * Supply focus converges even when the first frame write fails: one retry
+   * after 250 ms; `snapshot.focus` and the join response are the final fallback.
+   */
+  _broadcastSupplyFocus(index, payloadObject, retries = 1) {
+    const attempt = (remaining) => {
+      if (this._closed) return;
+      const { failed } = this._broadcastToRoom(index, payloadObject);
+      if (failed > 0 && remaining > 0) {
+        const timer = setTimeout(() => attempt(remaining - 1), 250);
+        timer.unref?.();
+      }
+    };
+    attempt(retries);
   }
 
   /** Meteor reset: event + fresh snapshot to the affected planet room only. */
@@ -664,6 +731,15 @@ export class InfiniteServerApp {
     for (const { index, core } of this.manager.loadedPlanets()) {
       const events = core.drainEvents();
       if (events.length) for (const event of events) this._broadcastToRoom(index, event);
+
+      // Coalesced surface frames (humans + robots share one stream) after the
+      // per-planet robot tick that `manager.tick()` already performed.
+      const frames = core.flushPoses(this.now());
+      for (const frame of frames) this._broadcastToRoom(index, frame);
+      // Expiry leaves are emitted by the sweep above; publish them in this pump
+      // so a silent body disappears without waiting for another tick.
+      const expired = core.drainEvents();
+      if (expired.length) for (const event of expired) this._broadcastToRoom(index, event);
 
       let tracker = this._planetState.get(index);
       if (!tracker) {

@@ -1208,6 +1208,31 @@ export function createSurfaceMode({
       mineTotal += 1;
       return true;
     },
+    /**
+     * SRV-04: apply the authoritative server placement pose for this pilot.
+     * The server owns the point; the client only adopts it (no local centroid).
+     */
+    applyPlacement: (placement) => {
+      if (!active || !placement || !placement.pos) return false;
+      const x = Number(placement.pos.x);
+      const y = Number(placement.pos.y);
+      const z = Number(placement.pos.z);
+      if (![x, y, z].every(Number.isFinite)) return false;
+      pos = norm({ x, y, z });
+      const forward = placement.heading;
+      const hasForward =
+        forward &&
+        Number.isFinite(Number(forward.x)) &&
+        Number.isFinite(Number(forward.y)) &&
+        Number.isFinite(Number(forward.z));
+      headingVec = hasForward ? tangentAt(pos, forward) : tangentAt(pos, { x: 1, y: 0, z: 0 });
+      const basis = tangentBasis(pos);
+      heading = Math.atan2(dot(headingVec, basis.east), dot(headingVec, basis.north));
+      travel = Math.max(0, travel - 0.0001);
+      harvestTimer = 0;
+      harvestQueue.length = 0;
+      return true;
+    },
     /** Relocate the pilot to a known impact cell (emergency supply). */
     focusLabel: (label) => {
       if (!active || !label) return false;

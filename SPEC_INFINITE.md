@@ -90,20 +90,42 @@ known players; a tokenless visitor with an existing tag gets `TAG_IN_USE`.
 
 `GET /api/events?token=…` SSE, first message:
 ```js
-{ type:"snapshot", state: State, leaves: Leaf[] }
+{ type:"snapshot", state: State, leaves: Leaf[], focus: SupplyFocus|null }
 ```
 then:
 ```js
 { type:"state", state: State }                     // players/scores/stats, ~1/s + on player changes
 { type:"cell", cell: Leaf, playerId, points, kind:"claim"|"steal"|"reinforce", broke:false }
 { type:"break", label, depth, byPlayerId, points, children: Leaf[] }
+{ type:"surface", playerId, tag, color, leaf, pos, local, heading, bearingRad,
+  state:"idle"|"walk"|"turn"|"mine", moving, updatedAt, rev }        // <= 10 Hz per player
+{ type:"surface_leave", playerId, reason:"leave"|"disconnect"|"expire"|"escape"|"reset"|"robot" }
+{ type:"surface_mine", playerId, tag, color, label, pos, resourceId|null, points, kind, broke, rev }
+{ type:"supply_focus", impactLabel, impactPos, cells, resources, placements, rev, expiresAt, message }
 { type:"toast", message, kind }
 ```
-`POST /api/action` `{token, type:"click", label}` → 
+The `cell`/`break` frame for a mined label always precedes its `surface_mine` frame in the same
+drained batch. `surface` frames are coalesced by the 100 ms pump; `surface_leave` fires once per
+pose removal with a closed reason.
+`POST /api/action` `{token, type:"click", label}` →
 ```js
 { ok:true, label, cell: Leaf, points, kind, score, broke, children?: Leaf[] }
 // 409 NOT_JOINED | COOLDOWN | NOT_A_LEAF | INVALID_LABEL
 ```
+
+`POST /api/action` `{token, type:"surface", pos, heading?, state?, moving?}` →
+```js
+{ ok:true, planetIndex, playerId, leaf, pos, heading, bearingRad, state, moving, rev, updatedAt }
+// 409 NOT_JOINED | INVALID_POSE | INVALID_STATE | POSE_RATE_LIMIT  (zero mutation)
+```
+`pos` must be a finite vector with length in `[0.1, 10]`; it is normalised and must resolve to an
+active leaf. `heading` accepts a bearing number (legacy clients) or a tangent vector. Poses are
+transient, room-scoped, never persisted and carry no token. `type:"surface_leave"` clears the pose
+with `reason:"leave"`.
+
+`POST /api/action` `{token, type:"supply", label?}` also returns additive `placements`, `rev`,
+`expiresAt` and `focus`: one deterministic, collision-safe placement per online human inside the
+supply cells, held with a 120 s TTL. The legacy `supply` frame is unchanged.
 `GET /api/state` → `{ok:true, state: State}` (landing stats, no leaves)
 `GET /api/world` → `{ok:true, state, leaves: Leaf[]}` (debug/tests)
 `GET /api/leaderboard` → `{ok:true, leaderboard: ArcadeEntry[]}`
@@ -113,10 +135,18 @@ then:
 Config: `BOTS=1`, `BOT_MIN_MS`/`BOT_MAX_MS` lifetime (defaults 60000/180000),
 `BOT_GAP_MIN_MS`/`BOT_GAP_MAX_MS` (3000/10000), `BOT_CLICK_MIN_MS`/`BOT_CLICK_MAX_MS`
 (800/2800). A robot spawns after a random gap with a fresh random callsign and 24-bit colour,
-appears as a normal online player (no bot flag; scores/breaks/faces/arcade persist), clicks on a
-random cadence (55% biased toward charged/human-owned cells, 45% random) subject to the same
-contest lock, leaves after a random lifetime, and a new robot with a new name replaces it.
-Join/leave emits toasts.
+appears as a normal online player (no bot flag; scores/breaks/faces/arcade persist), leaves after a
+random lifetime, and a new robot with a new name replaces it. Join/leave emits toasts.
+
+Surface movement is server-generated, not a random walk: each spawn derives
+`seed = hash32(planetSeed, planetIndex, spawnSerial)` and plans 1–4 active-leaf waypoints with
+interior standing points, total arc ≤ 2.4 rad, then advances `idle → turn → walk → mine` at
+`STEP_RAD = 0.0035` per 100 ms tick with a 1.2 rad/s turn limit. Re-plan triggers are `complete`,
+`ttl` (30 s), `stale_leaf` and `blocked`, each incrementing `replans`; route computation reads no
+human pose, so humans joining or leaving cannot change a route. A robot mines only the leaf its
+authoritative pose stands on, clicks with its own token through `WorldCore.click()`, and emits
+`surface_mine` only for an awarded click; a target elsewhere becomes a `travel` intent first.
+`surface.state` mirrors the route state, so the SRV-01 wire contract needs no robot-only field.
 
 Shapes:
 ```js
@@ -124,7 +154,8 @@ Leaf = [label, ownerIndex|-1, clicks]                  // compact; depth = label
 State = {
   serverTime, threshold, maxDepth, maxDepthReached,
   faces, totalClicks, totalBreaks, createdAt,
-  players: [{ id, tag, color, online, score, facesHeld, clicks, breaks, claims, steals }],
+  players: [{ id, tag, color, online, score, facesHeld, clicks, breaks, claims, steals,
+              surface?: SurfacePose }],                     // transient pose, absent when offline
   arcade: [{ tag, score, facesHeld, breaks, updatedAt }],   // top 20, score desc
 }
 ```

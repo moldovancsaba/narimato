@@ -321,7 +321,7 @@ export function docBlocks(context = {}) {
       file: 'GAMEPLAY.md',
       format: 'markdown',
       content:
-        'If the refit makes no progress for two minutes, a relief ship crashes onto the planet and scatters the missing ore across nearby triangles. The deposits are marked with salvage rings and are mineable on the first successful click. The drop is **planet-wide**: every human sees the marked cells, and anyone can harvest the ore — it is a race. Another ship can arrive after each two-minute window while parts are missing.',
+        'If the refit makes no progress for two minutes, a relief ship crashes onto the planet and scatters the missing ore across nearby triangles. The deposits are marked with salvage rings and are mineable on the first successful click. The drop is **planet-wide**: the server places every human at the impact footprint on a distinct safe standing point inside a marked cell, every client sees the marked cells, the view turns toward the impact, and anyone can harvest the ore — it is a race. A pilot who joins while the drop is still live arrives already focused. Another ship can arrive after each two-minute window while parts are missing.',
     },
     {
       id: 'gameplay-incidents',
