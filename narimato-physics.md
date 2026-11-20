@@ -243,6 +243,12 @@ is the production surface framing until RND-06 proves carrier pixel parity; the
 carrier framing is the opt-in, contract-complete implementation.
 `window.__ICOSA__.cameraMode()` returns `{ surface, contractVersion }`.
 
+Known limitation of the carrier framing (flag-only): because the camera sits on
+the carrier point directly above the anchor (`cam = pos · distance`), the pilot
+anchor projects below the shipped viewport at `tilt ∈ [0.95, 1.30]`. The camera
+is correct for contract and math use, but production surface framing stays
+legacy until RND-06 evaluates the anchor offset and pixel parity.
+
 The surface camera never reads tokens, tags or player ids: it consumes only
 unit-sphere geometry and the server-validated surface pose.
 
