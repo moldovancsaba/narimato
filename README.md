@@ -79,7 +79,9 @@ resets its crust and releases new resources. The game never ends.
 - **Persistent spherical world** — adaptive four-way geodesic subdivision, stable hierarchical
   labels (`11.4`, `9.2.1.1`), individual per-cell breaking, infinite zoom.
 - **Authoritative multiplayer** — Node server, SSE rooms per planet, robots on every planet,
-  per-cell contest locks, atomic persistence, graceful restart recovery.
+  per-cell contest locks, atomic persistence, graceful restart recovery; server-owned surface
+  poses for every human and robot (validation, rate-limit, 5 s expiry), seeded robot routes and
+  server-side emergency-supply relocation.
 - **Detailed procedural geography** — a high-detail seeded terrain layer (continents, oceans,
   coasts, mountains, polar ice) renders behind the gameplay cells, so you see the planet surface
   through the grid. One 32-bit seed, no textures/heightmaps; resources follow the same geology.
@@ -245,7 +247,7 @@ repository status documents. The repository owns durable technical knowledge and
 
 ## Development
 
-The node:test suite currently runs <!-- test-count:178 -->178<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
+The node:test suite currently runs <!-- test-count:202 -->202<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 ```
 npm test                 # node:test suite, no dependencies

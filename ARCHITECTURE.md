@@ -17,7 +17,7 @@ Architecture decisions are recorded as ADRs: [docs/adr/README.md](docs/adr/READM
 | Rendering | Canvas 2D + WebGL | game planet: Canvas 2D; spherical-icosahedron reference viewer: WebGL ray–sphere shader |
 | Simulation | Node.js ≥20 | authoritative game server, HTTP + Server-Sent Events |
 | Persistence | JSON files + atomic rename | one file per planet, one registry file |
-| Tests | `node:test` | <!-- test-count:178 -->178<!-- /test-count --> tests, no test dependencies; ownership map in [docs/TEST_MAP.md](docs/TEST_MAP.md) |
+| Tests | `node:test` | <!-- test-count:202 -->202<!-- /test-count --> tests, no test dependencies; ownership map in [docs/TEST_MAP.md](docs/TEST_MAP.md) |
 | CI | GitHub Actions | Node 20 and 22, `npm test` |
 | Deploy | `node server.js` behind any static/reverse proxy | Cloudflare tunnel used for the live build |
 
@@ -194,6 +194,31 @@ Authoritative rules live in [narimato-physics.md](narimato-physics.md):
 - Contest lock: the owner of a cell cannot charge it again after their own click until someone else
   clicks it. The client learns this from the 5th leaf slot (`lastClickIndex`) and suppresses
   pointless optimistic `+2` pulses; the server remains authoritative.
+- **Surface poses are transient and server-owned (SRV-01).** Every online player — human or
+  robot — has at most one `SurfacePose` in `WorldCore._poses`. The old server-only
+  `player.surfacePose` and the separate robot `player.surface` record are gone: humans and robots
+  publish one shape through one revision stream (`poseRev`). A pose is accepted at most once per
+  `POSE_MIN_INTERVAL_MS` (60 ms), coalesced to one `surface` frame per player per
+  `POSE_FRAME_INTERVAL_MS` (100 ms, ≤ 10 Hz), and expires after `POSE_TTL_MS` (5 s) of silence.
+  Validation rejects non-finite, zero-length and out-of-range positions, points outside every
+  active leaf and unknown states without mutating state. `surface_leave` fires exactly once with a
+  closed `reason`: `leave`, `disconnect`, `expire`, `escape`, `reset` or `robot`.
+- **Robot routes are seeded, bounded and human-independent (SRV-02).** Each spawn builds a
+  `RobotRoute` from `hash32(planetSeed, planetIndex, spawnSerial)` — 1–4 active-leaf waypoints with
+  interior standing points, total arc ≤ `ROUTE_MAX_ARC` (2.4 rad) — and advances an
+  `idle → turn → walk → mine` state machine at one fixed step per 100 ms pump tick. Route
+  computation reads no human pose, so humans joining or leaving cannot change a route, and a route
+  digest repeats from the same planet seed and spawn serial.
+- **Robot mining resolves the pose cell through one resolver (SRV-03).** `WorldCore.resolveLeaf()`
+  is the single containment resolver used by pose validation, robot mining and supply placement.
+  A robot mines only the leaf its authoritative pose stands on, clicks with its own token through
+  `WorldCore.click()`, and emits `surface_mine` only for an awarded click. A target elsewhere becomes
+  a `travel` intent, and the `cell`/`break` frames precede the beam in the same drained batch.
+- **Emergency supply relocation is server-side (SRV-04).** A drop computes one deterministic,
+  collision-safe `SupplyFocus` placement per online human (golden-angle spiral inside the supply
+  cells, minimum separation 0.06 rad, capped at 24), writes those poses into `_poses`, and exposes
+  the focus with a 120 s TTL through `snapshot.focus`, the join response and the additive
+  `supply_focus` frame. The legacy `supply` frame still marks cells for older clients.
 - Planet escape clones the pilot into the next planet scene: same tag/colour/token/player id and
   carried score, reset current-planet ore run; the previous clone remains an offline ghost on the
   old planet. The old SSE room is closed for that token.
@@ -234,6 +259,61 @@ Authoritative rules live in [narimato-physics.md](narimato-physics.md):
 `terrainVersion`, `threshold`, `maxDepth`, `maxDepthReached`, `faces`, `totalClicks`,
 `totalBreaks`, `createdAt`, `players[]` (public fields incl. `oreCounts`), `arcade[]`.
 
+`state.players[]` carries an optional `surface` object for every live pose (humans and robots
+share it). It is transient: absent for offline players and removed when the pose expires or leaves.
+
+### Surface pose (transient, `WorldCore._poses`)
+
+```ts
+type SurfacePose = {
+  playerId: string; tag: string; color: string;
+  leaf: string;                         // active leaf holding the position
+  pos: Vec3;                            // unit position
+  local: { x: number; y: number };      // gnomonic chart coordinates around the leaf centroid
+  heading: Vec3;                        // unit tangent; heading · pos = 0
+  bearingRad: number;                   // [0, 2π) in the leaf chart
+  state: "idle" | "walk" | "turn" | "mine";
+  moving: boolean; updatedAt: number; rev: number;
+};
+```
+
+`rev` strictly increases per planet and restarts at 0 with the process; equal or lower revisions are
+never produced. Poses are room-scoped, never persisted and never carry tokens.
+
+### Robot route (transient, seeded)
+
+```ts
+type RobotRoute = {
+  playerId: string; seed: number; serial: number;
+  waypoints: { leaf: string; pos: Vec3; arriveAt: number }[];  // 1..4
+  index: number; state: "idle" | "walk" | "turn" | "mine";
+  stateSince: number; stateUntil: number; replans: number;
+  intent: { kind: "travel" | "mine"; leaf: string | null };
+};
+```
+
+Re-plan triggers are `complete`, `ttl` (30 s), `stale_leaf` (the waypoint label retired) and
+`blocked` (the contest lock rejected the click); each increments `replans` and advances the seed by
+one. `routeDigest()` is the determinism evidence (planet seed + spawn serial + plan + progress).
+
+### Supply focus (advisory, 120 s TTL)
+
+```ts
+type SupplyFocus = {
+  planetIndex: number; impactLabel: string; impactPos: Vec3 | null;
+  cells: { label: string; resourceId: string }[];
+  resources: Resource[];
+  placements: { playerId: string; leaf: string; pos: Vec3; local: {x,y}; heading: Vec3; bearingRad: number }[];
+  rev: number; expiresAt: number; message: string;
+};
+```
+
+The placement order is deterministically derived from the online human order, so two servers agree
+for the same planet seed and revision. Placements are capped at 24, never persist, and expire by
+timestamp check (no timers). Retired cells are filtered and affected humans fall back to a
+surviving supply cell. The focus arrives as `snapshot.focus`, on the join response and in the
+`supply_focus` frame.
+
 ### Registry
 
 ```json
@@ -249,12 +329,40 @@ Authoritative rules live in [narimato-physics.md](narimato-physics.md):
 | GET | `/api/world?token=` | state + active leaves |
 | GET | `/api/leaderboard?token=` | planet arcade |
 | POST | `/api/join` | `{tag, token?}` → token, player, state, leaves, planet info |
-| POST | `/api/action` | `{token, type:"click", label}` or `{token, type:"escape"}` |
+| POST | `/api/action` | `{token, type}`: `click`, `escape`, `supply`, `surface`, `surface_leave` (robots never call HTTP) |
 | GET | `/api/events?token=` | SSE stream for the token's planet room |
 
-SSE frames: `snapshot`, `state`, `cell`, `break`, `resource`, `toast`, `meteor`, plus `:hb`
+SSE frames: `snapshot` (with `focus`), `state`, `cell`, `break`, `resource`, `surface`,
+`surface_leave`, `surface_mine`, `supply`, `supply_focus`, `toast`, `incident`, plus `:hb`
 heartbeats. Broadcasts are per-planet; state throttled ~1/s with immediate urgency on player/join
-changes and 1 MiB backpressure protection.
+changes and 1 MiB backpressure protection. Surface frames are coalesced to ≤ 10 Hz per player and
+are flushed by the 100 ms pump, never directly from a request handler.
+
+### Surface and mining contracts
+
+```jsonc
+// POST /api/action {type:"surface"}
+{ "token": "uuid", "type": "surface", "pos": {"x":0.5773,"y":0.5773,"z":0.5773},
+  "heading": {"x":-0.7071,"y":0.7071,"z":0}, "state": "walk", "moving": true }
+// 200
+{ "ok": true, "planetIndex": 0, "playerId": "p_9f3c1a", "rev": 41, "leaf": "9.2.3",
+  "updatedAt": 1760000000123, "pos": {...}, "heading": {...}, "bearingRad": 0.7,
+  "state": "walk", "moving": true }
+// 409 NOT_JOINED | INVALID_POSE | INVALID_STATE | POSE_RATE_LIMIT  (no mutation)
+```
+
+`heading` accepts either a number (legacy bearing) or a tangent vector; a zero-length vector falls
+back to the leaf east basis. `surface_leave` clears the pose with `reason:"leave"`. The `surface`
+frame carries the same pose shape as `state.players[].surface`; `surface_leave` carries
+`playerId` and the closed `reason`.
+
+`surface_mine` is additive and ordered: `type`, `playerId`, `tag`, `color`, `label` (the leaf that
+changed), `pos` (pose at click time), `resourceId | null`, `points`, `kind`, `broke`, `rev`. The
+`cell`/`break` frame for that label always precedes it in the same drained batch.
+
+`supply_focus` is additive: `type`, `impactLabel`, `impactPos`, `cells`, `resources`,
+`placements`, `rev`, `expiresAt`, `message`. The legacy `supply` frame is unchanged, so older
+clients keep marking cells.
 
 ### Escape action
 
@@ -320,7 +428,9 @@ Three deliberate layouts, not just scaling:
 - JSON bodies capped at 16 KiB; static paths sanitized (no traversal/backslash/NUL); no-store HTML
   and JS; no external assets.
 - Hard depth ceiling 32; planet level cap 8 (break cap 7); bot counts limited; per-planet saves.
-- Server is authoritative for scoring, ownership, locks, mining, escape and meteor.
+- Server is authoritative for scoring, ownership, locks, mining, escape, meteor, surface poses,
+  robot routes, robot click targets and supply placements. Clients may describe where they think
+  they are, never who they are or which cell they own; hidden deposits stay server-only.
 
 ## Configuration
 
@@ -337,7 +447,7 @@ Three deliberate layouts, not just scaling:
 
 ## Testing
 
-The suite currently runs <!-- test-count:178 -->178<!-- /test-count --> tests. Behaviour ownership: [docs/TEST_MAP.md](docs/TEST_MAP.md).
+The suite currently runs <!-- test-count:202 -->202<!-- /test-count --> tests. Behaviour ownership: [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 - `test/geometry.test.js` — regular icosahedron, spherical coverage, labels, camera/picking.
 - `test/sphere-interaction.test.js` — carrier projection/unprojection, point-follow, infinite local direction.
@@ -347,8 +457,11 @@ The suite currently runs <!-- test-count:178 -->178<!-- /test-count --> tests. B
   terrain deposit weights, client/server parity.
 - `test/mission.test.js` — requirements, per-planet scaling, depth progression, sanitization.
 - `test/world-core.test.js` — config, identity/tokens, scoring, breaks, locks, resources, migration,
-  robots, persistence, meteor/adopt/reset, arcade.
-- `test/server.test.js` — HTTP/SSE, rooms, escape, persistence, static safety.
+  robots, persistence, meteor/adopt/reset, arcade; plus surface pose validation/rate/TTL/rev,
+  seeded robot routes and replan triggers, resolver-driven robot mining, and supply placements.
+- `test/server.test.js` — HTTP/SSE, rooms, escape, persistence, static safety; plus surface
+  pose/leave frames, rate-limit and TTL rejection paths, SSE disconnect and room isolation,
+  robot frame progression, `surface_mine` ordering and supply focus convergence.
 - `test/observability.test.js` — `/api/metrics` shape/aggregates, SSE counters, privacy (no
   tokens/tags/ids/hidden deposits), telemetry whitelist/clamping, 4 KB body cap, same-origin,
   rate limiting, and the Node-safe client beacon module.

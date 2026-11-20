@@ -40,6 +40,7 @@ Measured before considering any sharding (see the load/scale gate in [LOAD_TEST.
   "planets": [{
     "index": 0, "name": "MAGRATHEA", "depth": 2,
     "playersOnline": 1, "playersTotal": 4, "robots": 2,
+    "posesLive": 3, "robotReplans": 4, "robotMineRejected": 1, "supplyDrops": 1,
     "faces": 20, "clicks": 120, "breaks": 3, "maxDepthReached": 1, "revision": 88
   }],
   "eventLoop": { "enabled": true, "resolutionMs": 20 },
@@ -58,6 +59,9 @@ Measured before considering any sharding (see the load/scale gate in [LOAD_TEST.
   in `http.routes`, but its long-lived duration never enters `http.latencyMs` (verified in tests).
 - `planets` only ever contains read-only counters for loaded planets. It never includes player
   arrays, tags, tokens, ids, hidden deposits, discovery clicks or any other gameplay secret.
+  Surface multiplayer signals: `posesLive` (live transient poses on the planet), `robotReplans`
+  (seeded route re-plans), `robotMineRejected` (clicks the contest lock or resolver rejected,
+  which emit no beam) and `supplyDrops` (emergency-supply focus drops placed).
 - Metrics are not injected into `/api/state` or `/api/world`.
 
 ```bash
