@@ -139,9 +139,10 @@ canvas.addEventListener('pointermove', (event) => {
   pointer.lastX = event.clientX;
   pointer.lastY = event.clientY;
   pointer.lastT = now;
-  camera.rotate(dx, dy);
-  spin.x = dx / dt;
-  spin.y = dy / dt;
+  // Direct grab: invert the camera rotation so the surface follows the cursor.
+  camera.rotate(-dx, -dy);
+  spin.x = -dx / dt;
+  spin.y = -dy / dt;
 });
 
 function endPointer(event) {
@@ -157,9 +158,22 @@ canvas.addEventListener('pointerup', endPointer);
 canvas.addEventListener('pointercancel', endPointer);
 canvas.addEventListener('pointerleave', (event) => { if (!canvas.hasPointerCapture?.(event.pointerId)) endPointer(event); });
 
+window.addEventListener('keydown', (event) => {
+  const step = 28;
+  switch (event.key) {
+    case 'ArrowLeft': camera.rotate(step, 0); event.preventDefault(); break;
+    case 'ArrowRight': camera.rotate(-step, 0); event.preventDefault(); break;
+    case 'ArrowUp': camera.rotate(0, step); event.preventDefault(); break;
+    case 'ArrowDown': camera.rotate(0, -step); event.preventDefault(); break;
+    default: break;
+  }
+});
+
 canvas.addEventListener('wheel', (event) => {
   event.preventDefault();
   camera.zoom = Math.max(0.55, Math.min(7, camera.zoom * Math.exp(-event.deltaY * 0.0012)));
 }, { passive: false });
 
 requestAnimationFrame(frame);
+
+window.__ICOSA_VIEW__ = { camera, vertices, project: (v) => camera.project(v) };
