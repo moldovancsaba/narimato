@@ -1740,3 +1740,20 @@ test('incidents: invalid kind is 400 and unarmed crust is 409 without a state ch
   assert.equal(unarmed.status, 409);
   assert.equal(unarmed.json.error, 'INCIDENT_NOT_ARMED');
 });
+
+test('incidents: the reset snapshot is broadcast before the incident frame', async (t) => {
+  const { base } = await makeServer(t, { eventTrigger: true, depositChance: 1 });
+  const join = await postJson(base, '/api/join', { tag: 'SNAPORD' });
+  const sse = await openSse(base, join.json.token);
+  const from = sse.events.length;
+  const res = await postJson(base, '/api/action', { token: join.json.token, type: 'incident', kind: 'nuclear' });
+  assert.equal(res.status, 200);
+  await sse.waitForEvent('incident', (event) => event.kind === 'nuclear', { from });
+  const slice = sse.events.slice(from);
+  const snapshotAt = slice.findIndex((event) => event.type === 'snapshot' && Array.isArray(event.leaves) && event.leaves.length === 20);
+  const incidentAt = slice.findIndex((event) => event.type === 'incident' && event.kind === 'nuclear');
+  assert.ok(snapshotAt >= 0, 'reset snapshot broadcast');
+  assert.ok(incidentAt >= 0, 'incident frame broadcast');
+  assert.ok(snapshotAt < incidentAt, 'snapshot with the reset leaves arrives before the overlay opens');
+  await sse.close();
+});

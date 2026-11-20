@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "base": "http://127.0.0.1:55346",
+  "base": "http://127.0.0.1:58534",
   "kinds": [
     {
       "kind": "meteor",

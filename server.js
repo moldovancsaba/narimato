@@ -859,16 +859,22 @@ export class InfiniteServerApp {
     attempt(retries);
   }
 
-  /** Meteor reset: event + fresh snapshot to the affected planet room only. */
+  /**
+   * Meteor reset: fresh snapshot + event to the affected planet room only.
+   *
+   * EVT-01: the snapshot carrying the reset leaves is written first, so a client
+   * can never paint the overlay over the pre-reset crust. `syncRenderFaces()`
+   * applies the new leaves before `handleIncidentEvent` opens the overlay.
+   */
   _broadcastMeteor(index, meteor) {
     const core = this.manager.planetCore(index);
     if (!core) return;
-    this._broadcastToRoom(index, { ...meteor.event, planetIndex: index });
     this._broadcastToRoom(index, {
       type: 'snapshot',
       state: this.manager.decorateState(core.getState(), index),
       leaves: core.getLeaves(),
     });
+    this._broadcastToRoom(index, { ...meteor.event, planetIndex: index });
   }
 
   /** End every SSE stream for a token that is not in `planetIndex` (escape). */
