@@ -33,6 +33,19 @@ children at a threshold. Players zoom from the whole sphere down to the deepest 
 - No bots, no phases, no rounds. The world is always live.
 - **Zoom**: camera `zoom` range `0.4 … 16777216`; wheel zooms; double-click on a face smoothly
   centres/focuses it (and zooms deeper); zoom back out to see the whole sphere.
+
+## 1b. Physics & interaction model
+
+Authoritative rules live in [narimato-physics.md](narimato-physics.md):
+
+- **One object**: the 20-face spherical icosahedron; every camera height uses the same triangles.
+  No per-camera generated mesh, no adaptive density, no LOD swap.
+- **One camera**: fixed centre distance. Cursor keys move the camera orbit (`Up` = straight down),
+  wheel/pinch is optical zoom.
+- **Mouse rotates the object**, not the camera: unproject the grabbed surface point, then rotate by
+  the shortest quaternion so that point follows the cursor exactly.
+- Object rotation (`objectQ`) and camera orbit (`orbitYaw`/`orbitPitch`) are separate.
+- Unprojection ray direction is `(X, Y, -focal)` — negative Z, into the scene.
 - Labels are shown on faces (all visible faces when few, hovered face at any depth) and can be
   toggled.
 

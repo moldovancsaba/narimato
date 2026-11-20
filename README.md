@@ -191,7 +191,8 @@ resets its crust and releases new resources. The game never ends.
 
 ## Documentation & roadmap
 
-- [ROADMAP.md](ROADMAP.md) — delivery audit, what was ruined/fixed, open gaps and acceptance criteria.
+- [ROADMAP.md](ROADMAP.md)
+- [narimato-physics.md](narimato-physics.md) — authoritative camera/planet/cursor physics and interaction rules
 - [REQUESTS_24H.md](REQUESTS_24H.md) — request-by-request delivered/partial/open table.
 - [DELIVERY_TASKS.md](DELIVERY_TASKS.md) — file-level tasks, acceptance tests and delivery order.
 - [GUIDE.md](GUIDE.md) — shareable new-pilot guide.

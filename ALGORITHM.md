@@ -7,6 +7,17 @@
 Everything here is implemented in [`public/js/shared/geometry.js`](public/js/shared/geometry.js),
 shared by the browser renderer, the click picker, and the Node game server.
 
+## 0. Physics & interaction model
+
+Authoritative source: [narimato-physics.md](narimato-physics.md). Geometry/control essentials:
+
+- Object = the base 20-face spherical icosahedron; render the same triangles at every altitude.
+- Camera = fixed-radius orbit; cursor keys change `orbitYaw`/`orbitPitch`, wheel changes `zoom`.
+- Mouse rotates the object via exact surface-point follow:
+  `axis = cross(P0,P1)`, `angle = acos(dot(P0,P1))`, `objectQ = axisAngle(axis,angle) · objectQ0`.
+- Unprojection: `dirCam = normalize(X, Y, -focal)` (negative Z into scene), then `unprojectView`.
+- Keep object and camera transforms separate.
+
 ## 1. Base spherical icosahedron (regular)
 
 Cartographic coordinates (degrees, north pole = +Y, longitude 0° = +X):

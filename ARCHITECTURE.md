@@ -87,9 +87,22 @@ Observability: `public/js/telemetry.js` posts a tiny privacy-safe numeric beacon
   replacement options are documented in [VOICE.md](VOICE.md).
 - **`shared/`** — pure modules used by both sides:
   - `geometry.js` — icosahedron, hierarchical labels, child triangles, slerp, camera/picking.
+  - `orbit-controls.js` — shared drag/trackball/cursor-key primitives used by app and viewer.
   - `planet.js` — seed-driven 3D noise terrain, biomes, geological deposit weights.
   - `resources.js` — 10-ore market, glyphs, colours, weighted rolls.
   - `mission.js` — planet depth/name, per-planet escape requirements, mission progress.
+
+## Physics & interaction model
+
+Authoritative rules live in [narimato-physics.md](narimato-physics.md):
+
+- One planet object: the base spherical icosahedron, same 20 triangles at every camera height; no
+  per-camera generated mesh or LOD swap.
+- One camera on a **fixed-radius orbit**; cursor keys orbit the camera (Up = straight down),
+  wheel/pinch is optical zoom.
+- Mouse rotates the **object**, not the camera, via exact surface-point unprojection + shortest-arc
+  quaternion (`objectQ = delta · objectQ_at_down`).
+- Object quaternion and camera orbit are separate transforms.
 
 ## Multiplayer model
 
