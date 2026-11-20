@@ -17,7 +17,7 @@ Architecture decisions are recorded as ADRs: [docs/adr/README.md](docs/adr/READM
 | Rendering | Canvas 2D + WebGL | game planet: Canvas 2D; spherical-icosahedron reference viewer: WebGL ray–sphere shader |
 | Simulation | Node.js ≥20 | authoritative game server, HTTP + Server-Sent Events |
 | Persistence | JSON files + atomic rename | one file per planet, one registry file |
-| Tests | `node:test` | <!-- test-count:431 -->431<!-- /test-count --> tests, no test dependencies; ownership map in [docs/TEST_MAP.md](docs/TEST_MAP.md) |
+| Tests | `node:test` | <!-- test-count:468 -->468<!-- /test-count --> tests, no test dependencies; ownership map in [docs/TEST_MAP.md](docs/TEST_MAP.md) |
 | CI | GitHub Actions | Node 20 and 22, `npm test`; Node 22 GDS island build/contract/determinism; scheduled OPS-02 load/soak/chaos gate |
 | Deploy | `node server.js` behind any static/reverse proxy | Cloudflare tunnel used for the live build |
 
@@ -105,16 +105,21 @@ Observability: `public/js/telemetry.js` posts a tiny privacy-safe numeric beacon
 - **`world.js`** — client-side adaptive tree mirror of the server leaves; label parsing, cell
   updates, terrain cache, per-cell lock state, and the monotonic `revision` that gates surface
   geometry rebuilds (RND-04).
-- **`ui.js`** — all DOM: landing/tag, HUD, mission/planet badge, drawers, target sheet, toasts,
-  confirm dialog, report overlay, responsive layout switching. It is the only HUD writer: orbit
-  nodes stay mounted across view changes, and surface mode only toggles `#hud[data-mode]` plus the
-  `#surface-controls` strip (target, lap, movement pads, exit).
-- **GDS island** — the approved DOM UI path (UI-01). `ui/src/` is React + `@sovereignsquad/gds`;
-  `npm run build:ui` compiles it into the committed `public/ui/{island.js,island.css,manifest.json}`
-  served by the static handler. `public/js/gds-adapter.js` resolves `?gds=0|1|proof` /
-  `localStorage['narimato.gds']` and maps the frozen `UI` API onto island slices;
-  `public/js/gds-boot.js` boots one `GdsProvider`/React root and falls back to the legacy UI with a
-  dismissible banner on failure. Details: [docs/GDS_INTEGRATION.md](docs/GDS_INTEGRATION.md).
+- **`ui.js`** — the frozen UI controller and GDS bridge: it still owns the legacy DOM for
+  `?gds=0`, still receives every state update from `app.js`, and in GDS mode publishes one coalesced
+  `{ ui }` slice (HUD, overlays, surface strip, toasts, captions) and translates island intents back
+  into the existing actions. It never owns game state.
+- **`gds-bridge.js`** — dependency-free publish/intent boundary between the legacy controllers and
+  the committed island. With no island it is a no-op, which is what keeps `?gds=0` intact.
+- **GDS island** — the approved DOM UI path (UI-01 through UI-05). `ui/src/` is React +
+  `@sovereignsquad/gds`; `npm run build:ui` compiles it into the committed
+  `public/ui/{island.js,island.css,manifest.json}` served by the static handler. `AppSurface`
+  composes the HUD (`HudSurface`), overlays (`OverlaySurface`), additive surface strip
+  (`SurfaceStrip`) and cine chrome (`CineChrome`) from shipped GDS components and tokens.
+  `public/js/gds-adapter.js` resolves `?gds=0|1|proof` / `localStorage['narimato.gds']`;
+  `public/js/gds-boot.js` boots one `GdsProvider`/React root, moves the required ids to the island
+  via `ui.enableGds()` and falls back to the legacy UI with a dismissible banner on failure.
+  Details: [docs/GDS_INTEGRATION.md](docs/GDS_INTEGRATION.md).
 - **`intro.js`** — launch cinematic state machine: wormhole → drift/gravity lock → descent; camera
   dolly, cockpit fade, steering (WASD/arrows/touch), skip/replay, reduced-motion.
 - **`interlude.js`** — escape transit: launch burn → random story event → hull damage/shake →
@@ -558,14 +563,19 @@ and the single stylesheet, and no parallel component library or second visual sy
 
 ## Responsive UI
 
-Three deliberate layouts, not just scaling:
+Three deliberate layouts, not just scaling, all composed from GDS layout primitives and tokens:
 
 - **Desktop >1024px:** command deck (mission + operators left, arcade right, world/score top,
   target inspector bottom).
 - **Tablet ≤1024 / short-height:** planet-first, compact top strip, slide-over drawers, target sheet.
-- **Mobile ≤640 portrait:** full-screen planet; safe-area dock; drawers; tap target sheet; 44–48px
-  controls; touch steering pads in the intro.
-- **Landscape phone:** vertical side dock/drawers, planet centered.
+- **Mobile ≤640 portrait:** full-screen planet; safe-area dock and horizontally scrollable status
+  row; drawers; tap target sheet; 44–48px controls; touch steering pads in the intro.
+- **Landscape phone:** short-height dock above the status row, planet centered.
+
+The HUD keeps exactly one scene: orbital panels stay mounted in surface mode and the strip is
+additive. Focus rings come from GDS, drawers and dialogs from the governed overlay stack, and the
+layout is verified at 200% zoom and `prefers-reduced-motion` (captions and text carry every state
+that animation would otherwise convey).
 
 ## Security headers and abuse limits
 
@@ -663,10 +673,10 @@ debounce 0.5 min + 5 min backup interval), RTO ≤ 15 min; retention is 7 daily 
 
 ## Testing
 
-The suite currently runs <!-- test-count:431 -->431<!-- /test-count --> tests. Behaviour ownership: [docs/TEST_MAP.md](docs/TEST_MAP.md).
+The suite currently runs <!-- test-count:468 -->468<!-- /test-count --> tests. Behaviour ownership: [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 ```bash
-npm test                 # node:test suite (431 tests)
+npm test                 # node:test suite (468 tests)
 npm run check:slo        # evaluate observability/slo.json against /api/metrics (0/1/2/3)
 npm run gate:load        # OPS-02 load/soak/chaos gate (ephemeral server, artifacts)
 npm run gate:perf        # PERF-01 client probe + 15% desktop baseline gate

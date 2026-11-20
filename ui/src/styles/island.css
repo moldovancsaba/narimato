@@ -12,20 +12,498 @@
   pointer-events: none;
 }
 
-/* The proof surface is the only mounted surface in UI-01; it takes the viewport
- * so operators can inspect it at every viewport and zoom the issue names. */
-#gds-root[data-surface='proof'] {
+}
+
+/* ==========================================================================
+   NARIMATO — migrated app surface (UI-02…UI-05)
+   Token-only layout. No control skinning: controls are GDS components; these
+   rules position the surface, hide the legacy chrome behind the kill switch,
+   and enforce the 44px touch floor, safe areas and reduced motion.
+   ========================================================================== */
+
+#gds-root[data-surface='app'] > div {
+  pointer-events: none;
+}
+
+#gds-root[data-surface='app'] {
   position: fixed;
   inset: 0;
-  overflow: auto;
-  overscroll-behavior: contain;
-  pointer-events: auto;
-  background: var(--mantine-color-body);
+  overflow: visible;
+  pointer-events: none;
+  background: transparent;
+  color: var(--mantine-color-text);
+  /* Below Mantine's modal portal (z-index 200), above the canvas and FX layers. */
+  z-index: 30;
+}
+
+.gds-app {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* The legacy presentation layer is kept in the document for `?gds=0` and for
+   the app.js listeners it already owns, but it is never painted in GDS mode. */
+html[data-gds-ui='on'] .hud,
+html[data-gds-ui='on'] .join-overlay,
+html[data-gds-ui='on'] .guide-overlay,
+html[data-gds-ui='on'] .manual-overlay,
+html[data-gds-ui='on'] .report-overlay,
+html[data-gds-ui='on'] .confirm-overlay,
+html[data-gds-ui='on'] .status-cluster,
+html[data-gds-ui='on'] .toast-container,
+html[data-gds-ui='on'] .narrative-subtitles,
+html[data-gds-ui='on'] .intro-content,
+html[data-gds-ui='on'] .intro-skip,
+html[data-gds-ui='on'] .intro-steer,
+html[data-gds-ui='on'] .intro-steer-hint,
+html[data-gds-ui='on'] .interlude-content {
+  display: none !important;
+}
+
+.gds-hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
   color: var(--mantine-color-text);
 }
 
+.gds-hud-top {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--gds-space-sm);
+  padding-block-start: max(var(--gds-space-sm), env(safe-area-inset-top));
+  pointer-events: none;
+  background: linear-gradient(180deg, var(--mantine-color-body) 0%, transparent 100%);
+}
+
+.gds-hud-top > * {
+  pointer-events: auto;
+}
+
+.gds-hud-brand,
+.gds-score-cluster,
+.gds-hud-right {
+  background: var(--mantine-color-body);
+  border: 1px solid var(--gds-border-subtle, var(--mantine-color-dark-4));
+  border-radius: var(--gds-radius-md, var(--mantine-radius-md));
+  padding: var(--gds-space-sm) var(--gds-space-md);
+  box-shadow: var(--mantine-shadow-sm);
+}
+
+.gds-wordmark {
+  letter-spacing: 0.18em;
+  font-weight: 700;
+}
+
+.gds-score-cluster {
+  flex: 0 0 auto;
+  text-align: center;
+}
+
+.gds-score-value {
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.gds-hud-right {
+  flex: 0 0 auto;
+}
+
+.gds-dock {
+  pointer-events: auto;
+  position: fixed;
+  inset-block-end: max(0.75rem, env(safe-area-inset-bottom));
+  inset-inline-end: max(0.75rem, env(safe-area-inset-right, 0px));
+  z-index: 6;
+  width: max-content;
+  max-width: calc(100vw - 2 * var(--gds-space-sm));
+  background: color-mix(in srgb, var(--mantine-color-body) 88%, transparent);
+  border: 1px solid var(--gds-border-subtle, var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-md);
+}
+
+.gds-hud-main {
+  position: absolute;
+  inset-block-start: 9.5rem;
+  inset-block-end: 4.5rem;
+  inset-inline: var(--gds-space-md);
+  display: grid;
+  grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr) minmax(15rem, 20rem);
+  gap: var(--gds-space-md);
+  pointer-events: none;
+  align-items: start;
+}
+
+.gds-hud-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--gds-space-sm);
+  min-width: 0;
+  height: 100%;
+  pointer-events: none;
+}
+
+.gds-hud-side {
+  min-width: 0;
+  max-height: 100%;
+  overflow: auto;
+  pointer-events: auto;
+}
+
+.gds-panel {
+  pointer-events: auto;
+  max-width: 100%;
+}
+
+.gds-panel--mission {
+  max-height: 100%;
+  overflow: auto;
+}
+
+.gds-panel--target {
+  position: absolute;
+  inset-inline-end: var(--gds-space-md);
+  inset-block-end: 7rem;
+  width: min(22rem, calc(100vw - 2 * var(--gds-space-md)));
+  pointer-events: auto;
+  z-index: 2;
+}
+
+.gds-hint {
+  pointer-events: none;
+  text-align: center;
+  font-size: var(--mantine-font-size-xs);
+  color: var(--mantine-color-dimmed);
+  padding: var(--gds-space-xs) var(--gds-space-sm);
+  background: color-mix(in srgb, var(--mantine-color-body) 82%, transparent);
+  border-radius: var(--mantine-radius-sm);
+  max-width: min(52rem, 90vw);
+}
+
+.gds-status-cluster,
+.gds-captions,
+.gds-surface-strip {
+  pointer-events: auto;
+}
+
+.gds-status-cluster #btn-abandon,
+.gds-status-cluster #btn-replay-intro {
+  display: inline-flex !important;
+}
+
+.gds-status-cluster > * {
+  flex: 0 0 auto;
+}
+
+.gds-status-cluster {
+  position: fixed;
+  inset-inline-start: var(--gds-space-md);
+  inset-block-end: max(var(--gds-space-sm), env(safe-area-inset-bottom));
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gds-space-xs);
+  align-items: center;
+  padding: var(--gds-space-xs);
+  background: color-mix(in srgb, var(--mantine-color-body) 88%, transparent);
+  border: 1px solid var(--gds-border-subtle, var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-md);
+  z-index: 3;
+}
+
+.gds-captions {
+  position: fixed;
+  inset-inline: 50%;
+  inset-block-end: max(6.5rem, calc(env(safe-area-inset-bottom) + 5rem));
+  transform: translateX(-50%);
+  width: min(46rem, calc(100vw - 2 * var(--gds-space-md)));
+  padding: var(--gds-space-xs) var(--gds-space-sm);
+  background: color-mix(in srgb, var(--mantine-color-body) 88%, transparent);
+  border-radius: var(--mantine-radius-sm);
+  text-align: center;
+  z-index: 3;
+}
+
+.gds-nav-chip {
+  position: absolute;
+  inset-block-start: 11.5rem;
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  padding: var(--gds-space-xs) var(--gds-space-sm);
+  background: var(--mantine-color-body);
+  border: 1px solid var(--gds-border-subtle, var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-md);
+  pointer-events: auto;
+  z-index: 2;
+}
+
+.gds-escape-cta,
+.gds-landing-brief {
+  position: fixed;
+  inset-block-end: 7rem;
+  inset-inline: 50%;
+  transform: translateX(-50%);
+  z-index: 9;
+  pointer-events: auto;
+  width: min(34rem, calc(100vw - 2 * var(--gds-space-md)));
+}
+
+.gds-subpanel {
+  border: 1px solid var(--gds-border-subtle, var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-sm);
+  padding: var(--gds-space-sm);
+}
+
+.gds-list {
+  list-style: none;
+  margin: 0;
+}
+
+.gds-player-row[data-me='true'],
+.gds-arcade-row[data-me='true'] {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: 2px;
+  border-radius: var(--mantine-radius-sm);
+}
+
+#gds-root #surface-controls {
+  position: fixed;
+  display: block;
+  inset-inline: 50%;
+  inset-block-end: 6rem;
+  transform: translateX(-50%);
+  width: min(40rem, calc(100vw - 2 * var(--gds-space-md)));
+  max-height: calc(100vh - 11rem);
+  overflow: auto;
+  z-index: 7;
+  padding: var(--gds-space-sm);
+  background: var(--mantine-color-body);
+  border: 1px solid var(--gds-border-subtle, var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-md);
+  z-index: 4;
+}
+
+.gds-surface-target {
+  display: flex;
+  gap: var(--gds-space-sm);
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: var(--gds-space-xs) 0;
+}
+
+/* The cine owns the screen: HUD chrome stays mounted but hidden. */
+[data-cine='true'] .gds-hud,
+[data-cine='true'] .gds-status-cluster,
+[data-cine='true'] .gds-dock {
+  display: none !important;
+}
+
+/* Cine chrome: additive over the legacy cockpit FX canvas. */
+.gds-cine {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gds-space-md);
+  padding: var(--gds-space-lg);
+  padding-block-start: max(var(--gds-space-lg), env(safe-area-inset-top));
+  padding-block-end: max(var(--gds-space-lg), env(safe-area-inset-bottom));
+  pointer-events: none;
+  z-index: 5;
+}
+
+.gds-cine-copy {
+  pointer-events: auto;
+  max-width: min(48rem, 92vw);
+  text-align: center;
+  background: color-mix(in srgb, var(--mantine-color-body) 80%, transparent);
+  border-radius: var(--mantine-radius-md);
+  padding: var(--gds-space-md);
+}
+
+.gds-cine-title {
+  font-size: clamp(2rem, 6vw, 4rem);
+  line-height: 1;
+  letter-spacing: 0.12em;
+}
+
+.gds-cine-steer {
+  pointer-events: auto;
+  align-self: flex-end;
+}
+
+.gds-toasts {
+  position: fixed;
+  inset-inline-end: var(--gds-space-md);
+  inset-block-end: max(5.5rem, calc(env(safe-area-inset-bottom) + 4.5rem));
+  display: flex;
+  flex-direction: column;
+  gap: var(--gds-space-xs);
+  width: min(24rem, calc(100vw - 2 * var(--gds-space-md)));
+  z-index: 30;
+  pointer-events: auto;
+}
+
+.gds-overlay-card,
+.gds-report,
+.gds-landing {
+  max-height: min(80vh, 60rem);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: var(--gds-space-xs);
+}
+
+.gds-landing-title {
+  font-size: clamp(2.2rem, 7vw, 5rem);
+  line-height: 0.95;
+  letter-spacing: 0.12em;
+}
+
+.gds-tag-input {
+  min-block-size: 44px;
+  flex: 1 1 14rem;
+  padding: var(--gds-space-xs) var(--gds-space-sm);
+  border: 1px solid var(--mantine-color-dark-4);
+  border-radius: var(--mantine-radius-sm);
+  background: var(--mantine-color-body);
+  color: var(--mantine-color-text);
+  font-family: var(--gds-font-mono, ui-monospace);
+  letter-spacing: 0.12em;
+}
+
+.gds-tag-input:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: 2px;
+}
+
+.gds-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+}
+
+.gds-report-canvas {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1200 / 630;
+}
+
+/* 44px touch floor for every control the player can hit on a phone. */
+.gds-app button,
+.gds-status-cluster button,
+.gds-surface-strip button {
+  min-inline-size: 44px;
+  min-block-size: 44px;
+}
+
+@media (max-width: 1024px), (max-height: 720px) {
+  .gds-hud-main {
+    grid-template-columns: minmax(0, 1fr);
+    inset-block-start: 16rem;
+  }
+
+  .gds-hud-side,
+  .gds-panel--mission {
+    position: fixed;
+    inset-block: 11rem 4.5rem;
+    inset-inline-start: var(--gds-space-sm);
+    width: min(22rem, calc(100vw - 2 * var(--gds-space-sm)));
+    max-height: none;
+    z-index: 8;
+    transform: translateX(-110%);
+    transition: transform 160ms ease;
+    pointer-events: none;
+  }
+
+  .gds-hud-side:has(.gds-panel[data-drawer='open']),
+  .gds-panel--mission[data-drawer='open'] {
+    transform: none;
+    pointer-events: auto;
+  }
+
+  .gds-panel--target {
+    inset-block-end: 12rem;
+  }
+
+  .gds-captions {
+    inset-block-end: 12rem;
+  }
+
+  #gds-root #surface-controls {
+    inset-block-end: 9rem;
+  }
+
+  .gds-cine-copy {
+    max-width: 92vw;
+  }
+}
+
+@media (max-width: 640px) {
+  .gds-hud-top {
+    gap: var(--gds-space-xs);
+    padding: var(--gds-space-xs);
+  }
+
+  .gds-hud-brand {
+    flex: 1 1 100%;
+  }
+
+  .gds-score-label {
+    display: none;
+  }
+
+  .gds-status-cluster {
+    inset-block-start: 16rem;
+    inset-block-end: auto;
+    inset-inline: var(--gds-space-xs);
+    max-width: calc(100vw - 2 * var(--gds-space-xs));
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+  }
+
+  .gds-nav-chip {
+    inset-block-start: 19rem;
+    max-width: calc(100vw - 2 * var(--gds-space-sm));
+  }
+
+  .gds-hud-main {
+    inset-block-start: 20rem;
+  }
+
+  .gds-dock {
+    inset-inline: var(--gds-space-xs);
+    inset-inline-end: var(--gds-space-xs);
+    width: auto;
+    transform: none;
+  }
+
+  #gds-root #surface-controls {
+    inset-block-end: 9.5rem;
+  }
+}
+
+@media (max-height: 480px) {
+  .gds-dock {
+    inset-block-end: 5.5rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  #gds-root[data-surface='proof'] {
-    scroll-behavior: auto;
+  .gds-app *,
+  .gds-cine * {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
   }
 }

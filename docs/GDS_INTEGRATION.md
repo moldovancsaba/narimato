@@ -26,7 +26,8 @@ boundary; [ADR-0007](adr/0007-gds-island-build-pipeline.md) records the concrete
 | Committed manifest | `public/ui/manifest.json` | yes, static |
 | Flag resolution, frozen-API adapter, page boot | `public/js/gds-adapter.js` | yes, static |
 | Page boot entry | `public/js/gds-boot.js` | yes, static |
-| Proof surface (dev/operator only) | `ui/src/surfaces/ProofSurface.jsx` → `?gds=proof` | yes, inside `island.js` |
+| Migrated app surface (HUD, overlays, surface strip, cine chrome) | `ui/src/surfaces/AppSurface.jsx`, `HudSurface.jsx`, `OverlaySurface.jsx`, `SurfaceStrip.jsx`, `CineChrome.jsx` | yes, inside `island.js` |
+| Proof mode | `?gds=proof` mounts the same app surface with `data-gds-proof-ready` | yes |
 | Contract gate | `scripts/verify-gds-build.mjs` (`npm run verify:ui`) | no |
 | Browser probe (dev-only) | `scripts/verify-gds-probe.mjs` | no |
 | Shared pure helpers used by build, verify and tests | `scripts/lib/gds-assets.mjs` | no |
@@ -118,13 +119,16 @@ the commit.
 
 | Asset | Measured at delivery | Hard budget | Target |
 |---|---|---|---|
-| `island.js` gzip | 172.45 KiB | ≤ 180 KiB | ≤ 140 KiB |
-| `island.css` gzip | 38.32 KiB | ≤ 40 KiB | — |
+| `island.js` gzip | 178.20 KiB | ≤ 180 KiB | ≤ 140 KiB |
+| `island.css` gzip | 39.97 KiB | ≤ 40 KiB | — |
 
-The JavaScript hard budget passes. The 140 KiB target is **not met**: React 19 plus one `GdsProvider`
-is about 160 KiB gzip before any component, because the provider pulls the Mantine theme runtime,
-notifications, modals and i18n. Recorded as a known limitation; it does not affect the hard budget
-or the page because the island is loaded after the game is playable.
+The JavaScript hard budget passes with 1.82 KiB headroom after UI-02…UI-05. The 140 KiB target is
+**not met**: React 19 plus one `GdsProvider` is about 160 KiB gzip before any component, because the
+provider pulls the Mantine theme runtime, notifications, modals and i18n. The four migrated surfaces
+add the governed HUD, dialog, form, progress and toast compositions on top. Recorded as a known
+limitation; it does not affect the hard budget or the page because the island is loaded after the game
+is playable. The CSS hard budget passes with 0.03 KiB headroom — every new surface rule is token-only
+and the unused-component pruning keeps the mandated stylesheet inside its budget.
 
 ## 4. Provider, root and portals
 
@@ -174,10 +178,12 @@ Precedence (issue #7 §11):
 Kill switches, in order of immediacy: `localStorage['narimato.gds'] = 'off'`, a `?gds=0` link, or
 revert the commit that added the stylesheet link and mount host.
 
-## 6. Proof surface (`?gds=proof`)
+## 6. Proof mode (`?gds=proof`)
 
-Dev/operator evidence surface, not a game screen. It proves the contract before UI-02 migrates a real
-surface:
+`?gds=proof` now mounts the migrated app surface with `data-gds-proof-ready` and the real HUD on top;
+the former standalone proof component was retired once UI-02…UI-05 shipped the game surfaces. The
+contract it proved is still covered by the unit suite (`test/gds-manifest.test.js`), the browser
+probe and the migrated-surface axe journeys. The historical proof surface asserted:
 
 - all five required states — loading (`StateBlock`), empty (`EmptyState` + action), error with recovery
   (`StateBlock` + `SemanticButton action="refresh"`), disabled with a visible reason (`SemanticButton`
@@ -234,3 +240,82 @@ PLAYWRIGHT_MODULE=/path/to/node_modules/playwright AXE_PATH=./node_modules/axe-c
 - Keep `app.js` as the orchestrator: the adapter maps frozen `UI` methods to island store slices.
 - Re-run `npm run build:ui && npm run verify:ui` after every surface change; budgets are enforced in
   CI and the committed output must stay in sync with `ui/src`.
+
+
+## 10. Migrated game surfaces (UI-02…UI-05)
+
+### 10.1 HUD (UI-02)
+
+| GDS composition | Required id / hook | Notes |
+|---|---|---|
+| `SectionPanel` + `StatusBadge` + `Progress` | `mission-panel`, `mission-list`, `data-mission="hud"` | refit objectives, cargo, captain's log, distress timer, `btn-escape` |
+| `SectionPanel` + `GdsStack` rows | `players-panel`, `players-list`, `players-count` | deterministic score-desc/tag-asc order, 14-row cap, `+N MORE` |
+| `SectionPanel` + ordered list | `arcade-panel` | all-time top ten |
+| `GdsStack` + `StatusBadge` + `Progress` | `planet-badge`, `hud-score`, `hud-faces`, `hud-clicks`, `hud-breaks`, `hud-zoom`, `nav-chip` | static text values; only milestones announce politely |
+| `SectionPanel` (inspector) + `Progress` | `hud-target`, `target-charge-bar` | `aria-label="Cell <label> charge"`; text `chargeText` keeps `pad2` |
+| `GdsInline` dock + `Button` | `mobile-dock`, `btn-mission`, `btn-operators`, `btn-arcade`, `btn-report` | 44 px minimum targets |
+
+`ui.updateHud` still receives the legacy state and writes the legacy nodes behind the kill switch. In
+GDS mode `gds-boot.js` calls `ui.enableGds()`, which moves every required id to `data-legacy-id` and
+mounts `AppSurface`; the island owns exactly one copy of each id. `ui.js` keeps publishing one
+coalesced `{ ui }` slice per change; the adapter/store commits at most once per frame.
+
+Charge progress: Mantine's `Progress` exposes the labelled `role="progressbar"` section with
+`aria-valuemin/max/now`; `#target-charge-bar` is the queryable wrapper (`id`) and the visible
+`0 / 8` text mirrors the same values.
+
+### 10.2 Overlays (UI-03)
+
+| Surface | GDS composition | Preserved contract |
+|---|---|---|
+| Landing / tag-in | `Modal` (full-screen) + `FormField` + `Button` + `StatusBadge` | `#join-overlay`, `#tag-input`, `#join-form`, `#btn-join`, `#join-error`, `#live-count`, `#btn-new-pilot`, landing mission/market/arcade hooks |
+| Quick Guide | `Modal` + list + buttons | `#guide-overlay`, `#guide-how-copy`, `#btn-guide-start`, `#btn-guide-close` |
+| Field Manual | `Modal` + list + voice buttons | `#manual-overlay`, `#manual-sections`, `#btn-manual-close` |
+| Report / Share | `Modal` + `SectionPanel` + 1200×630 canvas + buttons | `#report-overlay`, `#report-card-preview`, `#report-share-url`, PNG and `buildShareText` unchanged |
+| Confirm | `Modal` + `Button` pair (safe action first) | `#confirm-overlay`, `#confirm-message`, promise `ui.confirm` semantics |
+| Toasts | `InlineAlert` + dismiss `Button` in `#toast-container` | 3200/3800/4200 ms by kind, max three, no focus steal |
+
+Focus: each dialog is a Mantine-based GDS `Modal`, which traps Tab and restores the invoker. The
+`public/js/shared/overlay-port.js` stack owns Escape ordering and is unit-tested; Escape resolves the
+top dialog only. The landing is not dismissible by Escape or scrim (a pilot must join), while Guide,
+Manual, Report and Confirm close on Escape/scrim/close control.
+
+### 10.3 Surface strip (UI-04)
+
+`SurfaceStrip.jsx` is additive inside `#hud`: `#surface-controls`, `#surface-target` (a labelled
+status region with a text state), `#surface-lap` (progressbar), four `data-surface-hold` buttons
+(Run forward / Turn left / Run backward / Turn right, ≥44 px) and `#btn-surface-exit`. No duplicate
+mission/players/cargo panels and no `#surface-canvas`. Exit opens the GDS confirm dialog; cancel
+keeps running, confirm returns to the orbital camera. The controller still owns pose, harvest, lap
+and phase; the island only renders `ui.surface`.
+
+### 10.4 Cine chrome (UI-05)
+
+`CineChrome.jsx` is an additive layer over the existing cockpit FX canvases: `#intro-overlay` and
+`#interlude-overlay` stay the legacy visual layers, while the island renders `#intro-bar`,
+`#btn-skip-intro`, `#intro-steer`/`#steer-*`, `#btn-replay-intro`, `#interlude-bar`,
+`#btn-interlude-continue` and the CC/VOX controls. `public/js/shared/cine-chrome.js` owns progress
+clamping, reduced-motion scaling (0.35) and the reset-then-write caption contract. A focused chrome
+control keeps its native keys; steering keys are captured only while the canvas owns the keyboard.
+The captions region is one `role="region" aria-live="polite"` region (`#narrative-subtitles`).
+
+### 10.5 Rollback and flags
+
+`?gds=0` or `localStorage['narimato.gds']='off'` keeps the legacy UI; nothing above is imported in
+that mode. `?gds=1` forces the island. The old proof evidence is reproducible with
+`?gds=proof&intro=0`. The deploy-free rollback is still the flag flip; no data or protocol change.
+
+### 10.6 Verification
+
+```bash
+npm test
+npm run docs:check
+npm run check:version
+node scripts/test-count.mjs
+npm run build:ui && npm run verify:ui
+PLAYWRIGHT_MODULE=/tmp/dsh-pw/node_modules/playwright node scripts/verify-ui-migration.mjs
+PLAYWRIGHT_MODULE=/tmp/dsh-pw/node_modules/playwright AXE_PATH=/tmp/dsh-pw/node_modules/axe-core/axe.min.js node scripts/audit-ui-a11y.mjs
+```
+
+Evidence: `media/gds/migration/` (landing, HUD, drawers, overlays, surface, cine at desktop/tablet/
+mobile portrait+landscape, 200% zoom and reduced motion), `media/gds/migration/axe-report.json`.

@@ -30,8 +30,13 @@
     "perf:probe": "node scripts/perf-probe.mjs",
     "gate:perf": "node scripts/perf-probe.mjs --device=desktop --quality=0 --attempts=3 --check-baseline",
     "perf:baseline": "node scripts/perf-probe.mjs --device=desktop --quality=0 --attempts=3 --update-baseline",
-    "verify:single-scene": "node scripts/verify-single-scene.mjs"
-  },
+    "verify:single-scene": "node scripts/verify-single-scene.mjs",
+    "verify:hud": "node scripts/verify-hud-migration.mjs",
+    "verify:overlays": "node scripts/verify-overlays.mjs",
+    "verify:surface": "node scripts/verify-surface-hud.mjs",
+    "verify:cine": "node scripts/verify-cine-chrome.mjs",
+    "verify:zoom": "node scripts/verify-ui-zoom.mjs",
+    "verify:migration": "node scripts/verify-ui-migration.mjs"  },
   "engines": {
     "node": ">=20"
   },

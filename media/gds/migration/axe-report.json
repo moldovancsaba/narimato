@@ -1,0 +1,52 @@
+{
+  "suite": "all",
+  "generatedAt": "2026-11-20T22:38:52.585Z",
+  "viewports": [
+    [
+      1440,
+      900
+    ],
+    [
+      1024,
+      768
+    ],
+    [
+      390,
+      844
+    ],
+    [
+      844,
+      390
+    ],
+    [
+      792,
+      302
+    ],
+    [
+      1200,
+      630
+    ]
+  ],
+  "reports": {
+    "hud": {
+      "label": "hud",
+      "violations": []
+    },
+    "guide": {
+      "label": "guide",
+      "violations": []
+    },
+    "report": {
+      "label": "report",
+      "violations": []
+    },
+    "surface": {
+      "label": "surface",
+      "violations": []
+    },
+    "cine": {
+      "label": "cine",
+      "violations": []
+    }
+  }
+}

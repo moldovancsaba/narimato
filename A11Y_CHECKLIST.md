@@ -124,3 +124,16 @@ Cannot be executed in this headless environment; run before calling A4 fully clo
   reader pass is still required by the manual gate above.
 - VoiceOver reading order for the HUD needs a manual tuning pass.
 - Report/share overlay on very short screens needs a long-report device check.
+
+## Migrated GDS surfaces (UI-02…UI-05)
+
+| Gate | How to verify | Evidence |
+|---|---|---|
+| HUD keyboard traversal, drawers, inspector | Tab through `#hud`, open each dock drawer, open/close `#hud-target`, confirm focus visible at 200% | `media/gds/migration/hud-*.png`, axe report |
+| Charge progressbar | `#target-charge-bar` exposes a labelled `role="progressbar"` with min/max/now plus `03 / 08` text | `test/hud-format.test.js`, browser probe |
+| Overlay focus trap and restore | Open Landing, Guide, Manual, Report, Confirm; Tab wraps; Escape/scrim/close restore the invoker | `scripts/verify-ui-migration.mjs`, `test/overlay-contract.test.js` |
+| Report PNG | `#report-card-preview` is a deterministic 1200×630 canvas, no network assets | report screenshot, `test/share-text.test.js` |
+| Surface strip | `#surface-target` text state, 44 px pads at 390×844 and 844×390, exit confirm restores focus | `media/gds/migration/surface-*.png` |
+| Cine chrome | Skip/replay/CC/VOX reachable by Tab; captions announced politely; reduced motion shortens without losing copy | `media/gds/migration/cine-*.png`, `test/cine-chrome.test.js` |
+| Focus vs canvas keys | Steering is captured only while the canvas owns the keyboard; focused controls keep Space/Enter/arrows | `test/surface-hud.test.js`, `test/cine-chrome.test.js` |
+| axe serious/critical | Landing, HUD, Guide, Report and Surface run clean | `media/gds/migration/axe-report.json` |

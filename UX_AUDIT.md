@@ -211,3 +211,12 @@ PORT=4390 HOST=127.0.0.1 DATA_DIR=/tmp/narimato-audit BOTS=0 node server.js
 3. E4/E5/E6 subtitle stacking
 4. E7/E8 responsive hierarchy
 5. Goldfish items 1–6
+
+## UI-02…UI-05 follow-up (GDS migration)
+
+- **E1 — planet badge over score:** resolved. The badge and score are separate GDS panels in the
+  responsive top strip; the planet name truncates with the full value in an accessible label.
+- **E4 — 32 px status controls:** resolved. Status and dock controls render as GDS buttons with a
+  44 px minimum target; the dock scrolls/wraps instead of shrinking labels.
+- **E7 — crowded mobile rows:** resolved. Panels become drawers on compact layouts and the status
+  row scrolls horizontally; operator/mission rows are stacked GDS rows with a text status.

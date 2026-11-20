@@ -61,12 +61,14 @@ export function createStore(initialState = {}, options = {}) {
 
   const commit = () => {
     scheduled = false;
+    if (typeof window !== 'undefined') window.__NARIMATO_GDS_COMMITS__ = commitCount;
     if (!pending) return false;
     const next = pending;
     pending = null;
     if (shallowEqual(next, state)) return false;
     state = Object.freeze(next);
     commitCount += 1;
+    if (typeof window !== 'undefined') window.__NARIMATO_GDS_STATE__ = state;
     for (const listener of [...listeners]) {
       try {
         listener(state);
@@ -98,6 +100,7 @@ export function createStore(initialState = {}, options = {}) {
       pending = next;
       if (!scheduled) {
         scheduled = true;
+        if (typeof window !== 'undefined') window.__NARIMATO_GDS_SCHEDULED__ = true;
         schedule(commit);
       }
       return true;
