@@ -125,9 +125,13 @@ const STAR_COLORS = ['#dff6ff', '#dff6ff', '#bfefff', '#00f0ff', '#8a5cff', '#ff
 
 /** Geodesic edge samples per edge by cell depth. */
 function segmentsForDepth(depth) {
-  if (depth <= 0) return 8;
-  if (depth === 1) return 4;
-  if (depth === 2) return 2;
+  // Boundary sampling only: the cell geometry/set is unchanged. Close surface
+  // cameras need enough samples for the same spherical triangles to read as
+  // arcs instead of chords.
+  if (depth <= 0) return 12;
+  if (depth === 1) return 10;
+  if (depth === 2) return 6;
+  if (depth === 3) return 3;
   return 1;
 }
 

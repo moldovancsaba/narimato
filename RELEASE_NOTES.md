@@ -1,5 +1,20 @@
 # NARIMATO — Release Notes
 
+## v3.53.0 — “Two Camera Renders” (2026-11-20)
+
+- Added `scripts/render-planet-views.mjs`: renders the **same active face set** from an orbit camera
+  and a surface camera using the same `IcosaRenderer`; no HUD, avatars or generated geometry.
+- Saved comparison renders:
+  - `media/planet-orbit.png`
+  - `media/planet-surface.png`
+- Increased spherical edge-arc sampling at close depths so the same faces read as arcs rather than
+  straight chords. No cells or triangles were added/removed.
+- 106/106 tests.
+
+Release: https://github.com/moldovancsaba/narimato/releases/tag/v3.53.0
+
+---
+
 ## v3.52.0 — “Camera Only” (2026-11-20)
 
 - **Removed the generated surface mesh.** There is no adaptive subdivision, no local triangle-density
