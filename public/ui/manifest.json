@@ -1,0 +1,14 @@
+{
+  "version": "03b5e30e5760d64",
+  "builtAt": "2026-11-20T21:06:20.000Z",
+  "entries": {
+    "js": "island.js",
+    "css": "island.css"
+  },
+  "bytes": {
+    "js": 580193,
+    "css": 256011,
+    "jsGzip": 176588,
+    "cssGzip": 39237
+  }
+}

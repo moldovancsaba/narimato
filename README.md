@@ -247,16 +247,22 @@ repository status documents. The repository owns durable technical knowledge and
 
 ## Development
 
-The node:test suite currently runs <!-- test-count:311 -->311<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
+The node:test suite currently runs <!-- test-count:351 -->351<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 ```
 npm test                 # node:test suite, no dependencies
 npm run docs:check       # markdown links, issue map and version consistency
 npm run check:slo        # SLO verdict from /api/metrics (exit 0/1/2/3)
 npm run recovery:test    # backup -> verify -> restore drill on throwaway data
+npm run build:ui         # rebuild the committed GDS island from ui/src (dev only, needs npm ci)
+npm run verify:ui        # GDS island contract: content hash, budgets, mount rules, deploy safety
 npm start                # serve on PORT (default 4173), DATA_DIR (default ./data)
 npm run dev              # alias
 ```
+
+DOM UI is composed from the Sovereign Squad General Design System through the committed island under
+`public/ui/`; the game entry, server and tests stay dependency-free. Build, provider/portal model,
+feature flags, budgets and rollback: [docs/GDS_INTEGRATION.md](docs/GDS_INTEGRATION.md).
 
 Environment: `PORT`, `HOST`, `DATA_DIR`, `BREAK_CLICKS`, `MAX_DEPTH`, `BOTS`, `DEPOSIT_CHANCE`,
 the bot timing variables, `ALLOW_EMPTY_WORLD` (safe empty-boot guard) and `SECURITY_MODE`
@@ -276,8 +282,12 @@ lib/security.js           origin policy, CSP/header assembly, path safety (SEC-0
 lib/rate-limit.js         pure token-bucket limiter with injectable clock
 lib/data-integrity.js     manifest, deterministic tar/gzip, path safety, reconciliation (OPS-03)
 observability/slo.json    threshold/owner/runbook SSOT for the SLO checker
-public/index.html         shell + intro/interlude/HUD markup
+public/index.html         shell + intro/interlude/HUD markup + GDS mount host
 public/js/app.js          client integration + game loop
+ui/src/                   GDS React island sources (dev-time only)
+public/ui/                committed GDS island bundle + manifest served by the server
+public/js/gds-adapter.js  UI flags, frozen-UI adapter, boot retry/fallback
+public/js/gds-boot.js     page boot for the GDS island
 public/js/renderer.js     Canvas 2D spherical game renderer
 public/icosahedron.html   isolated spherical-icosahedron viewer
 public/js/icosahedron-viewer.js  WebGL ray–sphere front-surface viewer

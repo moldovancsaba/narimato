@@ -13,12 +13,12 @@ Architecture decisions are recorded as ADRs: [docs/adr/README.md](docs/adr/READM
 
 | Layer | Technology | Notes |
 |---|---|---|
-| Client | Vanilla HTML/CSS/ES modules | no framework, no bundler, no runtime npm deps |
+| Client | Vanilla HTML/CSS/ES modules + committed GDS island bundle | no runtime npm deps; a dev-time Vite/React build compiles `ui/src/` into `public/ui/` |
 | Rendering | Canvas 2D + WebGL | game planet: Canvas 2D; spherical-icosahedron reference viewer: WebGL ray–sphere shader |
 | Simulation | Node.js ≥20 | authoritative game server, HTTP + Server-Sent Events |
 | Persistence | JSON files + atomic rename | one file per planet, one registry file |
-| Tests | `node:test` | <!-- test-count:311 -->311<!-- /test-count --> tests, no test dependencies; ownership map in [docs/TEST_MAP.md](docs/TEST_MAP.md) |
-| CI | GitHub Actions | Node 20 and 22, `npm test` |
+| Tests | `node:test` | <!-- test-count:351 -->351<!-- /test-count --> tests, no test dependencies; ownership map in [docs/TEST_MAP.md](docs/TEST_MAP.md) |
+| CI | GitHub Actions | Node 20 and 22, `npm test`; Node 22 GDS island build, contract gate and determinism proof |
 | Deploy | `node server.js` behind any static/reverse proxy | Cloudflare tunnel used for the live build |
 
 Zero npm dependencies is intentional: the entire game ships as readable source and starts with
@@ -97,6 +97,12 @@ Observability: `public/js/telemetry.js` posts a tiny privacy-safe numeric beacon
   confirm dialog, report overlay, responsive layout switching. It is the only HUD writer: orbit
   nodes stay mounted across view changes, and surface mode only toggles `#hud[data-mode]` plus the
   `#surface-controls` strip (target, lap, movement pads, exit).
+- **GDS island** — the approved DOM UI path (UI-01). `ui/src/` is React + `@sovereignsquad/gds`;
+  `npm run build:ui` compiles it into the committed `public/ui/{island.js,island.css,manifest.json}`
+  served by the static handler. `public/js/gds-adapter.js` resolves `?gds=0|1|proof` /
+  `localStorage['narimato.gds']` and maps the frozen `UI` API onto island slices;
+  `public/js/gds-boot.js` boots one `GdsProvider`/React root and falls back to the legacy UI with a
+  dismissible banner on failure. Details: [docs/GDS_INTEGRATION.md](docs/GDS_INTEGRATION.md).
 - **`intro.js`** — launch cinematic state machine: wormhole → drift/gravity lock → descent; camera
   dolly, cockpit fade, steering (WASD/arrows/touch), skip/replay, reduced-motion.
 - **`interlude.js`** — escape transit: launch burn → random story event → hull damage/shake →
@@ -582,10 +588,10 @@ debounce 0.5 min + 5 min backup interval), RTO ≤ 15 min; retention is 7 daily 
 
 ## Testing
 
-The suite currently runs <!-- test-count:311 -->311<!-- /test-count --> tests. Behaviour ownership: [docs/TEST_MAP.md](docs/TEST_MAP.md).
+The suite currently runs <!-- test-count:351 -->351<!-- /test-count --> tests. Behaviour ownership: [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 ```bash
-npm test                 # node:test suite (311 tests)
+npm test                 # node:test suite (351 tests)
 npm run check:slo        # evaluate observability/slo.json against /api/metrics (0/1/2/3)
 npm run recovery:test    # backup -> verify -> restore drill on throwaway data
 npm run docs:check       # R1-R6 repository SSOT gate
@@ -611,6 +617,10 @@ node scripts/test-count.mjs  # documented count == executed count
 - `test/server.test.js` — HTTP/SSE, rooms, escape, persistence, static safety; plus surface
   pose/leave frames, rate-limit and TTL rejection paths, SSE disconnect and room isolation,
   robot frame progression, `surface_mine` ordering and supply focus convergence.
+- `test/gds-manifest.test.js` — committed island manifest, content-hash version, gzip budgets, GDS-only
+  source rules, mount contract and MIME/`no-store` serving of `public/ui/*`.
+- `test/gds-adapter.test.js` — flag precedence, frozen `UI` API mapping, safe degradation, one-retry boot,
+  fallback banner and guarded stale-chunk reload.
 - `test/observability.test.js` — `/api/metrics` shape/aggregates, SSE counters, privacy (no
   tokens/tags/ids/hidden deposits), telemetry whitelist/clamping, 4 KB body cap, same-origin,
   rate limiting, and the Node-safe client beacon module.
@@ -642,6 +652,7 @@ DATA_DIR=/var/lib/narimato PORT=4173 node server.js
   enough hidden deposits of each refit ore to make the mission completable.
 - Back up `DATA_DIR` before upgrades with `node scripts/backup-data.mjs --data-dir <dir> --out <backupDir>`
   and verify it with `node scripts/verify-data.mjs --archive <file>` (see [docs/RECOVERY.md](docs/RECOVERY.md)).
-  Static assets are served no-store by the game server.
+  Static assets are served no-store by the game server, including the committed GDS island under
+  `public/ui/`; `npm run build:ui` is only required after editing `ui/src/`.
 - Any reverse proxy/tunnel can front the HTTP port; SSE needs buffering disabled
   (`X-Accel-Buffering: no` is already sent).

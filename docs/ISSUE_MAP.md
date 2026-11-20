@@ -106,6 +106,7 @@ to it; it never restates their status.
 | [docs/TEST_MAP.md](TEST_MAP.md) | Test file to behaviour, module and issue ownership map. | [QA-01](https://github.com/moldovancsaba/narimato/issues/5) |
 | [docs/adr/README.md](adr/README.md) | Architecture decision index and conventions. | [DOC-01](https://github.com/moldovancsaba/narimato/issues/6) |
 | [docs/adr/TEMPLATE.md](adr/TEMPLATE.md) | ADR authoring template. | — |
+| [docs/GDS_INTEGRATION.md](GDS_INTEGRATION.md) | GDS island build pipeline, provider/portal model, flags, budgets, accessibility evidence and rollback. | [UI-01](https://github.com/moldovancsaba/narimato/issues/7), [UI-02](https://github.com/moldovancsaba/narimato/issues/8), [UI-03](https://github.com/moldovancsaba/narimato/issues/9), [UI-04](https://github.com/moldovancsaba/narimato/issues/10), [UI-05](https://github.com/moldovancsaba/narimato/issues/11), [A11Y-01](https://github.com/moldovancsaba/narimato/issues/12) |
 
 ## Legacy backlog mapping (retired by SSOT-04)
 

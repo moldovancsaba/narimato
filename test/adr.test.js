@@ -123,7 +123,7 @@ function fixtureDir(files) {
 
 test('the repository ADR set is valid and indexed', () => {
   const adrs = loadRepoAdrs();
-  assert.equal(adrs.length, 6);
+  assert.equal(adrs.length, 7);
   const rows = parseIndexRows(fs.readFileSync(path.join(ADR_DIR, 'README.md'), 'utf8'));
   const problems = validateAdrs(adrs, { indexRows: rows, issueKeys: repoIssueKeys() });
   assert.deepEqual(problems, []);

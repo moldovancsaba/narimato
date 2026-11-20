@@ -18,6 +18,7 @@ index below in number order, and open the implementing issue first (delivery SSO
 | [0004](0004-authoritative-server.md) | Authoritative server for all game state | Accepted | SRV-01, SRV-02, SRV-03, SRV-04, TST-01 |
 | [0005](0005-json-atomic-persistence.md) | JSON-file persistence with atomic rename | Accepted | OPS-03 |
 | [0006](0006-delivery-ssot-github-issues.md) | Delivery SSOT in GitHub Project issues; docs own durable knowledge | Accepted | SSOT-01, SSOT-02, SSOT-03, SSOT-04, DOC-01, REL-01 |
+| [0007](0007-gds-island-build-pipeline.md) | GDS island build pipeline — deterministic dev-time bundle with committed output | Accepted | UI-01 |
 
 ## Conventions
 
