@@ -126,28 +126,34 @@ function draw() {
   ctx.clip();
   ctx.strokeStyle = 'rgba(7,20,30,0.92)';
   ctx.lineWidth = 2.6;
+  // All 30 unique icosahedron edges as continuous great-circle arcs.
+  const edgeSet = new Set();
+  const edges = [];
   for (const [ia, ib, ic] of faces) {
-    const A = vecNorm(qRotateVec(objectQ, vertices[ia]));
-    const B = vecNorm(qRotateVec(objectQ, vertices[ib]));
-    const C = vecNorm(qRotateVec(objectQ, vertices[ic]));
-    for (const [p, q] of [[A, B], [B, C], [C, A]]) {
-      ctx.beginPath();
-      let drawing = false;
-      for (let i = 0; i <= 30; i += 1) {
-        const t = i / 30;
-        const d = Math.max(-1, Math.min(1, vecDot(p, q)));
-        const theta = Math.acos(d) * t;
-        const sin = Math.sin(theta);
-        const r = vecSub(q, vecMul(p, d));
-        const rl = Math.hypot(r.x, r.y, r.z) || 1;
-        const v = vecAdd(vecMul(p, Math.cos(theta)), vecMul(r, sin / rl));
-        const pr = camera.project(vecNorm(v));
-        if (!pr.visible) { drawing = false; continue; }
-        if (!drawing) { ctx.moveTo(pr.x, pr.y); drawing = true; }
-        else ctx.lineTo(pr.x, pr.y);
-      }
-      ctx.stroke();
+    for (const [a, b] of [[ia, ib], [ib, ic], [ic, ia]]) {
+      const key = a < b ? `${a}:${b}` : `${b}:${a}`;
+      if (edgeSet.has(key)) continue;
+      edgeSet.add(key);
+      edges.push([a, b]);
     }
+  }
+  for (const [ia, ib] of edges) {
+    const p = vecNorm(qRotateVec(objectQ, vertices[ia]));
+    const q = vecNorm(qRotateVec(objectQ, vertices[ib]));
+    ctx.beginPath();
+    for (let i = 0; i <= 32; i += 1) {
+      const t = i / 32;
+      const d = Math.max(-1, Math.min(1, vecDot(p, q)));
+      const theta = Math.acos(d) * t;
+      const sin = Math.sin(theta);
+      const r = vecSub(q, vecMul(p, d));
+      const rl = Math.hypot(r.x, r.y, r.z) || 1;
+      const v = vecNorm(vecAdd(vecMul(p, Math.cos(theta)), vecMul(r, sin / rl)));
+      const pr = camera.project(v);
+      if (i === 0) ctx.moveTo(pr.x, pr.y);
+      else ctx.lineTo(pr.x, pr.y);
+    }
+    ctx.stroke();
   }
   ctx.restore();
 }
