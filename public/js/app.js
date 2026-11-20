@@ -8,6 +8,7 @@
  */
 
 import { SphereCamera, pickFace, childTriangles, faceCentroid } from './shared/geometry.js';
+import { applyScreenDrag } from './shared/orbit-controls.js';
 import { World } from './world.js';
 import { IcosaRenderer } from './renderer.js';
 import { UI } from './ui.js';
@@ -2100,7 +2101,7 @@ function bindCanvasInput() {
         // Incremental screen-space rotation: unlike an absolute trackball the
         // direction cannot flip when the pointer leaves the virtual ball or the
         // view crosses a pole. Mouse-direct; I flips the screen axes.
-        safeCall(camera, 'rotate', invertDrag ? -dx : dx, invertDrag ? -dy : dy);
+        applyScreenDrag(camera, invertDrag ? -dx : dx, invertDrag ? -dy : dy);
         const stamp = now();
         pointerDown.lastMoveAt = stamp;
         // A direct grab is deterministic; no residual spin can reverse it.

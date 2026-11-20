@@ -3,6 +3,7 @@
  * Exactly 20 great-circle face edges; solid sphere; no stars/halo/HUD.
  */
 import { SphereCamera, SPHERE_SCREEN_FRACTION, baseIcosahedron } from './shared/geometry.js';
+import { applyScreenDrag, applyArrowKey } from './shared/orbit-controls.js';
 
 const canvas = document.getElementById('icosa-canvas');
 const ctx = canvas.getContext('2d');
@@ -139,10 +140,9 @@ canvas.addEventListener('pointermove', (event) => {
   pointer.lastX = event.clientX;
   pointer.lastY = event.clientY;
   pointer.lastT = now;
-  // Direct grab: invert the camera rotation so the surface follows the cursor.
-  camera.rotate(-dx, -dy);
-  spin.x = -dx / dt;
-  spin.y = -dy / dt;
+  applyScreenDrag(camera, dx, dy);
+  spin.x = dx / dt;
+  spin.y = dy / dt;
 });
 
 function endPointer(event) {
@@ -159,13 +159,10 @@ canvas.addEventListener('pointercancel', endPointer);
 canvas.addEventListener('pointerleave', (event) => { if (!canvas.hasPointerCapture?.(event.pointerId)) endPointer(event); });
 
 window.addEventListener('keydown', (event) => {
-  const step = 28;
-  switch (event.key) {
-    case 'ArrowLeft': camera.rotate(step, 0); event.preventDefault(); break;
-    case 'ArrowRight': camera.rotate(-step, 0); event.preventDefault(); break;
-    case 'ArrowUp': camera.rotate(0, step); event.preventDefault(); break;
-    case 'ArrowDown': camera.rotate(0, -step); event.preventDefault(); break;
-    default: break;
+  const keys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+  if (keys.includes(event.key)) {
+    applyArrowKey(camera, event.key);
+    event.preventDefault();
   }
 });
 
