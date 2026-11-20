@@ -25,6 +25,7 @@ import { renderResultCard } from './result-card.js';
 import { RESOURCE_MARKET, resourceById } from './shared/resources.js';
 import { isRareResource, missionForPlanet, missionProgress, planetName, planetSource } from './shared/mission.js';
 import { BIOMES } from './shared/planet.js';
+import { guideStepBody } from './story-copy.js';
 
 const CONNECTIONS = new Set(['connected', 'connecting', 'reconnecting', 'offline']);
 const CONNECTION_TEXT = {
@@ -856,6 +857,20 @@ class UI {
 
   get isGuideOpen() {
     return !!(this._el.guideOverlay && !this._el.guideOverlay.classList.contains('is-hidden'));
+  }
+
+  /**
+   * State the current planet's break threshold in the Quick Guide card. The DOM
+   * contract is unchanged: one existing text node is rewritten with the same
+   * `story-copy.js` template the docs are generated from.
+   */
+  setGuideThreshold(breakClicks) {
+    if (!this.doc) return;
+    const el = this.doc.getElementById('guide-how-copy');
+    if (!el) return;
+    const clicks = Math.max(1, Math.trunc(Number(breakClicks)) || 8);
+    const text = guideStepBody('how', { breakClicks: clicks, deeperClicks: Math.max(clicks, 8) });
+    if (el.textContent !== text) el.textContent = text;
   }
 
   /** Open the Field Manual with story/tips/help sections. */

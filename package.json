@@ -14,7 +14,11 @@
     "audit:ui": "node scripts/audit-ui.mjs",
     "load:test": "node scripts/load-test.mjs",
     "audit:a11y": "node scripts/audit-a11y.mjs",
-    "chaos:test": "node scripts/chaos-test.mjs"
+    "chaos:test": "node scripts/chaos-test.mjs",
+    "voice:generate": "node scripts/generate-voice.mjs",
+    "voice:verify": "node scripts/verify-voice.mjs",
+    "copy:check": "node scripts/sync-story-copy.mjs --check",
+    "copy:write": "node scripts/sync-story-copy.mjs --write"
   },
   "engines": {
     "node": ">=20"

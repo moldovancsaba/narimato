@@ -4,11 +4,14 @@
  * Narration is split into sentence-sized clips and played one sentence at a
  * time with a short breath pause between them. Voice and subtitles are
  * independent, persisted toggles (streaming-player UX). Audio files live in
- * public/audio/voice/<cue>__s<n>.m4a and are generated from narrative-data.js;
- * no runtime TTS is required. Dynamic story text maps to story clips by id.
+ * public/audio/voice/<profile>/<cue>__s<n>.m4a and are generated from
+ * narrative-data.js; no runtime TTS is required. Dynamic story text maps to
+ * story clips by id. The cache key is generated from the asset content by
+ * scripts/generate-voice.mjs (package version + content hash), never hand-edited.
  */
 
 import { NARRATION, VOICE_PROFILES, narrationSegments } from './narrative-data.js';
+import { AUDIO_VERSION } from './audio-version.js';
 import { telemetry } from './telemetry.js';
 
 const VOICE_KEY = 'icosa.voice';
@@ -17,7 +20,6 @@ const PROFILE_KEY = 'icosa.voiceProfile';
 const DEFAULT_PROFILE = 'george';
 const SEGMENT_GAP_MS = 220;
 const PLAYBACK_RATE = 0.94; // slower, deliberate delivery
-const AUDIO_VERSION = '3.16.0';
 
 /** Optional edge/CDN base for heavy audio assets. Same-origin by default. */
 function assetBase() {
@@ -113,7 +115,7 @@ export function createNarrator() {
 
   // Limited-concurrency warmup: fetch the first sentence of each cue and the
   // next sentence while one is playing. Keeps first-word latency low without
-  // downloading all 85 clips at boot.
+  // downloading all 115 clips at boot.
   const warmQueue = [];
   const warmed = new Set();
   let warmActive = 0;

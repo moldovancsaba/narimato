@@ -7,6 +7,9 @@
 > **Related delivery issues:** [UI-03](https://github.com/moldovancsaba/narimato/issues/9) · [CTL-05](https://github.com/moldovancsaba/narimato/issues/30) · [STR-02](https://github.com/moldovancsaba/narimato/issues/36)
 <!-- delivery-ssot:end -->
 
+> **Generated blocks:** the marked prose in this document is rendered from
+> `public/js/story-copy.js`; edit the module and run `node scripts/sync-story-copy.mjs --write`.
+
 Share this with a new pilot. In game, press **GUIDE** (or open `?guide=1`) for the same card.
 
 ## 1. What to mine
@@ -19,8 +22,9 @@ The **THE WAY HOME** panel lists every part the ship still needs.
 ## 2. How to mine
 
 - Click or tap a triangle to charge it.
-- **Four clicks** break a base triangle into four smaller cells.
-- Deeper cells need **eight clicks**.
+  <!-- story-copy:start guide-mining -->
+  Each planet has **one break threshold**: the first world breaks a triangle at **4 clicks**; deeper worlds ask for **8**. Reach the threshold and that triangle splits into four smaller cells; the children start charging from zero.
+  <!-- story-copy:end guide-mining -->
 - Keep breaking deeper to find richer ground.
 - The contest lock is always on: after your click, another operator must contest the cell before
   you can charge it again. If no human is around, the game staffs robots; one will prioritise
@@ -55,13 +59,18 @@ and **RETURN TO ORBIT** or Escape to leave.
   **Shift** speeds up travel.
 - Press **I** to reverse mouse drag.
 - **? / GUIDE** opens this card again; **OPEN FIELD MANUAL** has the full story and controls.
-- If you make no refit progress for **two minutes**, a relief ship crashes onto the planet and scatters the missing ore across marked triangles. It repeats every two minutes while parts are still missing.
+- **Relief ship:**
+  <!-- story-copy:start guide-relief -->
+  If you make no refit progress for **two minutes**, a relief ship crashes onto the planet and scatters the missing ore across marked triangles. It repeats every two minutes while parts are still missing.
+  <!-- story-copy:end guide-relief -->
 
 ## Early planets
 
 Rare requirements are deliberately gentle on the first worlds:
+<!-- story-copy:start guide-rare -->
 - Planet 1: exactly **one** rare unit.
 - Planet 2: exactly **one** rare unit.
 - Planet 3: up to **two** rare units.
 - Planet 4: up to **three** rare units.
 - Deeper worlds can demand more rare material.
+<!-- story-copy:end guide-rare -->

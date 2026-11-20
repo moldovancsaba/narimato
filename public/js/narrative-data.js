@@ -1,10 +1,15 @@
 /**
  * NARIMATO — narration script.
  *
- * Audio is generated from this file by `node scripts/generate-voice.mjs`
- * (macOS `say` + `afconvert`) into public/audio/voice/<id>.m4a. Subtitles use
- * the same strings. Voice and subtitles are independent toggles.
+ * Cue text is the single source for both the generated audio clips and the
+ * captions. Audio is generated from this file by `node scripts/generate-voice.mjs`
+ * into public/audio/voice/<profile>/<cue>__s<n>.m4a. PLAYER-FACING PROSE lives in
+ * `story-copy.js`; narration lines live here. Voice and subtitles are
+ * independent toggles.
  */
+
+// Field Manual sections are player-facing prose and live in the copy contract.
+export { HELP_SECTIONS } from './story-copy.js';
 
 /** Split narration text into display/audio sentences (one idea at a time). */
 export function splitNarrationSentences(text) {
@@ -25,9 +30,36 @@ export function narrationSegments(cue) {
 
 /** Selectable narrator voice packs (rendered into public/audio/voice/<id>/). */
 export const VOICE_PROFILES = Object.freeze([
-  { id: 'george', label: 'GEORGE', region: 'UK', engine: 'kokoro', voice: 'bm_george', lang: 'b' },
-  { id: 'daniel', label: 'DANIEL', region: 'UK', engine: 'say', voice: 'Daniel', rate: 150 },
-  { id: 'samantha', label: 'SAMANTHA', region: 'US', engine: 'say', voice: 'Samantha', rate: 152 },
+  {
+    id: 'george',
+    label: 'GEORGE',
+    region: 'UK',
+    engine: 'kokoro',
+    voice: 'bm_george',
+    lang: 'b',
+    license: 'Apache-2.0 (Kokoro-82M model weights)',
+    attribution: 'Kokoro-82M by hexgrad, voice bm_george — https://huggingface.co/hexgrad/Kokoro-82M',
+  },
+  {
+    id: 'daniel',
+    label: 'DANIEL',
+    region: 'UK',
+    engine: 'say',
+    voice: 'Daniel',
+    rate: 150,
+    license: 'macOS system voice (Apple licence)',
+    attribution: 'Apple macOS `say` voice Daniel',
+  },
+  {
+    id: 'samantha',
+    label: 'SAMANTHA',
+    region: 'US',
+    engine: 'say',
+    voice: 'Samantha',
+    rate: 152,
+    license: 'macOS system voice (Apple licence)',
+    attribution: 'Apple macOS `say` voice Samantha',
+  },
 ]);
 
 export const NARRATION = Object.freeze({
@@ -44,7 +76,7 @@ export const NARRATION = Object.freeze({
     text: 'Fuel empty. Mine the ore, rebuild the warp core, and find the way back.',
   },
   'tip-mining': {
-    text: 'Click a triangle to charge it. On this planet, four clicks break it into four smaller cells.',
+    text: 'Click a triangle to charge it. On the first world four clicks break it into four smaller cells; deeper worlds ask for eight.',
   },
   'tip-lock': {
     text: 'Green means you can mine. Red means you already mined it. Another operator must contest it before you can charge again.',
@@ -160,64 +192,94 @@ export const NARRATION = Object.freeze({
       'You pick one and start the descent.',
     ],
   },
-});
 
-export const HELP_SECTIONS = Object.freeze([
-  {
-    id: 'story',
-    voiceId: 'help-story',
-    title: 'THE WAY BACK',
-    body: [
-      'You are a pilot thrown through a wormhole to the far side of the universe. Your ship is trapped above a rogue geodesic planet with empty tanks.',
-      'Mine the crust, rebuild the drive, escape, and follow the worlds toward home. Every planet is deeper, stranger and more contested.',
+  // ---- STR-01: relief, per-kind incidents, Quick Guide and Captain's Log ----
+  'event-relief': {
+    text: 'Distress beacon answered. A relief ship is coming down hard. The missing ore is scattered across the marked triangles. It is a race; every pilot on this world can see the salvage rings.',
+    lines: [
+      'Distress beacon answered. A relief ship is coming down hard.',
+      'The missing ore is scattered across the marked triangles.',
+      'It is a race; every pilot on this world can see the salvage rings.',
     ],
   },
-  {
-    id: 'mining',
-    voiceId: 'help-mining',
-    title: 'MINING & CHARGE',
-    body: [
-      'Click or tap a triangle to claim or charge it. At the planet threshold it breaks into four smaller spherical cells.',
-      'Ore is hidden and is found on a random successful click — first, middle or the breaking click. Green cells can be mined; red cells are locked to you.',
+  'event-incident-meteor': {
+    text: 'Meteor impact. A rogue rock punched straight through the old crust. The crater is open, and fresh ore veins are exposed. Get down there and salvage what the rock is hiding.',
+    lines: [
+      'Meteor impact. A rogue rock punched straight through the old crust.',
+      'The crater is open, and fresh ore veins are exposed.',
+      'Get down there and salvage what the rock is hiding.',
     ],
   },
-  {
-    id: 'lock',
-    voiceId: 'help-lock',
-    title: 'CONTEST LOCK & ROBOTS',
-    body: [
-      'You cannot re-click your own cell until another player or robot contests it. Red means you are locked out; it clears when someone else clicks.',
-      'Every planet is staffed to keep at least three players: one human gets two robots, two humans get one, three or more play bot-free.',
+  'event-incident-nuclear': {
+    text: 'Nuclear war. Atomic fire swept the planet from horizon to horizon. The blast waves split the crust and exposed new materials. Everything old is ash; the survivors are already picking through the rubble.',
+    lines: [
+      'Nuclear war. Atomic fire swept the planet from horizon to horizon.',
+      'The blast waves split the crust and exposed new materials.',
+      'Everything old is ash; the survivors are already picking through the rubble.',
     ],
   },
-  {
-    id: 'planets',
-    voiceId: 'help-planets',
-    title: 'PLANETS & ESCAPE',
-    body: [
-      'Planet 1 is 2 levels (20 + 80 cells), planet 2 is 3 levels (20 + 80 + 320), and deeper planets follow.',
-      'Complete the refit to unlock ESCAPE. Your ore inventory travels with you and counts toward the next planet. Fully mined planets are reseeded by a meteor.',
+  'event-incident-solar': {
+    text: 'Solar flare. The local star lashed out and cooked the daylight side. The magnetic storm peeled back rock and scattered rare elements. The surface is hot, but the ore is close.',
+    lines: [
+      'Solar flare. The local star lashed out and cooked the daylight side.',
+      'The magnetic storm peeled back rock and scattered rare elements.',
+      'The surface is hot, but the ore is close.',
     ],
   },
-  {
-    id: 'navigation',
-    voiceId: 'help-navigation',
-    title: 'NAVIGATION & CAMERA',
-    body: [
-      'The gold NAV beacon and chip point to a strong nearby cell by biome and ore chance. Tap the chip to fly there, or the arrow to cycle.',
-      'Drag and release to let the planet glide. Scroll or pinch to zoom smoothly. Double-click a cell to focus it.',
+  'event-incident-alien': {
+    text: 'Alien invasion. A fleet razed the planet from orbit. Their beams demolished the old surface and scattered new materials. Whatever they were looking for, they left plenty behind for us.',
+    lines: [
+      'Alien invasion. A fleet razed the planet from orbit.',
+      'Their beams demolished the old surface and scattered new materials.',
+      'Whatever they were looking for, they left plenty behind for us.',
     ],
   },
-  {
-    id: 'controls',
-    voiceId: 'help-controls',
-    title: 'CONTROLS & AUDIO',
-    body: [
-      'Click: mine. Drag: rotate the planet (release to glide). Arrow keys: travel around the planet. Shift: faster travel. Mouse drag and cursor travel are separate. I: reverse drag. L: cell ids.',
-      'CC toggles subtitles. The voice button toggles narration. Both remember your choice and are independent, like a streaming player.',
+  'guide-what': {
+    text: 'The way home panel lists every part the ship still needs. Fuel rods, hull plates and warp core each show what is still missing. Rare parts are marked rare.',
+    lines: [
+      'The way home panel lists every part the ship still needs.',
+      'Fuel rods, hull plates and warp core each show what is still missing.',
+      'Rare parts are marked rare.',
     ],
   },
-]);
+  'guide-how': {
+    text: 'Click or tap a triangle to charge it. At this planet threshold it breaks into four smaller cells. Keep going deeper to find richer ground.',
+    lines: [
+      'Click or tap a triangle to charge it.',
+      'At this planet threshold it breaks into four smaller cells.',
+      'Keep going deeper to find richer ground.',
+    ],
+  },
+  'guide-where': {
+    text: 'Ore is hidden, and it can appear on a random click. Follow the gold nav beacon to the best nearby ground. Double click a cell to focus, and use the wheel or pinch to zoom.',
+    lines: [
+      'Ore is hidden, and it can appear on a random click.',
+      'Follow the gold nav beacon to the best nearby ground.',
+      'Double click a cell to focus, and use the wheel or pinch to zoom.',
+    ],
+  },
+  'guide-leave': {
+    text: 'Fill every system until the panel says loaded. The central try to fly away button opens. Take it to reach the next planet.',
+    lines: [
+      'Fill every system until the panel says loaded.',
+      'The central try to fly away button opens.',
+      'Take it to reach the next planet.',
+    ],
+  },
+  'log-grounded': {
+    text: 'We are grounded. The drive still needs parts from the crust. The relief ship will find us if the refit stalls.',
+    lines: [
+      'We are grounded. The drive still needs parts from the crust.',
+      'The relief ship will find us if the refit stalls.',
+    ],
+  },
+  'log-almost': {
+    text: 'The drive is almost there; check the ship, then take us home.',
+  },
+  'log-ready': {
+    text: 'The drive is breathing again; we can leave whenever you are ready.',
+  },
+});
 
 export const TIP_IDS = Object.freeze([
   'tip-mining', 'tip-lock', 'tip-ore', 'tip-nav', 'tip-escape',

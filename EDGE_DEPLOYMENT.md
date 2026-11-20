@@ -13,8 +13,13 @@ or served by the edge.
 
 ## What is already CDN-safe
 
-- Audio URLs are versioned: `/audio/voice/<profile>/<cue>__s<n>.m4a?v=3.16.0`.
+- Audio URLs are versioned: `/audio/voice/<profile>/<cue>__s<n>.m4a?v=3.57.0+56190bd8`.
+  The query is generated (`<package version>+<content hash8>`) by
+  `scripts/generate-voice.mjs`; never hand-edit it. Editing a sentence changes the
+  content hash, so a replaced clip always gets a new cache key.
 - `.m4a` responses are `Cache-Control: public, max-age=31536000, immutable`.
+- `/audio/voice/manifest.json` lists every clip with `sha256`, `bytes` and
+  `durationMs`; it is the verification contract for `npm run voice:verify`.
 - HTML/JS/CSS use `no-store`; release assets are versioned by `?v=<app version>`.
 - Static files are traversal-safe and MIME-typed by the origin.
 
@@ -46,7 +51,8 @@ and tests keep the default empty value (same origin).
 
 | Path | Cache | Notes |
 |---|---|---|
-| `/audio/voice/*` | `public, max-age=31536000, immutable` | version query is the cache key |
+| `/audio/voice/*` | `public, max-age=31536000, immutable` | `?v=` content-derived version is the cache key |
+| `/audio/voice/manifest.json` | `no-store` | generated contract; must match the deployed clips |
 | `/js/*`, `/css/*` | `public, max-age=31536000, immutable` | app entry carries `?v=` |
 | `/index.html` | `no-store` | must pick up release version + asset base |
 | `/api/*` | `no-store` | authoritative; never edge-cache |
