@@ -381,7 +381,7 @@ surface = createSurfaceMode({
   onExit: () => {
     renderer.setSurfaceView(false);
     surfaceLiveFaces = null;
-    renderer.setFaces(leafList);
+    syncRenderFaces();
     sendSurfaceLeave();
     // Returning from the crust must put the camera at maximum zoom-out in orbit,
     // not back at the deepest cell zoom.
@@ -477,13 +477,21 @@ interlude = createInterlude({ safeCall, safeAudio });
  * Boot
  * ------------------------------------------------------------------ */
 
+function syncRenderFaces() {
+  if (surface && surface.active) {
+    refreshSurfaceLiveFaces();
+    return;
+  }
+  renderer.setFaces(leafList);
+}
+
 function boot() {
   primeTokenMap();
   resize();
   renderer.setPlayers([], null);
   safeCall(renderer, 'setPoleLabelsVisible', false);
   renderer.setConfig({ threshold: DEFAULT_THRESHOLD, maxDepth: DEFAULT_MAX_DEPTH });
-  renderer.setFaces(leafList);
+  syncRenderFaces();
 
   const params = new URLSearchParams(window.location.search);
   const prefill = (params.get('tag') || readStorage(TAG_KEY) || '').toUpperCase().slice(0, 12);
@@ -633,7 +641,7 @@ async function refreshPublicState() {
       world.setPlanetSeed(data.state.planetSeed);
       safeCall(renderer, 'setPlanetSurface', data.state.planetSeed);
       refreshLeafList();
-      renderer.setFaces(leafList);
+      syncRenderFaces();
     }
     safeCall(ui, 'updateHud', data.state, null, { zoom: camera.zoom });
     safeCall(ui, 'setLeaderboard', data.state.arcade || []);
@@ -865,7 +873,7 @@ function applySnapshot(nextState, leaves) {
   }
   world.loadLeaves(leaves);
   refreshLeafList();
-  renderer.setFaces(leafList);
+  syncRenderFaces();
   applyState(nextState);
   refreshMission();
   refreshNavTarget();
@@ -881,7 +889,7 @@ function applyState(next) {
     world.setPlanetSeed(next.planetSeed);
     safeCall(renderer, 'setPlanetSurface', next.planetSeed);
     refreshLeafList();
-    renderer.setFaces(leafList);
+    syncRenderFaces();
   }
   myIndex = myPlayer ? next.players.findIndex((p) => p.id === myPlayer.id) : -1;
   if (myIndex === -1 && myPlayer && joined) {
@@ -956,7 +964,7 @@ function applyDiscoveredResource(label, resource, playerId) {
     node.resourceId = resource.id;
     try {
       if (typeof renderer.discoverResource === 'function') renderer.discoverResource(label, resource.id);
-      else renderer.setFaces(leafList);
+      else syncRenderFaces();
     } catch (err) {
       console.warn('[icosa] resource marker failed', err);
     }

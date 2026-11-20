@@ -7101,3 +7101,9 @@ body.is-surface #target-panel { visibility: hidden !important; }
 }
 .surface-overlay--external .surface-hint { bottom: 12px !important; z-index: 3; }
 .surface-overlay--external .surface-pads { z-index: 3; }
+body.is-surface #hud-hint { display: none !important; }
+.surface-overlay--external .surface-target {
+  font-size: 10px !important;
+  letter-spacing: 0.12em;
+  padding: 7px 14px !important;
+}

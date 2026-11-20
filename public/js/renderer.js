@@ -1441,8 +1441,10 @@ export class IcosaRenderer {
     for (let i = 0; i < nf; i++) {
       const e = faces[i];
       if (this.surfaceView) {
-        // Surface camera can see cells outside the orbital front cone. Project
-        // all actual cells and let the camera depth clip the far side.
+        // Show the local crust around the pilot, not the whole planet's far
+        // fan. culling is by angular distance from the camera's surface origin.
+        const origin = camera && camera.origin;
+        if (origin && e.centroid.x * origin.x + e.centroid.y * origin.y + e.centroid.z * origin.z < 0.35) continue;
         if (!this._projectEntry(e, camera, W, H)) continue;
         let sumZ = 0;
         for (let k = 0; k < e.n; k += 1) sumZ += e.pz[k];
@@ -1547,9 +1549,19 @@ export class IcosaRenderer {
       ctx.closePath();
 
       const terrain = e.terrain;
-      const detailedSurface = !!(this.surface && this.surface.faces.length);
+      const detailedSurface = !this.surfaceView && !!(this.surface && this.surface.faces.length);
       ctx.globalAlpha = lodAlpha;
-      if (terrain && detailedSurface) {
+      if (terrain && this.surfaceView) {
+        // Crust view: show the biome, not a full-cell player-colour wash.
+        ctx.fillStyle = e.terrainFill;
+        ctx.fill();
+        if (e.ownerIndex >= 0 && style.overlayC[fillIdx]) {
+          ctx.globalAlpha = lodAlpha * 0.10;
+          ctx.fillStyle = style.overlayC[fillIdx];
+          ctx.fill();
+          ctx.globalAlpha = lodAlpha;
+        }
+      } else if (terrain && detailedSurface) {
         // Geography is already painted by the high-res surface. Keep only a
         // light ownership tint so the terrain reads through the grid.
         if (e.ownerIndex >= 0) {

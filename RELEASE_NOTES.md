@@ -1,5 +1,25 @@
 # NARIMATO — Release Notes
 
+## v3.50.0 — “Crust Fix” (2026-11-20)
+
+### Fixed
+
+- **State snapshots were replacing the subdivided surface mesh with base leaves** while surface mode
+  was active, producing giant polygon slabs. Render face updates now respect surface mode.
+- **Ownership tint was painting over the biome terrain** in surface mode. Surface cells now render
+  the actual terrain fill with only a 10% owner tint.
+- Camera framing adjusted for a closer ground view; humanoids enlarged and neck/head connected.
+- Orbital hint bar hidden on the surface so the surface controls own the bottom hint.
+- **106/106 tests.**
+
+### Release artifact
+
+- Source tag: `v3.50.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.50.0
+- Archives + `SHA256SUMS` attached.
+
+---
+
 ## v3.49.0 — “Final Pass” (2026-11-18)
 
 ### Verified complete

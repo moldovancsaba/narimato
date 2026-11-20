@@ -28,9 +28,9 @@ export class SurfaceCamera {
     this.zoom = 1;
     this.distance = 1;
     this.surfaceMode = true;
-    this.eyeHeight = Number(options.eyeHeight) || 0.055;
-    this.behind = Number(options.behind) || 0.12;
-    this.focal = Number(options.focal) || 1.12;
+    this.eyeHeight = Number(options.eyeHeight) || 0.03;
+    this.behind = Number(options.behind) || 0.16;
+    this.focal = Number(options.focal) || 1.35;
     this._pos = { x: 0, y: 0, z: 1 };
     this._forward = { x: 1, y: 0, z: 0 };
     this._view = null;
@@ -47,6 +47,7 @@ export class SurfaceCamera {
   /** Set player position/tangent from the surface controller. */
   setPose(pos, forward) {
     this._pos = norm(pos);
+    this.origin = this._pos;
     const f = norm(forward);
     const tangent = norm(sub(f, mul(this._pos, dot(f, this._pos))));
     this._forward = tangent.x || tangent.y || tangent.z ? tangent : { x: 1, y: 0, z: 0 };
@@ -58,7 +59,7 @@ export class SurfaceCamera {
     const up = this._pos;
     const fwd = this._forward;
     const cam = add(mul(up, 1 + this.eyeHeight), mul(fwd, -this.behind));
-    const target = add(add(up, mul(fwd, 0.36)), mul(up, -0.075));
+    const target = add(add(up, mul(fwd, 0.46)), mul(up, -0.14));
     const f = norm(sub(target, cam));
     const r = norm(cross(f, up));
     const u = norm(cross(r, f));
