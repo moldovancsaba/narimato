@@ -13,7 +13,7 @@ or served by the edge.
 
 ## What is already CDN-safe
 
-- Audio URLs are versioned: `/audio/voice/<profile>/<cue>__s<n>.m4a?v=3.6.0`.
+- Audio URLs are versioned: `/audio/voice/<profile>/<cue>__s<n>.m4a?v=3.16.0`.
 - `.m4a` responses are `Cache-Control: public, max-age=31536000, immutable`.
 - HTML/JS/CSS use `no-store`; release assets are versioned by `?v=<app version>`.
 - Static files are traversal-safe and MIME-typed by the origin.

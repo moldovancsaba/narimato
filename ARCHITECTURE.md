@@ -7,6 +7,8 @@
 > **Related delivery issues:** [SSOT-01](https://github.com/moldovancsaba/narimato/issues/1) · [SSOT-03](https://github.com/moldovancsaba/narimato/issues/3) · [QA-01](https://github.com/moldovancsaba/narimato/issues/5) · [DOC-01](https://github.com/moldovancsaba/narimato/issues/6) · [UI-01](https://github.com/moldovancsaba/narimato/issues/7) · [RND-06](https://github.com/moldovancsaba/narimato/issues/19) · [SRV-01](https://github.com/moldovancsaba/narimato/issues/20) · [TST-01](https://github.com/moldovancsaba/narimato/issues/25) · [EVT-01](https://github.com/moldovancsaba/narimato/issues/32) · [OPS-03](https://github.com/moldovancsaba/narimato/issues/40) · [OPS-05](https://github.com/moldovancsaba/narimato/issues/42) · [SEC-01](https://github.com/moldovancsaba/narimato/issues/43) · [PERF-01](https://github.com/moldovancsaba/narimato/issues/44)
 <!-- delivery-ssot:end -->
 
+Architecture decisions are recorded as ADRs: [docs/adr/README.md](docs/adr/README.md).
+
 ## Stack
 
 | Layer | Technology | Notes |
@@ -15,7 +17,7 @@
 | Rendering | Canvas 2D + WebGL | game planet: Canvas 2D; spherical-icosahedron reference viewer: WebGL ray–sphere shader |
 | Simulation | Node.js ≥20 | authoritative game server, HTTP + Server-Sent Events |
 | Persistence | JSON files + atomic rename | one file per planet, one registry file |
-| Tests | `node:test` | 116 tests, no test dependencies |
+| Tests | `node:test` | <!-- test-count:144 -->144<!-- /test-count --> tests, no test dependencies; ownership map in [docs/TEST_MAP.md](docs/TEST_MAP.md) |
 | CI | GitHub Actions | Node 20 and 22, `npm test` |
 | Deploy | `node server.js` behind any static/reverse proxy | Cloudflare tunnel used for the live build |
 
@@ -181,7 +183,7 @@ Authoritative rules live in [narimato-physics.md](narimato-physics.md):
 
 | Method | Route | Purpose |
 |---|---|---|
-| GET | `/api/health` | aggregate health, loaded planets |
+| GET | `/api/health` | aggregate health, `appVersion` (from `package.json`), loaded planets |
 | GET | `/api/state?token=` | planet state (tokenless = planet 0) |
 | GET | `/api/world?token=` | state + active leaves |
 | GET | `/api/leaderboard?token=` | planet arcade |
@@ -273,6 +275,8 @@ Three deliberate layouts, not just scaling:
 | `DEPOSIT_CHANCE` | unset | optional override of biome deposit chance (mineable only) |
 
 ## Testing
+
+The suite currently runs <!-- test-count:144 -->144<!-- /test-count --> tests. Behaviour ownership: [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 - `test/geometry.test.js` — regular icosahedron, spherical coverage, labels, camera/picking.
 - `test/sphere-interaction.test.js` — carrier projection/unprojection, point-follow, infinite local direction.

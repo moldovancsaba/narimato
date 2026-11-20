@@ -102,6 +102,9 @@ to it; it never restates their status.
 | [docs/PROJECT_BOARD.md](PROJECT_BOARD.md) | Board fields, statuses, readiness, views, operating routine. | — |
 | [docs/DEFINITION_OF_DONE.md](DEFINITION_OF_DONE.md) | The only definition of done and release gate. | — |
 | [docs/ISSUE_INTAKE.md](ISSUE_INTAKE.md) | Issue authoring standard and anti-patterns. | — |
+| [docs/TEST_MAP.md](TEST_MAP.md) | Test file to behaviour, module and issue ownership map. | [QA-01](https://github.com/moldovancsaba/narimato/issues/5) |
+| [docs/adr/README.md](adr/README.md) | Architecture decision index and conventions. | [DOC-01](https://github.com/moldovancsaba/narimato/issues/6) |
+| [docs/adr/TEMPLATE.md](adr/TEMPLATE.md) | ADR authoring template. | — |
 
 ## Legacy backlog mapping (retired by SSOT-04)
 

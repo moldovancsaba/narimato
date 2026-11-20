@@ -11,7 +11,7 @@ Narration is prerecorded and shipped locally; the game never calls a cloud TTS
 service. Each cue is split into sentence clips, so subtitles and voice stay in
 sync and narration can pause between sentences.
 
-Assets are served versioned (`?v=3.6.0`) with immutable cache headers. The
+Assets are served versioned (`?v=3.16.0`) with immutable cache headers. The
 narration engine prefetches the first sentence of every cue at idle with at most
 three concurrent requests, then warms the next sentence while the current clip
 plays. Bump `AUDIO_VERSION` in `public/js/narrator.js` whenever replacing clips.

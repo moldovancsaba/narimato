@@ -69,6 +69,8 @@ resets its crust and releases new resources. The game never ends.
 - [Release notes](RELEASE_NOTES.md) — what shipped in this release and migration notes.
 - [Planet generation research](PLANET_RESEARCH.md) — low-data procedural surface sources/algorithm.
 - [Algorithm notes](ALGORITHM.md) — spherical geometry, labels, picking, zoom math.
+- [Architecture decisions](docs/adr/README.md) — ADRs for runtime dependencies, GDS boundary, single scene, authority and persistence.
+- [Test map](docs/TEST_MAP.md) — which test file owns which behaviour and issue.
 - [Protocol/feature specs](SPEC_INFINITE.md) · [resources](SPEC_RESOURCES.md) ·
   [planet surface](SPEC_PLANET.md) · [planet progression](SPEC_PLANETS.md).
 
@@ -236,6 +238,8 @@ repository status documents. The repository owns durable technical knowledge and
 | ![Escape CTA on mobile](media/escape-cta-mobile.jpg) | ![Landing briefing on mobile](media/landing-brief-mobile.jpg) |
 
 ## Development
+
+The node:test suite currently runs <!-- test-count:144 -->144<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 ```
 npm test                 # node:test suite, no dependencies

@@ -25,6 +25,8 @@ import {
 import { PLANET_VERSION, terrainAt } from '../public/js/shared/planet.js';
 import { missionForPlanet, missionProgress, planetDepth, planetName } from '../public/js/shared/mission.js';
 
+const PACKAGE_VERSION = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8')).version;
+
 /** Flat ore inventory that exactly satisfies a generated mission. */
 function oreCountsForMission(mission) {
   const counts = {};
@@ -212,6 +214,7 @@ test('HTTP: join, click flow, state/world/leaderboard/health, static safety and 
   let res = await getJson(base, '/api/health');
   assert.equal(res.status, 200);
   assert.equal(res.json.ok, true);
+  assert.equal(res.json.appVersion, PACKAGE_VERSION);
   assert.equal(res.json.playersOnline, 0);
   assert.equal(res.json.faces, 20);
   assert.equal(res.json.maxDepthReached, 0);

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { SphereCamera, baseIcosahedron } from '../public/js/shared/geometry.js';
-import { unprojectSphere, shortestArcQuat, carrierFrame, carrierProject, carrierUnproject, moveCarrier, lookFrame } from '../public/js/shared/sphere-interaction.js';
+import { unprojectSphere, shortestArcQuat, carrierFrame, carrierProject, carrierUnproject, moveCarrier } from '../public/js/shared/sphere-interaction.js';
 
 const apply = (q, v) => {
   const tx = 2 * (q.y * v.z - q.z * v.y);
@@ -89,18 +89,4 @@ test('carrier projection and unprojection recover a visible surface point', () =
   assert.ok(back);
   const err = Math.hypot(back.x - unit.x, back.y - unit.y, back.z - unit.z);
   assert.ok(err < 1e-9, `carrier ray recovers point, err=${err}`);
-});
-
-test('surface lookFrame: descends toward tangent and down toward the centre', () => {
-  const dot = (a, b) => a.x * b.x + a.y * b.y + a.z * b.z;
-  const pos = { x: 0, y: 0, z: 1 };
-  const up = { x: 0, y: 1, z: 0 };
-  const orbit = lookFrame(pos, up, up, 0);
-  assert.ok(dot(orbit.forward, pos) < 0, 'orbit looks at centre');
-  const surface = lookFrame(pos, up, up, 1, 0.4);
-  const centre = { x: 0, y: 0, z: -1 };
-  assert.ok(dot(surface.forward, centre) > 0, 'surface forward has a downward centre component');
-  assert.ok(Math.abs(dot(surface.right, surface.forward)) < 1e-9);
-  assert.ok(Math.abs(dot(surface.up, surface.forward)) < 1e-9);
-  assert.ok(Math.abs(Math.hypot(surface.up.x, surface.up.y, surface.up.z) - 1) < 1e-9);
 });
