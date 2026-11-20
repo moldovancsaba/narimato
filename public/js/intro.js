@@ -11,11 +11,14 @@
  */
 
 import { drawTetraShip } from './shared/tetra-ship.js';
+import { publish } from './gds-bridge.js';
+import { introCopy, mapCineSlice, shouldCaptureCineKey } from './shared/cine-chrome.js';
 
 const INTRO_SEEN_KEY = 'icosa.introSeen';
 const INTRO_START = { yaw: 1.18, pitch: 0.34, zoom: 0.16 };
 const INTRO_END = { yaw: 0.55, pitch: 0.27, zoom: 1 };
 const PHASE_ORDER = ['wormhole', 'drift', 'descent'];
+const PAD_VECTORS = { left: { dx: -1, dy: 0 }, right: { dx: 1, dy: 0 }, up: { dx: 0, dy: -1 }, down: { dx: 0, dy: 1 } };
 const PHASE_COPY = {
   wormhole: {
     label: 'WORMHOLE EXIT // YEAR 2189',
@@ -74,6 +77,8 @@ export function createIntro({
   let wasLandingHidden = false;
   let lastDraw = 0;
   let replaying = false;
+  let progressPct = 0;
+  let skipVisible = false;
   const steer = { x: 0, y: 0, keys: new Set() };
   const pointerPads = new Map();
   let bound = false;
@@ -102,7 +107,7 @@ export function createIntro({
       'steer-left', 'steer-right', 'steer-up', 'steer-down',
       'btn-replay-intro', 'join-overlay', 'hud',
     ]) {
-      els[id] = document.getElementById(id);
+      els[id] = document.getElementById(id) || document.querySelector(`[data-legacy-id="${id}"]`);
     }
     canvas = els['intro-fx'];
     if (canvas && canvas.getContext) {
@@ -129,6 +134,20 @@ export function createIntro({
     return true;
   }
 
+  function publishCine() {
+    const copy = introCopy(phase, planetName);
+    const slice = mapCineSlice('intro', {
+        active,
+        phase,
+        progress: progressPct,
+        copy: { kicker: copy.label, title: copy.main, sub: copy.sub },
+        motion: prefersReducedMotion() ? 'reduced' : 'full',
+        skipVisible,
+      });
+    if (typeof window !== 'undefined') window.__NARIMATO_CINE_DEBUG__ = slice;
+    publish({ cine: slice });
+  }
+
   function setStatus(main, sub, phaseLabel) {
     if (!els['intro-overlay']) return;
     if (els['intro-status']) els['intro-status'].textContent = main;
@@ -139,8 +158,10 @@ export function createIntro({
 
   function setProgress(value) {
     const pct = clamp01(value) * 100;
+    progressPct = Math.round(pct);
     if (els['intro-bar']) els['intro-bar'].style.width = `${pct}%`;
     if (ui && typeof ui.setIntroProgress === 'function') safeCall(ui, 'setIntroProgress', pct);
+    publishCine();
   }
 
   function setDescent(value) {
@@ -153,6 +174,15 @@ export function createIntro({
   function bindInput() {
     if (bound) return;
     bound = true;
+    window.addEventListener('narimato:cine-skip', skip);
+    window.addEventListener('narimato:cine-replay', replay);
+    window.addEventListener('narimato:cine-steer', (event) => {
+      if (!active || !event || !event.detail) return;
+      const { dir, down } = event.detail;
+      if (!dir) return;
+      if (down) pointerPads.set(`gds-${dir}`, PAD_VECTORS[dir] || { dx: 0, dy: 0 });
+      else pointerPads.delete(`gds-${dir}`);
+    });
     window.addEventListener('keydown', onKeyDown, { passive: false });
     window.addEventListener('keyup', onKeyUp);
     window.addEventListener('resize', resize);
@@ -180,6 +210,9 @@ export function createIntro({
 
   function onKeyDown(event) {
     if (!active) return;
+    // Chrome controls keep their native keys; steering is only captured while
+    // the canvas (not a focused button) owns the keyboard.
+    if (!shouldCaptureCineKey({ key: event.key, target: event.target, active })) return;
     const key = String(event.key || '').toLowerCase();
     if (key === 'escape') {
       event.preventDefault();
@@ -293,6 +326,7 @@ export function createIntro({
     if (next === 'descent') copy.sub = `FALLING INTO ${planet} // COCKPIT FRAME FAILING`;
     if (copy) setStatus(copy.main, copy.sub, copy.label);
     if (ui && typeof ui.setIntroPhase === 'function') safeCall(ui, 'setIntroPhase', next);
+    publishCine();
     if (next === 'wormhole') safeAudio('introWhoosh');
     else if (next === 'drift') safeAudio('introAlarm');
     else if (next === 'descent') safeAudio('introReveal');
@@ -336,6 +370,14 @@ export function createIntro({
     document.body.classList.add('intro-active');
     safeCall(ui, 'showIntro', true);
     if (els['btn-skip-intro']) els['btn-skip-intro'].hidden = false;
+    skipVisible = false;
+    setTimeout(() => {
+      if (active) {
+        skipVisible = true;
+        publishCine();
+      }
+    }, 120);
+    publishCine();
     if (els['join-overlay']) {
       wasLandingHidden = els['join-overlay'].hidden === false || !els['join-overlay'].classList.contains('is-hidden');
       safeCall(ui, 'hideLanding');
@@ -372,6 +414,9 @@ export function createIntro({
     steer.keys.clear();
     pointerPads.clear();
     safeCall(ui, 'setInputLocked', false);
+    skipVisible = false;
+    progressPct = 100;
+    publishCine();
     if (ctx && canvas) ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
     if (typeof onComplete === 'function') onComplete({ skipped, replay: replaying });
   }

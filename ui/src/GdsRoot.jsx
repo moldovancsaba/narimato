@@ -9,11 +9,12 @@
  */
 import { useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
-import { GdsProvider } from '@sovereignsquad/gds';
-import ProofSurface from './surfaces/ProofSurface.jsx';
+import { GdsProvider } from '@sovereignsquad/gds/client';
+import AppSurface from './surfaces/AppSurface.jsx';
 
 const SURFACES = Object.freeze({
-  proof: ProofSurface,
+  proof: AppSurface,
+  app: AppSurface,
 });
 
 export default function GdsRoot({ cfg, store }) {

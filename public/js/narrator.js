@@ -11,6 +11,8 @@
  */
 
 import { NARRATION, VOICE_PROFILES, narrationSegments } from './narrative-data.js';
+import { publish } from './gds-bridge.js';
+import { speakerLabel } from './shared/cine-chrome.js';
 import { AUDIO_VERSION } from './audio-version.js';
 import { telemetry } from './telemetry.js';
 import {
@@ -135,6 +137,28 @@ export function createNarrator() {
       els['btn-subtitles'].title = subtitlesEnabled ? 'Subtitles: on' : 'Subtitles: off';
     }
     syncTapVoice();
+    publishVoiceState();
+  }
+
+  function publishVoiceState() {
+    publish({
+      voice: {
+        voice: voiceEnabled,
+        subtitles: subtitlesEnabled,
+        profile: voiceProfile,
+        unlocked,
+      },
+    });
+  }
+
+  function publishCaptions(visible) {
+    publish({
+      captions: {
+        speaker: visible ? speakerLabel(shownSpeaker, voiceEnabled, unlocked) : 'NARRATOR',
+        text: visible ? shownText : '',
+        visible: visible === true,
+      },
+    });
   }
 
   function fileId(cueId, index) {
@@ -284,6 +308,7 @@ export function createNarrator() {
     textEl.textContent = shownText;
     lastSegmentText = shownText;
     syncTapVoice();
+    publishCaptions(true);
   }
 
   function hideSubtitles() {
@@ -293,6 +318,7 @@ export function createNarrator() {
       wrap.hidden = true;
     }
     lastSegmentText = '';
+    publishCaptions(false);
   }
 
   function pauseAudio() {

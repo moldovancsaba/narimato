@@ -19,6 +19,8 @@
  */
 
 import { drawTetraShip } from './shared/tetra-ship.js';
+import { publish } from './gds-bridge.js';
+import { mapCineSlice } from './shared/cine-chrome.js';
 
 const PHASES = [
   { id: 'launch', duration: 1700, status: 'ESCAPE BURN', sub: 'CLEARING THE GRAVITY WELL', className: 'mode-launch' },
@@ -106,6 +108,9 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
     dwellMs: INCIDENT_DWELL_MS,
     firstFrameLuminance: 0,
   };
+  let continueVisible = false;
+  let lastPublishAt = 0;
+  let lastProgress = -1;
 
   function collect() {
     for (const id of [
@@ -114,7 +119,7 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
       'meteor-overlay', 'meteor-fx', 'meteor-title', 'meteor-sub', 'meteor-description',
       'meteor-dismiss', 'arena-canvas',
     ]) {
-      els[id] = document.getElementById(id);
+      els[id] = document.getElementById(id) || document.querySelector(`[data-legacy-id="${id}"]`);
     }
     canvas = els['interlude-fx'];
     if (canvas && canvas.getContext) ctx = canvas.getContext('2d');
@@ -127,6 +132,41 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
    * 2D context back to CSS coordinates, so drawing code never has to know DPR.
    * Re-runs when the DPR or viewport changes mid-effect.
    */
+  function publishCine(phaseId = null, progressPct = null, force = false) {
+    const now = performance.now();
+    const phase = phaseId || (active ? currentPhase().id : 'idle');
+    const total = PHASES.reduce((sum, entry) => sum + entry.duration, 0);
+    const elapsed = active ? Math.max(0, now - startTime) : 0;
+    const pct = progressPct == null ? Math.min(100, Math.round((elapsed / Math.max(1, total)) * 100)) : progressPct;
+    if (!force && now - lastPublishAt < 100 && pct === lastProgress && phase === (lastPhase || phase)) return;
+    lastPublishAt = now;
+    lastProgress = pct;
+    lastPhase = phase;
+    const copy = {
+      kicker: 'INTERPLANETARY TRANSIT',
+      title: els['interlude-title'] ? els['interlude-title'].textContent : '',
+      sub: els['interlude-sub'] ? els['interlude-sub'].textContent : '',
+      status: els['interlude-status'] ? els['interlude-status'].textContent : '',
+    };
+    publish({
+      cine: {
+        ...mapCineSlice('interlude', {
+          active,
+          phase,
+          progress: pct,
+          copy: { kicker: copy.kicker, title: copy.title, sub: copy.sub, status: copy.status },
+          motion: prefersReducedMotion() ? 'reduced' : 'full',
+          skipVisible: false,
+          continueVisible,
+        }),
+        planet: els['interlude-planet'] ? els['interlude-planet'].textContent : 'TRANSIT',
+        lines: story && Array.isArray(story.lines) ? story.lines.slice(0, 4) : [],
+      },
+    });
+  }
+
+  let lastPhase = null;
+
   function resizeCanvas(el, context) {
     if (!el || !context) return { width: 1, height: 1, dpr: 1 };
     const { width, height } = canvasCssSize();
@@ -305,6 +345,11 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
     }
     const total = PHASES.reduce((sum, p) => sum + p.duration, 0);
     setProgress(elapsed / total);
+    if (elapsed >= total && !continueVisible) {
+      continueVisible = true;
+      if (els['btn-interlude-continue']) els['btn-interlude-continue'].hidden = false;
+    }
+    publishCine(phase.id, Math.min(100, Math.round((elapsed / total) * 100)));
     if (els['interlude-overlay'] && els['interlude-overlay'].dataset.phase !== phase.id) {
       for (const p of PHASES) els['interlude-overlay'].classList.remove(p.className);
       els['interlude-overlay'].classList.add(phase.className);
@@ -347,6 +392,8 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
   function finish() {
     if (!active) return;
     active = false;
+    continueVisible = false;
+    publishCine('complete', 100, true);
     cancelAnimationFrame(raf);
     setOverlay(false);
     if (document.body) {
@@ -369,6 +416,9 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
     story = nextStory || { title: 'SPACE STORM', lines: ['Hull integrity failing.'] };
     onComplete = done;
     active = true;
+    continueVisible = false;
+    lastProgress = -1;
+    lastPhase = null;
     startTime = performance.now();
     setOverlay(true);
     setProgress(0);
@@ -379,12 +429,15 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
       for (const p of PHASES) els['interlude-overlay'].classList.remove(p.className);
     }
     resizeCanvas(canvas, ctx);
+    publishCine('launch', 0, true);
     safeAudio('introWhoosh');
     if (prefersReducedMotion()) {
       // Short, calm version; still tells the story.
       setText('interlude-title', story.title || 'SPACE STORM');
       setText('interlude-sub', story.subtitle || 'EMERGENCY TRANSIT');
       renderStory();
+      continueVisible = true;
+      publishCine('event', 100, true);
       setTimeout(finish, 1800);
       return;
     }
@@ -873,7 +926,12 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
     resizeCanvas(meteorCanvas, meteorCtx);
   }
 
-  if (typeof window !== 'undefined') window.addEventListener('resize', resize);
+  if (typeof window !== 'undefined') {
+    window.addEventListener('resize', resize);
+    window.addEventListener('narimato:cine-continue', () => {
+      if (active) finish();
+    });
+  }
 
   /** EVT-02 debug/acceptance surface: counts and ratios only, no game state. */
   function incidentFxStatsReport() {

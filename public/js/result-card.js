@@ -19,6 +19,7 @@
  */
 
 import { resourceById } from './shared/resources.js';
+import { MAX_SHARE_TEXT, sanitizeShareUrl } from './shared/share-text.js';
 
 const CARD_W = 1200;
 const CARD_H = 630;
@@ -182,19 +183,42 @@ export async function downloadResultCard(result) {
  */
 export function buildShareText(result, shareUrl) {
   const r = normalizeResult(result);
-  const url = cleanString(shareUrl) || r.shareUrl;
-  const lines = [
-    'NARIMATO // INFINITE GRID',
-    `${r.tag} — ${formatNumber(r.score)} PTS — RANK #${r.rank}/${r.totalPlayers}`,
-    `SESSION +${formatNumber(r.sessionScore)} · CLICKS ${r.clicks} · BREAKS ${r.breaks}`,
-    `FACES HELD ${r.facesHeld} · DEPTH D${r.depth} · CLAIMS ${r.claims} · STEALS ${r.steals}`,
-    `ORES MINED ${r.ores} · ORE VALUE ${formatNumber(r.oreValue)} CR${
-      r.bestFind ? ` · RICHEST FIND ${r.bestFind.name} +${formatNumber(r.bestFind.value)} CR` : ''
-    }`,
-  ];
-  if (url) lines.push(url);
-  lines.push('#INFINITEGRID');
-  return lines.join('\n');
+  const origin = typeof location !== 'undefined' && location && location.origin ? location.origin : null;
+  const url = sanitizeShareUrl(cleanString(shareUrl) || r.shareUrl, { origin });
+  const header = 'NARIMATO // INFINITE GRID';
+  const identity = `${r.tag} — ${formatNumber(r.score)} PTS — RANK #${r.rank}/${r.totalPlayers}`;
+  const session = `SESSION +${formatNumber(r.sessionScore)} · CLICKS ${r.clicks} · BREAKS ${r.breaks}`;
+  const detail = `FACES HELD ${r.facesHeld} · DEPTH D${r.depth} · CLAIMS ${r.claims} · STEALS ${r.steals}`;
+  const ore = `ORES MINED ${r.ores} · ORE VALUE ${formatNumber(r.oreValue)} CR${
+    r.bestFind ? ` · RICHEST FIND ${r.bestFind.name} +${formatNumber(r.bestFind.value)} CR` : ''
+  }`;
+  const footer = '#INFINITEGRID';
+  // Keep the share target happy: 280 chars maximum. Optional lines drop first;
+  // the canonical URL and tagline are always last to go, so a share is useful.
+  const optional = [ore, detail];
+  const required = [header, identity, session];
+  const build = (extras) => {
+    const lines = [...required, ...extras];
+    if (url) lines.push(url);
+    lines.push(footer);
+    return lines.join('\n');
+  };
+  let text = build(optional);
+  while (text.length > MAX_SHARE_TEXT && optional.length) {
+    optional.pop();
+    text = build(optional);
+  }
+  if (text.length > MAX_SHARE_TEXT) {
+    const tail = [url, footer].filter(Boolean).join('\n');
+    const room = Math.max(1, MAX_SHARE_TEXT - tail.length - 2);
+    text = `${sanitizeText(required.join(' · '), room)}\n${tail}`;
+  }
+  return text;
+}
+
+function sanitizeText(value, max) {
+  const text = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
+  return text.length <= max ? text : `${text.slice(0, Math.max(0, max - 1)).trimEnd()}…`;
 }
 
 /* ------------------------------------------------------------------ *

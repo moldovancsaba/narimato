@@ -27,18 +27,11 @@ import { isRareResource, missionForPlanet, missionProgress, planetName, planetSo
 import { BIOMES } from './shared/planet.js';
 import { guideStepBody } from './story-copy.js';
 import { lapPercent, modeAttributes, snapshotFromIds, targetReadout } from './shared/hud-parity.js';
+import { publish } from './gds-bridge.js';
 
-const CONNECTIONS = new Set(['connected', 'connecting', 'reconnecting', 'offline']);
-const CONNECTION_TEXT = {
-  connected: 'LINKED',
-  connecting: 'LINKING',
-  reconnecting: 'RETRYING',
-  offline: 'OFFLINE',
-};
 const TOAST_KINDS = new Set(['info', 'good', 'bad', 'warn']);
 const TOAST_GLYPH = { info: '▸', good: '+', bad: '×', warn: '!' };
 const TOAST_MS = { info: 3200, good: 3200, bad: 4200, warn: 3800 };
-const MAX_PLAYER_ROWS = 14;
 
 const DEFAULT_MISSION = missionProgress({}, missionForPlanet(0, 0));
 
@@ -57,16 +50,22 @@ const toNum = (v, fallback = 0) => {
   return Number.isFinite(n) ? n : fallback;
 };
 const int = (v, fallback = 0) => Math.round(toNum(v, fallback));
-const pad2 = (n) => String(Math.max(0, int(n))).padStart(2, '0');
+const MAX_PLAYER_ROWS = 14;
+const CONNECTION_TEXT = Object.freeze({ connected: 'LINKED', connecting: 'LINKING', reconnecting: 'RETRYING', offline: 'OFFLINE', transit: 'IN TRANSIT' });
+const CONNECTION_SET = new Set(Object.keys(CONNECTION_TEXT));
+
+function pad2(n) {
+  return String(Math.max(0, int(n))).padStart(2, '0');
+}
 
 function formatNumber(value) {
   const n = Math.round(toNum(value));
   const neg = n < 0;
-  const s = Math.abs(n).toString();
+  const digits = Math.abs(n).toString();
   let out = '';
-  for (let i = 0; i < s.length; i++) {
-    if (i > 0 && (s.length - i) % 3 === 0) out += ',';
-    out += s[i];
+  for (let i = 0; i < digits.length; i += 1) {
+    if (i > 0 && (digits.length - i) % 3 === 0) out += ',';
+    out += digits[i];
   }
   return neg ? `-${out}` : out;
 }
@@ -81,13 +80,81 @@ function formatZoom(zoom) {
 }
 
 function normalizeConnection(status) {
-  const s = String(status || '').toLowerCase();
-  return CONNECTIONS.has(s) ? s : 'connecting';
+  const value = String(status || '').toLowerCase();
+  return CONNECTION_SET.has(value) ? value : 'connecting';
 }
 
 function normalizeTag(raw) {
   return String(raw == null ? '' : raw).trim().toUpperCase().slice(0, 12);
 }
+
+function chargePercent(clicks, threshold) {
+  const max = Math.max(1, int(threshold, 8));
+  return Math.round((clamp(int(clicks), 0, max) / max) * 1000) / 10;
+}
+
+function chargeText(clicks, threshold) {
+  const max = Math.max(1, int(threshold, 8));
+  return clicks == null ? `— / ${pad2(max)}` : `${pad2(clicks)} / ${pad2(max)}`;
+}
+
+function missionDoneRatio(mission) {
+  const objectives = mission && Array.isArray(mission.objectives) ? mission.objectives : [];
+  return objectives.length ? objectives.filter((objective) => objective && objective.done).length / objectives.length : 0;
+}
+
+function targetState(hover, maxDepth) {
+  const info = hover && typeof hover === 'object' ? hover : null;
+  if (!info) return 'idle';
+  const depth = Math.max(0, int(info.depth, String(info.label || '').split('.').length - 1));
+  if (depth >= Math.max(0, int(maxDepth, 0))) return 'depleted';
+  if (info.locked === true) return 'locked';
+  if (info.terrain && info.terrain.mineable === false) return 'submerged';
+  return 'active';
+}
+
+function rankPlayers(players, myId = null, cap = MAX_PLAYER_ROWS) {
+  const rows = [];
+  for (const [index, raw] of (Array.isArray(players) ? players : []).entries()) {
+    if (!raw || typeof raw !== 'object') continue;
+    rows.push({
+      id: raw.id != null ? String(raw.id) : `idx-${index}`,
+      tag: normalizeTag(raw.tag) || 'PLAYER',
+      color: typeof raw.color === 'string' ? raw.color : null,
+      online: raw.online !== false,
+      score: Math.max(0, int(raw.score)),
+      faces: Math.max(0, int(raw.facesHeld)),
+      isMe: myId != null && raw.id != null && String(raw.id) === String(myId),
+    });
+  }
+  rows.sort((a, b) => {
+    if (a.online !== b.online) return a.online ? -1 : 1;
+    if (b.score !== a.score) return b.score - a.score;
+    const byTag = a.tag.localeCompare(b.tag);
+    return byTag !== 0 ? byTag : a.id.localeCompare(b.id);
+  });
+  const limit = Math.max(1, int(cap, MAX_PLAYER_ROWS));
+  return { rows: rows.slice(0, limit), total: rows.length, online: rows.filter((row) => row.online).length, hidden: Math.max(0, rows.length - limit) };
+}
+
+function mapSurfaceSlice(input = {}) {
+  const src = input && typeof input === 'object' ? input : {};
+  const phase = ['landing', 'running', 'leaving', 'idle'].includes(src.phase) ? src.phase : 'idle';
+  const label = src.targetLabel == null || src.targetLabel === '' ? null : String(src.targetLabel);
+  let state = 'idle';
+  if (src.depleted === true) state = 'depleted';
+  else if (label && src.targetHarvestable === true) state = 'can';
+  else if (label) state = 'locked';
+  return {
+    active: src.active === true,
+    phase,
+    lap: { seconds: Math.max(0, Number(src.lapSeconds) || 0), run: Math.round(clamp(Number(src.lapFraction) || 0, 0, 1) * 100), auto: src.autoLabel == null ? null : String(src.autoLabel) },
+    target: { label, state },
+    mission: { done: Math.max(0, int(src.missionDone)), total: Math.max(0, int(src.missionTotal)), ready: src.missionReady === true },
+    keyboard: { steering: src.keyboardMode !== 'controls', mode: src.keyboardMode === 'controls' ? 'controls' : 'canvas' },
+  };
+}
+
 
 class UI {
   /**
@@ -146,6 +213,49 @@ class UI {
     this._playerRows = new Map();
     this._surfaceMode = 'orbit';
 
+    // UI-02…UI-05: the GDS presentation layer. In legacy mode (`?gds=0`) every
+    // one of these fields is still maintained but nothing is published.
+    this._gdsOn = false;
+    this._tagValue = '';
+    this._manualSections = [];
+    this._cargo = { entries: [], total: 0 };
+    this._captainLog = '';
+    this._distress = null;
+    this._navTarget = null;
+    this._surfaceHud = mapSurfaceSlice({ phase: 'idle' });
+    this._targetSnapshot = { open: false };
+    this._escapeCtaOpen = false;
+    this._landingBrief = null;
+    this._myStats = { score: 0, faces: 0, clicks: 0, breaks: 0 };
+    this._worldSnapshot = null;
+    this._gdsToasts = [];
+    this._cine = null;
+    this._captions = { visible: false, speaker: 'NARRATOR', text: '' };
+    this._voice = { voice: true, subtitles: true, unlocked: false };
+    this._gdsToastSeq = 0;
+    this._confirmRequest = null;
+    this._escapeMissionName = 'ESCAPE';
+    this._missionWasReady = false;
+    this._guideHowCopy = '';
+    this._voiceProfile = 'george';
+    const uiRef = this;
+    this._overlayPort = {
+      _stack: [],
+      open({ name, invoker } = {}) {
+        if (!name || this._stack.some((entry) => entry.name === name)) return;
+        this._stack.push({ name, invoker: invoker || (doc && doc.activeElement) });
+      },
+      close(name = null) {
+        const top = this._stack[this._stack.length - 1];
+        if (!top || (name && top.name !== name)) return;
+        this._stack.pop();
+        if (!uiRef._gdsOn && top.invoker && typeof top.invoker.focus === 'function') {
+          try { top.invoker.focus({ preventScroll: true }); } catch { /* ignore */ }
+        }
+      },
+    };
+    if (typeof window !== 'undefined') window.__NARIMATO_UI__ = this;
+
     this._bind();
     this._bindSurface();
     this._renderMarket();
@@ -155,6 +265,7 @@ class UI {
     this.setSoundMuted(false);
     this.setJoinBusy(false);
     if (this._el.connectionBadge) this._el.connectionBadge.dataset.status = 'connecting';
+    this._wrapGdsMethods();
   }
 
   /* ================================================================ *
@@ -183,6 +294,7 @@ class UI {
 
     const input = this._el.tagInput;
     if (input && !input.value && this._lastTag) input.value = this._lastTag;
+    if (input) this._tagValue = normalizeTag(input.value);
 
     if (typeof data.liveCount === 'number' || typeof data.liveCount === 'string') {
       this.setLiveCount(data.liveCount);
@@ -442,6 +554,16 @@ class UI {
     item.append(glyph, body);
     container.appendChild(item);
 
+    if (this._gdsOn) {
+      const entry = { id: String(++this._gdsToastSeq), kind: tone, text };
+      this._gdsToasts = [...this._gdsToasts, entry].slice(-3);
+      this._syncGds();
+      setTimeout(() => {
+        this._gdsToasts = this._gdsToasts.filter((toast) => toast.id !== entry.id);
+        this._syncGds();
+      }, TOAST_MS[tone]);
+    }
+
     const timer = setTimeout(dismiss, TOAST_MS[tone]);
     let dismissed = false;
     function dismiss() {
@@ -471,6 +593,8 @@ class UI {
     const opts = options && typeof options === 'object' ? options : {};
     this._reportResult = r;
     this._reportOptions = opts;
+    this._shareUrl = typeof opts.shareUrl === 'string' && opts.shareUrl ? opts.shareUrl : typeof r.shareUrl === 'string' ? r.shareUrl : '';
+    this._overlayPort.open({ name: 'report', invoker: this.doc && this.doc.activeElement });
 
     const overlay = this._el.reportOverlay;
     if (overlay) {
@@ -521,15 +645,25 @@ class UI {
     this._renderArcadeLists();
 
     // Card preview: app.js may also render it; rendering twice is harmless.
-    requestAnimationFrame(() => {
-      const preview = this._el.reportCardPreview;
-      if (!preview || typeof preview.getContext !== 'function') return;
-      try {
-        renderResultCard(preview, { ...r, tag, color, score, sessionScore, depth, rank, totalPlayers: total });
-      } catch (err) {
-        console.warn('[icosa] report card preview failed', err);
+    // In GDS mode the canvas mounts with the island Modal, which can be a frame
+    // or two after showReport, so retry a bounded number of frames.
+    const drawPreview = (attempt = 0) => {
+      const gdsCanvas = this._gdsOn && this.doc ? this.doc.getElementById('report-card-preview') : null;
+      const preview = this._gdsOn ? gdsCanvas : this._el.reportCardPreview;
+      if (preview && typeof preview.getContext === 'function') {
+        try {
+          renderResultCard(preview, { ...r, tag, color, score, sessionScore, depth, rank, totalPlayers: total });
+        } catch (err) {
+          console.warn('[icosa] report card preview failed', err);
+        }
+        return;
       }
-    });
+      if (this._gdsOn && attempt < 20) {
+        const raf = typeof requestAnimationFrame === 'function' ? requestAnimationFrame : (cb) => setTimeout(cb, 16);
+        raf(() => drawPreview(attempt + 1));
+      }
+    };
+    drawPreview(0);
 
     const panel = this._el.reportPanel;
     if (panel) panel.scrollTop = 0;
@@ -539,6 +673,7 @@ class UI {
 
   /** Hide the session report (safe when already hidden). */
   hideReport() {
+    this._overlayPort.close('report');
     const overlay = this._el.reportOverlay;
     if (overlay) {
       overlay.classList.add('is-hidden');
@@ -622,6 +757,15 @@ class UI {
       total += amount;
     }
     entries.sort((a, b) => b.resource.value - a.resource.value || a.resource.name.localeCompare(b.resource.name));
+    this._cargo = {
+      total,
+      entries: entries.map(({ resource, amount }) => ({
+        id: resource.id,
+        name: resource.name,
+        glyph: resource.glyph,
+        amount,
+      })),
+    };
     if (totalEl) totalEl.textContent = String(total);
     if (!list) return;
     list.textContent = '';
@@ -654,14 +798,17 @@ class UI {
 
   /** Human log line shown under the cargo bay. */
   setCaptainLog(text) {
-    this._setText(this._el.captainsLogText, text || '');
+    this._captainLog = String(text || '');
+    this._setText(this._el.captainsLogText, this._captainLog);
   }
 
   /** Show/update the relief-ship countdown, or hide with null. */
   setDistressTimer(seconds) {
+    const valid = seconds != null && Number.isFinite(seconds) && seconds >= 0;
+    this._distress = valid ? seconds : null;
     const row = this._el.distressRow;
     if (!row) return;
-    if (seconds == null || !Number.isFinite(seconds) || seconds < 0) {
+    if (!valid) {
       row.hidden = true;
       return;
     }
@@ -824,10 +971,12 @@ class UI {
     const biome = typeof src.biomeName === 'string' ? src.biomeName : '';
     const chance = Number.isFinite(src.chance) ? Math.round(src.chance * 100) : null;
     const meta = [biome, chance != null ? `${chance}% ORE` : ''].filter(Boolean).join(' · ');
+    this._navTarget = { label: String(src.label), meta: meta || 'NAVIGATION TARGET' };
     this._setText(this._el.navTargetMeta, meta || 'NAVIGATION TARGET');
   }
 
   hideNavTarget() {
+    this._navTarget = null;
     const chip = this._el.navChip;
     if (chip) {
       chip.hidden = true;
@@ -837,6 +986,7 @@ class UI {
 
   /** Open/close the one-screen quick guide. */
   showGuide() {
+    this._overlayPort.open({ name: 'guide', invoker: this.doc && this.doc.activeElement });
     const wrap = this._el.guideOverlay;
     if (!wrap) return;
     wrap.hidden = false;
@@ -846,10 +996,11 @@ class UI {
     if (card) card.scrollTop = 0;
     if (this.doc && this.doc.body) this.doc.body.classList.add('is-guide');
     this.closeDrawers();
-    try { this._el.btnGuideClose?.focus({ preventScroll: true }); } catch { /* ignore */ }
+    if (!this._gdsOn) { try { this._el.btnGuideClose?.focus({ preventScroll: true }); } catch { /* ignore */ } }
   }
 
   hideGuide() {
+    this._overlayPort.close('guide');
     const wrap = this._el.guideOverlay;
     if (wrap) {
       wrap.classList.add('is-hidden');
@@ -869,12 +1020,12 @@ class UI {
    * `story-copy.js` template the docs are generated from.
    */
   setGuideThreshold(breakClicks) {
-    if (!this.doc) return;
-    const el = this.doc.getElementById('guide-how-copy');
-    if (!el) return;
     const clicks = Math.max(1, Math.trunc(Number(breakClicks)) || 8);
     const text = guideStepBody('how', { breakClicks: clicks, deeperClicks: Math.max(clicks, 8) });
-    if (el.textContent !== text) el.textContent = text;
+    this._guideHowCopy = text;
+    if (!this.doc) return;
+    const el = this.doc.getElementById('guide-how-copy');
+    if (el && el.textContent !== text) el.textContent = text;
   }
 
   /** Open the Field Manual with story/tips/help sections. */
@@ -882,6 +1033,8 @@ class UI {
     const wrap = this._el.manualOverlay;
     const list = this._el.manualSections;
     if (!wrap || !list) return;
+    this._manualSections = Array.isArray(sections) ? sections : [];
+    this._overlayPort.open({ name: 'manual', invoker: this.doc && this.doc.activeElement });
     list.textContent = '';
     for (const section of Array.isArray(sections) ? sections : []) {
       const article = this.doc.createElement('article');
@@ -912,7 +1065,7 @@ class UI {
     wrap.setAttribute('aria-hidden', 'false');
     if (this.doc && this.doc.body) this.doc.body.classList.add('is-manual');
     this.closeDrawers();
-    if (this._el.btnManualClose) {
+    if (!this._gdsOn && this._el.btnManualClose) {
       try {
         this._el.btnManualClose.focus({ preventScroll: true });
       } catch {
@@ -922,6 +1075,7 @@ class UI {
   }
 
   hideManual() {
+    this._overlayPort.close('manual');
     const wrap = this._el.manualOverlay;
     if (wrap) {
       wrap.classList.add('is-hidden');
@@ -944,6 +1098,8 @@ class UI {
     const wasReady = this._escapeReady;
     this._escapeReady = !!ready;
     const name = typeof missionName === 'string' && missionName.trim() ? missionName.trim() : 'ESCAPE';
+    this._escapeMissionName = name;
+    if (this._escapeReady && !wasReady) this._announce('Refit complete. Escape is available.');
     for (const btn of [this._el.btnEscape, this._el.btnEscapeCenter]) {
       if (!btn) continue;
       btn.hidden = !this._escapeReady;
@@ -966,6 +1122,8 @@ class UI {
   /** Show the centered "try to fly away" escape call-to-action. */
   showEscapeCta(missionName = 'ESCAPE') {
     if (!this._escapeReady) return;
+    this._escapeCtaOpen = true;
+    this._escapeMissionName = String(missionName || 'ESCAPE');
     const cta = this._el.escapeCta;
     if (!cta) return;
     const title = this._el.escapeCtaTitle;
@@ -979,16 +1137,19 @@ class UI {
     if (this.doc && this.doc.body) this.doc.body.classList.add('is-escape-cta');
     if (this._el.btnEscapeCenter) {
       this._el.btnEscapeCenter.hidden = false;
-      try {
-        this._el.btnEscapeCenter.focus({ preventScroll: true });
-      } catch {
-        /* ignore */
+      if (!this._gdsOn) {
+        try {
+          this._el.btnEscapeCenter.focus({ preventScroll: true });
+        } catch {
+          /* ignore */
+        }
       }
     }
   }
 
   /** Hide the centered escape CTA (either dismissed or after escape starts). */
   hideEscapeCta() {
+    this._escapeCtaOpen = false;
     const cta = this._el.escapeCta;
     if (cta) {
       cta.classList.add('is-hidden');
@@ -1063,7 +1224,22 @@ class UI {
     if (this.doc && this.doc.body) this.doc.body.classList.add('is-landing-brief');
     this.hideEscapeCta();
     this.closeDrawers();
-    if (this._el.btnLandingBriefStart) {
+    this._landingBrief = {
+      kicker: source ? `SURFACE CONTACT // ${source}` : 'SURFACE CONTACT // NEW WORLD',
+      title: name,
+      sub: `LEVELS ${levels} // FIND WHAT SHE NEEDS TO FLY`,
+      objectives: progress.objectives.map((objective) => ({
+        id: objective.id,
+        name: objective.name,
+        done: objective.done === true,
+        items: (objective.items || []).map((item) => ({
+          name: item.name,
+          have: item.have,
+          need: item.need,
+        })),
+      })),
+    };
+    if (!this._gdsOn && this._el.btnLandingBriefStart) {
       try {
         this._el.btnLandingBriefStart.focus({ preventScroll: true });
       } catch {
@@ -1073,6 +1249,7 @@ class UI {
   }
 
   hideLandingBrief() {
+    this._landingBrief = null;
     const wrap = this._el.landingBrief;
     if (wrap) {
       wrap.classList.add('is-hidden');
@@ -1237,10 +1414,18 @@ class UI {
       this._confirmResolver = null;
       previous(false);
     }
-    this._setText(this._el.confirmTitle, opts.title ? String(opts.title).toUpperCase() : 'CONFIRM ACTION');
-    this._setText(this._el.confirmMessage, opts.message ? String(opts.message) : '');
-    if (this._el.btnConfirmYes) this._el.btnConfirmYes.textContent = String(opts.okLabel || 'CONFIRM').toUpperCase();
-    if (this._el.btnConfirmCancel) this._el.btnConfirmCancel.textContent = String(opts.cancelLabel || 'CANCEL').toUpperCase();
+    this._confirmRequest = {
+      open: true,
+      title: opts.title ? String(opts.title).toUpperCase() : 'CONFIRM ACTION',
+      message: opts.message ? String(opts.message) : '',
+      okLabel: String(opts.okLabel || 'CONFIRM').toUpperCase(),
+      cancelLabel: String(opts.cancelLabel || 'CANCEL').toUpperCase(),
+    };
+    this._overlayPort.open({ name: 'confirm', invoker: this._confirmPreviousFocus || (this.doc && this.doc.activeElement) });
+    this._setText(this._el.confirmTitle, this._confirmRequest.title);
+    this._setText(this._el.confirmMessage, this._confirmRequest.message);
+    if (this._el.btnConfirmYes) this._el.btnConfirmYes.textContent = this._confirmRequest.okLabel;
+    if (this._el.btnConfirmCancel) this._el.btnConfirmCancel.textContent = this._confirmRequest.cancelLabel;
     overlay.hidden = false;
     overlay.classList.remove('is-hidden');
     overlay.classList.add('is-active');
@@ -1248,7 +1433,7 @@ class UI {
     this.closeDrawers();
     this._confirmPreviousFocus = this.doc && this.doc.activeElement ? this.doc.activeElement : null;
     const focusTarget = this._el.btnConfirmCancel || this._el.btnConfirmYes;
-    if (focusTarget) {
+    if (!this._gdsOn && focusTarget) {
       try {
         focusTarget.focus({ preventScroll: true });
       } catch {
@@ -1261,6 +1446,8 @@ class UI {
   }
 
   _resolveConfirm(value) {
+    this._overlayPort.close('confirm');
+    this._confirmRequest = null;
     const overlay = this._el.confirmOverlay;
     if (overlay) {
       overlay.classList.add('is-hidden');
@@ -1278,6 +1465,7 @@ class UI {
       }
     }
     this._confirmPreviousFocus = null;
+    if (this._gdsOn) this._syncGds();
     if (resolver) resolver(!!value);
   }
 
@@ -1294,6 +1482,375 @@ class UI {
   /** Cleanup hook (tests / teardown). */
   destroy() {
     this._destroyed = true;
+  }
+
+  /* ================================================================ *
+   * GDS presentation bridge (UI-02…UI-05)
+   * ================================================================ */
+
+  /**
+   * Take presentation over from the legacy DOM. Called by `gds-boot.js` only
+   * after the island has booted; `?gds=0` never calls it, so the legacy UI is
+   * untouched there. Required ids are moved off the legacy nodes (kept as
+   * `data-legacy-id` for the controllers) so the island owns exactly one copy.
+   */
+  enableGds() {
+    if (this._gdsOn) return true;
+    this._gdsOn = true;
+    this._claimLegacyIds();
+    const input = this._el.tagInput;
+    this._tagValue = input ? normalizeTag(input.value) : '';
+    this._syncGds();
+    return true;
+  }
+
+  _claimLegacyIds() {
+    const doc = this.doc;
+    if (!doc) return;
+    const keep = new Set(['intro-overlay', 'intro-fx', 'interlude-overlay', 'interlude-fx']);
+    const roots = [
+      this._el.joinOverlay,
+      this._el.hud,
+      this._el.guideOverlay,
+      this._el.manualOverlay,
+      this._el.reportOverlay,
+      this._el.confirmOverlay,
+      this._el.toastContainer,
+      this._el.narrativeSubtitles,
+      this._el.introOverlay,
+      this._el.interludeOverlay,
+      doc.querySelector('.status-cluster'),
+    ];
+    for (const root of roots) {
+      if (!root || typeof root.querySelectorAll !== 'function') continue;
+      const nodes = [root, ...root.querySelectorAll('[id]')];
+      for (const node of nodes) {
+        const id = node.getAttribute && node.getAttribute('id');
+        if (!id || keep.has(id)) continue;
+        node.setAttribute('data-legacy-id', id);
+        node.removeAttribute('id');
+      }
+    }
+  }
+
+  _wrapGdsMethods() {
+    const methods = [
+      'showLanding', 'hideLanding', 'showJoinError', 'setJoinBusy', 'updateHud', 'setHoverFace',
+      'setZoom', 'setLeaderboard', 'setLiveCount', 'setConnection', 'toast', 'showReport',
+      'hideReport', 'setSoundMuted', 'updateMission', 'updateCargo', 'setCaptainLog',
+      'setDistressTimer', 'showMission', 'toggleDrawer', 'closeDrawers', 'showIntro',
+      'setIntroPhase', 'setIntroProgress', 'setPlanet', 'setNavTarget', 'hideNavTarget',
+      'showGuide', 'hideGuide', 'setGuideThreshold', 'showManual', 'hideManual', 'setEscapeReady',
+      'showEscapeCta', 'hideEscapeCta', 'dismissEscapeCta', 'showLandingBrief', 'hideLandingBrief',
+      'showInterlude', 'setInterlude', 'setInterludeProgress', 'showMeteor', 'confirm', 'setCine', 'setCaptions', 'setVoice',
+      'setLastFind', 'enterSurface', 'exitSurface', 'updateSurfaceHud',
+    ];
+    for (const name of methods) {
+      const original = this[name];
+      if (typeof original !== 'function') continue;
+      this[name] = (...args) => {
+        const result = original.apply(this, args);
+        if (this._gdsOn) this._syncGds();
+        return result;
+      };
+    }
+  }
+
+  /** Publish the full presentation snapshot; the island coalesces one commit/frame. */
+  _syncGds() {
+    if (!this._gdsOn) return false;
+    return publish({ ui: this._gdsSlice() });
+  }
+
+  _gdsSlice() {
+    const state = this._state;
+    const rawPlayers = state && Array.isArray(state.players) ? state.players : [];
+    const players = rankPlayers(rawPlayers, this._myPlayerId);
+    const myRow = players.rows.find((row) => row.isMe) || null;
+    const mission = this._mission || DEFAULT_MISSION;
+    const world = this._world || {};
+    const faces = Math.max(0, int(world.faces));
+    const maxDepthReached = Math.max(0, int(world.maxDepthReached, int(world.maxDepth, this._maxDepth)));
+    const threshold = Math.max(1, int(world.threshold, this._threshold));
+    const maxDepth = Math.max(0, int(world.maxDepth, this._maxDepth));
+    const planet = this._planet;
+    const distressSeconds = this._distress;
+    const distressTotal = Number.isFinite(distressSeconds) ? Math.max(0, Math.ceil(distressSeconds)) : 0;
+    const distressText = distressSeconds == null
+      ? ''
+      : `${String(Math.floor(distressTotal / 60)).padStart(2, '0')}:${String(distressTotal % 60).padStart(2, '0')}`;
+    return {
+      mode: this._surfaceMode,
+      connection: this._connection,
+      soundMuted: this._soundMuted,
+      drawer: this._drawerName,
+      highlightTag: this._highlightTag,
+      captainLog: this._captainLog,
+      distress: { visible: distressSeconds != null, text: distressText },
+      world: {
+        faces,
+        maxDepthReached,
+        totalClicks: Math.max(0, int(world.totalClicks)),
+        totalBreaks: Math.max(0, int(world.totalBreaks)),
+        threshold,
+        maxDepth,
+        text: `WORLD D${maxDepthReached} · ${formatNumber(faces)} FACES`,
+        depthText: `D${maxDepthReached}`,
+        rule: `BREAK AT ${pad2(threshold)} CLICKS // CONTEST LOCK // DEPTH CAP ${pad2(maxDepth)}`,
+      },
+      planet: {
+        index: Math.max(0, int(planet.planetIndex)),
+        name: planet.planetName,
+        source: planet.planetSource,
+        depth: Math.max(0, int(planet.planetDepth)),
+      },
+      hud: {
+        score: this._myStats.score,
+        faces: this._myStats.faces,
+        clicks: this._myStats.clicks,
+        breaks: this._myStats.breaks,
+        zoom: { value: this._zoom, depth: this._focusDepth },
+        find: this._lastFind ? { name: this._lastFind.name, value: this._lastFind.value } : null,
+      },
+      players: {
+        rows: players.rows,
+        total: players.total,
+        online: players.online,
+        hidden: players.hidden,
+        me: myRow,
+      },
+      arcade: this._leaderboard,
+      mission: {
+        ready: mission.ready === true,
+        objectives: mission.objectives,
+        ratio: missionDoneRatio(mission),
+      },
+      cargo: this._cargo,
+      target: this._targetSnapshot,
+      nav: this._navTarget,
+      escape: {
+        ready: this._escapeReady,
+        missionName: this._escapeMissionName,
+        ctaOpen: this._escapeCtaOpen,
+      },
+      landingBrief: this._landingBrief,
+      landing: {
+        open: this._isLandingVisible(),
+        busy: this._joinBusy,
+        error: this._el.joinError ? String(this._el.joinError.textContent || '') : '',
+        liveCount: this._liveCount,
+        value: this._tagValue,
+      },
+      guide: {
+        open: this.isGuideOpen,
+        breakClicks: threshold,
+        deeperClicks: Math.max(8, threshold),
+        howCopy: this._guideHowCopy || guideStepBody('how', { breakClicks: threshold, deeperClicks: Math.max(8, threshold) }),
+      },
+      manual: {
+        open: this.isManualOpen,
+        sections: this._manualSections,
+        voiceProfile: this._voiceProfile,
+      },
+      report: this._reportResult
+        ? {
+            open: this.isReportOpen,
+            result: this._reportResult,
+            title: this._reportOptions && this._reportOptions.title ? String(this._reportOptions.title) : 'SESSION REPORT',
+            shareUrl: this._shareUrl || '',
+          }
+        : { open: false, result: null, title: 'SESSION REPORT', shareUrl: '' },
+      confirm: this._confirmRequest || { open: false },
+      toasts: this._gdsToasts,
+      surface: this._surfaceHud,
+      cine: this._cine,
+      captions: this._captions,
+      voice: this._voice,
+    };
+  }
+
+  setCine(slice) {
+    this._cine = slice && typeof slice === 'object' ? slice : null;
+    return true;
+  }
+
+  setCaptions(captions) {
+    this._captions = captions && typeof captions === 'object'
+      ? { visible: captions.visible === true, speaker: String(captions.speaker || 'NARRATOR'), text: String(captions.text || '') }
+      : { visible: false, speaker: 'NARRATOR', text: '' };
+    return true;
+  }
+
+  setVoice(voice) {
+    this._voice = voice && typeof voice === 'object'
+      ? { voice: voice.voice !== false, subtitles: voice.subtitles !== false, unlocked: voice.unlocked === true, profile: voice.profile }
+      : { voice: true, subtitles: true, unlocked: false };
+    return true;
+  }
+
+  _announce(message) {
+    if (!this._gdsOn || !message) return;
+    publish({ announcement: String(message) });
+  }
+
+  /**
+   * Every island interaction arrives here. The island never owns game state; it
+   * forwards intents, and the legacy controller (or the app's existing listener)
+   * performs the action exactly once.
+   */
+  handleGdsIntent(intent) {
+    if (!intent || typeof intent !== 'object') return false;
+    const type = String(intent.type || '');
+    const click = (element) => {
+      if (element && typeof element.click === 'function') {
+        element.click();
+        return true;
+      }
+      return false;
+    };
+    switch (type) {
+      case 'tag-change': {
+        const value = String(intent.value == null ? '' : intent.value).toUpperCase().slice(0, 12);
+        this._tagValue = value;
+        if (this._el.tagInput && this._el.tagInput.value !== value) this._el.tagInput.value = value;
+        if (this._el.joinError && this._el.joinError.textContent) this.showJoinError('');
+        else this._syncGds();
+        return true;
+      }
+      case 'join': {
+        const value = normalizeTag(intent.tag != null ? intent.tag : this._tagValue);
+        this._tagValue = value;
+        if (this._el.tagInput) this._el.tagInput.value = value;
+        this._submitJoin();
+        return true;
+      }
+      case 'new-pilot':
+        this._tagValue = '';
+        return click(this._el.btnNewPilot);
+      case 'guide-close':
+        this.hideGuide();
+        return true;
+      case 'guide-start':
+        this.hideGuide();
+        return true;
+      case 'guide-manual':
+        this.hideGuide();
+        return click(this._el.btnGuideManual);
+      case 'guide-share':
+        return click(this._el.btnGuideShare);
+      case 'manual-close':
+        this.hideManual();
+        return true;
+      case 'manual-play': {
+        const voice = String(intent.voice || '');
+        const button = this._el.manualSections
+          ? this._el.manualSections.querySelector(`[data-voice="${voice}"]`)
+          : null;
+        return click(button);
+      }
+      case 'manual-voice': {
+        this._voiceProfile = String(intent.profile || 'george');
+        const button = this.doc ? this.doc.querySelector(`[data-voice-profile="${this._voiceProfile}"]`) : null;
+        return click(button);
+      }
+      case 'drawer':
+        this.toggleDrawer(String(intent.name || 'mission'), intent.force);
+        return true;
+      case 'drawer-close':
+        this.closeDrawers();
+        return true;
+      case 'target-close':
+        this.setHoverFace(null);
+        return true;
+      case 'nav-focus':
+        return click(this._el.btnNavFocus);
+      case 'nav-next':
+        return click(this._el.btnNavNext);
+      case 'abandon':
+      case 'dock-abandon':
+        return click(this._el.btnAbandon);
+      case 'escape':
+        return click(this._el.btnEscape);
+      case 'escape-center':
+        return click(this._el.btnEscapeCenter);
+      case 'escape-dismiss':
+        this.dismissEscapeCta();
+        return true;
+      case 'landing-brief-start':
+        this.hideLandingBrief();
+        return true;
+      case 'report-open':
+        return click(this._el.btnReport);
+      case 'report-close':
+        this._closeReport();
+        return true;
+      case 'report-download':
+        this._call('onDownload');
+        return true;
+      case 'report-share':
+        this._call('onShare');
+        return true;
+      case 'confirm':
+        this._resolveConfirm(intent.value === true);
+        return true;
+      case 'toast-dismiss': {
+        const id = String(intent.id || '');
+        this._gdsToasts = this._gdsToasts.filter((toast) => toast.id !== id);
+        this._syncGds();
+        return true;
+      }
+      case 'sound':
+        return click(this._el.btnSound);
+      case 'cine-toggle-captions':
+        return click(this._el.btnSubtitles);
+      case 'cine-toggle-voice':
+        return click(this._el.btnVoice);
+      case 'help':
+        return click(this._el.btnHelp);
+      case 'replay-intro':
+        return click(this._el.btnReplayIntro);
+      case 'surface-hold':
+        if (typeof this.opts.onSurfaceHold === 'function') this.opts.onSurfaceHold(String(intent.code || ''), intent.down === true);
+        return true;
+      case 'surface-exit': {
+        const exit = () => {
+          if (typeof this.opts.onSurfaceExit === 'function') this.opts.onSurfaceExit();
+        };
+        if (this._gdsOn && typeof this.confirm === 'function') {
+          this.confirm({
+            title: 'RETURN TO ORBIT?',
+            message: 'Leave the surface and restore the orbital camera? The run and its progress stay saved.',
+            okLabel: 'RETURN TO ORBIT',
+            cancelLabel: 'KEEP RUNNING',
+          }).then((ok) => {
+            if (ok) exit();
+          });
+          return true;
+        }
+        exit();
+        return true;
+      }
+      case 'cine-skip':
+        return this._emitCine('narimato:cine-skip', intent);
+      case 'cine-replay':
+        return this._emitCine('narimato:cine-replay', intent);
+      case 'cine-continue':
+        return this._emitCine('narimato:cine-continue', intent);
+      case 'cine-steer':
+        return this._emitCine('narimato:cine-steer', intent);
+      case 'retry':
+        if (typeof this.opts.onRetry === 'function') this._call('onRetry');
+        else if (typeof window !== 'undefined' && window.location) window.location.reload();
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  _emitCine(name, detail) {
+    if (typeof window === 'undefined') return false;
+    window.dispatchEvent(new CustomEvent(name, { detail: { ...detail } }));
+    return true;
   }
 
   /* ================================================================ *
@@ -1523,7 +2080,7 @@ class UI {
   }
 
   _focusTagInput() {
-    const input = this._el.tagInput;
+    const input = this._gdsOn && this.doc ? this.doc.getElementById('tag-input') : this._el.tagInput;
     if (!input) return;
     const attempt = () => {
       try {
@@ -1595,6 +2152,7 @@ class UI {
   enterSurface() {
     const mode = modeAttributes('surface');
     this._surfaceMode = 'surface';
+    this._surfaceHud = { ...this._surfaceHud, active: true };
     if (this._el.hud) {
       this._el.hud.dataset.mode = mode.hudMode;
       this._el.hud.removeAttribute('aria-hidden');
@@ -1616,6 +2174,7 @@ class UI {
   exitSurface() {
     const mode = modeAttributes('orbit');
     this._surfaceMode = 'orbit';
+    this._surfaceHud = { ...this._surfaceHud, active: false, phase: 'idle' };
     for (const pad of this._el.surfacePads || []) pad.classList.remove('is-held');
     if (this._el.hud) this._el.hud.dataset.mode = mode.hudMode;
     if (this._el.surfaceControls) this._el.surfaceControls.hidden = mode.controlsHidden;
@@ -1634,6 +2193,20 @@ class UI {
    */
   updateSurfaceHud(state = {}) {
     const data = state && typeof state === 'object' ? state : {};
+    this._surfaceHud = mapSurfaceSlice({
+      active: this._surfaceMode === 'surface',
+      phase: data.phase,
+      targetLabel: data.targetLabel,
+      targetHarvestable: data.targetHarvestable,
+      depleted: data.depleted,
+      lapFraction: data.lapFraction,
+      lapSeconds: data.lapSeconds,
+      autoLabel: data.autoLabel,
+      missionDone: data.missionDone != null ? data.missionDone : (this._mission ? this._mission.objectives.filter((objective) => objective.done).length : 0),
+      missionTotal: data.missionTotal != null ? data.missionTotal : (this._mission ? this._mission.objectives.length : 0),
+      missionReady: data.missionReady != null ? data.missionReady : !!(this._mission && this._mission.ready),
+      keyboardMode: this._surfaceKeyboardMode || 'canvas',
+    });
     const readout = data.targetLabel ? targetReadout(data.targetLabel, !!data.targetHarvestable) : targetReadout(null, false);
     const target = this._el.surfaceTarget;
     if (target) {
@@ -1881,6 +2454,12 @@ class UI {
     );
     this._setText(this._el.hudClicks, player ? formatNumber(Math.max(0, int(player.clicks))) : '0');
     this._setText(this._el.hudBreaks, player ? formatNumber(Math.max(0, int(player.breaks))) : '0');
+    this._myStats = {
+      score,
+      faces: player ? Math.max(0, int(player.facesHeld)) : 0,
+      clicks: player ? Math.max(0, int(player.clicks)) : 0,
+      breaks: player ? Math.max(0, int(player.breaks)) : 0,
+    };
     if (this._el.hudFaces) {
       this._el.hudFaces.classList.toggle('is-zero', !player || int(player.facesHeld) === 0);
     }
@@ -1891,6 +2470,7 @@ class UI {
     if (!panel) return;
     const hover = this._hoverInfo;
     if (!hover) {
+      this._targetSnapshot = { open: false };
       if (!panel.hidden) panel.hidden = true;
       if (this.doc && this.doc.body) this.doc.body.classList.remove('has-target');
       return;
@@ -1989,6 +2569,31 @@ class UI {
     panel.classList.toggle('is-max', atMaxDepth);
     panel.classList.toggle('is-mine', isMine);
     panel.dataset.depth = String(depth);
+
+    const terrainInfo = resolveTerrain(hover.terrain || hover);
+    this._targetSnapshot = {
+      open: true,
+      label,
+      depth,
+      threshold,
+      clicks,
+      owner: owner ? { tag: owner.tag, color: owner.color } : null,
+      isMine,
+      state: targetState({ ...hover, depth }, maxDepth),
+      chargePercent: chargePercent(clicks == null ? 0 : clicks, threshold),
+      chargeText: chargeText(clicks, threshold),
+      statusText,
+      statusState,
+      terrain: terrainInfo && terrainInfo.name
+        ? {
+            name: String(terrainInfo.name).toUpperCase(),
+            elevation: finite(terrainInfo.elevation)
+              ? `ELEV ${terrainInfo.elevation >= 0 ? '+' : '−'}${Math.abs(terrainInfo.elevation).toFixed(2)}`
+              : 'ELEV —',
+          }
+        : null,
+      meta,
+    };
   }
 
   _resolveOwner(hover) {
@@ -2153,6 +2758,8 @@ class UI {
       this._el.missionBadge.classList.toggle('is-ready', ready);
     }
     if (this._el.missionPanel) this._el.missionPanel.classList.toggle('is-ready', ready);
+    if (ready && !this._missionWasReady) this._announce('Refit complete. The escape drive is charged.');
+    this._missionWasReady = ready;
     if (this._el.landingMission) this._el.landingMission.classList.toggle('is-ready', ready);
 
     const doc = this.doc;
