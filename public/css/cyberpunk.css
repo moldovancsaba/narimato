@@ -6987,9 +6987,9 @@ body.is-guide .hud { pointer-events: none; }
   cursor: pointer;
 }
 .surface-exit:hover { border-color: #ffd36b; }
-#hud[data-mode="surface"] #hud-hint { display: none; }
-#hud[data-mode="surface"] #mobile-dock { display: none; }
-#hud[data-mode="surface"] #hud-zoom { opacity: 0.35; pointer-events: none; }
+#hud[data-mode="surface"] #hud-zoom { opacity: 0.45; }
+#hud[data-mode="surface"] .hud-side--left .mission-panel,
+#hud[data-mode="surface"] .players-panel { --surface-keep: 1; }
 #hud-zoom:focus-visible { outline: 2px solid #d4ff3f; outline-offset: 2px; }
 @media (max-width: 760px), (pointer: coarse) {
   .surface-pads { display: grid; }

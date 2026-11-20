@@ -1552,6 +1552,12 @@ class UI {
       this._el.hud.inert = false;
     }
     if (this._el.surfaceControls) this._el.surfaceControls.hidden = mode.controlsHidden;
+    const hint = this._el.hudHint;
+    if (hint) {
+      if (this._orbitHintText == null) this._orbitHintText = hint.textContent;
+      const surfaceHint = 'WASD / ARROWS RUN · A / D TURN · SHIFT SPRINT · ENTER TRIANGLES TO HARVEST · ESC // RETURN TO ORBIT';
+      if (hint.textContent !== surfaceHint) hint.textContent = surfaceHint;
+    }
     this.updateSurfaceHud({ phase: 'landing', targetLabel: null, targetHarvestable: false, lapFraction: 0 });
     const first = this._el.surfaceFirst;
     if (first && typeof first.focus === 'function') first.focus({ preventScroll: true });
@@ -1564,8 +1570,13 @@ class UI {
     for (const pad of this._el.surfacePads || []) pad.classList.remove('is-held');
     if (this._el.hud) this._el.hud.dataset.mode = mode.hudMode;
     if (this._el.surfaceControls) this._el.surfaceControls.hidden = mode.controlsHidden;
+    if (this._el.hudHint && this._orbitHintText != null) this._el.hudHint.textContent = this._orbitHintText;
+    // Restore focus to the orbit zoom control; on narrow viewports it is
+    // display:none, so fall back to the always-mounted HUD region.
     const zoom = this._el.hudZoom;
-    if (zoom && typeof zoom.focus === 'function') zoom.focus({ preventScroll: true });
+    const zoomVisible = !!zoom && typeof zoom.getClientRects === 'function' && zoom.getClientRects().length > 0;
+    const focusTarget = zoomVisible ? zoom : this._el.hud;
+    if (focusTarget && typeof focusTarget.focus === 'function') focusTarget.focus({ preventScroll: true });
   }
 
   /**
@@ -2342,6 +2353,7 @@ function resolveElements(doc) {
     worldBreaks: byId('world-breaks'),
     worldRule: byId('world-rule'),
     hud: byId('hud'),
+    hudHint: byId('hud-hint'),
     surfaceControls: byId('surface-controls'),
     surfaceTarget: byId('surface-target'),
     surfaceLap: byId('surface-lap'),

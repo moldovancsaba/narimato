@@ -324,6 +324,13 @@ results overlay `#results-overlay` with `#results-title`, `#results-rank`, `#res
 `#results-next`, `#results-share-url`, `#btn-download-json` (optional), `#results-card-preview`.
 UI may add wrapper ids as needed but must not rename the above.
 
+Surface mode adds one control strip to the same HUD tree (RND-03): `#surface-controls`
+(`role="group"`, accessible name `Surface controls`) contains `#surface-target`
+(`aria-live="polite"`), `#surface-lap` (`role="progressbar"`), four
+`[data-surface-hold]` movement buttons with accessible names, and `#btn-surface-exit`.
+Every HUD node carries `data-hud-node="<stable-id>"`; `#hud[data-mode]` is `orbit` or
+`surface`. No second HUD, no hidden duplicate panel and no `#surface-canvas` exist.
+
 ---
 
 ## 7. App behavior (Lead, `app.js`)

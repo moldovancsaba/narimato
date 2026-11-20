@@ -33,6 +33,7 @@ real count.
 | `test/sphere-interaction.test.js` | Carrier frame, projection/unprojection, point-follow, shortest arc | `public/js/shared/sphere-interaction.js` | RND-01, CTL-01 |
 | `test/surface-camera.test.js` | Surface camera framing, carrier dolly/tilt, round-trip, near plane, resize | `public/js/shared/surface-camera.js` | RND-01 |
 | `test/surface-render.test.js` | Surface view state machine, orbit restore, entity mapping, rollback flag | `public/js/surface-controller.js`, `public/js/shared/view-state.js` | RND-02 |
+| `test/hud-parity.test.js` | HUD snapshot parity, duplicate detection, target/lap fallbacks, static markup contract | `public/js/shared/hud-parity.js`, `public/index.html` | RND-03 |
 | `test/surface-math.test.js` | Surface tangent/down-angle and projection helpers | `public/js/shared/sphere-interaction.js` | RND-01 |
 | `test/test-count.test.js` | TAP summary parsing, marker verification, failure propagation | `scripts/test-count.mjs` | QA-01 |
 | `test/tetra-ship.test.js` | Five-tetrahedron ship geometry and incident models | `public/js/shared/tetra-ship.js` | EVT-02 |

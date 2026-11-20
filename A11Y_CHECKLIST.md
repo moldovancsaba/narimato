@@ -47,6 +47,28 @@ labels, and SFX button naming.
 - All overlay primary buttons are keyboard reachable; form fields and buttons retain focus styles.
 - `prefers-reduced-motion` CSS is present and respected by intro/interlude/renderer.
 
+## Surface mode keyboard and screen-reader path (RND-03)
+
+Surface mode is a camera and control mode on the same HUD tree:
+
+- Orbital nodes (score, mission, cargo, pilots, arcade, navigation, target inspector, hint) stay
+  mounted and keep their identity before, during and after surface entry; surface only adds the
+  `#surface-controls` group. The parity contract is `public/js/shared/hud-parity.js` and the
+  acceptance script is `node scripts/verify-hud-parity.mjs`.
+- `#surface-controls` is a `role="group"` named `Surface controls`; every button has an accessible
+  name and a 44 px target at mobile widths.
+- `#surface-target` is the single `aria-live="polite"` region for target and harvest state; the lap
+  bar is a `role="progressbar"` with `aria-valuenow`.
+- Entering the surface moves focus to the first movement pad; leaving restores focus to the orbit
+  zoom control (or the HUD region where the zoom indicator is hidden on narrow viewports).
+- Movement pads are `aria-disabled` during landing and leaving; Escape returns to orbit.
+- No surface CSS rule hides the orbital panels, the hint bar or the target inspector.
+
+Automated evidence: `media/hud-parity/report.json` (three-phase HUD snapshot parity, focus
+placement/restore, pad sizes, aria snapshot per viewport). axe serious/critical verification of the
+surface strip remains owned by UI-04/A11Y-01 because the strip is not yet a GDS island; the current
+strip reuses the existing HUD markup and tokens.
+
 ## Manual real-device gate (pending)
 
 Cannot be executed in this headless environment; run before calling A4 fully closed:
