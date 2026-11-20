@@ -16,7 +16,6 @@ import { downloadResultCard, buildShareText, renderResultCard } from './result-c
 import { resourceById } from './shared/resources.js';
 import { missionProgress, missionForPlanet, planetDepth, planetName, planetSource } from './shared/mission.js';
 import { planetTheme } from './shared/planet-theme.js';
-import { childTriangles, faceCentroid } from './shared/geometry.js';
 import { createIntro } from './intro.js';
 import { createInterlude } from './interlude.js';
 import { createNarrator } from './narrator.js';
@@ -87,7 +86,6 @@ let surface = null;
 const surfacePeers = new Map();
 let surfaceSupplyCells = [];
 let surfaceCamera = null;
-let surfaceLiveFaces = null;
 let supplyTimer = 0;
 let supplyDeadline = 0;
 let supplyPlanetKey = '';
@@ -380,7 +378,6 @@ surface = createSurfaceMode({
   },
   onExit: () => {
     renderer.setSurfaceView(false);
-    surfaceLiveFaces = null;
     syncRenderFaces();
     sendSurfaceLeave();
     // Returning from the crust must put the camera at maximum zoom-out in orbit,
@@ -2200,46 +2197,11 @@ function updateKeyboardNavigation(dt) {
 }
 
 let lastSurfacePoseSent = 0;
-function buildSurfaceLiveFaces() {
-  // Rebuilt from the live leaf list; there is no cached planet copy. Every
-  // visual triangle is a child of a currently active leaf, so multiplayer
-  // mining/breaks are reflected on the next authoritative cell/break event.
-  const out = [];
-  const angle = (p, q) => Math.acos(clamp(p.x * q.x + p.y * q.y + p.z * q.z, -1, 1));
-  for (const node of leafList) {
-    if (!node || !node.a) continue;
-    const edge = Math.max(angle(node.a, node.b), angle(node.b, node.c), angle(node.c, node.a));
-    const level = clamp(Math.ceil(Math.log2(Math.max(1e-4, edge / 0.03))), 0, 5);
-    let tris = [{ a: node.a, b: node.b, c: node.c }];
-    for (let i = 0; i < level; i += 1) {
-      const next = [];
-      for (const tri of tris) for (const child of childTriangles(tri.a, tri.b, tri.c)) next.push(child);
-      tris = next;
-    }
-    for (let i = 0; i < tris.length; i += 1) {
-      const tri = tris[i];
-      out.push({
-        label: `~${node.label}.${i}`,
-        a: tri.a,
-        b: tri.b,
-        c: tri.c,
-        centroid: faceCentroid(tri.a, tri.b, tri.c),
-        depth: node.depth,
-        ownerIndex: node.ownerIndex,
-        clicks: node.clicks,
-        lastClickIndex: node.lastClickIndex,
-        terrain: node.terrain,
-        resourceId: null,
-      });
-    }
-  }
-  return out;
-}
-
 function refreshSurfaceLiveFaces() {
   if (!(surface && surface.active)) return;
-  surfaceLiveFaces = buildSurfaceLiveFaces();
-  renderer.setFaces(surfaceLiveFaces);
+  // Camera-only surface: no generated/subdivided mesh. The renderer draws the
+  // actual active leaves from the single planet tree.
+  renderer.setFaces(leafList);
 }
 
 function sendSurfacePose(pose) {

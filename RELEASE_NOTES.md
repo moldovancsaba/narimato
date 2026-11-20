@@ -1,5 +1,17 @@
 # NARIMATO — Release Notes
 
+## v3.52.0 — “Camera Only” (2026-11-20)
+
+- **Removed the generated surface mesh.** There is no adaptive subdivision, no local triangle-density
+  increase and no synthesized surface geometry. Surface mode renders the actual active leaves from
+  the one planet tree through the existing renderer.
+- Surface mode changes the camera and controls only.
+- 106/106 tests.
+
+Release: https://github.com/moldovancsaba/narimato/releases/tag/v3.52.0
+
+---
+
 ## v3.51.0 — “Surface Framing” (2026-11-20)
 
 - Reduced ownership wash on surface biome terrain to 4%.
