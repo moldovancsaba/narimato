@@ -53,6 +53,8 @@ import {
 } from './shared/geometry.js';
 import { resourceById } from './shared/resources.js';
 import { BIOMES, terrainAt, SEA_LEVEL } from './shared/planet.js';
+import { drawTetraShip } from './shared/tetra-ship.js';
+import { drawHumanoid3D } from './shared/humanoid-3d.js';
 
 const TAU = Math.PI * 2;
 const HALF_PI = Math.PI / 2;
@@ -170,6 +172,13 @@ export class IcosaRenderer {
     this.surface = null;
     this.surfaceSeed = null;
     this.surfaceView = false;
+    // RND-02 single-scene surface mode: the renderer owns the entity pass and
+    // the landing/leaving ship; the surface controller owns only pose + labels.
+    this.surfaceMode = false;
+    this.surfaceEntities = [];
+    this.surfaceEffects = [];
+    this.surfacePhase = 'walking';
+    this.surfaceProgress = 1;
     this.opaqueSurface = false;
     this.planetTheme = null;
     this._surfaceCanvas = null;
@@ -373,6 +382,28 @@ export class IcosaRenderer {
   /** Use the existing cell/material pipeline from a close surface camera. */
   setSurfaceView(enabled) {
     this.surfaceView = !!enabled;
+    if (!this.surfaceView) {
+      this.surfaceMode = false;
+      this.surfaceEntities = [];
+      this.surfaceEffects = [];
+    }
+  }
+
+  /**
+   * Surface mode is a camera + control mode on this same renderer (RND-02).
+   * The planet, cells, markers and labels keep their orbit pipeline; the
+   * surface adds only the entity pass and the landing/leaving ship.
+   * @param {{active?:boolean, entities?:Array, phase?:string, progress?:number, effects?:Array}} options
+   */
+  setSurfaceMode(options = {}) {
+    const next = options && typeof options === 'object' ? options : {};
+    this.surfaceMode = !!next.active;
+    this.surfaceView = this.surfaceMode;
+    this.surfaceEntities = this.surfaceMode && Array.isArray(next.entities) ? next.entities : [];
+    this.surfaceEffects = this.surfaceMode && Array.isArray(next.effects) ? next.effects : [];
+    this.surfacePhase = typeof next.phase === 'string' && next.phase ? next.phase : 'walking';
+    this.surfaceProgress = Number.isFinite(next.progress) ? clamp(next.progress, 0, 1) : 1;
+    return this;
   }
 
   setOpaqueSurface(enabled) {
@@ -780,6 +811,8 @@ export class IcosaRenderer {
       this._drawWaypoint(ctx, camera);
       this._drawSupplyMarkers(ctx, camera);
     }
+
+    if (this.surfaceMode && hasCamera) this._drawSurfaceEntities(ctx, camera, rm);
 
     if (hasCamera) this._drawPulses(ctx, camera, rm);
   }
@@ -1398,6 +1431,226 @@ export class IcosaRenderer {
       ctx.stroke(path);
     }
     ctx.globalAlpha = 1;
+  }
+
+  /* ================================================================ *
+   * Surface entity pass (RND-02)
+   * ================================================================ */
+
+  /**
+   * Draw the surface entities inside the single renderer: avatars, target and
+   * supply pins, mining beams, harvest effects, and the landing/leaving ship.
+   * Entities reference cells by label, never by copied geometry.
+   */
+  _drawSurfaceEntities(ctx, camera, rm) {
+    const W = this.width;
+    const H = this.height;
+    if (W < 2 || H < 2) return;
+    const list = this.surfaceEntities || [];
+    for (let i = 0; i < list.length; i += 1) {
+      const entity = list[i];
+      if (!entity || !entity.pos) continue;
+      if (entity.kind === 'self' || entity.kind === 'peer') {
+        this._drawSurfaceAvatar(ctx, camera, entity);
+      } else if (entity.kind === 'pin') {
+        this._drawSurfacePin(ctx, camera, entity);
+      } else if (entity.kind === 'beam') {
+        this._drawSurfaceBeam(ctx, camera, entity);
+      }
+    }
+    this._drawSurfaceHarvest(ctx, W, H);
+    this._drawSurfaceShip(ctx, W, H, rm);
+  }
+
+  _drawSurfaceAvatar(ctx, camera, entity) {
+    const isSelf = entity.kind === 'self';
+    const forward = entity.forward && Number.isFinite(entity.forward.x)
+      ? entity.forward
+      : { x: 1, y: 0, z: 0 };
+    drawHumanoid3D(ctx, camera, entity.pos, forward, {
+      scale: isSelf ? 0.013 : 0.012,
+      walkPhase: Number.isFinite(entity.walk) ? entity.walk : 0,
+      tint: entity.tint || (isSelf ? '#67ddff' : '#a78bfa'),
+      skin: isSelf ? '#f2ffff' : '#dffcff',
+    });
+    const head = camera.project(mul(entity.pos, 1.016));
+    if (head && head.visible && entity.label) {
+      ctx.fillStyle = 'rgba(225,250,255,0.82)';
+      ctx.font = `8px ${FONT_STACK}`;
+      ctx.textAlign = 'center';
+      ctx.fillText(String(entity.label).toUpperCase().slice(0, 14), head.x, head.y - 10);
+    }
+    if (entity.mine) {
+      const foot = camera.project(entity.pos);
+      if (!foot || !foot.visible) return;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = entity.tint || '#8afcff';
+      ctx.beginPath();
+      ctx.moveTo(foot.x - 2, foot.y - 190);
+      ctx.lineTo(foot.x + 2, foot.y - 190);
+      ctx.lineTo(foot.x + 32, foot.y);
+      ctx.lineTo(foot.x - 32, foot.y);
+      ctx.closePath();
+      ctx.fill();
+      for (let i = 0; i < 5; i += 1) {
+        const a = (i / 5) * Math.PI * 2 + this.t * 2;
+        ctx.fillRect(foot.x + Math.cos(a) * 20, foot.y + Math.sin(a) * 8, 2, 2);
+      }
+      ctx.restore();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  _drawSurfacePin(ctx, camera, entity) {
+    const anchor = camera.project(mul(entity.pos, 1.001));
+    if (!anchor || !anchor.visible) return;
+    const color = entity.tint || (entity.variant === 'supply' ? '#ffd166' : '#22ff88');
+    const supply = entity.variant === 'supply';
+    const height = supply ? 52 : 22;
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = supply ? 1.2 : 1.4;
+    ctx.beginPath();
+    ctx.moveTo(anchor.x, anchor.y);
+    ctx.lineTo(anchor.x, anchor.y - height);
+    ctx.stroke();
+    const tip = anchor.y - height - 10;
+    ctx.beginPath();
+    ctx.moveTo(anchor.x, tip - 6);
+    ctx.lineTo(anchor.x + 6, tip + 1);
+    ctx.lineTo(anchor.x, tip + 8);
+    ctx.lineTo(anchor.x - 6, tip + 1);
+    ctx.closePath();
+    ctx.fill();
+    if (supply && entity.label) {
+      ctx.fillStyle = '#f3ffff';
+      ctx.font = `8px ${FONT_STACK}`;
+      ctx.textAlign = 'center';
+      ctx.fillText(String(entity.label).toUpperCase(), anchor.x, tip - 8);
+    }
+    ctx.restore();
+  }
+
+  _drawSurfaceBeam(ctx, camera, entity) {
+    const anchor = camera.project(mul(entity.pos, 1.003));
+    if (!anchor || !anchor.visible) return;
+    const k = clamp(Number.isFinite(entity.progress) ? entity.progress : 0, 0, 1);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.5 * (1 - k);
+    ctx.fillStyle = entity.tint || '#8afcff';
+    ctx.beginPath();
+    ctx.moveTo(anchor.x - 2, anchor.y - 180);
+    ctx.lineTo(anchor.x + 2, anchor.y - 180);
+    ctx.lineTo(anchor.x + 34, anchor.y);
+    ctx.lineTo(anchor.x - 34, anchor.y);
+    ctx.closePath();
+    ctx.fill();
+    for (let i = 0; i < 6; i += 1) {
+      const a = (i / 6) * Math.PI * 2 + this.t * 3;
+      ctx.fillRect(anchor.x + Math.cos(a) * (10 + k * 30), anchor.y + Math.sin(a) * 7, 2, 2);
+    }
+    ctx.restore();
+    if (entity.label) {
+      ctx.globalAlpha = 0.8 * (1 - k);
+      ctx.fillStyle = '#f3ffff';
+      ctx.font = `8px ${FONT_STACK}`;
+      ctx.textAlign = 'center';
+      ctx.fillText(String(entity.label), anchor.x, anchor.y - 30);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  /** Tractor cone + ore sparks for an authoritative harvest success. */
+  _drawSurfaceHarvest(ctx, W, H) {
+    const effects = this.surfaceEffects;
+    if (!effects || !effects.length) return;
+    for (let i = 0; i < effects.length; i += 1) {
+      const effect = effects[i];
+      const k = clamp(Number.isFinite(effect.age) ? effect.age : 0, 0, 1);
+      const x = W / 2;
+      const y = H * 0.69;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = `rgba(120,255,190,${0.18 * (1 - k)})`;
+      ctx.beginPath();
+      ctx.moveTo(x - 18, 0);
+      ctx.lineTo(x + 18, 0);
+      ctx.lineTo(x + 90, y);
+      ctx.lineTo(x - 90, y);
+      ctx.closePath();
+      ctx.fill();
+      for (let j = 0; j < 22; j += 1) {
+        const a = (j / 22) * Math.PI * 2 + k * 2;
+        const r = 18 + k * 130 + (j % 4) * 9;
+        ctx.globalAlpha = 0.8 * (1 - k);
+        ctx.fillStyle = effect.color || '#ffe066';
+        ctx.beginPath();
+        ctx.moveTo(x + Math.cos(a) * r, y + Math.sin(a) * r * 0.45 - 20);
+        ctx.lineTo(x + Math.cos(a + 0.18) * (r + 9), y + Math.sin(a + 0.18) * (r + 9) * 0.45 - 20);
+        ctx.lineTo(x + Math.cos(a - 0.18) * (r + 9), y + Math.sin(a - 0.18) * (r + 9) * 0.45 - 20);
+        ctx.closePath();
+        ctx.fill();
+      }
+      if (effect.value > 0) {
+        ctx.globalAlpha = 0.9 * (1 - k);
+        ctx.fillStyle = effect.color || '#ffe066';
+        ctx.font = `700 14px ${FONT_STACK}`;
+        ctx.textAlign = 'center';
+        ctx.fillText(`+${effect.value} ${effect.name}`, x, y - 52 - k * 42);
+      }
+      ctx.restore();
+      drawTetraShip(ctx, {
+        x: W / 2,
+        y: H * 0.07 + Math.sin(k * Math.PI) * 8,
+        scale: 0.55,
+        yaw: 0.6 + k,
+        pitch: -0.4,
+        hull: '#e8fbff',
+        fin: effect.color || '#ffe066',
+        edge: '#bffaff',
+        glow: effect.color || '#ffe066',
+        alpha: 0.55 * (1 - k),
+        engine: false,
+        shadow: false,
+      });
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /** The landing/leaving ship is part of the same surface draw path. */
+  _drawSurfaceShip(ctx, W, H, rm) {
+    const phase = this.surfacePhase;
+    if (phase === 'landing') {
+      const k = clamp(this.surfaceProgress, 0, 1);
+      drawTetraShip(ctx, {
+        x: W / 2,
+        y: -80 + (H * 0.57 + 100) * k,
+        scale: 1.35 + k * 1.2,
+        yaw: 0.6 + k * 1.8,
+        pitch: -0.4,
+        roll: 0.2,
+        hull: '#e8fbff',
+        fin: '#52d9ff',
+        edge: '#bffaff',
+        glow: '#55eaff',
+        alpha: 0.95,
+      });
+    } else if (phase === 'leaving') {
+      const k = clamp(this.surfaceProgress, 0, 1);
+      drawTetraShip(ctx, {
+        x: W / 2 + k * 160,
+        y: H * 0.62 - k * H * 0.8,
+        scale: 1.2 + k * 1.8,
+        yaw: 0.7 + k * 2,
+        pitch: -0.4,
+        glow: '#55eaff',
+        alpha: 1 - k * 0.3,
+      });
+    }
   }
 
   _drawSphere(ctx, camera, cx, cy, R, rm, glassFade) {

@@ -21,9 +21,10 @@ import { createIntro } from './intro.js';
 import { createInterlude } from './interlude.js';
 import { createNarrator } from './narrator.js';
 import { createSupplyDrop } from './supply-drop.js';
-import { createSurfaceMode } from './surface-mode.js';
+import { createSurfaceController } from './surface-controller.js';
 import { SurfaceCamera } from './shared/surface-camera.js';
 import { cameraModeReport, parseSurfaceCameraMode } from './shared/camera-contract.js';
+import { parseSurfaceRenderer, restoreOrbit, saveOrbit } from './shared/view-state.js';
 import './telemetry.js';
 import { HELP_SECTIONS, captainLog } from './story-copy.js';
 
@@ -38,6 +39,14 @@ const MAX_ZOOM = 16777216;
 const SURFACE_CAMERA_MODE = parseSurfaceCameraMode(
   typeof window !== 'undefined' ? window.location.search : '',
 );
+// RND-02 rollback flag: the overlay renderer is gone, so `overlay` fails closed
+// to the single-scene renderer with one console warning.
+const SURFACE_RENDERER = parseSurfaceRenderer(
+  typeof window !== 'undefined' ? window.location.search : '',
+);
+if (SURFACE_RENDERER === 'overlay') {
+  console.warn('[icosa] ?surface-renderer=overlay is retired; using the single-scene renderer');
+}
 
 const canvas = document.getElementById('arena-canvas');
 const camera = new SphereCamera(window.innerWidth || 1, window.innerHeight || 1);
@@ -90,6 +99,9 @@ let seenTips = loadSeenTips();
 let appliedPlanetThemeKey = '';
 let supplyDrop = null;
 let surface = null;
+// RND-02: one renderer, two views. `view` is the only mode switch.
+let view = 'orbit';
+let savedOrbit = null;
 const surfacePeers = new Map();
 let surfaceSupplyCells = [];
 let surfaceCamera = null;
@@ -203,6 +215,7 @@ function scheduleFirstGuide(delayMs = 700) {
     const brief = document.getElementById('landing-brief');
     if (brief && !brief.hidden) return;
     if (!joined) return;
+    if (view === 'surface') return;
     openGuide();
   }, Math.max(0, delayMs));
 }
@@ -387,6 +400,12 @@ const ui = new UI({
     safeAudio('setMuted', muted);
     safeCall(ui, 'setSoundMuted', muted);
   },
+  onSurfaceHold: (code, down) => {
+    if (surface) surface.hold(code, down);
+  },
+  onSurfaceExit: () => {
+    if (surface && surface.active) surface.stop();
+  },
 });
 
 /* ------------------------------------------------------------------ *
@@ -400,7 +419,7 @@ surfaceCamera = new SurfaceCamera(
   camera.height || window.innerHeight,
   { mode: SURFACE_CAMERA_MODE },
 );
-surface = createSurfaceMode({
+surface = createSurfaceController({
   getStartPoint: () => (camera && typeof camera.viewAxis === 'function' ? camera.viewAxis() : { x: 0, y: 0, z: 1 }),
   getLeaves: () => leafList,
   getPlanet: () => {
@@ -411,17 +430,7 @@ surface = createSurfaceMode({
   getMyPlayerId: () => (myPlayer ? myPlayer.id : null),
   getMyIndex: () => myIndex,
   getMaxDepth: () => maxDepth(),
-  getMission: () => {
-    const player = myStatePlayer();
-    const planet = planetInfoFromState();
-    return {
-      planet,
-      progress: missionProgress((player && player.oreCounts) || {}, planet.mission),
-    };
-  },
   getSupplyCells: () => surfaceSupplyCells,
-  externalScene: true,
-  getExternalCamera: () => surfaceCamera,
   getPeers: () => {
     const synced = [...surfacePeers.values()].filter((peer) => Date.now() - (peer.updatedAt || 0) < 5000);
     const ids = new Set(synced.map((peer) => peer.playerId));
@@ -435,20 +444,8 @@ surface = createSurfaceMode({
     if (!joined || !label) return;
     attemptClick(label);
   },
-  onExit: () => {
-    renderer.setSurfaceView(false);
-    syncRenderFaces();
-    sendSurfaceLeave();
-    // Returning from the crust must put the camera at maximum zoom-out in orbit,
-    // not back at the deepest cell zoom.
-    camera.reset();
-    camera.zoom = ORBIT_FAR_ZOOM;
-    zoomTarget = null;
-    zoomAnim = null;
-    keyboardSyncNeeded = true;
-    updateZoomUi();
-    safeCall(ui, 'toast', 'ORBIT VIEW // MAXIMUM ZOOM OUT', 'info');
-  },
+  onHud: (surfaceState) => safeCall(ui, 'updateSurfaceHud', surfaceState),
+  onExit: () => exitSurfaceMode(),
 });
 
 function loadSeenTips() {
@@ -462,6 +459,7 @@ function loadSeenTips() {
 
 function maybeTip(id, { delay = 900, speaker = 'TACTICAL' } = {}) {
   if (!id || seenTips[id] || !joined) return;
+  if (view === 'surface') return;
   if (intro && intro.active) return;
   if (interlude && interlude.active) return;
   if (ui && ui.isManualOpen) return;
@@ -2008,7 +2006,6 @@ function maxZoomLevel() {
 
 /** Surface landing happens after the fourth zoom rung (D0..D3), not maxDepth. */
 const SURFACE_ENTER_LEVEL = 3;
-const ORBIT_FAR_ZOOM = 0.4;
 function maxOrbitZoomLevel() {
   return Math.max(maxZoomLevel(), SURFACE_ENTER_LEVEL);
 }
@@ -2396,17 +2393,56 @@ function handleSurfaceEvent(msg) {
 }
 
 function enterSurfaceMode() {
-  if (!joined || !surface || surface.active) return;
+  if (!joined || !surface || surface.active || view === 'surface') return;
+  if (interlude && interlude.active) return;
+  if (intro && intro.active) intro.skip();
   cancelFocus();
   cancelZoom();
   narrator.stop();
+  if (firstGuideTimer) {
+    clearTimeout(firstGuideTimer);
+    firstGuideTimer = 0;
+  }
   safeCall(ui, 'hideGuide');
   safeCall(ui, 'hideManual');
+  safeCall(ui, 'hideLandingBrief');
+  // Store the orbit camera so exiting restores it exactly (RND-02).
+  savedOrbit = saveOrbit(camera);
   const planet = planetInfoFromState();
-  if (!surface.start({ planetName: planet.planetName, seed: planet.planetSeed, depth: planet.planetDepth })) return;
+  if (!surface.start({ planetName: planet.planetName, seed: planet.planetSeed, depth: planet.planetDepth })) {
+    savedOrbit = null;
+    return;
+  }
+  view = 'surface';
+  renderer.setSurfaceMode({ active: true, entities: [], phase: surface.phase, progress: surface.progress() });
+  safeCall(ui, 'enterSurface', { planet });
   refreshSurfaceLiveFaces();
   applySupplyFocus();
   safeAudio('introWhoosh');
+}
+
+function exitSurfaceMode() {
+  if (view !== 'surface') return;
+  view = 'orbit';
+  if (surface) surface.stop();
+  renderer.setSurfaceMode({ active: false });
+  renderer.setSurfaceView(false);
+  syncRenderFaces();
+  sendSurfaceLeave();
+  // Restore the exact pre-entry orbit (RND-02); CTL-04 owns the later
+  // "exit to farthest orbit" policy change.
+  if (savedOrbit) {
+    cancelFocus();
+    cancelZoom();
+    restoreOrbit(camera, savedOrbit);
+    savedOrbit = null;
+  }
+  zoomTarget = null;
+  zoomAnim = null;
+  keyboardSyncNeeded = true;
+  updateZoomUi();
+  safeCall(ui, 'exitSurface');
+  safeCall(ui, 'toast', 'ORBIT VIEW // CAMERA RESTORED', 'info');
 }
 
 function bindKeyboard() {
@@ -2572,11 +2608,20 @@ function frame(t) {
     return;
   }
 
-  if (surface && surface.active) {
+  if (view === 'surface' && surface && surface.active) {
+    // One RAF loop (this one): the controller advances pose and harvest state,
+    // the shared renderer draws the planet, cells and entities.
+    surface.update(dt);
     const pose = surface.pose();
     surfaceCamera.setViewport(camera.width || window.innerWidth, camera.height || window.innerHeight);
     surfaceCamera.setPose(pose.pos, pose.forward);
-    renderer.setSurfaceView(true);
+    renderer.setSurfaceMode({
+      active: true,
+      entities: surface.entities(),
+      effects: surface.effects(),
+      phase: surface.phase,
+      progress: surface.progress(),
+    });
     try {
       renderer.render(surfaceCamera, t);
     } catch (err) {
@@ -2588,7 +2633,7 @@ function frame(t) {
     requestAnimationFrame(frame);
     return;
   }
-  renderer.setSurfaceView(false);
+  if (renderer.surfaceMode) renderer.setSurfaceMode({ active: false });
 
   updateFocus(t);
   if (!focusAnim && !(interlude && interlude.active)) updateKeyboardNavigation(dt);
@@ -2677,7 +2722,17 @@ window.__ICOSA__ = {
   manual: () => safeCall(ui, 'showManual', HELP_SECTIONS),
   guide: () => openGuide(),
   surface: () => enterSurfaceMode(),
-  surfaceMode: () => (surface ? { active: surface.active, phase: surface.phase } : null),
+  surfaceMode: () => ({
+    active: view === 'surface' && !!surface && surface.active,
+    phase: surface ? surface.phase : 'idle',
+    entities: surface && surface.active ? surface.entities().length : 0,
+    canvasCount: typeof document !== 'undefined'
+      ? document.querySelectorAll('canvas#arena-canvas').length
+      : 0,
+  }),
+  view: () => view,
+  surfaceRenderer: () => SURFACE_RENDERER,
+  hudSnapshot: () => safeCall(ui, 'hudSnapshot'),
   cameraMode: () => cameraModeReport(SURFACE_CAMERA_MODE),
   surfaceDebug: () => (surface ? surface.debug() : null),
   surfaceMineCount: () => (surface ? surface.mineCount() : 0),

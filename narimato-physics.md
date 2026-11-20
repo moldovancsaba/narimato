@@ -245,3 +245,27 @@ carrier framing is the opt-in, contract-complete implementation.
 
 The surface camera never reads tokens, tags or player ids: it consumes only
 unit-sphere geometry and the server-validated surface pose.
+
+## 11. Surface mode is a camera change (RND-02)
+
+Surface mode draws the same planet object through the same `IcosaRenderer` on
+the same `#arena-canvas`. There is no second canvas, second RAF loop, second
+projection or second HUD:
+
+- `app.js` owns `view ∈ {orbit, surface}` and the single `requestAnimationFrame`
+  loop.
+- Entering stores `{ yaw, pitch, zoom, distance }` and switches the camera to
+  `SurfaceCamera` plus the control mode; exiting restores the stored orbit
+  exactly (one frame).
+- `surface-controller.js` advances the pilot pose, resolves the harvest target
+  through `shared/harvest.js`, and produces `SurfaceEntity[]`
+  (`self`, `peer`, `pin`, `beam`). Entities reference cells by `cellLabel`.
+- The renderer draws backdrop → planet → cells → markers → labels → entity pass
+  (avatars, pins, beams, harvest FX, landing/leaving ship).
+- `World.leaves` is the only client tree; surface entities never copy `a`/`b`/`c`.
+- Canvas terrain keeps its accessible equivalent in the HUD: the surface target
+  readout reports the cell label and harvest state, and `#surface-controls` is a
+  labelled `role="group"` with 44 px targets.
+
+Rollback: `?surface-renderer=overlay` is parsed but fails closed to the single
+scene; the only real rollback is reverting the RND-02 commit.

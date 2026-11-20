@@ -29,11 +29,12 @@ third-party runtime requests.
 
 ```
 Browser
-  index.html ── app.js ──┬─ renderer.js  (Canvas 2D game planet)
-                         ├─ world.js     (client adaptive tree)
-                         ├─ ui.js        (responsive HUD/DOM)
-                         ├─ intro.js     (cockpit launch cine)
-                         ├─ interlude.js (interplanetary storm/meteor cine)
+  index.html ── app.js ──┬─ renderer.js          (one Canvas 2D game planet + surface entities)
+                         ├─ world.js             (client adaptive tree)
+                         ├─ ui.js                (responsive HUD/DOM, one tree for both views)
+                         ├─ surface-controller.js (pose + harvest + surface entities; no canvas)
+                         ├─ intro.js             (cockpit launch cine)
+                         ├─ interlude.js         (interplanetary storm/meteor cine)
                          └─ result-card.js
   icosahedron.html ── icosahedron-viewer.js (WebGL ray–sphere reference viewer)
              shared/     geometry.js · planet.js · resources.js · mission.js
@@ -75,16 +76,26 @@ Observability: `public/js/telemetry.js` posts a tiny privacy-safe numeric beacon
 
 ### Client
 
-- **`app.js`** — orchestrates boot, intro, join/reconnect, camera, input, render loop, actions,
-  mission progress, escape transit, meteor reset, reports/shares, abandon/new-pilot.
+- **`app.js`** — orchestrates boot, intro, join/reconnect, camera, input, the single render loop,
+  actions, mission progress, escape transit, meteor reset, reports/shares, abandon/new-pilot. It owns
+  the `orbit`/`surface` view state: entering stores the orbital camera and switches camera + input;
+  exiting restores it exactly.
 - **`renderer.js`** — mixed-depth spherical Canvas renderer for the game: projected/slerp-tessellated
   edges, biome underlay + ownership, hidden ore markers, labels-on-interaction, particles, starfield.
+  It is the single renderer for both views: `setSurfaceMode({ active, entities, phase, progress })`
+  turns on the surface entity pass (avatars, pins, beams, harvest FX, landing ship) on the same
+  `#arena-canvas`.
+- **`surface-controller.js`** — surface mode as a control mode: pilot pose, movement, harvest
+  targeting, peer resolution and the `SurfaceEntity[]` list consumed by the renderer. It owns no
+  canvas, no RAF loop and no projection.
 - **`icosahedron-viewer.js`** — WebGL reference viewer: a full-screen ray–sphere shader draws the
   front surface only; analytic great-circle icosahedron edge bands; no back faces/edges.
 - **`world.js`** — client-side adaptive tree mirror of the server leaves; label parsing, cell
   updates, terrain cache, per-cell lock state.
 - **`ui.js`** — all DOM: landing/tag, HUD, mission/planet badge, drawers, target sheet, toasts,
-  confirm dialog, report overlay, responsive layout switching.
+  confirm dialog, report overlay, responsive layout switching. It is the only HUD writer: orbit
+  nodes stay mounted across view changes, and surface mode only toggles `#hud[data-mode]` plus the
+  `#surface-controls` strip (target, lap, movement pads, exit).
 - **`intro.js`** — launch cinematic state machine: wormhole → drift/gravity lock → descent; camera
   dolly, cockpit fade, steering (WASD/arrows/touch), skip/replay, reduced-motion.
 - **`interlude.js`** — escape transit: launch burn → random story event → hull damage/shake →
@@ -194,6 +205,42 @@ Authoritative rules live in [narimato-physics.md](narimato-physics.md):
 - WebGL reference viewer renders the front sphere surface only (no hidden back faces/edges).
 - Object rotation and camera carrier are separate transforms.
 - Full rationale and failure history: [narimato-physics.md](narimato-physics.md).
+
+## Single-scene surface mode
+
+There is one planet, one renderer, one canvas and one HUD. Surface mode is a camera and control
+mode change, not a second scene:
+
+```
+enterSurfaceMode():
+  savedOrbit = saveOrbit(camera)            // {yaw, pitch, zoom, distance}
+  controller.start({planetName, seed, depth})
+  view = "surface"
+  renderer.setSurfaceMode({active: true, entities: []})
+
+frame():
+  if view == "surface":
+    controller.update(dt)
+    surfaceCamera.setPose(controller.pose())
+    renderer.setSurfaceMode({active: true, entities: controller.entities(),
+                             phase, progress, effects})
+    renderer.render(surfaceCamera, t)
+  else:
+    renderer.setSurfaceMode({active: false})
+    renderer.render(camera, t)
+
+exitSurfaceMode():
+  controller.stop(); renderer.setSurfaceMode({active: false})
+  restoreOrbit(camera, savedOrbit); view = "orbit"
+```
+
+- `#arena-canvas` is the only planet canvas; `#surface-canvas` and the overlay RAF loop were deleted.
+- Entities reference cells by label (`cellLabel`), never by copied `a`/`b`/`c` geometry.
+- Surface entities: `kind` is `self`, `peer`, `pin` or `beam`; one `byLabel` map serves both views.
+- `window.__ICOSA__.surfaceMode()` returns `{ active, phase, entities, canvasCount }`.
+- `window.__ICOSA__.renderer` is the same instance before, during and after surface entry.
+- Rollback `?surface-renderer=overlay` is recognised but fails closed to the single-scene renderer
+  (the overlay module was removed); a full rollback is `git revert` of the RND-02 commit.
 
 ## Multiplayer model
 

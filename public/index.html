@@ -242,8 +242,8 @@
     </section>
 
     <!-- ============================= HUD ============================= -->
-    <section id="hud" class="hud" aria-label="World telemetry" aria-hidden="true">
-      <div id="nav-chip" class="nav-chip" hidden>
+    <section id="hud" class="hud" data-hud-node="hud" aria-label="World telemetry" aria-hidden="true">
+      <div id="nav-chip" class="nav-chip" data-hud-node="nav" hidden>
         <span class="nav-kicker">NAV</span>
         <button id="btn-nav-focus" class="nav-target" type="button" title="Fly the camera to the navigation target">
           <span id="nav-target-label" class="nav-target-label">TARGET</span>
@@ -263,14 +263,14 @@
           </div>
           <div class="hud-chips">
             <span class="chip chip--infinite">INFINITE GRID</span>
-            <span id="hud-world" class="chip chip--world">WORLD D0 · 20 FACES</span>
+            <span id="hud-world" class="chip chip--world" data-hud-node="world">WORLD D0 · 20 FACES</span>
             <span id="hud-find" class="chip chip--find" hidden>
               <span id="hud-find-glyph" class="find-glyph" aria-hidden="true">Ag</span>
               <span id="hud-find-name" class="find-name">SILVER</span>
               <span id="hud-find-value" class="find-value">+90 CR</span>
             </span>
           </div>
-          <div id="planet-badge" class="planet-badge" title="Current planet" role="status" aria-live="polite">
+          <div id="planet-badge" class="planet-badge" data-hud-node="planet" title="Current planet" role="status" aria-live="polite">
             <span class="planet-dot" aria-hidden="true"></span>
             <span id="planet-badge-name" class="planet-name">MAGRATHEA</span>
             <span class="planet-sep" aria-hidden="true">·</span>
@@ -280,16 +280,16 @@
 
         <div class="hud-center hud-score">
           <div class="score-label">YOUR SCORE</div>
-          <div id="hud-score" class="score-value">0</div>
+          <div id="hud-score" class="score-value" data-hud-node="score">0</div>
           <div id="hud-faces" class="hud-faces">FACES 0</div>
           <div class="hud-mini">
-            <span>CLICKS <b id="hud-clicks">0</b></span>
-            <span>BREAKS <b id="hud-breaks">0</b></span>
+            <span data-hud-node="clicks">CLICKS <b id="hud-clicks">0</b></span>
+            <span data-hud-node="breaks">BREAKS <b id="hud-breaks">0</b></span>
           </div>
         </div>
 
         <div class="hud-cluster hud-right">
-          <div id="hud-zoom" class="zoom-indicator" data-zoom="1">
+          <div id="hud-zoom" class="zoom-indicator" data-hud-node="zoom" tabindex="-1" data-zoom="1">
             <div class="zoom-head">
               <span class="zoom-label">ZOOM</span>
               <span id="hud-zoom-value" class="zoom-value">×1.0</span>
@@ -352,14 +352,14 @@
 
       <div class="hud-side hud-side--left">
       <!-- Escape mission -->
-      <aside id="mission-panel" class="panel mission-panel" aria-label="Escape mission objectives">
+      <aside id="mission-panel" class="panel mission-panel" data-hud-node="mission" aria-label="Escape mission objectives">
         <div class="panel-head">
           <h2 class="panel-title">THE WAY HOME</h2>
           <span id="mission-status" class="mission-status">REFIT IN PROGRESS</span>
           <button class="panel-toggle drawer-close" type="button" data-drawer-close aria-label="Close mission panel" title="Close">✕</button>
         </div>
         <div class="mission-wrap" tabindex="0" role="group" aria-label="Ship requirements, captain's log and cargo">
-          <ul class="mission-list" data-mission="hud"></ul>
+          <ul class="mission-list" id="mission-list" data-hud-node="mission-list" data-mission="hud"></ul>
           <div class="captains-log">
             <p class="captains-log-kicker">CAPTAIN'S LOG</p>
             <p id="captains-log-text" class="captains-log-text">We made it down. The drive is cold, but the crust is still full of what we need.</p>
@@ -367,9 +367,9 @@
           <div class="cargo-block">
             <div class="cargo-head">
               <span class="cargo-title">WHAT WE'RE CARRYING</span>
-              <span id="cargo-total" class="cargo-total">0</span>
+              <span id="cargo-total" class="cargo-total" data-hud-node="cargo">0</span>
             </div>
-            <ul id="cargo-list" class="cargo-list"></ul>
+            <ul id="cargo-list" class="cargo-list" data-hud-node="cargo-list"></ul>
           </div>
         </div>
         <div id="distress-row" class="distress-row" hidden>
@@ -387,7 +387,7 @@
       </aside>
 
       <!-- Online operators -->
-      <aside id="players-panel" class="panel players-panel" aria-label="Operators in the world">
+      <aside id="players-panel" class="panel players-panel" data-hud-node="players" aria-label="Operators in the world">
         <div class="panel-head">
           <h2 class="panel-title">PILOTS HERE</h2>
           <span class="panel-meta" id="players-count">0</span>
@@ -415,7 +415,7 @@
 
       <!-- All-time arcade -->
       <div class="hud-side hud-side--right">
-      <aside id="arcade-panel" class="panel arcade-panel" aria-label="All-time arcade top ten">
+      <aside id="arcade-panel" class="panel arcade-panel" data-hud-node="arcade" aria-label="All-time arcade top ten">
         <div class="panel-head">
           <h2 class="panel-title">LEGENDS OF THE GRID</h2>
           <button
@@ -435,7 +435,7 @@
       </div>
 
       <!-- Hovered cell inspector -->
-      <aside id="hud-target" class="panel target-panel" aria-live="polite" aria-label="Hovered cell" hidden>
+      <aside id="hud-target" class="panel target-panel" data-hud-node="target" aria-live="polite" aria-label="Hovered cell" hidden>
         <div class="target-top">
           <span class="target-kicker">TARGET CELL</span>
           <span id="target-label" class="target-label">1</span>
@@ -470,8 +470,29 @@
         <p id="target-meta" class="target-meta">CLICK TO CLAIM // 8 CLICKS TO BREAK</p>
       </aside>
 
-      <div id="hud-hint" class="hint-bar" role="status" aria-live="polite">
+      <div id="hud-hint" class="hint-bar" data-hud-node="hint" role="status" aria-live="polite">
         CLICK // MINE · DRAG // ROTATE PLANET · ARROWS // TRAVEL · SHIFT // FASTER · I // REVERSE DRAG · DBL-CLICK // FOCUS
+      </div>
+
+      <!-- Surface mode adds only its control strip, target, lap and exit to this
+           one mounted HUD tree. Nothing here is a second HUD. -->
+      <div id="surface-controls" class="surface-controls" data-hud-node="surface-controls" role="group" aria-label="Surface controls" hidden>
+        <p id="surface-target" class="surface-target" data-hud-node="surface-target" aria-live="polite" data-state="idle">TARGET: —</p>
+        <div class="surface-lap-row">
+          <span class="surface-lap-label">LAP</span>
+          <div id="surface-lap" class="surface-lap-bar" data-hud-node="surface-lap" role="progressbar" aria-label="Surface lap progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <i id="surface-lap-fill"></i>
+          </div>
+          <span id="surface-lap-value" class="surface-lap-value" data-hud-node="surface-lap-value">0.00</span>
+          <span id="surface-auto" class="surface-auto" data-hud-node="surface-auto" hidden>—</span>
+        </div>
+        <div class="surface-pads" data-hud-node="surface-pads" aria-label="Surface movement controls">
+          <button type="button" class="surface-pad surface-pad--forward" data-surface-hold="KeyW" data-surface-first data-hud-node="surface-forward" aria-label="Run forward">▲</button>
+          <button type="button" class="surface-pad" data-surface-hold="KeyA" data-hud-node="surface-left" aria-label="Turn left">◀</button>
+          <button type="button" class="surface-pad" data-surface-hold="KeyS" data-hud-node="surface-back" aria-label="Run backward">▼</button>
+          <button type="button" class="surface-pad" data-surface-hold="KeyD" data-hud-node="surface-right" aria-label="Turn right">▶</button>
+        </div>
+        <button id="btn-surface-exit" class="btn btn--ghost surface-exit" type="button" data-hud-node="surface-exit">RETURN TO ORBIT</button>
       </div>
     </section>
 
