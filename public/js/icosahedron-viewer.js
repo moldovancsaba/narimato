@@ -3,8 +3,8 @@
  * WebGL ray–sphere shader: one object, front surface only, analytic geodesic edges.
  * Mouse rotates objectQ. Cursor keys move the camera carrier pos/up. Wheel changes radius.
  */
-import { SPHERE_SCREEN_FRACTION, CAMERA_DISTANCE, baseIcosahedron } from './shared/geometry.js?v=3.58.0';
-import { shortestArcQuat, carrierFrame, lookFrame, frameProject, frameUnproject, moveCarrier } from './shared/sphere-interaction.js?v=3.58.0';
+import { SPHERE_SCREEN_FRACTION, CAMERA_DISTANCE, baseIcosahedron } from './shared/geometry.js';
+import { shortestArcQuat, carrierFrame, carrierProject, carrierUnproject, moveCarrier } from './shared/sphere-interaction.js';
 
 const canvas = document.getElementById('icosa-canvas');
 const gl = canvas.getContext('webgl', { antialias: true, preserveDrawingBuffer: true });
@@ -15,13 +15,11 @@ const W0 = window.innerWidth;
 const H0 = window.innerHeight;
 let carrier = carrierFrame({ x: 0, y: 0, z: 1 }, { x: 0, y: 1, z: 0 });
 let carrierDistance = CAMERA_DISTANCE;
-const MIN_DISTANCE = 1.002;
-const SURFACE_DISTANCE = 1.15;
+const MIN_DISTANCE = 2.0;
 const MAX_DISTANCE = 8.0;
 const ORBIT_STEP = 0.12;
 let objectQ = { x: 0, y: 0, z: 0, w: 1 };
 let W = 1, H = 1, dpr = 1;
-let view = lookFrame(carrier.pos, carrier.up, carrier.up, 0);
 
 const qNorm = (q) => { const l = Math.hypot(q.x, q.y, q.z, q.w) || 1; return { x: q.x/l, y: q.y/l, z: q.z/l, w: q.w/l }; };
 const qMul = (a, b) => ({
@@ -31,14 +29,6 @@ const qMul = (a, b) => ({
   w: a.w*b.w - a.x*b.x - a.y*b.y - a.z*b.z,
 });
 const qInv = (q) => ({ x: -q.x, y: -q.y, z: -q.z, w: q.w });
-const slerpVec = (a, b, t) => {
-  const dot = Math.max(-1, Math.min(1, a.x*b.x + a.y*b.y + a.z*b.z));
-  const theta = Math.acos(dot);
-  const s = Math.sin(theta) || 1e-9;
-  const ka = Math.sin((1 - t) * theta) / s;
-  const kb = Math.sin(t * theta) / s;
-  return { x: a.x*ka + b.x*kb, y: a.y*ka + b.y*kb, z: a.z*ka + b.z*kb };
-};
 const qRotateVec = (q, v) => {
   const tx = 2 * (q.y * v.z - q.z * v.y);
   const ty = 2 * (q.z * v.x - q.x * v.z);
@@ -63,7 +53,6 @@ uniform float uFocal;
 uniform vec3 uPos;
 uniform vec3 uRight;
 uniform vec3 uUp;
-uniform vec3 uForward;
 uniform vec4 uObjInv;
 uniform vec3 uEdgeA[30];
 uniform vec3 uEdgeB[30];
@@ -75,13 +64,7 @@ vec3 qrot(vec4 q, vec3 v) {
 
 void main() {
   vec2 s = gl_FragCoord.xy - uRes * 0.5;
-  vec3 dir = normalize(uRight * s.x + uUp * s.y + uForward * uFocal);
-  // Sky cull: from outside a convex sphere, rays pointing away from the centre
-  // can never hit the surface; this removes the top cap / back-side ghost.
-  if (dot(dir, uPos) > 0.0) {
-    gl_FragColor = vec4(0.043, 0.051, 0.071, 1.0);
-    return;
-  }
+  vec3 dir = normalize(uRight * s.x + uUp * s.y - uPos * uFocal);
   vec3 O = uPos * uDist;
   float b = 2.0 * dot(O, dir);
   float c = uDist * uDist - 1.0;
@@ -158,21 +141,17 @@ const u = {
   pos: gl.getUniformLocation(program, 'uPos'),
   right: gl.getUniformLocation(program, 'uRight'),
   up: gl.getUniformLocation(program, 'uUp'),
-  forward: gl.getUniformLocation(program, 'uForward'),
   objInv: gl.getUniformLocation(program, 'uObjInv'),
   edgeA: gl.getUniformLocation(program, 'uEdgeA'),
   edgeB: gl.getUniformLocation(program, 'uEdgeB'),
 };
 
 function focalPixels() { return Math.min(W, H) * SPHERE_SCREEN_FRACTION * CAMERA_DISTANCE; }
-function surfaceTilt() {
-  return Math.max(0, Math.min(1, (CAMERA_DISTANCE - carrierDistance) / (CAMERA_DISTANCE - SURFACE_DISTANCE)));
-}
 function unprojectSphere(xPx, yPx) {
-  return frameUnproject(carrierDistance, focalPixels(), view, xPx, yPx, W, H);
+  return carrierUnproject(carrierDistance, focalPixels(), carrier, xPx, yPx, W, H);
 }
 function projectPoint(v) {
-  const p = frameProject(carrierDistance, focalPixels(), view, v);
+  const p = carrierProject(carrierDistance, focalPixels(), carrier, v);
   return { x: W / 2 + p.x, y: H / 2 + p.y, z: p.z, visible: p.visible };
 }
 
@@ -190,12 +169,6 @@ window.addEventListener('resize', resize);
 resize();
 
 function draw() {
-  const t = surfaceTilt();
-  const lookDown = carrierDistance > 1.001 ? Math.acos(Math.min(1, 1 / carrierDistance)) + 0.14 : 1.4;
-  const zoomPos = slerpVec(carrier.pos, { x: 0, y: 1, z: 0 }, t);
-  const tangentUp = slerpVec(carrier.up, { x: 0, y: 0, z: -1 }, t);
-  const screenUp = { x: 0, y: 1, z: 0 };
-  view = lookFrame(zoomPos, tangentUp, screenUp, t, lookDown);
   gl.viewport(0, 0, canvas.width, canvas.height);
   gl.clearColor(0.043, 0.051, 0.071, 1);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -205,10 +178,9 @@ function draw() {
   gl.uniform2f(u.res, canvas.width, canvas.height);
   gl.uniform1f(u.dist, carrierDistance);
   gl.uniform1f(u.focal, focalPixels() * dpr);
-  gl.uniform3f(u.pos, view.pos.x, view.pos.y, view.pos.z);
-  gl.uniform3f(u.right, view.right.x, view.right.y, view.right.z);
-  gl.uniform3f(u.up, view.up.x, view.up.y, view.up.z);
-  gl.uniform3f(u.forward, view.forward.x, view.forward.y, view.forward.z);
+  gl.uniform3f(u.pos, carrier.pos.x, carrier.pos.y, carrier.pos.z);
+  gl.uniform3f(u.right, carrier.right.x, carrier.right.y, carrier.right.z);
+  gl.uniform3f(u.up, carrier.up.x, carrier.up.y, carrier.up.z);
   gl.uniform4f(u.objInv, inv.x, inv.y, inv.z, inv.w);
   gl.uniform3fv(u.edgeA, edgeA);
   gl.uniform3fv(u.edgeB, edgeB);
@@ -261,8 +233,6 @@ window.__ICOSA_VIEW__ = {
   vertices,
   unprojectSphere,
   project: (v) => projectPoint(qRotateVec(objectQ, v)),
-  view: () => view,
-  carrierDistance: () => carrierDistance,
   carrier: () => ({ pos: { ...carrier.pos }, up: { ...carrier.up }, distance: carrierDistance }),
   pixel: (x, y) => { const a = new Uint8Array(4); gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, a); return [...a]; },
   coloredPixels: () => { const a = new Uint8Array(canvas.width * canvas.height * 4); gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, a); let n = 0; for (let i = 0; i < a.length; i += 4) if (a[i] > 25 || a[i+1] > 35 || a[i+2] > 45) n++; return n; },
