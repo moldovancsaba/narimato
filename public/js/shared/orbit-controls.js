@@ -14,10 +14,10 @@ export function applyArrowKey(camera, key, step = 28) {
   if (!camera || typeof camera.rotate !== 'function') return;
   const s = Number(step) || 28;
   switch (key) {
-    case 'ArrowLeft': camera.rotate(s, 0); break;
-    case 'ArrowRight': camera.rotate(-s, 0); break;
-    case 'ArrowUp': camera.rotate(0, s); break;
-    case 'ArrowDown': camera.rotate(0, -s); break;
+    case 'ArrowLeft': camera.rotate(-s, 0); break;
+    case 'ArrowRight': camera.rotate(s, 0); break;
+    case 'ArrowUp': camera.rotate(0, -s); break;
+    case 'ArrowDown': camera.rotate(0, s); break;
     default: break;
   }
 }

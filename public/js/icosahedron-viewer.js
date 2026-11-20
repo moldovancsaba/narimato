@@ -116,7 +116,7 @@ canvas.addEventListener('pointerdown', (event) => {
     pointer = { id: event.pointerId, lastX: event.clientX, lastY: event.clientY, lastT: performance.now() };
     spin.x = 0; spin.y = 0;
     const p = pointOf(event);
-    beginTrackball(camera, p.x, p.y, Math.min(W, H) * 0.45);
+    beginTrackball(camera, p.x, -p.y, Math.min(W, H) * 0.45);
   } else if (pointers.size === 2) {
     pointer = null;
     const [p, q] = [...pointers.values()];
@@ -136,7 +136,7 @@ canvas.addEventListener('pointermove', (event) => {
   }
   if (!pointer || pointer.id !== event.pointerId) return;
   const p = pointOf(event);
-  dragTrackball(camera, p.x, p.y, Math.min(W, H) * 0.45);
+  dragTrackball(camera, p.x, -p.y, Math.min(W, H) * 0.45);
   pointer.lastX = event.clientX;
   pointer.lastY = event.clientY;
   pointer.lastT = performance.now();

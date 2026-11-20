@@ -35,3 +35,22 @@ test('shared virtual trackball: free rotation stays finite upside down', () => {
   const pr = cam.project({ x: 0.1, y: 0.2, z: 0.97 });
   assert.ok(Number.isFinite(pr.x) && Number.isFinite(pr.y));
 });
+
+test('shared controls: vertical drag and arrow directions are direct', () => {
+  const cam = new SphereCamera({ width: 1000, height: 800 });
+  cam.reset();
+  const p = { x: 0.1, y: 0.15, z: 0.98 };
+  const before = cam.project(p);
+  // Viewer passes negative screen Y into the trackball; a downward drag must move down.
+  beginTrackball(cam, 0, 0, 360);
+  dragTrackball(cam, 0, -160, 360);
+  const after = cam.project(p);
+  assert.ok(after.y > before.y, 'downward drag moves the surface down');
+
+  const cam2 = new SphereCamera({ width: 1000, height: 800 });
+  cam2.reset();
+  const b2 = cam2.project(p);
+  applyArrowKey(cam2, 'ArrowUp');
+  const a2 = cam2.project(p);
+  assert.ok(a2.y < b2.y, 'up cursor moves the view up');
+});
