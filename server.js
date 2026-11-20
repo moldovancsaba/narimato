@@ -22,7 +22,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { resolveConfig } from './lib/world-core.js';
+import { isIncidentKind, resolveConfig } from './lib/world-core.js';
 import { PlanetManager } from './lib/planet-manager.js';
 import { Metrics } from './lib/metrics.js';
 import { RateLimiter } from './lib/rate-limit.js';
@@ -480,6 +480,54 @@ export class InfiniteServerApp {
     const type = typeof body.type === 'string' ? body.type.trim().toLowerCase() : '';
     if (!this._guardLimit(req, res, `token:${typeof body.token === 'string' ? body.token : ''}`, 'action')) return;
 
+    // EVT-01: development-only deterministic incident trigger. The env gate is
+    // the only authority; no header or query parameter can override it.
+    if (type === 'incident') {
+      if (!this.config.eventTrigger) {
+        // Operator-visible once, never a per-request log flood.
+        if (!this._triggerDisabledLogged) {
+          this._triggerDisabledLogged = true;
+          if (!this.quiet) console.warn('[server] incident trigger refused: NARIMATO_EVENT_TRIGGER is not enabled');
+        }
+        sendJson(res, 403, {
+          ok: false,
+          error: 'INCIDENT_TRIGGER_DISABLED',
+          message: 'The incident trigger is disabled. Start the server with NARIMATO_EVENT_TRIGGER=1.',
+        });
+        return;
+      }
+      const kind = typeof body.kind === 'string' ? body.kind.trim().toLowerCase() : '';
+      if (!isIncidentKind(kind)) {
+        sendJson(res, 400, {
+          ok: false,
+          error: 'INVALID_INCIDENT_KIND',
+          message: 'Incident kind must be one of: meteor, nuclear, solar, alien.',
+        });
+        return;
+      }
+      const result = await this.manager.triggerIncident({ token: body.token, kind });
+      if (!result.ok) {
+        sendJson(res, 409, { ok: false, error: result.error, message: result.message });
+        return;
+      }
+      // Same broadcast contract as a play-driven incident: event frame then a
+      // fresh snapshot carrying the reset leaves.
+      this._broadcastMeteor(result.planetIndex, result);
+      this.pump();
+      sendJson(res, 200, {
+        ok: true,
+        kind: result.kind,
+        title: result.title,
+        tone: result.tone,
+        message: result.message,
+        description: result.description,
+        incidentCycle: result.incidentCycle,
+        state: result.state,
+        leaves: result.leaves,
+      });
+      return;
+    }
+
     if (type === 'escape') {
       const result = await this.manager.escape({ token: body.token });
       if (!result.ok) {
@@ -592,7 +640,7 @@ export class InfiniteServerApp {
     }
 
     if (type !== 'click') {
-      sendJson(res, 400, { ok: false, error: 'INVALID_ACTION', message: 'Action type must be "click", "escape", "supply", "surface" or "surface_leave".' });
+      sendJson(res, 400, { ok: false, error: 'INVALID_ACTION', message: 'Action type must be "click", "escape", "supply", "surface", "surface_leave" or "incident".' });
       return;
     }
     const routed = await this.manager.click({ token: body.token, label: body.label });

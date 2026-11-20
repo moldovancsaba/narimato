@@ -12,9 +12,30 @@ service. Each cue is split into sentence clips, so subtitles and voice stay in
 sync and narration can pause between sentences.
 
 Assets are served versioned (`?v=3.57.0+56190bd8`) with immutable cache headers.
-The narration engine prefetches the first sentence of every cue at idle with at most
-three concurrent requests, then warms the next sentence while the current clip
-plays. The cache key is generated from the spoken content; never hand-edit it.
+The narration engine prefetches the first sentence of every cue at idle, then warms the
+next sentence while the current clip plays. Prefetch fan-out is **bounded to 3 concurrent
+requests**, drops to **2 on slow 2G** and to **1 when `navigator.connection.saveData` is set**,
+and every queued request owns an `AbortController` so a superseded cue is aborted instead of
+competing with the live one. The cache key is generated from the spoken content; never hand-edit it.
+
+## Playback resilience (AUD-01)
+
+The pure policy module `public/js/shared/audio-policy.js` owns every decision; `narrator.js` is the
+effect layer.
+
+| Concern | Rule |
+|---|---|
+| Autoplay gate | Before the first pointerdown/keydown narration is parked and the caption bar shows a real **TAP FOR VOICE** button (`#btn-tap-voice`, 44 px, described by `#tap-voice-help`). Activating it unlocks playback and restarts the pending sentence from its beginning. |
+| Watchdog | Every sentence arms one timer, `clamp(estimate × 2.2, 1500, 6000)` ms (`× 1.6` when the clip duration is known). A `playing` event clears it; a clip that never starts advances within the budget. |
+| Failure classification | `NotAllowedError`/`SecurityError` → `gesture` (re-arms the gate, never advances). `NotSupportedError` → `format`; `AbortError` → `superseded`; anything else → `unknown`. Non-gesture failures advance, increment `audio.clipFailures`, and announce “narration paused” once. |
+| Failure ladder | After **2 consecutive failures** captions are forced for that cue only (`forceSubtitles`), without overwriting the saved VOICE preference. Voice returns on the next cue. |
+| Interruption | A non-page-initiated `pause` (iOS call, Bluetooth route change) attempts one resume; after **3 attempts** or 2 failures the cue degrades to captions. `visibilitychange` recovery stays enabled. |
+| Prefetch | At most 12 queued items, bounded concurrency as above; superseded requests are aborted. `saveData` or blocked `localStorage` never blocks playback — defaults apply. |
+| Telemetry | `audio.firstWordMs` is **cue-relative** (cue start → first `playing`), clamped to `[0, 120000]`; `audio.clipFailures` and `audio.resumeCount` are numeric counters. No URL, cue id, profile id or token leaves the browser. |
+
+Evidence: `node --test test/audio-policy.test.js`; browser emulation (strict autoplay gate, aborted
+audio requests, cue-relative first word) in `scripts/acceptance-audio-resilience.mjs` →
+`media/evt-01-03-aud-01/acceptance-audio-resilience.json`.
 
 ## Included profiles
 

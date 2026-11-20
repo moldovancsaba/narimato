@@ -1,0 +1,15 @@
+desktop      viewport=1440x900 score-overlap=0 target-sub-overlap=0 errors=0
+laptop       viewport=1280x800 score-overlap=0 target-sub-overlap=0 errors=0
+tablet       viewport=1024x768 score-overlap=0 target-sub-overlap=0 errors=0
+small-tablet viewport=900x600 score-overlap=0 target-sub-overlap=0 errors=0
+cropped      viewport=792x600 score-overlap=0 target-sub-overlap=0 errors=0
+landscape    viewport=844x390 score-overlap=0 target-sub-overlap=0 errors=0
+short        viewport=792x302 score-overlap=0 target-sub-overlap=0 errors=0
+mobile       viewport=390x844 score-overlap=0 target-sub-overlap=0 errors=0
+small-mobile viewport=360x740 score-overlap=0 target-sub-overlap=0 errors=0
+intro-mobile  caption-steer-overlap=0
+intro-short   caption-steer-overlap=0
+landing-landscape form=85..211 status=false
+landing-short   form=83..209 status=false
+
+[audit] clean (engine: chromium).

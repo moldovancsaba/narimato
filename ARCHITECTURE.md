@@ -106,7 +106,11 @@ Observability: `public/js/telemetry.js` posts a tiny privacy-safe numeric beacon
 - **`intro.js`** — launch cinematic state machine: wormhole → drift/gravity lock → descent; camera
   dolly, cockpit fade, steering (WASD/arrows/touch), skip/replay, reduced-motion.
 - **`interlude.js`** — escape transit: launch burn → random story event → hull damage/shake →
-  emergency landing; also meteor shockwave overlay.
+  emergency landing; also the incident FX overlay: one DPR-scaled canvas, the shared
+  `drawTetraShip` model for the meteor relief ship and the two alien ships, a faceted solar sun,
+  a nuclear flash, measured pixel coverage/`incidentFxStats()`, a reduced-motion poster and
+  Escape/DISMISS dismissal. All four kinds are `aria-hidden` canvas FX; the accessible text lives in
+  the DOM.
 - **`result-card.js`** — 1200×630 PNG card + share text; **`audio.js`** — synthesized WebAudio SFX.
 - **`narrator.js` + `narrative-data.js`** — prerecorded narration engine and script. Voice/subtitle
   toggles are independent and persisted. Each cue is split into sentence units and mapped to
@@ -451,12 +455,32 @@ clients keep marking cells.
 
 ### Exhausted-planet incidents
 
-When the last hidden deposit on a planet is mined, the core picks a random incident
-(`meteor`/`nuclear`/`solar`/`alien`), re-seeds the crust, resets the grid to its base leaves
-(players/scores/inventories preserved), and the manager broadcasts
-`{type:"incident", kind, title, tone, message, description, planetIndex}` followed by a fresh
-`snapshot` to that planet room only. The client renders a different full-screen effect per kind and
-shows the `description` as a story paragraph plus a persistent Captain’s Log entry.
+When the last hidden deposit on a planet is mined (or a completed refit allows an early incident),
+the core fires the next kind from its **persisted per-planet rotation**
+(`INCIDENTS[(incidentCycle + n) % 4]` → meteor, nuclear, solar, alien), re-seeds the crust, resets
+the grid to its base leaves (players/scores/inventories preserved) and re-arms itself against the
+reseeded deposits. Rotation state is serialized as `incidentCycle` in `world.json`; missing,
+negative, non-integer or unsafe values sanitize to `0`. The manager broadcasts
+`{type:"incident", kind, title, tone, message, description, revision, planetIndex}` followed by a
+fresh `snapshot` to that planet room only.
+
+A development-only trigger is available when `NARIMATO_EVENT_TRIGGER=1`:
+`POST /api/action` with `{"token":"…","type":"incident","kind":"solar"}` fires a forced kind with
+the same payload as play (`403 INCIDENT_TRIGGER_DISABLED` when off, `400 INVALID_INCIDENT_KIND` for
+unknown kinds, `409 INCIDENT_NOT_ARMED` when the crust cannot fire). `/api/health` advertises
+`eventTrigger` so the operator UI can hide the control in production.
+
+The client builds one announcement with the pure `public/js/shared/incident-announcements.js`,
+writes it once to `#event-announcer` (`role="status"`, `aria-live="polite"`), stores static caption
+units in `#event-captions`, renders a different full-screen effect per kind and shows the
+`description` as a story paragraph plus a persistent Captain’s Log entry. `#meteor-overlay` is a
+`role="region"` named by `#meteor-title` (the server title) and described by `#meteor-sub` and
+`#meteor-description`; `Escape` and the DISMISS button close it and return focus to the game canvas.
+Reduced motion paints a single static poster and suppresses shake.
+
+The single ship model lives in `public/js/shared/tetra-ship.js` (`TETRA_SHIP`, `drawTetraShip`);
+intro, transit, relief drop, meteor and alien incidents all render through it, so no second ship
+renderer exists.
 
 ## Algorithms
 

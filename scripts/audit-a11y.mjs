@@ -40,6 +40,11 @@ const browser = await engine.launch({ headless: true });
 const failures = [];
 async function scan(label, viewport, setup) {
   const context = await browser.newContext({ viewport });
+  // Deterministic first-run: the one-time Quick Guide must not auto-open over
+  // the route under audit (it intercepts pointer events for setup clicks).
+  await context.addInitScript(() => {
+    try { localStorage.setItem('icosa.guideSeen', '1'); } catch { /* private mode */ }
+  });
   const page = await context.newPage();
   await page.goto(`${BASE}/?intro=0`, { waitUntil: 'domcontentloaded' });
   await delay(600);
@@ -67,6 +72,31 @@ try {
     await delay(600);
     const brief = await page.$('#landing-brief');
     if (brief && await brief.isVisible()) { await page.click('#btn-landing-brief-start').catch(() => {}); await delay(300); }
+  });
+  await scan('incident-desktop', { width: 1440, height: 900 }, async (page) => {
+    await page.fill('#tag-input', 'AXE3');
+    await page.click('#btn-join');
+    await page.waitForFunction(() => window.__ICOSA__?.joined === true, null, { timeout: 12000 });
+    await delay(600);
+    await page.click('#btn-landing-brief-start').catch(() => {});
+    await delay(300);
+    // EVT-02/EVT-03: the incident overlay is a live route for axe.
+    await page.evaluate(() =>
+      window.__ICOSA__.incident('solar', 'SOLAR FLARE', 'A SOLAR FLARE STRIPPED THE DAYLIGHT SIDE', 'The magnetic storm peeled back rock and scattered rare elements.'),
+    );
+    await delay(500);
+  });
+  await scan('incident-mobile', { width: 390, height: 844 }, async (page) => {
+    await page.fill('#tag-input', 'AXE4');
+    await page.click('#btn-join');
+    await page.waitForFunction(() => window.__ICOSA__?.joined === true, null, { timeout: 12000 });
+    await delay(600);
+    await page.click('#btn-landing-brief-start').catch(() => {});
+    await delay(300);
+    await page.evaluate(() =>
+      window.__ICOSA__.incident('alien', 'ALIEN INVASION', 'A FLEET RAZED THE PLANET FROM ORBIT', 'Their beams demolished the old surface and scattered new materials.'),
+    );
+    await delay(500);
   });
   await scan('manual-mobile', { width: 390, height: 844 }, async (page) => {
     await page.fill('#tag-input', 'AXE2');

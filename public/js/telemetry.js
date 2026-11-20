@@ -20,7 +20,7 @@ export const TELEMETRY_ENDPOINT = '/api/telemetry';
 
 const WEB_VITALS = ['lcp', 'cls', 'inp', 'ttfb'];
 const HUD_KEYS = ['longTasks', 'maxLongTask'];
-const AUDIO_KEYS = ['firstWordMs'];
+const AUDIO_KEYS = ['firstWordMs', 'clipFailures', 'resumeCount'];
 const VIEWPORT_KEYS = ['width', 'height', 'dpr'];
 const ERROR_KEYS = ['js', 'network', 'unhandled'];
 
@@ -138,8 +138,24 @@ export function createTelemetry(options = {}) {
   const markAudioFirstWord = (firstWordMs) => {
     if (sent.has('audio')) return;
     const value = Number(firstWordMs);
-    metrics.audio.firstWordMs = Number.isFinite(value) ? Math.max(0, value) : Math.max(0, now() - sessionStart);
+    // AUD-01: cue-relative (the caller measures from cue start), never
+    // navigation-relative; the server clamps to [0, 120000] anyway.
+    metrics.audio.firstWordMs = Number.isFinite(value) ? Math.max(0, value) : 0;
     send('audio');
+  };
+
+  /** AUD-01: count a clip that failed/stalled (numeric, never a reason string). */
+  const markAudioClipFailure = () => {
+    metrics.audio.clipFailures = Math.min(100_000, (metrics.audio.clipFailures || 0) + 1);
+    if (!sent.has('audio-failure')) send('audio-failure');
+    return metrics.audio.clipFailures;
+  };
+
+  /** AUD-01: count one successful interruption resume. */
+  const markAudioResume = () => {
+    metrics.audio.resumeCount = Math.min(100_000, (metrics.audio.resumeCount || 0) + 1);
+    if (!sent.has('audio-resume')) send('audio-resume');
+    return metrics.audio.resumeCount;
   };
 
   const recordError = (kind = 'js') => {
@@ -223,6 +239,8 @@ export function createTelemetry(options = {}) {
     install,
     send,
     markAudioFirstWord,
+    markAudioClipFailure,
+    markAudioResume,
     recordError,
     getPayload: currentPayload,
     get sentReasons() {

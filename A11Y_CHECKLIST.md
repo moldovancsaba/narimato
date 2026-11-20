@@ -28,7 +28,8 @@ Checks:
 Latest result: **clean in Chromium and WebKit**.
 
 axe-core WCAG audit (`npm run audit:a11y`, dev-only dependency): latest result
-**0 serious/critical violations** in Chromium and WebKit for landing, HUD and Field Manual.
+**0 serious/critical violations** in Chromium and WebKit for landing, HUD, Field Manual and the
+incident overlay (desktop 1440×900 and mobile 390×844).
 
 Additional axe-core WCAG A/AA audit:
 
@@ -69,6 +70,35 @@ placement/restore, pad sizes, aria snapshot per viewport). axe serious/critical 
 surface strip remains owned by UI-04/A11Y-01 because the strip is not yet a GDS island; the current
 strip reuses the existing HUD markup and tokens.
 
+## Incident feedback and announcements (EVT-03)
+
+Every planetary incident and the relief drop are announced, captioned, keyboard dismissable and
+static under reduced motion. The canvas FX are decorative only; every piece of information they
+show is also text in the DOM.
+
+- **Live region inventory:** `#event-announcer` is the **only** added event live region
+  (`role="status"`, `aria-live="polite"`, `aria-atomic="true"`, visually hidden). It receives
+  exactly one full spoken sentence per event:
+  `<TITLE> on <PLANET>. <first description sentence> <outcome>` — for example
+  “Solar flare on Magrathea. The local star lashed out and cooked the daylight side. The crust has
+  reset, new ore is exposed, and mining is open again.” Spoken text never contains the visual `//`
+  separator, which screen readers would read as “slash slash”. Toasts do not duplicate it.
+- **Static captions:** `#event-captions` holds sentence-unit `<li>` elements with no `aria-live`,
+  so re-reading them never re-triggers speech. The wording comes from the pure builder
+  `public/js/shared/incident-announcements.js`, the same module the card uses.
+- **Dedupe:** announcements are keyed `kind:planetIndex:revision`; an SSE replay after reconnect
+  is spoken once, and the key advances on every fired event.
+- **Overlay semantics:** `#meteor-overlay` is a `role="region"` named by `#meteor-title` (the
+  server title, so nuclear and solar are not announced as meteor) and described by
+  `#meteor-sub` and `#meteor-description`. `Escape` and the 44 px **DISMISS** button close it and
+  return focus to `#arena-canvas`; incidents never steal focus or trap it while a player types.
+- **Reduced motion:** one static poster frame is painted, the animation loop and `body.is-shaking`
+  are not applied, and the overlay dwell is 1200 ms instead of 2600 ms.
+- **Evidence:** `scripts/acceptance-incident-a11y.mjs` records the roles, names, live region,
+  captions, Escape/DISMISS behaviour, focus return and reduced-motion state for all four kinds
+  (`media/evt-01-03-aud-01/acceptance-incident-a11y.json`); `npm run audit:a11y` includes the
+  incident overlay and reports 0 serious/critical violations.
+
 ## Manual real-device gate (pending)
 
 Cannot be executed in this headless environment; run before calling A4 fully closed:
@@ -83,6 +113,10 @@ Cannot be executed in this headless environment; run before calling A4 fully clo
 
 ## Known remaining risks
 
-- Real-device audio autoplay differs (iOS gesture rules); the `TAP FOR VOICE` hint covers this.
+- Real-device audio autoplay differs (iOS gesture rules). The `TAP FOR VOICE` control
+  (`#btn-tap-voice`, a real 44 px button described by `#tap-voice-help`) appears when narration is
+  gesture-blocked and resumes the pending sentence; browser emulation evidence is in
+  `media/evt-01-03-aud-01/acceptance-audio-resilience.json`. A physical iPhone/Android screen
+  reader pass is still required by the manual gate above.
 - VoiceOver reading order for the HUD needs a manual tuning pass.
 - Report/share overlay on very short screens needs a long-report device check.

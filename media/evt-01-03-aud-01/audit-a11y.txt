@@ -1,0 +1,8 @@
+landing-desktop: 0 total, 0 serious/critical
+landing-mobile: 0 total, 0 serious/critical
+hud-desktop: 0 total, 0 serious/critical
+incident-desktop: 0 total, 0 serious/critical
+incident-mobile: 0 total, 0 serious/critical
+manual-mobile: 0 total, 0 serious/critical
+
+[a11y] clean (chromium; no serious/critical axe violations).

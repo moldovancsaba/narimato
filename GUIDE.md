@@ -59,6 +59,9 @@ and **RETURN TO ORBIT** or Escape to leave.
   **Shift** speeds up travel.
 - Press **I** to reverse mouse drag.
 - **? / GUIDE** opens this card again; **OPEN FIELD MANUAL** has the full story and controls.
+- **Catastrophe overlay:** press **Escape** or activate **DISMISS** to close it early; mining
+  resumes when the crust reset finishes. With reduced motion enabled the overlay is a single static
+  poster and the screen does not shake.
 - **Relief ship:**
   <!-- story-copy:start guide-relief -->
   If you make no refit progress for **two minutes**, a relief ship crashes onto the planet and scatters the missing ore across marked triangles. It repeats every two minutes while parts are still missing.

@@ -13,6 +13,12 @@
 import { NARRATION, VOICE_PROFILES, narrationSegments } from './narrative-data.js';
 import { AUDIO_VERSION } from './audio-version.js';
 import { telemetry } from './telemetry.js';
+import {
+  audioPolicy,
+  classifyPlaybackError,
+  firstWordMs,
+  shouldDegradeToCaptions,
+} from './shared/audio-policy.js';
 
 const VOICE_KEY = 'icosa.voice';
 const SUBTITLE_KEY = 'icosa.subtitles';
@@ -83,11 +89,36 @@ export function createNarrator() {
   let firstWordMarked = false;
   let shownSpeaker = '';
   let shownText = '';
+  // AUD-01 playback resilience state.
+  let watchdogTimer = 0;
+  let clipStartedAt = 0;
+  let consecutiveFailures = 0;
+  let resumeAttempts = 0;
+  let forceSubtitleCueId = null; // captions forced for THIS cue after 2 failures
+  let statusAnnounced = false;
+
+  function networkHints() {
+    const conn = typeof navigator !== 'undefined' ? navigator.connection || navigator.mozConnection || navigator.webkitConnection : null;
+    return {
+      saveData: !!(conn && conn.saveData),
+      effectiveType: (conn && conn.effectiveType) || '',
+    };
+  }
+
+  function sentencePolicy(text, cueId, index, profile = voiceProfile) {
+    const knownDuration = durations.has(`${profile}:${fileId(cueId, index)}`);
+    return audioPolicy({
+      estimateMs: estimate(text) + SEGMENT_GAP_MS,
+      knownDuration,
+      ...networkHints(),
+      failures: consecutiveFailures,
+    });
+  }
   const audio = new Map();
   const durations = new Map();
 
   function collect() {
-    for (const id of ['narrative-subtitles', 'subtitle-speaker', 'subtitle-text', 'btn-voice', 'btn-subtitles']) {
+    for (const id of ['narrative-subtitles', 'subtitle-speaker', 'subtitle-text', 'btn-voice', 'btn-subtitles', 'btn-tap-voice']) {
       els[id] = doc ? doc.getElementById(id) : null;
     }
   }
@@ -103,6 +134,7 @@ export function createNarrator() {
       els['btn-subtitles'].setAttribute('aria-pressed', subtitlesEnabled ? 'true' : 'false');
       els['btn-subtitles'].title = subtitlesEnabled ? 'Subtitles: on' : 'Subtitles: off';
     }
+    syncTapVoice();
   }
 
   function fileId(cueId, index) {
@@ -113,31 +145,52 @@ export function createNarrator() {
     return `${assetBase()}/audio/voice/${profile}/${fileId(cueId, index)}.m4a?v=${AUDIO_VERSION}`;
   }
 
-  // Limited-concurrency warmup: fetch the first sentence of each cue and the
-  // next sentence while one is playing. Keeps first-word latency low without
-  // downloading all 115 clips at boot.
+  // AUD-01: bounded, abortable prefetch. Concurrency follows `audioPolicy`
+  // (saveData -> 1, slow 2G -> 2, otherwise 3) and every queued request owns an
+  // AbortController so a superseded cue never competes with the live one.
   const warmQueue = [];
   const warmed = new Set();
+  const warmControllers = new Map(); // url -> AbortController
   let warmActive = 0;
+
   function pumpWarm() {
     if (typeof fetch !== 'function') return;
-    while (warmActive < 3 && warmQueue.length) {
-      const url = warmQueue.shift();
-      if (!url || warmed.has(url)) continue;
-      warmed.add(url);
+    const limit = audioPolicy({ estimateMs: 2100, ...networkHints() }).concurrency;
+    while (warmActive < limit && warmQueue.length) {
+      const entry = warmQueue.shift();
+      if (!entry || warmed.has(entry.url)) continue;
+      warmed.add(entry.url);
       warmActive += 1;
-      fetch(url, { cache: 'force-cache' })
+      warmControllers.set(entry.url, entry.controller);
+      fetch(entry.url, { cache: 'force-cache', signal: entry.controller.signal })
         .catch(() => {})
         .finally(() => {
           warmActive -= 1;
+          warmControllers.delete(entry.url);
           pumpWarm();
         });
     }
   }
+
   function warmAudio(url) {
-    if (!url || warmed.has(url) || warmQueue.includes(url)) return;
-    warmQueue.push(url);
+    if (!url || warmed.has(url) || warmQueue.some((entry) => entry.url === url)) return;
+    const controller = typeof AbortController === 'function' ? new AbortController() : null;
+    warmQueue.push({ url, controller });
     pumpWarm();
+  }
+
+  /** AUD-01: abort every queued/in-flight prefetch from a superseded cue. */
+  function supersedePrefetch() {
+    const keep = new Set();
+    while (warmQueue.length) {
+      const entry = warmQueue.shift();
+      if (entry.controller) entry.controller.abort();
+    }
+    for (const [url, controller] of [...warmControllers.entries()]) {
+      if (!keep.has(url)) controller.abort();
+    }
+    // `warmed` only records cache-warm attempts; aborted ones may be retried.
+    warmed.clear();
   }
   function scheduleIdle(fn) {
     if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
@@ -191,11 +244,29 @@ export function createNarrator() {
     return total;
   }
 
+  function clearWatchdog() {
+    if (watchdogTimer) clearTimeout(watchdogTimer);
+    watchdogTimer = 0;
+  }
+
   function clearTimers() {
     if (gapTimer) clearTimeout(gapTimer);
     gapTimer = 0;
     if (hideTimer) clearTimeout(hideTimer);
     hideTimer = 0;
+    clearWatchdog();
+  }
+
+  function syncTapVoice() {
+    const btn = els['btn-tap-voice'];
+    if (!btn) return;
+    const shouldShow = voiceEnabled && !unlocked && !!(pending || (sequence && !currentAudio));
+    btn.hidden = !shouldShow;
+    btn.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+  }
+
+  function showTapVoice() {
+    if (els['btn-tap-voice']) els['btn-tap-voice'].hidden = false;
   }
 
   function showBar(speaker, text) {
@@ -209,11 +280,10 @@ export function createNarrator() {
     const label = String(speaker || 'NARIMATO').toUpperCase();
     shownSpeaker = label;
     shownText = String(text || '');
-    if (speakerEl) {
-      speakerEl.textContent = voiceEnabled && !unlocked ? `${label} · TAP FOR VOICE` : label;
-    }
+    if (speakerEl) speakerEl.textContent = label;
     textEl.textContent = shownText;
     lastSegmentText = shownText;
+    syncTapVoice();
   }
 
   function hideSubtitles() {
@@ -228,6 +298,8 @@ export function createNarrator() {
   function pauseAudio() {
     if (currentAudio) {
       try {
+        // AUD-01: mark our own pause so the interruption listener ignores it.
+        currentAudio.__intentionalPause = true;
         currentAudio.pause();
         currentAudio.currentTime = 0;
       } catch {
@@ -236,6 +308,7 @@ export function createNarrator() {
     }
     currentAudio = null;
     currentAudioId = null;
+    clearWatchdog();
   }
 
   function stopSequence({ hide = true } = {}) {
@@ -243,6 +316,7 @@ export function createNarrator() {
     pauseAudio();
     sequence = null;
     pending = null;
+    syncTapVoice();
     if (hide) hideSubtitles();
   }
 
@@ -263,6 +337,88 @@ export function createNarrator() {
     }, 650);
   }
 
+  function announcePaused() {
+    // One status line through the existing polite subtitle region (no new region).
+    if (!subtitlesEnabled) return;
+    const wrap = els['narrative-subtitles'];
+    const speakerEl = els['subtitle-speaker'];
+    if (wrap) {
+      wrap.classList.remove('is-hidden');
+      wrap.hidden = false;
+    }
+    if (speakerEl) speakerEl.textContent = 'NARRATION PAUSED // CAPTIONS CONTINUE';
+  }
+
+  /**
+   * AUD-01: one clip failed, never started or was interrupted. Classify, then
+   * either re-arm the gesture gate (autoplay) or advance inside the watchdog
+   * budget so narration never stalls silently. Two consecutive failures force
+   * captions for THIS cue only.
+   */
+  function onClipStalled(cueId, index, reason) {
+    clearWatchdog();
+    if (!sequence || sequence.cueId !== cueId || sequence.index !== index) return;
+    if (reason === 'superseded') return;
+    if (reason === 'gesture') {
+      unlocked = false;
+      pending = { ...sequence };
+      showTapVoice();
+      if (subtitlesEnabled) showBar(sequence.speaker, sequence.segments[index]);
+      return;
+    }
+    consecutiveFailures += 1;
+    try {
+      telemetry.markAudioClipFailure();
+    } catch {
+      /* telemetry is best-effort */
+    }
+    pauseAudio();
+    const policy = sentencePolicy(sequence.segments[index], cueId, index, sequence.profile);
+    if (policy.forceSubtitles) forceSubtitleCueId = cueId;
+    if (!statusAnnounced) {
+      statusAnnounced = true;
+      announcePaused();
+    }
+    // Captions continue to the next sentence within the bounded gap.
+    scheduleAdvance(SEGMENT_GAP_MS + 400);
+  }
+
+  /** AUD-01: attempt one interruption resume; degrade to captions after 3. */
+  function recoverInterruption() {
+    if (!voiceEnabled || !sequence) return false;
+    resumeAttempts += 1;
+    if (shouldDegradeToCaptions(resumeAttempts, consecutiveFailures)) {
+      forceSubtitleCueId = sequence.cueId;
+      if (!statusAnnounced) {
+        statusAnnounced = true;
+        announcePaused();
+      }
+      pauseAudio();
+      advance();
+      return false;
+    }
+    const a = currentAudio;
+    if (!a || !a.paused) {
+      if (!a) runCurrent();
+      return false;
+    }
+    try {
+      a.__intentionalPause = false;
+      const p = a.play();
+      if (p && typeof p.catch === 'function') {
+        p.catch(() => onClipStalled(sequence.cueId, sequence.index, 'unknown'));
+      }
+      try {
+        telemetry.markAudioResume();
+      } catch {
+        /* best-effort */
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   function runCurrent() {
     if (!sequence) return;
     const { cueId, segments, speaker, profile } = sequence;
@@ -274,55 +430,75 @@ export function createNarrator() {
     if (subtitlesEnabled) showBar(speaker, text);
     if (voiceEnabled && !unlocked) {
       pending = { ...sequence };
+      showTapVoice();
       return;
     }
-    if (voiceEnabled) {
+    if (voiceEnabled && forceSubtitleCueId !== cueId) {
       pauseAudio();
       const a = getAudio(cueId, sequence.index, profile);
       currentAudio = a;
       currentAudioId = `${profile}:${fileId(cueId, sequence.index)}`;
-      if (!firstWordMarked) {
+      const policy = sentencePolicy(text, cueId, sequence.index, profile);
+      clipStartedAt = performance.now();
+      clearWatchdog();
+      watchdogTimer = setTimeout(() => {
+        watchdogTimer = 0;
+        onClipStalled(cueId, sequence.index, 'timeout');
+      }, policy.watchdogMs);
+      watchdogTimer.unref?.();
+      if (!a.__playbackBound) {
+        a.__playbackBound = true;
         a.addEventListener('playing', () => {
+          clearWatchdog();
+          consecutiveFailures = 0;
+          resumeAttempts = 0;
           if (firstWordMarked) return;
           firstWordMarked = true;
           try {
-            telemetry.markAudioFirstWord(Math.max(0, Math.round(performance.now())));
+            // AUD-01: cue-relative, NOT navigation-relative.
+            telemetry.markAudioFirstWord(firstWordMs(clipStartedAt, performance.now()));
           } catch {
             /* telemetry is best-effort */
           }
-        }, { once: true });
+        });
+        a.addEventListener('error', () => {
+          if (a !== currentAudio || !sequence) return;
+          onClipStalled(sequence.cueId, sequence.index, 'format');
+        });
+        a.addEventListener('pause', () => {
+          if (a !== currentAudio || a.__intentionalPause || a.ended) return;
+          if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+          // iOS call / Bluetooth route change without visibilitychange: recover once.
+          setTimeout(() => {
+            if (a !== currentAudio || !a.paused) return;
+            // AUD-01: one resume, then the retry budget degrades to captions.
+            recoverInterruption();
+          }, 300);
+        });
       }
       try {
+        a.__intentionalPause = false;
         a.currentTime = 0;
         const p = a.play();
         if (p && typeof p.catch === 'function') {
-          p.catch(() => {
-          // Before any gesture the browser refuses playback: keep the cue pending.
-          // After a real gesture, do NOT relock all future narration on a single
-          // failed clip; leave the sequence ready and let the next cue/gesture
-          // resume it.
-          if (!gestureSeen) {
-            unlocked = false;
-            pending = { ...sequence };
-          }
-        });
+          p.catch((err) => onClipStalled(cueId, sequence.index, classifyPlaybackError(err)));
         }
         warmAudio(audioUrl(cueId, sequence.index + 1, profile));
         a.onended = () => {
+          clearWatchdog();
+          consecutiveFailures = 0;
           currentAudio = null;
           currentAudioId = null;
           if (!sequence) return;
           scheduleAdvance(SEGMENT_GAP_MS);
         };
       } catch {
-        pending = { ...sequence };
-        return;
+        onClipStalled(cueId, sequence.index, 'unknown');
       }
-      // If the clip never starts (autoplay block), leave it pending; subtitles
-      // remain readable until the next gesture.
       return;
     }
-    // No voice: subtitles still advance one sentence at a time.
+    // No voice, autoplay-blocked recovery, or captions forced for this cue:
+    // still advance one sentence at a time so text is never left behind.
     scheduleAdvance(segmentDuration(cueId, sequence.index, text, profile) + SEGMENT_GAP_MS);
   }
 
@@ -335,10 +511,14 @@ export function createNarrator() {
   function unlock() {
     gestureSeen = true;
     if (unlocked) {
+      syncTapVoice();
       if (voiceEnabled && sequence && !currentAudio) runCurrent();
       return;
     }
     unlocked = true;
+    consecutiveFailures = 0;
+    resumeAttempts = 0;
+    if (els['btn-tap-voice']) els['btn-tap-voice'].hidden = true;
     if (shownText && subtitlesEnabled) showBar(shownSpeaker, shownText);
     if (pending) {
       sequence = pending;
@@ -352,6 +532,11 @@ export function createNarrator() {
   function startSequence(cueId, segments, speaker) {
     if (!Array.isArray(segments) || !segments.length) return 0;
     stopSequence();
+    // AUD-01: a new cue resets the per-cue failure/caption decision.
+    forceSubtitleCueId = null;
+    consecutiveFailures = 0;
+    resumeAttempts = 0;
+    statusAnnounced = false;
     sequence = { cueId, segments: segments.slice(), speaker, profile: voiceProfile, index: 0 };
     if (voiceEnabled && !unlocked) {
       showBar(speaker, sequence.segments[0]);
@@ -369,6 +554,8 @@ export function createNarrator() {
     const segments = narrationSegments(cue);
     if (!segments.length) return 0;
     if (interrupt) stopSequence({ hide: false });
+    // AUD-01: a newer cue supersedes the older cue's queued prefetches.
+    supersedePrefetch();
     return startSequence(id, segments, speaker);
   }
 
@@ -382,6 +569,7 @@ export function createNarrator() {
       : Array.isArray(story.lines) && story.lines.length
         ? story.lines.map((line) => String(line).trim()).filter(Boolean)
         : ['An unknown signal washes over the ship.'];
+    supersedePrefetch();
     for (let i = 0; i < segments.length; i += 1) warmAudio(audioUrl(cueId, i, voiceProfile));
     return startSequence(cueId, segments, speaker);
   }
@@ -435,11 +623,34 @@ export function createNarrator() {
 
   /** Recover a clip paused by tab visibility or an interrupted audio context. */
   function resume() {
-    if (!voiceEnabled || !sequence) return false;
+    if (!voiceEnabled || !sequence) {
+      syncTapVoice();
+      return false;
+    }
     if (currentAudio && currentAudio.paused) {
+      resumeAttempts += 1;
+      if (shouldDegradeToCaptions(resumeAttempts, consecutiveFailures)) {
+        // Interruption budget exhausted: force captions for this cue.
+        forceSubtitleCueId = sequence.cueId;
+        if (!statusAnnounced) {
+          statusAnnounced = true;
+          announcePaused();
+        }
+        pauseAudio();
+        advance();
+        return false;
+      }
       try {
+        currentAudio.__intentionalPause = false;
         const p = currentAudio.play();
-        if (p && typeof p.catch === 'function') p.catch(() => {});
+        if (p && typeof p.catch === 'function') {
+          p.catch(() => onClipStalled(sequence.cueId, sequence.index, 'unknown'));
+        }
+        try {
+          telemetry.markAudioResume();
+        } catch {
+          /* best-effort */
+        }
         return true;
       } catch {
         return false;
@@ -493,6 +704,10 @@ export function createNarrator() {
     if (els['btn-subtitles']) {
       els['btn-subtitles'].addEventListener('click', () => setSubtitlesEnabled(!subtitlesEnabled));
     }
+    // AUD-01: the real TAP FOR VOICE control resumes the pending sentence.
+    if (els['btn-tap-voice']) {
+      els['btn-tap-voice'].addEventListener('click', () => unlock());
+    }
     if (typeof window !== 'undefined') {
       const onGesture = () => unlock();
       window.addEventListener('pointerdown', onGesture, { capture: true, passive: true });
@@ -544,6 +759,11 @@ export function createNarrator() {
       segment: sequence ? sequence.index + 1 : 0,
       totalSegments: sequence ? sequence.segments.length : 0,
       subtitle: els['subtitle-text'] && !els['narrative-subtitles'].hidden ? els['subtitle-text'].textContent : '',
+      tapVoiceVisible: !!(els['btn-tap-voice'] && !els['btn-tap-voice'].hidden),
+      clipFailures: consecutiveFailures,
+      forcedCaptions: !!sequence && forceSubtitleCueId === sequence.cueId,
+      watchdogMs: watchdogTimer ? 1 : 0,
+      gestureSeen,
     }),
   };
 }

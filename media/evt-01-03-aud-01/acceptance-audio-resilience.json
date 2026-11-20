@@ -1,0 +1,97 @@
+{
+  "ok": true,
+  "base": "http://127.0.0.1:51131",
+  "autoplay": {
+    "before": {
+      "visible": true,
+      "text": "TAP FOR VOICE",
+      "describedby": "tap-voice-help",
+      "minHeight": "44px",
+      "minWidth": "44px",
+      "unlocked": false,
+      "speaking": false,
+      "subtitle": "The crust is exhausted."
+    },
+    "after": {
+      "hidden": true,
+      "unlocked": true,
+      "subtitle": "The crust is exhausted."
+    }
+  },
+  "failure": {
+    "narrator": {
+      "voiceEnabled": true,
+      "subtitlesEnabled": true,
+      "profile": "george",
+      "profileLabel": "GEORGE · UK",
+      "unlocked": true,
+      "speaking": false,
+      "segment": 2,
+      "totalSegments": 2,
+      "subtitle": "On the first world four clicks break it into four smaller cells; deeper worlds ask for eight.",
+      "tapVoiceVisible": false,
+      "clipFailures": 2,
+      "forcedCaptions": true,
+      "watchdogMs": 0,
+      "gestureSeen": true
+    },
+    "telemetry": {
+      "webVitals": {
+        "lcp": 44,
+        "cls": 0.15,
+        "inp": 168,
+        "ttfb": 3
+      },
+      "hud": {
+        "longTasks": 74,
+        "maxLongTask": 94
+      },
+      "audio": {
+        "clipFailures": 2
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "dpr": 1
+      },
+      "errors": {
+        "js": 0,
+        "network": 0,
+        "unhandled": 0
+      },
+      "sessionMs": 5138
+    },
+    "subtitleVisible": true,
+    "subtitleText": "On the first world four clicks break it into four smaller cells; deeper worlds ask for eight.",
+    "speaker": "TACTICAL"
+  },
+  "firstWord": {
+    "firstWordMs": 475,
+    "navigationNowMs": 4420,
+    "cueStartMs": 3638,
+    "narrator": {
+      "voiceEnabled": true,
+      "subtitlesEnabled": true,
+      "profile": "george",
+      "profileLabel": "GEORGE · UK",
+      "unlocked": true,
+      "speaking": true,
+      "segment": 1,
+      "totalSegments": 2,
+      "subtitle": "Click a triangle to charge it.",
+      "tapVoiceVisible": false,
+      "clipFailures": 0,
+      "forcedCaptions": false,
+      "watchdogMs": 0,
+      "gestureSeen": true
+    },
+    "serverAggregate": {
+      "count": 1,
+      "sum": 475,
+      "avg": 475,
+      "min": 475,
+      "max": 475
+    }
+  },
+  "errors": []
+}

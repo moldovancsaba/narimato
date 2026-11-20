@@ -343,3 +343,33 @@ test('observability: telemetry beacons do not change game state or expose hidden
   assert.equal(metrics.telemetry.reports, 1);
   assert.equal(metrics.sse.active, 0);
 });
+
+// ------------------------------------------------------- AUD-01 audio counters
+
+test('observability: AUD-01 audio counters are whitelisted numeric and clamp', () => {
+  const normalized = normalizeTelemetryPayload({
+    audio: { firstWordMs: 280, clipFailures: 3, resumeCount: 2, reason: 'NotAllowedError' },
+    token: 'SECRET',
+  });
+  assert.equal(normalized.fields['audio.firstWordMs'], 280);
+  assert.equal(normalized.fields['audio.clipFailures'], 3);
+  assert.equal(normalized.fields['audio.resumeCount'], 2);
+  assert.equal(normalized.fields['audio.reason'], undefined, 'no failure reason string leaves the client');
+  assert.equal(JSON.stringify(normalized).includes('SECRET'), false);
+
+  const clamped = normalizeTelemetryPayload({ audio: { clipFailures: 10_000_000, resumeCount: -5 } });
+  assert.equal(clamped.fields['audio.clipFailures'], 100_000, 'clipFailures clamped to 100k');
+  assert.equal(clamped.fields['audio.resumeCount'], 0, 'resumeCount clamped to >= 0');
+});
+
+test('observability: /api/telemetry aggregates the new audio counters', async (t) => {
+  const { base } = await makeObsServer(t);
+  await postTelemetry(base, { audio: { firstWordMs: 280, clipFailures: 1, resumeCount: 2 } });
+  await postTelemetry(base, { audio: { firstWordMs: 240, clipFailures: 2, resumeCount: 0 } });
+  const aggregate = (await getJson(`${base}/api/telemetry`)).json.telemetry;
+  assert.equal(aggregate.aggregates['audio.firstWordMs'].count, 2);
+  assert.equal(aggregate.aggregates['audio.firstWordMs'].avg, 260);
+  assert.equal(aggregate.aggregates['audio.clipFailures'].count, 2);
+  assert.equal(aggregate.aggregates['audio.clipFailures'].max, 2);
+  assert.equal(aggregate.aggregates['audio.resumeCount'].sum, 2);
+});
