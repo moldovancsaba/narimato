@@ -3,8 +3,8 @@
  * WebGL ray–sphere shader: one object, front surface only, analytic geodesic edges.
  * Mouse rotates objectQ. Cursor keys move the camera carrier pos/up. Wheel changes radius.
  */
-import { SPHERE_SCREEN_FRACTION, CAMERA_DISTANCE, baseIcosahedron } from './shared/geometry.js';
-import { shortestArcQuat, carrierFrame, lookFrame, frameProject, frameUnproject, moveCarrier } from './shared/sphere-interaction.js';
+import { SPHERE_SCREEN_FRACTION, CAMERA_DISTANCE, baseIcosahedron } from './shared/geometry.js?v=3.57.0';
+import { shortestArcQuat, carrierFrame, lookFrame, frameProject, frameUnproject, moveCarrier } from './shared/sphere-interaction.js?v=3.57.0';
 
 const canvas = document.getElementById('icosa-canvas');
 const gl = canvas.getContext('webgl', { antialias: true, preserveDrawingBuffer: true });
@@ -190,8 +190,12 @@ window.addEventListener('resize', resize);
 resize();
 
 function draw() {
-  const lookDown = carrierDistance > 1.001 ? Math.acos(Math.min(1, 1 / carrierDistance)) + 0.02 : 1.4;
-  view = lookFrame(carrier.pos, carrier.up, surfaceTilt(), lookDown);
+  const t = surfaceTilt();
+  const lookDown = carrierDistance > 1.001 ? Math.acos(Math.min(1, 1 / carrierDistance)) + 0.14 : 1.4;
+  const zoomPos = slerpVec(carrier.pos, { x: 0, y: 1, z: 0 }, t);
+  const tangentUp = slerpVec(carrier.up, { x: 0, y: 0, z: -1 }, t);
+  const screenUp = { x: 0, y: 1, z: 0 };
+  view = lookFrame(zoomPos, tangentUp, screenUp, t, lookDown);
   gl.viewport(0, 0, canvas.width, canvas.height);
   gl.clearColor(0.043, 0.051, 0.071, 1);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -257,6 +261,8 @@ window.__ICOSA_VIEW__ = {
   vertices,
   unprojectSphere,
   project: (v) => projectPoint(qRotateVec(objectQ, v)),
+  view: () => view,
+  carrierDistance: () => carrierDistance,
   carrier: () => ({ pos: { ...carrier.pos }, up: { ...carrier.up }, distance: carrierDistance }),
   pixel: (x, y) => { const a = new Uint8Array(4); gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, a); return [...a]; },
   coloredPixels: () => { const a = new Uint8Array(canvas.width * canvas.height * 4); gl.readPixels(0, 0, canvas.width, canvas.height, gl.RGBA, gl.UNSIGNED_BYTE, a); let n = 0; for (let i = 0; i < a.length; i += 4) if (a[i] > 25 || a[i+1] > 35 || a[i+2] > 45) n++; return n; },
