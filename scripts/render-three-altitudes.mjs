@@ -28,6 +28,7 @@ const result = await page.evaluate(async () => {
   const { IcosaRenderer } = await import('/js/renderer.js');
   const app = window.__ICOSA__;
   const leaves = app.world.activeLeaves();
+  const faces = app.renderFaces ? app.renderFaces() : leaves;
   const state = app.state;
   const W = 1600;
   const H = 1000;
@@ -38,7 +39,7 @@ const result = await page.evaluate(async () => {
   renderer.resize();
   renderer.setConfig({ threshold: state.threshold, maxDepth: state.maxDepth });
   renderer.setPlanetSurface(state.planetSeed);
-  renderer.setFaces(leaves);
+  renderer.setFaces(faces);
   renderer.setPlayers(state.players, app.player && app.player.id);
 
   // ONE camera instance with two projection modes.
@@ -111,13 +112,13 @@ const result = await page.evaluate(async () => {
   renderer.render(camera, performance.now());
   shots.building = canvas.toDataURL('image/png');
 
-  return { shots, faces: leaves.length, leaf: leaves[0].label, sameFaces: renderer.faces.length };
+  return { shots, activeLeaves: leaves.length, renderFaces: faces.length, leaf: leaves[0].label, sameFaces: renderer.faces.length };
 });
 
 const decode = (url) => Buffer.from(url.split(',')[1], 'base64');
 await fs.writeFile(`${outDir}/planet-orbit.png`, decode(result.shots.orbit));
 await fs.writeFile(`${outDir}/planet-flight.png`, decode(result.shots.flight));
 await fs.writeFile(`${outDir}/planet-building.png`, decode(result.shots.building));
-console.log(JSON.stringify({ faces: result.faces, leaf: result.leaf, sameFaces: result.sameFaces, errors }, null, 2));
+console.log(JSON.stringify({ activeLeaves: result.activeLeaves, renderFaces: result.renderFaces, leaf: result.leaf, sameFaces: result.sameFaces, errors }, null, 2));
 await browser.close();
 if (errors.length) process.exitCode = 1;

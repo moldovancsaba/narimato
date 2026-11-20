@@ -7,7 +7,7 @@
  * the deepest face. No rounds, no timers, no end.
  */
 
-import { SphereCamera, pickFace } from './shared/geometry.js';
+import { SphereCamera, pickFace, childTriangles, faceCentroid } from './shared/geometry.js';
 import { World } from './world.js';
 import { IcosaRenderer } from './renderer.js';
 import { UI } from './ui.js';
@@ -86,6 +86,7 @@ let surface = null;
 const surfacePeers = new Map();
 let surfaceSupplyCells = [];
 let surfaceCamera = null;
+let planetRenderFaces = [];
 let supplyTimer = 0;
 let supplyDeadline = 0;
 let supplyPlanetKey = '';
@@ -474,12 +475,48 @@ interlude = createInterlude({ safeCall, safeAudio });
  * Boot
  * ------------------------------------------------------------------ */
 
-function syncRenderFaces() {
-  if (surface && surface.active) {
-    refreshSurfaceLiveFaces();
-    return;
+function buildPlanetRenderFaces() {
+  // ONE fixed render tessellation for the whole planet, identical in orbit and
+  // surface. The camera never changes triangle density.
+  const targetLevel = leafList.length <= 120 ? 4 : leafList.length <= 400 ? 3 : 2;
+  const out = [];
+  const angle = (p, q) => Math.acos(clamp(p.x * q.x + p.y * q.y + p.z * q.z, -1, 1));
+  for (const node of leafList) {
+    if (!node || !node.a) continue;
+    const edge = Math.max(angle(node.a, node.b), angle(node.b, node.c), angle(node.c, node.a));
+    const edgeLevel = clamp(Math.ceil(Math.log2(Math.max(1e-4, edge / 0.03))), 0, 5);
+    const level = Math.min(targetLevel, edgeLevel);
+    let tris = [{ a: node.a, b: node.b, c: node.c }];
+    for (let i = 0; i < level; i += 1) {
+      const next = [];
+      for (const tri of tris) for (const child of childTriangles(tri.a, tri.b, tri.c)) next.push(child);
+      tris = next;
+    }
+    for (let i = 0; i < tris.length; i += 1) {
+      const tri = tris[i];
+      out.push({
+        label: `~${node.label}.${i}`,
+        a: tri.a, b: tri.b, c: tri.c,
+        centroid: faceCentroid(tri.a, tri.b, tri.c),
+        depth: node.depth,
+        ownerIndex: node.ownerIndex,
+        clicks: node.clicks,
+        lastClickIndex: node.lastClickIndex,
+        terrain: node.terrain,
+        resourceId: null,
+      });
+    }
   }
-  renderer.setFaces(leafList);
+  return out;
+}
+
+function refreshPlanetRenderFaces() {
+  planetRenderFaces = buildPlanetRenderFaces();
+  renderer.setFaces(planetRenderFaces);
+}
+
+function syncRenderFaces() {
+  refreshPlanetRenderFaces();
 }
 
 function boot() {
@@ -921,7 +958,7 @@ function handleCellEvent(msg) {
   const node = world.applyCell(label, ownerIndex, clicks, lastClickIndex);
   if (!node) return;
   renderer.updateCell(label, node.ownerIndex, node.clicks, node.lastClickIndex);
-  if (surface && surface.active) refreshSurfaceLiveFaces();
+  refreshPlanetRenderFaces();
   if (hoveredLabel === label) safeCall(ui, 'setHoverFace', faceInfo(label));
 }
 
@@ -931,7 +968,7 @@ function handleBreakEvent(msg) {
   if (!children) return;
   refreshLeafList();
   renderer.replaceFace(msg.label, children);
-  if (surface && surface.active) refreshSurfaceLiveFaces();
+  refreshPlanetRenderFaces();
   for (const child of children) renderer.pulse(child.label, { color: '#d7ff00', kind: 'break', text: '' });
   safeAudio('breakShatter');
   safeCall(ui, 'toast', `CELL ${msg.label} FRACTURED // 4 NEW NODES`, 'good');
@@ -1526,7 +1563,7 @@ function optimisticClick(label) {
   if (kind !== 'reinforce' && myIndex >= 0) node.ownerIndex = myIndex;
   if (myIndex >= 0) node.lastClickIndex = myIndex;
   renderer.updateCell(label, node.ownerIndex, node.clicks, node.lastClickIndex);
-  if (surface && surface.active) refreshSurfaceLiveFaces();
+  refreshPlanetRenderFaces();
   const color = myPlayer ? myPlayer.color : '#00f0ff';
   const info = faceInfo(label);
   renderer.pulse(label, {
@@ -1577,7 +1614,7 @@ function attemptClick(label) {
           node.ownerIndex = before.ownerIndex;
           node.clicks = before.clicks;
           renderer.updateCell(label, node.ownerIndex, node.clicks, node.lastClickIndex);
-  if (surface && surface.active) refreshSurfaceLiveFaces();
+  refreshPlanetRenderFaces();
           if (hoveredLabel === label) safeCall(ui, 'setHoverFace', faceInfo(label));
         }
       } else if (err === 'NOT_JOINED') {
@@ -1589,7 +1626,7 @@ function attemptClick(label) {
           node.clicks = before.clicks;
           if (myIndex >= 0) node.lastClickIndex = myIndex; // remember locally: no more optimistic pulses
           renderer.updateCell(label, node.ownerIndex, node.clicks, node.lastClickIndex);
-  if (surface && surface.active) refreshSurfaceLiveFaces();
+  refreshPlanetRenderFaces();
           if (hoveredLabel === label) safeCall(ui, 'setHoverFace', faceInfo(label));
         }
         safeCall(ui, 'toast', 'CELL LOCKED // ANOTHER OPERATOR MUST CONTEST IT FIRST', 'warn');
@@ -1600,7 +1637,7 @@ function attemptClick(label) {
           node.ownerIndex = before.ownerIndex;
           node.clicks = before.clicks;
           renderer.updateCell(label, node.ownerIndex, node.clicks, node.lastClickIndex);
-  if (surface && surface.active) refreshSurfaceLiveFaces();
+  refreshPlanetRenderFaces();
         }
         safeCall(ui, 'toast', (data && data.message) || 'GRID REJECTED THE CLICK', 'warn');
         safeAudio('error');
@@ -2198,10 +2235,7 @@ function updateKeyboardNavigation(dt) {
 
 let lastSurfacePoseSent = 0;
 function refreshSurfaceLiveFaces() {
-  if (!(surface && surface.active)) return;
-  // Camera-only surface: no generated/subdivided mesh. The renderer draws the
-  // actual active leaves from the single planet tree.
-  renderer.setFaces(leafList);
+  refreshPlanetRenderFaces();
 }
 
 function sendSurfacePose(pose) {
@@ -2561,6 +2595,7 @@ window.__ICOSA__ = {
   report: () => openReport(),
   getReport: () => currentReport,
   leavesSnapshot: () => refreshLeafList().map((n) => [n.label, n.ownerIndex, n.clicks, n.resourceId || null]),
+  renderFaces: () => planetRenderFaces,
 };
 
 boot();

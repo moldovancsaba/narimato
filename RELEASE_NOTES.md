@@ -1,5 +1,20 @@
 # NARIMATO — Release Notes
 
+## v3.56.0 — “One Fixed Tessellation” (2026-11-20)
+
+- The planet now has **one fixed render tessellation** used identically in orbit and surface mode;
+  the camera no longer changes triangle density.
+- Fixed tessellation is built from the actual active leaves at a single global level and refreshed on
+  authoritative cell/break updates.
+- Planet-surface mesh is drawn under the active triangles from the same cached terrain.
+- Regenerated `media/planet-orbit.png`, `planet-flight.png`, `planet-building.png` from one
+  `PlanetCamera` instance and the same 20,480-face fixed set.
+- 106/106 tests.
+
+Release: https://github.com/moldovancsaba/narimato/releases/tag/v3.56.0
+
+---
+
 ## v3.55.0 — “Three Altitudes” (2026-11-20)
 
 - Added `scripts/render-three-altitudes.mjs`: **one `PlanetCamera` instance**, one active face set,

@@ -1360,7 +1360,7 @@ export class IcosaRenderer {
     const paths = new Map();
     const tmp = this._tmpV;
     for (const face of surface.faces) {
-      if (origin && face.centroid.x * origin.x + face.centroid.y * origin.y + face.centroid.z * origin.z < 0.18) continue;
+      if (origin && face.centroid.x * origin.x + face.centroid.y * origin.y + face.centroid.z * origin.z < -0.05) continue;
       tmp.x = face.a.x; tmp.y = face.a.y; tmp.z = face.a.z;
       const pa = camera.project(tmp);
       if (!pa.visible) continue;
