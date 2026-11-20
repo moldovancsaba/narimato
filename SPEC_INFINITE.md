@@ -40,8 +40,8 @@ Authoritative rules live in [narimato-physics.md](narimato-physics.md):
 
 - **One object**: the 20-face spherical icosahedron; every camera height uses the same triangles.
   No per-camera generated mesh, no adaptive density, no LOD swap.
-- **One camera**: fixed centre distance. Cursor keys move the camera orbit (`Up` = straight down),
-  wheel/pinch is optical zoom.
+- **One camera**: fixed centre distance. Cursor keys move the camera on a **free quaternion orbit**
+  (`Up` keeps moving up and loops over the pole, no pitch clamp); wheel/pinch is optical zoom.
 - **Mouse rotates the object**, not the camera: unproject the grabbed surface point, then rotate by
   the shortest quaternion so that point follows the cursor exactly.
 - Object rotation (`objectQ`) and camera orbit (`orbitYaw`/`orbitPitch`) are separate.

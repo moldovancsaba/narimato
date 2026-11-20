@@ -42,7 +42,8 @@ Cursor keys move the camera, not the object.
 | `Right` | camera orbits right |
 
 - `Up`/`Down` must not change yaw.
-- Pitch is clamped to `(-π/2, π/2)` (no pole roll for the camera orbit).
+- The orbit is a **free quaternion**: `Up` keeps moving the camera up locally and loops over the
+  pole; there is no pitch clamp.
 - Wheel/pinch changes `camera.zoom` only — it is optical zoom, **not** radius.
 
 ## 3. Object rotation (mouse)
@@ -111,7 +112,7 @@ grab returns `null` — dragging then does nothing.
 - `public/js/shared/orbit-controls.js`
   - shared `applyScreenDrag`, `applyArrowKey`, `beginTrackball`, `dragTrackball`.
 - `public/js/icosahedron-viewer.js`
-  - split `objectQ` (mouse) and `orbitYaw/orbitPitch` (cursor keys);
+  - split `objectQ` (mouse) and free `camera` quaternion orbit (cursor keys);
   - exact point-follow via `unprojectSphere()`.
 - `public/js/app.js`
   - pointer input routes to the shared control primitives.
@@ -122,7 +123,7 @@ grab returns `null` — dragging then does nothing.
   virtual-trackball finiteness across poles.
 - `scripts/verify-icosahedron-controls.mjs` — browser-level acceptance:
   - mouse-dragged surface point follows the cursor with error `< 0.01 px`;
-  - cursor Up keeps yaw constant and decreases pitch (camera descends).
+  - cursor Up keeps moving the camera up locally across the pole, quaternion normalised.
 
 Measured acceptance (1200×1200):
 

@@ -19,11 +19,8 @@ const OBJECT_DISTANCE = CAMERA_DISTANCE;
 // Object rotation (mouse) as a world-space quaternion.
 let objectQ = { x: 0, y: 0, z: 0, w: 1 };
 
-// Camera orbit angles (cursor keys) around the fixed-radius sphere.
-let orbitYaw = camera.yaw;
-let orbitPitch = camera.pitch;
-const HALF_PI = Math.PI / 2;
-const ORBIT_STEP = 0.05;
+// Camera orbit is a free quaternion; cursor keys rotate it locally with no pole clamp.
+const ORBIT_STEP = 28; // px passed to SphereCamera.rotate (0.006 rad/px)
 
 let dpr = 1;
 let W = 1;
@@ -97,14 +94,7 @@ function unprojectSphere(xPx, yPx) {
   return vecNorm(vecAdd(origin, vecMul(dirWorld, t)));
 }
 
-function updateCameraOrbit() {
-  orbitPitch = Math.max(-HALF_PI + 0.002, Math.min(HALF_PI - 0.002, orbitPitch));
-  camera.yaw = orbitYaw;
-  camera.pitch = orbitPitch;
-}
-
 function draw() {
-  updateCameraOrbit();
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, W, H);
   ctx.fillStyle = '#0b0d12';
@@ -211,10 +201,11 @@ canvas.addEventListener('pointercancel', endPointer);
 
 window.addEventListener('keydown', (event) => {
   switch (event.key) {
-    case 'ArrowLeft': orbitYaw -= ORBIT_STEP; event.preventDefault(); break;
-    case 'ArrowRight': orbitYaw += ORBIT_STEP; event.preventDefault(); break;
-    case 'ArrowUp': orbitPitch -= ORBIT_STEP; event.preventDefault(); break; // fly straight down
-    case 'ArrowDown': orbitPitch += ORBIT_STEP; event.preventDefault(); break;
+    // Local quaternion orbit: same Up direction forever, loops over poles, no clamp.
+    case 'ArrowLeft': camera.rotate(-ORBIT_STEP, 0); event.preventDefault(); break;
+    case 'ArrowRight': camera.rotate(ORBIT_STEP, 0); event.preventDefault(); break;
+    case 'ArrowUp': camera.rotate(0, ORBIT_STEP); event.preventDefault(); break;
+    case 'ArrowDown': camera.rotate(0, -ORBIT_STEP); event.preventDefault(); break;
     default: break;
   }
 });
@@ -224,4 +215,4 @@ canvas.addEventListener('wheel', (event) => {
   camera.zoom = Math.max(0.55, Math.min(7, camera.zoom * Math.exp(-event.deltaY * 0.0012)));
 }, { passive: false });
 
-window.__ICOSA_VIEW__ = { camera, objectQ: () => objectQ, vertices, unprojectSphere, project: (v) => camera.project(qRotateVec(objectQ, v)), orbit: () => ({ yaw: orbitYaw, pitch: orbitPitch }), setOrbit: (y, p) => { orbitYaw = y; orbitPitch = p; }, setObjectQ: (q) => { objectQ = qNorm(q); } };
+window.__ICOSA_VIEW__ = { camera, objectQ: () => objectQ, vertices, unprojectSphere, project: (v) => camera.project(qRotateVec(objectQ, v)), orbit: () => ({ yaw: camera._yaw, pitch: camera._pitch, q: camera._q, viewAxis: camera.viewAxis() }), setObjectQ: (q) => { objectQ = qNorm(q); } };

@@ -35,19 +35,26 @@ const follow = await page.evaluate(() => {
 const errX = Math.abs(follow.x - target.x);
 const errY = Math.abs(follow.y - target.y);
 
-// 2) Cursor Up: camera descends along the orbit, no horizontal drift.
-const beforeOrbit = await page.evaluate(() => window.__ICOSA_VIEW__.orbit());
+// 2) Cursor Up: camera keeps moving up locally and can loop over the pole.
+const pointY = await page.evaluate(() => window.__ICOSA_VIEW__.project(window.__ICOSA_VIEW__.vertices[4]).y);
 await page.keyboard.press('ArrowUp');
-await delay(150);
-const afterOrbit = await page.evaluate(() => window.__ICOSA_VIEW__.orbit());
+await delay(80);
+const afterOneUp = await page.evaluate(() => window.__ICOSA_VIEW__.project(window.__ICOSA_VIEW__.vertices[4]).y);
+for (let i = 0; i < 40; i += 1) { await page.keyboard.press('ArrowUp'); }
+await delay(120);
+const afterManyUp = await page.evaluate(() => ({
+  y: window.__ICOSA_VIEW__.project(window.__ICOSA_VIEW__.vertices[4]).y,
+  q: window.__ICOSA_VIEW__.orbit().q,
+}));
+const qNorm = Math.hypot(afterManyUp.q.x, afterManyUp.q.y, afterManyUp.q.z, afterManyUp.q.w);
 
-const result = { errX, errY, beforeOrbit, afterOrbit, errors };
+const result = { errX, errY, pointY, afterOneUp, afterManyUp: { y: afterManyUp.y, qNorm }, errors };
 console.log(JSON.stringify(result, null, 2));
 await browser.close();
 
 let failed = false;
 if (errors.length) failed = true;
 if (errX > 0.01 || errY > 0.01) failed = true;
-if (Math.abs(afterOrbit.yaw - beforeOrbit.yaw) > 1e-9) failed = true;
-if (!(afterOrbit.pitch < beforeOrbit.pitch)) failed = true;
+if (!(afterOneUp > pointY)) failed = true; // camera up => object moves down on screen
+if (Math.abs(qNorm - 1) > 1e-9) failed = true;
 if (failed) process.exitCode = 1;
