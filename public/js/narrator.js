@@ -483,7 +483,11 @@ export function createNarrator() {
         if (p && typeof p.catch === 'function') {
           p.catch((err) => onClipStalled(cueId, sequence.index, classifyPlaybackError(err)));
         }
-        warmAudio(audioUrl(cueId, sequence.index + 1, profile));
+        // Warm only a segment that exists: warming past the last sentence used
+        // to request a missing `__s(N+1)` clip (a 404 on every final segment).
+        if (sequence.index + 1 < sequence.segments.length) {
+          warmAudio(audioUrl(cueId, sequence.index + 1, profile));
+        }
         a.onended = () => {
           clearWatchdog();
           consecutiveFailures = 0;

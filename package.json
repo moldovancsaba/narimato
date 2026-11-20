@@ -29,7 +29,8 @@
     "gate:load": "node scripts/perf-gate.mjs",
     "perf:probe": "node scripts/perf-probe.mjs",
     "gate:perf": "node scripts/perf-probe.mjs --device=desktop --quality=0 --attempts=3 --check-baseline",
-    "perf:baseline": "node scripts/perf-probe.mjs --device=desktop --quality=0 --attempts=3 --update-baseline"
+    "perf:baseline": "node scripts/perf-probe.mjs --device=desktop --quality=0 --attempts=3 --update-baseline",
+    "verify:single-scene": "node scripts/verify-single-scene.mjs"
   },
   "engines": {
     "node": ">=20"

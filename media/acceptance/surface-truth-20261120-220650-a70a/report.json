@@ -1,0 +1,66 @@
+{
+  "runId": "surface-truth-20261120-220650-a70a",
+  "baseUrl": "http://localhost:53471",
+  "planetSeed": null,
+  "planetIndex": null,
+  "startedAt": "2026-11-20T22:06:50.041Z",
+  "finishedAt": "2026-11-20T22:06:55.371Z",
+  "durationMs": 5330,
+  "tags": [],
+  "checks": [
+    {
+      "id": "target-available",
+      "ok": true,
+      "detail": {
+        "targetLabel": "8",
+        "targetCan": false
+      }
+    },
+    {
+      "id": "hud-truth",
+      "ok": true,
+      "detail": {
+        "hud": {
+          "text": "TARGET 8 // RED // LOCKED",
+          "state": "locked"
+        },
+        "targetCan": false,
+        "status": 409,
+        "clickOk": false,
+        "expected": "refused"
+      }
+    },
+    {
+      "id": "beam-ordering",
+      "ok": true,
+      "detail": {
+        "frames": 1,
+        "valid": 1
+      }
+    },
+    {
+      "id": "no-page-errors",
+      "ok": true,
+      "detail": {
+        "count": 0,
+        "expectedRefusals": 1,
+        "errors": []
+      }
+    }
+  ],
+  "peers": [],
+  "beams": [
+    {
+      "playerId": "p_ekypvb",
+      "label": "13",
+      "precededByCell": true
+    }
+  ],
+  "supply": null,
+  "liveMutation": null,
+  "artifacts": [
+    "media/acceptance/surface-truth-20261120-220650-a70a/surface-truth.png"
+  ],
+  "errors": [],
+  "ok": true
+}

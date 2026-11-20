@@ -1,42 +1,122 @@
+#!/usr/bin/env node
 /**
- * Surface truth acceptance:
- * - target HUD colour matches the next server click result for the target label;
- * - at least one authoritative surface_mine beam effect appears while a robot mines.
- * Run: PLAYWRIGHT_MODULE=/tmp/dsh-pw/node_modules/playwright node this
+ * NARIMATO — surface truth acceptance (TST-01 step set).
+ *
+ * Proves the HUD harvest verdict and the authoritative mine frame agree:
+ *   - the surface target readout says HARVEST only when `/api/action` awards
+ *     the click, and LOCKED when the server refuses it;
+ *   - at least one `surface_mine` frame names a cell that a `cell`/`break`
+ *     frame already changed (the renderer beam's only legal source).
+ *
+ * Usage: PLAYWRIGHT_MODULE=/tmp/dsh-pw/node_modules/playwright node scripts/acceptance-surface-truth.mjs
+ * Exit: 0 pass, 1 failed check, 2 harness failure. Report: media/acceptance/<runId>/report.json
  */
-import { createRequire } from 'node:module';
-import { setTimeout as delay } from 'node:timers/promises';
+import {
+  HARD_MS,
+  addCheck,
+  captureScreenshot,
+  collectErrors,
+  createArtifactDir,
+  createRunId,
+  delay,
+  enterSurfaceClient,
+  joinClient,
+  launchClients,
+  loadPlaywright,
+  newAcceptanceReport,
+  postAction,
+  readEventLog,
+  startAcceptanceServer,
+  waitFor,
+  writeReport,
+} from './lib/acceptance-harness.mjs';
 
-const require = createRequire(import.meta.url);
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
-const base = process.env.BASE_URL || 'http://127.0.0.1:4173';
+const runId = createRunId('surface-truth');
+const artifactDir = createArtifactDir(runId);
+const report = newAcceptanceReport({ runId, baseUrl: '' });
+let server = null;
+let clients = null;
 
-const browser = await chromium.launch({ headless: true });
-const page = await browser.newPage();
-const errors = [];
-page.on('pageerror', (err) => errors.push(err.message));
-await page.goto(`${base}/?intro=0`, { waitUntil: 'domcontentloaded' });
-await delay(500);
-await page.fill('#tag-input', 'TRUTH');
-await page.click('#btn-join');
-await page.waitForFunction(() => window.__ICOSA__?.joined === true, null, { timeout: 12000 });
-await page.evaluate(() => window.__ICOSA__.surface());
-await delay(1800);
-const target = await page.evaluate(() => window.__ICOSA__.surfaceDebug());
-const token = await page.evaluate(() => localStorage.getItem('icosa.token'));
-const response = await page.evaluate(async ({ base, token, label }) => {
-  const res = await fetch(`${base}/api/action`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ token, type: 'click', label }),
+function finish(code) {
+  const file = writeReport(artifactDir, report);
+  const pass = report.checks.filter((check) => check.ok).length;
+  process.stdout.write(`${report.ok ? 'PASS' : 'FAIL'} surface-truth // ${runId} // ${pass}/${report.checks.length} checks\n`);
+  for (const check of report.checks) process.stdout.write(`  ${check.ok ? 'ok  ' : 'FAIL'} ${check.id}${check.ok ? '' : ` — ${JSON.stringify(check.detail)}`}\n`);
+  process.stdout.write(`report: ${file}\n`);
+  process.exitCode = code;
+}
+
+try {
+  const playwright = await loadPlaywright();
+  server = await startAcceptanceServer();
+  report.baseUrl = server.url;
+  clients = await launchClients(playwright, 1);
+  const page = clients.pages[0];
+  await joinClient(page, `TR${Math.floor(Math.random() * 900 + 100)}`, server.url);
+  await enterSurfaceClient(page);
+  const debug = await page.evaluate(() => window.__ICOSA__.surfaceDebug());
+  const targetLabel = debug && debug.targetLabel;
+  const targetCan = !!(debug && debug.targetCan);
+  addCheck(report, 'target-available', !!targetLabel, { targetLabel, targetCan });
+  // The HUD verdict and the API click must be the same predicate (CTL-03).
+  let hudState = null;
+  try {
+    await waitFor(page, (expected) => {
+      const node = document.querySelector('#surface-target');
+      if (!node) return false;
+      return expected ? node.dataset.state === 'can' : node.dataset.state !== 'can';
+    }, { label: 'hud-target-state', timeout: HARD_MS, artifactDir, arg: targetCan });
+    hudState = await page.evaluate(() => {
+      const node = document.querySelector('#surface-target');
+      return node ? { text: node.textContent, state: node.dataset.state } : null;
+    });
+  } catch (error) {
+    report.errors.push(error.message);
+  }
+  const click = targetLabel ? await postAction(page, { type: 'click', label: targetLabel }) : null;
+  const clickOk = !!(click && click.status === 200 && click.body && click.body.ok);
+  const truthAgrees = !!hudState && (targetCan ? clickOk : !clickOk);
+  addCheck(report, 'hud-truth', truthAgrees, {
+    hud: hudState,
+    targetCan,
+    status: click && click.status,
+    clickOk,
+    expected: targetCan ? 'awarded' : 'refused',
   });
-  return { status: res.status, body: await res.json() };
-}, { base, token, label: target.targetLabel });
-await delay(6000);
-const mineCount = await page.evaluate(() => window.__ICOSA__.surfaceMineCount());
-const result = { target: { label: target.targetLabel, can: target.targetCan }, clickStatus: response.status, mineCount, errors };
-console.log(JSON.stringify(result, null, 2));
-await browser.close();
-if (errors.length) process.exitCode = 1;
-if (target.targetCan && response.status !== 200) process.exitCode = 1;
-if (!target.targetCan && response.status === 200 && response.body?.ok) process.exitCode = 1;
+  report.artifacts.push(await captureScreenshot(page, artifactDir, 'surface-truth').catch(() => null));
+  // Authoritative mine frame ordering (the beam never precedes the mutation).
+  let mineFrames = [];
+  try {
+    await waitFor(page, () => window.__ICOSA__.eventLog().some((entry) => entry.type === 'surface_mine'), { label: 'surface-mine', timeout: HARD_MS, artifactDir });
+    const log = await readEventLog(page);
+    mineFrames = log.map((entry, index) => ({ entry, index }))
+      .filter(({ entry }) => entry.type === 'surface_mine')
+      .map(({ entry, index }) => ({
+        playerId: entry.playerId,
+        label: entry.label,
+        precededByCell: log.slice(0, index).some((previous) => (previous.type === 'cell' || previous.type === 'break') && previous.label === entry.label),
+      }));
+  } catch (error) {
+    report.errors.push(error.message);
+  }
+  report.beams = mineFrames.slice(0, 20);
+  addCheck(report, 'beam-ordering', mineFrames.length > 0 && mineFrames.every((frame) => frame.precededByCell), {
+    frames: mineFrames.length,
+    valid: mineFrames.filter((frame) => frame.precededByCell).length,
+  });
+  const signals = collectErrors(clients);
+  report.errors.push(...signals.errors);
+  addCheck(report, 'no-page-errors', signals.errors.length === 0, {
+    count: signals.errors.length,
+    expectedRefusals: signals.allowedRefusals.length,
+    errors: signals.errors.slice(0, 6),
+  });
+  finish(report.ok ? 0 : 1);
+} catch (error) {
+  report.errors.push(String(error && error.message ? error.message : error));
+  addCheck(report, 'harness', false, { message: String(error && error.message ? error.message : error) });
+  finish(error && error.harness ? 2 : 1);
+} finally {
+  if (clients) await clients.close();
+  if (server) await server.stop();
+}

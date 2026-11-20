@@ -223,6 +223,17 @@ the catalog is exhausted, so the infinite frontier never runs dry.
 - On the crust, humans and robots appear at their **server-owned poses** and disappear after five
   seconds of silence — a closed tab leaves no ghost body. Robot movement is deterministic from the
   planet seed, so it cannot be steered by where a pilot stands.
+- Pilots and robots are drawn as **3D bodies** — head, visor, torso, hips, arms and legs connected
+  at the joints — with a walk cycle and a tool-arm lift while mining. Nearby figures keep full
+  detail; distant ones switch to a simplified body and then a silhouette, so the crust stays
+  readable with a crowd on it.
+- **Mining beams are server events, not client effects.** A beam starts at the operator's pose and
+  lands on the exact cell the server changed; it never fires from a client-side timer. If the
+  target cell is out of view, an edge chevron points at it. Reduced motion freezes the walk and
+  shows mining as a static marker.
+- **Emergency supply drops are real server events.** The relief ship places one hidden deposit per
+  missing refit part on nearby mineable cells and relocates every online human into the impact
+  footprint, so both pilots can compete for the same salvage; the orbit camera focuses the impact.
 - The robots deliberately contest charged human cells so solo play cannot speed-run the lock.
 - The arcade leaderboard is per planet, all-time for that scene; planet carries your score forward
   to the next scene.

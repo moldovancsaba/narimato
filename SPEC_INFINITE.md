@@ -126,6 +126,16 @@ with `reason:"leave"`.
 `POST /api/action` `{token, type:"supply", label?}` also returns additive `placements`, `rev`,
 `expiresAt` and `focus`: one deterministic, collision-safe placement per online human inside the
 supply cells, held with a 120 s TTL. The legacy `supply` frame is unchanged.
+
+**Client consumption of surface frames (RND-07).** `surface` frames feed
+`renderer.setPeers(peers, serverNow)` (authoritative samples only, at most 8 per peer, deduped and
+ordered by `updatedAt`); `surface_mine` feeds `renderer.mineBeam({ playerId, toLeaf: label, ... })`
+and the renderer drops/counts a beam whose label is no longer a live leaf; `surface_leave` feeds
+`renderer.removePeer(playerId)`; `supply_focus` feeds `renderer.setSupplyMarkers(cells)` and the
+orbit focus; discovered `resourceId` values feed `renderer.setResourcePins(pins)`. The client never
+invents a peer pose, a beam target or a resource pin, and interpolation holds the newest sample
+(`renderServerNow = serverNow − 120 ms`, no extrapolation past it). `__ICOSA__.eventLog()` keeps a
+bounded ring of received frames so acceptance can prove the `cell`/`break` → `surface_mine` order.
 `GET /api/state` → `{ok:true, state: State}` (landing stats, no leaves)
 `GET /api/world` → `{ok:true, state, leaves: Leaf[]}` (debug/tests)
 `GET /api/leaderboard` → `{ok:true, leaderboard: ArcadeEntry[]}`

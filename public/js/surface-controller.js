@@ -108,16 +108,6 @@ function harvestable(node, myIndex, maxDepth) {
   return canHarvestCell(node, myIndex, maxDepth);
 }
 
-function hashString(value) {
-  let hash = 2166136261;
-  const text = String(value == null ? '' : value);
-  for (let i = 0; i < text.length; i += 1) {
-    hash ^= text.charCodeAt(i);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
-
 /**
  * @param {object} options
  * @param {()=>object} [options.getStartPoint]
@@ -127,8 +117,8 @@ function hashString(value) {
  * @param {()=>string|null} [options.getMyPlayerId]
  * @param {()=>number} [options.getMyIndex]
  * @param {()=>number} [options.getMaxDepth]
- * @param {()=>Array} [options.getSupplyCells]
- * @param {()=>Array} [options.getPeers]
+ * @param {()=>Array} [options.getSupplyCells] legacy: renderer owns supply markers (RND-07)
+ * @param {()=>Array} [options.getPeers] peers are resolved by the renderer (RND-07)
  * @param {(pose:object)=>void} [options.onPose]
  * @param {(label:string)=>void} [options.onHarvest]
  * @param {()=>void} [options.onExit]
@@ -169,9 +159,6 @@ export function createSurfaceController({
   let lastHudAt = 0;
   let debug = {};
   let effects = [];
-  let mineEffects = [];
-  let mineTotal = 0;
-  const virtualHomes = new Map();
 
   function findCell(point) {
     const leaves = getLeaves();
@@ -321,42 +308,15 @@ export function createSurfaceController({
     return 1;
   }
 
-  function virtualPeerPosition(peer, stamp) {
-    const id = String(peer.playerId || peer.tag || 'PILOT');
-    let home = virtualHomes.get(id);
-    if (!home) {
-      const hash = hashString(id);
-      const basis = tangentBasis(pos);
-      const radius = 0.035 + (hash % 60) / 1500;
-      const angle = ((hash >>> 7) % 628) / 100;
-      const homeBase = norm(add(pos, add(
-        mul(basis.east, Math.cos(angle) * radius),
-        mul(basis.north, Math.sin(angle) * radius),
-      )));
-      home = {
-        base: homeBase,
-        phase: ((hash >>> 13) % 628) / 100,
-        speed: 0.00006 + ((hash >>> 3) % 7) * 0.000015,
-        radius: 0.018 + (hash % 45) / 1600,
-        direction: (hash & 1) ? 1 : -1,
-      };
-      virtualHomes.set(id, home);
-    }
-    const basis = tangentBasis(home.base);
-    const angle = stamp * home.speed * home.direction + home.phase;
-    const x = Math.cos(angle) * home.radius;
-    const y = Math.sin(angle * 0.63 + home.phase) * home.radius * 0.62;
-    return norm(add(home.base, add(mul(basis.east, x), mul(basis.north, y))));
-  }
-
   /**
-   * Build the renderer entity list. Entities reference cells by `label` only;
-   * no geometry is copied and no colour/projection logic lives here.
+   * Build the renderer entity list for the *local* control surface: the pilot
+   * body and the target pin. Authoritative peers, robots, beams, supply markers
+   * and resource pins are owned by `IcosaRenderer` (RND-07), so no event state
+   * lives here.
    * @returns {Array<object>} SurfaceEntity[]
    */
   function entities() {
     if (!active) return [];
-    const stamp = now();
     const out = [];
     const players = getPlayers();
     const myId = getMyPlayerId();
@@ -373,35 +333,6 @@ export function createSurfaceController({
       label: String((me && me.tag) || 'PILOT'),
       cellLabel: current.label,
     });
-    for (const peer of getPeers()) {
-      if (!peer || peer.playerId === myId) continue;
-      const serverSurface = peer.surface && peer.surface.pos && Number.isFinite(peer.surface.pos.x)
-        ? peer.surface.pos
-        : null;
-      const peerPos = serverSurface || (peer.pos && Number.isFinite(peer.pos.x) ? peer.pos : virtualPeerPosition(peer, stamp));
-      if (!peerPos) continue;
-      const serverHeading = peer.surface && peer.surface.heading
-        && Number.isFinite(peer.surface.heading.x) ? peer.surface.heading : null;
-      const peerForward = serverHeading
-        || (peer.forward && Number.isFinite(peer.forward.x)
-          ? peer.forward
-          : tangentAt(peerPos, { x: 1, y: 0, z: 0 }));
-      let ph = 0;
-      const seed = String(peer.playerId || peer.tag);
-      for (let i = 0; i < seed.length; i += 1) ph = (ph * 31 + seed.charCodeAt(i)) % 997;
-      const cycle = (stamp / 2600 + ph / 997) % 1;
-      out.push({
-        kind: 'peer',
-        playerId: String(peer.playerId || peer.tag || 'PILOT'),
-        pos: { ...peerPos },
-        forward: { ...peerForward },
-        walk: stamp * 0.004,
-        mine: cycle < 0.32,
-        tint: peer.color || '#a78bfa',
-        label: String(peer.tag || 'PILOT'),
-        cellLabel: null,
-      });
-    }
     if (current.label) {
       const node = getLeaves().find((leaf) => leaf && leaf.label === current.label);
       if (node && node.centroid) {
@@ -419,41 +350,15 @@ export function createSurfaceController({
         });
       }
     }
-    for (const cell of getSupplyCells()) {
-      if (!cell || !cell.label) continue;
-      const node = getLeaves().find((leaf) => leaf && leaf.label === cell.label);
-      if (!node || !node.centroid) continue;
-      out.push({
-        kind: 'pin',
-        playerId: null,
-        pos: mul(node.centroid, 1.004),
-        forward: null,
-        walk: 0,
-        mine: false,
-        tint: cell.color || '#ffd166',
-        label: String(cell.name || 'ORE'),
-        cellLabel: cell.label,
-        variant: 'supply',
-      });
-    }
-    mineEffects = mineEffects.filter((effect) => stamp - effect.start < 1000);
-    for (const effect of mineEffects) {
-      const node = getLeaves().find((leaf) => leaf && leaf.label === effect.label);
-      if (!node || !node.centroid) continue;
-      out.push({
-        kind: 'beam',
-        playerId: effect.playerId || null,
-        pos: mul(node.centroid, 1.003),
-        forward: null,
-        walk: 0,
-        mine: true,
-        tint: effect.color || '#8afcff',
-        label: `${effect.tag || 'ROBOT'} // MINE ${effect.label}`,
-        cellLabel: effect.label,
-        progress: clamp01((stamp - effect.start) / 1000),
-      });
-    }
-    debug = { leaves: getLeaves().length, entities: out.length, phase };
+    // QA readout: the authoritative harvest verdict is the same predicate the
+    // HUD uses (CTL-03), so acceptance can compare it with an API click.
+    debug = {
+      leaves: getLeaves().length,
+      entities: out.length,
+      phase,
+      targetLabel: current.label,
+      targetCan: current.harvestable,
+    };
     return out;
   }
 
@@ -505,7 +410,6 @@ export function createSurfaceController({
       depth: Number(options.depth || planetInfo.depth) || 2,
     };
     pos = norm(getStartPoint() || { x: 0, y: 0, z: 1 });
-    virtualHomes.clear();
     const startBasis = tangentBasis(pos);
     headingVec = tangentAt(pos, startBasis.east);
     travel = 0;
@@ -514,7 +418,6 @@ export function createSurfaceController({
     harvestQueue = [];
     lastHarvestLabel = null;
     effects = [];
-    mineEffects = [];
     keys = new Set();
     phase = 'landing';
     active = true;
@@ -535,20 +438,6 @@ export function createSurfaceController({
     keys = new Set();
     detachInput();
     emitHud(true);
-    return true;
-  }
-
-  function showMine(message) {
-    if (!active || !message || !message.label) return false;
-    mineEffects.push({
-      start: now(),
-      label: String(message.label),
-      tag: String(message.tag || 'ROBOT').slice(0, 14),
-      color: message.color || '#8afcff',
-      playerId: message.playerId || null,
-    });
-    mineEffects = mineEffects.slice(-12);
-    mineTotal += 1;
     return true;
   }
 
@@ -621,13 +510,11 @@ export function createSurfaceController({
     entities,
     effects: effectsList,
     hold,
-    showMine,
     applyPlacement,
     focusLabel,
     harvestEffect,
     debug: () => debug,
     peers: () => getPeers().length,
-    mineCount: () => mineTotal,
     target,
     get active() { return active; },
     get phase() { return phase; },
