@@ -5,10 +5,10 @@
 | Layer | Technology | Notes |
 |---|---|---|
 | Client | Vanilla HTML/CSS/ES modules | no framework, no bundler, no runtime npm deps |
-| Rendering | Canvas 2D | geodesic sphere, biomes, ownership, ore markers, particles |
+| Rendering | Canvas 2D + WebGL | game planet: Canvas 2D; spherical-icosahedron reference viewer: WebGL ray–sphere shader |
 | Simulation | Node.js ≥20 | authoritative game server, HTTP + Server-Sent Events |
 | Persistence | JSON files + atomic rename | one file per planet, one registry file |
-| Tests | `node:test` | 80+ tests, no test dependencies |
+| Tests | `node:test` | 116 tests, no test dependencies |
 | CI | GitHub Actions | Node 20 and 22, `npm test` |
 | Deploy | `node server.js` behind any static/reverse proxy | Cloudflare tunnel used for the live build |
 
@@ -20,13 +20,15 @@ third-party runtime requests.
 
 ```
 Browser
-  index.html ── app.js ──┬─ renderer.js  (Canvas 2D)
+  index.html ── app.js ──┬─ renderer.js  (Canvas 2D game planet)
                          ├─ world.js     (client adaptive tree)
                          ├─ ui.js        (responsive HUD/DOM)
                          ├─ intro.js     (cockpit launch cine)
                          ├─ interlude.js (interplanetary storm/meteor cine)
                          └─ result-card.js
+  icosahedron.html ── icosahedron-viewer.js (WebGL ray–sphere reference viewer)
              shared/     geometry.js · planet.js · resources.js · mission.js
+                         sphere-interaction.js · orbit-controls.js
                  │
                  │ REST /api/*  +  SSE /api/events?token=…
                  ▼
@@ -62,8 +64,10 @@ Observability: `public/js/telemetry.js` posts a tiny privacy-safe numeric beacon
 
 - **`app.js`** — orchestrates boot, intro, join/reconnect, camera, input, render loop, actions,
   mission progress, escape transit, meteor reset, reports/shares, abandon/new-pilot.
-- **`renderer.js`** — mixed-depth spherical Canvas renderer: projected/slerp-tessellated edges,
-  biome underlay + ownership, hidden ore markers, labels-on-interaction, particles, starfield.
+- **`renderer.js`** — mixed-depth spherical Canvas renderer for the game: projected/slerp-tessellated
+  edges, biome underlay + ownership, hidden ore markers, labels-on-interaction, particles, starfield.
+- **`icosahedron-viewer.js`** — WebGL reference viewer: a full-screen ray–sphere shader draws the
+  front surface only; analytic great-circle icosahedron edge bands; no back faces/edges.
 - **`world.js`** — client-side adaptive tree mirror of the server leaves; label parsing, cell
   updates, terrain cache, per-cell lock state.
 - **`ui.js`** — all DOM: landing/tag, HUD, mission/planet badge, drawers, target sheet, toasts,
@@ -87,7 +91,8 @@ Observability: `public/js/telemetry.js` posts a tiny privacy-safe numeric beacon
   replacement options are documented in [VOICE.md](VOICE.md).
 - **`shared/`** — pure modules used by both sides:
   - `geometry.js` — icosahedron, hierarchical labels, child triangles, slerp, camera/picking.
-  - `orbit-controls.js` — shared drag/trackball/cursor-key primitives used by app and viewer.
+  - `sphere-interaction.js` — pure carrier frame/projection/unprojection/movement math.
+  - `orbit-controls.js` — shared game drag/trackball/cursor-key primitives.
   - `planet.js` — seed-driven 3D noise terrain, biomes, geological deposit weights.
   - `resources.js` — 10-ore market, glyphs, colours, weighted rolls.
   - `mission.js` — planet depth/name, per-planet escape requirements, mission progress.
@@ -98,11 +103,14 @@ Authoritative rules live in [narimato-physics.md](narimato-physics.md):
 
 - One planet object: the base spherical icosahedron, same 20 triangles at every camera height; no
   per-camera generated mesh or LOD swap.
-- One camera on a **concentric carrier orbit**; cursor keys move the carrier (Up keeps moving up),
-  wheel/pinch changes the carrier radius (dolly).
+- Camera = carrier `pos` + parallel-transported `up` on a concentric sphere; always faces centre.
+- Cursor keys move the carrier along local Up/Right; wheel changes the carrier radius with fixed
+  focal length (dolly, not optical zoom).
 - Mouse rotates the **object**, not the camera, via exact surface-point unprojection + shortest-arc
-  quaternion (`objectQ = delta · objectQ_at_down`).
-- Object quaternion and camera orbit are separate transforms.
+  quaternion.
+- WebGL reference viewer renders the front sphere surface only (no hidden back faces/edges).
+- Object rotation and camera carrier are separate transforms.
+- Full rationale and failure history: [narimato-physics.md](narimato-physics.md).
 
 ## Multiplayer model
 
@@ -260,6 +268,9 @@ Three deliberate layouts, not just scaling:
 ## Testing
 
 - `test/geometry.test.js` — regular icosahedron, spherical coverage, labels, camera/picking.
+- `test/sphere-interaction.test.js` — carrier projection/unprojection, point-follow, infinite local direction.
+- Accept live browser checks: `scripts/verify-icosahedron-controls.mjs`,
+  `scripts/verify-camera-carrier.mjs`, `scripts/verify-icosahedron-visual.mjs`.
 - `test/planet.test.js` — deterministic terrain, poles ice, biome distribution, ocean non-mineable,
   terrain deposit weights, client/server parity.
 - `test/mission.test.js` — requirements, per-planet scaling, depth progression, sanitization.

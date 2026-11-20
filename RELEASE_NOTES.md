@@ -1,5 +1,51 @@
 # NARIMATO — Release Notes
 
+## v3.57.0 — “Spherical Viewer Solution” (2026-11-20)
+
+### What was wrong
+
+- Camera was an Euler/clamped turntable; Up/Down reversed at the pole and could not loop.
+- Mouse and camera were the same transform; dragging the surface could not be independent.
+- Object drag used abstract arcball/incremental rotation instead of following the grabbed surface
+  point.
+- Unprojection ray used `+focal` (out of the screen), so intersection failed and drags appeared dead.
+- Zoom scaled focal length/projection instead of moving the camera on its carrier sphere.
+- Canvas2D front/back rendering leaked hidden edges, partial faces, fragments and silhouette tabs.
+
+### Final solution
+
+- One object: 20-face spherical icosahedron.
+- Camera carrier = `pos` + parallel-transported `up` on a hidden concentric sphere; always faces
+  the centre.
+- Cursor keys move the carrier locally; infinite through poles; no Euler/clamp.
+- Fixed focal length; wheel changes the carrier radius (true dolly).
+- Mouse rotates the object via exact surface-point unprojection + shortest-arc quaternion.
+- Viewer renders with a WebGL ray–sphere shader: only the front surface is shaded; 30 analytic
+  great-circle edge bands; no back faces, back edges, generated mesh or canvas artifacts.
+
+### Evidence
+
+- Mouse point-follow error < `1e-6 px`.
+- 200 consecutive Up: every step along previous local Up; no reversal.
+- 80 consecutive Right: same local Right.
+- Carrier pos/up norm `1.0`, tangent; orbit distance unchanged.
+- Mouse drag changes object only, camera delta `0`.
+- Wheel-up carrier `3.2 → 1.756`.
+- WebGL visual acceptance: default/close/upside-down screenshots pass.
+- **116/116 tests.**
+
+### Docs
+
+- [narimato-physics.md](narimato-physics.md) — full solution, failure history, maths and acceptance.
+- Architecture, high-level spec, low-level algorithm and README updated.
+
+### Release artifact
+
+- Source tag: `v3.57.0`
+- GitHub release: https://github.com/moldovancsaba/narimato/releases/tag/v3.57.0
+
+---
+
 ## v3.56.0 — “One Fixed Tessellation” (2026-11-20)
 
 - The planet now has **one fixed render tessellation** used identically in orbit and surface mode;

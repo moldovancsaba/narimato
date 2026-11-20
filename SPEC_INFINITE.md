@@ -40,13 +40,16 @@ Authoritative rules live in [narimato-physics.md](narimato-physics.md):
 
 - **One object**: the 20-face spherical icosahedron; every camera height uses the same triangles.
   No per-camera generated mesh, no adaptive density, no LOD swap.
-- **One camera**: a carrier point on a concentric orbit sphere. Cursor keys move the carrier freely
-  (`Up` keeps moving up and loops over the pole, no pitch clamp); wheel/pinch changes the carrier
-  radius (dolly).
+- **One camera**: carrier `pos` + parallel-transported `up` on a concentric orbit sphere. Cursor
+  keys move the carrier locally (`Up` keeps moving up and loops over the pole, no clamp); wheel/pinch
+  changes the carrier radius with fixed focal length (dolly).
 - **Mouse rotates the object**, not the camera: unproject the grabbed surface point, then rotate by
   the shortest quaternion so that point follows the cursor exactly.
-- Object rotation (`objectQ`) and camera orbit (`orbitYaw`/`orbitPitch`) are separate.
-- Unprojection ray direction is `(X, Y, -focal)` — negative Z, into the scene.
+- Object rotation (`objectQ`) and camera carrier are separate.
+- Unprojection ray is `normalize(right*X + up*Y - pos*focal)` — into the scene.
+- Reference viewer (`icosahedron.html` + `icosahedron-viewer.js`) uses a WebGL ray–sphere shader;
+  only the front surface can be shaded, so back faces/edges are impossible.
+- Full rationale and failure history: [narimato-physics.md](narimato-physics.md).
 - Labels are shown on faces (all visible faces when few, hovered face at any depth) and can be
   toggled.
 

@@ -1,167 +1,170 @@
-# NARIMATO — Physics & Interaction Model
+# NARIMATO — Physics, Camera & Rendering Solution
 
-> Source of truth for how the planet, camera and cursor work. Any renderer, viewer or future
-> client must follow these rules. If code and this document disagree, fix the code.
+> Authoritative record of the final working model, why it works, and the models that were wrong.
+> If code and this document disagree, the code is a regression.
 
-## 1. The single planet object
+## 1. The single object
 
-- One object: the **regular spherical icosahedron**, 20 faces, 12 vertices, 30 edges.
-- Geometry comes only from `public/js/shared/geometry.js` (`baseIcosahedron()`).
-- Runtime rendering must use the **same triangles** for every camera height:
-  - orbit / spaceship,
-  - commercial flight height,
-  - building height,
-  - surface.
-- **Forbidden:**
-  - generating a denser “surface” mesh,
-  - adaptive/per-camera triangle density,
-  - LOD that swaps the object,
-  - drawing a second copy of the planet.
-- If the object needs more detail, the object itself must be modelled at a higher fixed
-  resolution **before** it is used; it must never be synthesised per-camera at runtime.
+- One object: the regular **spherical icosahedron** — 12 vertices, 30 edges, 20 spherical
+  triangular faces.
+- Geometry source: `public/js/shared/geometry.js` → `baseIcosahedron()`.
+- The same object/faces are used at every camera distance. No per-camera mesh, no LOD swap, no
+  generated denser surface, no second planet.
+- The viewer is a WebGL ray–sphere shader. It does **not** build a mesh at all; it intersects the
+  unit sphere per pixel. That is why it cannot show hidden back faces or back edges.
 
-## 2. Camera
+## 2. The camera carrier
 
-One camera. It always sits on a **concentric orbit sphere** around the object centre.
+The camera is not a free-floating orientation. It is a **carrier point on a hidden concentric
+sphere** around the planet centre.
 
-- The camera is fixed to a carrier point on that outer sphere.
-- The carrier has a position `pos` and a parallel-transported local `up` tangent.
-- **Zoom changes the carrier sphere radius** (`camera.distance`) with a **fixed focal length**;
-  moving the carrier changes perspective/size like a real dolly, not a projection zoom.
-- The camera always faces the centre; the projection uses the carrier frame.
-- “Space”, “flight”, “building” and “surface” are **the same object viewed by the same camera
-  carrier at a chosen position**, not different cameras.
+Carrier state:
 
-### Camera orbit (cursor keys)
-
-Cursor keys move the camera, not the object.
-
-| Key | Effect |
-|---|---|
-| `Up` | camera moves **up** in its current local orbit frame |
-| `Down` | camera moves down |
-| `Left` | camera orbits left |
-| `Right` | camera orbits right |
-
-- `Up`/`Down` work in the camera's local frame and must not jump when crossing a pole.
-- The orbit is a **free quaternion**: repeated `Up` keeps moving the camera up and loops over the
-  pole; there is no pitch clamp.
-- Wheel/pinch changes the carrier sphere radius (`camera.distance`) within `[2.0, 8.0]`.
-- Projection focal length is fixed; the carrier moving is a real dolly, not projection zoom.
-
-## 3. Object rotation (mouse)
-
-Mouse drag rotates the **object**, never the camera.
-
-- On pointer-down, unproject the cursor onto the visible sphere to get the grabbed surface point
-  `P0` in world space.
-- On pointer-move, unproject the new cursor to `P1`.
-- Rotate the object by the shortest quaternion taking `P0` to `P1`:
-
+```js
+carrier = {
+  pos:  unit vector from planet centre to camera, // position on outer sphere
+  up:   unit tangent at pos,                       // camera local up
+  right = normalize(cross(up, pos))
+}
 ```
-axis = normalize(cross(P0, P1))
+
+- The camera is attached to the carrier and **always faces the planet centre**.
+- The carrier moves freely on its sphere with the cursor keys.
+- `Up`/`Down` move the carrier along the current local `up`; `Left`/`Right` along local `right`.
+- After every move, `up` is **parallel-transported** so the local frame stays consistent across the
+  poles. There is no Euler yaw/pitch and no clamp.
+- Carrier distance is fixed during orbit: `3.2` by default.
+- **Zoom changes the carrier radius** (`camera.distance`), from `2.0` to `8.0` in the viewer.
+  Projection focal length is fixed; the camera physically dollies toward/away from the planet.
+
+### Why this works
+
+- A carrier point + tangent frame has no gimbal lock.
+- `pos` remains unit length and `up` stays tangent automatically.
+- A full loop over a pole never reverses the local Up because `up` is parallel-transported, not
+  recomputed from Euler angles.
+- The camera always faces the centre by construction, so it cannot roll away or flip.
+
+## 3. Mouse: rotate the object, follow the surface point
+
+Mouse drag rotates the **object**, never the camera carrier.
+
+1. On pointer-down, unproject the cursor to the visible sphere surface → `P0`.
+2. On pointer-move, unproject to → `P1`.
+3. Compute the shortest quaternion taking `P0` to `P1`:
+
+```text
+axis  = normalize(cross(P0, P1))
 angle = acos(clamp(dot(P0, P1), -1, 1))
 delta = axisAngle(axis, angle)
 objectQ = normalize(delta * objectQ_at_pointer_down)
 ```
 
-This makes the **grabbed surface point follow the cursor exactly**. Do not use incremental
-screen-axis rotation for the object; do not use an abstract arcball vector when the requirement is
-“the surface point follows the mouse”.
+The camera carrier is untouched, so the grabbed point follows the cursor exactly.
 
-## 4. Unprojection math
+## 4. Screen → sphere unprojection
 
-Screen → ray → sphere intersection:
+Carrier basis: `pos`, `up`, `right`; fixed focal length.
 
-```
-focal  = min(W,H) * SPHERE_SCREEN_FRACTION * CAMERA_DISTANCE  // fixed
-camera-space point: (dot(point,right), dot(point,up), dot(point,pos))
-depth = camera.distance - dot(point,pos)
-screenX = W/2 + focal * dot(point,right) / depth
-screenY = H/2 - focal * dot(point,up) / depth
+```text
+focal = min(W,H) * SPHERE_SCREEN_FRACTION * CAMERA_DISTANCE   // fixed
 X = x - W/2
-Y = H/2 - y                      // screen Y is down; camera Y is up
+Y = H/2 - y
 
-dirWorld  = normalize(right*X + up*Y - pos*focal)
-origin    = pos * camera.distance
-```
+dirWorld = normalize(right*X + up*Y - pos*focal)   // ray into the scene
+origin   = pos * camera.distance
 
-Intersect the ray `origin + t·dirWorld` with the unit sphere centred at the origin:
-
-```
-b = 2·dot(origin, dirWorld)
+b = 2*dot(origin, dirWorld)
 c = dot(origin, origin) - 1
 t = (-b - sqrt(b² - 4c)) / 2
-P = normalize(origin + t·dirWorld)
+P = normalize(origin + t*dirWorld)
 ```
 
-Common bug: using `z = +focal` points the ray out of the screen, the intersection fails, and the
-grab returns `null` — dragging then does nothing.
+Critical detail: the ray direction is **`-pos*focal`**, into the scene. Using `+focal` makes the ray
+point out of the screen, the intersection fails, and the drag does nothing.
 
-## 5. What we use and why
+## 5. Rendering: WebGL ray–sphere shader
 
-| Piece | Choice | Why |
-|---|---|---|
-| Object rotation | world-space quaternion `objectQ` | no gimbal lock, arbitrary orientation, shortest-arc |
-| Camera orbit | carrier `pos` + parallel-transported `up` | spherical-pane movement, no Euler/pole reversal |
-| Mouse | surface-point unprojection + shortest-arc quaternion | grabbed point follows cursor exactly |
-| Cursor keys | `moveCarrier` | explicit local up/down/left/right, infinite orbit |
-| Zoom | `camera.distance` (carrier radius) | zoom dollies the carrier toward/away from the planet |
-| Geometry | `baseIcosahedron()` | one object, 20 spherical triangles |
+The viewer uses a full-screen WebGL shader rather than a mesh:
 
-## 6. Implementation
+- Per pixel, a ray from the carrier is intersected with the unit sphere.
+- The nearest intersection is the **front surface**; back faces are impossible to draw because
+  there is no rasterized back surface.
+- Shading uses the sphere normal.
+- The 30 icosahedron edges are analytic great-circle bands, front surface only.
+- Edge width is scaled to a constant screen-pixel width (`1.5 * (distance-1)/focal`), so close
+  dollies do not create giant black bands.
+- Object rotation is applied by rotating the surface point into object space before edge tests.
+- No stars, halo, background pseudo-planet, or back-edge wireframe.
 
-- `public/js/shared/geometry.js`
-  - `SphereCamera` quaternion orientation, `project()`, `unprojectView()`, `viewAxis()`,
-    `beginVirtualTrackball()` / `virtualTrackballTo()` (kept for generic trackball use only).
-- `public/js/shared/orbit-controls.js`
-  - shared `applyScreenDrag`, `applyArrowKey`, `beginTrackball`, `dragTrackball` (game input).
-- `public/js/shared/sphere-interaction.js`
-  - `carrierFrame`, `carrierProject`, `carrierUnproject`, `moveCarrier`; pure and tested.
-- `public/js/icosahedron-viewer.js`
-  - split `objectQ` (mouse) and carrier `pos`/`up` (cursor keys);
-  - exact point-follow via `carrierUnproject()`;
-  - WebGL ray–sphere shader draws the front surface only, with analytic visible geodesic edges
-    (no back faces/edges).
-- `public/js/app.js`
-  - pointer input routes to the shared control primitives.
+### Why the WebGL solution works
 
-## 7. Tests / verification
+Canvas2D projected mesh/wireframe could not reliably hide back edges or partial spherical triangles
+at the silhouette. The shader solves it at the pixel level: only the nearest sphere intersection is
+shaded, and edge bands are tested on that surface point. There is no hidden geometry to leak through.
 
-- `test/orbit-controls.test.js` — drag direction, cursor-key direction, fixed orbit radius,
-  virtual-trackball finiteness across poles.
-- `scripts/verify-icosahedron-controls.mjs` — browser-level numeric acceptance;
-- `scripts/verify-camera-carrier.mjs` — cursor keys change carrier only; mouse changes object only;
-  carrier radius/pos/up verified.
-- `scripts/verify-icosahedron-visual.mjs` — captures default/close/upside-down views and checks
-  canvas coverage/background.
-  - mouse-dragged surface point follows the cursor with error `< 0.01 px`;
-  - cursor Up keeps moving the camera up locally across the pole, quaternion normalised.
+## 6. What was wrong (do not reintroduce)
 
-Measured acceptance (1200×1200):
+1. **Euler/turntable camera with clamped pitch.** It could not loop over the pole; after crossing,
+   Up/Down reversed. Cursor keys must move the carrier, not change clamped Euler pitch.
+2. **Mouse and camera were the same transform.** Mouse drag rotated the camera, so “rotate object”
+   and “move camera” could not be independent. They are now `objectQ` and carrier state.
+3. **Abstract arcball / incremental screen rotation for the object.** It did not keep the grabbed
+   surface point under the cursor. Use surface-point unprojection + shortest-arc quaternion.
+4. **Ray sign bug.** Unprojection used `+focal` (out of screen) instead of `-focal` (into scene).
+   The intersection returned null and the drag appeared dead.
+5. **Optical zoom.** Scale/focal changed instead of moving the camera. Zoom must change carrier
+   radius with fixed focal length.
+6. **Canvas2D front/back rendering.** Partial faces, hidden back edges, overhangs and fragmented
+   arcs at the silhouette. Replaced by WebGL front-surface intersection.
+7. **Verification only checked pixels, not gestures.** Tests now check per-key direction, carrier
+   normals, object/camera separation, point-follow error, and live WebGL screenshots.
 
-- point-follow error X: `5.061e-7 px`
-- point-follow error Y: `7.054e-7 px`
-- visual acceptance: WebGL default/close/upside-down screenshots pass coverage/background checks
-- zoom: carrier `3.2 → 1.756` on wheel-up
-- carrier Up: 200 steps each move along previous local Up (`dot(delta, oldUp) > 0`), no reversals
-- carrier position/up remain unit length and tangent throughout
-- 41× Up: carrier position/up norm `1.0`, no clamp/flip
+## 7. Implementation map
 
-## 8. Do / do not
+| File | Responsibility |
+|---|---|
+| `public/js/shared/geometry.js` | icosahedron vertices/faces, `SphereCamera` projection primitives |
+| `public/js/shared/sphere-interaction.js` | `carrierFrame`, `carrierProject`, `carrierUnproject`, `moveCarrier`, `shortestArcQuat` |
+| `public/js/icosahedron-viewer.js` | WebGL ray–sphere shader, carrier controls, object drag, fixed-focal dolly |
+| `public/js/shared/orbit-controls.js` | shared game mouse/trackball/cursor primitives |
+| `test/sphere-interaction.test.js` | pure carrier/unprojection/shortest-arc tests |
+| `test/orbit-controls.test.js` | shared game control direction tests |
+| `scripts/verify-icosahedron-controls.mjs` | live numeric gesture acceptance |
+| `scripts/verify-camera-carrier.mjs` | live camera/object separation and radius acceptance |
+| `scripts/verify-icosahedron-visual.mjs` | live WebGL screenshot/coverage acceptance |
 
-### Do
+## 8. Acceptance evidence
 
-- Split object rotation and camera orbit.
-- Keep the carrier on the orbit; zoom changes its radius.
-- Use `z = -focal` in unprojection.
-- Rotate the object with the shortest quaternion from `P0` to `P1`.
-- Test the actual projected numbers, not just “it feels right”.
+Measured on live viewport 1200×1200:
 
-### Do not
+- Mouse point-follow error: **< 1e-6 px** X and Y.
+- 200 consecutive Up carrier steps: every step moves along the previous local Up, no reversal.
+- 80 consecutive Right steps: same local Right direction.
+- Carrier `pos` norm = `1.0`, `up` norm = `1.0`, `dot(pos,up)=0`.
+- Cursor orbit leaves camera distance unchanged (`3.2`).
+- Mouse drag changes `objectQ`, camera delta = `0`.
+- Wheel-up changes carrier radius `3.2 → 1.756` (dolly in).
+- WebGL visual acceptance passes default, close and upside-down screenshots.
+- **116/116 tests pass.**
 
-- Do not use incremental local-axis rotation for the mouse object grab.
-- Do not invert screen Y unless you are converting from screen-down to camera-up.
-- Do not generate per-camera surface geometry.
+## 9. Rules
+
+### Must
+
+- One icosahedron, 20 spherical faces, same object at all distances.
+- Camera = carrier `pos` + parallel-transported `up`; always faces centre.
+- Cursor keys move carrier only; mouse rotates object only.
+- Unproject screen points to the actual sphere surface with `-focal` ray direction.
+- Fixed focal length; zoom changes carrier radius.
+- Render the front surface only; no back faces/edges.
+- Test both numbers and live visuals before claiming a fix.
+
+### Must not
+
+- Do not use Euler/clamped camera pitch or accumulate camera roll.
 - Do not merge object and camera transforms.
-- Do not use optical zoom (`camera.zoom`) — zoom is the carrier radius.
+- Do not use incremental screen rotation for the dragged surface point.
+- Do not use optical zoom or scale the projection.
+- Do not draw a generated surface mesh or hidden back edges.
+- Do not call a pixel-coverage test “visual proof” by itself.

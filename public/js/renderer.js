@@ -764,7 +764,7 @@ export class IcosaRenderer {
       this._drawResourceMarkers(ctx);
     }
 
-    if (!this.surfaceView && hasCamera && cartoFade > 0.01) {
+    if (!this.surfaceView && !this.opaqueSurface && hasCamera && cartoFade > 0.01) {
       this._drawGraticule(ctx, camera, cartoFade);
       this._drawPoles(ctx, camera, cx, cy, cartoFade);
     }
@@ -1439,7 +1439,7 @@ export class IcosaRenderer {
 
     // --- Back hemisphere wireframe (cheap hologram scaffold). --------
     const backFade = clamp(1 - (this._zoom - 6) / 8, 0, 1);
-    if (!this.surfaceView && backFade > 0.02) {
+    if (!this.surfaceView && !this.opaqueSurface && backFade > 0.02) {
       const backPath = new Path2D();
       let backCount = 0;
       if (nf <= 800) {
@@ -1500,6 +1500,7 @@ export class IcosaRenderer {
         // fan. culling is by angular distance from the camera's surface origin.
         const origin = camera && camera.origin;
         if (origin && e.centroid.x * origin.x + e.centroid.y * origin.y + e.centroid.z * origin.z < 0.35) continue;
+        if (this.opaqueSurface && origin && e.centroid.x * origin.x + e.centroid.y * origin.y + e.centroid.z * origin.z <= 0) continue;
         if (!this._projectEntry(e, camera, W, H)) continue;
         let sumZ = 0;
         for (let k = 0; k < e.n; k += 1) sumZ += e.pz[k];
@@ -1509,6 +1510,7 @@ export class IcosaRenderer {
       }
       const c = e.centroid;
       const dotc = c.x * Kx + c.y * Ky + c.z * Kz;
+      if (this.opaqueSurface && dotc <= 0) continue;
       const ct = e.cosTheta;
       const st = e.sinTheta;
       if (dotc >= cosA * ct - sinA * st) {

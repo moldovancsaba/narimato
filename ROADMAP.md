@@ -1,6 +1,6 @@
 # NARIMATO — Roadmap & Delivery Audit
 
-**Current version:** `3.50.0`
+**Current version:** `3.57.0`
 **Audit window:** 2026-11-18 → 2026-11-19 (last 24 hours)
 **Live:** https://treasurer-record-flooring-mounting.trycloudflare.com
 
@@ -9,6 +9,11 @@ fixed, and what is still deliberately unfinished. It is more important than any
 single release note: if the code and this document disagree, fix one of them.
 
 ---
+
+## 0. Spherical viewer solution
+
+See [narimato-physics.md](narimato-physics.md) for the final carrier-camera/WebGL ray–sphere model,
+what was wrong before it, and the mathematical/visual acceptance evidence.
 
 ## 1. What we use, and why
 

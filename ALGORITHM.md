@@ -5,7 +5,7 @@
 > Sections 1–3 below are the geometry/numbering foundation; section 5 explains the adaptive tree.
 
 Everything here is implemented in [`public/js/shared/geometry.js`](public/js/shared/geometry.js),
-shared by the browser renderer, the click picker, and the Node game server.
+shared by the browser renderer, the click picker, the Node game server and the WebGL reference viewer.
 
 ## 0. Physics & interaction model
 
@@ -13,11 +13,13 @@ Authoritative source: [narimato-physics.md](narimato-physics.md). Geometry/contr
 
 - Object = the base 20-face spherical icosahedron; render the same triangles at every altitude.
 - Camera = carrier on a concentric orbit (`pos` + parallel-transported `up`); cursor keys move it
-  locally, wheel changes carrier radius.
+  locally, wheel changes carrier radius with fixed focal length.
 - Mouse rotates the object via exact surface-point follow:
   `axis = cross(P0,P1)`, `angle = acos(dot(P0,P1))`, `objectQ = axisAngle(axis,angle) · objectQ0`.
-- Unprojection: `dirCam = normalize(X, Y, -focal)` (negative Z into scene), then `unprojectView`.
-- Keep object and camera transforms separate.
+- Projection: `screen = W/2 + focal*dot(P,right)/depth`, with fixed focal; unprojection ray
+  `normalize(right*X + up*Y - pos*focal)`.
+- Reference viewer uses WebGL ray–sphere front-surface shading with analytic geodesic edge bands.
+- Full rationale and failure history: [narimato-physics.md](narimato-physics.md).
 
 ## 1. Base spherical icosahedron (regular)
 

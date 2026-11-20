@@ -12,6 +12,11 @@ Related:
 
 ---
 
+## Delivered reference solution
+
+The isolated spherical viewer is solved in [narimato-physics.md](narimato-physics.md): carrier
+`pos`+`up`, fixed-focal dolly, exact object point-follow, WebGL ray–sphere front-surface rendering.
+
 ## P0 — One planet, one scene, camera-only surface change
 
 ### D1. Delete the separate surface renderer; add a surface camera to `IcosaRenderer`

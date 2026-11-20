@@ -44,6 +44,12 @@ met; **Open** = not delivered; **Superseded** = changed after a correction.
 | 33 | **Make/update the task list** | Delivered | This document + DELIVERY_TASKS updated |
 | 35 | **Two-client surface acceptance** | **Delivered test harness** | `scripts/acceptance-two-client-surface.mjs`: two browsers join/surface, both see surface peers and robot server poses; no page errors. |
 
+## Delivered solution
+
+- [narimato-physics.md](narimato-physics.md) documents the final carrier-camera + WebGL ray–sphere
+  solution, the broken models (Euler/clamp, shared object/camera transform, optical zoom, back-edge
+  rendering), and the live/algorithmic acceptance evidence.
+
 ## Reconsidered priorities
 
 1. **D1/D2** — finish the single-renderer/HUD migration; remove the derived visual mesh and dedicated

@@ -189,10 +189,21 @@ resets its crust and releases new resources. The game never ends.
 - **Reports & sharing** — 1200×630 session card, shareable URL, all stats persisted.
 - **Zero runtime dependencies**, all UI/audio/visuals generated in code.
 
+## Spherical reference viewer
+
+- **`/icosahedron.html`** — isolated reference viewer for the single 20-face spherical icosahedron.
+- **Mouse drag rotates the object**; the grabbed surface point follows the cursor exactly.
+- **Cursor keys move the camera carrier** on a hidden concentric sphere: local Up/Down/Left/Right,
+  infinite over the poles, no clamp.
+- **Wheel/pinch changes the carrier radius** with a fixed focal length (real dolly, not optical zoom).
+- **WebGL ray–sphere shader** renders the front surface only; analytic icosahedron edges, no hidden
+  back faces/edges, no stars/halo/HUD.
+- Rationale, failure history and acceptance numbers: [narimato-physics.md](narimato-physics.md).
+
 ## Documentation & roadmap
 
 - [ROADMAP.md](ROADMAP.md)
-- [narimato-physics.md](narimato-physics.md) — authoritative camera/planet/cursor physics and interaction rules
+- [narimato-physics.md](narimato-physics.md) — authoritative solution: carrier camera, object drag, fixed-focal dolly, WebGL ray–sphere rendering, failure history and acceptance tests
 - [REQUESTS_24H.md](REQUESTS_24H.md) — request-by-request delivered/partial/open table.
 - [DELIVERY_TASKS.md](DELIVERY_TASKS.md) — file-level tasks, acceptance tests and delivery order.
 - [GUIDE.md](GUIDE.md) — shareable new-pilot guide.
@@ -233,18 +244,21 @@ lib/world-core.js         authoritative planet world, players, mining, persisten
 lib/planet-manager.js     multi-planet rooms, routing, escape, meteor, stories
 public/index.html         shell + intro/interlude/HUD markup
 public/js/app.js          client integration + game loop
-public/js/renderer.js     Canvas 2D spherical renderer
+public/js/renderer.js     Canvas 2D spherical game renderer
+public/icosahedron.html   isolated spherical-icosahedron viewer
+public/js/icosahedron-viewer.js  WebGL ray–sphere front-surface viewer
+public/js/shared/sphere-interaction.js  carrier/unprojection/shortest-arc math
 public/js/world.js        client adaptive tree
 public/js/ui.js           responsive DOM UI controller
 public/js/intro.js        cockpit launch cinematic
 public/js/interlude.js    interplanetary transit + meteor cinematic
 public/js/result-card.js  session report + share card
-public/js/shared/         geometry, planets, resources, mission rules
+public/js/shared/         geometry, planets, resources, mission, sphere interaction
 test/                     node:test suites
 media/                    screenshots used by docs
 ```
 
 ## Status
 
-Version **3.56.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.57.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.
