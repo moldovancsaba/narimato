@@ -13,12 +13,10 @@ await delay(400);
 
 const read = () => page.evaluate(() => {
   const v = window.__ICOSA_VIEW__;
-  const axis = v.camera.viewAxis();
+  const c = v.carrier();
   return {
-    q: v.camera._q,
-    axis,
-    distance: v.camera.distance,
-    carrier: { x: axis.x * v.camera.distance, y: axis.y * v.camera.distance, z: axis.z * v.camera.distance },
+    carrier: c,
+    distance: c.distance,
     objectQ: v.objectQ(),
   };
 });
@@ -40,14 +38,22 @@ const afterMouse = await read();
 
 const qNorm = (q) => Math.hypot(q.x, q.y, q.z, q.w);
 const objDifferent = Math.hypot(afterMouse.objectQ.x - mouseRef.objectQ.x, afterMouse.objectQ.y - mouseRef.objectQ.y, afterMouse.objectQ.z - mouseRef.objectQ.z, afterMouse.objectQ.w - mouseRef.objectQ.w);
-const camSame = Math.hypot(afterMouse.q.x - mouseRef.q.x, afterMouse.q.y - mouseRef.q.y, afterMouse.q.z - mouseRef.q.z, afterMouse.q.w - mouseRef.q.w);
+const camSame = Math.hypot(
+  afterMouse.carrier.pos.x - mouseRef.carrier.pos.x,
+  afterMouse.carrier.pos.y - mouseRef.carrier.pos.y,
+  afterMouse.carrier.pos.z - mouseRef.carrier.pos.z,
+  afterMouse.carrier.up.x - mouseRef.carrier.up.x,
+  afterMouse.carrier.up.y - mouseRef.carrier.up.y,
+  afterMouse.carrier.up.z - mouseRef.carrier.up.z,
+);
 const result = {
   beforeDistance: before.distance,
   afterUpDistance: afterUp.distance,
   afterLoopDistance: afterLoop.distance,
-  beforeCarrierLength: Math.hypot(before.carrier.x, before.carrier.y, before.carrier.z),
-  afterCarrierLength: Math.hypot(afterUp.carrier.x, afterUp.carrier.y, afterUp.carrier.z),
-  qNorm: qNorm(afterLoop.q),
+  beforeCarrierLength: Math.hypot(before.carrier.pos.x, before.carrier.pos.y, before.carrier.pos.z),
+  afterCarrierLength: Math.hypot(afterUp.carrier.pos.x, afterUp.carrier.pos.y, afterUp.carrier.pos.z),
+  carrierPosNorm: Math.hypot(afterLoop.carrier.pos.x, afterLoop.carrier.pos.y, afterLoop.carrier.pos.z),
+  carrierUpNorm: Math.hypot(afterLoop.carrier.up.x, afterLoop.carrier.up.y, afterLoop.carrier.up.z),
   objectChangedByMouse: objDifferent > 1e-6,
   cameraChangedByMouse: camSame > 1e-6,
   cameraDelta: camSame,
@@ -59,9 +65,9 @@ await browser.close();
 let failed = errors.length > 0;
 if (Math.abs(result.beforeDistance - result.afterUpDistance) > 1e-12) failed = true;
 if (Math.abs(result.beforeDistance - result.afterLoopDistance) > 1e-12) failed = true;
-if (Math.abs(result.beforeCarrierLength - result.beforeDistance) > 1e-9) failed = true;
-if (Math.abs(result.afterCarrierLength - result.afterUpDistance) > 1e-9) failed = true;
-if (Math.abs(result.qNorm - 1) > 1e-9) failed = true;
+if (Math.abs(result.beforeCarrierLength - 1) > 1e-9) failed = true;
+if (Math.abs(result.afterCarrierLength - 1) > 1e-9) failed = true;
+if (Math.abs(result.carrierPosNorm - 1) > 1e-9 || Math.abs(result.carrierUpNorm - 1) > 1e-9) failed = true;
 if (!result.objectChangedByMouse) failed = true;
 if (result.cameraChangedByMouse) failed = true;
 if (failed) process.exitCode = 1;

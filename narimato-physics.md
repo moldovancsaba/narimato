@@ -25,11 +25,12 @@
 One camera. It always sits on a **concentric orbit sphere** around the object centre.
 
 - The camera is fixed to a carrier point on that outer sphere.
+- The carrier has a position `pos` and a parallel-transported local `up` tangent.
 - **Zoom changes the carrier sphere radius** (`camera.distance`) with a **fixed focal length**;
   moving the carrier changes perspective/size like a real dolly, not a projection zoom.
-- The camera orbits freely and always faces the centre; zoom changes the carrier radius.
+- The camera always faces the centre; the projection uses the carrier frame.
 - “Space”, “flight”, “building” and “surface” are **the same object viewed by the same camera
-  orbit at a chosen orientation**, not different cameras with different distances.
+  carrier at a chosen position**, not different cameras.
 
 ### Camera orbit (cursor keys)
 
@@ -74,14 +75,15 @@ Screen → ray → sphere intersection:
 
 ```
 focal  = min(W,H) * SPHERE_SCREEN_FRACTION * CAMERA_DISTANCE  // fixed
-screenX = W/2 + focal * pv.x / (camera.distance - pv.z)
-screenY = H/2 - focal * pv.y / (camera.distance - pv.z)
+camera-space point: (dot(point,right), dot(point,up), dot(point,pos))
+depth = camera.distance - dot(point,pos)
+screenX = W/2 + focal * dot(point,right) / depth
+screenY = H/2 - focal * dot(point,up) / depth
 X = x - W/2
 Y = H/2 - y                      // screen Y is down; camera Y is up
 
-dirCam    = normalize(X, Y, -focal)      // NEGATIVE z: ray goes into the scene
-dirWorld  = camera.unprojectView(dirCam) // camera space → world space
-origin    = camera.viewAxis() * camera.distance
+dirWorld  = normalize(right*X + up*Y - pos*focal)
+origin    = pos * camera.distance
 ```
 
 Intersect the ray `origin + t·dirWorld` with the unit sphere centred at the origin:
@@ -101,9 +103,9 @@ grab returns `null` — dragging then does nothing.
 | Piece | Choice | Why |
 |---|---|---|
 | Object rotation | world-space quaternion `objectQ` | no gimbal lock, arbitrary orientation, shortest-arc |
-| Camera orbit | free quaternion (`camera.rotate` locally) | camera moves independently from object, no clamp |
+| Camera orbit | carrier `pos` + parallel-transported `up` | spherical-pane movement, no Euler/pole reversal |
 | Mouse | surface-point unprojection + shortest-arc quaternion | grabbed point follows cursor exactly |
-| Cursor keys | free camera quaternion | explicit local up/down/left/right, infinite orbit |
+| Cursor keys | `moveCarrier` | explicit local up/down/left/right, infinite orbit |
 | Zoom | `camera.distance` (carrier radius) | zoom dollies the carrier toward/away from the planet |
 | Geometry | `baseIcosahedron()` | one object, 20 spherical triangles |
 
@@ -113,10 +115,12 @@ grab returns `null` — dragging then does nothing.
   - `SphereCamera` quaternion orientation, `project()`, `unprojectView()`, `viewAxis()`,
     `beginVirtualTrackball()` / `virtualTrackballTo()` (kept for generic trackball use only).
 - `public/js/shared/orbit-controls.js`
-  - shared `applyScreenDrag`, `applyArrowKey`, `beginTrackball`, `dragTrackball`.
+  - shared `applyScreenDrag`, `applyArrowKey`, `beginTrackball`, `dragTrackball` (game input).
+- `public/js/shared/sphere-interaction.js`
+  - `carrierFrame`, `carrierProject`, `carrierUnproject`, `moveCarrier`; pure and tested.
 - `public/js/icosahedron-viewer.js`
-  - split `objectQ` (mouse) and free `camera` quaternion orbit (cursor keys);
-  - exact point-follow via `unprojectSphere()`.
+  - split `objectQ` (mouse) and carrier `pos`/`up` (cursor keys);
+  - exact point-follow via `carrierUnproject()`.
 - `public/js/app.js`
   - pointer input routes to the shared control primitives.
 
@@ -125,6 +129,8 @@ grab returns `null` — dragging then does nothing.
 - `test/orbit-controls.test.js` — drag direction, cursor-key direction, fixed orbit radius,
   virtual-trackball finiteness across poles.
 - `scripts/verify-icosahedron-controls.mjs` — browser-level numeric acceptance;
+- `scripts/verify-camera-carrier.mjs` — cursor keys change carrier only; mouse changes object only;
+  carrier radius/pos/up verified.
 - `scripts/verify-icosahedron-visual.mjs` — captures default/close/upside-down views and checks
   canvas coverage/background.
   - mouse-dragged surface point follows the cursor with error `< 0.01 px`;
@@ -136,8 +142,9 @@ Measured acceptance (1200×1200):
 - point-follow error Y: `7.054e-7 px`
 - visual acceptance: default/close/upside-down screenshots pass coverage/background checks
 - zoom: carrier `3.2 → 1.756` on wheel-up
-- cursor Up: view-axis Y `0.2667 → 0.4004` (camera up), yaw unchanged
-- 41× Up: quaternion norm `1.0`, no clamp/flip
+- carrier Up: 200 steps each move along previous local Up (`dot(delta, oldUp) > 0`), no reversals
+- carrier position/up remain unit length and tangent throughout
+- 41× Up: carrier position/up norm `1.0`, no clamp/flip
 
 ## 8. Do / do not
 

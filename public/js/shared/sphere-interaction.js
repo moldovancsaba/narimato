@@ -41,3 +41,70 @@ export function shortestArcQuat(p0, p1) {
 
 export const dotVec = dot;
 export const normVec = norm;
+
+/** Orthonormal camera frame on the carrier sphere. */
+export function carrierFrame(pos, up) {
+  const p = norm(pos);
+  let u = norm(up);
+  u = norm(sub(u, mul(p, dot(u, p))));
+  if (Math.hypot(u.x, u.y, u.z) < 1e-9) {
+    const seed = Math.abs(p.y) < 0.9 ? { x: 0, y: 1, z: 0 } : { x: 0, y: 0, z: 1 };
+    u = norm(sub(seed, mul(p, dot(seed, p))));
+  }
+  const right = norm(cross(u, p));
+  return { pos: p, up: u, right };
+}
+
+/** Fixed-focal projection from a carrier point; the camera always faces centre. */
+export function carrierProject(carrierDistance, focalPx, frame, point) {
+  const depth = carrierDistance - dot(point, frame.pos);
+  if (!(depth > 1e-9)) return { x: 0, y: 0, z: 0, visible: false };
+  return {
+    x: (focalPx * dot(point, frame.right)) / depth,
+    y: -(focalPx * dot(point, frame.up)) / depth,
+    z: dot(point, frame.pos),
+    visible: dot(point, frame.pos) > 0,
+    depth,
+  };
+}
+
+/** Screen ray -> sphere point from the carrier frame. */
+export function carrierUnproject(carrierDistance, focalPx, frame, xPx, yPx, width, height) {
+  const X = xPx - width / 2;
+  const Y = height / 2 - yPx;
+  const dir = norm(add(add(mul(frame.right, X), mul(frame.up, Y)), mul(frame.pos, -focalPx)));
+  const origin = mul(frame.pos, carrierDistance);
+  const b = 2 * dot(origin, dir);
+  const c = dot(origin, origin) - 1;
+  const disc = b * b - 4 * c;
+  if (!(disc >= 0)) return null;
+  const t = (-b - Math.sqrt(disc)) / 2;
+  if (!(t > 0)) return null;
+  return norm(add(origin, mul(dir, t)));
+}
+
+/** Move carrier on its sphere. dx=right/left, dy=up/down; no Euler/pole lock. */
+export function moveCarrier(frame, dx, dy, angle) {
+  const p = frame.pos;
+  const t = norm(add(mul(frame.right, dx), mul(frame.up, dy)));
+  if (Math.hypot(t.x, t.y, t.z) < 1e-12) return frame;
+  const a = angle;
+  const cos = Math.cos(a);
+  const sin = Math.sin(a);
+  const nextPos = norm(add(mul(p, cos), mul(t, sin)));
+  // Parallel transport up around the great-circle normal.
+  const axis = norm(cross(p, t));
+  const q = {
+    x: axis.x * Math.sin(-a / 2),
+    y: axis.y * Math.sin(-a / 2),
+    z: axis.z * Math.sin(-a / 2),
+    w: Math.cos(a / 2),
+  };
+  const rotate = (v) => {
+    const tx = 2 * (q.y * v.z - q.z * v.y);
+    const ty = 2 * (q.z * v.x - q.x * v.z);
+    const tz = 2 * (q.x * v.y - q.y * v.x);
+    return { x: v.x + q.w * tx + (q.y * tz - q.z * ty), y: v.y + q.w * ty + (q.z * tx - q.x * tz), z: v.z + q.w * tz + (q.x * ty - q.y * tx) };
+  };
+  return carrierFrame(nextPos, rotate(frame.up));
+}

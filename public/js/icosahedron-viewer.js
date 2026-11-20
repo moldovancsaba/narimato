@@ -5,7 +5,7 @@
  * - Wheel/pinch: changes the carrier sphere radius with fixed focal length (true dolly).
  */
 import { SphereCamera, SPHERE_SCREEN_FRACTION, CAMERA_DISTANCE, baseIcosahedron } from './shared/geometry.js';
-import { unprojectSphere as unprojectSurface, shortestArcQuat } from './shared/sphere-interaction.js';
+import { unprojectSphere as unprojectSurface, shortestArcQuat, carrierFrame, carrierProject, carrierUnproject, moveCarrier } from './shared/sphere-interaction.js';
 
 const canvas = document.getElementById('icosa-canvas');
 const ctx = canvas.getContext('2d');
@@ -23,8 +23,9 @@ const MAX_DISTANCE = 8.0;
 // Object rotation (mouse) as a world-space quaternion.
 let objectQ = { x: 0, y: 0, z: 0, w: 1 };
 
-// Camera orbit is a free quaternion; cursor keys rotate it locally with no pole clamp.
-const ORBIT_STEP = 28; // px passed to SphereCamera.rotate (0.006 rad/px)
+// Camera carrier: position + parallel-transported local up frame on the sphere.
+const ORBIT_STEP = 0.12; // radians per cursor press
+let carrier = carrierFrame(camera.viewAxis(), { x: 0, y: 1, z: 0 });
 
 let dpr = 1;
 let W = 1;
@@ -81,25 +82,22 @@ resize();
 
 /** Screen point -> visible unit-sphere surface point. */
 function focalPixels() {
-  // Fixed focal length: moving the carrier must change perspective, not scale.
+  // Fixed focal length: moving the carrier changes perspective, not optical zoom.
   return Math.min(W, H) * SPHERE_SCREEN_FRACTION * CAMERA_DISTANCE;
 }
 
 function projectPoint(v) {
-  const f = focalPixels();
-  const pv = qRotateVec(camera._q, v);
-  const depth = camera.distance - pv.z;
-  if (!(depth > 1e-9)) return { x: 0, y: 0, z: pv.z, visible: false };
+  const p = carrierProject(camera.distance, focalPixels(), carrier, v);
   return {
-    x: W / 2 + (f * pv.x) / depth,
-    y: H / 2 - (f * pv.y) / depth,
-    z: pv.z,
-    visible: pv.z > 0,
+    x: W / 2 + p.x,
+    y: H / 2 + p.y,
+    z: p.z,
+    visible: p.visible,
   };
 }
 
 function unprojectSphere(xPx, yPx) {
-  return unprojectSurface(camera, xPx, yPx, W, H, focalPixels());
+  return carrierUnproject(camera.distance, focalPixels(), carrier, xPx, yPx, W, H);
 }
 
 function draw() {
@@ -214,11 +212,11 @@ canvas.addEventListener('pointercancel', endPointer);
 
 window.addEventListener('keydown', (event) => {
   switch (event.key) {
-    // Local quaternion orbit: same Up direction forever, loops over poles, no clamp.
-    case 'ArrowLeft': camera.rotate(-ORBIT_STEP, 0); event.preventDefault(); break;
-    case 'ArrowRight': camera.rotate(ORBIT_STEP, 0); event.preventDefault(); break;
-    case 'ArrowUp': camera.rotate(0, ORBIT_STEP); event.preventDefault(); break;
-    case 'ArrowDown': camera.rotate(0, -ORBIT_STEP); event.preventDefault(); break;
+    // Carrier moves locally on the sphere; no Euler/pole lock.
+    case 'ArrowLeft': carrier = moveCarrier(carrier, -1, 0, ORBIT_STEP); event.preventDefault(); break;
+    case 'ArrowRight': carrier = moveCarrier(carrier, 1, 0, ORBIT_STEP); event.preventDefault(); break;
+    case 'ArrowUp': carrier = moveCarrier(carrier, 0, 1, ORBIT_STEP); event.preventDefault(); break;
+    case 'ArrowDown': carrier = moveCarrier(carrier, 0, -1, ORBIT_STEP); event.preventDefault(); break;
     default: break;
   }
 });
@@ -229,4 +227,4 @@ canvas.addEventListener('wheel', (event) => {
   camera.distance = carrierDistance;
 }, { passive: false });
 
-window.__ICOSA_VIEW__ = { camera, objectQ: () => objectQ, vertices, unprojectSphere, project: (v) => projectPoint(qRotateVec(objectQ, v)), orbit: () => ({ yaw: camera._yaw, pitch: camera._pitch, q: camera._q, viewAxis: camera.viewAxis() }), setObjectQ: (q) => { objectQ = qNorm(q); } };
+window.__ICOSA_VIEW__ = { camera, objectQ: () => objectQ, vertices, unprojectSphere, project: (v) => projectPoint(qRotateVec(objectQ, v)), carrier: () => ({ pos: { ...carrier.pos }, up: { ...carrier.up }, distance: camera.distance }), setObjectQ: (q) => { objectQ = qNorm(q); } };

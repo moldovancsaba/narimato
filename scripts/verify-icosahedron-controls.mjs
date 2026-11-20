@@ -44,15 +44,17 @@ for (let i = 0; i < 40; i += 1) { await page.keyboard.press('ArrowUp'); }
 await delay(120);
 const afterManyUp = await page.evaluate(() => ({
   y: window.__ICOSA_VIEW__.project(window.__ICOSA_VIEW__.vertices[4]).y,
-  q: window.__ICOSA_VIEW__.orbit().q,
+  carrier: window.__ICOSA_VIEW__.carrier(),
 }));
-const qNorm = Math.hypot(afterManyUp.q.x, afterManyUp.q.y, afterManyUp.q.z, afterManyUp.q.w);
+const c = afterManyUp.carrier;
+const posNorm = Math.hypot(c.pos.x, c.pos.y, c.pos.z);
+const upNorm = Math.hypot(c.up.x, c.up.y, c.up.z);
 
 const beforeDistance = await page.evaluate(() => window.__ICOSA_VIEW__.camera.distance);
 await page.mouse.wheel(0, -500);
 await delay(150);
 const afterDistance = await page.evaluate(() => window.__ICOSA_VIEW__.camera.distance);
-const result = { errX, errY, pointY, afterOneUp, afterManyUp: { y: afterManyUp.y, qNorm }, beforeDistance, afterDistance, errors };
+const result = { errX, errY, pointY, afterOneUp, afterManyUp: { y: afterManyUp.y, posNorm, upNorm }, beforeDistance, afterDistance, errors };
 console.log(JSON.stringify(result, null, 2));
 await browser.close();
 
@@ -60,6 +62,6 @@ let failed = false;
 if (errors.length) failed = true;
 if (errX > 0.01 || errY > 0.01) failed = true;
 if (!(afterOneUp > pointY)) failed = true; // camera up => object moves down on screen
-if (Math.abs(qNorm - 1) > 1e-9) failed = true;
+if (Math.abs(posNorm - 1) > 1e-9 || Math.abs(upNorm - 1) > 1e-9) failed = true;
 if (!(afterDistance < beforeDistance)) failed = true;
 if (failed) process.exitCode = 1;

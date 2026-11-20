@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { SphereCamera, baseIcosahedron } from '../public/js/shared/geometry.js';
-import { unprojectSphere, shortestArcQuat } from '../public/js/shared/sphere-interaction.js';
+import { unprojectSphere, shortestArcQuat, carrierFrame, carrierProject, carrierUnproject, moveCarrier } from '../public/js/shared/sphere-interaction.js';
 
 const apply = (q, v) => {
   const tx = 2 * (q.y * v.z - q.z * v.y);
@@ -55,4 +55,38 @@ test('camera orbit: Up remains finite for a full loop and does not change distan
     assert.ok(Number.isFinite(axis.x) && Number.isFinite(axis.y) && Number.isFinite(axis.z));
   }
   assert.equal(cam.distance, distance, 'cursor orbit does not change carrier radius');
+});
+
+test('carrier pane: Up/Down/Left/Right always move along the current local tangent', () => {
+  const dot = (a, b) => a.x * b.x + a.y * b.y + a.z * b.z;
+  let frame = carrierFrame({ x: 0, y: 0, z: 1 }, { x: 0, y: 1, z: 0 });
+  for (let i = 0; i < 200; i += 1) {
+    const old = frame;
+    frame = moveCarrier(frame, 0, 1, 0.12);
+    const delta = { x: frame.pos.x - old.pos.x, y: frame.pos.y - old.pos.y, z: frame.pos.z - old.pos.z };
+    assert.ok(dot(delta, old.up) > 0, `Up step ${i} moved along local Up`);
+    assert.ok(Math.abs(dot(frame.pos, frame.up)) < 1e-9);
+    assert.ok(Math.abs(Math.hypot(frame.pos.x, frame.pos.y, frame.pos.z) - 1) < 1e-9);
+    assert.ok(Math.abs(Math.hypot(frame.up.x, frame.up.y, frame.up.z) - 1) < 1e-9);
+  }
+  let r = carrierFrame({ x: 0, y: 0, z: 1 }, { x: 0, y: 1, z: 0 });
+  for (let i = 0; i < 80; i += 1) {
+    const old = r;
+    r = moveCarrier(r, 1, 0, 0.12);
+    const delta = { x: r.pos.x - old.pos.x, y: r.pos.y - old.pos.y, z: r.pos.z - old.pos.z };
+    assert.ok(dot(delta, old.right) > 0, `Right step ${i} moved along local Right`);
+  }
+});
+
+test('carrier projection and unprojection recover a visible surface point', () => {
+  const frame = carrierFrame({ x: 0, y: 0, z: 1 }, { x: 0, y: 1, z: 0 });
+  const focal = 480 * 3.2;
+  const v = { x: 0.2, y: 0.1, z: 0.97 };
+  const n = Math.hypot(v.x, v.y, v.z);
+  const unit = { x: v.x / n, y: v.y / n, z: v.z / n };
+  const s = carrierProject(3.2, focal, frame, unit);
+  const back = carrierUnproject(3.2, focal, frame, 600 + s.x, 600 + s.y, 1200, 1200);
+  assert.ok(back);
+  const err = Math.hypot(back.x - unit.x, back.y - unit.y, back.z - unit.z);
+  assert.ok(err < 1e-9, `carrier ray recovers point, err=${err}`);
 });
