@@ -245,5 +245,5 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.54.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.55.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.

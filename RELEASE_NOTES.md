@@ -1,5 +1,20 @@
 # NARIMATO — Release Notes
 
+## v3.55.0 — “Three Altitudes” (2026-11-20)
+
+- Added `scripts/render-three-altitudes.mjs`: **one `PlanetCamera` instance**, one active face set,
+  one renderer, three altitudes:
+  - orbit,
+  - commercial-flight height,
+  - building height, aimed at the horizon.
+- Saved renders: `media/planet-orbit.png`, `media/planet-flight.png`, `media/planet-building.png`.
+- No generated geometry/HUD.
+- 106/106 tests.
+
+Release: https://github.com/moldovancsaba/narimato/releases/tag/v3.55.0
+
+---
+
 ## v3.54.0 — “Planet Under The Triangles” (2026-11-20)
 
 - Surface camera now draws the **same cached planet-surface mesh underneath** the active-cell
