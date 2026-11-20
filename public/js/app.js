@@ -24,7 +24,7 @@ import { createSupplyDrop } from './supply-drop.js';
 import { createSurfaceMode } from './surface-mode.js';
 import { SurfaceCamera } from './shared/surface-camera.js';
 import './telemetry.js';
-import { HELP_SECTIONS } from './narrative-data.js';
+import { HELP_SECTIONS, captainLog } from './story-copy.js';
 
 const TOKEN_KEY = 'icosa.token';
 const TAG_KEY = 'icosa.tag';
@@ -95,9 +95,13 @@ let supplyRequestedKey = '';
 let lastSupplyEventKey = '';
 let lastDistressProgressKey = '';
 let captainLogHoldUntil = 0;
+let lastCaptainLogCue = null;
 let firstGuideTimer = 0;
+let guideNarrationTimer = 0;
+let guideNarrationToken = 0;
 let pendingAutoJoin = null;
 const missionReadyNotified = new Set();
+const GUIDE_CUE_IDS = Object.freeze(['guide-what', 'guide-how', 'guide-where', 'guide-leave']);
 
 const session = {
   startedAt: Date.now(),
@@ -128,6 +132,54 @@ function safeCall(obj, method, ...args) {
   return undefined;
 }
 
+/* ------------------------------------------------------------------ *
+ * Quick Guide narration (STR-01: four guide section cues)
+ * ------------------------------------------------------------------ */
+
+function stopGuideNarration() {
+  guideNarrationToken += 1;
+  if (guideNarrationTimer) clearTimeout(guideNarrationTimer);
+  guideNarrationTimer = 0;
+}
+
+/** Play the four Quick Guide section cues in order; cancel on close. */
+function startGuideNarration() {
+  if (!narrator) return;
+  stopGuideNarration();
+  const token = guideNarrationToken;
+  let index = 0;
+  const playNext = () => {
+    if (token !== guideNarrationToken || !narrator) return;
+    if (ui && !ui.isGuideOpen) return;
+    if (index >= GUIDE_CUE_IDS.length) return;
+    const cueId = GUIDE_CUE_IDS[index];
+    index += 1;
+    const ms = narrator.playCue(cueId, { speaker: 'QUICK GUIDE' });
+    if (index < GUIDE_CUE_IDS.length) {
+      guideNarrationTimer = setTimeout(playNext, Math.max(1200, ms + 320));
+    }
+  };
+  playNext();
+}
+
+function openGuide() {
+  if (!ui) return;
+  narrator.stop();
+  safeCall(ui, 'showGuide');
+  try {
+    localStorage.setItem('icosa.guideSeen', '1');
+  } catch {
+    /* private mode */
+  }
+  startGuideNarration();
+}
+
+function closeGuide() {
+  stopGuideNarration();
+  narrator.stop();
+  safeCall(ui, 'hideGuide');
+}
+
 function scheduleFirstGuide(delayMs = 700) {
   try {
     if (localStorage.getItem('icosa.guideSeen') === '1') return;
@@ -144,13 +196,7 @@ function scheduleFirstGuide(delayMs = 700) {
     const brief = document.getElementById('landing-brief');
     if (brief && !brief.hidden) return;
     if (!joined) return;
-    narrator.stop();
-    safeCall(ui, 'showGuide');
-    try {
-      localStorage.setItem('icosa.guideSeen', '1');
-    } catch {
-      /* private mode */
-    }
+    openGuide();
   }, Math.max(0, delayMs));
 }
 
@@ -556,20 +602,15 @@ function boot() {
   if (escapeBtn) escapeBtn.addEventListener('click', () => requestEscape());
   const escapeCenterBtn = document.getElementById('btn-escape-center');
   if (escapeCenterBtn) escapeCenterBtn.addEventListener('click', () => requestEscape());
-  function openGuide() {
-    narrator.stop();
-    safeCall(ui, 'showGuide');
-    try { localStorage.setItem('icosa.guideSeen', '1'); } catch { /* private mode */ }
-  }
   const helpBtn = document.getElementById('btn-help');
   if (helpBtn) helpBtn.addEventListener('click', () => openGuide());
   const guideStartBtn = document.getElementById('btn-guide-start');
-  if (guideStartBtn) guideStartBtn.addEventListener('click', () => safeCall(ui, 'hideGuide'));
+  if (guideStartBtn) guideStartBtn.addEventListener('click', () => closeGuide());
   const guideCloseBtn = document.getElementById('btn-guide-close');
-  if (guideCloseBtn) guideCloseBtn.addEventListener('click', () => safeCall(ui, 'hideGuide'));
+  if (guideCloseBtn) guideCloseBtn.addEventListener('click', () => closeGuide());
   const guideManualBtn = document.getElementById('btn-guide-manual');
   if (guideManualBtn) guideManualBtn.addEventListener('click', () => {
-    safeCall(ui, 'hideGuide');
+    closeGuide();
     safeCall(ui, 'showManual', HELP_SECTIONS);
   });
   const guideShareBtn = document.getElementById('btn-guide-share');
@@ -1183,6 +1224,7 @@ function handleSupplyEvent(msg) {
   clearDistressTimer();
   safeCall(ui, 'toast', message, 'good');
   setCaptainLogMessage('They heard us. A relief ship came down hard — the missing ore is scattered across the marked triangles. Go get it.', 30000);
+  if (narrator) narrator.playCue('event-relief', { speaker: 'SHIP AI' });
   if (supplyDrop) supplyDrop.show({ message, cells });
   safeCall(renderer, 'setSupplyMarkers', cells);
   const label = msg.impactLabel || cells[0]?.label;
@@ -1218,21 +1260,51 @@ function setCaptainLogMessage(text, holdMs = 22000) {
 }
 
 function captainLogFor(planet, progress) {
-  if (progress.ready) {
-    return `The drive is breathing again. We can leave ${planet.planetName} whenever you're ready — but the next world will ask for more.`;
-  }
   const missing = [];
   for (const objective of progress.objectives) {
     for (const item of objective.items) {
       if (item.done) continue;
       const left = Math.max(0, item.need - item.have);
-      if (left > 0) missing.push(`${left} ${item.name}${left === 1 ? '' : 's'}`);
+      if (left > 0) missing.push({ name: item.name, left });
     }
   }
-  if (!missing.length) {
-    return `We're still on ${planet.planetName}. The drive is almost there. Check the ship, then take us home.`;
+  return captainLog({
+    planetName: planet.planetName,
+    planetSource: planet.planetSource,
+    missing,
+    ready: progress.ready,
+  });
+}
+
+/** Which Captain's Log cue matches the current refit state. */
+function captainLogCueFor(progress) {
+  if (progress.ready) return 'log-ready';
+  for (const objective of progress.objectives) {
+    for (const item of objective.items) {
+      if (item.need > item.have) return 'log-grounded';
+    }
   }
-  return `We're grounded on ${planet.planetName} — ${planet.planetSource || 'somewhere far from home'}. The drive still needs ${missing.join(' and ')}. The crust can give it to us.`;
+  return 'log-almost';
+}
+
+/**
+ * Narrate the Captain's Log on state transitions only, never over other
+ * narration (STR-01: three log cues). The first observation after boot is
+ * silent so the intro/landing keeps its own voice.
+ */
+function narrateCaptainLog(progress) {
+  const cueId = captainLogCueFor(progress);
+  if (lastCaptainLogCue === null) {
+    lastCaptainLogCue = cueId;
+    return;
+  }
+  if (lastCaptainLogCue === cueId) return;
+  lastCaptainLogCue = cueId;
+  if (!joined || !narrator || narrator.speaking) return;
+  if (intro && intro.active) return;
+  if (interlude && interlude.active) return;
+  if (ui && (ui.isGuideOpen || ui.isManualOpen)) return;
+  narrator.playCue(cueId, { speaker: "CAPTAIN'S LOG" });
 }
 
 function refreshMission() {
@@ -1245,6 +1317,7 @@ function refreshMission() {
   safeCall(ui, 'updateCargo', counts);
   if (Date.now() >= captainLogHoldUntil) {
     safeCall(ui, 'setCaptainLog', captainLogFor(planet, progress));
+    narrateCaptainLog(progress);
   }
   safeCall(ui, 'setPlanet', {
     planetIndex: planet.planetIndex,
@@ -1252,6 +1325,7 @@ function refreshMission() {
     planetName: planet.planetName,
     planetSource: planet.planetSource,
   });
+  safeCall(ui, 'setGuideThreshold', threshold());
   safeCall(ui, 'setEscapeReady', progress.ready && !(interlude && interlude.active), planet.mission.name);
   if (progress.ready && player && !missionReadyNotified.has(`${planet.planetIndex}:${player.id}`)) {
     missionReadyNotified.add(`${planet.planetIndex}:${player.id}`);
@@ -1447,7 +1521,7 @@ function handleIncidentEvent(msg) {
   safeCall(ui, 'toast', message, 'warn');
   setCaptainLogMessage(description || message, 26000);
   if (interlude && !interlude.active) interlude.incident(kind, title, message, description);
-  maybeTip(kind === 'meteor' ? 'tip-meteor' : 'tip-incident', { delay: 1800, speaker: 'SHIP AI' });
+  if (narrator) narrator.playCue(`event-incident-${kind}`, { speaker: 'SHIP AI' });
   setTimeout(async () => {
     await reloadWorld();
     refreshMission();
@@ -2557,7 +2631,7 @@ window.__ICOSA__ = {
     context: audio && audio._ctx ? audio._ctx.state : null,
   }),
   manual: () => safeCall(ui, 'showManual', HELP_SECTIONS),
-  guide: () => safeCall(ui, 'showGuide'),
+  guide: () => openGuide(),
   surface: () => enterSurfaceMode(),
   surfaceMode: () => (surface ? { active: surface.active, phase: surface.phase } : null),
   surfaceDebug: () => (surface ? surface.debug() : null),

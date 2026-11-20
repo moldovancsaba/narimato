@@ -98,15 +98,21 @@ resets its crust and releases new resources. The game never ends.
   you left it. Arrow keys travel the other way (cursor left rotates the planet right). Wheel/pinch
   zoom eases into its target instead of snapping.
 - **Narration & subtitles** — slow, deliberate prerecorded voice-over delivered **one sentence at
-  a time**, with a short pause between lines, for the story, tips, Field Manual and every
-  interplanetary story. **VOICE** and **CC** toggle independently and remember your choice;
-  subtitles work even when autoplay blocks the first audio line.
+  a time**, with a short pause between lines, for the story, tips, Field Manual, every
+  interplanetary story, emergency relief drops, all four catastrophes, the Quick Guide and the
+  Captain's Log (40 cues, 115 sentence units per voice). **VOICE** and **CC** toggle
+  independently and remember your choice; subtitles work even when autoplay blocks the first
+  audio line.
 - **Three narrator voices** — open-source **GEORGE** (Kokoro-82M, default), British **DANIEL** or US
   **SAMANTHA**, selectable in the Field Manual. See [VOICE.md](VOICE.md) for the voice pipeline and
   open-source TTS options (Kokoro, Piper).
 - **Narration load management** — first sentences are idle-prefetched with limited concurrency,
-  the next sentence is warmed while the current one plays, and voice assets are versioned and
-  cached immutably, so sentence transitions do not stall on the network.
+  the next sentence is warmed while the current one plays, and voice assets carry a
+  content-derived version (`<package version>+<content hash8>`) served immutably, so sentence
+  transitions do not stall and a replaced clip is never stale.
+- **One copy contract** — `public/js/story-copy.js` renders the Quick Guide, Field Manual,
+  incident copy and Captain's Log; marked blocks keep `GUIDE.md` and `GAMEPLAY.md` in sync, with a
+  `copy:check` gate that fails CI on drift. See [GUIDE.md](GUIDE.md), [GAMEPLAY.md](GAMEPLAY.md).
 - **Field Manual** — an in-game guide to the story, mining, contest lock, planets, navigation and
   controls, with a PLAY button on each section.
 - **Contextual tips** — one-time narrated hints for first mining, red locked cells, ore discovery,
@@ -239,7 +245,7 @@ repository status documents. The repository owns durable technical knowledge and
 
 ## Development
 
-The node:test suite currently runs <!-- test-count:144 -->144<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
+The node:test suite currently runs <!-- test-count:178 -->178<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 ```
 npm test                 # node:test suite, no dependencies

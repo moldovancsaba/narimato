@@ -3,7 +3,8 @@
  * NARIMATO — version SSOT checker (issue SSOT-03).
  *
  * One declaration (`package.json.version`) drives every app-lineage slot; the audio
- * lineage is declared once by `AUDIO_VERSION` in `public/js/narrator.js` and validated
+ * lineage is declared once by the generated `AUDIO_VERSION` in
+ * `public/js/audio-version.js` (package version + content hash) and validated
  * separately. Zero dependencies.
  *
  * Usage:
@@ -58,21 +59,21 @@ export const APP_SLOTS = [
 
 /** Slots owned by the audio lineage; the narrator declaration is the source of truth. */
 export const AUDIO_DECLARATION = {
-  file: 'public/js/narrator.js',
-  pattern: /(const AUDIO_VERSION = ')([^']+)(')/g,
+  file: 'public/js/audio-version.js',
+  pattern: /(export const AUDIO_VERSION = ')([^']+)(')/g,
 };
 export const AUDIO_SLOTS = [
   {
     file: 'VOICE.md',
     label: 'voice documentation example',
-    pattern: /(\?v=)(\d+\.\d+\.\d+)/g,
+    pattern: /(\?v=)(\d+\.\d+\.\d+\+[0-9a-f]{8})/g,
     template: '$1__VERSION__',
     optional: true,
   },
   {
     file: 'EDGE_DEPLOYMENT.md',
     label: 'edge deployment example',
-    pattern: /(\?v=)(\d+\.\d+\.\d+)/g,
+    pattern: /(\?v=)(\d+\.\d+\.\d+\+[0-9a-f]{8})/g,
     template: '$1__VERSION__',
     optional: true,
   },

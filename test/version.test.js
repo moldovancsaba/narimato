@@ -15,7 +15,13 @@ import {
   readAudioDeclaration,
 } from '../scripts/check-version.mjs';
 
-function fixtureRoot({ version = '3.57.0', audio = '3.16.0', voice = '3.16.0', edge = '3.16.0', omitDocs = false } = {}) {
+function fixtureRoot({
+  version = '3.57.0',
+  audio = '3.57.0+9f2c1ab4',
+  voice = '3.57.0+9f2c1ab4',
+  edge = '3.57.0+9f2c1ab4',
+  omitDocs = false,
+} = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'narimato-version-'));
   const write = (file, text) => {
     fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
@@ -32,7 +38,7 @@ function fixtureRoot({ version = '3.57.0', audio = '3.16.0', voice = '3.16.0', e
   );
   write('public/icosahedron.html', `<script type="module" src="/js/icosahedron-viewer.js?v=${version}"></script>`);
   write('README.md', `Version **${version}** · MIT\n`);
-  write('public/js/narrator.js', `const AUDIO_VERSION = '${audio}';\n`);
+  write('public/js/audio-version.js', `export const AUDIO_VERSION = '${audio}';\n`);
   if (!omitDocs) {
     write('VOICE.md', `Assets are served versioned (\`?v=${voice}\`) with immutable cache headers.\n`);
     write('EDGE_DEPLOYMENT.md', `Audio URLs are versioned: \`/audio/voice/x.m4a?v=${edge}\`.\n`);
@@ -51,9 +57,9 @@ test('compareSemver orders releases and pre-releases', () => {
 });
 
 test('readDeclaration and readAudioDeclaration return the declared versions', () => {
-  const root = fixtureRoot({ version: '4.1.0', audio: '3.20.1' });
+  const root = fixtureRoot({ version: '4.1.0', audio: '3.20.1+abcdef12' });
   assert.equal(readDeclaration(root), '4.1.0');
-  assert.equal(readAudioDeclaration(root), '3.20.1');
+  assert.equal(readAudioDeclaration(root), '3.20.1+abcdef12');
 });
 
 test('inspectSlot distinguishes zero, one and many matches', () => {
@@ -67,11 +73,11 @@ test('inspectSlot distinguishes zero, one and many matches', () => {
 });
 
 test('scanVersion reports stale slots and skips optional missing documents', () => {
-  const root = fixtureRoot({ version: '3.57.0', voice: '3.6.0', edge: '3.6.0' });
+  const root = fixtureRoot({ version: '3.57.0', voice: '3.57.0+00000000', edge: '3.57.0+00000000' });
   const report = scanVersion(root);
   assert.equal(report.ok, false);
   assert.equal(report.declaration, '3.57.0');
-  assert.equal(report.audioDeclaration, '3.16.0');
+  assert.equal(report.audioDeclaration, '3.57.0+9f2c1ab4');
   const stale = report.results.filter((result) => !result.ok).map((result) => result.slot.file);
   assert.deepEqual(stale.sort(), ['EDGE_DEPLOYMENT.md', 'VOICE.md']);
   const optionalRoot = fixtureRoot({ omitDocs: true });
@@ -79,12 +85,12 @@ test('scanVersion reports stale slots and skips optional missing documents', () 
 });
 
 test('fixVersion rewrites stale slots and refuses ambiguous ones', () => {
-  const root = fixtureRoot({ voice: '3.6.0', edge: '3.6.0' });
+  const root = fixtureRoot({ voice: '3.57.0+00000000', edge: '3.57.0+00000000' });
   const fixed = fixVersion(root);
   assert.equal(fixed.ok, true);
   assert.equal(fixed.fixed.length, 2);
   assert.equal(scanVersion(root).ok, true);
-  assert.match(fs.readFileSync(path.join(root, 'VOICE.md'), 'utf8'), /\?v=3\.16\.0/);
+  assert.match(fs.readFileSync(path.join(root, 'VOICE.md'), 'utf8'), /\?v=3\.57\.0\+9f2c1ab4/);
 
   const ambiguous = fixtureRoot();
   fs.appendFileSync(path.join(ambiguous, 'README.md'), 'Version **3.57.0** again\n');

@@ -7,6 +7,9 @@
 > **Related delivery issues:** [A11Y-02](https://github.com/moldovancsaba/narimato/issues/13) · [SRV-02](https://github.com/moldovancsaba/narimato/issues/21) · [SRV-04](https://github.com/moldovancsaba/narimato/issues/23) · [RND-07](https://github.com/moldovancsaba/narimato/issues/24) · [CTL-04](https://github.com/moldovancsaba/narimato/issues/29) · [CTL-05](https://github.com/moldovancsaba/narimato/issues/30) · [EVT-02](https://github.com/moldovancsaba/narimato/issues/33) · [EVT-03](https://github.com/moldovancsaba/narimato/issues/34) · [STR-02](https://github.com/moldovancsaba/narimato/issues/36)
 <!-- delivery-ssot:end -->
 
+> **Generated blocks:** the marked prose in this document is rendered from
+> `public/js/story-copy.js`; edit the module and run `node scripts/sync-story-copy.mjs --write`.
+
 ## The story
 
 You are a pilot. A wormhole accident throws your ship to the far side of the universe. The game
@@ -44,9 +47,10 @@ to a different tag creates/restores a different pilot; the browser remembers one
 
 - Click/tap a triangle: unclaimed → **claim**, rival-owned → **steal**, yours → **reinforce**.
   Every click adds charge to that cell.
-- At the planet's click threshold — **4 on the first planet**, 8 on later planets — that single
-  triangle breaks into four smaller spherical triangles. Children inherit the owner and start charging from 0. Other cells are
-  unaffected.
+- **Click threshold:**
+  <!-- story-copy:start gameplay-mining -->
+  Each planet has **one break threshold**: **4 clicks** on the first world, **8** on deeper worlds. At the threshold, that single triangle breaks into four smaller spherical triangles; children inherit the owner and start charging from 0.
+  <!-- story-copy:end gameplay-mining -->
 - **Contest lock:** after your own click on a cell, it turns **red** to show it is locked to you
   and only others can mine it. When another operator (human or robot) clicks it, the red clears and
   you can mine it again. A locked click shows `CELL LOCKED // CONTEST REQUIRED` once — no repeated
@@ -113,18 +117,18 @@ the second level.
 
 - Each planet is its own **multiplayer scene**: its own players, robot(s), leaderboard, grid and
   resource deposits. You only see/fight people on your planet.
-- **Emergency relief:** if the refit makes no progress for two minutes, a relief ship crashes onto
-  the planet and scatters the missing ore across nearby triangles. Those deposits are marked with
-  salvage rings and are mineable on the first successful click. The drop is **planet-wide**: every
-  human on the world sees the marked cells, their view turns toward the impact, and anyone can
-  harvest the ore — it is a race. If the parts remain missing, another relief ship can arrive after
-  each two-minute window.
-- **Rare parts:** every refit includes at least one rare material; look for the **RARE** marker.
-  Early planets are deliberately gentle: planets 1–2 need exactly one rare unit, planet 3 up to
-  two, planet 4 up to three, then the deeper worlds ramp up.
-- **Quick Guide:** the first landing offers a one-screen answer to **what to mine**, **how to
-  mine**, **where to dig** and **how to leave**; the same card is behind **GUIDE** and at
-  `?guide=1` for sharing.
+- **Emergency relief:**
+  <!-- story-copy:start gameplay-relief -->
+  If the refit makes no progress for two minutes, a relief ship crashes onto the planet and scatters the missing ore across nearby triangles. The deposits are marked with salvage rings and are mineable on the first successful click. The drop is **planet-wide**: every human sees the marked cells, and anyone can harvest the ore — it is a race. Another ship can arrive after each two-minute window while parts are missing.
+  <!-- story-copy:end gameplay-relief -->
+- **Rare parts:**
+  <!-- story-copy:start gameplay-rare -->
+  Every refit includes at least one rare material; look for the **RARE** marker. Early planets are deliberately gentle: planets 1–2 need exactly one rare unit, planet 3 up to two, planet 4 up to three, then the deeper worlds ramp up.
+  <!-- story-copy:end gameplay-rare -->
+- **Quick Guide:**
+  <!-- story-copy:start gameplay-quick-guide -->
+  The first landing offers a one-screen answer to **what to mine**, **how to mine**, **where to dig** and **how to leave**; the same card is behind **GUIDE** and at `?guide=1` for sharing.
+  <!-- story-copy:end gameplay-quick-guide -->
 - **Planet character:** each world has its own major/secondary colour palette that tints the
   surface, atmosphere and HUD identity.
 - **Planetary incidents:** when the last hidden deposit is mined, the exhausted planet ends in a
@@ -133,6 +137,12 @@ the second level.
   the damage and the newly exposed resources, then resets/reseeds the crust with new resources.
   The Captain’s Log keeps the explanation after the overlay clears. Players, scores and inventories survive. The screen shakes,
   the meteor overlay announces `METEOR IMPACT // NEW RESOURCES AVAILABLE`, and mining continues.
+  <!-- story-copy:start gameplay-incidents -->
+  - **METEOR IMPACT** — A rogue meteor punched through the surface. The old tunnels are gone, but the crater cracked open fresh ore veins and threw rare material across the ground. Get down there and salvage what the rock is hiding.
+  - **NUCLEAR WAR** — Atomic fire swept the planet from horizon to horizon. The blast waves split the crust and exposed new materials. The survivors are already picking through the rubble.
+  - **SOLAR FLARE** — The local star lashed out and cooked the daylight side. The magnetic storm peeled back rock and scattered rare elements across the new ground. The ore is close.
+  - **ALIEN INVASION** — An alien fleet razed the planet from orbit. Their beams demolished the old surface and scattered new materials across the wreckage. Whatever they wanted, they left plenty behind for us.
+  <!-- story-copy:end gameplay-incidents -->
 - **Carried ore:** your full ore inventory (all materials, ore counts and total ore value) travels
   with you when you escape. It is available immediately on the next planet and counts toward that
   planet's refit, so stockpiling can pay off. The **CARGO // ALL MATERIALS** panel shows everything
@@ -161,10 +171,10 @@ the second level.
 NARIMATO behaves like a streaming player: **VOICE** and **CC** are independent toggles in the top
 status bar, and both remember your choice.
 
-- **VOICE** plays prerecorded narration: the cockpit story, context tips, Field Manual sections and
-  the random interplanetary story after every escape. Narration is deliberately slow and plays
-  **one sentence at a time**, with a short breath pause between sentences; CC follows the same
-  sentence units.
+- **VOICE** plays prerecorded narration: the cockpit story, context tips, Field Manual sections,
+  the random interplanetary story after every escape, emergency relief drops, each catastrophe,
+  the Quick Guide and the Captain's Log. Narration is deliberately slow and plays **one sentence
+  at a time**, with a short breath pause between sentences; CC follows the same sentence units.
 - **CC** shows the same lines as subtitles. They appear immediately even if the browser blocks
   autoplay until your first tap/click. Speech clips are prefetched in the background (first line of
   each cue at idle, then the next sentence while the current one plays) so a slow connection does
@@ -173,8 +183,10 @@ status bar, and both remember your choice.
   controls and audio. Each section has a **▶ PLAY** button. Under **NARRATOR** you can switch
   between **GEORGE** (open-source Kokoro, default), British **DANIEL** and US **SAMANTHA**; the
   choice is remembered.
-- **Captain's Log:** the refit panel tells you, in plain language, what the ship still needs and
-  when the relief ship is due.
+- **Captain's Log:**
+  <!-- story-copy:start gameplay-captain-log -->
+  The log tells you in plain language what the ship still needs, for example "We're grounded on TATOOINE — STAR WARS. The drive still needs 2 Uranium and 1 Palladium. The crust can give it to us."
+  <!-- story-copy:end gameplay-captain-log -->
 
 - First-time hints are one-time and can be replayed from the manual. Story interplanetary narration
   extends the transit screen so the story is not cut off.
