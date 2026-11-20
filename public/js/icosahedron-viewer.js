@@ -1,10 +1,11 @@
 /**
  * Interactive spherical icosahedron.
  * - Mouse drag: the grabbed SURFACE POINT follows the cursor exactly.
- * - Cursor keys: the camera moves on a fixed-radius orbit; Up flies straight down.
- * - Wheel/pinch: optical zoom.
+ * - Cursor keys: the camera carrier moves on a free orbit; Up continues up locally.
+ * - Wheel/pinch: changes the carrier sphere radius (dolly).
  */
 import { SphereCamera, SPHERE_SCREEN_FRACTION, CAMERA_DISTANCE, baseIcosahedron } from './shared/geometry.js';
+import { unprojectSphere as unprojectSurface, shortestArcQuat } from './shared/sphere-interaction.js';
 
 const canvas = document.getElementById('icosa-canvas');
 const ctx = canvas.getContext('2d');
@@ -18,7 +19,6 @@ camera.reset();
 let carrierDistance = CAMERA_DISTANCE;
 const MIN_DISTANCE = 1.3;
 const MAX_DISTANCE = 8.0;
-camera.zoom = 1;
 
 // Object rotation (mouse) as a world-space quaternion.
 let objectQ = { x: 0, y: 0, z: 0, w: 1 };
@@ -79,25 +79,9 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
-/** Screen point to a point on the visible unit-sphere surface. */
+/** Screen point -> visible unit-sphere surface point. */
 function unprojectSphere(xPx, yPx) {
-  // Must use the same base projection radius as camera.project(); the exact
-  // silhouette radius is only for drawing the sphere disk.
-  const radius = Math.min(W, H) * SPHERE_SCREEN_FRACTION * camera.zoom;
-  const focal = radius * camera.distance;
-  const X = xPx - W / 2;
-  const Y = H / 2 - yPx;
-  // Camera-space ray direction: X/Z = px, Y/Z = py with focal length radius*distance.
-  const dirCam = vecNorm({ x: X, y: Y, z: -focal });
-  const dirWorld = camera.unprojectView(dirCam);
-  const origin = vecMul(vecNorm(camera.viewAxis()), camera.distance);
-  const b = 2 * vecDot(origin, dirWorld);
-  const c = vecDot(origin, origin) - 1;
-  const disc = b * b - 4 * c;
-  if (disc < 0) return null;
-  const t = (-b - Math.sqrt(disc)) / 2;
-  if (!(t > 0)) return null;
-  return vecNorm(vecAdd(origin, vecMul(dirWorld, t)));
+  return unprojectSurface(camera, xPx, yPx, W, H);
 }
 
 function draw() {
@@ -125,35 +109,30 @@ function draw() {
   ctx.arc(cx, cy, radius, 0, Math.PI * 2);
   ctx.clip();
   ctx.strokeStyle = 'rgba(7,20,30,0.92)';
-  ctx.lineWidth = 2.6;
-  // All 30 unique icosahedron edges as continuous great-circle arcs.
+  ctx.lineWidth = 2.4;
   const edgeSet = new Set();
-  const edges = [];
   for (const [ia, ib, ic] of faces) {
     for (const [a, b] of [[ia, ib], [ib, ic], [ic, ia]]) {
       const key = a < b ? `${a}:${b}` : `${b}:${a}`;
       if (edgeSet.has(key)) continue;
       edgeSet.add(key);
-      edges.push([a, b]);
+      const p = vecNorm(qRotateVec(objectQ, vertices[a]));
+      const q = vecNorm(qRotateVec(objectQ, vertices[b]));
+      ctx.beginPath();
+      for (let i = 0; i <= 32; i += 1) {
+        const t = i / 32;
+        const d = Math.max(-1, Math.min(1, vecDot(p, q)));
+        const theta = Math.acos(d) * t;
+        const sin = Math.sin(theta);
+        const r = vecSub(q, vecMul(p, d));
+        const rl = Math.hypot(r.x, r.y, r.z) || 1;
+        const v = vecNorm(vecAdd(vecMul(p, Math.cos(theta)), vecMul(r, sin / rl)));
+        const pr = camera.project(v);
+        if (i === 0) ctx.moveTo(pr.x, pr.y);
+        else ctx.lineTo(pr.x, pr.y);
+      }
+      ctx.stroke();
     }
-  }
-  for (const [ia, ib] of edges) {
-    const p = vecNorm(qRotateVec(objectQ, vertices[ia]));
-    const q = vecNorm(qRotateVec(objectQ, vertices[ib]));
-    ctx.beginPath();
-    for (let i = 0; i <= 32; i += 1) {
-      const t = i / 32;
-      const d = Math.max(-1, Math.min(1, vecDot(p, q)));
-      const theta = Math.acos(d) * t;
-      const sin = Math.sin(theta);
-      const r = vecSub(q, vecMul(p, d));
-      const rl = Math.hypot(r.x, r.y, r.z) || 1;
-      const v = vecNorm(vecAdd(vecMul(p, Math.cos(theta)), vecMul(r, sin / rl)));
-      const pr = camera.project(v);
-      if (i === 0) ctx.moveTo(pr.x, pr.y);
-      else ctx.lineTo(pr.x, pr.y);
-    }
-    ctx.stroke();
   }
   ctx.restore();
 }
@@ -192,11 +171,8 @@ canvas.addEventListener('pointermove', (event) => {
   if (!pointer || pointer.id !== event.pointerId || !grab) return;
   const p1 = unprojectSphere(event.clientX, event.clientY);
   if (!p1) return;
-  // Shortest rotation taking the grabbed surface point to the cursor point.
-  const axis = vecCross(grab.p0, p1);
-  const angle = Math.acos(Math.max(-1, Math.min(1, vecDot(grab.p0, p1))));
-  if (angle < 1e-6 || Math.hypot(axis.x, axis.y, axis.z) < 1e-9) return;
-  const delta = qAxisAngle(vecNorm(axis), angle);
+  // Shared tested shortest-arc rotation from grabbed point to cursor point.
+  const delta = shortestArcQuat(grab.p0, p1);
   objectQ = qNorm(qMul(delta, grab.q0));
 });
 
@@ -226,7 +202,7 @@ window.addEventListener('keydown', (event) => {
 
 canvas.addEventListener('wheel', (event) => {
   event.preventDefault();
-  carrierDistance = Math.max(MIN_DISTANCE, Math.min(MAX_DISTANCE, carrierDistance * Math.exp(-event.deltaY * 0.0012)));
+  carrierDistance = Math.max(MIN_DISTANCE, Math.min(MAX_DISTANCE, carrierDistance * Math.exp(event.deltaY * 0.0012)));
   camera.distance = carrierDistance;
 }, { passive: false });
 

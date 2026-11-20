@@ -61,5 +61,5 @@ if (errors.length) failed = true;
 if (errX > 0.01 || errY > 0.01) failed = true;
 if (!(afterOneUp > pointY)) failed = true; // camera up => object moves down on screen
 if (Math.abs(qNorm - 1) > 1e-9) failed = true;
-if (!(afterDistance > beforeDistance)) failed = true;
+if (!(afterDistance < beforeDistance)) failed = true;
 if (failed) process.exitCode = 1;

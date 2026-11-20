@@ -36,13 +36,13 @@ Cursor keys move the camera, not the object.
 
 | Key | Effect |
 |---|---|
-| `Up` | camera flies **straight down** around the planet (pitch decreases) |
-| `Down` | camera flies straight up (pitch increases) |
+| `Up` | camera moves **up** in its current local orbit frame |
+| `Down` | camera moves down |
 | `Left` | camera orbits left |
 | `Right` | camera orbits right |
 
-- `Up`/`Down` must not change yaw.
-- The orbit is a **free quaternion**: `Up` keeps moving the camera up locally and loops over the
+- `Up`/`Down` work in the camera's local frame and must not jump when crossing a pole.
+- The orbit is a **free quaternion**: repeated `Up` keeps moving the camera up and loops over the
   pole; there is no pitch clamp.
 - Wheel/pinch changes the carrier sphere radius (`camera.distance`) within `[1.3, 8.0]`.
 
@@ -71,14 +71,14 @@ screen-axis rotation for the object; do not use an abstract arcball vector when 
 Screen → ray → sphere intersection:
 
 ```
-radius = min(W,H) * SPHERE_SCREEN_FRACTION * camera.zoom
-focal  = radius * CAMERA_DISTANCE
+radius = min(W,H) * SPHERE_SCREEN_FRACTION
+focal  = radius * camera.distance
 X = x - W/2
 Y = H/2 - y                      // screen Y is down; camera Y is up
 
 dirCam    = normalize(X, Y, -focal)      // NEGATIVE z: ray goes into the scene
 dirWorld  = camera.unprojectView(dirCam) // camera space → world space
-origin    = camera.viewAxis() * CAMERA_DISTANCE
+origin    = camera.viewAxis() * camera.distance
 ```
 
 Intersect the ray `origin + t·dirWorld` with the unit sphere centred at the origin:
@@ -98,9 +98,9 @@ grab returns `null` — dragging then does nothing.
 | Piece | Choice | Why |
 |---|---|---|
 | Object rotation | world-space quaternion `objectQ` | no gimbal lock, arbitrary orientation, shortest-arc |
-| Camera orbit | separate `orbitYaw` / `orbitPitch` | camera moves independently from object |
+| Camera orbit | free quaternion (`camera.rotate` locally) | camera moves independently from object, no clamp |
 | Mouse | surface-point unprojection + shortest-arc quaternion | grabbed point follows cursor exactly |
-| Cursor keys | `orbitYaw`/`orbitPitch` | explicit up/down/left/right camera orbit |
+| Cursor keys | free camera quaternion | explicit local up/down/left/right, infinite orbit |
 | Zoom | `camera.distance` (carrier radius) | zoom dollies the carrier toward/away from the planet |
 | Geometry | `baseIcosahedron()` | one object, 20 spherical triangles |
 
@@ -121,7 +121,9 @@ grab returns `null` — dragging then does nothing.
 
 - `test/orbit-controls.test.js` — drag direction, cursor-key direction, fixed orbit radius,
   virtual-trackball finiteness across poles.
-- `scripts/verify-icosahedron-controls.mjs` — browser-level acceptance:
+- `scripts/verify-icosahedron-controls.mjs` — browser-level numeric acceptance;
+- `scripts/verify-icosahedron-visual.mjs` — captures default/close/upside-down views and checks
+  canvas coverage/background.
   - mouse-dragged surface point follows the cursor with error `< 0.01 px`;
   - cursor Up keeps moving the camera up locally across the pole, quaternion normalised.
 
@@ -129,7 +131,9 @@ Measured acceptance (1200×1200):
 
 - point-follow error X: `5.061e-7 px`
 - point-follow error Y: `7.054e-7 px`
-- cursor Up: `yaw 0.55 → 0.55`, `pitch 0.27 → 0.22`
+- visual acceptance: default/close/upside-down screenshots pass coverage/background checks
+- cursor Up: view-axis Y `0.2667 → 0.4004` (camera up), yaw unchanged
+- 41× Up: quaternion norm `1.0`, no clamp/flip
 
 ## 8. Do / do not
 
