@@ -29,6 +29,16 @@ const qMul = (a, b) => ({
   w: a.w*b.w - a.x*b.x - a.y*b.y - a.z*b.z,
 });
 const qInv = (q) => ({ x: -q.x, y: -q.y, z: -q.z, w: q.w });
+const rotateAroundAxis = (v, axis, angle) => {
+  const a = normVec(axis);
+  const c = Math.cos(angle), s = Math.sin(angle);
+  const cr = vecCross(a, v);
+  const d = vecDot(a, v);
+  return { x: v.x * c + cr.x * s + a.x * d * (1 - c), y: v.y * c + cr.y * s + a.y * d * (1 - c), z: v.z * c + cr.z * s + a.z * d * (1 - c) };
+};
+const normVec = (v) => { const l = Math.hypot(v.x, v.y, v.z) || 1; return { x: v.x / l, y: v.y / l, z: v.z / l }; };
+const vecCross = (a, b) => ({ x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x });
+const vecDot = (a, b) => a.x * b.x + a.y * b.y + a.z * b.z;
 const qRotateVec = (q, v) => {
   const tx = 2 * (q.y * v.z - q.z * v.y);
   const ty = 2 * (q.z * v.x - q.x * v.z);
@@ -215,10 +225,11 @@ canvas.addEventListener('pointercancel', end);
 
 window.addEventListener('keydown', (event) => {
   switch (event.key) {
-    case 'ArrowLeft': carrier = moveCarrier(carrier, 1, 0, ORBIT_STEP); event.preventDefault(); break;
-    case 'ArrowRight': carrier = moveCarrier(carrier, -1, 0, ORBIT_STEP); event.preventDefault(); break;
-    case 'ArrowUp': carrier = moveCarrier(carrier, 0, 1, ORBIT_STEP); event.preventDefault(); break;
-    case 'ArrowDown': carrier = moveCarrier(carrier, 0, -1, ORBIT_STEP); event.preventDefault(); break;
+    // Car-like controls: Up/Down drive forward/back, Left/Right yaw the holder.
+    case 'ArrowLeft': carrier.up = rotateAroundAxis(carrier.up, carrier.pos, -ORBIT_STEP); event.preventDefault(); break;
+    case 'ArrowRight': carrier.up = rotateAroundAxis(carrier.up, carrier.pos, ORBIT_STEP); event.preventDefault(); break;
+    case 'ArrowUp': carrier = moveCarrier(carrier, 1, 0, ORBIT_STEP); event.preventDefault(); break;
+    case 'ArrowDown': carrier = moveCarrier(carrier, -1, 0, ORBIT_STEP); event.preventDefault(); break;
     default: break;
   }
 });
