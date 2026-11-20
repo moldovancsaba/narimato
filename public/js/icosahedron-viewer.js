@@ -14,7 +14,11 @@ const W0 = window.innerWidth;
 const H0 = window.innerHeight;
 const camera = new SphereCamera(W0, H0);
 camera.reset();
-const OBJECT_DISTANCE = CAMERA_DISTANCE;
+// Camera carrier sits on a hidden concentric sphere; zoom changes this radius.
+let carrierDistance = CAMERA_DISTANCE;
+const MIN_DISTANCE = 1.3;
+const MAX_DISTANCE = 8.0;
+camera.zoom = 1;
 
 // Object rotation (mouse) as a world-space quaternion.
 let objectQ = { x: 0, y: 0, z: 0, w: 1 };
@@ -77,14 +81,14 @@ resize();
 
 /** Screen point to a point on the visible unit-sphere surface. */
 function unprojectSphere(xPx, yPx) {
-  const radius = Math.min(W, H) * SPHERE_SCREEN_FRACTION * camera.zoom;
-  const focal = radius * OBJECT_DISTANCE;
+  const radius = Math.min(W, H) * SPHERE_SCREEN_FRACTION; // optical zoom is fixed; radius changes via camera.distance
+  const focal = radius * camera.distance;
   const X = xPx - W / 2;
   const Y = H / 2 - yPx;
   // Camera-space ray direction: X/Z = px, Y/Z = py with focal length radius*distance.
   const dirCam = vecNorm({ x: X, y: Y, z: -focal });
   const dirWorld = camera.unprojectView(dirCam);
-  const origin = vecMul(vecNorm(camera.viewAxis()), OBJECT_DISTANCE);
+  const origin = vecMul(vecNorm(camera.viewAxis()), camera.distance);
   const b = 2 * vecDot(origin, dirWorld);
   const c = vecDot(origin, origin) - 1;
   const disc = b * b - 4 * c;
@@ -102,7 +106,7 @@ function draw() {
 
   const cx = W / 2;
   const cy = H / 2;
-  const radius = Math.min(W, H) * SPHERE_SCREEN_FRACTION * camera.zoom;
+  const radius = Math.min(W, H) * SPHERE_SCREEN_FRACTION; // optical zoom is fixed; radius changes via camera.distance
   const sphere = ctx.createRadialGradient(cx - radius * 0.36, cy - radius * 0.36, radius * 0.08, cx, cy, radius);
   sphere.addColorStop(0, 'rgb(126,210,230)');
   sphere.addColorStop(0.68, 'rgb(57,132,162)');
@@ -171,7 +175,7 @@ canvas.addEventListener('pointermove', (event) => {
   if (pointers.size >= 2) {
     const [p, q] = [...pointers.values()];
     const dist = Math.hypot(p.x - q.x, p.y - q.y);
-    if (pinch > 0 && dist > 0) camera.zoom = Math.max(0.55, Math.min(7, camera.zoom * (dist / pinch)));
+    if (pinch > 0 && dist > 0) { carrierDistance = Math.max(MIN_DISTANCE, Math.min(MAX_DISTANCE, carrierDistance * (dist / pinch))); camera.distance = carrierDistance; }
     pinch = dist;
     return;
   }
@@ -212,7 +216,8 @@ window.addEventListener('keydown', (event) => {
 
 canvas.addEventListener('wheel', (event) => {
   event.preventDefault();
-  camera.zoom = Math.max(0.55, Math.min(7, camera.zoom * Math.exp(-event.deltaY * 0.0012)));
+  carrierDistance = Math.max(MIN_DISTANCE, Math.min(MAX_DISTANCE, carrierDistance * Math.exp(-event.deltaY * 0.0012)));
+  camera.distance = carrierDistance;
 }, { passive: false });
 
 window.__ICOSA_VIEW__ = { camera, objectQ: () => objectQ, vertices, unprojectSphere, project: (v) => camera.project(qRotateVec(objectQ, v)), orbit: () => ({ yaw: camera._yaw, pitch: camera._pitch, q: camera._q, viewAxis: camera.viewAxis() }), setObjectQ: (q) => { objectQ = qNorm(q); } };

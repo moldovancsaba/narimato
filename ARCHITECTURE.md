@@ -98,8 +98,8 @@ Authoritative rules live in [narimato-physics.md](narimato-physics.md):
 
 - One planet object: the base spherical icosahedron, same 20 triangles at every camera height; no
   per-camera generated mesh or LOD swap.
-- One camera on a **fixed-radius orbit**; cursor keys orbit the camera (Up = straight down),
-  wheel/pinch is optical zoom.
+- One camera on a **concentric carrier orbit**; cursor keys move the carrier (Up keeps moving up),
+  wheel/pinch changes the carrier radius (dolly).
 - Mouse rotates the **object**, not the camera, via exact surface-point unprojection + shortest-arc
   quaternion (`objectQ = delta · objectQ_at_down`).
 - Object quaternion and camera orbit are separate transforms.

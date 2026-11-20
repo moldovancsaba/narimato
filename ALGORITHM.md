@@ -12,7 +12,7 @@ shared by the browser renderer, the click picker, and the Node game server.
 Authoritative source: [narimato-physics.md](narimato-physics.md). Geometry/control essentials:
 
 - Object = the base 20-face spherical icosahedron; render the same triangles at every altitude.
-- Camera = fixed-radius orbit; cursor keys change `orbitYaw`/`orbitPitch`, wheel changes `zoom`.
+- Camera = carrier on a concentric orbit; cursor keys move the carrier, wheel changes carrier radius.
 - Mouse rotates the object via exact surface-point follow:
   `axis = cross(P0,P1)`, `angle = acos(dot(P0,P1))`, `objectQ = axisAngle(axis,angle) · objectQ0`.
 - Unprojection: `dirCam = normalize(X, Y, -focal)` (negative Z into scene), then `unprojectView`.

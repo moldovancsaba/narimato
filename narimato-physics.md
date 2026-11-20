@@ -22,9 +22,10 @@
 
 ## 2. Camera
 
-One camera. It always sits on a **fixed-radius orbit around the object centre**.
+One camera. It always sits on a **concentric orbit sphere** around the object centre.
 
-- Camera centre distance is constant (`CAMERA_DISTANCE`).
+- The camera is fixed to a carrier point on that outer sphere.
+- **Zoom changes the carrier sphere radius** (`camera.distance`), not optical field of view.
 - The camera may orbit (change yaw/pitch) and zoom optically, but it never changes the centre
   distance for zoom.
 - “Space”, “flight”, “building” and “surface” are **the same object viewed by the same camera
@@ -44,7 +45,7 @@ Cursor keys move the camera, not the object.
 - `Up`/`Down` must not change yaw.
 - The orbit is a **free quaternion**: `Up` keeps moving the camera up locally and loops over the
   pole; there is no pitch clamp.
-- Wheel/pinch changes `camera.zoom` only — it is optical zoom, **not** radius.
+- Wheel/pinch changes the carrier sphere radius (`camera.distance`) within `[1.3, 8.0]`.
 
 ## 3. Object rotation (mouse)
 
@@ -101,7 +102,7 @@ grab returns `null` — dragging then does nothing.
 | Camera orbit | separate `orbitYaw` / `orbitPitch` | camera moves independently from object |
 | Mouse | surface-point unprojection + shortest-arc quaternion | grabbed point follows cursor exactly |
 | Cursor keys | `orbitYaw`/`orbitPitch` | explicit up/down/left/right camera orbit |
-| Zoom | `camera.zoom` (optical) | fixed centre distance; never a dolly |
+| Zoom | `camera.distance` (carrier radius) | zoom dollies the carrier toward/away from the planet |
 | Geometry | `baseIcosahedron()` | one object, 20 spherical triangles |
 
 ## 6. Implementation
@@ -147,4 +148,4 @@ Measured acceptance (1200×1200):
 - Do not invert screen Y unless you are converting from screen-down to camera-up.
 - Do not generate per-camera surface geometry.
 - Do not merge object and camera transforms.
-- Do not change camera distance to zoom.
+- Do not use optical zoom (`camera.zoom`) — zoom is the carrier radius.
