@@ -108,3 +108,62 @@ export function moveCarrier(frame, dx, dy, angle) {
   };
   return carrierFrame(nextPos, rotate(frame.up));
 }
+
+
+function rotateAroundAxis(v, axis, angle) {
+  const c = Math.cos(angle), s = Math.sin(angle);
+  const cr = cross(axis, v);
+  const d = dot(axis, v);
+  return { x: v.x * c + cr.x * s + axis.x * d * (1 - c), y: v.y * c + cr.y * s + axis.y * d * (1 - c), z: v.z * c + cr.z * s + axis.z * d * (1 - c) };
+}
+
+/** Camera look frame: 0 = look at centre, 1 = tangent/horizon view. */
+export function lookFrame(pos, up, t, downAngle = 0) {
+  const p = norm(pos);
+  let u = norm(up);
+  u = norm(sub(u, mul(p, dot(u, p))));
+  if (Math.hypot(u.x, u.y, u.z) < 1e-9) {
+    const seed = Math.abs(p.y) < 0.9 ? { x: 0, y: 1, z: 0 } : { x: 0, y: 0, z: 1 };
+    u = norm(sub(seed, mul(p, dot(seed, p))));
+  }
+  const tangent = norm(cross(u, p)); // horizon forward
+  const centre = mul(p, -1);          // straight down toward planet centre
+  const horizon = norm(add(mul(centre, 1 - t), mul(tangent, t)));
+  // As the camera nears the surface, pitch down toward the centre so the
+  // horizon stays at the top and the ground fills the lower screen.
+  const down = downAngle * t;
+  const forward = norm(add(mul(horizon, Math.cos(down)), mul(centre, Math.sin(down))));
+  const right = norm(cross(forward, u));
+  const vup = norm(cross(right, forward));
+  return { pos: p, up: vup, right, forward };
+}
+
+/** Generic fixed-focal projection for any look frame. */
+export function frameProject(distance, focalPx, frame, point) {
+  const cam = mul(frame.pos, distance);
+  const rel = sub(point, cam);
+  const depth = dot(rel, frame.forward);
+  if (!(depth > 1e-9)) return { x: 0, y: 0, z: 0, visible: false, depth };
+  return {
+    x: (focalPx * dot(rel, frame.right)) / depth,
+    y: -(focalPx * dot(rel, frame.up)) / depth,
+    z: dot(point, frame.pos),
+    visible: depth > 0,
+    depth,
+  };
+}
+
+/** Generic fixed-focal screen→sphere unprojection for any look frame. */
+export function frameUnproject(distance, focalPx, frame, xPx, yPx, width, height) {
+  const X = xPx - width / 2;
+  const Y = height / 2 - yPx;
+  const dir = norm(add(add(mul(frame.right, X), mul(frame.up, Y)), mul(frame.forward, focalPx)));
+  const origin = mul(frame.pos, distance);
+  const b = 2 * dot(origin, dir);
+  const c = dot(origin, origin) - 1;
+  const disc = b * b - 4 * c;
+  if (!(disc >= 0)) return null;
+  const t = (-b - Math.sqrt(disc)) / 2;
+  if (!(t > 0)) return null;
+  return norm(add(origin, mul(dir, t)));
+}
