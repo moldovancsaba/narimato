@@ -1,0 +1,198 @@
+{
+  "schemaVersion": "1.0.0",
+  "generatedAt": "2026-11-20T23:50:32.991Z",
+  "startedAt": "2026-11-20T23:48:52.290Z",
+  "durationMs": 100701,
+  "commit": "c3a27a618085",
+  "engine": "chromium",
+  "mode": "full",
+  "status": "pass",
+  "summary": {
+    "pass": 0,
+    "warning": 0,
+    "failure": 0,
+    "incomplete": 0,
+    "suppressed": 0,
+    "total": 0
+  },
+  "suppressions": [],
+  "suppressionAudit": {
+    "applied": [],
+    "expired": [],
+    "unused": []
+  },
+  "surfaces": [
+    {
+      "id": "landing",
+      "route": "/?intro=0&gds=1",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "reducedMotion": "no-preference",
+      "status": "pass",
+      "summary": {
+        "pass": 0,
+        "warning": 0,
+        "failure": 0,
+        "incomplete": 0,
+        "suppressed": 0,
+        "total": 0
+      },
+      "findings": []
+    },
+    {
+      "id": "hud",
+      "route": "/?intro=0&gds=1",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "reducedMotion": "no-preference",
+      "status": "pass",
+      "summary": {
+        "pass": 0,
+        "warning": 0,
+        "failure": 0,
+        "incomplete": 0,
+        "suppressed": 0,
+        "total": 0
+      },
+      "findings": []
+    },
+    {
+      "id": "guide",
+      "route": "/?intro=0&gds=1",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "reducedMotion": "no-preference",
+      "status": "pass",
+      "summary": {
+        "pass": 0,
+        "warning": 0,
+        "failure": 0,
+        "incomplete": 0,
+        "suppressed": 0,
+        "total": 0
+      },
+      "findings": []
+    },
+    {
+      "id": "manual",
+      "route": "/?intro=0&gds=1",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "reducedMotion": "no-preference",
+      "status": "pass",
+      "summary": {
+        "pass": 0,
+        "warning": 0,
+        "failure": 0,
+        "incomplete": 0,
+        "suppressed": 0,
+        "total": 0
+      },
+      "findings": []
+    },
+    {
+      "id": "report",
+      "route": "/?intro=0&gds=1",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "reducedMotion": "no-preference",
+      "status": "pass",
+      "summary": {
+        "pass": 0,
+        "warning": 0,
+        "failure": 0,
+        "incomplete": 0,
+        "suppressed": 0,
+        "total": 0
+      },
+      "findings": []
+    },
+    {
+      "id": "confirm",
+      "route": "/?intro=0&gds=1",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "reducedMotion": "no-preference",
+      "status": "pass",
+      "summary": {
+        "pass": 0,
+        "warning": 0,
+        "failure": 0,
+        "incomplete": 0,
+        "suppressed": 0,
+        "total": 0
+      },
+      "findings": []
+    },
+    {
+      "id": "surface",
+      "route": "/?intro=0&gds=1",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "reducedMotion": "no-preference",
+      "status": "pass",
+      "summary": {
+        "pass": 0,
+        "warning": 0,
+        "failure": 0,
+        "incomplete": 0,
+        "suppressed": 0,
+        "total": 0
+      },
+      "findings": []
+    },
+    {
+      "id": "cine",
+      "route": "/?gds=1",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "reducedMotion": "no-preference",
+      "status": "pass",
+      "summary": {
+        "pass": 0,
+        "warning": 0,
+        "failure": 0,
+        "incomplete": 0,
+        "suppressed": 0,
+        "total": 0
+      },
+      "findings": []
+    },
+    {
+      "id": "incident",
+      "route": "/?intro=0&gds=1",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "reducedMotion": "no-preference",
+      "status": "pass",
+      "summary": {
+        "pass": 0,
+        "warning": 0,
+        "failure": 0,
+        "incomplete": 0,
+        "suppressed": 0,
+        "total": 0
+      },
+      "findings": []
+    }
+  ],
+  "findings": []
+}

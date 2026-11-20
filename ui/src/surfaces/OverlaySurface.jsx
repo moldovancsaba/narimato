@@ -22,6 +22,7 @@ import {
   StatusBadge,
 } from '@sovereignsquad/gds/client';
 import { IDS } from './intents.js';
+import IncidentDialog from './IncidentDialog.jsx';
 import { formatNumber, pad2 } from '../../../public/js/shared/hud-contract.js';
 import { sanitizeShareUrl } from '../../../public/js/shared/share-text.js';
 const GUIDE_STEPS = Object.freeze([
@@ -96,6 +97,9 @@ function LandingDialog({ ui, open }) {
   return (
     <Modal
       id="gds-landing"
+      data-gds-surface="dialog"
+      data-gds-component="landing"
+      classNames={{ content: 'gds-dialog-content' }}
       opened={open}
       onClose={() => {}}
       title="NARIMATO // THE WAY BACK"
@@ -106,7 +110,8 @@ function LandingDialog({ ui, open }) {
       returnFocus
       className="gds-landing-modal"
     >
-      <GdsBox id={IDS.landing} className="gds-landing" data-gds-landing="true">
+      <GdsBox id={IDS.landing} className="gds-landing" data-gds-landing="true" data-gds-surface="dialog" data-gds-component="landing"
+      classNames={{ content: 'gds-dialog-content' }}>
         <GdsInline gap="lg" align="start" wrap="wrap" className="gds-landing-grid">
           <GdsStack gap="md">
             <GdsBox>
@@ -225,6 +230,9 @@ function GuideDialog({ ui, open }) {
   return (
     <Modal
       id="gds-guide"
+      data-gds-surface="dialog"
+      data-gds-component="guide"
+      classNames={{ content: 'gds-dialog-content' }}
       opened={open}
       onClose={() => intent('guide-close')}
       title="HOW TO GET HOME"
@@ -233,7 +241,8 @@ function GuideDialog({ ui, open }) {
       returnFocus
       closeButtonProps={{ 'aria-label': 'Close dialog' }}
     >
-      <GdsBox id={IDS.guide} className="gds-overlay-card">
+      <GdsBox id={IDS.guide} className="gds-overlay-card" data-gds-surface="dialog" data-gds-component="guide"
+      classNames={{ content: 'gds-dialog-content' }}>
         <GdsStack component="ol" gap="md" padding={0} className="gds-list">
           {GUIDE_STEPS.map((step) => (
             <GdsBox component="li" key={step.id} className="gds-guide-step">
@@ -270,6 +279,9 @@ function ManualDialog({ ui, open }) {
   return (
     <Modal
       id="gds-manual"
+      data-gds-surface="dialog"
+      data-gds-component="manual"
+      classNames={{ content: 'gds-dialog-content' }}
       opened={open}
       onClose={() => intent('manual-close')}
       title="THE WAY BACK"
@@ -278,7 +290,8 @@ function ManualDialog({ ui, open }) {
       returnFocus
       closeButtonProps={{ 'aria-label': 'Close dialog' }}
     >
-      <GdsBox id={IDS.manual} className="gds-overlay-card">
+      <GdsBox id={IDS.manual} className="gds-overlay-card" data-gds-surface="dialog" data-gds-component="manual"
+      classNames={{ content: 'gds-dialog-content' }}>
         <BodyText>
           Story, mining rules, planets and controls. Press PLAY on any section to hear it. Voice and subtitles can be
           toggled independently.
@@ -353,6 +366,9 @@ function ReportDialog({ ui }) {
   return (
     <Modal
       id="gds-report"
+      data-gds-surface="dialog"
+      data-gds-component="report"
+      classNames={{ content: 'gds-dialog-content' }}
       opened={report.open === true}
       onClose={() => intent('report-close')}
       title={report.title || 'SESSION REPORT'}
@@ -361,7 +377,8 @@ function ReportDialog({ ui }) {
       returnFocus
       closeButtonProps={{ 'aria-label': 'Close dialog' }}
     >
-      <GdsBox id={IDS.report} className="gds-report">
+      <GdsBox id={IDS.report} className="gds-report" data-gds-surface="dialog" data-gds-component="report"
+      classNames={{ content: 'gds-dialog-content' }}>
         <GdsInline justify="between" align="center" wrap="wrap" gap="sm">
           <GdsStack gap={0}>
             <MetadataText>OPERATOR</MetadataText>
@@ -455,6 +472,9 @@ function ConfirmOverlay({ ui }) {
   return (
     <Modal
       id="gds-confirm"
+      data-gds-surface="dialog"
+      data-gds-component="confirm"
+      classNames={{ content: 'gds-dialog-content' }}
       opened={confirm.open === true}
       onClose={() => intent('confirm', { value: false })}
       title={confirm.title || 'CONFIRM ACTION'}
@@ -463,17 +483,18 @@ function ConfirmOverlay({ ui }) {
       returnFocus
       closeButtonProps={{ 'aria-label': 'Close dialog' }}
     >
-      <GdsBox id={IDS.confirm}>
+      <GdsBox id={IDS.confirm} data-gds-surface="dialog" data-gds-component="confirm"
+      classNames={{ content: 'gds-dialog-content' }}>
         <BodyText id="confirm-message">{confirm.message || ''}</BodyText>
         <MetadataText>
           Escape, the close control or the safe action resolves false. The explicit destructive control is the only
           true path.
         </MetadataText>
         <GdsInline gap="sm" justify="flex-end" wrap="wrap">
-          <Button variant="subtle" onClick={() => intent('confirm', { value: false })}>
+          <Button id="btn-confirm-cancel" variant="subtle" onClick={() => intent('confirm', { value: false })}>
             {confirm.cancelLabel || 'KEEP PLAYING'}
           </Button>
-          <Button onClick={() => intent('confirm', { value: true })}>
+          <Button id="btn-confirm-ok" onClick={() => intent('confirm', { value: true })}>
             {confirm.okLabel || 'CONFIRM'}
           </Button>
         </GdsInline>
@@ -509,7 +530,7 @@ function ToastRegion({ toasts }) {
   );
 }
 
-export default function OverlaySurface({ ui, cineActive }) {
+export default function OverlaySurface({ ui, cineActive, incident }) {
   const landing = ui.landing || { open: false };
   const guide = ui.guide || { open: false };
   const manual = ui.manual || { open: false };
@@ -522,6 +543,7 @@ export default function OverlaySurface({ ui, cineActive }) {
       <ManualDialog ui={ui} open={manual.open === true} />
       <ReportDialog ui={ui} />
       <ConfirmOverlay ui={ui} />
+      <IncidentDialog incident={incident} />
       <ToastRegion toasts={ui.toasts || []} />
     </>
   );

@@ -50,6 +50,54 @@ jobs:
       - name: Verify generated test count
         run: node scripts/test-count.mjs --log /tmp/narimato-test.log
 
+  a11y-chromium:
+    name: a11y (chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install Playwright, axe and the GDS a11y layer
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: GDS accessibility gate (Chromium)
+        run: node scripts/a11y-gate.mjs --engine=chromium --out=artifacts/a11y
+      - name: Upload accessibility report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a11y-chromium-${{ github.run_id }}
+          path: artifacts/a11y
+          retention-days: 14
+
+  a11y-webkit:
+    name: a11y (webkit)
+    runs-on: macos-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install Playwright, axe and the GDS a11y layer
+        run: npm ci
+      - name: Install WebKit
+        run: npx playwright install --with-deps webkit
+      - name: GDS accessibility gate (WebKit)
+        run: node scripts/a11y-gate.mjs --engine=webkit --out=artifacts/a11y
+      - name: Upload accessibility report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: a11y-webkit-${{ github.run_id }}
+          path: artifacts/a11y
+          retention-days: 14
+
   gds-ui:
     runs-on: ubuntu-latest
     steps:

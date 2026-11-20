@@ -248,6 +248,7 @@ class UI {
     this._worldSnapshot = null;
     this._gdsToasts = [];
     this._cine = null;
+    this._incident = { open: false, kind: 'meteor', title: 'PLANETARY EVENT', message: '', description: '', reducedMotion: false, dwellMs: 0 };
     this._captions = { visible: false, speaker: 'NARRATOR', text: '' };
     this._voice = { voice: true, subtitles: true, unlocked: false };
     this._gdsToastSeq = 0;
@@ -708,6 +709,7 @@ class UI {
     this._reportResult = null;
     this._reportOptions = null;
     if (this._isLandingVisible()) this._focusTagInput();
+    this._focusGdsControl('gds-btn-report');
   }
 
   /** Reflect the audio mute state on the always-on AUDIO button. */
@@ -1003,6 +1005,21 @@ class UI {
     }
   }
 
+
+  _focusGdsControl(id, delay = 650) {
+    if (!this._gdsOn || !this.doc) return;
+    setTimeout(() => {
+      const target = this.doc.getElementById(id);
+      if (!target || typeof target.focus !== 'function') return;
+      if (target.getClientRects().length === 0) return;
+      try {
+        target.focus({ preventScroll: true });
+      } catch {
+        /* focus is best-effort */
+      }
+    }, delay);
+  }
+
   /** Open/close the one-screen quick guide. */
   showGuide() {
     this._overlayPort.open({ name: 'guide', invoker: this.doc && this.doc.activeElement });
@@ -1018,7 +1035,7 @@ class UI {
     if (!this._gdsOn) { try { this._el.btnGuideClose?.focus({ preventScroll: true }); } catch { /* ignore */ } }
   }
 
-  hideGuide() {
+  hideGuide({ restoreFocus = true } = {}) {
     this._overlayPort.close('guide');
     const wrap = this._el.guideOverlay;
     if (wrap) {
@@ -1027,6 +1044,7 @@ class UI {
       wrap.setAttribute('aria-hidden', 'true');
     }
     if (this.doc && this.doc.body) this.doc.body.classList.remove('is-guide');
+    if (restoreFocus) this._focusGdsControl('btn-help');
   }
 
   get isGuideOpen() {
@@ -1103,6 +1121,7 @@ class UI {
       wrap.setAttribute('aria-hidden', 'true');
     }
     if (this.doc && this.doc.body) this.doc.body.classList.remove('is-manual');
+    this._focusGdsControl('btn-help');
   }
 
   get isManualOpen() {
@@ -1476,11 +1495,25 @@ class UI {
     }
     const resolver = this._confirmResolver;
     this._confirmResolver = null;
-    if (this._confirmPreviousFocus && typeof this._confirmPreviousFocus.focus === 'function') {
+    if (!this._gdsOn && this._confirmPreviousFocus && typeof this._confirmPreviousFocus.focus === 'function') {
       try {
         this._confirmPreviousFocus.focus({ preventScroll: true });
       } catch {
         /* ignore */
+      }
+    }
+    if (this._gdsOn) {
+      const invoker = this._confirmPreviousFocus;
+      const usable = invoker && invoker !== this.doc.body && invoker !== this.doc.documentElement && invoker.isConnected && invoker.getClientRects().length > 0;
+      const target = usable ? invoker : this.doc && this.doc.getElementById('btn-abandon');
+      if (target && typeof target.focus === 'function') {
+        setTimeout(() => {
+          try {
+            target.focus({ preventScroll: true });
+          } catch {
+            /* ignore */
+          }
+        }, 650);
       }
     }
     this._confirmPreviousFocus = null;
@@ -1561,7 +1594,7 @@ class UI {
       'setIntroPhase', 'setIntroProgress', 'setPlanet', 'setNavTarget', 'hideNavTarget',
       'showGuide', 'hideGuide', 'setGuideThreshold', 'showManual', 'hideManual', 'setEscapeReady',
       'showEscapeCta', 'hideEscapeCta', 'dismissEscapeCta', 'showLandingBrief', 'hideLandingBrief',
-      'showInterlude', 'setInterlude', 'setInterludeProgress', 'showMeteor', 'confirm', 'setCine', 'setCaptions', 'setVoice',
+      'showInterlude', 'setInterlude', 'setInterludeProgress', 'showMeteor', 'confirm', 'setCine', 'setIncident', 'setCaptions', 'setVoice',
       'setLastFind', 'enterSurface', 'exitSurface', 'updateSurfaceHud', 'setControlMode',
     ];
     for (const name of methods) {
@@ -1684,6 +1717,7 @@ class UI {
       toasts: this._gdsToasts,
       surface: this._surfaceHud,
       cine: this._cine,
+      incident: this._incident,
       captions: this._captions,
       voice: this._voice,
     };
@@ -1691,6 +1725,20 @@ class UI {
 
   setCine(slice) {
     this._cine = slice && typeof slice === 'object' ? slice : null;
+    return true;
+  }
+
+  setIncident(slice) {
+    const value = slice && typeof slice === 'object' ? slice : {};
+    this._incident = {
+      open: value.open === true,
+      kind: ['meteor', 'nuclear', 'solar', 'alien'].includes(value.kind) ? value.kind : 'meteor',
+      title: String(value.title || 'PLANETARY EVENT'),
+      message: String(value.message || ''),
+      description: String(value.description || ''),
+      reducedMotion: value.reducedMotion === true,
+      dwellMs: Number.isFinite(value.dwellMs) ? value.dwellMs : 0,
+    };
     return true;
   }
 
@@ -1754,7 +1802,7 @@ class UI {
         this.hideGuide();
         return true;
       case 'guide-manual':
-        this.hideGuide();
+        this.hideGuide({ restoreFocus: false });
         return click(this._el.btnGuideManual);
       case 'guide-share':
         return click(this._el.btnGuideShare);
@@ -1856,6 +1904,9 @@ class UI {
         exit();
         return true;
       }
+      case 'incident-dismiss':
+        if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('narimato:incident-dismiss'));
+        return true;
       case 'cine-skip':
         return this._emitCine('narimato:cine-skip', intent);
       case 'cine-replay':

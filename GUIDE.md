@@ -64,9 +64,9 @@ holding while you slide. Use `WASD`/arrows to run, `A/D` to turn, `Shift` to spr
 - The HUD shows the current control mode and the drag direction. Press **I** or the visible
   `DRAG:` toggle to reverse pointer drag only; the choice survives a reload.
 - **? / GUIDE** opens this card again; **OPEN FIELD MANUAL** has the full story and controls.
-- **Catastrophe overlay:** press **Escape** or activate **DISMISS** to close it early; mining
-  resumes when the crust reset finishes. With reduced motion enabled the overlay is a single static
-  poster and the screen does not shake.
+- **Catastrophe dialog:** the GDS dialog is named by the incident title; press **Escape** or
+  activate **DISMISS** to close it early. Mining resumes when the crust reset finishes. With reduced
+  motion enabled the overlay is a single static poster and the screen does not shake.
 - **Relief ship:**
   <!-- story-copy:start guide-relief -->
   If you make no refit progress for **two minutes**, a relief ship crashes onto the planet and scatters the missing ore across marked triangles. It repeats every two minutes while parts are still missing.

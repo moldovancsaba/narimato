@@ -507,3 +507,5 @@ html[data-gds-ui='on'] .interlude-content {
     scroll-behavior: auto !important;
   }
 }
+
+.gds-dialog-content button{min-width:44px!important;min-height:44px!important}

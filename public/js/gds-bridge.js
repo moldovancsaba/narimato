@@ -28,6 +28,7 @@ export function publish(slice) {
   const ui = typeof window !== 'undefined' ? window.__NARIMATO_UI__ : null;
   if (ui && typeof ui === 'object') {
     if (slice && slice.cine && typeof ui.setCine === 'function') return ui.setCine(slice.cine) !== false;
+    if (slice && slice.incident && typeof ui.setIncident === 'function') return ui.setIncident(slice.incident) !== false;
     if (slice && slice.captions && typeof ui.setCaptions === 'function') return ui.setCaptions(slice.captions) !== false;
     if (slice && slice.voice && typeof ui.setVoice === 'function') return ui.setVoice(slice.voice) !== false;
   }

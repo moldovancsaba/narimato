@@ -17,7 +17,7 @@ Architecture decisions are recorded as ADRs: [docs/adr/README.md](docs/adr/READM
 | Rendering | Canvas 2D + WebGL | game planet: Canvas 2D; spherical-icosahedron reference viewer: WebGL ray–sphere shader |
 | Simulation | Node.js ≥20 | authoritative game server, HTTP + Server-Sent Events |
 | Persistence | JSON files + atomic rename | one file per planet, one registry file |
-| Tests | `node:test` | <!-- test-count:527 -->527<!-- /test-count --> tests, no test dependencies; ownership map in [docs/TEST_MAP.md](docs/TEST_MAP.md) |
+| Tests | `node:test` | <!-- test-count:543 -->543<!-- /test-count --> tests, no test dependencies; ownership map in [docs/TEST_MAP.md](docs/TEST_MAP.md) |
 | CI | GitHub Actions | Node 20 and 22, `npm test`; Node 22 GDS island build/contract/determinism; scheduled OPS-02 load/soak/chaos gate |
 | Deploy | `node server.js` behind any static/reverse proxy | Cloudflare tunnel used for the live build |
 
@@ -731,10 +731,10 @@ debounce 0.5 min + 5 min backup interval), RTO ≤ 15 min; retention is 7 daily 
 
 ## Testing
 
-The suite currently runs <!-- test-count:527 -->527<!-- /test-count --> tests. Behaviour ownership: [docs/TEST_MAP.md](docs/TEST_MAP.md).
+The suite currently runs <!-- test-count:543 -->543<!-- /test-count --> tests. Behaviour ownership: [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 ```bash
-npm test                 # node:test suite (527 tests)
+npm test                 # node:test suite (543 tests)
 npm run check:slo        # evaluate observability/slo.json against /api/metrics (0/1/2/3)
 npm run gate:load        # OPS-02 load/soak/chaos gate (ephemeral server, artifacts)
 npm run gate:perf        # PERF-01 client probe + 15% desktop baseline gate
@@ -742,7 +742,23 @@ npm run recovery:test    # backup -> verify -> restore drill on throwaway data
 npm run docs:check       # R1-R6 repository SSOT gate
 npm run check:version    # version SSOT gate
 node scripts/test-count.mjs  # documented count == executed count
+npm run a11y:gate        # GDS accessibility gate (Chromium + WebKit; needs npm ci + browsers)
 ```
+
+### Accessibility gate (A11Y-01)
+
+`scripts/a11y-gate.mjs` owns the executable accessibility claim. It starts the authoritative server
+on a loopback port with a throwaway `DATA_DIR` and `BOTS=0`, then for each engine and each entry in
+`public/js/a11y-surfaces.js` runs the GDS accessibility test layer (`@sovereignsquad/gds-a11y`) plus
+the gate's own checks: axe serious/critical, expected tab order (real Tab walk on Chromium), focus
+trap/restore and Escape, WCAG AA text contrast, 200% zoom reflow, reduced-motion emulation, GDS
+ownership (`data-gds-surface` + `data-gds-component`) and 44 px targets.
+
+The gate writes a versioned `artifacts/a11y/report.json`; CI runs `a11y (chromium)` on Ubuntu and
+`a11y (webkit)` on macOS and uploads the report. Suppressions live in `a11y-suppressions.json` with
+an owner, expiry and replacement path; expired entries never hide a finding. Playwright, axe-core and
+the GDS a11y layer are devDependencies only, so the runtime remains zero-dependency. Operator guide:
+[A11Y_CHECKLIST.md](A11Y_CHECKLIST.md).
 
 - `test/geometry.test.js` — regular icosahedron, spherical coverage, labels, camera/picking.
 - `test/sphere-interaction.test.js` — carrier projection/unprojection, point-follow, infinite local direction.

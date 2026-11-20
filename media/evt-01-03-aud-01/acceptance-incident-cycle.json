@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "base": "http://127.0.0.1:58469",
+  "base": "http://127.0.0.1:60163",
   "kinds": [
     {
       "kind": "meteor",
@@ -41,7 +41,7 @@
   ],
   "mutations": 4,
   "errors": [],
-  "startedAt": "2026-11-20T21:44:18.033Z",
+  "startedAt": "2026-11-20T23:27:42.518Z",
   "health": {
     "eventTrigger": true,
     "appVersion": "3.57.0"
