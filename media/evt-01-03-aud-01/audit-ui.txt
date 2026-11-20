@@ -7,6 +7,8 @@ landscape    viewport=844x390 score-overlap=0 target-sub-overlap=0 errors=0
 short        viewport=792x302 score-overlap=0 target-sub-overlap=0 errors=0
 mobile       viewport=390x844 score-overlap=0 target-sub-overlap=0 errors=0
 small-mobile viewport=360x740 score-overlap=0 target-sub-overlap=0 errors=0
+surface-mobile   pads=4 min=44px exit=44px
+surface-landscape pads=4 min=44px exit=44px
 intro-mobile  caption-steer-overlap=0
 intro-short   caption-steer-overlap=0
 landing-landscape form=0..0 status=false

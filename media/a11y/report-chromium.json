@@ -1,9 +1,9 @@
 {
   "schemaVersion": "1.0.0",
-  "generatedAt": "2026-11-20T23:50:32.991Z",
-  "startedAt": "2026-11-20T23:48:52.290Z",
-  "durationMs": 100701,
-  "commit": "c3a27a618085",
+  "generatedAt": "2026-11-20T23:53:09.178Z",
+  "startedAt": "2026-11-20T23:51:29.182Z",
+  "durationMs": 99996,
+  "commit": "f3bdfa47925a",
   "engine": "chromium",
   "mode": "full",
   "status": "pass",
