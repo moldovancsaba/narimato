@@ -35,3 +35,26 @@ jobs:
           npm test 2>&1 | tee /tmp/narimato-test.log
       - name: Verify generated test count
         run: node scripts/test-count.mjs --log /tmp/narimato-test.log
+
+  gds-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install island build dependencies
+        run: npm ci
+      - name: Build the committed GDS island
+        run: npm run build:ui
+      - name: Verify the island contract, hash and budgets
+        run: npm run verify:ui
+      - name: Committed island assets match a fresh build
+        run: git diff --exit-code -- public/ui/island.js public/ui/island.css
+      - name: Two builds are byte-identical (deterministic output)
+        shell: bash
+        run: |
+          sha256sum public/ui/island.js public/ui/island.css > /tmp/gds-build-1.sha
+          npm run build:ui
+          sha256sum -c /tmp/gds-build-1.sha
