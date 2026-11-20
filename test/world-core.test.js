@@ -26,6 +26,18 @@ import {
   STEAL_POINTS,
   REINFORCE_POINTS,
   DEFAULT_CONFIG,
+  POSE_TTL_MS,
+  POSE_MIN_INTERVAL_MS,
+  POSE_FRAME_INTERVAL_MS,
+  POSE_STATES,
+  SURFACE_LEAVE_REASONS,
+  ROUTE_MAX_WAYPOINTS,
+  ROUTE_MAX_ARC,
+  ROUTE_TTL_MS,
+  STEP_RAD,
+  SUPPLY_FOCUS_TTL_MS,
+  SUPPLY_MIN_SEPARATION_RAD,
+  SUPPLY_MAX_PLACEMENTS,
 } from '../lib/world-core.js';
 import { buildMesh, childTriangles } from '../public/js/shared/geometry.js';
 import { robotTargetForOnlineHumans } from '../lib/planet-manager.js';
@@ -118,6 +130,33 @@ function forceFirstClickDeposits(core, labels = null) {
     if (cell && cell.resourceId && !cell.resourceFound) cell.resourceFindClick = 1;
   }
 }
+/**
+ * Place one robot at a known leaf and give it that leaf as its route target, so
+ * SRV-03 click mapping (mine only the cell under the pose) can be exercised
+ * without waiting for a full walk.
+ */
+function aimRobotAtLeaf(core, robot, clock, label) {
+  const cell = core.getLeafMap().get(label);
+  const now = clock.now();
+  core._applyRobotPose(robot, cell.centroid, null, 'idle', now);
+  robot.route = {
+    playerId: robot.playerId,
+    seed: 1,
+    serial: robot.serial,
+    waypoints: [{ leaf: label, pos: { ...cell.centroid }, arriveAt: now }],
+    index: 0,
+    state: 'idle',
+    stateSince: now,
+    stateUntil: now,
+    intent: { kind: 'mine', leaf: label },
+    replans: 0,
+    plannedAt: now,
+    lastTickAt: now,
+  };
+  robot.nextClickAt = now;
+  return cell;
+}
+
 function pickLabel(core, predicate) {
   for (const [label] of core.getLeaves()) {
     if (predicate(terrainFor(core, label), label)) return label;
@@ -985,9 +1024,13 @@ test('robot staffing: multiple robots act independently, lifetimes replace immed
   assert.equal(first.length, 2);
   assert.equal(new Set(first.map((robot) => robot.playerId)).size, 2);
 
-  // Both robots click on their own cadence.
-  clock.advance(220);
-  core.tick(clock.now());
+  // Both robots mine the leaf they stand on as their route target.
+  const labels = core.getLeaves().map(([label]) => label);
+  for (const info of first) {
+    const robot = core._robots.find((entry) => entry.playerId === info.playerId);
+    aimRobotAtLeaf(core, robot, clock, labels[core._robots.indexOf(robot)]);
+    core._robotClick(robot, clock.now());
+  }
   const robotStates = core.getState().players.filter((player) => first.some((robot) => robot.playerId === player.id));
   assert.ok(robotStates.length === 2);
   for (const robot of robotStates) assert.ok(robot.clicks > 0, `robot ${robot.tag} clicks independently`);
@@ -1009,7 +1052,6 @@ test('robot staffing: multiple robots act independently, lifetimes replace immed
 });
 
 test('robot: contests (steals) human-owned cells so solo play cannot speed-run', async (t) => {
-  // rng = 0 -> the robot picks the first active leaf ('1') every time.
   const { core, clock } = await makeCore(t, {
     rng: () => 0,
     config: { bots: 1, botGapMinMs: 10, botGapMaxMs: 10, botMinMs: 10_000, botMaxMs: 10_000, botClickMinMs: 10, botClickMaxMs: 10, clickCooldownMs: 0 },
@@ -1017,8 +1059,10 @@ test('robot: contests (steals) human-owned cells so solo play cannot speed-run',
   const human = core.join({ tag: 'HUMAN' });
   assert.equal(click(core, human.token, '1').ok, true); // human owns cell 1, locked
   core.tick(clock.now()); // spawn immediately (no gap)
-  clock.advance(11);
-  core.tick(clock.now()); // first robot click
+  // SRV-03: a robot only contests the leaf it stands on — walk it there first.
+  const robot = core._robots[0];
+  aimRobotAtLeaf(core, robot, clock, '1');
+  core._robotClick(robot, clock.now());
   const state = core.getState();
   assert.equal(state.players.length, 2);
   assert.equal(state.players[1].online, true);
@@ -1030,8 +1074,7 @@ test('robot: contests (steals) human-owned cells so solo play cannot speed-run',
   assert.equal(click(core, human.token, '1').ok, true);
 });
 
-test('robot: prioritises a human cell locked to its owner even on explore rolls', async (t) => {
-  // rng 0.9 would normally fall into explore mode; a locked human cell must win.
+test('robot: contests a leaf locked to a human when its route stands on it', async (t) => {
   const { core, clock } = await makeCore(t, {
     rng: () => 0.9,
     config: { bots: 1, botGapMinMs: 10, botGapMaxMs: 10, botMinMs: 10_000, botMaxMs: 10_000, botClickMinMs: 10, botClickMaxMs: 10, clickCooldownMs: 0 },
@@ -1040,8 +1083,9 @@ test('robot: prioritises a human cell locked to its owner even on explore rolls'
   assert.equal(click(core, human.token, '2').ok, true);
   assert.equal(click(core, human.token, '2').error, 'OWN_CELL_LOCKED');
   core.tick(clock.now());
-  clock.advance(11);
-  core.tick(clock.now());
+  const robot = core._robots[0];
+  aimRobotAtLeaf(core, robot, clock, '2');
+  core._robotClick(robot, clock.now());
   const leaves = leafMap(core);
   assert.notEqual(leaves.get('2').owner, 0, 'robot contested the locked human cell');
   assert.equal(click(core, human.token, '2').ok, true, 'human can act again after the robot contest');
@@ -1271,9 +1315,17 @@ test('mining: robot mines through the normal click path', async (t) => {
   });
   forceFirstClickDeposits(core);
   core.tick(clock.now()); // spawn immediately
-  clock.advance(1000);
-  core.tick(clock.now()); // several robot clicks
-  const robot = core.getState().players.find((player) => player.online);
+  // Walk the robot onto a known hidden deposit; the click then flows through
+  // WorldCore.click() exactly like a human click.
+  const deposit = core
+    .getLeaves()
+    .map(([label]) => core.getLeafMap().get(label))
+    .find((cell) => cell.resourceId && !cell.resourceFound);
+  assert.ok(deposit, 'planet has a hidden deposit');
+  const robotState = core._robots[0];
+  aimRobotAtLeaf(core, robotState, clock, deposit.label);
+  core._robotClick(robotState, clock.now());
+  const robot = core.getState().players.find((player) => player.online && player.id === robotState.playerId);
   assert.ok(robot, 'robot is online');
   assert.ok(robot.clicks > 0, 'robot clicked');
   assert.ok(robot.ores >= 1, 'robot mined at least one deposit through click()');
@@ -1696,13 +1748,15 @@ test('robot: owns a server-authoritative surface pose and mines the cell under i
   });
   core.tick(clock.now());
   const robot = core._robots[0];
-  assert.ok(robot && robot.surface, 'robot has a transient surface pose');
-  assert.ok(Math.abs(Math.hypot(robot.surface.pos.x, robot.surface.pos.y, robot.surface.pos.z) - 1) < 1e-9);
-  const target = core._labelAtSurface(robot.surface.pos);
+  const pose = core.getPose(robot.playerId);
+  assert.ok(pose, 'robot has a transient surface pose');
+  assert.equal(Math.abs(Math.hypot(pose.pos.x, pose.pos.y, pose.pos.z) - 1) < 1e-9, true);
+  const target = core._labelAtSurface(pose.pos);
   assert.ok(target, 'surface pose resolves to an active leaf');
   const publicRobot = core.getState().players.find((player) => player.id === robot.playerId);
   assert.ok(publicRobot.surface && publicRobot.surface.pos, 'surface pose is published to clients');
-  robot.nextClickAt = clock.now();
+  assert.equal(publicRobot.surface.leaf, target.label);
+  aimRobotAtLeaf(core, robot, clock, target.label);
   core.tick(clock.now());
   const cell = core._leaves.get(target.label);
   assert.equal(cell.ownerIndex, robot.index, 'robot mined the cell under its own surface pose');
@@ -1737,13 +1791,556 @@ test('robot: emits surface_mine for the authoritative cell it clicked', async (t
   });
   core.tick(clock.now());
   const robot = core._robots[0];
+  const initial = core.getPose(robot.playerId);
+  aimRobotAtLeaf(core, robot, clock, initial.leaf);
+  const pose = core.getPose(robot.playerId);
   core.drainEvents();
-  robot.nextClickAt = clock.now();
   core.tick(clock.now());
   const events = core.drainEvents();
   const mine = events.find((event) => event.type === 'surface_mine');
   assert.ok(mine, 'surface_mine event emitted');
   assert.equal(mine.playerId, robot.playerId);
   assert.ok(core._leaves.has(mine.label));
-  assert.equal(mine.pos.x, robot.surface.pos.x);
+  assert.equal(mine.label, core.getPose(robot.playerId).leaf);
+  assert.equal(mine.pos.x, pose.pos.x);
+  assert.equal(mine.resourceId, null, 'no resource awarded yet on an empty cell');
+  assert.equal(typeof mine.points, 'number');
+  assert.ok(['claim', 'steal', 'reinforce'].includes(mine.kind));
+  assert.equal(mine.broke, false);
+  assert.equal(mine.rev, pose.rev, 'surface_mine carries the click-time pose revision');
+});
+
+
+// ------------------------------------------------------- SRV-01 surface poses
+
+const vdot3 = (a, b) => a.x * b.x + a.y * b.y + a.z * b.z;
+const clampDot = (value) => Math.min(1, Math.max(-1, value));
+const unitPose = { x: 0, y: 0, z: 1 };
+const offPose = { x: 0.1, y: 0.05, z: 1 };
+
+test('pose: validation rejects non-finite, zero and out-of-range positions without mutation', async (t) => {
+  const { core, clock } = await makeCore(t, { config: { bots: 0 } });
+  const joined = core.join({ tag: 'POSER' });
+  const player = core.findByToken(joined.token);
+  const rejected = [
+    { pos: { x: Number.NaN, y: 0, z: 1 } },
+    { pos: { x: 0, y: 0, z: 0 } },
+    { pos: { x: 0, y: 0, z: 0.05 } },
+    { pos: { x: 0, y: 0, z: 10.5 } },
+    { pos: { x: Number.POSITIVE_INFINITY, y: 0, z: 0 } },
+    {},
+    { pos: null },
+  ];
+  for (const input of rejected) {
+    const result = core.applySurfacePose(player, input, clock.now());
+    assert.equal(result.ok, false, `rejects ${JSON.stringify(input)}`);
+    assert.equal(result.error, 'INVALID_POSE');
+  }
+  assert.equal(core.poseCount, 0);
+  assert.equal(core.poseRev, 0);
+  assert.equal(core.getState().players[0].surface, undefined);
+  assert.deepEqual(core.drainEvents(), [], 'rejected poses queue no frames');
+
+  // Unknown states use the closed INVALID_STATE vocabulary and never mutate.
+  const invalidState = core.applySurfacePose(player, { pos: unitPose, state: 'dance' }, clock.now());
+  assert.equal(invalidState.ok, false);
+  assert.equal(invalidState.error, 'INVALID_STATE');
+  assert.equal(core.poseCount, 0);
+  assert.equal(core.poseRev, 0);
+  // Unknown tokens never create a player or a pose.
+  const unknown = core.applySurfacePose(null, { pos: unitPose }, clock.now());
+  assert.equal(unknown.error, 'NOT_JOINED');
+  assert.equal(core.poseCount, 0);
+});
+
+test('pose: accepted poses share the wire shape, unit tangent heading and monotonic rev', async (t) => {
+  const { core, clock } = await makeCore(t, { config: { bots: 0 } });
+  const joined = core.join({ tag: 'SHAPE' });
+  const player = core.findByToken(joined.token);
+
+  const first = core.applySurfacePose(player, { pos: unitPose, heading: 1.2, moving: true }, clock.now());
+  assert.equal(first.ok, true);
+  const pose = first.pose;
+  assert.equal(pose.playerId, joined.player.id);
+  assert.equal(pose.tag, 'SHAPE');
+  assert.equal(typeof pose.leaf, 'string');
+  assert.ok(core.getLeafMap().has(pose.leaf), 'pose leaf is an active leaf');
+  assert.ok(Math.abs(Math.hypot(pose.pos.x, pose.pos.y, pose.pos.z) - 1) < 1e-9);
+  assert.ok(Math.abs(Math.hypot(pose.heading.x, pose.heading.y, pose.heading.z) - 1) < 1e-9);
+  assert.ok(Math.abs(vdot3(pose.heading, pose.pos)) < 1e-9, 'heading is tangent');
+  assert.ok(pose.bearingRad >= 0 && pose.bearingRad < Math.PI * 2);
+  assert.equal(pose.state, 'walk');
+  assert.equal(pose.moving, true);
+  assert.equal(typeof pose.local.x, 'number');
+  assert.equal(typeof pose.local.y, 'number');
+  assert.deepEqual(Object.keys(pose).sort(), [
+    'bearingRad', 'color', 'heading', 'leaf', 'local', 'moving', 'playerId', 'pos', 'rev', 'state', 'tag', 'updatedAt',
+  ]);
+  assert.deepEqual(core.getState().players[0].surface, pose, 'state.players[].surface mirrors the record');
+
+  // One accepted pose per POSE_MIN_INTERVAL_MS; rejection mutates nothing.
+  clock.advance(POSE_MIN_INTERVAL_MS - 1);
+  const limited = core.applySurfacePose(player, { pos: offPose, moving: true }, clock.now());
+  assert.equal(limited.ok, false);
+  assert.equal(limited.error, 'POSE_RATE_LIMIT');
+  assert.equal(core.poseRev, pose.rev);
+  assert.deepEqual(core.getPose(joined.player.id), pose, 'rejected pose keeps the last sample');
+  assert.deepEqual(core.drainEvents(), []);
+
+  clock.advance(1);
+  const second = core.applySurfacePose(player, { pos: offPose, moving: true }, clock.now());
+  assert.equal(second.ok, true);
+  assert.ok(second.pose.rev > pose.rev, 'rev is strictly monotonic per planet');
+  assert.deepEqual(core.getState().players[0].surface, second.pose);
+});
+
+test('pose: surface frames coalesce to at most one per 100 ms per player', async (t) => {
+  const { core, clock } = await makeCore(t, { config: { bots: 0 } });
+  const joined = core.join({ tag: 'COALESCE' });
+  const player = core.findByToken(joined.token);
+  core.applySurfacePose(player, { pos: unitPose, moving: true }, clock.now());
+  const first = core.flushPoses(clock.now());
+  assert.equal(first.length, 1);
+  assert.equal(first[0].type, 'surface');
+  assert.equal(JSON.stringify(first[0]).includes(joined.token), false, 'tokens never enter frames');
+  clock.advance(POSE_MIN_INTERVAL_MS);
+  core.applySurfacePose(player, { pos: offPose, moving: true }, clock.now());
+  assert.deepEqual(core.flushPoses(clock.now()), [], 'same 100 ms window is coalesced');
+  clock.advance(POSE_FRAME_INTERVAL_MS - POSE_MIN_INTERVAL_MS);
+  const second = core.flushPoses(clock.now());
+  assert.equal(second.length, 1);
+  assert.ok(second[0].rev > first[0].rev);
+});
+
+test('pose: TTL expiry emits exactly one surface_leave and clears state', async (t) => {
+  const { core, clock } = await makeCore(t, { config: { bots: 0 } });
+  const joined = core.join({ tag: 'TTL' });
+  const player = core.findByToken(joined.token);
+  const applied = core.applySurfacePose(player, { pos: unitPose, moving: true }, clock.now());
+  assert.equal(applied.ok, true);
+  core.drainEvents();
+
+  clock.advance(POSE_TTL_MS + 1);
+  assert.deepEqual(core.flushPoses(clock.now()), [], 'an expired pose never broadcasts');
+  const leaves = core.drainEvents().filter((event) => event.type === 'surface_leave');
+  assert.equal(leaves.length, 1, 'exactly one surface_leave per expiry');
+  assert.equal(leaves[0].playerId, joined.player.id);
+  assert.equal(leaves[0].reason, 'expire');
+  assert.equal(SURFACE_LEAVE_REASONS.includes(leaves[0].reason), true);
+  assert.equal(core.getPose(joined.player.id), null);
+  assert.equal(core.getState().players[0].surface, undefined);
+  core.flushPoses(clock.now());
+  assert.deepEqual(core.drainEvents(), [], 'the leave fires once, not per sweep');
+
+  // Reset clears poses with the `reset` reason; explicit leave uses `leave`.
+  core.applySurfacePose(player, { pos: unitPose, moving: true }, clock.now());
+  core.drainEvents();
+  core.clearSurfacePose(player, 'disconnect');
+  const disconnect = core.drainEvents();
+  assert.equal(disconnect.length, 1);
+  assert.equal(disconnect[0].reason, 'disconnect');
+  assert.equal(core.poseCount, 0);
+  core.resetGrid();
+  assert.deepEqual(core.drainEvents(), [], 'nothing to clear after the disconnect');
+});
+
+test('pose: humans and robots share one record shape under one revision stream', async (t) => {
+  const { core, clock } = await makeCore(t, {
+    config: { bots: 1, botMinMs: 1_000_000, botMaxMs: 1_000_000, botClickMinMs: 1_000_000, botClickMaxMs: 1_000_000 },
+  });
+  const joined = core.join({ tag: 'HUMAN' });
+  const human = core.findByToken(joined.token);
+  const humanPose = core.applySurfacePose(human, { pos: unitPose, moving: true }, clock.now()).pose;
+  core.setRobotTarget(1);
+  core.tick(clock.now());
+  const robot = core._robots[0];
+  const robotPose = core.getPose(robot.playerId);
+  assert.ok(robotPose, 'robot publishes a pose through the same record');
+  assert.deepEqual(Object.keys(humanPose).sort(), Object.keys(robotPose).sort(), 'one shape for humans and robots');
+  for (const pose of [humanPose, robotPose]) {
+    assert.ok(Math.abs(Math.hypot(pose.pos.x, pose.pos.y, pose.pos.z) - 1) < 1e-9);
+    assert.ok(Math.abs(Math.hypot(pose.heading.x, pose.heading.y, pose.heading.z) - 1) < 1e-9);
+    assert.ok(Math.abs(vdot3(pose.heading, pose.pos)) < 1e-9);
+    assert.ok(POSE_STATES.includes(pose.state));
+    assert.equal(typeof pose.rev, 'number');
+  }
+  // Idle dwell ends, then the first turn tick writes a fresh pose.
+  clock.advance(2_000);
+  core.setRobotTarget(1);
+  core.tick(clock.now());
+  clock.advance(100);
+  core.setRobotTarget(1);
+  core.tick(clock.now());
+  const nextRobotPose = core.getPose(robot.playerId);
+  assert.ok(nextRobotPose.rev > robotPose.rev, 'rev advances robot poses too');
+  const state = core.getState();
+  assert.deepEqual(state.players.find((entry) => entry.id === human.id).surface, humanPose);
+  assert.deepEqual(state.players.find((entry) => entry.id === robot.playerId).surface, nextRobotPose);
+  // Robot departure clears its pose with the closed `robot` reason.
+  core.drainEvents();
+  core._leaveRobot(robot, clock.now());
+  const robotLeave = core.drainEvents().filter((event) => event.type === 'surface_leave');
+  assert.equal(robotLeave.length, 1);
+  assert.equal(robotLeave[0].reason, 'robot');
+  assert.equal(core.getPose(robot.playerId), null);
+});
+
+// --------------------------------------------------------- SRV-02 robot routes
+
+test('robot route: same seed yields an identical waypoint digest', async (t) => {
+  const clock = makeClock();
+  const config = {
+    bots: 1,
+    planetSeed: 424242,
+    planetIndex: 0,
+    botMinMs: 1_000_000,
+    botMaxMs: 1_000_000,
+    botClickMinMs: 1_000_000,
+    botClickMaxMs: 1_000_000,
+    clickCooldownMs: 0,
+    depositChance: 0,
+  };
+  const make = async () => {
+    const dataDir = await tempDir(t);
+    const core = new WorldCore({ dataDir, config, now: clock.now, rng: mulberry32(0xabc), autoSave: false, quiet: true });
+    core.setRobotTarget(1);
+    core.tick(clock.now());
+    return core;
+  };
+  const a = await make();
+  const b = await make();
+  assert.equal(a._robots.length, 1);
+  assert.equal(b._robots.length, 1);
+  assert.deepEqual(
+    a._robots[0].route.waypoints.map((waypoint) => waypoint.leaf),
+    b._robots[0].route.waypoints.map((waypoint) => waypoint.leaf),
+    'same planet seed + serial plans the same waypoints',
+  );
+  const digestsA = [];
+  const digestsB = [];
+  for (let tick = 0; tick < 600; tick += 1) {
+    clock.advance(100);
+    a.setRobotTarget(1);
+    a.tick(clock.now());
+    b.setRobotTarget(1);
+    b.tick(clock.now());
+    digestsA.push(a.robotRouteDigest(a._robots[0].playerId));
+    digestsB.push(b.robotRouteDigest(b._robots[0].playerId));
+  }
+  assert.deepEqual(digestsA, digestsB, '600 ticks keep the digest identical');
+  assert.ok(new Set(digestsA).size > 1, 'the digest evolves along the route');
+});
+
+test('robot route: humans cannot change a route', async (t) => {
+  const clock = makeClock();
+  const config = {
+    bots: 1,
+    planetSeed: 424242,
+    planetIndex: 0,
+    botMinMs: 1_000_000,
+    botMaxMs: 1_000_000,
+    botClickMinMs: 1_000_000,
+    botClickMaxMs: 1_000_000,
+    clickCooldownMs: 0,
+    depositChance: 0,
+  };
+  const make = async () => {
+    const dataDir = await tempDir(t);
+    const core = new WorldCore({ dataDir, config, now: clock.now, rng: mulberry32(0x51de), autoSave: false, quiet: true });
+    core.setRobotTarget(1);
+    core.tick(clock.now());
+    return core;
+  };
+  const withHumans = await make();
+  const control = await make();
+  const digestsWith = [];
+  const digestsControl = [];
+  const humanTokens = [];
+  for (let tick = 0; tick < 600; tick += 1) {
+    if (tick === 100) humanTokens.push(withHumans.join({ tag: 'VISITOR' }).token);
+    if (tick === 200) humanTokens.push(withHumans.join({ tag: 'VISITOR2' }).token);
+    if (tick === 300) withHumans.setOnline(withHumans.findByToken(humanTokens[0]).id, false);
+    clock.advance(100);
+    withHumans.setRobotTarget(1);
+    withHumans.tick(clock.now());
+    control.setRobotTarget(1);
+    control.tick(clock.now());
+    digestsWith.push(withHumans.robotRouteDigest(withHumans._robots[0].playerId));
+    digestsControl.push(control.robotRouteDigest(control._robots[0].playerId));
+  }
+  assert.equal(withHumans.players.length, 3, 'humans joined/left around the robot');
+  assert.deepEqual(digestsWith, digestsControl, 'route computation reads no human pose');
+});
+
+test('robot route: replans on stale leaf, ttl and blocked', async (t) => {
+  const { core, clock } = await makeCore(t, {
+    config: {
+      bots: 1,
+      botMinMs: 1_000_000,
+      botMaxMs: 1_000_000,
+      botClickMinMs: 1_000_000,
+      botClickMaxMs: 1_000_000,
+      clickCooldownMs: 0,
+    },
+  });
+  core.setRobotTarget(1);
+  core.tick(clock.now());
+  const robot = core._robots[0];
+  const first = robot.replans;
+
+  // stale_leaf: the current waypoint label is retired.
+  robot.route.waypoints[0] = { ...robot.route.waypoints[0], leaf: 'retired.label' };
+  core._advanceRobotRoute(robot, clock.now());
+  assert.equal(robot.replans, first + 1, 'stale_leaf re-plans immediately');
+  for (const waypoint of robot.route.waypoints) assert.ok(core.getLeafMap().has(waypoint.leaf));
+
+  // ttl: a route older than ROUTE_TTL_MS re-plans.
+  const beforeTtl = robot.replans;
+  robot.route.plannedAt = clock.now() - ROUTE_TTL_MS - 1;
+  core._advanceRobotRoute(robot, clock.now());
+  assert.equal(robot.replans, beforeTtl + 1, 'ttl re-plans');
+
+  // blocked: a click the contest lock rejects re-plans with the next seed.
+  const label = core.getLeaves()[0][0];
+  aimRobotAtLeaf(core, robot, clock, label);
+  assert.equal(core.click({ token: robot.token, label }).ok, true, 'robot claims the target cell');
+  const beforeBlocked = robot.replans;
+  aimRobotAtLeaf(core, robot, clock, label);
+  core.drainEvents();
+  core._robotClick(robot, clock.now());
+  assert.equal(robot.replans, beforeBlocked + 1, 'blocked re-plans');
+  assert.ok(core.robotMineRejectedCount >= 1);
+  assert.equal(core.drainEvents().some((event) => event.type === 'surface_mine'), false, 'blocked click emits nothing');
+});
+
+test('robot route: waypoints are active leaves with interior points inside the arc bound', async (t) => {
+  const { core, clock } = await makeCore(t, {
+    config: {
+      bots: 1,
+      botMinMs: 1_000_000,
+      botMaxMs: 1_000_000,
+      botClickMinMs: 1_000_000,
+      botClickMaxMs: 1_000_000,
+      clickCooldownMs: 0,
+    },
+  });
+  core.setRobotTarget(1);
+  core.tick(clock.now());
+  const robot = core._robots[0];
+  let route = robot.route;
+  for (let replan = 0; replan < 20; replan += 1) {
+    assert.ok(route.waypoints.length >= 1 && route.waypoints.length <= ROUTE_MAX_WAYPOINTS);
+    let arc = 0;
+    let from = core.getPose(robot.playerId).pos;
+    for (const waypoint of route.waypoints) {
+      assert.ok(core.getLeafMap().has(waypoint.leaf), 'waypoint is an active leaf');
+      assert.equal(core.resolveLeaf(waypoint.pos).label, waypoint.leaf, 'standing point resolves to its leaf');
+      assert.ok(Math.abs(Math.hypot(waypoint.pos.x, waypoint.pos.y, waypoint.pos.z) - 1) < 1e-9);
+      assert.ok(waypoint.arriveAt >= route.plannedAt);
+      arc += Math.acos(clampDot(vdot3(from, waypoint.pos)));
+      from = waypoint.pos;
+    }
+    assert.ok(arc <= ROUTE_MAX_ARC + 1e-9, `arc ${arc} stays under ${ROUTE_MAX_ARC}`);
+    route = core._replanRobot(robot, clock.now(), 'ttl');
+  }
+});
+
+// ------------------------------------------------------- SRV-03 surface mining
+
+test('robot mine: the mined cell equals resolveLeaf(pose)', async (t) => {
+  const { core, clock } = await makeCore(t, {
+    config: { bots: 1, botMinMs: 1_000_000, botMaxMs: 1_000_000, botClickMinMs: 1_000_000, botClickMaxMs: 1_000_000, clickCooldownMs: 0 },
+  });
+  core.setRobotTarget(1);
+  core.tick(clock.now());
+  const robot = core._robots[0];
+  const label = core.getLeaves()[5][0];
+  aimRobotAtLeaf(core, robot, clock, label);
+  const pose = core.getPose(robot.playerId);
+  assert.equal(core.resolveLeaf(pose.pos).label, label);
+  core.drainEvents();
+  core._robotClick(robot, clock.now());
+  const events = core.drainEvents();
+  const mine = events.find((event) => event.type === 'surface_mine');
+  assert.ok(mine, 'surface_mine emitted for the authoritative cell');
+  assert.equal(mine.label, core.resolveLeaf(pose.pos).label);
+  assert.equal(core.getLeafMap().get(label).ownerIndex, robot.index);
+  // Ordering inside the one drain batch: `cell` before `surface_mine`.
+  const cellIndex = events.findIndex((event) => event.type === 'cell' && event.cell[0] === mine.label);
+  assert.ok(cellIndex >= 0, 'the changed cell frame is in the same batch');
+  assert.ok(cellIndex < events.indexOf(mine), 'cell frame precedes the beam frame');
+  assert.equal(robot.route.intent.kind, 'mine');
+  assert.equal(robot.route.intent.leaf, label);
+});
+
+test('robot mine: a mismatched intent becomes travel and emits nothing', async (t) => {
+  const { core, clock } = await makeCore(t, {
+    config: { bots: 1, botMinMs: 1_000_000, botMaxMs: 1_000_000, botClickMinMs: 1_000_000, botClickMaxMs: 1_000_000, clickCooldownMs: 0 },
+  });
+  core.setRobotTarget(1);
+  core.tick(clock.now());
+  const robot = core._robots[0];
+  const standingLabel = core.getLeaves()[2][0];
+  const targetLabel = core.getLeaves()[7][0];
+  aimRobotAtLeaf(core, robot, clock, standingLabel);
+  const targetCell = core.getLeafMap().get(targetLabel);
+  robot.route.waypoints[0] = { leaf: targetLabel, pos: { ...targetCell.centroid }, arriveAt: clock.now() };
+  core.drainEvents();
+  core._robotClick(robot, clock.now());
+  assert.deepEqual(core.drainEvents(), [], 'no click is fabricated for a distant target');
+  assert.equal(robot.route.intent.kind, 'travel');
+  assert.equal(robot.route.intent.leaf, targetLabel);
+});
+
+
+test('robot mine: rejected click emits nothing and is counted', async (t) => {
+  const { core, clock } = await makeCore(t, {
+    config: { bots: 1, botMinMs: 1_000_000, botMaxMs: 1_000_000, botClickMinMs: 1_000_000, botClickMaxMs: 1_000_000, clickCooldownMs: 0 },
+  });
+  core.setRobotTarget(1);
+  core.tick(clock.now());
+  const robot = core._robots[0];
+  const label = core.getLeaves()[1][0];
+  aimRobotAtLeaf(core, robot, clock, label);
+  core._robotClick(robot, clock.now()); // claim: the cell is now locked to the robot
+  core.drainEvents();
+  const rejectedBefore = core.robotMineRejectedCount;
+  aimRobotAtLeaf(core, robot, clock, label);
+  core._robotClick(robot, clock.now()); // OWN_CELL_LOCKED
+  assert.deepEqual(core.drainEvents(), [], 'a rejected click emits no frame at all');
+  assert.equal(core.robotMineRejectedCount, rejectedBefore + 1);
+  assert.equal(core.getLeafMap().get(label).clicks, 1, 'the rejected click mutated nothing');
+});
+
+test('robot mine: surface_mine reports the awarded resource only', async (t) => {
+  const { core, clock } = await makeCore(t, {
+    config: { bots: 1, depositChance: 1, planetSeed: 424242, clickCooldownMs: 0, botMinMs: 1_000_000, botMaxMs: 1_000_000, botClickMinMs: 1_000_000, botClickMaxMs: 1_000_000 },
+  });
+  core.setRobotTarget(1);
+  core.tick(clock.now());
+  const robot = core._robots[0];
+  const deposit = [...core.getLeafMap().values()].find((cell) => cell.resourceId && !cell.resourceFound);
+  assert.ok(deposit, 'planet hides at least one deposit');
+  forceFirstClickDeposits(core, [deposit.label]);
+  aimRobotAtLeaf(core, robot, clock, deposit.label);
+  core.drainEvents();
+  core._robotClick(robot, clock.now());
+  const events = core.drainEvents();
+  const mine = events.find((event) => event.type === 'surface_mine');
+  assert.ok(mine, 'surface_mine emitted');
+  assert.equal(mine.resourceId, deposit.resourceId, 'resourceId is the awarded deposit');
+  assert.equal(deposit.resourceFound, true);
+  assert.equal(mine.label, deposit.label);
+  assert.ok(mine.points >= 10);
+  assert.equal(typeof mine.rev, 'number');
+  // No resources leak: no token, no hidden-deposit fields.
+  const wire = JSON.stringify(mine);
+  assert.equal(wire.includes(robot.token), false);
+  assert.equal(wire.includes('resourceFindClick'), false);
+});
+
+// --------------------------------------------------- SRV-04 supply relocation
+
+test('supply placement: one valid distinct point per human', async (t) => {
+  const { core } = await makeCore(t, { config: { bots: 0, depositChance: 1, planetSeed: 424242 } });
+  const humans = ['PLACEA', 'PLACEB', 'PLACEC'].map((tag) => core.join({ tag }));
+  const drop = core.placeEmergencySupply({ units: ['silver', 'gold', 'uranium'], planetIndex: 0 });
+  assert.ok(drop.cells.length >= 2);
+  const focus = core.createSupplyFocus({
+    planetIndex: 0,
+    impactLabel: drop.impactLabel,
+    impactPos: drop.impactPos,
+    cells: drop.cells,
+    resources: drop.resources,
+    message: 'DROP',
+  });
+  const cellLabels = new Set(drop.cells.map((cell) => cell.label));
+  assert.equal(focus.placements.length, humans.length, 'one placement per online human');
+  assert.equal(focus.rev, 1);
+  assert.ok(focus.expiresAt > core.now());
+  const ids = new Set();
+  for (const placement of focus.placements) {
+    assert.ok(!ids.has(placement.playerId), 'placements are distinct per human');
+    ids.add(placement.playerId);
+    assert.ok(cellLabels.has(placement.leaf), 'placement leaf is a supply cell');
+    assert.equal(core.resolveLeaf(placement.pos).label, placement.leaf, 'placement resolves inside its cell');
+    assert.ok(Math.abs(Math.hypot(placement.pos.x, placement.pos.y, placement.pos.z) - 1) < 1e-9);
+    assert.ok(Math.abs(Math.hypot(placement.heading.x, placement.heading.y, placement.heading.z) - 1) < 1e-9);
+    assert.ok(Math.abs(vdot3(placement.heading, placement.pos)) < 1e-9);
+    assert.ok(placement.bearingRad >= 0 && placement.bearingRad < Math.PI * 2);
+    // The authoritative pose is relocated with the placement.
+    const pose = core.getPose(placement.playerId);
+    assert.ok(pose, 'placed human gets an authoritative pose');
+    assert.equal(pose.leaf, placement.leaf);
+    assert.ok(vdot3(pose.pos, placement.pos) > 1 - 1e-9);
+    assert.deepEqual(core.getState().players.find((player) => player.id === placement.playerId).surface.pos, pose.pos);
+  }
+  for (let i = 0; i < focus.placements.length; i += 1) {
+    for (let j = i + 1; j < focus.placements.length; j += 1) {
+      assert.ok(
+        vdot3(focus.placements[i].pos, focus.placements[j].pos) < Math.cos(SUPPLY_MIN_SEPARATION_RAD),
+        'no pair is closer than MIN_SEPARATION',
+      );
+    }
+  }
+  assert.ok(focus.placements.length <= SUPPLY_MAX_PLACEMENTS);
+});
+
+test('supply placement: deterministic from seed and revision', async (t) => {
+  const make = async () => {
+    const { core } = await makeCore(t, {
+      config: { bots: 0, depositChance: 1, planetSeed: 424242, planetIndex: 0 },
+      rng: mulberry32(0x5e77),
+    });
+    for (const tag of ['DETA', 'DETB']) core.join({ tag });
+    const drop = core.placeEmergencySupply({ units: ['silver', 'gold'], planetIndex: 0 });
+    return {
+      core,
+      drop,
+      focus: core.createSupplyFocus({
+        planetIndex: 0,
+        impactLabel: drop.impactLabel,
+        impactPos: drop.impactPos,
+        cells: drop.cells,
+        resources: drop.resources,
+        message: 'DROP',
+      }),
+    };
+  };
+  const a = await make();
+  const b = await make();
+  assert.equal(a.focus.impactLabel, b.focus.impactLabel, 'same seed picks the same impact cell');
+  assert.equal(a.focus.rev, b.focus.rev);
+  const shape = (focus) => focus.placements.map((placement) => ({ leaf: placement.leaf, pos: placement.pos, heading: placement.heading }));
+  assert.deepEqual(shape(a.focus), shape(b.focus), 'same seed + revision = same placements');
+  // Repeating the computation for the same drop is stable.
+  const again = a.core.computeSupplyPlacements({ impactLabel: a.focus.impactLabel, cells: a.focus.cells });
+  assert.deepEqual(
+    again.map((placement) => ({ leaf: placement.leaf, pos: placement.pos })),
+    shape(a.focus).map((placement) => ({ leaf: placement.leaf, pos: placement.pos })),
+  );
+});
+
+test('supply focus: expires after the TTL and prunes retired cells', async (t) => {
+  const { core, clock } = await makeCore(t, { config: { bots: 0, depositChance: 1, planetSeed: 424242 } });
+  for (const tag of ['TTLA', 'TTLB']) core.join({ tag });
+  const drop = core.placeEmergencySupply({ units: ['silver', 'gold'], planetIndex: 0 });
+  const focus = core.createSupplyFocus({ planetIndex: 0, impactLabel: drop.impactLabel, impactPos: drop.impactPos, cells: drop.cells, resources: drop.resources, message: 'DROP' });
+  clock.advance(SUPPLY_FOCUS_TTL_MS - 1_000);
+  assert.ok(core.getFocus(), 'focus is live inside the TTL');
+  clock.advance(2_000);
+  assert.equal(core.getFocus(), null, 'focus expires without timers');
+
+  // A cell that retires mid-drop is filtered and affected humans fall back.
+  const again = core.createSupplyFocus({ planetIndex: 0, impactLabel: drop.impactLabel, impactPos: drop.impactPos, cells: drop.cells, resources: drop.resources, message: 'DROP' });
+  const retired = again.cells[0].label;
+  core._leaves.delete(retired);
+  const pruned = core.getFocus();
+  assert.ok(pruned, 'a surviving cell keeps the focus alive');
+  assert.equal(pruned.cells.some((cell) => cell.label === retired), false);
+  for (const placement of pruned.placements) assert.ok(core.getLeafMap().has(placement.leaf), 'placements only name surviving cells');
+
+  // A grid reset clears the advisory focus entirely.
+  core.resetGrid();
+  assert.equal(core.getFocus(), null);
 });

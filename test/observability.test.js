@@ -192,8 +192,12 @@ test('observability: /api/metrics exposes HTTP/process/SSE/planets/telemetry agg
     'name',
     'playersOnline',
     'playersTotal',
+    'posesLive',
     'revision',
+    'robotMineRejected',
+    'robotReplans',
     'robots',
+    'supplyDrops',
   ]);
   assert.equal(metrics.planets[0].index, 0);
   assert.equal(metrics.planets[0].playersOnline, 1);
