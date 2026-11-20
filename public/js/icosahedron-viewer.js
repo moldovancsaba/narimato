@@ -121,60 +121,41 @@ function draw() {
   ctx.arc(cx, cy, radius, 0, Math.PI * 2);
   ctx.fill();
 
-  const camPos = vecMul(vecNorm(camera.viewAxis()), camera.distance);
-  const drawFaces = [];
-  for (let fi = 0; fi < faces.length; fi += 1) {
-    const [ia, ib, ic] = faces[fi];
-    const A = vecNorm(qRotateVec(objectQ, vertices[ia]));
-    const B = vecNorm(qRotateVec(objectQ, vertices[ib]));
-    const C = vecNorm(qRotateVec(objectQ, vertices[ic]));
-    const centroid = vecNorm(vecAdd(vecAdd(A, B), C));
-    let normal = vecNorm(vecCross(vecSub(B, A), vecSub(C, A)));
-    if (vecDot(normal, centroid) < 0) normal = vecMul(normal, -1);
-    // Back-face culling in world space; skip faces that cross the silhouette.
-    if (vecDot(normal, vecSub(camPos, centroid)) <= 0) continue;
-    if (!projectPoint(A).visible || !projectPoint(B).visible || !projectPoint(C).visible) continue;
-    const points = [];
-    for (const [p, q] of [[A, B], [B, C], [C, A]]) {
-      for (let i = 0; i < 32; i += 1) {
-        const t = i / 32;
-        const dot = Math.max(-1, Math.min(1, vecDot(p, q)));
-        const theta = Math.acos(dot) * t;
-        const sin = Math.sin(theta);
-        const r = vecSub(q, vecMul(p, dot));
-        const rl = Math.hypot(r.x, r.y, r.z) || 1;
-        const v = vecNorm(vecAdd(vecMul(p, Math.cos(theta)), vecMul(r, sin / rl)));
-        points.push(projectPoint(v));
-      }
-    }
-    const depth = projectPoint(centroid).z;
-    const light = 0.55 + 0.45 * Math.max(0, Math.min(1, vecDot(normal, vecNorm({ x: -0.35, y: 0.55, z: 0.76 }))));
-    drawFaces.push({ points, depth, fi, light });
-  }
-  drawFaces.sort((a, b) => a.depth - b.depth);
-  for (const face of drawFaces) {
-    const r = Math.round(42 + 76 * face.light);
-    const g = Math.round(106 + 100 * face.light);
-    const b = Math.round(136 + 86 * face.light);
-    ctx.beginPath();
-    ctx.moveTo(face.points[0].x, face.points[0].y);
-    for (let i = 1; i < face.points.length; i += 1) ctx.lineTo(face.points[i].x, face.points[i].y);
-    ctx.closePath();
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = `rgb(${r},${g},${b})`;
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(6,16,24,0.92)';
-    ctx.lineWidth = 2.2;
-    ctx.stroke();
-  }
-
-  // Hard silhouette mask: no face fill or edge can exist outside the sphere.
+  // Complete spherical icosahedron wireframe: 30 great-circle edges, no fragments.
   ctx.save();
-  ctx.globalCompositeOperation = 'destination-in';
   ctx.beginPath();
   ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-  ctx.fillStyle = '#000';
-  ctx.fill();
+  ctx.clip();
+  ctx.strokeStyle = 'rgba(7,20,30,0.92)';
+  ctx.lineWidth = 2.4;
+  const edges = [];
+  const seen = new Set();
+  for (const [ia, ib, ic] of faces) {
+    for (const [a, b] of [[ia, ib], [ib, ic], [ic, ia]]) {
+      const key = a < b ? `${a}:${b}` : `${b}:${a}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      edges.push([a, b]);
+    }
+  }
+  for (const [ia, ib] of edges) {
+    const p = vecNorm(qRotateVec(objectQ, vertices[ia]));
+    const q = vecNorm(qRotateVec(objectQ, vertices[ib]));
+    ctx.beginPath();
+    for (let i = 0; i <= 32; i += 1) {
+      const t = i / 32;
+      const d = Math.max(-1, Math.min(1, vecDot(p, q)));
+      const theta = Math.acos(d) * t;
+      const sin = Math.sin(theta);
+      const r = vecSub(q, vecMul(p, d));
+      const rl = Math.hypot(r.x, r.y, r.z) || 1;
+      const v = vecNorm(vecAdd(vecMul(p, Math.cos(theta)), vecMul(r, sin / rl)));
+      const pr = projectPoint(v);
+      if (i === 0) ctx.moveTo(pr.x, pr.y);
+      else ctx.lineTo(pr.x, pr.y);
+    }
+    ctx.stroke();
+  }
   ctx.restore();
   ctx.globalCompositeOperation = 'source-over';
 }
