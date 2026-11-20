@@ -751,6 +751,9 @@ export class IcosaRenderer {
     if (!this.surfaceView && haloFade > 0.01) this._drawHalo(ctx, W, H, cx, cy, R, rm, haloFade);
 
     this._visCount = 0;
+    if (this.surfaceView && hasCamera) {
+      this._drawSurfaceProjected(ctx, camera, W, H);
+    }
     if (this.faces.length && hasCamera) {
       this._drawSphere(ctx, camera, cx, cy, R, rm, glassFade);
       this._drawResourceMarkers(ctx);
@@ -1347,6 +1350,49 @@ export class IcosaRenderer {
     ctx.arc(cx, cy, R, 0, TAU);
     ctx.fill();
     ctx.restore();
+  }
+
+  /** Surface camera underlay: the same cached planet mesh used by orbit. */
+  _drawSurfaceProjected(ctx, camera, W, H) {
+    const surface = this.surface;
+    if (!surface || !surface.faces || !surface.faces.length) return;
+    const origin = camera && camera.origin;
+    const paths = new Map();
+    const tmp = this._tmpV;
+    for (const face of surface.faces) {
+      if (origin && face.centroid.x * origin.x + face.centroid.y * origin.y + face.centroid.z * origin.z < 0.18) continue;
+      tmp.x = face.a.x; tmp.y = face.a.y; tmp.z = face.a.z;
+      const pa = camera.project(tmp);
+      if (!pa.visible) continue;
+      tmp.x = face.b.x; tmp.y = face.b.y; tmp.z = face.b.z;
+      const pb = camera.project(tmp);
+      if (!pb.visible) continue;
+      tmp.x = face.c.x; tmp.y = face.c.y; tmp.z = face.c.z;
+      const pc = camera.project(tmp);
+      if (!pc.visible) continue;
+      const minX = Math.min(pa.x, pb.x, pc.x);
+      const maxX = Math.max(pa.x, pb.x, pc.x);
+      const minY = Math.min(pa.y, pb.y, pc.y);
+      const maxY = Math.max(pa.y, pb.y, pc.y);
+      if (maxX < -4 || minX > W + 4 || maxY < -4 || minY > H + 4) continue;
+      let path = paths.get(face.bucket);
+      if (!path) { path = new Path2D(); paths.set(face.bucket, path); }
+      path.moveTo(pa.x, pa.y);
+      path.lineTo(pb.x, pb.y);
+      path.lineTo(pc.x, pc.y);
+      path.closePath();
+    }
+    for (const [bucket, path] of paths) {
+      const color = surface.buckets[bucket] && surface.buckets[bucket].fill;
+      if (!color) continue;
+      ctx.fillStyle = color;
+      ctx.globalAlpha = 0.98;
+      ctx.fill(path);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 0.8;
+      ctx.stroke(path);
+    }
+    ctx.globalAlpha = 1;
   }
 
   _drawSphere(ctx, camera, cx, cy, R, rm, glassFade) {

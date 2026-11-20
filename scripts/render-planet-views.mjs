@@ -40,6 +40,7 @@ const result = await page.evaluate(async () => {
   const renderer = new IcosaRenderer(canvas);
   renderer.resize();
   renderer.setConfig({ threshold: state.threshold, maxDepth: state.maxDepth });
+  renderer.setPlanetSurface(state.planetSeed);
   renderer.setFaces(leaves);
   renderer.setPlayers(state.players, app.player && app.player.id);
   renderer.setSurfaceView(false);

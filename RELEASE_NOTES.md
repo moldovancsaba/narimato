@@ -1,5 +1,19 @@
 # NARIMATO — Release Notes
 
+## v3.54.0 — “Planet Under The Triangles” (2026-11-20)
+
+- Surface camera now draws the **same cached planet-surface mesh underneath** the active-cell
+  triangles, so there is solid terrain between cells instead of black space.
+- Close-depth spherical edge sampling retained (arcs, not straight chords).
+- Regenerated the two camera renders:
+  - `media/planet-orbit.png`
+  - `media/planet-surface.png`
+- 106/106 tests.
+
+Release: https://github.com/moldovancsaba/narimato/releases/tag/v3.54.0
+
+---
+
 ## v3.53.0 — “Two Camera Renders” (2026-11-20)
 
 - Added `scripts/render-planet-views.mjs`: renders the **same active face set** from an orbit camera
