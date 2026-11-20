@@ -94,6 +94,10 @@ show is also text in the DOM.
   return focus to `#arena-canvas`; incidents never steal focus or trap it while a player types.
 - **Reduced motion:** one static poster frame is painted, the animation loop and `body.is-shaking`
   are not applied, and the overlay dwell is 1200 ms instead of 2600 ms.
+- **Design-system dependency:** UI-01 (GDS island foundation, `GdsProvider`, adapter boundary) is on
+  `main`; the incident overlay is still a legacy `ui.js` surface whose GDS composition is owned by
+  UI-05 (EVT-02's native dependency). Until UI-05 lands, the new controls reuse the existing `.btn`
+  atom and GDS-facing tokens; no parallel component library is introduced.
 - **Evidence:** `scripts/acceptance-incident-a11y.mjs` records the roles, names, live region,
   captions, Escape/DISMISS behaviour, focus return and reduced-motion state for all four kinds
   (`media/evt-01-03-aud-01/acceptance-incident-a11y.json`); `npm run audit:a11y` includes the

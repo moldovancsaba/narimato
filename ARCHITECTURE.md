@@ -17,7 +17,7 @@ Architecture decisions are recorded as ADRs: [docs/adr/README.md](docs/adr/READM
 | Rendering | Canvas 2D + WebGL | game planet: Canvas 2D; spherical-icosahedron reference viewer: WebGL ray–sphere shader |
 | Simulation | Node.js ≥20 | authoritative game server, HTTP + Server-Sent Events |
 | Persistence | JSON files + atomic rename | one file per planet, one registry file |
-| Tests | `node:test` | <!-- test-count:351 -->351<!-- /test-count --> tests, no test dependencies; ownership map in [docs/TEST_MAP.md](docs/TEST_MAP.md) |
+| Tests | `node:test` | <!-- test-count:379 -->379<!-- /test-count --> tests, no test dependencies; ownership map in [docs/TEST_MAP.md](docs/TEST_MAP.md) |
 | CI | GitHub Actions | Node 20 and 22, `npm test`; Node 22 GDS island build, contract gate and determinism proof |
 | Deploy | `node server.js` behind any static/reverse proxy | Cloudflare tunnel used for the live build |
 
@@ -482,6 +482,12 @@ The single ship model lives in `public/js/shared/tetra-ship.js` (`TETRA_SHIP`, `
 intro, transit, relief drop, meteor and alien incidents all render through it, so no second ship
 renderer exists.
 
+Design-system boundary: the UI-01 GDS island foundation is on `main` (one `GdsProvider`, one React
+root, `public/js/gds-adapter.js`), but the incident overlay, announcer and `TAP FOR VOICE` control
+are still legacy `public/js/ui.js` surfaces delegated through that adapter. EVT-02 depends on UI-05
+for the GDS overlay migration; until it lands these surfaces reuse the existing `.btn` atom, tokens
+and the single stylesheet, and no parallel component library or second visual system is added.
+
 ## Algorithms
 
 - **Icosahedron:** regular icosahedron (12 cartographic points, 30 equal 63.435° edges, 20 congruent
@@ -612,10 +618,10 @@ debounce 0.5 min + 5 min backup interval), RTO ≤ 15 min; retention is 7 daily 
 
 ## Testing
 
-The suite currently runs <!-- test-count:351 -->351<!-- /test-count --> tests. Behaviour ownership: [docs/TEST_MAP.md](docs/TEST_MAP.md).
+The suite currently runs <!-- test-count:379 -->379<!-- /test-count --> tests. Behaviour ownership: [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 ```bash
-npm test                 # node:test suite (351 tests)
+npm test                 # node:test suite (379 tests)
 npm run check:slo        # evaluate observability/slo.json against /api/metrics (0/1/2/3)
 npm run recovery:test    # backup -> verify -> restore drill on throwaway data
 npm run docs:check       # R1-R6 repository SSOT gate

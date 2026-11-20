@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "base": "http://127.0.0.1:51131",
+  "base": "http://127.0.0.1:55420",
   "autoplay": {
     "before": {
       "visible": true,
@@ -37,17 +37,17 @@
     },
     "telemetry": {
       "webVitals": {
-        "lcp": 44,
-        "cls": 0.15,
-        "inp": 168,
-        "ttfb": 3
+        "lcp": 40,
+        "cls": 0.264,
+        "inp": 160,
+        "ttfb": 2
       },
       "hud": {
-        "longTasks": 74,
-        "maxLongTask": 94
+        "longTasks": 65,
+        "maxLongTask": 280
       },
       "audio": {
-        "clipFailures": 2
+        "clipFailures": 4
       },
       "viewport": {
         "width": 390,
@@ -59,16 +59,16 @@
         "network": 0,
         "unhandled": 0
       },
-      "sessionMs": 5138
+      "sessionMs": 5328
     },
     "subtitleVisible": true,
     "subtitleText": "On the first world four clicks break it into four smaller cells; deeper worlds ask for eight.",
     "speaker": "TACTICAL"
   },
   "firstWord": {
-    "firstWordMs": 475,
-    "navigationNowMs": 4420,
-    "cueStartMs": 3638,
+    "firstWordMs": 458,
+    "navigationNowMs": 4345,
+    "cueStartMs": 3579,
     "narrator": {
       "voiceEnabled": true,
       "subtitlesEnabled": true,
@@ -87,10 +87,10 @@
     },
     "serverAggregate": {
       "count": 1,
-      "sum": 475,
-      "avg": 475,
-      "min": 475,
-      "max": 475
+      "sum": 458,
+      "avg": 458,
+      "min": 458,
+      "max": 458
     }
   },
   "errors": []

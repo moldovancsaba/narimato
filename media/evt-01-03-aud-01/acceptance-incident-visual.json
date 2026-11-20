@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "base": "http://127.0.0.1:52612",
+  "base": "http://127.0.0.1:54821",
   "viewports": [
     {
       "name": "desktop",
@@ -48,7 +48,7 @@
             "blank": false,
             "poster": false,
             "open": true,
-            "firstFrameLuminance": 0.9397,
+            "firstFrameLuminance": 0.9426,
             "dwellMs": 2600,
             "minCoverage": 0.03,
             "posterFrameMs": 400,
@@ -326,5 +326,5 @@
     }
   ],
   "errors": [],
-  "startedAt": "2026-11-20T21:35:31.520Z"
+  "startedAt": "2026-11-20T21:39:49.992Z"
 }

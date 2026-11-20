@@ -112,7 +112,9 @@
     <!-- EVT-03: region (not a modal dialog) so a background incident never traps
          focus or interrupts the tag field; wording lives in
          shared/incident-announcements.js and the single live region is
-         #event-announcer below. GDS island composition is pending PR #53. -->
+         #event-announcer below. The UI-01 GDS island foundation is on main; the
+         incident overlay is a legacy surface whose GDS migration is owned by
+         UI-05 (EVT-02 depends on it). No parallel component system is added. -->
     <section
       id="meteor-overlay"
       class="meteor-overlay is-hidden"
@@ -192,9 +194,10 @@
       <span id="subtitle-text" class="subtitle-text"></span>
       <!-- AUD-01: autoplay-blocked recovery. A real button, 44 px, described by
            the sentence rule below; it resumes the pending sentence from its
-           beginning. Hidden until the browser blocks autoplay. GDS composition
-           lands with the React island (PR #53); markup/classes reuse the game's
-           single button atom instead of a second visual system. -->
+           beginning. Hidden until the browser blocks autoplay. The UI-01 island
+           foundation is on main; caption surfaces migrate in UI-05/A11Y-01, so
+           this control reuses the single .btn atom and GDS tokens instead of a
+           second visual system. -->
       <button
         id="btn-tap-voice"
         class="btn btn--tap-voice"

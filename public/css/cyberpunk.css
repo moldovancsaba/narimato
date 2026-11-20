@@ -5417,7 +5417,8 @@ body.interlude-active .toast-container {
   pointer-events: auto;
 }
 
-/* Incident DISMISS reuses the single .btn atom (GDS dependency: PR #53). */
+/* Incident DISMISS reuses the single .btn atom and tokens (GDS overlay
+   migration is owned by UI-05; no parallel control system is introduced). */
 .meteor-dismiss {
   margin-top: 18px;
   min-width: 44px;
