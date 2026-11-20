@@ -81,9 +81,9 @@ resize();
 
 /** Screen point to a point on the visible unit-sphere surface. */
 function unprojectSphere(xPx, yPx) {
-  // Exact projected silhouette radius for a unit sphere at camera.distance.
-  const d = camera.distance;
-  const radius = Math.min(W, H) * SPHERE_SCREEN_FRACTION * (d / Math.sqrt(Math.max(1e-6, d * d - 1)));
+  // Must use the same base projection radius as camera.project(); the exact
+  // silhouette radius is only for drawing the sphere disk.
+  const radius = Math.min(W, H) * SPHERE_SCREEN_FRACTION * camera.zoom;
   const focal = radius * camera.distance;
   const X = xPx - W / 2;
   const Y = H / 2 - yPx;
