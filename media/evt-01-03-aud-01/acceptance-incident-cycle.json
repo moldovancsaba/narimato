@@ -1,0 +1,49 @@
+{
+  "ok": true,
+  "base": "http://127.0.0.1:58469",
+  "kinds": [
+    {
+      "kind": "meteor",
+      "status": 200,
+      "title": "METEOR IMPACT",
+      "serverLeaves": 20,
+      "clientLeaves": 20,
+      "incidentCycle": 1,
+      "announcement": "METEOR IMPACT on MAGRATHEA. A rogue meteor punched through the surface. The crust has reset, new ore is exposed, and mining is open again."
+    },
+    {
+      "kind": "nuclear",
+      "status": 200,
+      "title": "NUCLEAR WAR",
+      "serverLeaves": 20,
+      "clientLeaves": 20,
+      "incidentCycle": 2,
+      "announcement": "NUCLEAR WAR on MAGRATHEA. Atomic fire swept the planet from horizon to horizon. The crust has reset, new ore is exposed, and mining is open again."
+    },
+    {
+      "kind": "solar",
+      "status": 200,
+      "title": "SOLAR FLARE",
+      "serverLeaves": 20,
+      "clientLeaves": 20,
+      "incidentCycle": 3,
+      "announcement": "SOLAR FLARE on MAGRATHEA. The local star lashed out and cooked the daylight side. The crust has reset, new ore is exposed, and mining is open again."
+    },
+    {
+      "kind": "alien",
+      "status": 200,
+      "title": "ALIEN INVASION",
+      "serverLeaves": 20,
+      "clientLeaves": 20,
+      "incidentCycle": 0,
+      "announcement": "ALIEN INVASION on MAGRATHEA. An alien fleet razed the planet from orbit. The crust has reset, new ore is exposed, and mining is open again."
+    }
+  ],
+  "mutations": 4,
+  "errors": [],
+  "startedAt": "2026-11-20T21:44:18.033Z",
+  "health": {
+    "eventTrigger": true,
+    "appVersion": "3.57.0"
+  }
+}

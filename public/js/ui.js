@@ -138,6 +138,7 @@ class UI {
     this._escapeReady = false;
     this._interludeActive = false;
     this._meteorActive = false;
+    this._announcedEvents = new Set();
     this._confirmResolver = null;
     this._confirmPreviousFocus = null;
     this._reportResult = null;
@@ -1171,6 +1172,54 @@ class UI {
     }
     if (this.doc && this.doc.body) this.doc.body.classList.toggle('is-meteor', this._meteorActive);
     if (this._meteorActive) this.closeDrawers();
+  }
+
+  /**
+   * EVT-03: exactly one live-region write plus the static caption units and
+   * overlay copy for one incident announcement. Returns false when this
+   * announcement id was already shown (SSE replay / reconnect dedupe).
+   * Focus is never moved: incidents arrive in the background.
+   * @param {object} announcement built by shared/incident-announcements.js
+   */
+  showIncidentFeedback(announcement) {
+    const data = announcement && typeof announcement === 'object' ? announcement : null;
+    if (!data || typeof data.id !== 'string' || !data.id) return false;
+    if (!this.announceEvent(data.id, data.spoken, data.captions)) return false;
+
+    // Overlay copy is written before the overlay becomes visible.
+    if (data.title) this._setText(this._el.meteorTitle, String(data.title));
+    if (data.message) this._setText(this._el.meteorSub, String(data.message));
+    this._setText(this._el.meteorDescription, String(data.detail || ''));
+    return true;
+  }
+
+  /**
+   * EVT-03: write ONE polite announcement and its static caption units. Used by
+   * incidents and the relief drop. Returns false when `id` was already shown.
+   * Only #event-announcer is live; #event-captions is static so re-reading it
+   * never re-triggers speech.
+   */
+  announceEvent(id, spoken, captions = []) {
+    if (!id || typeof id !== 'string') return false;
+    if (this._announcedEvents.has(id)) return false;
+    if (this._announcedEvents.size > 128) this._announcedEvents.clear();
+    this._announcedEvents.add(id);
+    this._setText(this._el.eventAnnouncer, String(spoken || ''));
+    const list = this._el.eventCaptionList;
+    if (list) {
+      list.textContent = '';
+      const lines = Array.isArray(captions) ? captions : [];
+      for (const line of lines) {
+        const item = this.doc.createElement('li');
+        item.textContent = String(line);
+        list.appendChild(item);
+      }
+    }
+    if (this._el.eventCaptions) {
+      this._el.eventCaptions.hidden = false;
+      this._el.eventCaptions.classList.remove('is-hidden');
+    }
+    return true;
   }
 
   /**
@@ -2383,6 +2432,7 @@ function resolveElements(doc) {
     narrativeSubtitles: byId('narrative-subtitles'),
     subtitleSpeaker: byId('subtitle-speaker'),
     subtitleText: byId('subtitle-text'),
+    btnTapVoice: byId('btn-tap-voice'),
     btnSubtitles: byId('btn-subtitles'),
     btnVoice: byId('btn-voice'),
     btnHelp: byId('btn-help'),
@@ -2422,6 +2472,11 @@ function resolveElements(doc) {
     meteorFx: byId('meteor-fx'),
     meteorTitle: byId('meteor-title'),
     meteorSub: byId('meteor-sub'),
+    meteorDescription: byId('meteor-description'),
+    meteorDismiss: byId('meteor-dismiss'),
+    eventAnnouncer: byId('event-announcer'),
+    eventCaptions: byId('event-captions'),
+    eventCaptionList: byId('event-caption-list'),
     introOverlay: byId('intro-overlay'),
     introFx: byId('intro-fx'),
     introPhase: byId('intro-phase'),

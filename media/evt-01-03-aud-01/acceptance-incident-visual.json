@@ -1,0 +1,330 @@
+{
+  "ok": true,
+  "base": "http://127.0.0.1:54821",
+  "viewports": [
+    {
+      "name": "desktop",
+      "width": 1280,
+      "height": 800,
+      "dpr": 1,
+      "kinds": [
+        {
+          "kind": "meteor",
+          "stats": {
+            "kind": "meteor",
+            "frames": 30,
+            "coverage": 1,
+            "dpr": 1,
+            "reducedMotion": false,
+            "ships": 1,
+            "blank": false,
+            "poster": false,
+            "open": true,
+            "firstFrameLuminance": 0.2506,
+            "dwellMs": 2600,
+            "minCoverage": 0.03,
+            "posterFrameMs": 400,
+            "minFrames": 30
+          },
+          "canvas": {
+            "width": 1280,
+            "height": 800,
+            "cssWidth": 1280,
+            "cssHeight": 800,
+            "innerWidth": 1280,
+            "innerHeight": 800,
+            "dpr": 1
+          }
+        },
+        {
+          "kind": "nuclear",
+          "stats": {
+            "kind": "nuclear",
+            "frames": 30,
+            "coverage": 1,
+            "dpr": 1,
+            "reducedMotion": false,
+            "ships": 0,
+            "blank": false,
+            "poster": false,
+            "open": true,
+            "firstFrameLuminance": 0.9426,
+            "dwellMs": 2600,
+            "minCoverage": 0.03,
+            "posterFrameMs": 400,
+            "minFrames": 30
+          },
+          "canvas": {
+            "width": 1280,
+            "height": 800,
+            "cssWidth": 1280,
+            "cssHeight": 800,
+            "innerWidth": 1280,
+            "innerHeight": 800,
+            "dpr": 1
+          }
+        },
+        {
+          "kind": "solar",
+          "stats": {
+            "kind": "solar",
+            "frames": 30,
+            "coverage": 1,
+            "dpr": 1,
+            "reducedMotion": false,
+            "ships": 0,
+            "blank": false,
+            "poster": false,
+            "open": true,
+            "firstFrameLuminance": 0.7202,
+            "dwellMs": 2600,
+            "minCoverage": 0.03,
+            "posterFrameMs": 400,
+            "minFrames": 30
+          },
+          "canvas": {
+            "width": 1280,
+            "height": 800,
+            "cssWidth": 1280,
+            "cssHeight": 800,
+            "innerWidth": 1280,
+            "innerHeight": 800,
+            "dpr": 1
+          }
+        },
+        {
+          "kind": "alien",
+          "stats": {
+            "kind": "alien",
+            "frames": 30,
+            "coverage": 1,
+            "dpr": 1,
+            "reducedMotion": false,
+            "ships": 2,
+            "blank": false,
+            "poster": false,
+            "open": true,
+            "firstFrameLuminance": 0.4521,
+            "dwellMs": 2600,
+            "minCoverage": 0.03,
+            "posterFrameMs": 400,
+            "minFrames": 30
+          },
+          "canvas": {
+            "width": 1280,
+            "height": 800,
+            "cssWidth": 1280,
+            "cssHeight": 800,
+            "innerWidth": 1280,
+            "innerHeight": 800,
+            "dpr": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "dpr": 3,
+      "kinds": [
+        {
+          "kind": "meteor",
+          "stats": {
+            "kind": "meteor",
+            "frames": 30,
+            "coverage": 1,
+            "dpr": 3,
+            "reducedMotion": false,
+            "ships": 1,
+            "blank": false,
+            "poster": false,
+            "open": true,
+            "firstFrameLuminance": 0.2698,
+            "dwellMs": 2600,
+            "minCoverage": 0.03,
+            "posterFrameMs": 400,
+            "minFrames": 30
+          },
+          "canvas": {
+            "width": 1170,
+            "height": 2532,
+            "cssWidth": 390,
+            "cssHeight": 844,
+            "innerWidth": 390,
+            "innerHeight": 844,
+            "dpr": 3
+          }
+        },
+        {
+          "kind": "nuclear",
+          "stats": {
+            "kind": "nuclear",
+            "frames": 30,
+            "coverage": 1,
+            "dpr": 3,
+            "reducedMotion": false,
+            "ships": 0,
+            "blank": false,
+            "poster": false,
+            "open": true,
+            "firstFrameLuminance": 0.9453,
+            "dwellMs": 2600,
+            "minCoverage": 0.03,
+            "posterFrameMs": 400,
+            "minFrames": 30
+          },
+          "canvas": {
+            "width": 1170,
+            "height": 2532,
+            "cssWidth": 390,
+            "cssHeight": 844,
+            "innerWidth": 390,
+            "innerHeight": 844,
+            "dpr": 3
+          }
+        },
+        {
+          "kind": "solar",
+          "stats": {
+            "kind": "solar",
+            "frames": 30,
+            "coverage": 1,
+            "dpr": 3,
+            "reducedMotion": false,
+            "ships": 0,
+            "blank": false,
+            "poster": false,
+            "open": true,
+            "firstFrameLuminance": 0.7424,
+            "dwellMs": 2600,
+            "minCoverage": 0.03,
+            "posterFrameMs": 400,
+            "minFrames": 30
+          },
+          "canvas": {
+            "width": 1170,
+            "height": 2532,
+            "cssWidth": 390,
+            "cssHeight": 844,
+            "innerWidth": 390,
+            "innerHeight": 844,
+            "dpr": 3
+          }
+        },
+        {
+          "kind": "alien",
+          "stats": {
+            "kind": "alien",
+            "frames": 30,
+            "coverage": 1,
+            "dpr": 3,
+            "reducedMotion": false,
+            "ships": 2,
+            "blank": false,
+            "poster": false,
+            "open": true,
+            "firstFrameLuminance": 0.5477,
+            "dwellMs": 2600,
+            "minCoverage": 0.03,
+            "posterFrameMs": 400,
+            "minFrames": 30
+          },
+          "canvas": {
+            "width": 1170,
+            "height": 2532,
+            "cssWidth": 390,
+            "cssHeight": 844,
+            "innerWidth": 390,
+            "innerHeight": 844,
+            "dpr": 3
+          }
+        }
+      ]
+    }
+  ],
+  "reducedMotion": [
+    {
+      "kind": "meteor",
+      "stats": {
+        "kind": "meteor",
+        "frames": 1,
+        "coverage": 1,
+        "dpr": 1,
+        "reducedMotion": true,
+        "ships": 1,
+        "blank": false,
+        "poster": true,
+        "open": true,
+        "firstFrameLuminance": 0.251,
+        "dwellMs": 1200,
+        "minCoverage": 0.03,
+        "posterFrameMs": 400,
+        "minFrames": 30
+      },
+      "shake": false
+    },
+    {
+      "kind": "nuclear",
+      "stats": {
+        "kind": "nuclear",
+        "frames": 1,
+        "coverage": 1,
+        "dpr": 1,
+        "reducedMotion": true,
+        "ships": 0,
+        "blank": false,
+        "poster": true,
+        "open": true,
+        "firstFrameLuminance": 0.2693,
+        "dwellMs": 1200,
+        "minCoverage": 0.03,
+        "posterFrameMs": 400,
+        "minFrames": 30
+      },
+      "shake": false
+    },
+    {
+      "kind": "solar",
+      "stats": {
+        "kind": "solar",
+        "frames": 1,
+        "coverage": 1,
+        "dpr": 1,
+        "reducedMotion": true,
+        "ships": 0,
+        "blank": false,
+        "poster": true,
+        "open": true,
+        "firstFrameLuminance": 0.7199,
+        "dwellMs": 1200,
+        "minCoverage": 0.03,
+        "posterFrameMs": 400,
+        "minFrames": 30
+      },
+      "shake": false
+    },
+    {
+      "kind": "alien",
+      "stats": {
+        "kind": "alien",
+        "frames": 1,
+        "coverage": 1,
+        "dpr": 1,
+        "reducedMotion": true,
+        "ships": 2,
+        "blank": false,
+        "poster": true,
+        "open": true,
+        "firstFrameLuminance": 0.4505,
+        "dwellMs": 1200,
+        "minCoverage": 0.03,
+        "posterFrameMs": 400,
+        "minFrames": 30
+      },
+      "shake": false
+    }
+  ],
+  "errors": [],
+  "startedAt": "2026-11-20T21:39:49.992Z"
+}

@@ -38,6 +38,8 @@ import {
   SUPPLY_FOCUS_TTL_MS,
   SUPPLY_MIN_SEPARATION_RAD,
   SUPPLY_MAX_PLACEMENTS,
+  INCIDENTS,
+  INCIDENT_KINDS,
 } from '../lib/world-core.js';
 import { buildMesh, childTriangles } from '../public/js/shared/geometry.js';
 import { robotTargetForOnlineHumans } from '../lib/planet-manager.js';
@@ -1800,6 +1802,163 @@ test('incidents: a completed refit can trigger the next incident before every de
   const meteor = core.maybeMeteor({ missionReady: true });
   assert.ok(meteor && meteor.event && meteor.event.title);
   assert.deepEqual(core.getLeaves().length, 20);
+});
+
+/** EVT-01: play-driven exhaustion — click every hidden deposit, then let the manager fire. */
+function exhaustWithClicks(core, token) {
+  forceFirstClickDeposits(core);
+  for (let guard = 0; guard < 400 && core.hiddenDepositCount() > 0; guard += 1) {
+    const cell = [...core.getLeafMap().values()].find((entry) => entry.resourceId && !entry.resourceFound);
+    if (!cell) break;
+    assert.equal(core.click({ token, label: cell.label }).ok, true, 'play-driven click');
+  }
+  assert.equal(core.hiddenDepositCount(), 0, 'crust exhausted by clicks');
+  return core.maybeMeteor();
+}
+
+test('incidents: eight play-driven incidents are two full rotations with period four', async (t) => {
+  const { core } = await makeCore(t, { config: { depositChance: 1, planetSeed: 424242, bots: 0 } });
+  const { token } = core.join({ tag: 'PILOT' });
+  const kinds = [];
+  for (let i = 0; i < 8; i += 1) {
+    const meteor = exhaustWithClicks(core, token);
+    assert.ok(meteor && meteor.triggered, `incident ${i + 1} fired from play`);
+    assert.equal(meteor.event.type, 'incident');
+    assert.ok(['meteor', 'nuclear', 'solar', 'alien'].includes(meteor.event.kind));
+    assert.equal(core.getLeaves().length, 20, 'crust reset to 20 leaves');
+    assert.ok(core.hiddenDepositCount() > 0, 'reset crust is re-armed');
+    kinds.push(meteor.event.kind);
+  }
+  assert.deepEqual(kinds, ['meteor', 'nuclear', 'solar', 'alien', 'meteor', 'nuclear', 'solar', 'alien']);
+  assert.equal(core.incidentCycle, 0, 'cycle wraps at four');
+});
+
+test('incidents: the rotation survives reload and continues at the next kind', async (t) => {
+  const config = { depositChance: 1, planetSeed: 424242, bots: 0 };
+  const { core, dataDir, clock } = await makeCore(t, { config });
+  const { token } = core.join({ tag: 'PILOT' });
+  const first = exhaustWithClicks(core, token);
+  assert.equal(first.event.kind, 'meteor');
+  const second = exhaustWithClicks(core, token);
+  assert.equal(second.event.kind, 'nuclear');
+  assert.equal(core.incidentCycle, 2);
+  await core.flush();
+  const raw = JSON.parse(await readFile(path.join(dataDir, 'world.json'), 'utf8'));
+  assert.equal(raw.incidentCycle, 2, 'incidentCycle is serialized in world.json');
+
+  const reloaded = new WorldCore({
+    dataDir,
+    config: { ...config, clickCooldownMs: 0 },
+    now: clock.now,
+    rng: Math.random,
+    autoSave: false,
+    quiet: true,
+  });
+  t.after(async () => reloaded.flush());
+  await reloaded.load();
+  assert.equal(reloaded.incidentCycle, 2, 'reload resumes at solar');
+  const third = exhaustWithClicks(reloaded, token);
+  assert.equal(third.event.kind, 'solar', 'reload after nuclear continues at solar');
+});
+
+test('incidents: clearing arming around reset blocks a back-to-back duplicate', async (t) => {
+  const { core } = await makeCore(t, { config: { depositChance: 0, bots: 0 } });
+  assert.equal(core.hiddenDepositCount(), 0, 'no deposits with DEPOSIT_CHANCE=0');
+  assert.equal(core.maybeMeteor(), null, 'never fires unarmed');
+  // A grid that still had arming (for example a stale in-memory flag) fires once,
+  // then the explicit re-arm against the deposit-free crust refuses a second fire.
+  core._meteorArmed = true;
+  const first = core.maybeMeteor();
+  assert.ok(first, 'first incident fires while armed');
+  assert.equal(first.event.kind, 'meteor');
+  assert.equal(core.maybeMeteor(), null, 'arming cleared: no duplicate incident');
+  assert.equal(core.incidentCycle, 1, 'the cycle advanced exactly once');
+});
+
+test('incidents: forced kind emits the play payload and advances the rotation', async (t) => {
+  const { core } = await makeCore(t, { config: { depositChance: 1, bots: 0 } });
+  const { token } = core.join({ tag: 'PILOT' });
+  const before = core.incidentCycle;
+  const solar = core.maybeMeteor({ forcedKind: 'solar', missionReady: true });
+  assert.ok(solar);
+  assert.equal(solar.event.type, 'incident');
+  assert.equal(solar.event.kind, 'solar');
+  assert.equal(solar.event.title, INCIDENTS.find((entry) => entry.kind === 'solar').title);
+  assert.equal(solar.event.message, INCIDENTS.find((entry) => entry.kind === 'solar').message);
+  assert.equal(core.incidentCycle, (before + 1) % 4, 'forced fire advances the cycle');
+  assert.deepEqual(core.getLeaves().length, 20);
+
+  // Unknown forced kinds are a no-op: no state change, no cycle advance.
+  const cycleNow = core.incidentCycle;
+  const seedNow = core.planetSeed;
+  assert.equal(core.maybeMeteor({ forcedKind: 'volcano', missionReady: true }), null);
+  assert.equal(core.incidentCycle, cycleNow, 'unknown kind never advances the cycle');
+  assert.equal(core.planetSeed, seedNow, 'unknown kind never resets the planet');
+  void token;
+});
+
+test('incidents: two planets in one process keep independent rotation cycles', async (t) => {
+  const config = { depositChance: 1, bots: 0 };
+  const a = await makeCore(t, { config });
+  const b = await makeCore(t, { config });
+  const tokenA = a.core.join({ tag: 'ALPHA' }).token;
+  const tokenB = b.core.join({ tag: 'BETA' }).token;
+  exhaustWithClicks(a.core, tokenA);
+  exhaustWithClicks(a.core, tokenA);
+  assert.equal(a.core.incidentCycle, 2);
+  assert.equal(b.core.incidentCycle, 0, 'planet B untouched');
+  const first = exhaustWithClicks(b.core, tokenB);
+  assert.equal(first.event.kind, 'meteor', 'planet B starts at meteor');
+  assert.equal(b.core.incidentCycle, 1);
+});
+
+test('incidents: corrupt or unsafe persisted cycles sanitize to 0 (migration)', async (t) => {
+  const config = { depositChance: 1, planetSeed: 424242, bots: 0 };
+  const { core, dataDir, clock } = await makeCore(t, { config });
+  core.join({ tag: 'PILOT' });
+  await core.flush();
+  const file = path.join(dataDir, 'world.json');
+  const original = JSON.parse(await readFile(file, 'utf8'));
+
+  const cases = [
+    [undefined, 0],
+    [-3, 0],
+    [2.5, 0],
+    ['solar', 0],
+    [Number.MAX_SAFE_INTEGER + 2, 0],
+    [3, 3],
+    [6, 2],
+  ];
+  for (const [value, expected] of cases) {
+    const raw = { ...original };
+    if (value === undefined) delete raw.incidentCycle;
+    else raw.incidentCycle = value;
+    await writeFile(file, JSON.stringify(raw), 'utf8');
+    const reloaded = new WorldCore({
+      dataDir,
+      config: { ...config, clickCooldownMs: 0 },
+      now: clock.now,
+      rng: Math.random,
+      autoSave: false,
+      quiet: true,
+    });
+    t.after(async () => reloaded.flush());
+    await reloaded.load();
+    assert.equal(reloaded.incidentCycle, expected, `incidentCycle ${String(value)} sanitizes to ${expected}`);
+  }
+});
+
+test('incidents: health advertises the development trigger gate', async (t) => {
+  assert.deepEqual(INCIDENT_KINDS, ['meteor', 'nuclear', 'solar', 'alien']);
+  assert.equal(resolveConfig({ NARIMATO_EVENT_TRIGGER: '1' }).eventTrigger, true);
+  assert.equal(resolveConfig({ NARIMATO_EVENT_TRIGGER: 'true' }).eventTrigger, true);
+  assert.equal(resolveConfig({ NARIMATO_EVENT_TRIGGER: '0' }).eventTrigger, false);
+  assert.equal(resolveConfig({}).eventTrigger, false, 'default off');
+  assert.equal(resolveConfig({}, { eventTrigger: true }).eventTrigger, true, 'explicit override');
+  const on = await makeCore(t, { config: { eventTrigger: true } });
+  assert.equal(on.core.config.eventTrigger, true);
+  const off = await makeCore(t, {});
+  assert.equal(off.core.config.eventTrigger, false);
 });
 
 test('robot: emits surface_mine for the authoritative cell it clicked', async (t) => {

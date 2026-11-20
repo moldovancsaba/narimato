@@ -96,7 +96,9 @@ ignored; numbers are clamped):
 | `webVitals.ttfb` | 0..60000 ms |
 | `hud.longTasks` | 0..1000000 |
 | `hud.maxLongTask` | 0..600000 ms |
-| `audio.firstWordMs` | 0..120000 ms |
+| `audio.firstWordMs` | 0..120000 ms (cue-relative; see below) |
+| `audio.clipFailures` | 0..100000 |
+| `audio.resumeCount` | 0..100000 |
 | `viewport.width` / `viewport.height` | 1..20000 |
 | `viewport.dpr` | 0.25..10 |
 | `sessionMs` | 0..86400000 |
@@ -126,8 +128,19 @@ exposes a controller:
 
 ```js
 import { telemetry } from './telemetry.js';
-telemetry?.markAudioFirstWord(performance.now() - startedAt); // beacon once after first audio word
+// AUD-01: measure from CUE START, not navigation start, and let the watchdog
+// classify failures. `firstWordMs` is clamped to [0, 120000] server-side.
+const cueStartedAt = performance.now();
+telemetry?.markAudioFirstWord(firstWordMs(cueStartedAt, performance.now()));
+telemetry?.markAudioClipFailure(); // numeric counter only; never a reason string
+telemetry?.markAudioResume();      // one successful interruption resume
 ```
+
+`audio.firstWordMs` used to be measured from navigation start, which made the `< 300 ms` cached
+SLO unverifiable (a healthy page reports thousands of milliseconds). It is now measured from the
+sentence's cue start to its first `playing` event and aggregated like every other numeric field.
+`audio.clipFailures` counts watchdog/`play()` failures and `audio.resumeCount` counts successful
+interruption resumes; all three are numbers only, so no cue id, URL, profile id or token can leak.
 
 - Collects Web Vitals (LCP/CLS/INP/TTFB), long-task counters, viewport, session length and error
   counters locally, using `PerformanceObserver` where available.
@@ -228,6 +241,13 @@ reports (`audio-first-word`, severity warn, owner client-perf-on-call).
 
 **Diagnose:** `curl -s http://localhost:4173/api/telemetry` for count/min/max/avg; compare
 `webVitals.lcp` and `sessionMs`; check the `.m4a` asset cache and `ASSET_BASE_URL` (OPS-04).
+
+**AUD-01 counters:** the same endpoint aggregates `audio.clipFailures` (watchdog/play failures)
+and `audio.resumeCount` (interruption resumes). A rising `clipFailures` with a flat
+`resumeCount` means clients are degrading to captions (watchdog/`play()` ladder in
+[VOICE.md](VOICE.md#playback-resilience-aud-01)); a healthy session keeps `firstWordMs` low and
+`clipFailures` at 0. Both counters are numeric-only and clamped, so they never carry a cue id,
+URL, profile id or token.
 
 **Act:** if the count is small or one outlier dominates (`max` far above `avg`), no action. If the
 average is sustained, verify CDN/asset-base caching and the narration preload path; roll back the

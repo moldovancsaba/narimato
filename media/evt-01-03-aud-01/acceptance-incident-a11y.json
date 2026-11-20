@@ -1,0 +1,220 @@
+{
+  "ok": true,
+  "base": "http://127.0.0.1:58534",
+  "kinds": [
+    {
+      "kind": "meteor",
+      "serverTitle": "METEOR IMPACT",
+      "overlay": {
+        "role": "region",
+        "labelledby": "meteor-title",
+        "describedby": "meteor-sub meteor-description",
+        "ariaHidden": "false",
+        "active": true,
+        "liveRegionsInside": 0
+      },
+      "name": "METEOR IMPACT",
+      "announcer": {
+        "role": "status",
+        "live": "polite",
+        "atomic": "true",
+        "text": "METEOR IMPACT on MAGRATHEA. A rogue meteor punched through the surface. The crust has reset, new ore is exposed, and mining is open again."
+      },
+      "captions": {
+        "live": null,
+        "role": null,
+        "items": [
+          "Meteor impact. A rogue rock punched straight through the old crust.",
+          "The crater is open, and fresh ore veins are exposed.",
+          "Get down there and salvage what the rock is hiding."
+        ]
+      },
+      "statusRegions": 1,
+      "activeElementId": ""
+    },
+    {
+      "kind": "nuclear",
+      "serverTitle": "NUCLEAR WAR",
+      "overlay": {
+        "role": "region",
+        "labelledby": "meteor-title",
+        "describedby": "meteor-sub meteor-description",
+        "ariaHidden": "false",
+        "active": true,
+        "liveRegionsInside": 0
+      },
+      "name": "NUCLEAR WAR",
+      "announcer": {
+        "role": "status",
+        "live": "polite",
+        "atomic": "true",
+        "text": "NUCLEAR WAR on MAGRATHEA. Atomic fire swept the planet from horizon to horizon. The crust has reset, new ore is exposed, and mining is open again."
+      },
+      "captions": {
+        "live": null,
+        "role": null,
+        "items": [
+          "Nuclear war. Atomic fire swept the planet from horizon to horizon.",
+          "The blast waves split the crust and exposed new materials.",
+          "Everything old is ash; the survivors are already picking through the rubble."
+        ]
+      },
+      "statusRegions": 1,
+      "activeElementId": ""
+    },
+    {
+      "kind": "solar",
+      "serverTitle": "SOLAR FLARE",
+      "overlay": {
+        "role": "region",
+        "labelledby": "meteor-title",
+        "describedby": "meteor-sub meteor-description",
+        "ariaHidden": "false",
+        "active": true,
+        "liveRegionsInside": 0
+      },
+      "name": "SOLAR FLARE",
+      "announcer": {
+        "role": "status",
+        "live": "polite",
+        "atomic": "true",
+        "text": "SOLAR FLARE on MAGRATHEA. The local star lashed out and cooked the daylight side. The crust has reset, new ore is exposed, and mining is open again."
+      },
+      "captions": {
+        "live": null,
+        "role": null,
+        "items": [
+          "Solar flare. The local star lashed out and cooked the daylight side.",
+          "The magnetic storm peeled back rock and scattered rare elements.",
+          "The surface is hot, but the ore is close."
+        ]
+      },
+      "statusRegions": 1,
+      "activeElementId": ""
+    },
+    {
+      "kind": "alien",
+      "serverTitle": "ALIEN INVASION",
+      "overlay": {
+        "role": "region",
+        "labelledby": "meteor-title",
+        "describedby": "meteor-sub meteor-description",
+        "ariaHidden": "false",
+        "active": true,
+        "liveRegionsInside": 0
+      },
+      "name": "ALIEN INVASION",
+      "announcer": {
+        "role": "status",
+        "live": "polite",
+        "atomic": "true",
+        "text": "ALIEN INVASION on MAGRATHEA. An alien fleet razed the planet from orbit. The crust has reset, new ore is exposed, and mining is open again."
+      },
+      "captions": {
+        "live": null,
+        "role": null,
+        "items": [
+          "Alien invasion. A fleet razed the planet from orbit.",
+          "Their beams demolished the old surface and scattered new materials.",
+          "Whatever they were looking for, they left plenty behind for us."
+        ]
+      },
+      "statusRegions": 1,
+      "activeElementId": ""
+    }
+  ],
+  "dismissal": {
+    "dismissed": true,
+    "activeElementId": "arena-canvas",
+    "dismissTag": "BUTTON",
+    "dismissMinHeight": "44px",
+    "dismissMinWidth": "44px"
+  },
+  "reducedMotion": {
+    "meteor": {
+      "stats": {
+        "kind": "meteor",
+        "frames": 1,
+        "coverage": 1,
+        "dpr": 1,
+        "reducedMotion": true,
+        "ships": 1,
+        "blank": false,
+        "poster": true,
+        "open": true,
+        "firstFrameLuminance": 0.251,
+        "dwellMs": 1200,
+        "minCoverage": 0.03,
+        "posterFrameMs": 400,
+        "minFrames": 30
+      },
+      "shaking": false,
+      "announcer": "METEOR IMPACT on MAGRATHEA. A rogue meteor punched through the surface. The crust has reset, new ore is exposed, and mining is open again.",
+      "captions": 3
+    },
+    "nuclear": {
+      "stats": {
+        "kind": "nuclear",
+        "frames": 1,
+        "coverage": 1,
+        "dpr": 1,
+        "reducedMotion": true,
+        "ships": 0,
+        "blank": false,
+        "poster": true,
+        "open": true,
+        "firstFrameLuminance": 0.2693,
+        "dwellMs": 1200,
+        "minCoverage": 0.03,
+        "posterFrameMs": 400,
+        "minFrames": 30
+      },
+      "shaking": false,
+      "announcer": "NUCLEAR WAR on MAGRATHEA. Atomic fire swept the planet from horizon to horizon. The crust has reset, new ore is exposed, and mining is open again.",
+      "captions": 3
+    },
+    "solar": {
+      "stats": {
+        "kind": "solar",
+        "frames": 1,
+        "coverage": 1,
+        "dpr": 1,
+        "reducedMotion": true,
+        "ships": 0,
+        "blank": false,
+        "poster": true,
+        "open": true,
+        "firstFrameLuminance": 0.7199,
+        "dwellMs": 1200,
+        "minCoverage": 0.03,
+        "posterFrameMs": 400,
+        "minFrames": 30
+      },
+      "shaking": false,
+      "announcer": "SOLAR FLARE on MAGRATHEA. The local star lashed out and cooked the daylight side. The crust has reset, new ore is exposed, and mining is open again.",
+      "captions": 3
+    },
+    "alien": {
+      "stats": {
+        "kind": "alien",
+        "frames": 1,
+        "coverage": 1,
+        "dpr": 1,
+        "reducedMotion": true,
+        "ships": 2,
+        "blank": false,
+        "poster": true,
+        "open": true,
+        "firstFrameLuminance": 0.4505,
+        "dwellMs": 1200,
+        "minCoverage": 0.03,
+        "posterFrameMs": 400,
+        "minFrames": 30
+      },
+      "shaking": false,
+      "announcer": "ALIEN INVASION on MAGRATHEA. An alien fleet razed the planet from orbit. The crust has reset, new ore is exposed, and mining is open again.",
+      "captions": 3
+    }
+  },
+  "errors": []
+}

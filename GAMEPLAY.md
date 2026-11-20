@@ -138,8 +138,18 @@ the second level.
   random catastrophe — **Meteor Impact**, **Nuclear War**, **Solar Flare** or **Alien Invasion**.
   Each has a distinct full-screen visual effect, narration, shake and a story paragraph explaining
   the damage and the newly exposed resources, then resets/reseeds the crust with new resources.
-  The Captain’s Log keeps the explanation after the overlay clears. Players, scores and inventories survive. The screen shakes,
-  the meteor overlay announces `METEOR IMPACT // NEW RESOURCES AVAILABLE`, and mining continues.
+  The Captain’s Log keeps the explanation after the overlay clears. Players, scores and inventories survive.
+  The crust resets to its base **20 leaves** and the kind rotation is deterministic and durable per
+  planet: four consecutive incidents are **Meteor Impact → Nuclear War → Solar Flare → Alien
+  Invasion**, the cycle continues after a reload, and no kind can fire twice without the crust being
+  re-armed by the reset. Each kind has one measurable visual signature built from the shared
+  five-tetrahedron ship: meteor draws a relief ship among impact shards, nuclear opens on a
+  full-frame flash with fire columns, solar draws a faceted sun with 48 corona rays, and alien draws
+  two five-tetra ships with tractor beams. **DISMISS** or **Escape** closes the overlay and returns
+  focus to the game; with `prefers-reduced-motion: reduce` one static poster frame replaces the
+  animation and the screen never shakes. A development-only trigger
+  (`NARIMATO_EVENT_TRIGGER=1` then `POST /api/action` with `{"type":"incident","kind":"solar"}`)
+  fires a chosen kind without mining, and is refused with `403` when the variable is unset.
   <!-- story-copy:start gameplay-incidents -->
   - **METEOR IMPACT** — A rogue meteor punched through the surface. The old tunnels are gone, but the crater cracked open fresh ore veins and threw rare material across the ground. Get down there and salvage what the rock is hiding.
   - **NUCLEAR WAR** — Atomic fire swept the planet from horizon to horizon. The blast waves split the crust and exposed new materials. The survivors are already picking through the rubble.

@@ -1685,3 +1685,75 @@ test('supply focus: join during the TTL returns the same placements', async (t) 
   assert.equal(mine.status, 200);
   assert.equal(mine.json.resource.id, firstCell.resourceId);
 });
+
+/* ------------------------------------------------- EVT-01 incident trigger */
+
+test('incidents: health advertises eventTrigger and the gate defaults off', async (t) => {
+  const { base } = await makeServer(t);
+  const health = await getJson(base, '/api/health');
+  assert.equal(health.status, 200);
+  assert.equal(health.json.eventTrigger, false, 'trigger is off by default');
+
+  const gated = await makeServer(t, { eventTrigger: true });
+  const on = await getJson(gated.base, '/api/health');
+  assert.equal(on.json.eventTrigger, true);
+});
+
+test('incidents: the trigger is disabled unless NARIMATO_EVENT_TRIGGER=1', async (t) => {
+  const { base } = await makeServer(t);
+  const join = await postJson(base, '/api/join', { tag: 'NOEVENT' });
+  const res = await postJson(base, '/api/action', { token: join.json.token, type: 'incident', kind: 'solar' });
+  assert.equal(res.status, 403);
+  assert.equal(res.json.error, 'INCIDENT_TRIGGER_DISABLED');
+});
+
+test('incidents: the gated trigger fires the requested kind with the play payload', async (t) => {
+  const { base } = await makeServer(t, { eventTrigger: true, depositChance: 1 });
+  const join = await postJson(base, '/api/join', { tag: 'EVENT' });
+  assert.equal(join.status, 200);
+  const titles = { meteor: 'METEOR IMPACT', nuclear: 'NUCLEAR WAR', solar: 'SOLAR FLARE', alien: 'ALIEN INVASION' };
+  for (const kind of ['meteor', 'nuclear', 'solar', 'alien']) {
+    const res = await postJson(base, '/api/action', { token: join.json.token, type: 'incident', kind });
+    assert.equal(res.status, 200, `${kind} ${res.status} ${JSON.stringify(res.json)}`);
+    assert.equal(res.json.ok, true);
+    assert.equal(res.json.kind, kind);
+    assert.equal(res.json.title, titles[kind]);
+    assert.equal(typeof res.json.tone, 'string');
+    assert.ok(res.json.message.includes('//'), 'message keeps the play copy');
+    assert.ok(res.json.description.length > 40);
+    assert.equal(res.json.leaves.length, 20, 'crust reset to 20 leaves before the response');
+    assert.equal(res.json.state.leaves, undefined);
+    assert.ok(Number.isInteger(res.json.incidentCycle));
+  }
+});
+
+test('incidents: invalid kind is 400 and unarmed crust is 409 without a state change', async (t) => {
+  const enabled = await makeServer(t, { eventTrigger: true, depositChance: 1 });
+  const join = await postJson(enabled.base, '/api/join', { tag: 'EVENT' });
+  const invalid = await postJson(enabled.base, '/api/action', { token: join.json.token, type: 'incident', kind: 'volcano' });
+  assert.equal(invalid.status, 400);
+  assert.equal(invalid.json.error, 'INVALID_INCIDENT_KIND');
+
+  const disabledCrust = await makeServer(t, { eventTrigger: true, depositChance: 0 });
+  const offJoin = await postJson(disabledCrust.base, '/api/join', { tag: 'NOARM' });
+  const unarmed = await postJson(disabledCrust.base, '/api/action', { token: offJoin.json.token, type: 'incident', kind: 'meteor' });
+  assert.equal(unarmed.status, 409);
+  assert.equal(unarmed.json.error, 'INCIDENT_NOT_ARMED');
+});
+
+test('incidents: the reset snapshot is broadcast before the incident frame', async (t) => {
+  const { base } = await makeServer(t, { eventTrigger: true, depositChance: 1 });
+  const join = await postJson(base, '/api/join', { tag: 'SNAPORD' });
+  const sse = await openSse(base, join.json.token);
+  const from = sse.events.length;
+  const res = await postJson(base, '/api/action', { token: join.json.token, type: 'incident', kind: 'nuclear' });
+  assert.equal(res.status, 200);
+  await sse.waitForEvent('incident', (event) => event.kind === 'nuclear', { from });
+  const slice = sse.events.slice(from);
+  const snapshotAt = slice.findIndex((event) => event.type === 'snapshot' && Array.isArray(event.leaves) && event.leaves.length === 20);
+  const incidentAt = slice.findIndex((event) => event.type === 'incident' && event.kind === 'nuclear');
+  assert.ok(snapshotAt >= 0, 'reset snapshot broadcast');
+  assert.ok(incidentAt >= 0, 'incident frame broadcast');
+  assert.ok(snapshotAt < incidentAt, 'snapshot with the reset leaves arrives before the overlay opens');
+  await sse.close();
+});

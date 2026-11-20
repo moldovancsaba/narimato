@@ -17,7 +17,7 @@ Architecture decisions are recorded as ADRs: [docs/adr/README.md](docs/adr/READM
 | Rendering | Canvas 2D + WebGL | game planet: Canvas 2D; spherical-icosahedron reference viewer: WebGL ray–sphere shader |
 | Simulation | Node.js ≥20 | authoritative game server, HTTP + Server-Sent Events |
 | Persistence | JSON files + atomic rename | one file per planet, one registry file |
-| Tests | `node:test` | <!-- test-count:351 -->351<!-- /test-count --> tests, no test dependencies; ownership map in [docs/TEST_MAP.md](docs/TEST_MAP.md) |
+| Tests | `node:test` | <!-- test-count:380 -->380<!-- /test-count --> tests, no test dependencies; ownership map in [docs/TEST_MAP.md](docs/TEST_MAP.md) |
 | CI | GitHub Actions | Node 20 and 22, `npm test`; Node 22 GDS island build, contract gate and determinism proof |
 | Deploy | `node server.js` behind any static/reverse proxy | Cloudflare tunnel used for the live build |
 
@@ -106,7 +106,11 @@ Observability: `public/js/telemetry.js` posts a tiny privacy-safe numeric beacon
 - **`intro.js`** — launch cinematic state machine: wormhole → drift/gravity lock → descent; camera
   dolly, cockpit fade, steering (WASD/arrows/touch), skip/replay, reduced-motion.
 - **`interlude.js`** — escape transit: launch burn → random story event → hull damage/shake →
-  emergency landing; also meteor shockwave overlay.
+  emergency landing; also the incident FX overlay: one DPR-scaled canvas, the shared
+  `drawTetraShip` model for the meteor relief ship and the two alien ships, a faceted solar sun,
+  a nuclear flash, measured pixel coverage/`incidentFxStats()`, a reduced-motion poster and
+  Escape/DISMISS dismissal. All four kinds are `aria-hidden` canvas FX; the accessible text lives in
+  the DOM.
 - **`result-card.js`** — 1200×630 PNG card + share text; **`audio.js`** — synthesized WebAudio SFX.
 - **`narrator.js` + `narrative-data.js`** — prerecorded narration engine and script. Voice/subtitle
   toggles are independent and persisted. Each cue is split into sentence units and mapped to
@@ -451,12 +455,38 @@ clients keep marking cells.
 
 ### Exhausted-planet incidents
 
-When the last hidden deposit on a planet is mined, the core picks a random incident
-(`meteor`/`nuclear`/`solar`/`alien`), re-seeds the crust, resets the grid to its base leaves
-(players/scores/inventories preserved), and the manager broadcasts
-`{type:"incident", kind, title, tone, message, description, planetIndex}` followed by a fresh
-`snapshot` to that planet room only. The client renders a different full-screen effect per kind and
-shows the `description` as a story paragraph plus a persistent Captain’s Log entry.
+When the last hidden deposit on a planet is mined (or a completed refit allows an early incident),
+the core fires the next kind from its **persisted per-planet rotation**
+(`INCIDENTS[(incidentCycle + n) % 4]` → meteor, nuclear, solar, alien), re-seeds the crust, resets
+the grid to its base leaves (players/scores/inventories preserved) and re-arms itself against the
+reseeded deposits. Rotation state is serialized as `incidentCycle` in `world.json`; missing,
+negative, non-integer or unsafe values sanitize to `0`. The manager broadcasts
+`{type:"incident", kind, title, tone, message, description, revision, planetIndex}` followed by a
+fresh `snapshot` to that planet room only.
+
+A development-only trigger is available when `NARIMATO_EVENT_TRIGGER=1`:
+`POST /api/action` with `{"token":"…","type":"incident","kind":"solar"}` fires a forced kind with
+the same payload as play (`403 INCIDENT_TRIGGER_DISABLED` when off, `400 INVALID_INCIDENT_KIND` for
+unknown kinds, `409 INCIDENT_NOT_ARMED` when the crust cannot fire). `/api/health` advertises
+`eventTrigger` so the operator UI can hide the control in production.
+
+The client builds one announcement with the pure `public/js/shared/incident-announcements.js`,
+writes it once to `#event-announcer` (`role="status"`, `aria-live="polite"`), stores static caption
+units in `#event-captions`, renders a different full-screen effect per kind and shows the
+`description` as a story paragraph plus a persistent Captain’s Log entry. `#meteor-overlay` is a
+`role="region"` named by `#meteor-title` (the server title) and described by `#meteor-sub` and
+`#meteor-description`; `Escape` and the DISMISS button close it and return focus to the game canvas.
+Reduced motion paints a single static poster and suppresses shake.
+
+The single ship model lives in `public/js/shared/tetra-ship.js` (`TETRA_SHIP`, `drawTetraShip`);
+intro, transit, relief drop, meteor and alien incidents all render through it, so no second ship
+renderer exists.
+
+Design-system boundary: the UI-01 GDS island foundation is on `main` (one `GdsProvider`, one React
+root, `public/js/gds-adapter.js`), but the incident overlay, announcer and `TAP FOR VOICE` control
+are still legacy `public/js/ui.js` surfaces delegated through that adapter. EVT-02 depends on UI-05
+for the GDS overlay migration; until it lands these surfaces reuse the existing `.btn` atom, tokens
+and the single stylesheet, and no parallel component library or second visual system is added.
 
 ## Algorithms
 
@@ -588,10 +618,10 @@ debounce 0.5 min + 5 min backup interval), RTO ≤ 15 min; retention is 7 daily 
 
 ## Testing
 
-The suite currently runs <!-- test-count:351 -->351<!-- /test-count --> tests. Behaviour ownership: [docs/TEST_MAP.md](docs/TEST_MAP.md).
+The suite currently runs <!-- test-count:380 -->380<!-- /test-count --> tests. Behaviour ownership: [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 ```bash
-npm test                 # node:test suite (351 tests)
+npm test                 # node:test suite (380 tests)
 npm run check:slo        # evaluate observability/slo.json against /api/metrics (0/1/2/3)
 npm run recovery:test    # backup -> verify -> restore drill on throwaway data
 npm run docs:check       # R1-R6 repository SSOT gate

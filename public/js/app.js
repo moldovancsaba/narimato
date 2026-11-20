@@ -25,8 +25,9 @@ import { createSurfaceController } from './surface-controller.js';
 import { SurfaceCamera } from './shared/surface-camera.js';
 import { cameraModeReport, parseSurfaceCameraMode } from './shared/camera-contract.js';
 import { parseSurfaceRenderer, restoreOrbit, saveOrbit } from './shared/view-state.js';
-import './telemetry.js';
+import { telemetry } from './telemetry.js';
 import { HELP_SECTIONS, captainLog } from './story-copy.js';
+import { buildIncidentAnnouncement } from './shared/incident-announcements.js';
 
 const TOKEN_KEY = 'icosa.token';
 const TAG_KEY = 'icosa.tag';
@@ -1249,7 +1250,21 @@ function handleSupplyEvent(msg) {
     surface.focusLabel(msg.impactLabel);
   }
   clearDistressTimer();
-  safeCall(ui, 'toast', message, 'good');
+  // EVT-03: the relief ship is announced too, but through the SAME single
+  // #event-announcer region, so it never duplicates a toast live region.
+  const supplyPlanet = typeof planetInfoFromState === 'function' ? planetInfoFromState() : {};
+  const supplyPlanetName = (supplyPlanet && supplyPlanet.planetName) || 'this planet';
+  safeCall(
+    ui,
+    'announceEvent',
+    `supply:${eventKey || supplyPlanetName}`,
+    `Emergency supply drop on ${supplyPlanetName}. Missing ore is scattered across the marked triangles. It is a race; every pilot on this world can see the salvage rings.`,
+    [
+      'Emergency supply drop. A relief ship came down hard.',
+      'The missing ore is scattered across the marked triangles.',
+      'It is a race; every pilot on this world can see the salvage rings.',
+    ],
+  );
   setCaptainLogMessage('They heard us. A relief ship came down hard — the missing ore is scattered across the marked triangles. Go get it.', 30000);
   if (narrator) narrator.playCue('event-relief', { speaker: 'SHIP AI' });
   if (supplyDrop) supplyDrop.show({ message, cells });
@@ -1565,24 +1580,41 @@ function startNewPilot() {
   safeCall(ui, 'toast', 'NEW PILOT // ENTER A NEW GAME TAG TO START FROM PLANET 1', 'good');
 }
 
+/**
+ * EVT-01/02/03: one SSE incident becomes ONE spoken announcement, one static
+ * caption block, one overlay and one deferred crust reload.
+ *
+ * The announcement is built by the pure `buildIncidentAnnouncement` so the
+ * spoken wording, the card and the captions cannot drift. The event's `revision`
+ * makes the dedupe key stable across an SSE reconnect, and the dwell comes from
+ * the announcement (1200 ms reduced motion / 2600 ms otherwise) so no path
+ * reloads the crust before the reset snapshot has been applied.
+ */
+let incidentRevisionSeq = 0;
 function handleIncidentEvent(msg) {
   if (!msg) return;
-  const kind = ['meteor', 'nuclear', 'solar', 'alien'].includes(msg.kind) ? msg.kind : 'meteor';
-  const title = msg.title || kind.toUpperCase();
-  const message = msg.message || 'PLANET EXHAUSTED // NEW RESOURCES AVAILABLE';
-  const description = msg.description || '';
-  safeCall(ui, 'toast', message, 'warn');
-  setCaptainLogMessage(description || message, 26000);
-  if (interlude && !interlude.active) interlude.incident(kind, title, message, description);
-  if (narrator) narrator.playCue(`event-incident-${kind}`, { speaker: 'SHIP AI' });
+  const planet = typeof planetInfoFromState === 'function' ? planetInfoFromState() : {};
+  const reducedMotion = typeof window !== 'undefined' && window.matchMedia
+    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    : false;
+  const revision = Number.isFinite(msg.revision) ? msg.revision : (incidentRevisionSeq += 1);
+  const announcement = buildIncidentAnnouncement(msg, { name: planet.planetName, planetIndex: planet.planetIndex }, { reducedMotion, revision });
+  const shown = safeCall(ui, 'showIncidentFeedback', announcement);
+  if (shown === false) return; // duplicate replay: one announcement per event
+  setCaptainLogMessage(announcement.detail || announcement.spoken, 26000);
+  if (interlude && !interlude.active) {
+    interlude.incident(announcement.kind, announcement.title, msg.message, announcement.detail, {
+      dwellMs: announcement.dwellMs,
+    });
+  }
+  if (narrator) narrator.playCue(announcement.captionCueId, { speaker: 'SHIP AI' });
   setTimeout(async () => {
     await reloadWorld();
     refreshMission();
     cancelCameraInertia();
     camera.reset();
     updateZoomUi();
-    safeCall(ui, 'toast', 'THE DUST SETTLES // NEW ORE IN THE CRUST', 'good');
-  }, 2400);
+  }, announcement.dwellMs);
 }
 
 /**
@@ -2610,6 +2642,15 @@ function frame(t) {
   const dt = Math.min(64, Math.max(0, t - lastFrame));
   lastFrame = t;
 
+  // EVT-02/EVT-03: while the full-screen incident overlay is open it owns the
+  // visible frame. Keep this loop alive (state stays consistent) but do not
+  // compete with the FX canvas for the software-rendered frame budget; the
+  // planet underneath is not visible anyway.
+  if (interlude && interlude.incidentOpen) {
+    requestAnimationFrame(frame);
+    return;
+  }
+
   if (intro && intro.active) {
     intro.update(t, dt);
     try {
@@ -2729,7 +2770,11 @@ window.__ICOSA__ = {
   get interludeState() {
     return interlude ? interlude.state() : null;
   },
+  incidentFxStats: () => (interlude && typeof interlude.incidentFxStats === 'function' ? interlude.incidentFxStats() : null),
   narrator: () => (narrator ? narrator.state() : null),
+  narratorPlayCue: (id) => (narrator ? narrator.playCue(id) : 0),
+  narratorResume: () => (narrator ? narrator.resume() : false),
+  audioTelemetry: () => telemetry.getPayload(),
   audioState: () => ({
     unlocked: !!(audio && audio.isUnlocked),
     muted: !!(audio && audio.isMuted),

@@ -23,6 +23,7 @@
     <!-- Persistent geodesic arena: fixed behind every layer. -->
     <canvas
       id="arena-canvas"
+      tabindex="-1"
       aria-label="Infinite geodesic grid on a sphere. Drag to rotate, scroll to zoom, click a cell to claim or charge it."
     ></canvas>
 
@@ -108,15 +109,39 @@
     </section>
 
     <!-- ============================ METEOR IMPACT ============================ -->
-    <section id="meteor-overlay" class="meteor-overlay is-hidden" aria-label="Meteor impact" aria-hidden="true">
+    <!-- EVT-03: region (not a modal dialog) so a background incident never traps
+         focus or interrupts the tag field; wording lives in
+         shared/incident-announcements.js and the single live region is
+         #event-announcer below. The UI-01 GDS island foundation is on main; the
+         incident overlay is a legacy surface whose GDS migration is owned by
+         UI-05 (EVT-02 depends on it). No parallel component system is added. -->
+    <section
+      id="meteor-overlay"
+      class="meteor-overlay is-hidden"
+      role="region"
+      aria-labelledby="meteor-title"
+      aria-describedby="meteor-sub meteor-description"
+      aria-hidden="true"
+    >
       <canvas id="meteor-fx" class="meteor-fx" aria-hidden="true"></canvas>
       <div class="meteor-shockwave" aria-hidden="true"></div>
       <div class="meteor-content">
         <p class="meteor-kicker">PLANETARY EVENT // SURFACE IMPACT</p>
-        <h2 id="meteor-title" class="meteor-title">METEOR IMPACT</h2>
+        <h2 id="meteor-title" class="meteor-title">PLANETARY EVENT</h2>
         <p id="meteor-sub" class="meteor-sub">NEW RESOURCES AVAILABLE</p>
         <p id="meteor-description" class="meteor-description"></p>
+        <button id="meteor-dismiss" class="btn meteor-dismiss" type="button">DISMISS</button>
       </div>
+    </section>
+
+    <!-- EVT-03: the ONE live region for event outcomes. Incidents never steal
+         focus, so this polite status region carries kind, planet, change and
+         next step as one sentence. Static caption units live in #event-captions
+         (never live) so re-reading them does not re-trigger speech. -->
+    <div id="event-announcer" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
+    <section id="event-captions" class="visually-hidden" aria-label="Event captions" hidden>
+      <h2 id="event-captions-title">EVENT CAPTIONS</h2>
+      <ol id="event-caption-list"></ol>
     </section>
 
     <!-- Always-on status controls. -->
@@ -167,6 +192,20 @@
     <div id="narrative-subtitles" class="narrative-subtitles is-hidden" role="region" aria-live="polite" aria-label="Narration subtitles">
       <span id="subtitle-speaker" class="subtitle-speaker">NARRATOR</span>
       <span id="subtitle-text" class="subtitle-text"></span>
+      <!-- AUD-01: autoplay-blocked recovery. A real button, 44 px, described by
+           the sentence rule below; it resumes the pending sentence from its
+           beginning. Hidden until the browser blocks autoplay. The UI-01 island
+           foundation is on main; caption surfaces migrate in UI-05/A11Y-01, so
+           this control reuses the single .btn atom and GDS tokens instead of a
+           second visual system. -->
+      <button
+        id="btn-tap-voice"
+        class="btn btn--tap-voice"
+        type="button"
+        aria-describedby="tap-voice-help"
+        hidden
+      >TAP FOR VOICE</button>
+      <span id="tap-voice-help" class="visually-hidden">Narration needs one tap or key press before the browser plays it. Activating this plays the current sentence from the beginning.</span>
     </div>
 
     <!-- Field Manual -->
