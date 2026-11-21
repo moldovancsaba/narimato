@@ -50,6 +50,15 @@ const prefersReducedMotion = () =>
   window.matchMedia &&
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/** Test-only probe flag: keep the cine in its first phase for a11y evidence. */
+const FROZEN = (() => {
+  try {
+    return new URLSearchParams(window.location.search).get('introFreeze') === '1';
+  } catch {
+    return false;
+  }
+})();
+
 export function createIntro({
   camera,
   ui,
@@ -463,6 +472,12 @@ export function createIntro({
 
   function update(t, dt) {
     if (!active) return;
+    if (FROZEN) {
+      // Probe mode: hold the wormhole phase so accessibility checks observe a stable surface.
+      setProgress(0.02);
+      publishCine();
+      return;
+    }
     elapsed = Math.max(0, t - startTime);
     const d = durations();
     const total = d.wormhole + d.drift + d.descent;
