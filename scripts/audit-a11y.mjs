@@ -47,6 +47,8 @@ async function scan(label, viewport, setup) {
   });
   const page = await context.newPage();
   await page.goto(`${BASE}/?intro=0`, { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.__NARIMATO_GDS__?.status?.().booted === true, null, { timeout: 20000 });
+  await page.waitForSelector('#tag-input', { state: 'visible', timeout: 20000 });
   await delay(600);
   if (setup) await setup(page);
   await page.addScriptTag({ content: axeSource });
@@ -84,6 +86,7 @@ try {
     await page.evaluate(() =>
       window.__ICOSA__.incident('solar', 'SOLAR FLARE', 'A SOLAR FLARE STRIPPED THE DAYLIGHT SIDE', 'The magnetic storm peeled back rock and scattered rare elements.'),
     );
+    await page.waitForFunction(() => document.getElementById('meteor-title')?.textContent === 'SOLAR FLARE', null, { timeout: 10000 });
     await delay(500);
   });
   await scan('incident-mobile', { width: 390, height: 844 }, async (page) => {
@@ -96,6 +99,7 @@ try {
     await page.evaluate(() =>
       window.__ICOSA__.incident('alien', 'ALIEN INVASION', 'A FLEET RAZED THE PLANET FROM ORBIT', 'Their beams demolished the old surface and scattered new materials.'),
     );
+    await page.waitForFunction(() => document.getElementById('meteor-title')?.textContent === 'ALIEN INVASION', null, { timeout: 10000 });
     await delay(500);
   });
   await scan('manual-mobile', { width: 390, height: 844 }, async (page) => {
@@ -106,6 +110,7 @@ try {
     await page.click('#btn-landing-brief-start').catch(() => {});
     await delay(250);
     await page.click('#btn-help');
+    await page.waitForSelector('.mantine-Modal-content', { state: 'visible', timeout: 10000 });
     await delay(300);
   });
 } finally {

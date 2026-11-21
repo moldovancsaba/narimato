@@ -116,8 +116,7 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
     for (const id of [
       'interlude-overlay', 'interlude-fx', 'interlude-title', 'interlude-sub',
       'interlude-story', 'interlude-status', 'interlude-bar', 'interlude-planet',
-      'meteor-overlay', 'meteor-fx', 'meteor-title', 'meteor-sub', 'meteor-description',
-      'meteor-dismiss', 'arena-canvas',
+      'incident-fx-layer', 'meteor-fx', 'arena-canvas',
     ]) {
       els[id] = document.getElementById(id) || document.querySelector(`[data-legacy-id="${id}"]`);
     }
@@ -218,12 +217,12 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
   }
 
   function setMeteor(visible) {
-    const overlay = els['meteor-overlay'];
-    if (!overlay) return;
-    overlay.classList.toggle('is-hidden', !visible);
-    overlay.classList.toggle('is-active', visible);
-    overlay.hidden = !visible;
-    overlay.setAttribute('aria-hidden', visible ? 'false' : 'true');
+    const layer = els['incident-fx-layer'];
+    if (!layer) return;
+    layer.classList.toggle('is-hidden', !visible);
+    layer.classList.toggle('is-active', visible);
+    layer.hidden = !visible;
+    layer.setAttribute('aria-hidden', 'true');
     if (document.body) document.body.classList.toggle('is-meteor', visible);
   }
 
@@ -747,13 +746,6 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
 
   function focusIncidentReturnTarget() {
     if (typeof document === 'undefined') return;
-    const active = document.activeElement;
-    const overlay = els['meteor-overlay'];
-    const movedIntoOverlay = !!(overlay && active && overlay.contains(active));
-    if (!movedIntoOverlay) {
-      incidentFocusBefore = null;
-      return;
-    }
     const previous =
       incidentFocusBefore &&
       document.contains(incidentFocusBefore) &&
@@ -762,14 +754,12 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
         ? incidentFocusBefore
         : null;
     const target = previous || els['arena-canvas'] || document.body;
-    if (active && typeof active.blur === 'function') {
-      try {
-        active.blur();
-      } catch {
-        /* ignore */
-      }
-    }
-    if (target && typeof target.focus === 'function') {
+    incidentFocusBefore = null;
+    if (!target || typeof target.focus !== 'function') return;
+    const focusTarget = () => {
+      const active = document.activeElement;
+      const stillInPortal = !!(active && active.closest && active.closest('[role="dialog"]'));
+      if (stillInPortal) return false;
       try {
         target.focus({ preventScroll: true });
       } catch {
@@ -779,8 +769,29 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
           /* focus is best-effort */
         }
       }
-    }
-    incidentFocusBefore = null;
+      return true;
+    };
+    let attempts = 0;
+    const restore = () => {
+      attempts += 1;
+      if (focusTarget() || attempts >= 10) return;
+      setTimeout(restore, 100);
+    };
+    setTimeout(restore, 350);
+  }
+
+  function publishIncident(open) {
+    publish({
+      incident: {
+        open,
+        kind: incidentKind,
+        title: meteorTitle,
+        message: meteorMessage,
+        description: incidentDescription,
+        reducedMotion: prefersReducedMotionNow(),
+        dwellMs: incidentDwellMs,
+      },
+    });
   }
 
   function closeIncident() {
@@ -798,6 +809,7 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
       document.body.classList.remove('is-meteor');
     }
     clearIncidentCanvas();
+    publishIncident(false);
     focusIncidentReturnTarget();
     return true;
   }
@@ -816,20 +828,10 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
   function bindIncidentControls() {
     if (incidentControlsBound) return;
     incidentControlsBound = true;
-    if (typeof document === 'undefined') return;
-    if (els['meteor-dismiss']) {
-      els['meteor-dismiss'].addEventListener('click', () => closeIncident());
-    }
-    document.addEventListener(
-      'keydown',
-      (event) => {
-        if (event.key !== 'Escape' || !incidentOpen) return;
-        event.preventDefault();
-        event.stopPropagation();
-        closeIncident();
-      },
-      true,
-    );
+    if (typeof window === 'undefined') return;
+    window.addEventListener('narimato:incident-dismiss', () => {
+      if (incidentOpen) closeIncident();
+    });
   }
 
   /**
@@ -859,6 +861,7 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
         : INCIDENT_DWELL_MS;
     incidentOpen = true;
     meteorActive = true;
+    incidentDwellMs = dwellMs;
     meteorStart = performance.now();
     incidentFocusBefore = typeof document !== 'undefined' ? document.activeElement : null;
     incidentFirstFrameMeasured = false;
@@ -875,17 +878,17 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
       dwellMs,
       firstFrameLuminance: 0,
     });
-    const overlay = els['meteor-overlay'];
+    const layer = els['incident-fx-layer'];
     const fx = els['meteor-fx'];
     if (fx && fx.getContext) {
       meteorCanvas = fx;
       meteorCtx = fx.getContext('2d', { willReadFrequently: true });
     }
-    if (overlay) {
-      overlay.className = `meteor-overlay incident-${incidentKind}`;
-      overlay.hidden = false;
-      overlay.classList.add('is-active');
-      overlay.setAttribute('aria-hidden', 'false');
+    if (layer) {
+      layer.className = `incident-fx-layer incident-${incidentKind}`;
+      layer.hidden = false;
+      layer.classList.add('is-active');
+      layer.setAttribute('aria-hidden', 'true');
     }
     if (document.body) {
       document.body.className = document.body.className.replace(/\bincident-\w+/g, '').trim();
@@ -893,9 +896,7 @@ export function createInterlude({ safeCall, safeAudio } = {}) {
       // Reduced motion: no shake class at all (EVT-03).
       if (!reduced) document.body.classList.add('is-shaking');
     }
-    setText('meteor-title', meteorTitle);
-    setText('meteor-sub', meteorMessage);
-    setText('meteor-description', incidentDescription);
+    publishIncident(true);
     if (reduced) {
       // One static poster frame, no animation loop, no shake.
       paintIncidentFrame(POSTER_FRAME_MS);

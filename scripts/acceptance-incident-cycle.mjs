@@ -61,6 +61,8 @@ try {
     if (msg.type() === 'error') errors.push(msg.text());
   });
   await page.goto(`${base}/?intro=0`, { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.__NARIMATO_GDS__?.status?.().booted === true, null, { timeout: 20000 });
+  await page.waitForSelector('#tag-input', { state: 'visible', timeout: 20000 });
   await page.fill('#tag-input', 'EVTCYC');
   await page.click('#btn-join');
   await page.waitForFunction(() => window.__ICOSA__?.joined === true, null, { timeout: 15000 });
@@ -97,12 +99,15 @@ try {
     if (!body.message.includes('//')) throw new Error(`${kind}: play copy missing`);
     if (!(body.description || '').length) throw new Error(`${kind}: description missing`);
 
-    // The overlay names the kind the server fired (EVT-02/EVT-03 contract).
+    // The GDS dialog names the kind the server fired (EVT-02/EVT-03 contract).
     await page.waitForFunction(
       (title) => {
-        const overlay = document.getElementById('meteor-overlay');
         const heading = document.getElementById('meteor-title');
-        return !!overlay && overlay.classList.contains('is-active') && heading && heading.textContent === title;
+        const dialog = [...document.querySelectorAll('[role="dialog"]')].find((element) => {
+          const rect = element.getBoundingClientRect();
+          return rect.width > 0 && rect.height > 0 && !element.closest('[aria-hidden="true"]');
+        });
+        return !!dialog && !!heading && heading.textContent === title;
       },
       body.title,
       { timeout: 4000 },
@@ -111,7 +116,11 @@ try {
       announcement: document.getElementById('event-announcer')?.textContent || '',
       leaves: window.__ICOSA__?.leaves,
       title: document.getElementById('meteor-title')?.textContent,
+      dialog: !!document.querySelector('[role="dialog"]:not([aria-hidden="true"])'),
+      fxHidden: document.getElementById('incident-fx-layer')?.getAttribute('aria-hidden'),
     }));
+    if (!live.dialog) throw new Error(`${kind}: GDS incident dialog is not open`);
+    if (live.fxHidden !== 'true') throw new Error(`${kind}: FX layer must stay aria-hidden`);
     if (live.announcement.includes('//')) throw new Error(`${kind}: spoken announcement contains "//"`);
     if (!live.announcement.includes(body.title)) throw new Error(`${kind}: announcement misses the title`);
     if (live.leaves !== 20) throw new Error(`${kind}: client leaf count ${live.leaves} != 20 after reset`);
@@ -125,10 +134,10 @@ try {
       announcement: live.announcement,
     });
 
-    // Let the overlay dwell + the crust reload finish before the next trigger.
+    // Let the dialog dwell + the crust reload finish before the next trigger.
     await delay(3200);
-    const closed = await page.evaluate(() => !document.getElementById('meteor-overlay')?.classList.contains('is-active'));
-    if (!closed) throw new Error(`${kind}: overlay did not close`);
+    const closed = await page.evaluate(() => window.__ICOSA__?.incidentFxStats?.().open === false);
+    if (!closed) throw new Error(`${kind}: incident dialog did not close`);
   }
 
   report.mutations = await page.evaluate(() => window.__EVT_ANNOUNCER_WRITES__ || 0);

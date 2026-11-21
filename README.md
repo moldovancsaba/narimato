@@ -249,7 +249,7 @@ repository status documents. The repository owns durable technical knowledge and
 
 ## Development
 
-The node:test suite currently runs <!-- test-count:527 -->527<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
+The node:test suite currently runs <!-- test-count:543 -->543<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 ```
 npm test                 # node:test suite, no dependencies
@@ -262,6 +262,7 @@ npm run gate:perf        # PERF-01 client probe + 15% desktop baseline gate
 npm run recovery:test    # backup -> verify -> restore drill on throwaway data
 npm run build:ui         # rebuild the committed GDS island from ui/src (dev only, needs npm ci)
 npm run verify:ui        # GDS island contract: content hash, budgets, mount rules, deploy safety
+npm run a11y:gate        # GDS accessibility gate, both engines (needs npm ci; CI installs browsers)
 npm start                # serve on PORT (default 4173), DATA_DIR (default ./data)
 npm run dev              # alias
 ```
@@ -269,6 +270,16 @@ npm run dev              # alias
 DOM UI is composed from the Sovereign Squad General Design System through the committed island under
 `public/ui/`; the game entry, server and tests stay dependency-free. Build, provider/portal model,
 feature flags, budgets and rollback: [docs/GDS_INTEGRATION.md](docs/GDS_INTEGRATION.md).
+
+### Accessibility gate
+
+`npm run a11y:gate` audits every migrated GDS surface in Chromium and WebKit using
+[`@sovereignsquad/gds-a11y`](https://github.com/sovereignsquad/general-design-system/issues/81):
+axe serious/critical = 0, expected tab order, focus trap and restore, WCAG AA contrast, 200% zoom,
+reduced-motion emulation, GDS ownership and 44 px targets. Serious findings, incomplete checks and
+expired suppressions fail the job; the report is `artifacts/a11y/report.json` and CI keeps both
+engine artifacts for 14 days. Surfaces, schema, suppression owner/expiry policy, local reproduction
+and the still-manual real-device checklist: [A11Y_CHECKLIST.md](A11Y_CHECKLIST.md).
 
 Environment: `PORT`, `HOST`, `DATA_DIR`, `BREAK_CLICKS`, `MAX_DEPTH`, `BOTS`, `DEPOSIT_CHANCE`,
 `SUPPLY_MIN_AGE_MS` (emergency-drop gate), the bot timing variables, `ALLOW_EMPTY_WORLD` (safe
@@ -293,10 +304,11 @@ observability/load-scenarios.json  fixed OPS-02 smoke/load/soak/chaos scenarios
 observability/perf-baseline.json   measured PERF-01 client baseline (15% p95 gate)
 public/index.html         shell + intro/interlude/HUD markup + GDS mount host
 public/js/app.js          client integration + game loop
-ui/src/                   GDS React island sources (dev-time only)
+ui/src/                   GDS React island sources (dev-time only; incident GDS dialog included)
 public/ui/                committed GDS island bundle + manifest served by the server
 public/js/gds-adapter.js  UI flags, frozen-UI adapter, boot retry/fallback
 public/js/gds-boot.js     page boot for the GDS island
+public/js/a11y-surfaces.js  accessibility gate surface registry (A11Y-01)
 public/js/renderer.js     Canvas 2D spherical game renderer (adaptive quality LOD)
 public/js/perf-budget.js  pure device budgets, frame ring and quality ladder (PERF-01)
 public/icosahedron.html   isolated spherical-icosahedron viewer

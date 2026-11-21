@@ -37,13 +37,20 @@
     "verify:surface": "node scripts/verify-surface-hud.mjs",
     "verify:cine": "node scripts/verify-cine-chrome.mjs",
     "verify:zoom": "node scripts/verify-ui-zoom.mjs",
-    "verify:migration": "node scripts/verify-ui-migration.mjs"  },
+    "verify:migration": "node scripts/verify-ui-migration.mjs",
+    "a11y:gate": "node scripts/a11y-gate.mjs",
+    "a11y:gate:chromium": "node scripts/a11y-gate.mjs --engine=chromium",
+    "a11y:gate:webkit": "node scripts/a11y-gate.mjs --engine=webkit"
+  },
   "engines": {
     "node": ">=20"
   },
   "license": "MIT",
   "devDependencies": {
     "@sovereignsquad/gds": "6.9.0",
+    "@sovereignsquad/gds-a11y": "6.9.0",
+    "axe-core": "4.14.1",
+    "playwright": "1.65.1",
     "react": "19.2.9",
     "react-dom": "19.2.9",
     "vite": "6.4.6"

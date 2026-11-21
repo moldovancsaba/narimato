@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0.0",
+  "policy": {
+    "maxExpiryDays": 90,
+    "owner": "accessibility",
+    "note": "Each entry needs id, reason, owner, expiresAt (YYYY-MM-DD, <= 90 days) and replacementPath. Expired entries never suppress and fail the gate."
+  },
+  "suppressions": []
+}

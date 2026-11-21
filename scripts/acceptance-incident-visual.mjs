@@ -66,6 +66,8 @@ async function join(page, tag = 'EVTFX') {
   for (let i = 2; usedTags.has(unique); i += 1) unique = `${tag}${i}`;
   usedTags.add(unique);
   await page.goto(`${base}/?intro=0`, { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => window.__NARIMATO_GDS__?.status?.().booted === true, null, { timeout: 20000 });
+  await page.waitForSelector('#tag-input', { state: 'visible', timeout: 20000 });
   await page.fill('#tag-input', unique);
   await page.click('#btn-join');
   await page.waitForFunction(() => window.__ICOSA__?.joined === true, null, { timeout: 15000 });

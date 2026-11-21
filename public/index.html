@@ -23,6 +23,7 @@
     <!-- Persistent geodesic arena: fixed behind every layer. -->
     <canvas
       id="arena-canvas"
+      role="main"
       tabindex="-1"
       aria-label="Infinite geodesic grid on a sphere. Drag to rotate, scroll to zoom, click a cell to claim or charge it."
     ></canvas>
@@ -108,31 +109,15 @@
       </div>
     </section>
 
-    <!-- ============================ METEOR IMPACT ============================ -->
-    <!-- EVT-03: region (not a modal dialog) so a background incident never traps
-         focus or interrupts the tag field; wording lives in
-         shared/incident-announcements.js and the single live region is
-         #event-announcer below. The UI-01 GDS island foundation is on main; the
-         incident overlay is a legacy surface whose GDS migration is owned by
-         UI-05 (EVT-02 depends on it). No parallel component system is added. -->
-    <section
-      id="meteor-overlay"
-      class="meteor-overlay is-hidden"
-      role="region"
-      aria-labelledby="meteor-title"
-      aria-describedby="meteor-sub meteor-description"
-      aria-hidden="true"
-    >
+    <!-- ============================ INCIDENT FX ============================ -->
+    <!-- EVT-02: the incident text, accessible name and dismissal are a GDS
+         dialog owned by the UI-01 island (ui/src/surfaces/IncidentDialog.jsx).
+         This aria-hidden layer is product rendering only: the full-screen FX
+         canvas stays behind the governed dialog. Wording still comes from
+         shared/incident-announcements.js and one polite #event-announcer. -->
+    <div id="incident-fx-layer" class="incident-fx-layer is-hidden" aria-hidden="true">
       <canvas id="meteor-fx" class="meteor-fx" aria-hidden="true"></canvas>
-      <div class="meteor-shockwave" aria-hidden="true"></div>
-      <div class="meteor-content">
-        <p class="meteor-kicker">PLANETARY EVENT // SURFACE IMPACT</p>
-        <h2 id="meteor-title" class="meteor-title">PLANETARY EVENT</h2>
-        <p id="meteor-sub" class="meteor-sub">NEW RESOURCES AVAILABLE</p>
-        <p id="meteor-description" class="meteor-description"></p>
-        <button id="meteor-dismiss" class="btn meteor-dismiss" type="button">DISMISS</button>
-      </div>
-    </section>
+    </div>
 
     <!-- EVT-03: the ONE live region for event outcomes. Incidents never steal
          focus, so this polite status region carries kind, planet, change and

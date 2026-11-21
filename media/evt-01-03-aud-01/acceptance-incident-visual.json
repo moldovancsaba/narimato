@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "base": "http://127.0.0.1:54821",
+  "base": "http://127.0.0.1:49541",
   "viewports": [
     {
       "name": "desktop",
@@ -48,7 +48,7 @@
             "blank": false,
             "poster": false,
             "open": true,
-            "firstFrameLuminance": 0.9426,
+            "firstFrameLuminance": 0.9256,
             "dwellMs": 2600,
             "minCoverage": 0.03,
             "posterFrameMs": 400,
@@ -168,7 +168,7 @@
             "blank": false,
             "poster": false,
             "open": true,
-            "firstFrameLuminance": 0.9453,
+            "firstFrameLuminance": 0.9369,
             "dwellMs": 2600,
             "minCoverage": 0.03,
             "posterFrameMs": 400,
@@ -326,5 +326,5 @@
     }
   ],
   "errors": [],
-  "startedAt": "2026-11-20T21:39:49.992Z"
+  "startedAt": "2026-11-20T23:54:39.223Z"
 }

@@ -199,6 +199,12 @@ probe and the migrated-surface axe journeys. The historical proof surface assert
 
 ## 7. Accessibility evidence
 
+The executable, per-merge gate is A11Y-01: `npm run a11y:gate` audits the nine migrated surfaces in
+Chromium and WebKit (axe, tab order, focus trap/restore, contrast, 200% zoom, reduced motion, GDS
+ownership, 44 px targets) and writes `artifacts/a11y/report.json`. The UI-01 proof-surface evidence
+below is historical; current operator policy, schema and suppression rules live in
+[A11Y_CHECKLIST.md](../A11Y_CHECKLIST.md), with delivery artifacts in `media/a11y/`.
+
 - axe-core (wcag2a, wcag2aa, wcag21a, wcag21aa) on `?gds=proof` at 1440x900: **0 violations**, 0
   serious/critical.
 - Keyboard journey in `scripts/verify-gds-probe.mjs`: Tab reaches the retry and abandon controls,
@@ -226,7 +232,7 @@ node scripts/test-count.mjs
 npm run build:ui && npm run verify:ui
 PLAYWRIGHT_MODULE=/path/to/node_modules/playwright node scripts/verify-gds-probe.mjs
 npm install --no-save axe-core
-PLAYWRIGHT_MODULE=/path/to/node_modules/playwright AXE_PATH=./node_modules/axe-core/axe.min.js npm run audit:a11y
+PLAYWRIGHT_MODULE=/path/to/node_modules/playwright AXE_PATH=./node_modules/axe-core/axe.min.js npm run a11y:gate
 ```
 
 ## 9. Rules for the migration issues (UI-02…UI-05)
@@ -242,7 +248,7 @@ PLAYWRIGHT_MODULE=/path/to/node_modules/playwright AXE_PATH=./node_modules/axe-c
   CI and the committed output must stay in sync with `ui/src`.
 
 
-## 10. Migrated game surfaces (UI-02…UI-05)
+## 10. Migrated game surfaces (UI-02…UI-05, EVT-02)
 
 ### 10.1 HUD (UI-02)
 
@@ -299,13 +305,28 @@ clamping, reduced-motion scaling (0.35) and the reset-then-write caption contrac
 control keeps its native keys; steering keys are captured only while the canvas owns the keyboard.
 The captions region is one `role="region" aria-live="polite"` region (`#narrative-subtitles`).
 
-### 10.5 Rollback and flags
+### 10.5 Incident dialog (EVT-02)
+
+`ui/src/surfaces/IncidentDialog.jsx` replaces the legacy incident overlay markup with a GDS
+`Modal` inside the one provider. The incident title is the dialog's accessible name; focus enters the
+heading; the GDS Modal close control and the GDS `DISMISS` button dispatch one `incident-dismiss`
+intent; Escape, the button and the dwell timer restore focus to `#arena-canvas`. The full-screen
+`#incident-fx-layer` (`#meteor-fx` canvas) remains `aria-hidden` product rendering behind the
+dialog, sized to `cssSize × devicePixelRatio`. Under reduced motion the controller paints one static
+poster frame, stops the loop, keeps the 1200 ms dwell and never applies `body.is-shaking`.
+
+The controller publishes `{ incident }` through `ui.setIncident`, so the island owns presentation
+while `interlude.js` keeps FX measurement (`window.__ICOSA__.incidentFxStats()`). Acceptance:
+`scripts/acceptance-incident-a11y.mjs`, `acceptance-incident-visual.mjs`,
+`acceptance-incident-cycle.mjs`; the A11Y-01 gate covers `incident` in both engines.
+
+### 10.6 Rollback and flags
 
 `?gds=0` or `localStorage['narimato.gds']='off'` keeps the legacy UI; nothing above is imported in
 that mode. `?gds=1` forces the island. The old proof evidence is reproducible with
 `?gds=proof&intro=0`. The deploy-free rollback is still the flag flip; no data or protocol change.
 
-### 10.6 Verification
+### 10.7 Verification
 
 ```bash
 npm test
@@ -314,7 +335,7 @@ npm run check:version
 node scripts/test-count.mjs
 npm run build:ui && npm run verify:ui
 PLAYWRIGHT_MODULE=/tmp/dsh-pw/node_modules/playwright node scripts/verify-ui-migration.mjs
-PLAYWRIGHT_MODULE=/tmp/dsh-pw/node_modules/playwright AXE_PATH=/tmp/dsh-pw/node_modules/axe-core/axe.min.js node scripts/audit-ui-a11y.mjs
+PLAYWRIGHT_MODULE=/tmp/dsh-pw/node_modules/playwright AXE_PATH=/tmp/dsh-pw/node_modules/axe-core/axe.min.js npm run a11y:gate
 ```
 
 Evidence: `media/gds/migration/` (landing, HUD, drawers, overlays, surface, cine at desktop/tablet/

@@ -92,7 +92,7 @@ export default function CineChrome({ cine, voice, captions }) {
           data-motion={motion}
           data-phase={slice.phase}
           role="region"
-          aria-label="Wormhole cockpit intro"
+          aria-label="Wormhole cockpit controls"
         >
           <GdsStack gap="sm" className="gds-cine-copy" align="center">
             <MetadataText id="intro-phase">{copy.kicker}</MetadataText>

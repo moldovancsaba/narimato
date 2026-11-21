@@ -1,0 +1,212 @@
+{
+  "schemaVersion": "1.0.0",
+  "generatedAt": "2026-11-20T23:53:53.501Z",
+  "startedAt": "2026-11-20T23:51:29.182Z",
+  "durationMs": 144319,
+  "commit": "f3bdfa47925a",
+  "engine": "webkit",
+  "mode": "full",
+  "status": "warning",
+  "summary": {
+    "pass": 0,
+    "warning": 1,
+    "failure": 0,
+    "incomplete": 0,
+    "suppressed": 0,
+    "total": 1
+  },
+  "suppressions": [],
+  "suppressionAudit": {
+    "applied": [],
+    "expired": [],
+    "unused": []
+  },
+  "surfaces": [
+    {
+      "id": "landing",
+      "route": "/?intro=0&gds=1",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "reducedMotion": "no-preference",
+      "status": "pass",
+      "summary": {
+        "pass": 0,
+        "warning": 0,
+        "failure": 0,
+        "incomplete": 0,
+        "suppressed": 0,
+        "total": 0
+      },
+      "findings": []
+    },
+    {
+      "id": "hud",
+      "route": "/?intro=0&gds=1",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "reducedMotion": "no-preference",
+      "status": "pass",
+      "summary": {
+        "pass": 0,
+        "warning": 0,
+        "failure": 0,
+        "incomplete": 0,
+        "suppressed": 0,
+        "total": 0
+      },
+      "findings": []
+    },
+    {
+      "id": "guide",
+      "route": "/?intro=0&gds=1",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "reducedMotion": "no-preference",
+      "status": "pass",
+      "summary": {
+        "pass": 0,
+        "warning": 0,
+        "failure": 0,
+        "incomplete": 0,
+        "suppressed": 0,
+        "total": 0
+      },
+      "findings": []
+    },
+    {
+      "id": "manual",
+      "route": "/?intro=0&gds=1",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "reducedMotion": "no-preference",
+      "status": "pass",
+      "summary": {
+        "pass": 0,
+        "warning": 0,
+        "failure": 0,
+        "incomplete": 0,
+        "suppressed": 0,
+        "total": 0
+      },
+      "findings": []
+    },
+    {
+      "id": "report",
+      "route": "/?intro=0&gds=1",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "reducedMotion": "no-preference",
+      "status": "pass",
+      "summary": {
+        "pass": 0,
+        "warning": 0,
+        "failure": 0,
+        "incomplete": 0,
+        "suppressed": 0,
+        "total": 0
+      },
+      "findings": []
+    },
+    {
+      "id": "confirm",
+      "route": "/?intro=0&gds=1",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "reducedMotion": "no-preference",
+      "status": "pass",
+      "summary": {
+        "pass": 0,
+        "warning": 0,
+        "failure": 0,
+        "incomplete": 0,
+        "suppressed": 0,
+        "total": 0
+      },
+      "findings": []
+    },
+    {
+      "id": "surface",
+      "route": "/?intro=0&gds=1",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "reducedMotion": "no-preference",
+      "status": "pass",
+      "summary": {
+        "pass": 0,
+        "warning": 0,
+        "failure": 0,
+        "incomplete": 0,
+        "suppressed": 0,
+        "total": 0
+      },
+      "findings": []
+    },
+    {
+      "id": "cine",
+      "route": "/?gds=1",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "reducedMotion": "no-preference",
+      "status": "pass",
+      "summary": {
+        "pass": 0,
+        "warning": 0,
+        "failure": 0,
+        "incomplete": 0,
+        "suppressed": 0,
+        "total": 0
+      },
+      "findings": []
+    },
+    {
+      "id": "incident",
+      "route": "/?intro=0&gds=1",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "reducedMotion": "no-preference",
+      "status": "pass",
+      "summary": {
+        "pass": 0,
+        "warning": 0,
+        "failure": 0,
+        "incomplete": 0,
+        "suppressed": 0,
+        "total": 0
+      },
+      "findings": []
+    }
+  ],
+  "findings": [
+    {
+      "id": "tab-walk-platform",
+      "check": "tab-order",
+      "surface": "gate",
+      "selector": "document",
+      "expected": "a real Tab walk where the browser exposes button tabbing",
+      "actual": "webkit uses the programmatic GDS tab-order assertion",
+      "severity": "minor",
+      "status": "warning",
+      "message": "webkit does not tab to buttons under its default keyboard policy; the gate uses the GDS expectGdsTabOrder assertion for this engine. Chromium runs the real Tab walk.",
+      "helpUrl": "",
+      "suggestedGdsReplacement": ""
+    }
+  ]
+}

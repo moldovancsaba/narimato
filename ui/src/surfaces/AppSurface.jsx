@@ -28,6 +28,7 @@ export default function AppSurface({ cfg, state }) {
   const ui = data.ui || {};
   const surface = ui.surface || data.surface || {};
   const cine = ui.cine || data.cine || {};
+  const incident = ui.incident || data.incident || { open: false };
   const voice = ui.voice || data.voice || {};
   const captions = ui.captions || data.captions || { visible: false, speaker: 'NARRATOR', text: '' };
   const landingOpen = ui.landing ? ui.landing.open === true : false;
@@ -68,11 +69,17 @@ export default function AppSurface({ cfg, state }) {
   }, []);
 
   return (
-      <GdsBox className="gds-app" data-gds-app="true" data-reduced-motion={cfg && cfg.reducedMotion ? 'true' : 'false'}
-        data-cine={cineActive ? 'true' : 'false'}>
+      <GdsBox
+        className="gds-app"
+        data-gds-app="true"
+        data-gds-surface="app"
+        data-gds-component="app"
+        data-reduced-motion={cfg && cfg.reducedMotion ? 'true' : 'false'}
+        data-cine={cineActive ? 'true' : 'false'}
+      >
         <Announcer announcement={state.announcement || ''} seq={state.announcementSeq || 0} />
         <HudSurface ui={ui} surface={surface} cineActive={cineActive} />
-        <OverlaySurface ui={ui} cineActive={cineActive} />
+        <OverlaySurface ui={ui} cineActive={cineActive} incident={incident} />
         <CineChrome cine={cine} voice={voice} captions={captions} />
       </GdsBox>
   );

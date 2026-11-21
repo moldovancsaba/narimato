@@ -1,109 +1,180 @@
-# NARIMATO — Accessibility / Device Checklist (A4)
+# NARIMATO — Accessibility gate and device checklist
 
 <!-- delivery-ssot:start -->
 > **Delivery SSOT:** [NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80) · [Definition of Done](docs/DEFINITION_OF_DONE.md) · [Issue index](docs/ISSUE_MAP.md).
 > This document owns durable knowledge; it does not track delivery status.
 >
-> **Related delivery issues:** [UI-03](https://github.com/moldovancsaba/narimato/issues/9) · [UI-04](https://github.com/moldovancsaba/narimato/issues/10) · [UI-05](https://github.com/moldovancsaba/narimato/issues/11) · [A11Y-01](https://github.com/moldovancsaba/narimato/issues/12) · [A11Y-02](https://github.com/moldovancsaba/narimato/issues/13) · [CTL-06](https://github.com/moldovancsaba/narimato/issues/31) · [EVT-03](https://github.com/moldovancsaba/narimato/issues/34) · [REL-01](https://github.com/moldovancsaba/narimato/issues/45)
+> **Related delivery issues:** [A11Y-01](https://github.com/moldovancsaba/narimato/issues/12) · [A11Y-02](https://github.com/moldovancsaba/narimato/issues/13) · [EVT-02](https://github.com/moldovancsaba/narimato/issues/33) · [EVT-03](https://github.com/moldovancsaba/narimato/issues/34) · [UI-01](https://github.com/moldovancsaba/narimato/issues/7) · [UI-02](https://github.com/moldovancsaba/narimato/issues/8) · [UI-05](https://github.com/moldovancsaba/narimato/issues/11)
 <!-- delivery-ssot:end -->
 
-## Automated (delivered)
+A11Y-01 installs one deterministic gate on the GDS accessibility test layer
+([`@sovereignsquad/gds-a11y`](https://github.com/sovereignsquad/general-design-system/issues/81)).
+The gate owns the accessibility claim; this document is the operator guide. Test results
+live in CI artifacts, not here.
 
-`npm run audit:ui` runs the nine-viewport matrix in **Chromium** and can run the same audit in
-**WebKit** (Safari engine) with:
+## 1. What blocks merge
 
-```sh
-PLAYWRIGHT_MODULE=/path/to/playwright PLAYWRIGHT_ENGINE=webkit npm run audit:ui
+| Gate | Command | CI job |
+|---|---|---|
+| GDS accessibility gate (Chromium) | `npm run a11y:gate` | `a11y (chromium)` on `ubuntu-latest` |
+| GDS accessibility gate (WebKit) | `node scripts/a11y-gate.mjs --engine=webkit` | `a11y (webkit)` on `macos-latest` |
+| Legacy viewport audit | `npm run audit:ui` | local / release checks |
+
+Both jobs upload `artifacts/a11y` for 14 days. A missing Playwright, missing axe-core, a browser
+that cannot launch, no free gate port, or a surface that cannot be reached exits `2`; it is never a
+false green. All findings at or above the serious band, every incomplete check, and every expired
+suppression exit `1`.
+
+## 2. Migrated surfaces
+
+The registry is [`public/js/a11y-surfaces.js`](public/js/a11y-surfaces.js); the gate audits every
+entry.
+
+| Surface id | Route / state | Viewport | Dialog / focus contract |
+|---|---|---|---|
+| `landing` | `/?intro=0&gds=1`, tag-in | 1440×900 | full-screen landing dialog; not dismissible before join |
+| `hud` | joined, orbit | 1440×900 | no dialog; dock order asserted |
+| `guide` | Quick Guide open | 1440×900 | GDS modal, Escape, focus restore to `#btn-help` |
+| `manual` | Field Manual open | 1440×900 | GDS modal, Escape, focus restore to `#btn-help` |
+| `report` | Session Report open | 1440×900 | GDS modal, Escape, focus restore to `#gds-btn-report` |
+| `confirm` | Abandon confirm open | 1440×900 | GDS modal, Escape resolves false, focus restore |
+| `surface` | surface mode | 1440×900 | no dialog; move pads order asserted |
+| `cine` | cockpit intro | 1280×800 | reduced-motion pass; skip/replay/steer order asserted |
+| `incident` | incident dialog open | 1280×800 | GDS dialog named by the incident title; Escape/close restores `#arena-canvas` |
+
+## 3. The seven assertions
+
+1. **axe serious/critical = 0.** `runGdsAxeScan` from the GDS layer runs the WCAG A/AA ruleset at
+   the `serious` threshold. Serious and critical violations are failures; lower bands are warnings.
+   A page without axe returns the package's critical `gds-axe-missing` failure.
+2. **Expected tab order.** `expectGdsTabOrder` asserts each expected stop is focusable in order. On
+   Chromium the gate also presses Tab from the first stop and fails if focus lands anywhere else.
+3. **Focus trap and restore.** `expectGdsFocusTrap` plus a full forward Tab cycle prove containment;
+   Escape must dismiss the dialog, and focus must return to the documented invoker (or
+   `#arena-canvas` for a background incident). A dialog that cannot be dismissed fails as a keyboard
+   trap.
+4. **Contrast.** A WCAG 2.1 luminance sweep measures body text at ≥ 4.5:1 and large text at ≥ 3:1,
+   resolving inherited transparent backgrounds. Transparent text fills fail. Gradient-backed text
+   that cannot be sampled is reported as a warning, never silently dropped.
+5. **200% zoom.** The gate halves the CSS viewport and asserts `scrollWidth ≤ innerWidth + 1` and
+   that every primary action is visible or inside a genuinely scrollable ancestor.
+6. **Reduced motion.** Playwright emulates `prefers-reduced-motion: reduce`. The incident overlay
+   must paint one non-blank poster frame, stop the loop, keep a 1200 ms dwell, never add
+   `body.is-shaking`, keep the GDS dialog named and dismissible, and restore focus. The cine chrome
+   must report `reduced`, keep its copy and skip control, and run no long CSS animation.
+7. **GDS ownership and 44 px targets.** Every visible interactive node on a migrated surface must
+   descend from a node carrying both `data-gds-surface` and `data-gds-component`. Every visible
+   button is at least 44×44 CSS px. `public/css/cyberpunk.css` may not skin `.gds-*` controls; layout
+   lives in the island stylesheet.
+
+## 4. Report contract
+
+The gate writes `artifacts/a11y/report-<engine>.json` and a combined `artifacts/a11y/report.json`.
+Delivery evidence is committed under `media/a11y/`.
+
+```json
+{
+  "schemaVersion": "1.0.0",
+  "generatedAt": "ISO timestamp",
+  "commit": "short sha",
+  "engine": "chromium|webkit|both",
+  "status": "pass|warning|failure|incomplete",
+  "summary": { "pass": 0, "warning": 0, "failure": 0, "incomplete": 0, "suppressed": 0, "total": 0 },
+  "surfaces": [
+    { "id": "incident", "route": "/?intro=0&gds=1", "status": "pass",
+      "findings": [
+        { "id": "color-contrast", "check": "axe", "surface": "incident",
+          "selector": "#meteor-description", "expected": "no violations",
+          "actual": "failure", "severity": "serious", "status": "failure",
+          "message": "...", "helpUrl": "...", "suggestedGdsReplacement": "..." }
+      ] }
+  ],
+  "findings": [],
+  "suppressions": [],
+  "suppressionAudit": { "applied": [], "expired": [], "unused": [] }
+}
 ```
 
-Checks:
-- score/nav/badge overlap;
-- target inspector vs subtitles;
-- intro captions vs touch steering;
-- mobile labels and 44 px primary touch targets;
-- accessible names on visible buttons;
-- short-landing form visibility and hidden game chrome;
-- console/page errors and horizontal overflow.
+`pending` is never a status: a finding is `failure`, `warning`, `incomplete` or `suppressed`.
+`incomplete` means the check did not run to completion (surface unreachable, browser error, missing
+axe) and fails the job. `warning` is a review signal below the failure threshold.
 
-Latest result: **clean in Chromium and WebKit**.
+## 5. Suppression policy
 
-axe-core WCAG audit (`npm run audit:a11y`, dev-only dependency): latest result
-**0 serious/critical violations** in Chromium and WebKit for landing, HUD, Field Manual and the
-incident overlay (desktop 1440×900 and mobile 390×844).
+The ledger is [`a11y-suppressions.json`](a11y-suppressions.json). Every entry requires:
 
-Additional axe-core WCAG A/AA audit:
+| Field | Rule |
+|---|---|
+| `id` | axe rule id or gate check id |
+| `reason` | why the finding is accepted |
+| `owner` | a named team or role accountable for removal |
+| `expiresAt` | `YYYY-MM-DD`; at most 90 days from today unless the ledger policy widens it |
+| `replacementPath` | the concrete GDS fix that removes the waiver |
+| `selector` / `route` | optional narrowing |
 
-```sh
-npm install --no-save axe-core
-PLAYWRIGHT_MODULE=/path/to/playwright AXE_PATH=./node_modules/axe-core/axe.min.js npm run audit:a11y
+An expired suppression never hides a finding: the finding stays active, is annotated with the
+expiry date, and the gate reports `suppression-expired`. A suppression that matches nothing is a
+warning, and becomes a failure with `--strict-suppressions` or once it is expired
+(`suppression-expired-unused`). The policy is enforced by
+`scripts/lib/a11y-report.mjs` and the suppression tests; it is not a convention.
+
+## 6. Local reproduction
+
+```bash
+npm ci
+npx playwright install --with-deps chromium webkit
+npm run a11y:gate                              # chromium + webkit, artifacts/a11y
+node scripts/a11y-gate.mjs --engine=chromium --out=artifacts/a11y --screenshots=media/a11y/screenshots
+node scripts/a11y-gate.mjs --engine=webkit --only=incident
 ```
 
-Latest result: **0 serious/critical violations** on landing, HUD and Field Manual in Chromium and
-WebKit. Fixed in v3.11.0: resource-market keyboard access, duplicate visible/accessible control
-labels, and SFX button naming.
+Without installing Playwright/axe in the repository, point at an existing installation:
 
-## Keyboard (delivered)
+```bash
+PLAYWRIGHT_MODULE=/path/to/node_modules/playwright \
+AXE_PATH=/path/to/node_modules/axe-core/axe.min.js \
+node scripts/a11y-gate.mjs --engine=chromium
+```
 
-- Escape closes the Field Manual, landing briefing and escape CTA.
-- All overlay primary buttons are keyboard reachable; form fields and buttons retain focus styles.
-- `prefers-reduced-motion` CSS is present and respected by intro/interlude/renderer.
+Exit codes: `0` clean or warning-only, `1` findings/incomplete/expired-or-strict-unused
+suppressions, `2` infrastructure error.
 
-## Surface mode keyboard and screen-reader path (RND-03)
+Negative checks (run before changing the gate):
 
-Surface mode is a camera and control mode on the same HUD tree:
+- Remove `aria-label` from `#btn-guide-close` and run `--only=guide`: the axe scan must exit `1`.
+- Make a modal ignore Escape: `focus-trap` must report a failure.
+- Set a ledger entry's `expiresAt` in the past: `suppression-expired` must fail the run.
 
-- Orbital nodes (score, mission, cargo, pilots, arcade, navigation, target inspector, hint) stay
-  mounted and keep their identity before, during and after surface entry; surface only adds the
-  `#surface-controls` group. The parity contract is `public/js/shared/hud-parity.js` and the
-  acceptance script is `node scripts/verify-hud-parity.mjs`.
-- `#surface-controls` is a `role="group"` named `Surface controls`; every button has an accessible
-  name and a 44 px target at mobile widths.
-- `#surface-target` is the single `aria-live="polite"` region for target and harvest state; the lap
-  bar is a `role="progressbar"` with `aria-valuenow`.
-- Entering the surface moves focus to the first movement pad; leaving restores focus to the orbit
-  zoom control (or the HUD region where the zoom indicator is hidden on narrow viewports).
-- Movement pads are `aria-disabled` during landing and leaving; Escape returns to orbit.
-- No surface CSS rule hides the orbital panels, the hint bar or the target inspector.
+## 7. Engine notes
 
-Automated evidence: `media/hud-parity/report.json` (three-phase HUD snapshot parity, focus
-placement/restore, pad sizes, aria snapshot per viewport). axe serious/critical verification of the
-surface strip remains owned by UI-04/A11Y-01 because the strip is not yet a GDS island; the current
-strip reuses the existing HUD markup and tokens.
+Chromium runs the real Tab walk. WebKit's default macOS keyboard policy does not Tab to buttons, so
+the gate uses the GDS `expectGdsTabOrder` assertion there and records one explicit
+`tab-walk-platform` warning; this is an engine limitation, not a skipped surface. Every other
+assertion (axe, focus trap/restore, contrast, zoom, reduced motion, ownership, targets) runs in both
+engines. WebKit missing system libraries exits `2` instead of a false green.
 
-## Incident feedback and announcements (EVT-03)
+## 8. GDS-only rule
 
-Every planetary incident and the relief drop are announced, captioned, keyboard dismissable and
-static under reduced motion. The canvas FX are decorative only; every piece of information they
-show is also text in the DOM.
+- Interactive nodes must sit inside a `[data-gds-surface][data-gds-component]` root. The island sets
+  those markers on the app shell, each modal root and each dialog body.
+- No custom control styling for migrated selectors in `public/css/cyberpunk.css`. The legacy
+  stylesheet owns only the mount host and the fallback banner; controls are GDS components styled by
+  props, tokens and the island layout stylesheet.
+- A new migrated surface adds one registry entry, one ownership root, and its expected tab stops;
+  the gate then enforces it on both engines.
 
-- **Live region inventory:** `#event-announcer` is the **only** added event live region
-  (`role="status"`, `aria-live="polite"`, `aria-atomic="true"`, visually hidden). It receives
-  exactly one full spoken sentence per event:
-  `<TITLE> on <PLANET>. <first description sentence> <outcome>` — for example
-  “Solar flare on Magrathea. The local star lashed out and cooked the daylight side. The crust has
-  reset, new ore is exposed, and mining is open again.” Spoken text never contains the visual `//`
-  separator, which screen readers would read as “slash slash”. Toasts do not duplicate it.
-- **Static captions:** `#event-captions` holds sentence-unit `<li>` elements with no `aria-live`,
-  so re-reading them never re-triggers speech. The wording comes from the pure builder
-  `public/js/shared/incident-announcements.js`, the same module the card uses.
-- **Dedupe:** announcements are keyed `kind:planetIndex:revision`; an SSE replay after reconnect
-  is spoken once, and the key advances on every fired event.
-- **Overlay semantics:** `#meteor-overlay` is a `role="region"` named by `#meteor-title` (the
-  server title, so nuclear and solar are not announced as meteor) and described by
-  `#meteor-sub` and `#meteor-description`. `Escape` and the 44 px **DISMISS** button close it and
-  return focus to `#arena-canvas`; incidents never steal focus or trap it while a player types.
-- **Reduced motion:** one static poster frame is painted, the animation loop and `body.is-shaking`
-  are not applied, and the overlay dwell is 1200 ms instead of 2600 ms.
-- **Design-system dependency:** UI-01 (GDS island foundation, `GdsProvider`, adapter boundary) is on
-  `main`; the incident overlay is still a legacy `ui.js` surface whose GDS composition is owned by
-  UI-05 (EVT-02's native dependency). Until UI-05 lands, the new controls reuse the existing `.btn`
-  atom and GDS-facing tokens; no parallel component library is introduced.
-- **Evidence:** `scripts/acceptance-incident-a11y.mjs` records the roles, names, live region,
-  captions, Escape/DISMISS behaviour, focus return and reduced-motion state for all four kinds
-  (`media/evt-01-03-aud-01/acceptance-incident-a11y.json`); `npm run audit:a11y` includes the
-  incident overlay and reports 0 serious/critical violations.
+## 9. Incident overlay (EVT-02)
 
-## Controls, touch and mode state (CTL-05, CTL-06)
+The incident overlay is a GDS dialog rendered by
+[`ui/src/surfaces/IncidentDialog.jsx`](ui/src/surfaces/IncidentDialog.jsx) inside the single
+`GdsProvider`. The incident title is the dialog's accessible name; focus enters the heading; the GDS
+Modal close control and the GDS DISMISS button both dispatch `incident-dismiss`; Escape, the button
+and the dwell timeout all restore focus to `#arena-canvas`. The FX canvas is an
+`aria-hidden` product-rendering layer behind the dialog, sized to device pixels, with a static poster
+under reduced motion. The one polite `#event-announcer` and the static `#event-captions` still carry
+the spoken and written event outcome.
+
+## 10. Controls, touch and mode state (CTL-05, CTL-06)
 
 - **Control-mode indicator** (`#control-mode`): `role="group"` with visible text
   (`OFFLINE|ORBIT|DESCENT|SURFACE|LEAVING` plus `DRAG: FOLLOW CURSOR|REVERSE`), a real
@@ -131,37 +202,25 @@ Automated evidence: `media/ctl/control-mode-*.jpg`, `media/ctl/touch-*.jpg`,
 `media/ctl/exit-*.jpg`, `media/ctl/surface-truth-*.jpg`; JSON reports are printed by the
 `scripts/acceptance-*.mjs` runs.
 
-## Manual real-device gate (pending)
+Evidence: `media/evt-01-03-aud-01/acceptance-incident-a11y.json`,
+`acceptance-incident-visual.json`, `acceptance-incident-cycle.json` and the incident JPEGs. The
+gate's `incident` and reduced-motion checks reproduce the same contract on every run.
 
-Cannot be executed in this headless environment; run before calling A4 fully closed:
+## 11. Manual real-device gate (pending)
+
+Cannot be executed in this headless environment; run before calling A11Y-02 done:
 
 - [ ] iPhone Safari (portrait + landscape): intro skip, join, HUD top row, brief scroll, captions.
 - [ ] Android Chrome (portrait + landscape): same.
 - [ ] Screen reader (VoiceOver/TalkBack/NVDA): planet badge, mission/cargo, target inspector,
-      subtitles, manual, escape CTA.
-- [ ] 200% zoom: no clipped primary actions; landing/brief/CTA scroll.
-- [ ] Reduced motion: no essential information depends on animation.
-- [ ] Contrast: muted labels remain readable in daylight/outdoor brightness.
+      subtitles, manual, escape CTA, incident dialog name and dismissal.
+- [ ] 200% text zoom on a physical device: no clipped primary action.
+- [ ] Reduced motion on device: poster, no shake, dismissible.
+- [ ] Contrast in direct daylight/outdoor brightness.
 
-## Known remaining risks
+## 12. Operator triage
 
-- Real-device audio autoplay differs (iOS gesture rules). The `TAP FOR VOICE` control
-  (`#btn-tap-voice`, a real 44 px button described by `#tap-voice-help`) appears when narration is
-  gesture-blocked and resumes the pending sentence; browser emulation evidence is in
-  `media/evt-01-03-aud-01/acceptance-audio-resilience.json`. A physical iPhone/Android screen
-  reader pass is still required by the manual gate above.
-- VoiceOver reading order for the HUD needs a manual tuning pass.
-- Report/share overlay on very short screens needs a long-report device check.
-
-## Migrated GDS surfaces (UI-02…UI-05)
-
-| Gate | How to verify | Evidence |
-|---|---|---|
-| HUD keyboard traversal, drawers, inspector | Tab through `#hud`, open each dock drawer, open/close `#hud-target`, confirm focus visible at 200% | `media/gds/migration/hud-*.png`, axe report |
-| Charge progressbar | `#target-charge-bar` exposes a labelled `role="progressbar"` with min/max/now plus `03 / 08` text | `test/hud-format.test.js`, browser probe |
-| Overlay focus trap and restore | Open Landing, Guide, Manual, Report, Confirm; Tab wraps; Escape/scrim/close restore the invoker | `scripts/verify-ui-migration.mjs`, `test/overlay-contract.test.js` |
-| Report PNG | `#report-card-preview` is a deterministic 1200×630 canvas, no network assets | report screenshot, `test/share-text.test.js` |
-| Surface strip | `#surface-target` text state, 44 px pads at 390×844 and 844×390, exit confirm restores focus | `media/gds/migration/surface-*.png` |
-| Cine chrome | Skip/replay/CC/VOX reachable by Tab; captions announced politely; reduced motion shortens without losing copy | `media/gds/migration/cine-*.png`, `test/cine-chrome.test.js` |
-| Focus vs canvas keys | Steering is captured only while the canvas owns the keyboard; focused controls keep Space/Enter/arrows | `test/surface-hud.test.js`, `test/cine-chrome.test.js` |
-| axe serious/critical | Landing, HUD, Guide, Report and Surface run clean | `media/gds/migration/axe-report.json` |
+Every finding prints `surface`, `selector`, `expected` and `actual`. Start with the first failure
+line, reproduce with `--only=<surface>`, then fix in GDS components, tokens or island layout only.
+Do not add a suppression for a missing GDS primitive, an unnamed control, a broken keyboard path, an
+invisible focus trap or an avoidable contrast failure.

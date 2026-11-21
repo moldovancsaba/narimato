@@ -1,19 +1,41 @@
 {
   "ok": true,
-  "base": "http://127.0.0.1:58534",
+  "base": "http://127.0.0.1:49421",
   "kinds": [
     {
       "kind": "meteor",
       "serverTitle": "METEOR IMPACT",
-      "overlay": {
-        "role": "region",
-        "labelledby": "meteor-title",
-        "describedby": "meteor-sub meteor-description",
-        "ariaHidden": "false",
-        "active": true,
-        "liveRegionsInside": 0
+      "dialog": {
+        "role": "dialog",
+        "ariaModal": "true",
+        "labelledby": "meteor-overlay-title",
+        "describedby": "meteor-overlay-body",
+        "name": "METEOR IMPACT",
+        "contentTag": "SECTION"
       },
-      "name": "METEOR IMPACT",
+      "title": {
+        "text": "METEOR IMPACT",
+        "tag": "SPAN",
+        "tabindex": "-1"
+      },
+      "fxLayer": {
+        "ariaHidden": "true",
+        "active": true,
+        "role": null
+      },
+      "owner": {
+        "title": true,
+        "dismiss": true,
+        "close": true
+      },
+      "controls": {
+        "dismissTag": "BUTTON",
+        "dismissClass": "mantine-focus-auto mantine-active m_77c9d27d mantine-Button-root m_87cf2631 mantine-UnstyledButton-root",
+        "dismissHeight": 50,
+        "dismissWidth": 131.828125,
+        "closeTag": "BUTTON",
+        "closeClass": "mantine-focus-auto mantine-active m_220c80f2 m_606cb269 mantine-Modal-close m_86a44da5 mantine-CloseButton-root m_87cf2631 mantine-UnstyledButton-root"
+      },
       "announcer": {
         "role": "status",
         "live": "polite",
@@ -30,20 +52,42 @@
         ]
       },
       "statusRegions": 1,
-      "activeElementId": ""
+      "trapped": 8
     },
     {
       "kind": "nuclear",
       "serverTitle": "NUCLEAR WAR",
-      "overlay": {
-        "role": "region",
-        "labelledby": "meteor-title",
-        "describedby": "meteor-sub meteor-description",
-        "ariaHidden": "false",
-        "active": true,
-        "liveRegionsInside": 0
+      "dialog": {
+        "role": "dialog",
+        "ariaModal": "true",
+        "labelledby": "meteor-overlay-title",
+        "describedby": "meteor-overlay-body",
+        "name": "NUCLEAR WAR",
+        "contentTag": "SECTION"
       },
-      "name": "NUCLEAR WAR",
+      "title": {
+        "text": "NUCLEAR WAR",
+        "tag": "SPAN",
+        "tabindex": "-1"
+      },
+      "fxLayer": {
+        "ariaHidden": "true",
+        "active": true,
+        "role": null
+      },
+      "owner": {
+        "title": true,
+        "dismiss": true,
+        "close": true
+      },
+      "controls": {
+        "dismissTag": "BUTTON",
+        "dismissClass": "mantine-focus-auto mantine-active m_77c9d27d mantine-Button-root m_87cf2631 mantine-UnstyledButton-root",
+        "dismissHeight": 50,
+        "dismissWidth": 131.828125,
+        "closeTag": "BUTTON",
+        "closeClass": "mantine-focus-auto mantine-active m_220c80f2 m_606cb269 mantine-Modal-close m_86a44da5 mantine-CloseButton-root m_87cf2631 mantine-UnstyledButton-root"
+      },
       "announcer": {
         "role": "status",
         "live": "polite",
@@ -60,20 +104,42 @@
         ]
       },
       "statusRegions": 1,
-      "activeElementId": ""
+      "trapped": 8
     },
     {
       "kind": "solar",
       "serverTitle": "SOLAR FLARE",
-      "overlay": {
-        "role": "region",
-        "labelledby": "meteor-title",
-        "describedby": "meteor-sub meteor-description",
-        "ariaHidden": "false",
-        "active": true,
-        "liveRegionsInside": 0
+      "dialog": {
+        "role": "dialog",
+        "ariaModal": "true",
+        "labelledby": "meteor-overlay-title",
+        "describedby": "meteor-overlay-body",
+        "name": "SOLAR FLARE",
+        "contentTag": "SECTION"
       },
-      "name": "SOLAR FLARE",
+      "title": {
+        "text": "SOLAR FLARE",
+        "tag": "SPAN",
+        "tabindex": "-1"
+      },
+      "fxLayer": {
+        "ariaHidden": "true",
+        "active": true,
+        "role": null
+      },
+      "owner": {
+        "title": true,
+        "dismiss": true,
+        "close": true
+      },
+      "controls": {
+        "dismissTag": "BUTTON",
+        "dismissClass": "mantine-focus-auto mantine-active m_77c9d27d mantine-Button-root m_87cf2631 mantine-UnstyledButton-root",
+        "dismissHeight": 50,
+        "dismissWidth": 131.828125,
+        "closeTag": "BUTTON",
+        "closeClass": "mantine-focus-auto mantine-active m_220c80f2 m_606cb269 mantine-Modal-close m_86a44da5 mantine-CloseButton-root m_87cf2631 mantine-UnstyledButton-root"
+      },
       "announcer": {
         "role": "status",
         "live": "polite",
@@ -90,20 +156,42 @@
         ]
       },
       "statusRegions": 1,
-      "activeElementId": ""
+      "trapped": 8
     },
     {
       "kind": "alien",
       "serverTitle": "ALIEN INVASION",
-      "overlay": {
-        "role": "region",
-        "labelledby": "meteor-title",
-        "describedby": "meteor-sub meteor-description",
-        "ariaHidden": "false",
-        "active": true,
-        "liveRegionsInside": 0
+      "dialog": {
+        "role": "dialog",
+        "ariaModal": "true",
+        "labelledby": "meteor-overlay-title",
+        "describedby": "meteor-overlay-body",
+        "name": "ALIEN INVASION",
+        "contentTag": "SECTION"
       },
-      "name": "ALIEN INVASION",
+      "title": {
+        "text": "ALIEN INVASION",
+        "tag": "SPAN",
+        "tabindex": "-1"
+      },
+      "fxLayer": {
+        "ariaHidden": "true",
+        "active": true,
+        "role": null
+      },
+      "owner": {
+        "title": true,
+        "dismiss": true,
+        "close": true
+      },
+      "controls": {
+        "dismissTag": "BUTTON",
+        "dismissClass": "mantine-focus-auto mantine-active m_77c9d27d mantine-Button-root m_87cf2631 mantine-UnstyledButton-root",
+        "dismissHeight": 50,
+        "dismissWidth": 131.828125,
+        "closeTag": "BUTTON",
+        "closeClass": "mantine-focus-auto mantine-active m_220c80f2 m_606cb269 mantine-Modal-close m_86a44da5 mantine-CloseButton-root m_87cf2631 mantine-UnstyledButton-root"
+      },
       "announcer": {
         "role": "status",
         "live": "polite",
@@ -120,15 +208,17 @@
         ]
       },
       "statusRegions": 1,
-      "activeElementId": ""
+      "trapped": 8
     }
   ],
   "dismissal": {
+    "dismissTag": "BUTTON",
+    "dismissClass": "mantine-focus-auto mantine-active m_77c9d27d mantine-Button-root m_87cf2631 mantine-UnstyledButton-root",
+    "dismissWidth": 132,
+    "dismissHeight": 50,
     "dismissed": true,
     "activeElementId": "arena-canvas",
-    "dismissTag": "BUTTON",
-    "dismissMinHeight": "44px",
-    "dismissMinWidth": "44px"
+    "dialogOpen": false
   },
   "reducedMotion": {
     "meteor": {
@@ -150,7 +240,9 @@
       },
       "shaking": false,
       "announcer": "METEOR IMPACT on MAGRATHEA. A rogue meteor punched through the surface. The crust has reset, new ore is exposed, and mining is open again.",
-      "captions": 3
+      "captions": 3,
+      "title": "METEOR IMPACT",
+      "dialog": true
     },
     "nuclear": {
       "stats": {
@@ -171,7 +263,9 @@
       },
       "shaking": false,
       "announcer": "NUCLEAR WAR on MAGRATHEA. Atomic fire swept the planet from horizon to horizon. The crust has reset, new ore is exposed, and mining is open again.",
-      "captions": 3
+      "captions": 3,
+      "title": "NUCLEAR WAR",
+      "dialog": true
     },
     "solar": {
       "stats": {
@@ -192,7 +286,9 @@
       },
       "shaking": false,
       "announcer": "SOLAR FLARE on MAGRATHEA. The local star lashed out and cooked the daylight side. The crust has reset, new ore is exposed, and mining is open again.",
-      "captions": 3
+      "captions": 3,
+      "title": "SOLAR FLARE",
+      "dialog": true
     },
     "alien": {
       "stats": {
@@ -213,7 +309,9 @@
       },
       "shaking": false,
       "announcer": "ALIEN INVASION on MAGRATHEA. An alien fleet razed the planet from orbit. The crust has reset, new ore is exposed, and mining is open again.",
-      "captions": 3
+      "captions": 3,
+      "title": "ALIEN INVASION",
+      "dialog": true
     }
   },
   "errors": []

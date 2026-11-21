@@ -675,7 +675,7 @@ export default function HudSurface({ ui, surface, cineActive }) {
         <SurfaceStrip surface={surface} intent={intent} />
       </GdsBox>
 
-      <GdsInline gap="xs" align="center" wrap="nowrap" className="gds-status-cluster" role="toolbar" aria-label="Game controls">
+      <GdsInline gap="xs" align="center" wrap="nowrap" className="gds-status-cluster" role="region" aria-label="Game status and controls">
         <Button id={IDS.abandon} variant="subtle" size="compact-lg" onClick={() => intent('abandon')}>
           ABANDON
         </Button>
