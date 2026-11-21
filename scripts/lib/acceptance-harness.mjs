@@ -116,10 +116,26 @@ export async function launchClients(playwright, count = 2) {
   };
 }
 
+/** Read the landing join controls before the landing overlay is unmounted. */
+export async function readJoinControls(page) {
+  return page.evaluate(() => {
+    const nameOf = (element) => (element ? element.getAttribute('aria-label') || element.textContent.trim() || null : null);
+    const tagInput = document.querySelector('#tag-input');
+    const joinButton = document.querySelector('#btn-join');
+    return {
+      tagInputName: nameOf(tagInput),
+      joinName: nameOf(joinButton),
+      tagTabbable: tagInput ? tagInput.tabIndex >= 0 : false,
+      joinTabbable: joinButton ? joinButton.tabIndex >= 0 : false,
+    };
+  });
+}
+
 /** Join one page with a throwaway callsign and wait for the joined state. */
-export async function joinClient(page, tag, baseUrl) {
+export async function joinClient(page, tag, baseUrl, { beforeJoin = null } = {}) {
   await page.goto(`${baseUrl}/?intro=0`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('#tag-input', { timeout: HARD_MS });
+  if (beforeJoin) await beforeJoin(page);
   await page.fill('#tag-input', tag);
   await page.click('#btn-join');
   await page.waitForFunction(() => window.__ICOSA__ && window.__ICOSA__.joined === true, null, { timeout: HARD_MS });
@@ -209,6 +225,12 @@ export function newAcceptanceReport({ runId, baseUrl, planetSeed = null, planetI
   };
 }
 
+/** Exit-code contract: report.ok is computed by writeReport(), never by the caller. */
+export function acceptanceExitCode(report, { harnessFailure = false } = {}) {
+  if (!report || typeof report !== 'object') return 2;
+  return report.ok ? 0 : harnessFailure ? 2 : 1;
+}
+
 export function addCheck(report, id, ok, detail = null) {
   const check = { id, ok: !!ok, detail };
   report.checks.push(check);
@@ -260,7 +282,9 @@ export async function loadPlaywright() {
  * (`OWN_CELL_LOCKED`, `COOLDOWN`) are recorded separately, including their
  * browser "Failed to load resource" console noise.
  */
-export function collectErrors(clients, { allowedRefusals = ['OWN_CELL_LOCKED', 'COOLDOWN', 'POSE_RATE_LIMIT', 'SUPPLY_NOT_READY'] } = {}) {
+export const DEFAULT_ALLOWED_REFUSALS = Object.freeze(['OWN_CELL_LOCKED', 'COOLDOWN', 'POSE_RATE_LIMIT', 'SUPPLY_NOT_READY']);
+
+export function collectErrors(clients, { allowedRefusals = DEFAULT_ALLOWED_REFUSALS } = {}) {
   const list = [...clients.errors];
   const allowed = [];
   const unexpected = [];

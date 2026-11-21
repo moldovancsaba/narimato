@@ -20,6 +20,9 @@ real count.
 | `test/cdn-preflight.test.js` | CDN config validation, production-host classification, DNS/header checks, CORS/range/cache policy, fail-closed exit codes | `scripts/cdn-preflight.mjs` | OPS-04 |
 | `test/data-integrity.test.js` | Manifest/tar determinism, path safety, checksums, reconciliation, retention, exit codes | `lib/data-integrity.js` | OPS-03 |
 | `test/device-gate.test.js` | Fixed 20-row device matrix, ledger schema, coverage, evidence paths, defect links, approvals, freshness, commit provenance, CLI exit codes | `scripts/device-gate.mjs` | A11Y-02 |
+| `test/release-gate.test.js` | Release gate exit-code matrix, version triple, count parsing, prerequisite/owner validation, manifest contract, atomic report writing, dry-run plan | `lib/release-checks.js`, `scripts/release-gate.mjs`, `scripts/rollback-drill.mjs` | REL-01 |
+| `test/evidence-check.test.js` | Claim table parsing, closed status vocabulary, typed evidence resolution, planned-as-live tense, broken links, exit-code precedence | `lib/claim-ledger.js`, `scripts/evidence-check.mjs` | REL-02 |
+| `test/acceptance-harness.test.js` | Acceptance report exit-code contract and scoped expected-refusal handling | `scripts/lib/acceptance-harness.mjs` | TST-01 |
 | `test/docs-check.test.js` | R1–R6 docs gate, link/anchor/placeholder/key rules | `scripts/check-docs.mjs` | SSOT-02 |
 | `test/geometry.test.js` | Regular spherical icosahedron, subdivision, labels, picking, projection | `public/js/shared/geometry.js` | RND-01 |
 | `test/harvest.test.js` | Harvest truth table: joined/stale/cooldown/lock precedence, deep-cell informational, server error mapping, chip text | `public/js/shared/harvest.js` | CTL-03 |

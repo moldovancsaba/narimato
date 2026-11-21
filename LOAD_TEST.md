@@ -21,6 +21,12 @@ npm run gate:load -- --only=smoke,load,chaos
 npm run gate:load -- --only=soak        # release prerequisite (1–2 h)
 ```
 
+`npm run release:gate` runs the fast release profile `--only=smoke,chaos` (about 15 s of
+load plus the restart drill) as one blocking gate step, writing under
+`artifacts/release/v<version>/load/`. The 120-minute soak is deliberately **not** part of
+the fast gate: it stays a separate release prerequisite (weekly CI job or
+`npm run gate:load -- --only=soak`) recorded in `observability/release-prerequisites.json`.
+
 `node scripts/perf-gate.mjs` starts an ephemeral server per run (`PORT=0`, a fresh
 `mkdtemp` `DATA_DIR`, `BOTS=0`, `CLICK_COOLDOWN_MS=0`) with `SECURITY_MODE=enforce`,
 runs the generator, samples `/api/metrics` before and after, checks `/api/state` and

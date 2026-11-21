@@ -248,6 +248,28 @@ repository status documents. The repository owns durable technical knowledge and
 | ![Centered TRY TO FLY AWAY escape CTA](media/escape-cta.jpg) | ![New-planet landing briefing](media/landing-brief.jpg) |
 | ![Escape CTA on mobile](media/escape-cta-mobile.jpg) | ![Landing briefing on mobile](media/landing-brief-mobile.jpg) |
 
+## Capability status
+
+The closed vocabulary is `LIVE`, `PARTIAL`, `PLANNED` and `NOT_STARTED`. A `LIVE`
+capability carries at least one resolvable evidence reference; `PARTIAL` names what
+remains; `PLANNED` uses future tense. The rules, schema and release-time update
+procedure are in [docs/RELEASE_EVIDENCE.md](docs/RELEASE_EVIDENCE.md), and
+`npm run evidence:check` fails a planned capability described as live.
+
+| Capability | Status | Evidence | Note |
+|---|---|---|---|
+| Persistent shared world, scoring and escape | LIVE | `test:test/world-core.test.js`, `test:test/server.test.js` | Server-authoritative; tokens reconnect pilots |
+| GDS UI and accessible HUD surfaces | LIVE | `script:scripts/a11y-gate.mjs`, `test:test/a11y-report.test.js` | Headless Chromium/WebKit gate; real-device sign-off is separate |
+| One spherical scene for orbit and surface | LIVE | `script:scripts/verify-single-scene.mjs`, `test:test/single-scene-guard.test.js` | Camera-only transition, pixel parity and frame budget |
+| Two-client surface multiplayer | LIVE | `script:scripts/acceptance-two-client-surface.mjs`, `test:test/renderer-surface.test.js` | Peer tags, authoritative beams, supply relocation and live mutation |
+| Release acceptance gate | LIVE | `script:scripts/release-gate.mjs`, `test:test/release-gate.test.js` | `npm run release:gate` fails closed; manifest under `artifacts/release/` |
+| Release evidence ledger | LIVE | `script:scripts/evidence-check.mjs`, `test:test/evidence-check.test.js` | Closed status vocabulary with typed, resolvable evidence |
+| Recovery and rollback drills | LIVE | `script:scripts/recovery-test.mjs`, `script:scripts/rollback-drill.mjs` | Backup -> verify -> restore and previous-tag worktree drill |
+| Load and chaos gate | LIVE | `script:scripts/perf-gate.mjs`, `test:test/perf-gate.test.js` | Smoke/load/chaos scenarios with OPS-01 thresholds |
+| Real-device accessibility sign-off | PLANNED | `issue:#13` | Awaits the A11Y-02 capture matrix and two approvals |
+| Edge/CDN asset delivery | PLANNED | `issue:#41` | Awaits OPS-04 stub-origin proof and production credentials |
+| 120-minute soak for this release | PARTIAL | `script:scripts/perf-gate.mjs` | The fast gate runs smoke and chaos; the 120-minute soak remains a separate release prerequisite |
+
 ## Development
 
 The node:test suite currently runs <!-- test-count:583 -->583<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
@@ -333,7 +355,7 @@ media/                    screenshots used by docs
 
 ## Status
 
-Version **3.57.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
+Version **3.58.0** · MIT-licensed community project by the NARIMATO crew. The live world is persistent;
 server restarts preserve every loaded planet and the token→planet registry.
 
 Delivery is tracked on the **[NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80)**

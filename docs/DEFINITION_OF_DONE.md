@@ -62,13 +62,19 @@ definition used by the board; [PROJECT_BOARD.md](PROJECT_BOARD.md) defines the w
 
 ## Release gate (M7 / REL-01)
 
+- [ ] `npm run release:gate` was run on the delivery commit and its manifest is attached to the PR.
+- [ ] The gate verdict is truthful: `GREEN` only when every code gate passed and no external
+      prerequisite is open; otherwise `BLOCKED` or `RED`, with the blocking IDs named.
+- [ ] `npm run evidence:check` passes; every `LIVE` claim in `README.md`, `RELEASE_NOTES.md` and
+      [RELEASE_EVIDENCE.md](RELEASE_EVIDENCE.md) has a resolvable reference.
 - [ ] Version SSOT consistent across `package.json`, cache-bust query strings, README and docs.
 - [ ] Full test matrix green (Node 20 and 22).
 - [ ] Browser acceptance suite green; screenshots attached.
 - [ ] Accessibility CI gate green; real-device gate signed.
 - [ ] Load/soak/chaos gate green on the release topology; SLOs recorded.
 - [ ] Docs link/issue check green; no orphan or deleted target.
-- [ ] Release evidence table (commit, tests, artifacts, smoke) complete.
+- [ ] Release evidence table (commit, tests, artifacts, smoke) complete in
+      [RELEASE_EVIDENCE.md](RELEASE_EVIDENCE.md).
 - [ ] Rollback drill executed and recorded (revert version + assets + data plan).
 
 ## Not Done

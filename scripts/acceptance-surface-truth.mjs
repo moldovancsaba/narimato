@@ -15,6 +15,8 @@ import {
   HARD_MS,
   addCheck,
   captureScreenshot,
+  DEFAULT_ALLOWED_REFUSALS,
+  acceptanceExitCode,
   collectErrors,
   createArtifactDir,
   createRunId,
@@ -37,13 +39,15 @@ const report = newAcceptanceReport({ runId, baseUrl: '' });
 let server = null;
 let clients = null;
 
-function finish(code) {
+function finish(harnessFailure = false) {
+  // writeReport() is what computes report.ok, so the exit code must be derived
+  // *after* it. Deriving it in the caller produced "PASS 4/4" with exit 1 (TST-01).
   const file = writeReport(artifactDir, report);
   const pass = report.checks.filter((check) => check.ok).length;
   process.stdout.write(`${report.ok ? 'PASS' : 'FAIL'} surface-truth // ${runId} // ${pass}/${report.checks.length} checks\n`);
   for (const check of report.checks) process.stdout.write(`  ${check.ok ? 'ok  ' : 'FAIL'} ${check.id}${check.ok ? '' : ` — ${JSON.stringify(check.detail)}`}\n`);
   process.stdout.write(`report: ${file}\n`);
-  process.exitCode = code;
+  process.exitCode = acceptanceExitCode(report, { harnessFailure });
 }
 
 try {
@@ -104,18 +108,23 @@ try {
     frames: mineFrames.length,
     valid: mineFrames.filter((frame) => frame.precededByCell).length,
   });
-  const signals = collectErrors(clients);
+  // The script itself posts one expected `/api/action` click; when the target is
+  // locked the server legitimately answers 409 NOT_A_LEAF. That response is the
+  // subject under test, not a page error (TST-01 defect).
+  const signals = collectErrors(clients, {
+    allowedRefusals: [...DEFAULT_ALLOWED_REFUSALS, 'NOT_A_LEAF'],
+  });
   report.errors.push(...signals.errors);
   addCheck(report, 'no-page-errors', signals.errors.length === 0, {
     count: signals.errors.length,
     expectedRefusals: signals.allowedRefusals.length,
     errors: signals.errors.slice(0, 6),
   });
-  finish(report.ok ? 0 : 1);
+  finish();
 } catch (error) {
   report.errors.push(String(error && error.message ? error.message : error));
   addCheck(report, 'harness', false, { message: String(error && error.message ? error.message : error) });
-  finish(error && error.harness ? 2 : 1);
+  finish(Boolean(error && error.harness));
 } finally {
   if (clients) await clients.close();
   if (server) await server.stop();

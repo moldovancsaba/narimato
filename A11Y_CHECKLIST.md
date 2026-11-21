@@ -25,6 +25,11 @@ that cannot launch, no free gate port, or a surface that cannot be reached exits
 false green. All findings at or above the serious band, every incomplete check, and every expired
 suppression exit `1`.
 
+`npm run release:gate` runs the Chromium gate as a blocking release step and records the report
+under `artifacts/release/v<version>/a11y/report.json`. The manual real-device matrix (A11Y-02,
+issue #13) is an external release prerequisite: the gate reports `BLOCKED` until that evidence is
+linked, and no headless run is presented as a device sign-off.
+
 ## 2. Migrated surfaces
 
 The registry is [`public/js/a11y-surfaces.js`](public/js/a11y-surfaces.js); the gate audits every

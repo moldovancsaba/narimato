@@ -12,6 +12,7 @@ import {
   HARD_MS,
   addCheck,
   captureScreenshot,
+  acceptanceExitCode,
   collectErrors,
   createArtifactDir,
   createRunId,
@@ -32,13 +33,14 @@ const report = newAcceptanceReport({ runId, baseUrl: '' });
 let server = null;
 let clients = null;
 
-function finish(code) {
+function finish(harnessFailure = false) {
+  // report.ok is computed by writeReport(); derive the exit code afterwards.
   const file = writeReport(artifactDir, report);
   const pass = report.checks.filter((check) => check.ok).length;
   process.stdout.write(`${report.ok ? 'PASS' : 'FAIL'} supply-focus // ${runId} // ${pass}/${report.checks.length} checks\n`);
   for (const check of report.checks) process.stdout.write(`  ${check.ok ? 'ok  ' : 'FAIL'} ${check.id}${check.ok ? '' : ` — ${JSON.stringify(check.detail)}`}\n`);
   process.stdout.write(`report: ${file}\n`);
-  process.exitCode = code;
+  process.exitCode = acceptanceExitCode(report, { harnessFailure });
 }
 
 try {
@@ -89,11 +91,11 @@ try {
     expectedRefusals: signals.allowedRefusals.length,
     errors: signals.errors.slice(0, 6),
   });
-  finish(report.ok ? 0 : 1);
+  finish();
 } catch (error) {
   report.errors.push(String(error && error.message ? error.message : error));
   addCheck(report, 'harness', false, { message: String(error && error.message ? error.message : error) });
-  finish(error && error.harness ? 2 : 1);
+  finish(Boolean(error && error.harness));
 } finally {
   if (clients) await clients.close();
   if (server) await server.stop();

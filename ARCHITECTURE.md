@@ -745,7 +745,23 @@ node scripts/test-count.mjs  # documented count == executed count
 npm run a11y:gate        # GDS accessibility gate (Chromium + WebKit; needs npm ci + browsers)
 npm run device:gate -- --plan --commit=$(git rev-parse HEAD)  # A11Y-02 real-device matrix
 npm run cdn:preflight    # OPS-04 CDN gate (exit 3 until a real CDN hostname/origin exists)
+npm run evidence:check   # release claim ledger (status vocabulary + resolvable evidence)
+npm run release:gate     # REL-01 full release acceptance matrix + versioned manifest
+npm run release:drill    # previous-tag rollback rehearsal in a throwaway worktree
 ```
+
+### Release acceptance gate (REL-01)
+
+`scripts/release-gate.mjs` is the only procedure allowed to declare a version releasable. It runs
+in dependency order — version/cache-bust, the `node:test` suite, documented-versus-executed test
+count, `docs:check`, GDS build/verify/determinism, the Chromium accessibility gate, single-scene
+self-test, two-client and surface-truth acceptance, load/chaos smoke, recovery, rollback drill and
+the evidence ledger — and writes `artifacts/release/v<version>/release-manifest.json`,
+`release-report.md` and `logs/`. Exit codes are `0` GREEN, `1` RED, `2` preflight refusal, `3`
+missing dependency, `4` test-count mismatch and `5` BLOCKED on external prerequisites. The
+120-minute soak is a separate release prerequisite, and A11Y-02/OPS-04 are tracked in
+`observability/release-prerequisites.json`; neither is faked by the fast gate. Claim rules and the
+current ledger are in [docs/RELEASE_EVIDENCE.md](docs/RELEASE_EVIDENCE.md).
 
 ### Accessibility gate (A11Y-01)
 

@@ -13,7 +13,7 @@ or served by the edge.
 
 ## What is already CDN-safe
 
-- Audio URLs are versioned: `/audio/voice/<profile>/<cue>__s<n>.m4a?v=3.57.0+56190bd8`.
+- Audio URLs are versioned: `/audio/voice/<profile>/<cue>__s<n>.m4a?v=3.58.0+56190bd8`.
   The query is generated (`<package version>+<content hash8>`) by
   `scripts/generate-voice.mjs`; never hand-edit it. Editing a sentence changes the
   content hash, so a replaced clip always gets a new cache key.
