@@ -82,6 +82,16 @@ Living technical and product documents stay at the repository root; delivery doc
 
 ## Repository quality gate (R1–R6)
 
+`npm run release:gate` (`scripts/release-gate.mjs`, REL-01) is the release acceptance
+matrix. It runs the version SSOT, test suite and count, docs gate, GDS build/verify,
+accessibility gate, browser acceptance, load/chaos smoke, recovery and rollback drills,
+and the evidence ledger, then writes a versioned manifest and report under
+`artifacts/release/v<version>/`. Exit codes: `0` GREEN, `1` RED, `2` preflight refusal,
+`3` missing dependency, `4` documented/executed test-count mismatch, `5` BLOCKED on
+external prerequisites. The machine-readable prerequisites live in
+`observability/release-prerequisites.json`; the 120-minute soak is a separate release
+prerequisite.
+
 `npm run docs:check` (`scripts/check-docs.mjs`) is the deterministic repository gate run in CI:
 
 - **R1** relative links resolve to an existing file with exact path case.
@@ -98,6 +108,18 @@ editing the checker to fit a broken tree.
 The version gate (`node scripts/check-version.mjs`, SSOT-03) validates one app version and one
 audio-lineage version across every declared slot, and can fix or bump them. The test-count gate
 (`node scripts/test-count.mjs`, QA-01) proves the documented suite size equals the executed suite.
+
+## Release evidence ledger (REL-02)
+
+Every shipped claim in [README.md](../README.md), [RELEASE_NOTES.md](../RELEASE_NOTES.md)
+and [RELEASE_EVIDENCE.md](RELEASE_EVIDENCE.md) is a table row with one status from the
+closed vocabulary `LIVE`, `PARTIAL`, `PLANNED`, `NOT_STARTED` and typed evidence
+(`commit:`, `test:`, `script:`, `screenshot:`, `smoke:`, `issue:`). `npm run evidence:check`
+exits `1` for an invalid status, `2` for unresolved evidence, `3` for a broken link and
+`4` for a planned capability described as live; the release gate runs it as a blocking
+step. The ledger update is part of the release procedure, and the board's `Delivered` /
+`Release Evidence` fields are filled from the manifest, never from a plan. History is
+annotated, never deleted.
 
 ## Change policy
 

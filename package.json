@@ -1,6 +1,6 @@
 {
   "name": "narimato",
-  "version": "3.57.0",
+  "version": "3.58.0",
   "private": false,
   "type": "module",
   "description": "NARIMATO \u2014 the way back: persistent multiplayer mining, planet escape and deep-space progression on a spherical icosahedron",
@@ -13,6 +13,9 @@
     "check:slo": "node scripts/check-slo.mjs",
     "check:scale": "node scripts/check-scale-decision.mjs",
     "test:count": "node scripts/test-count.mjs --print",
+    "evidence:check": "node scripts/evidence-check.mjs --readme README.md --notes RELEASE_NOTES.md --ledger docs/RELEASE_EVIDENCE.md --repo .",
+    "release:gate": "node scripts/release-gate.mjs",
+    "release:drill": "node scripts/rollback-drill.mjs",
     "backup:data": "node scripts/backup-data.mjs",
     "verify:data": "node scripts/verify-data.mjs",
     "restore:data": "node scripts/restore-data.mjs",

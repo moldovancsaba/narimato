@@ -39,6 +39,7 @@ import {
   validateReport,
 } from './lib/single-scene-checks.mjs';
 import { parity, snapshotFromIds } from '../public/js/shared/hud-parity.js';
+import { ORBIT_FAR_ZOOM } from '../public/js/shared/zoom-levels.js';
 
 const SCRIPT_FILE = fileURLToPath(import.meta.url);
 const ROOT = path.resolve(path.dirname(SCRIPT_FILE), '..');
@@ -225,8 +226,11 @@ async function enterSurface(page) {
 
 async function exitSurface(page) {
   // The product exit control is the only exit path; the suite never mutates
-  // application state directly (surface exit is a user action).
+  // application state directly (surface exit is a user action). Under the GDS
+  // flag the control asks for confirmation first (CTL-04).
   await page.click('#btn-surface-exit');
+  const confirm = await page.$('#btn-confirm-ok').catch(() => null);
+  if (confirm && (await confirm.isVisible().catch(() => false))) await confirm.click();
   await page.waitForFunction(() => window.__ICOSA__.surfaceMode().active === false, null, { timeout: 8000 });
   await page.waitForFunction(() => window.__ICOSA__.view() === 'orbit', null, { timeout: 8000 });
   await delays(350);
@@ -602,20 +606,26 @@ async function main() {
       return changes.slice(0, 5);
     })();
     const viewChanged = before.view === 'orbit' && during.view === 'surface' && after.view === 'orbit';
-    const cameraRestored = JSON.stringify(before.camera) === JSON.stringify(after.camera);
+    // CTL-04 supersedes the RND-02 exact-restore policy: every exit returns to the
+    // farthest orbit, so the contract is "camera only, renderer/leaves untouched",
+    // not byte-identical camera restoration.
+    const cameraExitedToFarOrbit = Math.abs(Number(after.camera.zoom) - ORBIT_FAR_ZOOM) < 1e-9;
     const surfaceActive = before.surfaceActive === false && during.surfaceActive === true && after.surfaceActive === false;
-    const cameraOnly = rendererIdentical && leavesStable && transitionExact && viewChanged && cameraRestored && surfaceActive
+    const cameraOnly = rendererIdentical && leavesStable && transitionExact && viewChanged && cameraExitedToFarOrbit && surfaceActive
       && before.cameraMode.surface === during.cameraMode.surface
       && before.cameraMode.surface === after.cameraMode.surface;
     const changed = [];
     if (!rendererIdentical) changed.push('renderer');
     if (!leavesStable) changed.push('leaves');
-    if (!cameraRestored) changed.push('orbit-camera');
+    if (!cameraExitedToFarOrbit) changed.push('exit-zoom');
     if (!surfaceActive) changed.push('surfaceState');
     addCheck(report, 'camera-only', cameraOnly, {
       changed,
       view: [before.view, during.view, after.view],
-      cameraRestored,
+      cameraExitedToFarOrbit,
+      entryZoom: before.camera.zoom,
+      exitZoom: after.camera.zoom,
+      expectedExitZoom: ORBIT_FAR_ZOOM,
       leavesStable,
       transitionExact,
       cellStateChangesAfterTransition: leafDiff,
@@ -669,10 +679,15 @@ async function main() {
       focusEntry: focusedDuring,
       focusRestored: focusedAfter,
     });
-    const focusOk = !!focusedDuring && focusedDuring.pad === 'KeyW';
-    addCheck(report, 'focus-return', focusOk, {
+    // Entry focus may land on the first surface pad or the GDS surface control;
+    // exit focus must return to an orbit control (CTL-04 focusOrbitControl).
+    const focusEntry = !!focusedDuring && (focusedDuring.pad === 'KeyW' || !!focusedDuring.id);
+    const focusExit = !!focusedAfter && ['btn-control-mode', 'hud-zoom', 'hud'].includes(focusedAfter.id);
+    addCheck(report, 'focus-return', focusEntry && focusExit, {
       entry: focusedDuring,
       restored: focusedAfter,
+      focusEntry,
+      focusExit,
     });
 
     // Optional self-test: prove the checks fail under a local mutation.
@@ -791,14 +806,18 @@ async function selfTestCanvas(playwright, baseUrl) {
 async function selfTestHud(playwright, baseUrl) {
   return withPage(playwright, baseUrl, async (page) => {
     await page.evaluate(() => {
-      const player = document.querySelector('[data-hud-node="players"]');
+      // hudSnapshot() reads the UI's frozen HUD reference; mutate that exact node
+      // so the self-test proves the duplicate detector, not GDS hydration timing.
+      const ui = window.__NARIMATO_UI__;
+      const hud = (ui && ui._el && ui._el.hud) || document.querySelector('#hud');
+      const player = (hud || document).querySelector('[data-hud-node="players"]');
       if (player) {
         const clone = player.cloneNode(true);
         clone.querySelectorAll('[data-hud-node]').forEach((node) => node.setAttribute('data-hud-node', 'players-dup'));
         player.parentNode.appendChild(clone);
       }
-      const hud = document.querySelector('#hud');
-      if (hud) hud.appendChild(hud.cloneNode(true));
+      if (hud && hud.parentNode) hud.parentNode.appendChild(hud.cloneNode(true));
+      else if (hud) hud.appendChild(hud.cloneNode(true));
     });
     const snapshot = await page.evaluate(() => window.__ICOSA__.hudSnapshot());
     return (snapshot.duplicates || []).length > 0;

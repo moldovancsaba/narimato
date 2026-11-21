@@ -27,6 +27,7 @@ import {
   WAIT_MS,
   addCheck,
   captureScreenshot,
+  acceptanceExitCode,
   collectErrors,
   createArtifactDir,
   createRunId,
@@ -38,6 +39,7 @@ import {
   newAcceptanceReport,
   postAction,
   readEventLog,
+  readJoinControls,
   requestSupply,
   startAcceptanceServer,
   waitFor,
@@ -50,14 +52,15 @@ const report = newAcceptanceReport({ runId, baseUrl: '', tags: ['DUO1', 'DUO2'] 
 let server = null;
 let clients = null;
 
-function finish(code) {
+function finish(harnessFailure = false) {
+  // report.ok is computed by writeReport(); derive the exit code afterwards.
   const file = writeReport(artifactDir, report);
   process.stdout.write(`${report.ok ? 'PASS' : 'FAIL'} two-client-surface // ${runId} // ${report.checks.filter((check) => check.ok).length}/${report.checks.length} checks\n`);
   for (const check of report.checks) {
     process.stdout.write(`  ${check.ok ? 'ok  ' : 'FAIL'} ${check.id}${check.ok ? '' : ` — ${JSON.stringify(check.detail)}`}\n`);
   }
   process.stdout.write(`report: ${file}\n`);
-  process.exitCode = code;
+  process.exitCode = acceptanceExitCode(report, { harnessFailure });
 }
 
 /** Authoritative robot player id from a client's state snapshot. */
@@ -85,7 +88,12 @@ async function main() {
   const tagA = `D1${suffix}`;
   const tagB = `D2${suffix}`;
   report.tags = [tagA, tagB];
-  await joinClient(pageA, tagA, server.url);
+  let joinA11y = null;
+  await joinClient(pageA, tagA, server.url, {
+    beforeJoin: async (page) => {
+      joinA11y = await readJoinControls(page);
+    },
+  });
   await joinClient(pageB, tagB, server.url);
   // A per-page navigation marker: if the peer ever reloads to see the break,
   // the marker disappears (the acceptance requires a live SSE update).
@@ -340,15 +348,11 @@ async function main() {
 
   // --- a11y-controls ---------------------------------------------------
   const a11y = await pageA.evaluate(() => {
-    const nameOf = (element) => element.getAttribute('aria-label') || element.textContent.trim() || null;
-    const tagInput = document.querySelector('#tag-input');
-    const joinButton = document.querySelector('#btn-join');
+    const nameOf = (element) => (element ? element.getAttribute('aria-label') || element.textContent.trim() || null : null);
     const pads = [...document.querySelectorAll('[data-surface-hold]')];
     const roster = document.querySelector('#players-panel');
     const exit = document.querySelector('#btn-surface-exit');
     return {
-      tagInputName: nameOf(tagInput),
-      joinName: nameOf(joinButton),
       pads: pads.map((pad) => ({ code: pad.getAttribute('data-surface-hold'), name: nameOf(pad), tabbable: pad.tabIndex >= 0 })),
       exitName: nameOf(exit),
       rosterLabel: roster ? roster.getAttribute('aria-label') : null,
@@ -356,14 +360,19 @@ async function main() {
       focusVisibleCss: true,
     };
   });
-  const controlsNamed = !!a11y.joinName && a11y.pads.length === 4
+  // The surface HUD mounts responsive duplicate pads; the contract is four distinct
+  // hold directions, each named and tabbable, not exactly four DOM nodes.
+  const padCodes = new Set(a11y.pads.map((pad) => pad.code).filter(Boolean));
+  const controlsNamed = !!joinA11y && !!joinA11y.joinName && joinA11y.joinTabbable && !!joinA11y.tagInputName
+    && padCodes.size === 4
     && a11y.pads.every((pad) => !!pad.name && pad.tabbable)
     && !!a11y.exitName && !!a11y.rosterLabel;
-  report.a11y = a11y;
+  report.a11y = { ...a11y, join: joinA11y };
   addCheck(report, 'a11y-controls', controlsNamed, {
-    join: a11y.joinName,
+    join: joinA11y && joinA11y.joinName,
     exit: a11y.exitName,
     pads: a11y.pads.map((pad) => pad.name),
+    padCodes: [...padCodes],
     rosterLabel: a11y.rosterLabel,
     rosterLiveRegion: a11y.rosterLiveRegion,
     note: a11y.rosterLiveRegion ? null : 'peer roster aria-live is owned by the GDS HUD migration (UI-02/UI-04); existing HUD reused, no DOM added here',
@@ -388,11 +397,11 @@ async function main() {
 
 try {
   const ok = await main();
-  finish(ok && report.ok ? 0 : 1);
+  finish();
 } catch (error) {
   report.errors.push(String(error && error.message ? error.message : error));
   addCheck(report, 'harness', false, { message: String(error && error.message ? error.message : error) });
-  finish(error && error.harness ? 2 : 1);
+  finish(Boolean(error && error.harness));
 } finally {
   if (clients) await Promise.race([clients.close(), delay(5000)]);
   if (server) await server.stop();

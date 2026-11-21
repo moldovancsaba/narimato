@@ -11,7 +11,7 @@ Narration is prerecorded and shipped locally; the game never calls a cloud TTS
 service. Each cue is split into sentence clips, so subtitles and voice stay in
 sync and narration can pause between sentences.
 
-Assets are served versioned (`?v=3.57.0+56190bd8`) with immutable cache headers.
+Assets are served versioned (`?v=3.58.0+56190bd8`) with immutable cache headers.
 The narration engine prefetches the first sentence of every cue at idle, then warms the
 next sentence while the current clip plays. Prefetch fan-out is **bounded to 3 concurrent
 requests**, drops to **2 on slow 2G** and to **1 when `navigator.connection.saveData` is set**,
@@ -106,7 +106,7 @@ type VoiceManifest = {
 `public/js/audio-version.js` is a generated module:
 
 ```js
-export const AUDIO_VERSION = '3.57.0+56190bd8';
+export const AUDIO_VERSION = '3.58.0+56190bd8';
 ```
 
 `<package version>` is `package.json.version`; `<content hash8>` is the first

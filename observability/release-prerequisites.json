@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "updated": "2026-11-21",
+  "description": "External release prerequisites the repository cannot satisfy on its own. REL-01's gate reports BLOCKED while any blocksRelease row is not satisfied. Update the status and evidence only when the owning issue links the artifact; never pre-fill evidence to make a gate green.",
+  "external": [
+    {
+      "id": "A11Y-02",
+      "issue": 13,
+      "owner": "accessibility-lead",
+      "status": "blocked",
+      "blocksRelease": true,
+      "title": "Real-device accessibility gate \u2014 iPhone, Android and screen readers",
+      "requiredEvidence": "executed docs/device-gate/EVIDENCE.json with two approvals, linked from issue #13",
+      "verification": "gh issue view 13 --repo moldovancsaba/narimato",
+      "note": "Issue closed after the device-gate package landed; the physical-device ledger, defect links and two approvals are still missing."
+    },
+    {
+      "id": "OPS-04",
+      "issue": 41,
+      "owner": "platform-ops",
+      "status": "open",
+      "blocksRelease": true,
+      "title": "Edge/CDN activation with a stub-origin verification report",
+      "requiredEvidence": "cdn:preflight report against the real hostname plus the ASSET_BASE_URL rollback proof, linked from issue #41",
+      "verification": "gh issue view 41 --repo moldovancsaba/narimato"
+    }
+  ],
+  "deferred": [
+    {
+      "id": "SOAK",
+      "issue": 39,
+      "owner": "platform-ops",
+      "status": "open",
+      "blocksRelease": false,
+      "title": "120-minute weekly soak \u2014 a separate release prerequisite",
+      "requiredEvidence": "artifacts/gate/soak/summary.json from the weekly CI job for the release commit",
+      "verification": "node scripts/perf-gate.mjs --only=soak"
+    }
+  ]
+}

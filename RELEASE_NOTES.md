@@ -7,7 +7,68 @@
 > **Related delivery issues:** [QA-01](https://github.com/moldovancsaba/narimato/issues/5) · [REL-01](https://github.com/moldovancsaba/narimato/issues/45) · [REL-02](https://github.com/moldovancsaba/narimato/issues/46)
 <!-- delivery-ssot:end -->
 
-## Unreleased — M6 operations, recovery & security (2026-11-20)
+## v3.58.0 — “Release Gate” (2026-11-21)
+
+This release ships the release acceptance gate and the evidence ledger on top of the M6
+operations, recovery and security work that was prepared in the unreleased section.
+
+### Release acceptance gate (REL-01)
+
+- `npm run release:gate` (`scripts/release-gate.mjs`) runs the matrix in dependency order:
+  version/cache-bust, `npm test`, documented test count, `docs:check`, GDS build/verify and
+  determinism, the Chromium accessibility gate, single-scene self-test, two-client and
+  surface-truth acceptance, load/chaos smoke, recovery and rollback drills, and the evidence
+  checker.
+- The gate fails closed: a red gate exits `1`, a dirty tree or an existing tag exits `2`, a
+  missing Playwright/axe dependency exits `3`, a documented-versus-executed count mismatch
+  exits `4`, and a run with every code gate green but external prerequisites open exits `5`
+  (`BLOCKED`). It writes `artifacts/release/v<version>/release-manifest.json`,
+  `release-report.md` and per-gate logs; the manifest is the durable record.
+- `scripts/rollback-drill.mjs` rehearses the previous tag in a throwaway git worktree: its
+  suite, version slots, schema compatibility and (when present) the recovery drill.
+- `scripts/acceptance-surface-truth.mjs` now derives its exit code from the written report,
+  so a passing run exits `0`, and its no-page-errors check allows the expected `409
+  NOT_A_LEAF` answer to the script's own target click (TST-01 defect on issue #25). The
+  two-client and supply-focus acceptance scripts use the same exit-code helper.
+
+### Release evidence ledger (REL-02)
+
+- `docs/RELEASE_EVIDENCE.md` defines the claim schema, the closed `LIVE` / `PARTIAL` /
+  `PLANNED` / `NOT_STARTED` vocabulary, typed evidence references, board-field templates,
+  verification commands and the current release ledger.
+- `npm run evidence:check` (`scripts/evidence-check.mjs`) validates the README status table,
+  the current release-note table and the ledger. It exits `1` for an invalid status, `2` for
+  unresolved evidence, `3` for a broken link and `4` for a planned capability described in
+  the present tense. The release gate runs it as a blocking step.
+- `observability/release-prerequisites.json` is the machine-readable external-prerequisite
+  record. A11Y-02 (real-device accessibility, gate package delivered but the physical-device
+  ledger is unexecuted) and OPS-04 (edge/CDN activation, still open) remain release blockers, so
+  the truthful verdict for this release is `BLOCKED`; the 120-minute soak is recorded as a
+  separate release prerequisite rather than faked by the fast profile.
+
+### Claim ledger — v3.58.0
+
+| Claim | Status | Evidence | Note |
+|---|---|---|---|
+| One-command release acceptance gate | LIVE | `script:scripts/release-gate.mjs`, `test:test/release-gate.test.js` | Runs the full matrix and writes the versioned manifest |
+| Version and cache-bust SSOT | LIVE | `script:scripts/check-version.mjs`, `test:test/version.test.js` | Four release-visible slots agree |
+| Documented test-count consistency | LIVE | `script:scripts/test-count.mjs`, `test:test/test-count.test.js` | Markers and current-release prose match the suite |
+| Evidence ledger and planned-as-live check | LIVE | `script:scripts/evidence-check.mjs`, `test:test/evidence-check.test.js` | Closed vocabulary and typed references |
+| TST-01 acceptance exit-code contract | LIVE | `script:scripts/acceptance-surface-truth.mjs`, `test:test/acceptance-harness.test.js` | PASS exits 0; expected 409 is not a page error |
+| Single-scene acceptance | LIVE | `script:scripts/verify-single-scene.mjs`, `test:test/single-scene-guard.test.js` | Camera-only proof and frame budget |
+| Two-client surface acceptance | LIVE | `script:scripts/acceptance-two-client-surface.mjs`, `test:test/renderer-surface.test.js` | Peer visibility, beams, supply focus, live mutation |
+| GDS headless accessibility gate | LIVE | `script:scripts/a11y-gate.mjs`, `test:test/a11y-report.test.js` | Chromium and WebKit engines |
+| Binary rollback drill | LIVE | `script:scripts/rollback-drill.mjs`, `test:test/release-gate.test.js` | Previous tag v3.57.0; schema 2 -> 2 |
+| Real-device accessibility sign-off | PARTIAL | `script:scripts/device-gate.mjs`, `test:test/device-gate.test.js` | Gate package live; physical-device ledger and approvals remain |
+| Edge/CDN asset delivery | PLANNED | `script:scripts/cdn-preflight.mjs`, `issue:#41` | Preflight gate exists; activation awaits OPS-04 credentials |
+| 120-minute soak for this release | PARTIAL | `script:scripts/perf-gate.mjs` | Fast gate runs smoke and chaos; the 120-minute soak remains separate |
+
+### Gates
+
+- `npm test`: 602/602 tests pass; `npm run docs:check`; `npm run check:version`;
+  `node scripts/test-count.mjs`; `npm run evidence:check`.
+- `npm run release:gate`: code gates green, verdict `BLOCKED` on A11Y-02 and OPS-04.
+- No runtime dependency added; no wire-frame, scoring, tree, schema or gameplay change.
 
 ### Observability SSOT (OPS-01)
 
@@ -47,7 +108,7 @@
 
 ### Gates
 
-- `npm test`: 260 tests pass; `npm run docs:check`; `npm run check:version`; `node scripts/test-count.mjs`.
+- `npm test`: 602 tests pass; `npm run docs:check`; `npm run check:version`; `node scripts/test-count.mjs`.
 - No runtime dependency added; no wire-frame, scoring, tree or schema change.
 
 ## v3.57.0 — “Spherical Viewer Solution” (2026-11-20)
