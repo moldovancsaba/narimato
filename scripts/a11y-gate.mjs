@@ -35,6 +35,7 @@ import { SURFACES, selectSurfaces } from '../public/js/a11y-surfaces.js';
 import {
   A11Y_SCHEMA_VERSION,
   applySuppressions,
+  isAllowedRuntimeError,
   assembleReport,
   createFinding,
   loadSuppressionLedger,
@@ -191,9 +192,13 @@ async function runSurface(browser, engine, surface, contextOptions) {
   });
   const page = await context.newPage();
   const errors = [];
+  const expectedErrors = [];
   page.on('pageerror', (error) => errors.push(`PAGE ${error.message}`));
   page.on('console', (message) => {
-    if (message.type() === 'error') errors.push(message.text());
+    if (message.type() !== 'error') return;
+    const text = message.text();
+    if (isAllowedRuntimeError(text, surface.allowedConsoleErrors || [])) expectedErrors.push(text);
+    else errors.push(text);
   });
   try {
     await page.goto(`${base}${surface.route}`, { waitUntil: 'domcontentloaded', timeout: 30_000 });
@@ -250,6 +255,9 @@ async function runSurface(browser, engine, surface, contextOptions) {
         }),
       );
     }
+    if (expectedErrors.length) {
+      console.log(`  ${surface.id}: ${new Set(expectedErrors).size} expected runtime outcome(s) filtered`);
+    }
     if (errors.length) {
       for (const message of [...new Set(errors)].slice(0, 5)) {
         findings.push(
@@ -284,7 +292,7 @@ async function runSurface(browser, engine, surface, contextOptions) {
   } finally {
     await context.close();
   }
-  return findings;
+  return { findings, expectedErrors: [...new Set(expectedErrors)] };
 }
 
 function aggregateReports(reports) {
@@ -365,16 +373,17 @@ async function main() {
         );
       }
       const engineFindings = [];
+      const engineExpectedErrors = [];
       try {
         for (const surface of surfaces) {
           console.log(`  ${engine}/${surface.id}`);
-          engineFindings.push(
-            ...(await runSurface(browser, engine, surface, {
-              base: server.handle.url,
-              axeSource,
-              screenshotDir: options.screenshots,
-            })),
-          );
+          const surfaceResult = await runSurface(browser, engine, surface, {
+            base: server.handle.url,
+            axeSource,
+            screenshotDir: options.screenshots,
+          });
+          engineFindings.push(...surfaceResult.findings);
+          engineExpectedErrors.push(...surfaceResult.expectedErrors);
         }
         for (const surface of surfaces) {
           if (!surface.motion) continue;
@@ -445,6 +454,7 @@ async function main() {
         findings,
         suppressions: ledger.suppressions,
         suppressionAudit: applied,
+        expectedRuntimeErrors: engineExpectedErrors,
         startedAt,
         finishedAt: new Date().toISOString(),
         durationMs: Date.now() - started,

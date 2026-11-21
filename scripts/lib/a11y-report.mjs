@@ -11,11 +11,23 @@
  * selector while still being readable by the GDS helpers.
  */
 
-export const A11Y_SCHEMA_VERSION = '1.0.0';
+export const A11Y_SCHEMA_VERSION = '1.1.0';
 export const A11Y_LEDGER_SCHEMA_VERSION = '1.0.0';
 export const DEFAULT_MAX_EXPIRY_DAYS = 90;
 
 export const SEVERITY_RANK = Object.freeze({ minor: 1, moderate: 2, serious: 3, critical: 4 });
+
+/**
+ * True when a console/page error is an expected interaction outcome (e.g. the
+ * surface probe's own 409 on a contested cell). Patterns are per-surface and
+ * explicit: anything not listed still fails the gate.
+ */
+export function isAllowedRuntimeError(text, patterns = []) {
+  const message = String(text || '');
+  return patterns.some((pattern) =>
+    pattern instanceof RegExp ? pattern.test(message) : String(pattern) === message
+  );
+}
 export const STATUS_RANK = Object.freeze({ pass: 0, warning: 1, incomplete: 2, failure: 3 });
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -200,6 +212,7 @@ export function assembleReport({
   findings = [],
   suppressions = [],
   suppressionAudit = { applied: [], expired: [], unused: [] },
+  expectedRuntimeErrors = [],
   startedAt = '',
   finishedAt = new Date().toISOString(),
   durationMs = 0,
@@ -235,6 +248,7 @@ export function assembleReport({
     mode,
     status,
     summary,
+    expectedRuntimeErrors: [...new Set(expectedRuntimeErrors)].sort(),
     suppressions: suppressions.map((suppression) => ({ ...suppression })),
     suppressionAudit: {
       applied: suppressionAudit.applied.map((item) => ({ ...item })),

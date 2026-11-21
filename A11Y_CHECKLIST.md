@@ -229,3 +229,7 @@ Every finding prints `surface`, `selector`, `expected` and `actual`. Start with 
 line, reproduce with `--only=<surface>`, then fix in GDS components, tokens or island layout only.
 Do not add a suppression for a missing GDS primitive, an unnamed control, a broken keyboard path, an
 invisible focus trap or an avoidable contrast failure.
+
+## Expected interaction errors
+
+The accessibility gate ignores only explicitly allow-listed interaction outcomes (currently the surface probe's own `409 Conflict` on a contested cell) and records them in the report as `expectedRuntimeErrors`; every other page/console error still fails the gate.
