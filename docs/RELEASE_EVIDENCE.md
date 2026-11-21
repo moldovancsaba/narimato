@@ -115,17 +115,19 @@ Do not write "done", "delivered" or "live" in any field while the gate reports
 |---|---|
 | Release | v3.58.0 — "Release Gate" |
 | Base commit | `8d79afa` (main before REL-01/REL-02 delivery) |
+| Delivery commits | `1002805`, `3d91dce`, `3328f4d`, `e5ef0e4` on `delivery/rel-01-02` (rebased onto `a4a4118`) |
 | Delivery scope | REL-01 release gate, REL-02 evidence ledger, TST-01 acceptance fix |
 | Version SSOT | `package.json` 3.58.0 · cache-bust 3.58.0 · README 3.58.0 · notes heading v3.58.0 |
 | Audio cache key | `3.58.0+56190bd8` (content hash unchanged; spoken text did not change) |
 | Executed suite | 602 tests, 602 pass, 0 fail (`node:test`) |
-| Docs gate | pass at gate time; exact file/link counts are recorded in the gate manifest and log |
+| Docs gate | pass: 42 markdown files, 889 links, 0 findings (`npm run docs:check`) |
 | Headless accessibility | Chromium gate clean: 9 surfaces, 0 failure, 0 warning, 0 incomplete |
 | Browser acceptance | single-scene self-test, two-client 7/7, surface-truth 4/4 (TST-01 exit contract fixed) |
 | Load / chaos | fast profile `smoke` + `chaos` PASS; 120-minute soak is a separate prerequisite |
 | Rollback drill | previous tag v3.57.0; previous suite 116 tests; schema 2 → 2; PASS |
-| Release gate verdict | BLOCKED (exit 5) — all code gates green, external prerequisites open |
-| Gate artifacts | `artifacts/release/v3.58.0/release-manifest.json`, `release-report.md`, `logs/`, `a11y/`, `load/` |
+| Release gate verdict | BLOCKED (exit 5) on A11Y-02/OPS-04 only — all code gates green |
+| Gate run | `npm run release:gate` at `PLAYWRIGHT_MODULE=/tmp/dsh-pw/node_modules/playwright`; 277 s; manifest commit recorded in the artifact |
+| Gate artifacts | `artifacts/release/v3.58.0/release-manifest.json`, `release-report.md`, `logs/`, `a11y/`, `load/`, `rollback-drill.json` |
 
 Claim ledger for this release (the checker parses this table):
 

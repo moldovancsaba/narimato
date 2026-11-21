@@ -1,0 +1,313 @@
+{
+  "runId": "surface-20261121-005425-6f29",
+  "baseUrl": "http://localhost:64764",
+  "planetSeed": 2023895880,
+  "planetIndex": 0,
+  "startedAt": "2026-11-21T00:54:25.723Z",
+  "finishedAt": "2026-11-21T00:54:40.215Z",
+  "durationMs": 14492,
+  "tags": [
+    "D1105",
+    "D2105"
+  ],
+  "checks": [
+    {
+      "id": "peers-visible",
+      "ok": true,
+      "detail": {
+        "aSeesB": true,
+        "bSeesA": true
+      }
+    },
+    {
+      "id": "robot-online",
+      "ok": true,
+      "detail": {
+        "id": "p_6eijgb",
+        "tag": "SOLARHAUNT",
+        "leaf": "11",
+        "state": "idle",
+        "moved": true
+      }
+    },
+    {
+      "id": "beam-authoritative",
+      "ok": true,
+      "detail": {
+        "frames": 2,
+        "valid": 2,
+        "invalid": 0,
+        "robotBeam": true,
+        "robotIds": [
+          "p_6eijgb"
+        ],
+        "rendererDropped": 0
+      }
+    },
+    {
+      "id": "supply-focus",
+      "ok": true,
+      "detail": {
+        "impactLabel": "19",
+        "cells": [
+          "19",
+          "18",
+          "20"
+        ],
+        "placements": 2,
+        "mined": {
+          "a": {
+            "frames": 1
+          },
+          "b": {
+            "frames": 1
+          }
+        }
+      }
+    },
+    {
+      "id": "live-mutation",
+      "ok": true,
+      "detail": {
+        "label": "1",
+        "childrenSeenByPeer": true,
+        "breakBy": "A",
+        "clicked": [
+          {
+            "status": 200,
+            "kind": "claim",
+            "broke": false
+          },
+          {
+            "status": 200,
+            "kind": "steal",
+            "broke": false
+          },
+          {
+            "status": 200,
+            "kind": "steal",
+            "broke": true
+          }
+        ],
+        "peerJoinedWithoutReload": true
+      }
+    },
+    {
+      "id": "a11y-controls",
+      "ok": true,
+      "detail": {
+        "join": "JACK IN",
+        "exit": "RETURN TO ORBIT",
+        "pads": [
+          "Run forward",
+          "Turn left",
+          "Run backward",
+          "Turn right",
+          "Run forward",
+          "Turn left",
+          "Run backward",
+          "Turn right"
+        ],
+        "padCodes": [
+          "KeyW",
+          "KeyA",
+          "KeyS",
+          "KeyD"
+        ],
+        "rosterLabel": "Operators in the world",
+        "rosterLiveRegion": null,
+        "note": "peer roster aria-live is owned by the GDS HUD migration (UI-02/UI-04); existing HUD reused, no DOM added here"
+      }
+    },
+    {
+      "id": "no-page-errors",
+      "ok": true,
+      "detail": {
+        "count": 0,
+        "expectedRefusals": 1,
+        "unexpectedRefusals": 0,
+        "errors": []
+      }
+    }
+  ],
+  "peers": [
+    {
+      "from": "D1105",
+      "sees": [
+        {
+          "tag": "SOLARHAUNT",
+          "leaf": "11"
+        },
+        {
+          "tag": "D2105",
+          "leaf": "8"
+        }
+      ]
+    },
+    {
+      "from": "D2105",
+      "sees": [
+        {
+          "tag": "SOLARHAUNT",
+          "leaf": "11"
+        },
+        {
+          "tag": "D1105",
+          "leaf": "8"
+        }
+      ]
+    }
+  ],
+  "beams": [
+    {
+      "playerId": "p_dyd3zb",
+      "label": "3",
+      "precededByCell": true
+    },
+    {
+      "playerId": "p_6eijgb",
+      "label": "11",
+      "precededByCell": true
+    }
+  ],
+  "supply": {
+    "impactLabel": "19",
+    "cells": [
+      "19",
+      "18",
+      "20"
+    ],
+    "placements": [
+      {
+        "playerId": "p_mji68k",
+        "leaf": "19"
+      },
+      {
+        "playerId": "p_4xwc4z",
+        "leaf": "18"
+      }
+    ],
+    "mined": {
+      "a": {
+        "frames": 1
+      },
+      "b": {
+        "frames": 1
+      }
+    },
+    "placementsSeenBy": {
+      "a": 2,
+      "b": 2
+    }
+  },
+  "liveMutation": {
+    "label": "1",
+    "childrenSeenByPeer": true,
+    "breakBy": "A",
+    "clicked": [
+      {
+        "status": 200,
+        "kind": "claim",
+        "broke": false
+      },
+      {
+        "status": 200,
+        "kind": "steal",
+        "broke": false
+      },
+      {
+        "status": 200,
+        "kind": "steal",
+        "broke": true
+      }
+    ],
+    "peerJoinedWithoutReload": true
+  },
+  "artifacts": [
+    "media/acceptance/surface-20261121-005425-6f29/client-a-surface.png",
+    "media/acceptance/surface-20261121-005425-6f29/client-b-surface.png"
+  ],
+  "errors": [],
+  "ok": true,
+  "players": [
+    {
+      "id": "p_mji68k",
+      "tag": "D1105"
+    },
+    {
+      "id": "p_4xwc4z",
+      "tag": "D2105"
+    }
+  ],
+  "planetName": "MAGRATHEA",
+  "robot": {
+    "id": "p_6eijgb",
+    "tag": "SOLARHAUNT",
+    "leaf": "11",
+    "updatedAt": 1795222471683,
+    "state": "idle",
+    "moved": true
+  },
+  "a11y": {
+    "pads": [
+      {
+        "code": "KeyW",
+        "name": "Run forward",
+        "tabbable": true
+      },
+      {
+        "code": "KeyA",
+        "name": "Turn left",
+        "tabbable": true
+      },
+      {
+        "code": "KeyS",
+        "name": "Run backward",
+        "tabbable": true
+      },
+      {
+        "code": "KeyD",
+        "name": "Turn right",
+        "tabbable": true
+      },
+      {
+        "code": "KeyW",
+        "name": "Run forward",
+        "tabbable": true
+      },
+      {
+        "code": "KeyA",
+        "name": "Turn left",
+        "tabbable": true
+      },
+      {
+        "code": "KeyS",
+        "name": "Run backward",
+        "tabbable": true
+      },
+      {
+        "code": "KeyD",
+        "name": "Turn right",
+        "tabbable": true
+      }
+    ],
+    "exitName": "RETURN TO ORBIT",
+    "rosterLabel": "Operators in the world",
+    "rosterLiveRegion": null,
+    "focusVisibleCss": true,
+    "join": {
+      "tagInputName": "Operator tag",
+      "joinName": "JACK IN",
+      "tagTabbable": true,
+      "joinTabbable": true
+    }
+  },
+  "refusals": [
+    {
+      "status": 409,
+      "url": "http://localhost:64764/api/action",
+      "error": "POSE_RATE_LIMIT"
+    }
+  ],
+  "runLog": "run surface-20261121-005425-6f29 at http://localhost:64764 with tags D1105/D2105"
+}

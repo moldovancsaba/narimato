@@ -41,9 +41,10 @@ operations, recovery and security work that was prepared in the unreleased secti
   unresolved evidence, `3` for a broken link and `4` for a planned capability described in
   the present tense. The release gate runs it as a blocking step.
 - `observability/release-prerequisites.json` is the machine-readable external-prerequisite
-  record. A11Y-02 (real-device accessibility) and OPS-04 (edge/CDN activation) remain open,
-  so the truthful verdict for this release is `BLOCKED`; the 120-minute soak is recorded as
-  a separate release prerequisite rather than faked by the fast profile.
+  record. A11Y-02 (real-device accessibility, gate package delivered but the physical-device
+  ledger is unexecuted) and OPS-04 (edge/CDN activation, still open) remain release blockers, so
+  the truthful verdict for this release is `BLOCKED`; the 120-minute soak is recorded as a
+  separate release prerequisite rather than faked by the fast profile.
 
 ### Claim ledger — v3.58.0
 

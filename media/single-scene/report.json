@@ -2,9 +2,9 @@
   "ok": true,
   "reportVersion": 1,
   "version": "3.58.0",
-  "startedAt": "2026-11-21T00:42:45.961Z",
-  "finishedAt": "2026-11-21T00:44:29.889Z",
-  "durationMs": 103928,
+  "startedAt": "2026-11-21T00:52:37.366Z",
+  "finishedAt": "2026-11-21T00:54:20.626Z",
+  "durationMs": 103260,
   "checks": [
     {
       "id": "one-renderer",
@@ -135,9 +135,9 @@
       "observed": {
         "frames": 600,
         "p95Ms": 0.8,
-        "droppedRatio": 0.0033,
+        "droppedRatio": 0.0017,
         "frameMode": "work",
-        "rafP50Ms": 33.4,
+        "rafP50Ms": 33.3,
         "passes": [
           {
             "p95": 0.9
@@ -212,6 +212,6 @@
     "duplicateHudDetected": true,
     "cellColourDetected": true
   },
-  "tag": "SCENE4851",
-  "baseUrl": "http://localhost:62052"
+  "tag": "SCENE1431",
+  "baseUrl": "http://localhost:64458"
 }
