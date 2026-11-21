@@ -1,10 +1,10 @@
 {
   "ok": true,
   "reportVersion": 1,
-  "version": "3.57.0",
-  "startedAt": "2026-11-20T22:18:04.608Z",
-  "finishedAt": "2026-11-20T22:19:53.225Z",
-  "durationMs": 108617,
+  "version": "3.58.0",
+  "startedAt": "2026-11-21T00:35:40.158Z",
+  "finishedAt": "2026-11-21T00:37:12.498Z",
+  "durationMs": 92340,
   "checks": [
     {
       "id": "one-renderer",
@@ -27,7 +27,7 @@
             "interlude-fx",
             "meteor-fx",
             "supply-fx",
-            "report-card-preview"
+            "(anonymous)"
           ],
           "total": 6,
           "planet": 1,
@@ -40,7 +40,7 @@
             "interlude-fx",
             "meteor-fx",
             "supply-fx",
-            "report-card-preview"
+            "(anonymous)"
           ],
           "total": 6,
           "planet": 1,
@@ -53,7 +53,7 @@
             "interlude-fx",
             "meteor-fx",
             "supply-fx",
-            "report-card-preview"
+            "(anonymous)"
           ],
           "total": 6,
           "planet": 1,
@@ -71,7 +71,10 @@
           "surface",
           "orbit"
         ],
-        "cameraRestored": true,
+        "cameraExitedToFarOrbit": true,
+        "entryZoom": 1,
+        "exitZoom": 0.4,
+        "expectedExitZoom": 0.4,
         "leavesStable": true,
         "transitionExact": true,
         "cellStateChangesAfterTransition": [
@@ -107,7 +110,7 @@
       "observed": {
         "P": 1,
         "duplicates": [],
-        "nodes": 27,
+        "nodes": 33,
         "modes": [
           "orbit",
           "surface",
@@ -131,19 +134,19 @@
       "ok": true,
       "observed": {
         "frames": 600,
-        "p95Ms": 1,
+        "p95Ms": 0.7,
         "droppedRatio": 0.0017,
         "frameMode": "work",
-        "rafP50Ms": 33.3,
+        "rafP50Ms": 33.4,
         "passes": [
           {
             "p95": 1
           },
           {
-            "p95": 1.1
+            "p95": 0.8
           },
           {
-            "p95": 1.8
+            "p95": 0.7
           }
         ],
         "viewport": "1200x800",
@@ -163,12 +166,12 @@
           "serious": []
         },
         "focusEntry": {
-          "id": null,
-          "pad": "KeyW"
+          "id": "btn-help",
+          "pad": null
         },
         "focusRestored": {
-          "id": "hud-zoom",
-          "tag": "DIV"
+          "id": "btn-control-mode",
+          "tag": "BUTTON"
         }
       }
     },
@@ -177,22 +180,15 @@
       "ok": true,
       "observed": {
         "entry": {
-          "id": null,
-          "pad": "KeyW"
+          "id": "btn-help",
+          "pad": null
         },
         "restored": {
-          "id": "hud-zoom",
-          "tag": "DIV"
-        }
-      }
-    },
-    {
-      "id": "self-test",
-      "ok": true,
-      "observed": {
-        "secondCanvasDetected": true,
-        "duplicateHudDetected": true,
-        "cellColourDetected": true
+          "id": "btn-control-mode",
+          "tag": "BUTTON"
+        },
+        "focusEntry": true,
+        "focusExit": true
       }
     }
   ],
@@ -202,11 +198,6 @@
     "media/single-scene/surface-mobile.png"
   ],
   "errors": [],
-  "selfTest": {
-    "secondCanvasDetected": true,
-    "duplicateHudDetected": true,
-    "cellColourDetected": true
-  },
-  "tag": "SCENE6385",
-  "baseUrl": "http://localhost:58247"
+  "tag": "SCENE2652",
+  "baseUrl": "http://localhost:59803"
 }

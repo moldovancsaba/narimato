@@ -353,6 +353,8 @@ function main(argv) {
   let testCounts = null;
   let testCountReport = null;
   let docsReport = null;
+  let rollbackReport = null;
+  let rollbackFile = null;
   let countMismatch = false;
   let missingDependency = false;
   const startedAt = new Date();
@@ -512,7 +514,6 @@ function main(argv) {
     docsReport = docsJson;
     gates.push(docsGate);
     push(docsGate);
-    push(docsGate);
 
     // 5. GDS build, verify, determinism --------------------------------------------
     const buildRun = run('gds-build', 'GDS build, verify and determinism', ['scripts/build-ui.mjs'], { timeout: 180_000 });
@@ -549,7 +550,6 @@ function main(argv) {
     };
     gates.push(gdsGate);
     push(gdsGate);
-    push(gdsGate);
 
     // 6. Accessibility gate ---------------------------------------------------------
     const a11yDir = path.join(outDir, 'a11y');
@@ -571,7 +571,6 @@ function main(argv) {
     };
     gates.push(a11yGate);
     push(a11yGate);
-    push(a11yGate);
 
     // 7. Single-scene acceptance ----------------------------------------------------
     const singleRun = run('single-scene', 'Single-scene acceptance (self-test)', ['scripts/verify-single-scene.mjs', '--self-test'], {
@@ -592,7 +591,6 @@ function main(argv) {
     };
     gates.push(singleGate);
     push(singleGate);
-    push(singleGate);
 
     // 8. Two-client acceptance ------------------------------------------------------
     const twoRun = run('two-client', 'Two-client surface acceptance', ['scripts/acceptance-two-client-surface.mjs'], {
@@ -607,7 +605,6 @@ function main(argv) {
     };
     gates.push(twoGate);
     push(twoGate);
-    push(twoGate);
 
     // 9. Surface truth acceptance (TST-01 defect fixed in this release) --------------
     const truthRun = run('surface-truth', 'Surface truth acceptance', ['scripts/acceptance-surface-truth.mjs'], {
@@ -621,7 +618,6 @@ function main(argv) {
       detail: /^PASS surface-truth.*$/m.exec(truthRun.stdout)?.[0] || 'no PASS line',
     };
     gates.push(truthGate);
-    push(truthGate);
     push(truthGate);
 
     // 10. Load/chaos smoke (fast profile; soak is separate) -------------------------
@@ -645,7 +641,6 @@ function main(argv) {
     };
     gates.push(loadGate);
     push(loadGate);
-    push(loadGate);
 
     // 11. Recovery drill ------------------------------------------------------------
     const recoveryRun = run('recovery', 'Persistence recovery drill', ['scripts/recovery-test.mjs'], {
@@ -660,15 +655,13 @@ function main(argv) {
     };
     gates.push(recoveryGate);
     push(recoveryGate);
-    push(recoveryGate);
 
     // 12. Rollback drill ------------------------------------------------------------
-    const rollbackFile = path.join(outDir, 'rollback-drill.json');
+    rollbackFile = path.join(outDir, 'rollback-drill.json');
     const rollbackRun = run('rollback', 'Binary rollback drill', ['scripts/rollback-drill.mjs', `--previous-tag=${previousTag}`, `--report=${rollbackFile}`], {
       timeout: 600_000,
       evidence: () => relative(root, rollbackFile),
     });
-    let rollbackReport = null;
     try {
       rollbackReport = readJson(rollbackFile);
     } catch {
@@ -682,7 +675,6 @@ function main(argv) {
       detail: rollbackReport ? `${rollbackReport.drill} · ${rollbackReport.previousTag} · RTO ${rollbackReport.rtoMinutes} min` : 'rollback report missing',
     };
     gates.push(rollbackGate);
-    push(rollbackGate);
     push(rollbackGate);
 
     // 13. Evidence ledger -----------------------------------------------------------
@@ -711,7 +703,6 @@ function main(argv) {
     };
     gates.push(evidenceGate);
     push(evidenceGate);
-    push(evidenceGate);
   } else {
     // The suite is red: run the ledger check anyway because it is independent and
     // cheap, then produce the RED manifest with all known failures.
@@ -731,7 +722,6 @@ function main(argv) {
       detail: evidenceReport ? `${evidenceReport.summary?.total ?? '?'} claims · ${evidenceReport.findings?.length ?? '?'} findings` : 'ledger report missing',
     };
     gates.push(evidenceGate);
-    push(evidenceGate);
     push(evidenceGate);
   }
 
