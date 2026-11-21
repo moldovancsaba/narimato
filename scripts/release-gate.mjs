@@ -725,6 +725,9 @@ function main(argv) {
     push(evidenceGate);
   }
 
+  for (const gate of gates) {
+    if (!gate.evidence) gate.evidence = gate.log || 'not applicable';
+  }
   const verdict = verdictFor({ gates, prerequisites: prerequisiteValidation });
   const exitCode = exitCodeFor({ verdict, countMismatch, missingDependency });
   const finishedAt = new Date();

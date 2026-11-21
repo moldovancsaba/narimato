@@ -2,9 +2,9 @@
   "ok": true,
   "reportVersion": 1,
   "version": "3.58.0",
-  "startedAt": "2026-11-21T00:35:40.158Z",
-  "finishedAt": "2026-11-21T00:37:12.498Z",
-  "durationMs": 92340,
+  "startedAt": "2026-11-21T00:42:45.961Z",
+  "finishedAt": "2026-11-21T00:44:29.889Z",
+  "durationMs": 103928,
   "checks": [
     {
       "id": "one-renderer",
@@ -134,19 +134,19 @@
       "ok": true,
       "observed": {
         "frames": 600,
-        "p95Ms": 0.7,
-        "droppedRatio": 0.0017,
+        "p95Ms": 0.8,
+        "droppedRatio": 0.0033,
         "frameMode": "work",
         "rafP50Ms": 33.4,
         "passes": [
           {
-            "p95": 1
+            "p95": 0.9
+          },
+          {
+            "p95": 0.9
           },
           {
             "p95": 0.8
-          },
-          {
-            "p95": 0.7
           }
         ],
         "viewport": "1200x800",
@@ -190,6 +190,15 @@
         "focusEntry": true,
         "focusExit": true
       }
+    },
+    {
+      "id": "self-test",
+      "ok": true,
+      "observed": {
+        "secondCanvasDetected": true,
+        "duplicateHudDetected": true,
+        "cellColourDetected": true
+      }
     }
   ],
   "artifacts": [
@@ -198,6 +207,11 @@
     "media/single-scene/surface-mobile.png"
   ],
   "errors": [],
-  "tag": "SCENE2652",
-  "baseUrl": "http://localhost:59803"
+  "selfTest": {
+    "secondCanvasDetected": true,
+    "duplicateHudDetected": true,
+    "cellColourDetected": true
+  },
+  "tag": "SCENE4851",
+  "baseUrl": "http://localhost:62052"
 }

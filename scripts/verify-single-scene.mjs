@@ -806,14 +806,18 @@ async function selfTestCanvas(playwright, baseUrl) {
 async function selfTestHud(playwright, baseUrl) {
   return withPage(playwright, baseUrl, async (page) => {
     await page.evaluate(() => {
-      const player = document.querySelector('[data-hud-node="players"]');
+      // hudSnapshot() reads the UI's frozen HUD reference; mutate that exact node
+      // so the self-test proves the duplicate detector, not GDS hydration timing.
+      const ui = window.__NARIMATO_UI__;
+      const hud = (ui && ui._el && ui._el.hud) || document.querySelector('#hud');
+      const player = (hud || document).querySelector('[data-hud-node="players"]');
       if (player) {
         const clone = player.cloneNode(true);
         clone.querySelectorAll('[data-hud-node]').forEach((node) => node.setAttribute('data-hud-node', 'players-dup'));
         player.parentNode.appendChild(clone);
       }
-      const hud = document.querySelector('#hud');
-      if (hud) hud.appendChild(hud.cloneNode(true));
+      if (hud && hud.parentNode) hud.parentNode.appendChild(hud.cloneNode(true));
+      else if (hud) hud.appendChild(hud.cloneNode(true));
     });
     const snapshot = await page.evaluate(() => window.__ICOSA__.hudSnapshot());
     return (snapshot.duplicates || []).length > 0;
