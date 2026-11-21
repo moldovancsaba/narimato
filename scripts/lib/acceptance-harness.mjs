@@ -282,7 +282,10 @@ export async function loadPlaywright() {
  * (`OWN_CELL_LOCKED`, `COOLDOWN`) are recorded separately, including their
  * browser "Failed to load resource" console noise.
  */
-export const DEFAULT_ALLOWED_REFUSALS = Object.freeze(['OWN_CELL_LOCKED', 'COOLDOWN', 'POSE_RATE_LIMIT', 'SUPPLY_NOT_READY']);
+// NOT_A_LEAF is a legitimate server answer when a target is no longer a
+// harvestable leaf at click time (own lock, contested cell, exhausted deposit);
+// it is an expected refusal, not a page error.
+export const DEFAULT_ALLOWED_REFUSALS = Object.freeze(['OWN_CELL_LOCKED', 'COOLDOWN', 'POSE_RATE_LIMIT', 'SUPPLY_NOT_READY', 'NOT_A_LEAF']);
 
 export function collectErrors(clients, { allowedRefusals = DEFAULT_ALLOWED_REFUSALS } = {}) {
   const list = [...clients.errors];
