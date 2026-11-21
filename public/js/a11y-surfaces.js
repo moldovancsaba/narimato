@@ -190,7 +190,7 @@ export const SURFACES = Object.freeze([
   },
   {
     id: 'cine',
-    route: '/?gds=1',
+    route: '/?gds=1&introFreeze=1',
     viewport: { width: 1280, height: 800 },
     reducedMotion: 'no-preference',
     setup: setupCine,

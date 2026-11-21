@@ -235,6 +235,10 @@ line, reproduce with `--only=<surface>`, then fix in GDS components, tokens or i
 Do not add a suppression for a missing GDS primitive, an unnamed control, a broken keyboard path, an
 invisible focus trap or an avoidable contrast failure.
 
+## Cine determinism probe
+
+The cine surface is audited with `?introFreeze=1`, which holds the intro in its first phase for deterministic evidence; normal play ignores the flag.
+
 ## Expected interaction errors
 
 The accessibility gate ignores only explicitly allow-listed interaction outcomes (currently the surface probe's own `409 Conflict` on a contested cell) and records them in the report as `expectedRuntimeErrors`; every other page/console error still fails the gate.

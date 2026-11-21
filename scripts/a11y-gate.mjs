@@ -239,7 +239,7 @@ async function runSurface(browser, engine, surface, contextOptions) {
     }
     // Focus trap runs last because Escape dismisses the dialog.
     try {
-      findings.push(...(await runFocusTrap(page, surface)));
+      findings.push(...(await runFocusTrap(page, surface, engine)));
     } catch (error) {
       findings.push(
         createFinding({
