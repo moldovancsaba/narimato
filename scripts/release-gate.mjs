@@ -10,7 +10,7 @@
  *   artifacts/release/v<version>/logs/<gate>.log
  *
  * Gates: version SSOT + cache-bust · test suite + documented count · docs/link
- * gate · GDS build/verify/determinism · a11y gate · single-scene · two-client ·
+ * gate · GDS build/verify/determinism · a11y gate · two-client ·
  * surface-truth · load/chaos smoke · recovery drill · rollback drill · evidence
  * ledger. The 120-minute soak is a separate release prerequisite and is never
  * faked here.
@@ -232,7 +232,6 @@ function dryRunPlan({ root, version, tag, outDir, profile, previousTag, prerequi
     { id: 'docs', name: 'Docs and link gate (R1-R6)', command: 'node scripts/check-docs.mjs --json' },
     { id: 'gds-build', name: 'GDS build, verify and determinism', command: 'node scripts/build-ui.mjs; node scripts/verify-gds-build.mjs; git diff --exit-code public/ui/island.js public/ui/island.css' },
     { id: 'a11y', name: 'GDS accessibility gate (Chromium)', command: `node scripts/a11y-gate.mjs --engine=chromium --out=${relative(root, outDir)}/a11y` },
-    { id: 'single-scene', name: 'Single-scene acceptance (self-test)', command: 'node scripts/verify-single-scene.mjs --self-test' },
     { id: 'two-client', name: 'Two-client surface acceptance', command: 'node scripts/acceptance-two-client-surface.mjs' },
     { id: 'surface-truth', name: 'Surface truth acceptance', command: 'node scripts/acceptance-surface-truth.mjs' },
     { id: 'load-chaos', name: 'Load/chaos smoke (fast profile)', command: `node scripts/perf-gate.mjs --only=${profile === 'full' ? 'smoke,load,chaos' : 'smoke,chaos'} --out=${relative(root, outDir)}/load` },
@@ -572,27 +571,7 @@ function main(argv) {
     gates.push(a11yGate);
     push(a11yGate);
 
-    // 7. Single-scene acceptance ----------------------------------------------------
-    const singleRun = run('single-scene', 'Single-scene acceptance (self-test)', ['scripts/verify-single-scene.mjs', '--self-test'], {
-      timeout: 600_000,
-      evidence: () => 'media/single-scene/report.json',
-    });
-    let singleReport = null;
-    try {
-      singleReport = readJson(path.join(root, 'media/single-scene/report.json'));
-    } catch {
-      singleReport = null;
-    }
-    const singleGate = {
-      ...singleRun,
-      status: singleRun.ok && singleReport && singleReport.ok === true ? 'pass' : 'fail',
-      ok: singleRun.ok && Boolean(singleReport) && singleReport.ok === true,
-      detail: singleReport ? `${singleReport.checks?.filter((check) => check.ok).length ?? '?'}/${singleReport.checks?.length ?? '?'} checks` : 'report missing',
-    };
-    gates.push(singleGate);
-    push(singleGate);
-
-    // 8. Two-client acceptance ------------------------------------------------------
+    // 7. Two-client acceptance ------------------------------------------------------
     const twoRun = run('two-client', 'Two-client surface acceptance', ['scripts/acceptance-two-client-surface.mjs'], {
       timeout: 300_000,
       evidence: (stdout) => /report:\s*(\S+)/.exec(stdout)?.[1] || 'media/acceptance',

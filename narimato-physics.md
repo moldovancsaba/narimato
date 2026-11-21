@@ -133,8 +133,6 @@ shaded, and edge bands are tested on that surface point. There is no hidden geom
 |---|---|
 | `public/js/shared/geometry.js` | icosahedron vertices/faces, `SphereCamera` projection primitives |
 | `public/js/shared/sphere-interaction.js` | `carrierFrame`, `carrierProject`, `carrierUnproject`, `moveCarrier`, `shortestArcQuat` |
-| `public/js/shared/camera-contract.js` | `CameraView` member list, `assertCameraView`, `focalPxFor`, dolly/tilt helpers, `?surface-camera` parser |
-| `public/js/shared/surface-camera.js` | `SurfaceCamera` (legacy third-person frame and carrier framing) on the shared contract |
 | `public/js/icosahedron-viewer.js` | WebGL ray–sphere shader, carrier controls, object drag, fixed-focal dolly |
 | `public/js/shared/orbit-controls.js` | orbit input SSOT: absolute surface-point drag, carrier arrow travel, mode polarity (CTL-01) |
 | `public/js/shared/pointer-router.js` | pointer roles, capture, cancellation and pinch intents (CTL-06) |
@@ -256,52 +254,20 @@ camera's near bound; `project()` never mutates camera state.
 The orbital `SphereCamera` keeps its quaternion view and pixels; the contract
 members are additive (`depth`, `focalPx`, `nearPlane`, `unprojectScreen`).
 
-### Surface carrier framing
+### Surface view uses the same camera
 
-`SurfaceCamera` composes the proven carrier primitives (section 2) for the
-surface view:
+There is **no separate surface camera and no derived surface mesh**. The game has
+one `SphereCamera` instance and one `IcosaRenderer` instance for the whole zoom
+range. Entering the surface does not swap projection, canvas, RAF loop or scene:
+it moves the same camera deeper (zoom), keeps the same active-cell leaf pass, and
+adds the pilot/peer/entity overlay through the same `project()`/`viewAxis()`
+interface. Scrolling in/out continues the same camera; scrolling out past the
+surface entry rung returns to orbit through the exit policy.
 
-```
-pos     = normalize(anchor)                 // pilot ground point
-fwd     = tangent(pos, heading)             // pilot heading
-right   = normalize(cross(fwd, pos))
-forward = normalize(−cos(tilt)·pos + sin(tilt)·fwd)
-cam     = pos · distance
-up      = normalize(cross(right, forward))
-
-depth = dot(v − cam, forward)
-z     = dot(v, pos)                          // front-hemisphere coordinate
-x     = W/2 + focalPx · dot(v − cam, right) / depth
-y     = H/2 − focalPx · dot(v − cam, up) / depth
-```
-
-- `focalPx = focalPxFor(W, H) = max(W, H) / 2` — fixed for the viewport.
-- `tilt` is clamped to `[0.95, 1.30]` rad from the inward normal (54.4° … 74.5°).
-- Dolly: `d(z) = 1.08 · (1.72 / 1.08)^z`, `z = clamp(0.5 + 0.5·log2(zoom), 0, 1)`;
-  `zoom = 0.25 → 1.08`, `zoom = 1 → 1.363`, `zoom = 4 → 1.72`.
-- Screen inverse casts the pixel ray from `cam` and returns the near root
-  `(−b − √(b² − 4c)) / 2`.
-
-Near-plane proof: the fixed focal makes the largest on-screen ray angle 45°,
-so any point projecting inside the viewport has
-`depth ≥ (d − 1)·cos 45° ≥ 0.08 · 0.7071 = 0.0566 > 0.05` for every
-`d ∈ [1.08, 1.72]`. Only points behind the camera or beyond the rendered field
-of view fall below the near plane.
-
-Framing selector: `?surface-camera=legacy|carrier` (default `legacy`). The
-legacy third-person frame (eye `1 + 0.024` radii, fixed focal `height × 1.36`)
-is the production surface framing until RND-06 proves carrier pixel parity; the
-carrier framing is the opt-in, contract-complete implementation.
-`window.__ICOSA__.cameraMode()` returns `{ surface, contractVersion }`.
-
-Known limitation of the carrier framing (flag-only): because the camera sits on
-the carrier point directly above the anchor (`cam = pos · distance`), the pilot
-anchor projects below the shipped viewport at `tilt ∈ [0.95, 1.30]`. The camera
-is correct for contract and math use, but production surface framing stays
-legacy until RND-06 evaluates the anchor offset and pixel parity.
-
-The surface camera never reads tokens, tags or player ids: it consumes only
-unit-sphere geometry and the server-validated surface pose.
+The earlier experiments (a third-person `SurfaceCamera`, a seed-keyed globe, and
+a revision-gated 6000-triangle "live surface mesh") were separate-scene hacks.
+They produced broken arc-triangle overlays and are removed from the product and
+from the renderer.
 
 ## 11. Surface mode is a camera change (RND-02)
 
@@ -311,24 +277,23 @@ projection or second HUD:
 
 - `app.js` owns `view ∈ {orbit, surface}` and the single `requestAnimationFrame`
   loop.
-- Entering stores `{ yaw, pitch, zoom, distance }` and switches the camera to
-  `SurfaceCamera` plus the control mode; exiting restores the stored orbit
-  exactly (one frame).
+- Entering keeps the same `SphereCamera` and deepens its zoom; the surface adds
+  the control mode and entity overlay only. Exiting returns to the farthest orbit
+  through the single exit policy (CTL-04).
 - `surface-controller.js` advances the pilot pose, resolves the harvest target
   through `shared/harvest.js`, and produces `SurfaceEntity[]`
   (`self`, `peer`, `pin`, `beam`). Entities reference cells by `cellLabel`.
 - The renderer draws backdrop → planet → cells → markers → labels → entity pass
   (avatars, pins, beams, harvest FX, landing/leaving ship).
 - `World.leaves` is the only client tree; surface entities never copy `a`/`b`/`c`.
-- The surface underlay is the live leaf mesh (RND-04): it is derived from
-  `World.leaves` on every revision change, budget-clamped to 6000 triangles and
-  rebuilt at most once per frame. There is no cached seed-keyed globe.
+- The planet, cells, edges, labels and markers are the same render pipeline and
+  the same `World.leaves` tree at every zoom. No derived mesh, cached globe or
+  second projection exists.
 - Canvas terrain keeps its accessible equivalent in the HUD: the surface target
   readout reports the cell label and harvest state, and `#surface-controls` is a
   labelled `role="group"` with 44 px targets.
 
-Rollback: `?surface-renderer=overlay` is parsed but fails closed to the single
-scene; the only real rollback is reverting the RND-02 commit.
+Rollback: revert the commit; there is no second renderer or flag to fall back to.
 
 ## 12. Surface figures and event visuals (RND-05, RND-07)
 
@@ -367,5 +332,4 @@ screen  = camera.project(world)
   `prefers-reduced-motion` the walk freezes and the beam renders as a static
   marker.
 
-Rollback: `?surface-renderer=overlay` is parsed but fails closed to the single
-scene; the only real rollback is reverting the RND-02 commit.
+Rollback: revert the commit; there is no second renderer or flag to fall back to.

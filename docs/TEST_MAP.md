@@ -1,6 +1,7 @@
 # Test Map — file ownership
 
-The `node:test` suite is the executable contract of the repository. Every test file owns one
+The `node:test` suite is the executable contract of the repository. Tests for the removed
+separate-surface-camera/derived-mesh hacks are deleted; surface and orbit share one camera. Every test file owns one
 behaviour area; every repository change must keep its area green and add coverage to the owning
 file (or a new file with a new row here).
 
@@ -15,7 +16,6 @@ real count.
 | `test/a11y-suppression.test.js` | Suppression owner/expiry validation, selector/route matching, expired never suppresses, unused audit | `scripts/lib/a11y-report.mjs`, `a11y-suppressions.json` | A11Y-01 |
 | `test/a11y-runtime-filter.test.js` | Allow-listed expected runtime errors vs fatal errors in the a11y report | `scripts/lib/a11y-report.mjs` | A11Y-01 |
 | `test/adr.test.js` | ADR numbering, front matter, index coverage, key existence | `docs/adr/` | DOC-01 |
-| `test/camera-contract.test.js` | `CameraView` conformance for both cameras, units, orthonormal basis, malformed rejection | `public/js/shared/camera-contract.js` | RND-01 |
 | `test/camera-controls.test.js` | Camera control semantics, unchanged orbital pixel fixture, 720-step two-pole loop, pole/roll face sweep, culling bounds, frame stats | `public/js/shared/geometry.js`, `public/js/renderer.js` | CTL-01, CTL-02, RND-01 |
 | `test/cdn-preflight.test.js` | CDN config validation, production-host classification, DNS/header checks, CORS/range/cache policy, fail-closed exit codes | `scripts/cdn-preflight.mjs` | OPS-04 |
 | `test/data-integrity.test.js` | Manifest/tar determinism, path safety, checksums, reconciliation, retention, exit codes | `lib/data-integrity.js` | OPS-03 |
@@ -41,13 +41,10 @@ real count.
 | `test/slo-contract.test.js` | SLO ruleset schema, path resolution, warm-up, checker exit codes, docs drift, privacy | `lib/slo.js`, `observability/slo.json` | OPS-01 |
 | `test/story-copy.test.js` | Copy SSOT: plural/naming table, Captain's Log grammar, threshold rendering, incident copy, doc-block sync and drift failure, guide card DOM contract | `public/js/story-copy.js`, `scripts/sync-story-copy.mjs` | STR-02 |
 | `test/sphere-interaction.test.js` | Carrier frame, projection/unprojection, point-follow, shortest arc, 720-step two-pole carrier loop | `public/js/shared/sphere-interaction.js` | RND-01, CTL-01, CTL-02 |
-| `test/surface-camera.test.js` | Surface camera framing, carrier dolly/tilt, round-trip, near plane, resize | `public/js/shared/surface-camera.js` | RND-01 |
 | `test/surface-render.test.js` | Surface view state machine, orbit restore, entity mapping, rollback flag | `public/js/surface-controller.js`, `public/js/shared/view-state.js` | RND-02 |
 | `test/hud-parity.test.js` | HUD snapshot parity, duplicate detection, target/lap fallbacks, static markup contract | `public/js/shared/hud-parity.js`, `public/index.html` | RND-03 |
 | `test/humanoid-rig.test.js` | Closed-manifold volumes, joint coincidence, deterministic poses, walk/mining angles, 132/72/2 LOD hysteresis, culling, no sprite path | `public/js/shared/humanoid-3d.js` | RND-05 |
 | `test/renderer-surface.test.js` | Renderer peer interpolation, beam drop/count, resource pins, peer fade/clear, event forwarding | `public/js/renderer.js` | RND-07 |
-| `test/single-scene-guard.test.js` | RND-06 thresholds, report schema, static guard scan, canvas inventory, committed report | `scripts/lib/single-scene-checks.mjs`, `scripts/verify-single-scene.mjs` | RND-06 |
-| `test/live-mesh.test.js` | World revision, live mesh level formula, budget clamp, determinism, break delta, no-op path | `public/js/shared/live-surface-mesh.js`, `public/js/world.js` | RND-04 |
 | `test/surface-math.test.js` | Surface tangent/down-angle and projection helpers | `public/js/shared/sphere-interaction.js` | RND-01 |
 | `test/test-count.test.js` | TAP summary parsing, marker verification, failure propagation | `scripts/test-count.mjs` | QA-01 |
 | `test/tetra-ship.test.js` | Five-tetrahedron ship geometry and incident models | `public/js/shared/tetra-ship.js` | EVT-02 |

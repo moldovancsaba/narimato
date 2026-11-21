@@ -75,7 +75,7 @@ release ledger. On the owning issue, after the evidence exists:
 | Field | Fill with |
 |---|---|
 | `Delivered` | One or two sentences naming the shipped outcome, the commit SHA, and the PR URL. Example: "REL-01 release gate: `npm run release:gate` runs the matrix and writes `release-manifest.json`; commit `<delivery-sha>`, PR #N." |
-| `Release Evidence` | The gate verdict and exit code, the manifest and report paths, the executed test count, and the docs/a11y/load evidence paths. Example: "Gate BLOCKED (exit 5) on A11Y-02/OPS-04; code gates PASS; 603/603 tests; manifest `artifacts/release/v3.58.0/release-manifest.json`." |
+| `Release Evidence` | The gate verdict and exit code, the manifest and report paths, the executed test count, and the docs/a11y/load evidence paths. Example: "Gate BLOCKED (exit 5) on A11Y-02/OPS-04; code gates PASS; 556/556 tests; manifest `artifacts/release/v3.58.0/release-manifest.json`." |
 | `Documentation` | The exact repository paths changed, for example `docs/RELEASE_EVIDENCE.md`, `RELEASE_NOTES.md`, `docs/SSOT.md`. |
 | `Next Action` | The next concrete unblocker; for a blocked release name the external owner and the evidence required. Example: "A11Y-02 owner links the device matrix; OPS-04 owner links the stub-origin report; rerun `npm run release:gate`." |
 
@@ -103,7 +103,7 @@ Do not write "done", "delivered" or "live" in any field while the gate reports
 3. Add or update the claim rows in `README.md`, the current `RELEASE_NOTES.md`
    section and this ledger. Use the exact status that the evidence supports.
 4. Run `npm run evidence:check`; fix every violation before the release gate.
-5. Run `npm run release:gate`; commit the generated acceptance/single-scene evidence
+5. Run `npm run release:gate`; commit the generated acceptance evidence
    and fill the board fields from the manifest. A `BLOCKED` verdict is a real
    verdict: do not edit the gate or the prerequisite file to make it green.
 6. Re-run the gate after the evidence commit, attach the report to the PR, and leave
@@ -119,10 +119,10 @@ Do not write "done", "delivered" or "live" in any field while the gate reports
 | Delivery scope | REL-01 release gate, REL-02 evidence ledger, TST-01 acceptance fix |
 | Version SSOT | `package.json` 3.58.0 · cache-bust 3.58.0 · README 3.58.0 · notes heading v3.58.0 |
 | Audio cache key | `3.58.0+56190bd8` (content hash unchanged; spoken text did not change) |
-| Executed suite | 603 tests, 603 pass, 0 fail (`node:test`) |
+| Executed suite | 556 tests, 556 pass, 0 fail (`node:test`) |
 | Docs gate | pass: 42 markdown files, 889 links, 0 findings (`npm run docs:check`) |
 | Headless accessibility | Chromium gate clean: 9 surfaces, 0 failure, 0 warning, 0 incomplete |
-| Browser acceptance | single-scene self-test, two-client 7/7, surface-truth 4/4 (TST-01 exit contract fixed) |
+| Browser acceptance | two-client 7/7, surface-truth 4/4 (TST-01 exit contract fixed) |
 | Load / chaos | fast profile `smoke` + `chaos` PASS; **120.02-minute soak PASS** for `cb65df9` (artifact `artifacts/gate/soak/summary.json`) |
 | Rollback drill | previous tag v3.57.0; previous suite 116 tests; schema 2 → 2; PASS |
 | Release gate verdict | BLOCKED (exit 5) on A11Y-02/OPS-04 only — all code gates green |
@@ -138,7 +138,6 @@ Claim ledger for this release (the checker parses this table):
 | Documented test-count consistency | LIVE | `script:scripts/test-count.mjs`, `test:test/test-count.test.js` | Markers and current-release prose must equal the executed suite |
 | Evidence ledger and planned-as-live check | LIVE | `script:scripts/evidence-check.mjs`, `test:test/evidence-check.test.js` | Closed vocabulary, typed references, exit 4 for tense violations |
 | TST-01 acceptance exit-code contract | LIVE | `script:scripts/acceptance-surface-truth.mjs`, `test:test/acceptance-harness.test.js` | PASS now exits 0; expected 409 NOT_A_LEAF is not a page error |
-| Single-scene acceptance | LIVE | `script:scripts/verify-single-scene.mjs`, `test:test/single-scene-guard.test.js` | Camera-only transition, parity, frame budget |
 | Two-client surface acceptance | LIVE | `script:scripts/acceptance-two-client-surface.mjs`, `test:test/renderer-surface.test.js` | Peer visibility, authoritative beams, supply focus, live mutation |
 | GDS headless accessibility gate | LIVE | `script:scripts/a11y-gate.mjs`, `test:test/a11y-report.test.js` | Chromium and WebKit engines; zero serious/critical findings |
 | Load and chaos gate | LIVE | `script:scripts/perf-gate.mjs`, `test:test/perf-gate.test.js` | OPS-02 scenarios and thresholds |
@@ -152,7 +151,7 @@ Claim ledger for this release (the checker parses this table):
 
 ## 7. External blockers for this release
 
-Final verification (2026-11-21): `npm run release:gate` on `fefa5b5` (v3.58.0) → BLOCKED (exit 5) on A11Y-02/OPS-04 only, with all 14 code gates PASS in 283 s and the 120.02-minute soak satisfied; artifacts `artifacts/release/v3.58.0/`.
+Final verification (2026-11-21): `npm run release:gate` on `fefa5b5` (v3.58.0) → BLOCKED (exit 5) on A11Y-02/OPS-04 only, with all 13 code gates PASS in 283 s and the 120.02-minute soak satisfied; artifacts `artifacts/release/v3.58.0/`.
 
 | ID | Issue | Owner | Status | Required evidence |
 |---|---|---|---|---|

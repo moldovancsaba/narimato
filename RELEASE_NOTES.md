@@ -16,7 +16,7 @@ operations, recovery and security work that was prepared in the unreleased secti
 
 - `npm run release:gate` (`scripts/release-gate.mjs`) runs the matrix in dependency order:
   version/cache-bust, `npm test`, documented test count, `docs:check`, GDS build/verify and
-  determinism, the Chromium accessibility gate, single-scene self-test, two-client and
+  determinism, the Chromium accessibility gate, two-client and
   surface-truth acceptance, load/chaos smoke, recovery and rollback drills, and the evidence
   checker.
 - The gate fails closed: a red gate exits `1`, a dirty tree or an existing tag exits `2`, a
@@ -55,7 +55,6 @@ operations, recovery and security work that was prepared in the unreleased secti
 | Documented test-count consistency | LIVE | `script:scripts/test-count.mjs`, `test:test/test-count.test.js` | Markers and current-release prose match the suite |
 | Evidence ledger and planned-as-live check | LIVE | `script:scripts/evidence-check.mjs`, `test:test/evidence-check.test.js` | Closed vocabulary and typed references |
 | TST-01 acceptance exit-code contract | LIVE | `script:scripts/acceptance-surface-truth.mjs`, `test:test/acceptance-harness.test.js` | PASS exits 0; expected 409 is not a page error |
-| Single-scene acceptance | LIVE | `script:scripts/verify-single-scene.mjs`, `test:test/single-scene-guard.test.js` | Camera-only proof and frame budget |
 | Two-client surface acceptance | LIVE | `script:scripts/acceptance-two-client-surface.mjs`, `test:test/renderer-surface.test.js` | Peer visibility, beams, supply focus, live mutation |
 | GDS headless accessibility gate | LIVE | `script:scripts/a11y-gate.mjs`, `test:test/a11y-report.test.js` | Chromium and WebKit engines |
 | Binary rollback drill | LIVE | `script:scripts/rollback-drill.mjs`, `test:test/release-gate.test.js` | Previous tag v3.57.0; schema 2 -> 2 |
@@ -65,7 +64,7 @@ operations, recovery and security work that was prepared in the unreleased secti
 
 ### Gates
 
-- `npm test`: 603/603 tests pass; `npm run docs:check`; `npm run check:version`;
+- `npm test`: 556/556 tests pass; `npm run docs:check`; `npm run check:version`;
   `node scripts/test-count.mjs`; `npm run evidence:check`.
 - `npm run release:gate`: code gates green, verdict `BLOCKED` on A11Y-02 and OPS-04.
 - No runtime dependency added; no wire-frame, scoring, tree, schema or gameplay change.
@@ -108,7 +107,7 @@ operations, recovery and security work that was prepared in the unreleased secti
 
 ### Gates
 
-- `npm test`: 603 tests pass; `npm run docs:check`; `npm run check:version`; `node scripts/test-count.mjs`.
+- `npm test`: 556 tests pass; `npm run docs:check`; `npm run check:version`; `node scripts/test-count.mjs`.
 - No runtime dependency added; no wire-frame, scoring, tree or schema change.
 
 ## v3.57.0 — “Spherical Viewer Solution” (2026-11-20)

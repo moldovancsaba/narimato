@@ -32,7 +32,6 @@ function makeRenderer() {
     resourceId: null,
   }));
   renderer.setFaces(faces);
-  renderer.setLiveSurface({ leaves, revision: 1, seed: 4242 });
   return { renderer, world, leaves };
 }
 

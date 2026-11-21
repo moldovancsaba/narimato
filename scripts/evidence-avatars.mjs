@@ -103,7 +103,7 @@ try {
     await delay(450);
     const clip = await page.evaluate(() => {
       const ic = window.__ICOSA__;
-      const cam = ic.surfaceCamera();
+      const cam = ic.camera;
       const visual = ic.renderer.peerVisuals.get('p_preview');
       const sample = ic.renderer.samplePeer(visual, Date.now());
       const p = sample ? cam.project(sample.pos) : null;
@@ -132,7 +132,7 @@ try {
   // aimed at a live leaf that is actually on screen so the arc is legible.
   const mining = await page.evaluate(() => {
     const ic = window.__ICOSA__;
-    const camera = ic.surfaceCamera();
+    const camera = ic.camera;
     let toLeaf = null;
     for (const node of ic.world.activeLeaves()) {
       if (!ic.renderer.hasLeaf(node.label)) continue;
@@ -168,7 +168,7 @@ try {
   const beamFocus = await page.evaluate(() => {
     const ic = window.__ICOSA__;
     const r = ic.renderer;
-    const cam = ic.surfaceCamera();
+    const cam = ic.camera;
     const beam = r.beams[0];
     if (!beam) return null;
     const from = cam.project(beam.from);

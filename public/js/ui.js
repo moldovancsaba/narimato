@@ -2754,8 +2754,8 @@ class UI {
       if (swatch) swatch.style.setProperty('--p-color', owner ? owner.color || '#00f0ff' : 'transparent');
     }
 
-    const chargeText = clicks == null ? `— / ${pad2(threshold)}` : `${pad2(clicks)} / ${pad2(threshold)}`;
-    this._setText(this._el.targetCharge, chargeText);
+    const chargeLabel = clicks == null ? `— / ${pad2(threshold)}` : `${pad2(clicks)} / ${pad2(threshold)}`;
+    this._setText(this._el.targetCharge, chargeLabel);
     if (this._el.targetChargeFill) this._el.targetChargeFill.style.width = `${fillPct.toFixed(1)}%`;
     const bar = this._el.targetChargeBar;
     if (bar) {
