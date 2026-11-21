@@ -31,11 +31,13 @@
       "id": "SOAK",
       "issue": 39,
       "owner": "platform-ops",
-      "status": "open",
+      "status": "satisfied",
       "blocksRelease": false,
       "title": "120-minute weekly soak \u2014 a separate release prerequisite",
       "requiredEvidence": "artifacts/gate/soak/summary.json from the weekly CI job for the release commit",
-      "verification": "node scripts/perf-gate.mjs --only=soak"
+      "verification": "node scripts/perf-gate.mjs --only=soak",
+      "evidence": "artifacts/gate/soak/summary.json",
+      "note": "120.02-minute soak PASS for commit cb65df9 (HTTP p95 1 ms, loop p95 22.053 ms, 0 dropped SSE, 0 errors, join p95 3.23 ms, click p95 11.27 ms, RSS growth 0). The earlier 60-minute clamped run is retained as artifacts/gate/soak-invalid-60min and is not counted."
     }
   ]
 }

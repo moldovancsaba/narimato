@@ -123,7 +123,7 @@ Do not write "done", "delivered" or "live" in any field while the gate reports
 | Docs gate | pass: 42 markdown files, 889 links, 0 findings (`npm run docs:check`) |
 | Headless accessibility | Chromium gate clean: 9 surfaces, 0 failure, 0 warning, 0 incomplete |
 | Browser acceptance | single-scene self-test, two-client 7/7, surface-truth 4/4 (TST-01 exit contract fixed) |
-| Load / chaos | fast profile `smoke` + `chaos` PASS; 120-minute soak is a separate prerequisite |
+| Load / chaos | fast profile `smoke` + `chaos` PASS; **120.02-minute soak PASS** for `cb65df9` (artifact `artifacts/gate/soak/summary.json`) |
 | Rollback drill | previous tag v3.57.0; previous suite 116 tests; schema 2 → 2; PASS |
 | Release gate verdict | BLOCKED (exit 5) on A11Y-02/OPS-04 only — all code gates green |
 | Gate run | `npm run release:gate` at `PLAYWRIGHT_MODULE=/tmp/dsh-pw/node_modules/playwright`; 277 s; manifest commit recorded in the artifact |
@@ -148,7 +148,7 @@ Claim ledger for this release (the checker parses this table):
 | Physical-device accessibility sign-off | PARTIAL | `issue:#13`, `script:scripts/device-gate.mjs` | The 20-row ledger is not executed on hardware; two approvals remain (A11Y-02) |
 | CDN preflight gate | LIVE | `script:scripts/cdn-preflight.mjs`, `test:test/cdn-preflight.test.js` | Fail-closed policy, CORS/range/cache and production-host checks |
 | Edge/CDN asset delivery | PLANNED | `issue:#41`, `script:scripts/cdn-preflight.mjs` | Activation will follow the real CDN hostname and credentials (OPS-04) |
-| 120-minute soak for this release | PARTIAL | `script:scripts/perf-gate.mjs` | First run was clamped to 60 min and is invalid (harness defect #71); the true 120-minute run is running for 41c884f and its summary will be linked when complete |
+| 120-minute soak for this release | LIVE | `script:scripts/perf-gate.mjs`, `commit:cb65df9` | 120.02 min PASS for `cb65df9`: HTTP p95 1 ms, loop p95 22.053 ms, 0 dropped SSE, 0 errors, join p95 3.23 ms, click p95 11.27 ms, RSS growth 0; the clamped 60-min attempt is retained as invalid |
 
 ## 7. External blockers for this release
 
@@ -158,7 +158,7 @@ Fresh verification (2026-11-21): `npm run release:gate` on `41c884f` (v3.58.0) r
 |---|---|---|---|---|
 | A11Y-02 | #13 | accessibility-lead | blocked (issue open, evidence unmet) | executed `docs/device-gate/EVIDENCE.json`, defect links and two approvals |
 | OPS-04 | #41 | platform-ops | open | `cdn:preflight` report against the real hostname and the `ASSET_BASE_URL` rollback proof |
-| SOAK | #39 | platform-ops | NOT MET — first attempt clamped to 60 min by the harness (`load-test.mjs` 3600 s cap); fixed under #71 and the true 120-minute run is being re-executed | weekly 120-minute `artifacts/gate/soak/summary.json` for the release commit |
+| SOAK | #39 | platform-ops | satisfied — 120.02-minute PASS for `cb65df9` | `artifacts/gate/soak/summary.json` (the earlier clamped 60-minute run is invalid and not counted) |
 
 The machine-readable twin is `observability/release-prerequisites.json`; the release
 gate validates it and reports `BLOCKED` while a blocking row is not `satisfied`. Do
