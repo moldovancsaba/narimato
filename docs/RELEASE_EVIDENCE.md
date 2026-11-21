@@ -148,15 +148,17 @@ Claim ledger for this release (the checker parses this table):
 | Physical-device accessibility sign-off | PARTIAL | `issue:#13`, `script:scripts/device-gate.mjs` | The 20-row ledger is not executed on hardware; two approvals remain (A11Y-02) |
 | CDN preflight gate | LIVE | `script:scripts/cdn-preflight.mjs`, `test:test/cdn-preflight.test.js` | Fail-closed policy, CORS/range/cache and production-host checks |
 | Edge/CDN asset delivery | PLANNED | `issue:#41`, `script:scripts/cdn-preflight.mjs` | Activation will follow the real CDN hostname and credentials (OPS-04) |
-| 120-minute soak for this release | PARTIAL | `script:scripts/perf-gate.mjs` | Fast gate runs smoke and chaos; the 120-minute soak remains separate |
+| 120-minute soak for this release | PARTIAL | `script:scripts/perf-gate.mjs` | Fast gate runs smoke and chaos; the 120-minute soak is running for 41c884f and its summary will be linked when complete |
 
 ## 7. External blockers for this release
 
+Fresh verification (2026-11-21): `npm run release:gate` on `41c884f` (v3.58.0) reproduced BLOCKED (exit 5) on A11Y-02/OPS-04 only, with all 14 code gates PASS in 280 s; artifacts `artifacts/release/v3.58.0/`.
+
 | ID | Issue | Owner | Status | Required evidence |
 |---|---|---|---|---|
-| A11Y-02 | #13 | accessibility-lead | blocked (issue closed, evidence unmet) | executed `docs/device-gate/EVIDENCE.json`, defect links and two approvals |
+| A11Y-02 | #13 | accessibility-lead | blocked (issue open, evidence unmet) | executed `docs/device-gate/EVIDENCE.json`, defect links and two approvals |
 | OPS-04 | #41 | platform-ops | open | `cdn:preflight` report against the real hostname and the `ASSET_BASE_URL` rollback proof |
-| SOAK | #39 | platform-ops | separate prerequisite | weekly 120-minute `artifacts/gate/soak/summary.json` for the release commit |
+| SOAK | #39 | platform-ops | in progress (started 2026-11-21 02:53 CET) | weekly 120-minute `artifacts/gate/soak/summary.json` for the release commit |
 
 The machine-readable twin is `observability/release-prerequisites.json`; the release
 gate validates it and reports `BLOCKED` while a blocking row is not `satisfied`. Do
