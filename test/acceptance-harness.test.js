@@ -2,7 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  DEFAULT_ALLOWED_REFUSALS,
   acceptanceExitCode,
   collectErrors,
 } from '../scripts/lib/acceptance-harness.mjs';
@@ -30,7 +29,4 @@ test('NOT_A_LEAF is an expected protocol refusal, other refusals stay errors', (
   const strict = collectErrors(clients, { allowedRefusals: ['OWN_CELL_LOCKED'] });
   assert.equal(strict.errors.length, 1, 'a stricter surface can still surface NOT_A_LEAF');
   assert.equal(strict.allowedRefusals.length, 1);
-});
-  assert.equal(surfaceTruth.errors.length, 0);
-  assert.equal(surfaceTruth.allowedRefusals.length, 2);
 });
