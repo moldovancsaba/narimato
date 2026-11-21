@@ -1,0 +1,308 @@
+{
+  "runId": "surface-20261121-050824-17bb",
+  "baseUrl": "http://localhost:52262",
+  "planetSeed": 621632325,
+  "planetIndex": 0,
+  "startedAt": "2026-11-21T05:08:24.340Z",
+  "finishedAt": "2026-11-21T05:08:38.060Z",
+  "durationMs": 13720,
+  "tags": [
+    "D1195",
+    "D2195"
+  ],
+  "checks": [
+    {
+      "id": "peers-visible",
+      "ok": true,
+      "detail": {
+        "aSeesB": true,
+        "bSeesA": true
+      }
+    },
+    {
+      "id": "robot-online",
+      "ok": true,
+      "detail": {
+        "id": "p_di0gra",
+        "tag": "MAGMA_13",
+        "leaf": "10",
+        "state": "idle",
+        "moved": true
+      }
+    },
+    {
+      "id": "beam-authoritative",
+      "ok": true,
+      "detail": {
+        "frames": 1,
+        "valid": 1,
+        "invalid": 0,
+        "robotBeam": true,
+        "robotIds": [
+          "p_di0gra"
+        ],
+        "rendererDropped": 0
+      }
+    },
+    {
+      "id": "supply-focus",
+      "ok": true,
+      "detail": {
+        "impactLabel": "4",
+        "cells": [
+          "4",
+          "14",
+          "19"
+        ],
+        "placements": 2,
+        "mined": {
+          "a": {
+            "frames": 1
+          },
+          "b": {
+            "frames": 1
+          }
+        }
+      }
+    },
+    {
+      "id": "live-mutation",
+      "ok": true,
+      "detail": {
+        "label": "1",
+        "childrenSeenByPeer": true,
+        "breakBy": "A",
+        "clicked": [
+          {
+            "status": 200,
+            "kind": "claim",
+            "broke": false
+          },
+          {
+            "status": 200,
+            "kind": "steal",
+            "broke": false
+          },
+          {
+            "status": 200,
+            "kind": "steal",
+            "broke": true
+          }
+        ],
+        "peerJoinedWithoutReload": true
+      }
+    },
+    {
+      "id": "a11y-controls",
+      "ok": true,
+      "detail": {
+        "join": "JACK IN",
+        "exit": "RETURN TO ORBIT",
+        "pads": [
+          "Run forward",
+          "Turn left",
+          "Run backward",
+          "Turn right",
+          "Run forward",
+          "Turn left",
+          "Run backward",
+          "Turn right"
+        ],
+        "padCodes": [
+          "KeyW",
+          "KeyA",
+          "KeyS",
+          "KeyD"
+        ],
+        "rosterLabel": "Operators in the world",
+        "rosterLiveRegion": null,
+        "note": "peer roster aria-live is owned by the GDS HUD migration (UI-02/UI-04); existing HUD reused, no DOM added here"
+      }
+    },
+    {
+      "id": "no-page-errors",
+      "ok": true,
+      "detail": {
+        "count": 0,
+        "expectedRefusals": 1,
+        "unexpectedRefusals": 0,
+        "errors": []
+      }
+    }
+  ],
+  "peers": [
+    {
+      "from": "D1195",
+      "sees": [
+        {
+          "tag": "MAGMA_13",
+          "leaf": "10"
+        },
+        {
+          "tag": "D2195",
+          "leaf": "8"
+        }
+      ]
+    },
+    {
+      "from": "D2195",
+      "sees": [
+        {
+          "tag": "MAGMA_13",
+          "leaf": "10"
+        },
+        {
+          "tag": "D1195",
+          "leaf": "8"
+        }
+      ]
+    }
+  ],
+  "beams": [
+    {
+      "playerId": "p_di0gra",
+      "label": "10",
+      "precededByCell": true
+    }
+  ],
+  "supply": {
+    "impactLabel": "4",
+    "cells": [
+      "4",
+      "14",
+      "19"
+    ],
+    "placements": [
+      {
+        "playerId": "p_6xd5y2",
+        "leaf": "4"
+      },
+      {
+        "playerId": "p_bdeign",
+        "leaf": "14"
+      }
+    ],
+    "mined": {
+      "a": {
+        "frames": 1
+      },
+      "b": {
+        "frames": 1
+      }
+    },
+    "placementsSeenBy": {
+      "a": 2,
+      "b": 2
+    }
+  },
+  "liveMutation": {
+    "label": "1",
+    "childrenSeenByPeer": true,
+    "breakBy": "A",
+    "clicked": [
+      {
+        "status": 200,
+        "kind": "claim",
+        "broke": false
+      },
+      {
+        "status": 200,
+        "kind": "steal",
+        "broke": false
+      },
+      {
+        "status": 200,
+        "kind": "steal",
+        "broke": true
+      }
+    ],
+    "peerJoinedWithoutReload": true
+  },
+  "artifacts": [
+    "media/acceptance/surface-20261121-050824-17bb/client-a-surface.png",
+    "media/acceptance/surface-20261121-050824-17bb/client-b-surface.png"
+  ],
+  "errors": [],
+  "ok": true,
+  "players": [
+    {
+      "id": "p_6xd5y2",
+      "tag": "D1195"
+    },
+    {
+      "id": "p_bdeign",
+      "tag": "D2195"
+    }
+  ],
+  "planetName": "MAGRATHEA",
+  "robot": {
+    "id": "p_di0gra",
+    "tag": "MAGMA_13",
+    "leaf": "10",
+    "updatedAt": 1795237709633,
+    "state": "idle",
+    "moved": true
+  },
+  "a11y": {
+    "pads": [
+      {
+        "code": "KeyW",
+        "name": "Run forward",
+        "tabbable": true
+      },
+      {
+        "code": "KeyA",
+        "name": "Turn left",
+        "tabbable": true
+      },
+      {
+        "code": "KeyS",
+        "name": "Run backward",
+        "tabbable": true
+      },
+      {
+        "code": "KeyD",
+        "name": "Turn right",
+        "tabbable": true
+      },
+      {
+        "code": "KeyW",
+        "name": "Run forward",
+        "tabbable": true
+      },
+      {
+        "code": "KeyA",
+        "name": "Turn left",
+        "tabbable": true
+      },
+      {
+        "code": "KeyS",
+        "name": "Run backward",
+        "tabbable": true
+      },
+      {
+        "code": "KeyD",
+        "name": "Turn right",
+        "tabbable": true
+      }
+    ],
+    "exitName": "RETURN TO ORBIT",
+    "rosterLabel": "Operators in the world",
+    "rosterLiveRegion": null,
+    "focusVisibleCss": true,
+    "join": {
+      "tagInputName": "Operator tag",
+      "joinName": "JACK IN",
+      "tagTabbable": true,
+      "joinTabbable": true
+    }
+  },
+  "refusals": [
+    {
+      "status": 409,
+      "url": "http://localhost:52262/api/action",
+      "error": "POSE_RATE_LIMIT"
+    }
+  ],
+  "runLog": "run surface-20261121-050824-17bb at http://localhost:52262 with tags D1195/D2195"
+}

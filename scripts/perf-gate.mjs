@@ -567,7 +567,7 @@ async function runChaosScenario({ document, scenario, ruleset, outDir }) {
         repeat: scenario.repeat,
         verdict: evaluation.failures.length ? 'FAIL' : 'PASS',
         startedAt: new Date(startedAt).toISOString(),
-        durationMs: elapsedMs,
+        durationMs: Date.now() - startedAt,
         thresholds,
         summary: summary || null,
         failures: evaluation.failures,

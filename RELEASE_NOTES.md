@@ -65,7 +65,7 @@ operations, recovery and security work that was prepared in the unreleased secti
 
 ### Gates
 
-- `npm test`: 602/602 tests pass; `npm run docs:check`; `npm run check:version`;
+- `npm test`: 603/603 tests pass; `npm run docs:check`; `npm run check:version`;
   `node scripts/test-count.mjs`; `npm run evidence:check`.
 - `npm run release:gate`: code gates green, verdict `BLOCKED` on A11Y-02 and OPS-04.
 - No runtime dependency added; no wire-frame, scoring, tree, schema or gameplay change.
@@ -108,7 +108,7 @@ operations, recovery and security work that was prepared in the unreleased secti
 
 ### Gates
 
-- `npm test`: 602 tests pass; `npm run docs:check`; `npm run check:version`; `node scripts/test-count.mjs`.
+- `npm test`: 603 tests pass; `npm run docs:check`; `npm run check:version`; `node scripts/test-count.mjs`.
 - No runtime dependency added; no wire-frame, scoring, tree or schema change.
 
 ## v3.57.0 — “Spherical Viewer Solution” (2026-11-20)

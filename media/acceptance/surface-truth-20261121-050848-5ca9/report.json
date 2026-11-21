@@ -1,0 +1,71 @@
+{
+  "runId": "surface-truth-20261121-050848-5ca9",
+  "baseUrl": "http://localhost:52346",
+  "planetSeed": null,
+  "planetIndex": null,
+  "startedAt": "2026-11-21T05:08:48.309Z",
+  "finishedAt": "2026-11-21T05:08:54.404Z",
+  "durationMs": 6095,
+  "tags": [],
+  "checks": [
+    {
+      "id": "target-available",
+      "ok": true,
+      "detail": {
+        "targetLabel": "8",
+        "targetCan": false
+      }
+    },
+    {
+      "id": "hud-truth",
+      "ok": true,
+      "detail": {
+        "hud": {
+          "text": "RED // LOCKEDTARGET 8",
+          "state": "locked"
+        },
+        "targetCan": false,
+        "status": 409,
+        "clickOk": false,
+        "expected": "refused"
+      }
+    },
+    {
+      "id": "beam-ordering",
+      "ok": true,
+      "detail": {
+        "frames": 2,
+        "valid": 2
+      }
+    },
+    {
+      "id": "no-page-errors",
+      "ok": true,
+      "detail": {
+        "count": 0,
+        "expectedRefusals": 1,
+        "errors": []
+      }
+    }
+  ],
+  "peers": [],
+  "beams": [
+    {
+      "playerId": "p_t6et3c",
+      "label": "9",
+      "precededByCell": true
+    },
+    {
+      "playerId": "p_t6et3c",
+      "label": "10",
+      "precededByCell": true
+    }
+  ],
+  "supply": null,
+  "liveMutation": null,
+  "artifacts": [
+    "media/acceptance/surface-truth-20261121-050848-5ca9/surface-truth.png"
+  ],
+  "errors": [],
+  "ok": true
+}
