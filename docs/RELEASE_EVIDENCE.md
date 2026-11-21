@@ -152,7 +152,7 @@ Claim ledger for this release (the checker parses this table):
 
 ## 7. External blockers for this release
 
-Fresh verification (2026-11-21): `npm run release:gate` on `41c884f` (v3.58.0) reproduced BLOCKED (exit 5) on A11Y-02/OPS-04 only, with all 14 code gates PASS in 280 s; artifacts `artifacts/release/v3.58.0/`.
+Final verification (2026-11-21): `npm run release:gate` on `fefa5b5` (v3.58.0) → BLOCKED (exit 5) on A11Y-02/OPS-04 only, with all 14 code gates PASS in 283 s and the 120.02-minute soak satisfied; artifacts `artifacts/release/v3.58.0/`.
 
 | ID | Issue | Owner | Status | Required evidence |
 |---|---|---|---|---|
