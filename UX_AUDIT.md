@@ -192,8 +192,9 @@ problem on tablets/landscape phones.
 
 Headless Chromium at simulated viewports; no real iOS Safari/Android device, no
 screen-reader pass, no hearing check of voice quality. The audio load timings are local,
-not through a consumer network. These need a second pass with real devices and
-throttled network before calling accessibility/performance “done”.
+not through a consumer network. Real devices, screen readers and throttled networks remain a
+separate gate: [docs/DEVICE_GATE.md](docs/DEVICE_GATE.md) defines the fixed matrix and the
+commit-keyed evidence ledger; this audit does not sign it.
 
 ## Repro
 

@@ -16,7 +16,9 @@ real count.
 | `test/adr.test.js` | ADR numbering, front matter, index coverage, key existence | `docs/adr/` | DOC-01 |
 | `test/camera-contract.test.js` | `CameraView` conformance for both cameras, units, orthonormal basis, malformed rejection | `public/js/shared/camera-contract.js` | RND-01 |
 | `test/camera-controls.test.js` | Camera control semantics, unchanged orbital pixel fixture, 720-step two-pole loop, pole/roll face sweep, culling bounds, frame stats | `public/js/shared/geometry.js`, `public/js/renderer.js` | CTL-01, CTL-02, RND-01 |
+| `test/cdn-preflight.test.js` | CDN config validation, production-host classification, DNS/header checks, CORS/range/cache policy, fail-closed exit codes | `scripts/cdn-preflight.mjs` | OPS-04 |
 | `test/data-integrity.test.js` | Manifest/tar determinism, path safety, checksums, reconciliation, retention, exit codes | `lib/data-integrity.js` | OPS-03 |
+| `test/device-gate.test.js` | Fixed 20-row device matrix, ledger schema, coverage, evidence paths, defect links, approvals, freshness, commit provenance, CLI exit codes | `scripts/device-gate.mjs` | A11Y-02 |
 | `test/docs-check.test.js` | R1–R6 docs gate, link/anchor/placeholder/key rules | `scripts/check-docs.mjs` | SSOT-02 |
 | `test/geometry.test.js` | Regular spherical icosahedron, subdivision, labels, picking, projection | `public/js/shared/geometry.js` | RND-01 |
 | `test/harvest.test.js` | Harvest truth table: joined/stale/cooldown/lock precedence, deep-cell informational, server error mapping, chip text | `public/js/shared/harvest.js` | CTL-03 |

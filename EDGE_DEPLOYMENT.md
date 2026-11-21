@@ -53,19 +53,32 @@ and tests keep the default empty value (same origin).
 |---|---|---|
 | `/audio/voice/*` | `public, max-age=31536000, immutable` | `?v=` content-derived version is the cache key |
 | `/audio/voice/manifest.json` | `no-store` | generated contract; must match the deployed clips |
-| `/js/*`, `/css/*` | `public, max-age=31536000, immutable` | app entry carries `?v=` |
+| `/js/*`, `/css/*` | `no-store` today | Immutable only after the OPS-04 allowlist extension. |
+| `/media/*` | `public, max-age=3600` today | Immutable only after the OPS-04 allowlist extension. |
 | `/index.html` | `no-store` | must pick up release version + asset base |
 | `/api/*` | `no-store` | authoritative; never edge-cache |
 
-## Activation checklist
+## Activation procedure
+
+The executable activation runbook is [docs/CDN_ACTIVATION.md](docs/CDN_ACTIVATION.md). It owns the
+provider prerequisites, CORS/range/cache-key policy, verification curls, metrics, origin/edge
+rollback and the fail-closed preflight.
 
 1. Upload/copy the asset tree to the edge/origin pull zone.
-2. Set `ASSET_BASE_URL` and restart the origin server once.
-3. `curl -s https://cdn.example.com/narimato/audio/voice/george/help-story__s1.m4a -I`
-   → 200, `audio/mp4`, immutable cache.
-4. Reload the game, first spoken sentence, and verify no CORS errors in the console.
-5. Check `/api/metrics` HTTP/SSE SLOs and client telemetry `audio.firstWordMs`.
-6. Roll back by unsetting `ASSET_BASE_URL` (defaults to same-origin).
+2. Configure the edge cache key, exact CORS origin, ranges and the HTML/API bypass.
+3. Run the fail-closed preflight; it exits `3` with `credentials/hostname missing` unless a real
+   HTTPS CDN hostname and the exact game origin are supplied:
+
+   ```sh
+   ASSET_BASE_URL=https://edge.narimato.dev/narimato \
+     GAME_ORIGIN=https://game.narimato.dev node scripts/cdn-preflight.mjs
+   ```
+
+4. Set `ASSET_BASE_URL` and restart the origin server once.
+5. Reload the game, first spoken sentence, and verify no CORS errors in the console.
+6. Check `/api/metrics` HTTP/SSE SLOs and client telemetry `audio.firstWordMs`; read the edge hit
+   ratio from provider analytics.
+7. Roll back by unsetting `ASSET_BASE_URL` (defaults to same-origin) and restarting the origin.
 
 ## Measurement
 
@@ -75,5 +88,8 @@ and tests keep the default empty value (same origin).
 
 ## Current state
 
-B1 is **CDN-ready in code** (asset base + immutable origins) but no external CDN credentials
-are available in this environment; activation is a deployment step, not a code gate.
+B1 is **CDN-ready in code** for narration audio (asset base + immutable origins), with a
+fail-closed activation gate. No external CDN account, hostname, DNS record, TLS certificate or
+origin token is available in this repository, so activation is an external deployment decision, not
+a code gate. The exact runbook is [docs/CDN_ACTIVATION.md](docs/CDN_ACTIVATION.md); the issue stays
+open until a real hostname passes the preflight and the activation is recorded.

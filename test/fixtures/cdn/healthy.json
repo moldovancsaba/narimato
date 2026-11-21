@@ -1,0 +1,42 @@
+{
+  "config": {
+    "baseUrl": "https://cdn.narimato.dev/narimato",
+    "originUrl": "https://game.narimato.dev"
+  },
+  "observations": {
+    "dns": {
+      "ok": true,
+      "addresses": [
+        "203.0.113.10",
+        "2001:db8::10"
+      ]
+    },
+    "audio": {
+      "status": 200,
+      "headers": {
+        "content-type": "audio/mp4",
+        "cache-control": "public, max-age=31536000, immutable",
+        "access-control-allow-origin": "https://game.narimato.dev",
+        "access-control-expose-headers": "Content-Range, Content-Length",
+        "vary": "Origin",
+        "accept-ranges": "bytes"
+      }
+    },
+    "range": {
+      "status": 206,
+      "headers": {
+        "content-type": "audio/mp4",
+        "content-range": "bytes 0-1023/1048576",
+        "content-length": "1024"
+      }
+    },
+    "html": {
+      "status": 404,
+      "headers": {}
+    },
+    "api": {
+      "status": 404,
+      "headers": {}
+    }
+  }
+}

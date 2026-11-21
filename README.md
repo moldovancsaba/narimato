@@ -177,7 +177,8 @@ resets its crust and releases new resources. The game never ends.
 - **Planet major colours** — eight palette identities tint the surface, atmosphere, HUD identity and
   landing briefing, so neighbouring worlds feel like different places.
 - **CDN-ready assets** — narration URLs can move to an edge cache with `ASSET_BASE_URL`; audio is
-  versioned and immutable.
+  versioned and immutable. Activation is a credential-gated deployment step, not a shipped claim:
+  [docs/CDN_ACTIVATION.md](docs/CDN_ACTIVATION.md).
 - **Accessibility + resilience gates** — Chromium/WebKit UI audits, axe-core WCAG checks, 44 px
   touch targets, and a chaos restart test for live SSE/state survival.
 - **Mobile-first controls** — labelled 44 px media controls, a visible "tap for voice" hint, and a
@@ -249,7 +250,7 @@ repository status documents. The repository owns durable technical knowledge and
 
 ## Development
 
-The node:test suite currently runs <!-- test-count:543 -->543<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
+The node:test suite currently runs <!-- test-count:580 -->580<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 ```
 npm test                 # node:test suite, no dependencies
@@ -263,6 +264,8 @@ npm run recovery:test    # backup -> verify -> restore drill on throwaway data
 npm run build:ui         # rebuild the committed GDS island from ui/src (dev only, needs npm ci)
 npm run verify:ui        # GDS island contract: content hash, budgets, mount rules, deploy safety
 npm run a11y:gate        # GDS accessibility gate, both engines (needs npm ci; CI installs browsers)
+npm run device:gate -- --plan --commit=$(git rev-parse HEAD)  # A11Y-02 real-device matrix
+npm run cdn:preflight    # OPS-04 CDN gate; exits 3 until a real CDN hostname/origin exists
 npm start                # serve on PORT (default 4173), DATA_DIR (default ./data)
 npm run dev              # alias
 ```
@@ -278,8 +281,9 @@ feature flags, budgets and rollback: [docs/GDS_INTEGRATION.md](docs/GDS_INTEGRAT
 axe serious/critical = 0, expected tab order, focus trap and restore, WCAG AA contrast, 200% zoom,
 reduced-motion emulation, GDS ownership and 44 px targets. Serious findings, incomplete checks and
 expired suppressions fail the job; the report is `artifacts/a11y/report.json` and CI keeps both
-engine artifacts for 14 days. Surfaces, schema, suppression owner/expiry policy, local reproduction
-and the still-manual real-device checklist: [A11Y_CHECKLIST.md](A11Y_CHECKLIST.md).
+engine artifacts for 14 days. Surfaces, schema, suppression owner/expiry policy and local
+reproduction: [A11Y_CHECKLIST.md](A11Y_CHECKLIST.md). The real-device gate is separate and
+executable, and headless CI cannot sign it: [docs/DEVICE_GATE.md](docs/DEVICE_GATE.md).
 
 Environment: `PORT`, `HOST`, `DATA_DIR`, `BREAK_CLICKS`, `MAX_DEPTH`, `BOTS`, `DEPOSIT_CHANCE`,
 `SUPPLY_MIN_AGE_MS` (emergency-drop gate), the bot timing variables, `ALLOW_EMPTY_WORLD` (safe

@@ -1,0 +1,474 @@
+{
+  "template": true,
+  "schemaVersion": "1.0.0",
+  "instructions": [
+    "Copy this file to media/a11y/device-gate/<short-sha>/EVIDENCE.json.",
+    "Remove \"template\", fill runDate/gameUrl/executor/approvals, then run every row on the listed physical target.",
+    "A pass or fail row needs at least one evidence file under the same commit directory and a capturedAt date.",
+    "A fail row also needs an absolute GitHub defect URL and a [Device][Surface] title.",
+    "A blocked row needs a reason and keeps the gate blocked.",
+    "Validate with: node scripts/device-gate.mjs --check --commit=<full-sha>"
+  ],
+  "commit": "",
+  "runDate": "",
+  "gameUrl": "",
+  "executor": {
+    "name": "",
+    "role": ""
+  },
+  "approvals": [],
+  "rows": [
+    {
+      "id": "iphone-safari/boot",
+      "target": "iphone-safari",
+      "script": "DEV-BOOT",
+      "criterion": "Intro skip (?intro=0), join, HUD top row, short briefing and captions render; no primary action is clipped at the target viewports.",
+      "viewports": [
+        "390x844",
+        "844x390"
+      ],
+      "device": {
+        "model": "",
+        "os": "iOS 17+",
+        "browser": "Safari",
+        "assistiveTech": "none"
+      },
+      "verdict": "blocked",
+      "capturedAt": "",
+      "evidence": [],
+      "notes": "",
+      "defect": null,
+      "defectTitle": null,
+      "reason": "not executed — fill after the device run"
+    },
+    {
+      "id": "iphone-safari/sr",
+      "target": "iphone-safari",
+      "script": "SR-IPHONE-VO",
+      "criterion": "The target screen-reader script passes: planet badge, mission, cargo, target inspector, captions, manual, escape CTA and the incident dialog are announced in a usable order with no focus trap.",
+      "viewports": [
+        "390x844",
+        "844x390"
+      ],
+      "device": {
+        "model": "",
+        "os": "iOS 17+",
+        "browser": "Safari",
+        "assistiveTech": "VoiceOver"
+      },
+      "verdict": "blocked",
+      "capturedAt": "",
+      "evidence": [],
+      "notes": "",
+      "defect": null,
+      "defectTitle": null,
+      "reason": "not executed — fill after the device run"
+    },
+    {
+      "id": "iphone-safari/zoom-motion",
+      "target": "iphone-safari",
+      "script": "DEV-ZOOM-MOTION",
+      "criterion": "200% text zoom keeps every primary action reachable; prefers-reduced-motion loses no information; muted HUD labels stay legible in direct daylight.",
+      "viewports": [
+        "390x844",
+        "844x390"
+      ],
+      "device": {
+        "model": "",
+        "os": "iOS 17+",
+        "browser": "Safari",
+        "assistiveTech": "none"
+      },
+      "verdict": "blocked",
+      "capturedAt": "",
+      "evidence": [],
+      "notes": "",
+      "defect": null,
+      "defectTitle": null,
+      "reason": "not executed — fill after the device run"
+    },
+    {
+      "id": "iphone-safari/audio-overlay",
+      "target": "iphone-safari",
+      "script": "DEV-AUDIO-OVERLAY",
+      "criterion": "First narration is gesture-gated, a call/route interruption recovers with captions intact, and the report overlay plus notch/home-indicator insets clear system gestures.",
+      "viewports": [
+        "390x844",
+        "844x390"
+      ],
+      "device": {
+        "model": "",
+        "os": "iOS 17+",
+        "browser": "Safari",
+        "assistiveTech": "none"
+      },
+      "verdict": "blocked",
+      "capturedAt": "",
+      "evidence": [],
+      "notes": "",
+      "defect": null,
+      "defectTitle": null,
+      "reason": "not executed — fill after the device run"
+    },
+    {
+      "id": "android-chrome/boot",
+      "target": "android-chrome",
+      "script": "DEV-BOOT",
+      "criterion": "Intro skip (?intro=0), join, HUD top row, short briefing and captions render; no primary action is clipped at the target viewports.",
+      "viewports": [
+        "412x915",
+        "915x412"
+      ],
+      "device": {
+        "model": "",
+        "os": "Android 13+",
+        "browser": "Chrome",
+        "assistiveTech": "none"
+      },
+      "verdict": "blocked",
+      "capturedAt": "",
+      "evidence": [],
+      "notes": "",
+      "defect": null,
+      "defectTitle": null,
+      "reason": "not executed — fill after the device run"
+    },
+    {
+      "id": "android-chrome/sr",
+      "target": "android-chrome",
+      "script": "SR-ANDROID-TALKBACK",
+      "criterion": "The target screen-reader script passes: planet badge, mission, cargo, target inspector, captions, manual, escape CTA and the incident dialog are announced in a usable order with no focus trap.",
+      "viewports": [
+        "412x915",
+        "915x412"
+      ],
+      "device": {
+        "model": "",
+        "os": "Android 13+",
+        "browser": "Chrome",
+        "assistiveTech": "TalkBack"
+      },
+      "verdict": "blocked",
+      "capturedAt": "",
+      "evidence": [],
+      "notes": "",
+      "defect": null,
+      "defectTitle": null,
+      "reason": "not executed — fill after the device run"
+    },
+    {
+      "id": "android-chrome/zoom-motion",
+      "target": "android-chrome",
+      "script": "DEV-ZOOM-MOTION",
+      "criterion": "200% text zoom keeps every primary action reachable; prefers-reduced-motion loses no information; muted HUD labels stay legible in direct daylight.",
+      "viewports": [
+        "412x915",
+        "915x412"
+      ],
+      "device": {
+        "model": "",
+        "os": "Android 13+",
+        "browser": "Chrome",
+        "assistiveTech": "none"
+      },
+      "verdict": "blocked",
+      "capturedAt": "",
+      "evidence": [],
+      "notes": "",
+      "defect": null,
+      "defectTitle": null,
+      "reason": "not executed — fill after the device run"
+    },
+    {
+      "id": "android-chrome/audio-overlay",
+      "target": "android-chrome",
+      "script": "DEV-AUDIO-OVERLAY",
+      "criterion": "First narration is gesture-gated, a call/route interruption recovers with captions intact, and the report overlay plus notch/home-indicator insets clear system gestures.",
+      "viewports": [
+        "412x915",
+        "915x412"
+      ],
+      "device": {
+        "model": "",
+        "os": "Android 13+",
+        "browser": "Chrome",
+        "assistiveTech": "none"
+      },
+      "verdict": "blocked",
+      "capturedAt": "",
+      "evidence": [],
+      "notes": "",
+      "defect": null,
+      "defectTitle": null,
+      "reason": "not executed — fill after the device run"
+    },
+    {
+      "id": "ipad-safari/boot",
+      "target": "ipad-safari",
+      "script": "DEV-BOOT",
+      "criterion": "Intro skip (?intro=0), join, HUD top row, short briefing and captions render; no primary action is clipped at the target viewports.",
+      "viewports": [
+        "1024x768",
+        "768x1024"
+      ],
+      "device": {
+        "model": "",
+        "os": "iPadOS 17+",
+        "browser": "Safari",
+        "assistiveTech": "none"
+      },
+      "verdict": "blocked",
+      "capturedAt": "",
+      "evidence": [],
+      "notes": "",
+      "defect": null,
+      "defectTitle": null,
+      "reason": "not executed — fill after the device run"
+    },
+    {
+      "id": "ipad-safari/sr",
+      "target": "ipad-safari",
+      "script": "SR-IPAD-KEYBOARD",
+      "criterion": "The target screen-reader script passes: planet badge, mission, cargo, target inspector, captions, manual, escape CTA and the incident dialog are announced in a usable order with no focus trap.",
+      "viewports": [
+        "1024x768",
+        "768x1024"
+      ],
+      "device": {
+        "model": "",
+        "os": "iPadOS 17+",
+        "browser": "Safari",
+        "assistiveTech": "Keyboard-only"
+      },
+      "verdict": "blocked",
+      "capturedAt": "",
+      "evidence": [],
+      "notes": "",
+      "defect": null,
+      "defectTitle": null,
+      "reason": "not executed — fill after the device run"
+    },
+    {
+      "id": "ipad-safari/zoom-motion",
+      "target": "ipad-safari",
+      "script": "DEV-ZOOM-MOTION",
+      "criterion": "200% text zoom keeps every primary action reachable; prefers-reduced-motion loses no information; muted HUD labels stay legible in direct daylight.",
+      "viewports": [
+        "1024x768",
+        "768x1024"
+      ],
+      "device": {
+        "model": "",
+        "os": "iPadOS 17+",
+        "browser": "Safari",
+        "assistiveTech": "none"
+      },
+      "verdict": "blocked",
+      "capturedAt": "",
+      "evidence": [],
+      "notes": "",
+      "defect": null,
+      "defectTitle": null,
+      "reason": "not executed — fill after the device run"
+    },
+    {
+      "id": "ipad-safari/audio-overlay",
+      "target": "ipad-safari",
+      "script": "DEV-AUDIO-OVERLAY",
+      "criterion": "First narration is gesture-gated, a call/route interruption recovers with captions intact, and the report overlay plus notch/home-indicator insets clear system gestures.",
+      "viewports": [
+        "1024x768",
+        "768x1024"
+      ],
+      "device": {
+        "model": "",
+        "os": "iPadOS 17+",
+        "browser": "Safari",
+        "assistiveTech": "none"
+      },
+      "verdict": "blocked",
+      "capturedAt": "",
+      "evidence": [],
+      "notes": "",
+      "defect": null,
+      "defectTitle": null,
+      "reason": "not executed — fill after the device run"
+    },
+    {
+      "id": "windows-nvda/boot",
+      "target": "windows-nvda",
+      "script": "DEV-BOOT",
+      "criterion": "Intro skip (?intro=0), join, HUD top row, short briefing and captions render; no primary action is clipped at the target viewports.",
+      "viewports": [
+        "1440x900"
+      ],
+      "device": {
+        "model": "",
+        "os": "Windows 11",
+        "browser": "Chrome",
+        "assistiveTech": "none"
+      },
+      "verdict": "blocked",
+      "capturedAt": "",
+      "evidence": [],
+      "notes": "",
+      "defect": null,
+      "defectTitle": null,
+      "reason": "not executed — fill after the device run"
+    },
+    {
+      "id": "windows-nvda/sr",
+      "target": "windows-nvda",
+      "script": "SR-WINDOWS-NVDA",
+      "criterion": "The target screen-reader script passes: planet badge, mission, cargo, target inspector, captions, manual, escape CTA and the incident dialog are announced in a usable order with no focus trap.",
+      "viewports": [
+        "1440x900"
+      ],
+      "device": {
+        "model": "",
+        "os": "Windows 11",
+        "browser": "Chrome",
+        "assistiveTech": "NVDA"
+      },
+      "verdict": "blocked",
+      "capturedAt": "",
+      "evidence": [],
+      "notes": "",
+      "defect": null,
+      "defectTitle": null,
+      "reason": "not executed — fill after the device run"
+    },
+    {
+      "id": "windows-nvda/zoom-motion",
+      "target": "windows-nvda",
+      "script": "DEV-ZOOM-MOTION",
+      "criterion": "200% text zoom keeps every primary action reachable; prefers-reduced-motion loses no information; muted HUD labels stay legible in direct daylight.",
+      "viewports": [
+        "1440x900"
+      ],
+      "device": {
+        "model": "",
+        "os": "Windows 11",
+        "browser": "Chrome",
+        "assistiveTech": "none"
+      },
+      "verdict": "blocked",
+      "capturedAt": "",
+      "evidence": [],
+      "notes": "",
+      "defect": null,
+      "defectTitle": null,
+      "reason": "not executed — fill after the device run"
+    },
+    {
+      "id": "windows-nvda/audio-overlay",
+      "target": "windows-nvda",
+      "script": "DEV-AUDIO-OVERLAY",
+      "criterion": "First narration is gesture-gated, a call/route interruption recovers with captions intact, and the report overlay plus notch/home-indicator insets clear system gestures.",
+      "viewports": [
+        "1440x900"
+      ],
+      "device": {
+        "model": "",
+        "os": "Windows 11",
+        "browser": "Chrome",
+        "assistiveTech": "none"
+      },
+      "verdict": "blocked",
+      "capturedAt": "",
+      "evidence": [],
+      "notes": "",
+      "defect": null,
+      "defectTitle": null,
+      "reason": "not executed — fill after the device run"
+    },
+    {
+      "id": "macos-voiceover/boot",
+      "target": "macos-voiceover",
+      "script": "DEV-BOOT",
+      "criterion": "Intro skip (?intro=0), join, HUD top row, short briefing and captions render; no primary action is clipped at the target viewports.",
+      "viewports": [
+        "1440x900"
+      ],
+      "device": {
+        "model": "",
+        "os": "macOS 14+",
+        "browser": "Safari",
+        "assistiveTech": "none"
+      },
+      "verdict": "blocked",
+      "capturedAt": "",
+      "evidence": [],
+      "notes": "",
+      "defect": null,
+      "defectTitle": null,
+      "reason": "not executed — fill after the device run"
+    },
+    {
+      "id": "macos-voiceover/sr",
+      "target": "macos-voiceover",
+      "script": "SR-MACOS-VO",
+      "criterion": "The target screen-reader script passes: planet badge, mission, cargo, target inspector, captions, manual, escape CTA and the incident dialog are announced in a usable order with no focus trap.",
+      "viewports": [
+        "1440x900"
+      ],
+      "device": {
+        "model": "",
+        "os": "macOS 14+",
+        "browser": "Safari",
+        "assistiveTech": "VoiceOver"
+      },
+      "verdict": "blocked",
+      "capturedAt": "",
+      "evidence": [],
+      "notes": "",
+      "defect": null,
+      "defectTitle": null,
+      "reason": "not executed — fill after the device run"
+    },
+    {
+      "id": "macos-voiceover/zoom-motion",
+      "target": "macos-voiceover",
+      "script": "DEV-ZOOM-MOTION",
+      "criterion": "200% text zoom keeps every primary action reachable; prefers-reduced-motion loses no information; muted HUD labels stay legible in direct daylight.",
+      "viewports": [
+        "1440x900"
+      ],
+      "device": {
+        "model": "",
+        "os": "macOS 14+",
+        "browser": "Safari",
+        "assistiveTech": "none"
+      },
+      "verdict": "blocked",
+      "capturedAt": "",
+      "evidence": [],
+      "notes": "",
+      "defect": null,
+      "defectTitle": null,
+      "reason": "not executed — fill after the device run"
+    },
+    {
+      "id": "macos-voiceover/audio-overlay",
+      "target": "macos-voiceover",
+      "script": "DEV-AUDIO-OVERLAY",
+      "criterion": "First narration is gesture-gated, a call/route interruption recovers with captions intact, and the report overlay plus notch/home-indicator insets clear system gestures.",
+      "viewports": [
+        "1440x900"
+      ],
+      "device": {
+        "model": "",
+        "os": "macOS 14+",
+        "browser": "Safari",
+        "assistiveTech": "none"
+      },
+      "verdict": "blocked",
+      "capturedAt": "",
+      "evidence": [],
+      "notes": "",
+      "defect": null,
+      "defectTitle": null,
+      "reason": "not executed — fill after the device run"
+    }
+  ]
+}

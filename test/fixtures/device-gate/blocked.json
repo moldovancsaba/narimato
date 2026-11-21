@@ -1,0 +1,516 @@
+{
+  "schemaVersion": "1.0.0",
+  "commit": "0123456789abcdef0123456789abcdef01234567",
+  "runDate": "2026-11-20",
+  "gameUrl": "http://127.0.0.1:4173/?intro=0",
+  "executor": {
+    "name": "Device runner",
+    "role": "QA"
+  },
+  "approvals": [
+    {
+      "name": "Reviewer One",
+      "role": "Accessibility",
+      "date": "2026-11-21",
+      "executed": true
+    },
+    {
+      "name": "Reviewer Two",
+      "role": "Release",
+      "date": "2026-11-21",
+      "executed": false
+    }
+  ],
+  "rows": [
+    {
+      "id": "iphone-safari/boot",
+      "target": "iphone-safari",
+      "script": "DEV-BOOT",
+      "criterion": "Intro skip (?intro=0), join, HUD top row, short briefing and captions render; no primary action is clipped at the target viewports.",
+      "viewports": [
+        "390x844",
+        "844x390"
+      ],
+      "device": {
+        "model": "iPhone 15",
+        "os": "iOS 17+",
+        "browser": "Safari",
+        "assistiveTech": "none"
+      },
+      "verdict": "pass",
+      "capturedAt": "2026-11-20",
+      "evidence": [
+        "media/a11y/device-gate/0123456/iphone-safari-boot-01.jpg"
+      ],
+      "notes": "Fixture record: replace with the captured artefact and observation.",
+      "defect": null,
+      "defectTitle": null,
+      "reason": null
+    },
+    {
+      "id": "iphone-safari/sr",
+      "target": "iphone-safari",
+      "script": "SR-IPHONE-VO",
+      "criterion": "The target screen-reader script passes: planet badge, mission, cargo, target inspector, captions, manual, escape CTA and the incident dialog are announced in a usable order with no focus trap.",
+      "viewports": [
+        "390x844",
+        "844x390"
+      ],
+      "device": {
+        "model": "iPhone 15",
+        "os": "iOS 17+",
+        "browser": "Safari",
+        "assistiveTech": "VoiceOver"
+      },
+      "verdict": "pass",
+      "capturedAt": "2026-11-20",
+      "evidence": [
+        "media/a11y/device-gate/0123456/iphone-safari-sr-01.jpg"
+      ],
+      "notes": "Fixture record: replace with the captured artefact and observation.",
+      "defect": null,
+      "defectTitle": null,
+      "reason": null
+    },
+    {
+      "id": "iphone-safari/zoom-motion",
+      "target": "iphone-safari",
+      "script": "DEV-ZOOM-MOTION",
+      "criterion": "200% text zoom keeps every primary action reachable; prefers-reduced-motion loses no information; muted HUD labels stay legible in direct daylight.",
+      "viewports": [
+        "390x844",
+        "844x390"
+      ],
+      "device": {
+        "model": "iPhone 15",
+        "os": "iOS 17+",
+        "browser": "Safari",
+        "assistiveTech": "none"
+      },
+      "verdict": "pass",
+      "capturedAt": "2026-11-20",
+      "evidence": [
+        "media/a11y/device-gate/0123456/iphone-safari-zoom-motion-01.jpg"
+      ],
+      "notes": "Fixture record: replace with the captured artefact and observation.",
+      "defect": null,
+      "defectTitle": null,
+      "reason": null
+    },
+    {
+      "id": "iphone-safari/audio-overlay",
+      "target": "iphone-safari",
+      "script": "DEV-AUDIO-OVERLAY",
+      "criterion": "First narration is gesture-gated, a call/route interruption recovers with captions intact, and the report overlay plus notch/home-indicator insets clear system gestures.",
+      "viewports": [
+        "390x844",
+        "844x390"
+      ],
+      "device": {
+        "model": "iPhone 15",
+        "os": "iOS 17+",
+        "browser": "Safari",
+        "assistiveTech": "none"
+      },
+      "verdict": "pass",
+      "capturedAt": "2026-11-20",
+      "evidence": [
+        "media/a11y/device-gate/0123456/iphone-safari-audio-overlay-01.jpg"
+      ],
+      "notes": "Fixture record: replace with the captured artefact and observation.",
+      "defect": null,
+      "defectTitle": null,
+      "reason": null
+    },
+    {
+      "id": "android-chrome/boot",
+      "target": "android-chrome",
+      "script": "DEV-BOOT",
+      "criterion": "Intro skip (?intro=0), join, HUD top row, short briefing and captions render; no primary action is clipped at the target viewports.",
+      "viewports": [
+        "412x915",
+        "915x412"
+      ],
+      "device": {
+        "model": "Pixel 8",
+        "os": "Android 13+",
+        "browser": "Chrome",
+        "assistiveTech": "none"
+      },
+      "verdict": "pass",
+      "capturedAt": "2026-11-20",
+      "evidence": [
+        "media/a11y/device-gate/0123456/android-chrome-boot-01.jpg"
+      ],
+      "notes": "Fixture record: replace with the captured artefact and observation.",
+      "defect": null,
+      "defectTitle": null,
+      "reason": null
+    },
+    {
+      "id": "android-chrome/sr",
+      "target": "android-chrome",
+      "script": "SR-ANDROID-TALKBACK",
+      "criterion": "The target screen-reader script passes: planet badge, mission, cargo, target inspector, captions, manual, escape CTA and the incident dialog are announced in a usable order with no focus trap.",
+      "viewports": [
+        "412x915",
+        "915x412"
+      ],
+      "device": {
+        "model": "Pixel 8",
+        "os": "Android 13+",
+        "browser": "Chrome",
+        "assistiveTech": "TalkBack"
+      },
+      "verdict": "pass",
+      "capturedAt": "2026-11-20",
+      "evidence": [
+        "media/a11y/device-gate/0123456/android-chrome-sr-01.jpg"
+      ],
+      "notes": "Fixture record: replace with the captured artefact and observation.",
+      "defect": null,
+      "defectTitle": null,
+      "reason": null
+    },
+    {
+      "id": "android-chrome/zoom-motion",
+      "target": "android-chrome",
+      "script": "DEV-ZOOM-MOTION",
+      "criterion": "200% text zoom keeps every primary action reachable; prefers-reduced-motion loses no information; muted HUD labels stay legible in direct daylight.",
+      "viewports": [
+        "412x915",
+        "915x412"
+      ],
+      "device": {
+        "model": "Pixel 8",
+        "os": "Android 13+",
+        "browser": "Chrome",
+        "assistiveTech": "none"
+      },
+      "verdict": "pass",
+      "capturedAt": "2026-11-20",
+      "evidence": [
+        "media/a11y/device-gate/0123456/android-chrome-zoom-motion-01.jpg"
+      ],
+      "notes": "Fixture record: replace with the captured artefact and observation.",
+      "defect": null,
+      "defectTitle": null,
+      "reason": null
+    },
+    {
+      "id": "android-chrome/audio-overlay",
+      "target": "android-chrome",
+      "script": "DEV-AUDIO-OVERLAY",
+      "criterion": "First narration is gesture-gated, a call/route interruption recovers with captions intact, and the report overlay plus notch/home-indicator insets clear system gestures.",
+      "viewports": [
+        "412x915",
+        "915x412"
+      ],
+      "device": {
+        "model": "Pixel 8",
+        "os": "Android 13+",
+        "browser": "Chrome",
+        "assistiveTech": "none"
+      },
+      "verdict": "pass",
+      "capturedAt": "2026-11-20",
+      "evidence": [
+        "media/a11y/device-gate/0123456/android-chrome-audio-overlay-01.jpg"
+      ],
+      "notes": "Fixture record: replace with the captured artefact and observation.",
+      "defect": null,
+      "defectTitle": null,
+      "reason": null
+    },
+    {
+      "id": "ipad-safari/boot",
+      "target": "ipad-safari",
+      "script": "DEV-BOOT",
+      "criterion": "Intro skip (?intro=0), join, HUD top row, short briefing and captions render; no primary action is clipped at the target viewports.",
+      "viewports": [
+        "1024x768",
+        "768x1024"
+      ],
+      "device": {
+        "model": "iPad Air (5th generation)",
+        "os": "iPadOS 17+",
+        "browser": "Safari",
+        "assistiveTech": "none"
+      },
+      "verdict": "pass",
+      "capturedAt": "2026-11-20",
+      "evidence": [
+        "media/a11y/device-gate/0123456/ipad-safari-boot-01.jpg"
+      ],
+      "notes": "Fixture record: replace with the captured artefact and observation.",
+      "defect": null,
+      "defectTitle": null,
+      "reason": null
+    },
+    {
+      "id": "ipad-safari/sr",
+      "target": "ipad-safari",
+      "script": "SR-IPAD-KEYBOARD",
+      "criterion": "The target screen-reader script passes: planet badge, mission, cargo, target inspector, captions, manual, escape CTA and the incident dialog are announced in a usable order with no focus trap.",
+      "viewports": [
+        "1024x768",
+        "768x1024"
+      ],
+      "device": {
+        "model": "iPad Air (5th generation)",
+        "os": "iPadOS 17+",
+        "browser": "Safari",
+        "assistiveTech": "Keyboard-only"
+      },
+      "verdict": "blocked",
+      "capturedAt": "2026-11-20",
+      "evidence": [],
+      "notes": "Fixture record: replace with the captured artefact and observation.",
+      "defect": null,
+      "defectTitle": null,
+      "reason": "Device unavailable on the run date; retest scheduled."
+    },
+    {
+      "id": "ipad-safari/zoom-motion",
+      "target": "ipad-safari",
+      "script": "DEV-ZOOM-MOTION",
+      "criterion": "200% text zoom keeps every primary action reachable; prefers-reduced-motion loses no information; muted HUD labels stay legible in direct daylight.",
+      "viewports": [
+        "1024x768",
+        "768x1024"
+      ],
+      "device": {
+        "model": "iPad Air (5th generation)",
+        "os": "iPadOS 17+",
+        "browser": "Safari",
+        "assistiveTech": "none"
+      },
+      "verdict": "pass",
+      "capturedAt": "2026-11-20",
+      "evidence": [
+        "media/a11y/device-gate/0123456/ipad-safari-zoom-motion-01.jpg"
+      ],
+      "notes": "Fixture record: replace with the captured artefact and observation.",
+      "defect": null,
+      "defectTitle": null,
+      "reason": null
+    },
+    {
+      "id": "ipad-safari/audio-overlay",
+      "target": "ipad-safari",
+      "script": "DEV-AUDIO-OVERLAY",
+      "criterion": "First narration is gesture-gated, a call/route interruption recovers with captions intact, and the report overlay plus notch/home-indicator insets clear system gestures.",
+      "viewports": [
+        "1024x768",
+        "768x1024"
+      ],
+      "device": {
+        "model": "iPad Air (5th generation)",
+        "os": "iPadOS 17+",
+        "browser": "Safari",
+        "assistiveTech": "none"
+      },
+      "verdict": "pass",
+      "capturedAt": "2026-11-20",
+      "evidence": [
+        "media/a11y/device-gate/0123456/ipad-safari-audio-overlay-01.jpg"
+      ],
+      "notes": "Fixture record: replace with the captured artefact and observation.",
+      "defect": null,
+      "defectTitle": null,
+      "reason": null
+    },
+    {
+      "id": "windows-nvda/boot",
+      "target": "windows-nvda",
+      "script": "DEV-BOOT",
+      "criterion": "Intro skip (?intro=0), join, HUD top row, short briefing and captions render; no primary action is clipped at the target viewports.",
+      "viewports": [
+        "1440x900"
+      ],
+      "device": {
+        "model": "Dell XPS 13",
+        "os": "Windows 11",
+        "browser": "Chrome",
+        "assistiveTech": "none"
+      },
+      "verdict": "pass",
+      "capturedAt": "2026-11-20",
+      "evidence": [
+        "media/a11y/device-gate/0123456/windows-nvda-boot-01.jpg"
+      ],
+      "notes": "Fixture record: replace with the captured artefact and observation.",
+      "defect": null,
+      "defectTitle": null,
+      "reason": null
+    },
+    {
+      "id": "windows-nvda/sr",
+      "target": "windows-nvda",
+      "script": "SR-WINDOWS-NVDA",
+      "criterion": "The target screen-reader script passes: planet badge, mission, cargo, target inspector, captions, manual, escape CTA and the incident dialog are announced in a usable order with no focus trap.",
+      "viewports": [
+        "1440x900"
+      ],
+      "device": {
+        "model": "Dell XPS 13",
+        "os": "Windows 11",
+        "browser": "Chrome",
+        "assistiveTech": "NVDA"
+      },
+      "verdict": "pass",
+      "capturedAt": "2026-11-20",
+      "evidence": [
+        "media/a11y/device-gate/0123456/windows-nvda-sr-01.jpg"
+      ],
+      "notes": "Fixture record: replace with the captured artefact and observation.",
+      "defect": null,
+      "defectTitle": null,
+      "reason": null
+    },
+    {
+      "id": "windows-nvda/zoom-motion",
+      "target": "windows-nvda",
+      "script": "DEV-ZOOM-MOTION",
+      "criterion": "200% text zoom keeps every primary action reachable; prefers-reduced-motion loses no information; muted HUD labels stay legible in direct daylight.",
+      "viewports": [
+        "1440x900"
+      ],
+      "device": {
+        "model": "Dell XPS 13",
+        "os": "Windows 11",
+        "browser": "Chrome",
+        "assistiveTech": "none"
+      },
+      "verdict": "pass",
+      "capturedAt": "2026-11-20",
+      "evidence": [
+        "media/a11y/device-gate/0123456/windows-nvda-zoom-motion-01.jpg"
+      ],
+      "notes": "Fixture record: replace with the captured artefact and observation.",
+      "defect": null,
+      "defectTitle": null,
+      "reason": null
+    },
+    {
+      "id": "windows-nvda/audio-overlay",
+      "target": "windows-nvda",
+      "script": "DEV-AUDIO-OVERLAY",
+      "criterion": "First narration is gesture-gated, a call/route interruption recovers with captions intact, and the report overlay plus notch/home-indicator insets clear system gestures.",
+      "viewports": [
+        "1440x900"
+      ],
+      "device": {
+        "model": "Dell XPS 13",
+        "os": "Windows 11",
+        "browser": "Chrome",
+        "assistiveTech": "none"
+      },
+      "verdict": "pass",
+      "capturedAt": "2026-11-20",
+      "evidence": [
+        "media/a11y/device-gate/0123456/windows-nvda-audio-overlay-01.jpg"
+      ],
+      "notes": "Fixture record: replace with the captured artefact and observation.",
+      "defect": null,
+      "defectTitle": null,
+      "reason": null
+    },
+    {
+      "id": "macos-voiceover/boot",
+      "target": "macos-voiceover",
+      "script": "DEV-BOOT",
+      "criterion": "Intro skip (?intro=0), join, HUD top row, short briefing and captions render; no primary action is clipped at the target viewports.",
+      "viewports": [
+        "1440x900"
+      ],
+      "device": {
+        "model": "MacBook Pro 14",
+        "os": "macOS 14+",
+        "browser": "Safari",
+        "assistiveTech": "none"
+      },
+      "verdict": "pass",
+      "capturedAt": "2026-11-20",
+      "evidence": [
+        "media/a11y/device-gate/0123456/macos-voiceover-boot-01.jpg"
+      ],
+      "notes": "Fixture record: replace with the captured artefact and observation.",
+      "defect": null,
+      "defectTitle": null,
+      "reason": null
+    },
+    {
+      "id": "macos-voiceover/sr",
+      "target": "macos-voiceover",
+      "script": "SR-MACOS-VO",
+      "criterion": "The target screen-reader script passes: planet badge, mission, cargo, target inspector, captions, manual, escape CTA and the incident dialog are announced in a usable order with no focus trap.",
+      "viewports": [
+        "1440x900"
+      ],
+      "device": {
+        "model": "MacBook Pro 14",
+        "os": "macOS 14+",
+        "browser": "Safari",
+        "assistiveTech": "VoiceOver"
+      },
+      "verdict": "pass",
+      "capturedAt": "2026-11-20",
+      "evidence": [
+        "media/a11y/device-gate/0123456/macos-voiceover-sr-01.jpg"
+      ],
+      "notes": "Fixture record: replace with the captured artefact and observation.",
+      "defect": null,
+      "defectTitle": null,
+      "reason": null
+    },
+    {
+      "id": "macos-voiceover/zoom-motion",
+      "target": "macos-voiceover",
+      "script": "DEV-ZOOM-MOTION",
+      "criterion": "200% text zoom keeps every primary action reachable; prefers-reduced-motion loses no information; muted HUD labels stay legible in direct daylight.",
+      "viewports": [
+        "1440x900"
+      ],
+      "device": {
+        "model": "MacBook Pro 14",
+        "os": "macOS 14+",
+        "browser": "Safari",
+        "assistiveTech": "none"
+      },
+      "verdict": "pass",
+      "capturedAt": "2026-11-20",
+      "evidence": [
+        "media/a11y/device-gate/0123456/macos-voiceover-zoom-motion-01.jpg"
+      ],
+      "notes": "Fixture record: replace with the captured artefact and observation.",
+      "defect": null,
+      "defectTitle": null,
+      "reason": null
+    },
+    {
+      "id": "macos-voiceover/audio-overlay",
+      "target": "macos-voiceover",
+      "script": "DEV-AUDIO-OVERLAY",
+      "criterion": "First narration is gesture-gated, a call/route interruption recovers with captions intact, and the report overlay plus notch/home-indicator insets clear system gestures.",
+      "viewports": [
+        "1440x900"
+      ],
+      "device": {
+        "model": "MacBook Pro 14",
+        "os": "macOS 14+",
+        "browser": "Safari",
+        "assistiveTech": "none"
+      },
+      "verdict": "pass",
+      "capturedAt": "2026-11-20",
+      "evidence": [
+        "media/a11y/device-gate/0123456/macos-voiceover-audio-overlay-01.jpg"
+      ],
+      "notes": "Fixture record: replace with the captured artefact and observation.",
+      "defect": null,
+      "defectTitle": null,
+      "reason": null
+    }
+  ]
+}
