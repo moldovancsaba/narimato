@@ -40,7 +40,9 @@
     "verify:migration": "node scripts/verify-ui-migration.mjs",
     "a11y:gate": "node scripts/a11y-gate.mjs",
     "a11y:gate:chromium": "node scripts/a11y-gate.mjs --engine=chromium",
-    "a11y:gate:webkit": "node scripts/a11y-gate.mjs --engine=webkit"
+    "a11y:gate:webkit": "node scripts/a11y-gate.mjs --engine=webkit",
+    "device:gate": "node scripts/device-gate.mjs",
+    "cdn:preflight": "node scripts/cdn-preflight.mjs"
   },
   "engines": {
     "node": ">=20"

@@ -206,17 +206,22 @@ Evidence: `media/evt-01-03-aud-01/acceptance-incident-a11y.json`,
 `acceptance-incident-visual.json`, `acceptance-incident-cycle.json` and the incident JPEGs. The
 gate's `incident` and reduced-motion checks reproduce the same contract on every run.
 
-## 11. Manual real-device gate (pending)
+## 11. Manual real-device gate (A11Y-02)
 
-Cannot be executed in this headless environment; run before calling A11Y-02 done:
+The real-device gate is executable and separate from the headless A11Y-01 gate. It is owned by
+[`scripts/device-gate.mjs`](scripts/device-gate.mjs) and documented in
+[docs/DEVICE_GATE.md](docs/DEVICE_GATE.md). The fixed matrix is five targets, four rows each:
 
-- [ ] iPhone Safari (portrait + landscape): intro skip, join, HUD top row, brief scroll, captions.
-- [ ] Android Chrome (portrait + landscape): same.
-- [ ] Screen reader (VoiceOver/TalkBack/NVDA): planet badge, mission/cargo, target inspector,
-      subtitles, manual, escape CTA, incident dialog name and dismissal.
-- [ ] 200% text zoom on a physical device: no clipped primary action.
-- [ ] Reduced motion on device: poster, no shake, dismissible.
-- [ ] Contrast in direct daylight/outdoor brightness.
+- iPhone Safari (390×844, 844×390), Android Chrome (412×915, 915×412), iPad Safari (1024×768,
+  768×1024), Windows Chrome + NVDA (1440×900), macOS Safari + VoiceOver (1440×900).
+- Rows: boot/join/captions, the target screen-reader or keyboard script, 200% zoom + reduced motion
+  + daylight contrast, and autoplay/interruption plus short-screen/inset overlays.
+- A run is recorded in `media/a11y/device-gate/{SHORT_SHA}/EVIDENCE.json` with per-row evidence,
+  a full commit SHA, a run date and two approvals, at least one from a reviewer who did not execute
+  the run. A fail row must link a `[Device][Surface]` defect issue.
+- Headless CI cannot sign this gate: it can print the plan and run the checker's unit tests, but it
+  cannot produce device evidence, screen-reader speech or the two approvals. An absent ledger exits
+  `3`, an incomplete ledger exits `1`, and only a complete ledger exits `0`.
 
 ## 12. Operator triage
 

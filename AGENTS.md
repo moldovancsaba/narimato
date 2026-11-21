@@ -45,6 +45,8 @@ npm run check:slo        # SLO verdict from /api/metrics (0 healthy, 1 breach, 2
 npm run check:scale      # sharding decision record vs observability/slo.json and the measured capture
 npm run recovery:test    # backup -> verify -> restore drill on throwaway data
 npm run backup:data      # checksummed DATA_DIR archive + manifest (see docs/RECOVERY.md)
+npm run device:gate -- --plan --commit=$(git rev-parse HEAD)  # A11Y-02 20-row plan
+npm run cdn:preflight    # OPS-04 fail-closed gate; exit 3 until a real CDN host exists
 ```
 
 ## Pull requests
