@@ -272,7 +272,7 @@ procedure are in [docs/RELEASE_EVIDENCE.md](docs/RELEASE_EVIDENCE.md), and
 
 ## Development
 
-The node:test suite currently runs <!-- test-count:602 -->602<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
+The node:test suite currently runs <!-- test-count:603 -->603<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 ```
 npm test                 # node:test suite, no dependencies

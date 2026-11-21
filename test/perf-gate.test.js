@@ -11,6 +11,7 @@ import {
   DEFAULT_RULES,
   DEFAULT_SCENARIOS,
   REQUIRED_SCENARIOS,
+  durationSatisfied,
   evaluateRun,
   flattenRules,
   loadRuleset,
@@ -191,4 +192,14 @@ test('perf gate: artifacts redact tokens, tags and player identities', () => {
   assert.equal(text.includes('LT01'), false);
   assert.equal(artifact.scenario.id, 'load');
   assert.equal(artifact.runs[0].summary.label, 'keep');
+});
+
+test('durationSatisfied rejects a clamped soak and accepts the full duration', () => {
+  const soak = { durationSeconds: 7200 };
+  assert.equal(durationSatisfied(soak, 3_601_311).ok, false, '60-minute run must fail a 120-minute scenario');
+  assert.equal(durationSatisfied(soak, 7_200_000).ok, true);
+  assert.equal(durationSatisfied(soak, 7_196_000).ok, true, '5 s tolerance covers setup overhead');
+  assert.equal(durationSatisfied(soak, 7_190_000).ok, false, '10 s short is a failure');
+  assert.equal(durationSatisfied({ durationSeconds: 0 }, 1_000).ok, true, 'no declared duration means until-done');
+  assert.equal(durationSatisfied({}, 1_000).ok, true);
 });
