@@ -7,7 +7,8 @@
  * the deepest face. No rounds, no timers, no end.
  */
 
-import { SphereCamera, pickFace, childTriangles, faceCentroid } from './shared/geometry.js';
+import { CAMERA_DISTANCE, SphereCamera, pickFace, childTriangles, faceCentroid } from './shared/geometry.js';
+import { CarrierCamera, SURFACE_CARRIER_DISTANCE } from './shared/carrier-camera.js';
 import {
   beginSurfaceDrag,
   dragSurfaceTo,
@@ -70,6 +71,8 @@ const DEFAULT_THRESHOLD = 8;
 const DEFAULT_MAX_DEPTH = 24;
 const canvas = document.getElementById('arena-canvas');
 const camera = new SphereCamera(window.innerWidth || 1, window.innerHeight || 1);
+// Approved carrier control: the surface camera is held by the pilot/cursor.
+const surfaceCamera = new CarrierCamera(window.innerWidth || 1, window.innerHeight || 1);
 const renderer = new IcosaRenderer(canvas);
 const audio = new ArcadeAudio();
 const world = new World();
@@ -763,6 +766,7 @@ function resize() {
   const w = window.innerWidth || 1;
   const h = window.innerHeight || 1;
   camera.setViewport(w, h);
+  surfaceCamera.setViewport(w, h);
   try {
     renderer.resize();
   } catch (err) {
@@ -2208,15 +2212,14 @@ function zoomByNotch(direction, magnitude = 1) {
   // not swap to a second projection. Scrolling back out past the entry rung
   // returns to orbit through the normal exit policy.
   if (view === 'surface') {
+    // Approved model: wheel changes the carrier radius, focal stays fixed.
     if (direction > 0) {
-      startZoom(clamp(current * 2, current, MAX_ZOOM), 180 + 20 * clamp(magnitude, 0, 3));
+      surfaceCamera.dolly(0.88);
+    } else if (surfaceCamera.distance >= surfaceCamera.maxDistance - 1e-3) {
+      requestExitSurface();
+      return;
     } else {
-      const nextZoom = current / 2;
-      if (nextZoom <= zoomForLevel(SURFACE_ENTER_LEVEL)) {
-        requestExitSurface();
-        return;
-      }
-      startZoom(clamp(nextZoom, zoomForLevel(SURFACE_ENTER_LEVEL), MAX_ZOOM), 180 + 20 * clamp(magnitude, 0, 3));
+      surfaceCamera.dolly(1.14);
     }
     lastInteraction = now();
     return;
@@ -2373,6 +2376,7 @@ function bindCanvasInput() {
  * ------------------------------------------------------------------ */
 
 let pinchBaseZoom = 0;
+let pinchBaseDistance = 0;
 let pinchAccum = 1;
 
 function pointerLocal(intent) {
@@ -2383,6 +2387,22 @@ function pointerLocal(intent) {
 function handlePointerIntent(intent) {
   if (!intent || !intent.kind) return;
   if (intent.kind === 'orbit-drag') {
+    if (view === 'surface') {
+      const p = pointerLocal(intent);
+      if (intent.phase === 'start') {
+        safeAudio('unlock');
+        surfaceCamera.beginDrag(p.x, p.y);
+        canvas.style.cursor = 'grabbing';
+      } else if (intent.phase === 'move') {
+        surfaceCamera.dragTo(p.x, p.y);
+        lastInteraction = now();
+      } else {
+        surfaceCamera.endDrag();
+        canvas.style.cursor = 'grab';
+        hoverNeedsRefresh = true;
+      }
+      return;
+    }
     if (intent.phase === 'start') {
       safeAudio('unlock');
       initSequence();
@@ -2415,26 +2435,30 @@ function handlePointerIntent(intent) {
   }
   if (intent.kind === 'tap') {
     const p = pointerLocal(intent);
-    const label = pickFace({ faces: leafList }, camera, p.x, p.y);
+    const label = pickFace({ faces: leafList }, view === 'surface' ? surfaceCamera : camera, p.x, p.y);
     if (label) attemptClick(label);
     return;
   }
   if (intent.kind === 'pinch') {
     if (intent.phase === 'start') {
       pinchBaseZoom = zoomTarget === null ? camera.zoom : zoomTarget;
+      pinchBaseDistance = surfaceCamera.distance;
       pinchAccum = 1;
       return;
     }
     if (intent.phase === 'move') {
       const scale = Number(intent.scale) || 1;
       pinchAccum *= scale;
-      if (zoomLevelForZoom(pinchBaseZoom) >= SURFACE_ENTER_LEVEL || view === 'surface') {
-        if (view !== 'surface' && pinchAccum > 1.25) {
+      if (view === 'surface') {
+        surfaceCamera.setDistance(pinchBaseDistance / Math.max(0.01, pinchAccum));
+        return;
+      }
+      if (zoomLevelForZoom(pinchBaseZoom) >= SURFACE_ENTER_LEVEL) {
+        if (pinchAccum > 1.25) {
           enterSurfaceMode();
           return;
         }
-        const floor = zoomForLevel(SURFACE_ENTER_LEVEL);
-        startZoom(clamp(pinchBaseZoom * pinchAccum, floor, MAX_ZOOM), 90);
+        startZoom(clamp(pinchBaseZoom * pinchAccum, zoomForLevel(SURFACE_ENTER_LEVEL), MAX_ZOOM), 90);
         return;
       }
       startZoom(clamp(pinchBaseZoom * pinchAccum, ORBIT_FAR_ZOOM, MAX_ZOOM), 90);
@@ -2602,6 +2626,10 @@ function enterSurfaceMode() {
     surfaceHistoryPushed = false;
   }
   renderer.setSurfaceMode({ active: true, entities: [], phase: surface.phase, progress: surface.progress() });
+  surfaceCamera.reset();
+  surfaceCamera.setDistance(SURFACE_CARRIER_DISTANCE);
+  const startPose = surface.pose();
+  if (startPose && startPose.pos) surfaceCamera.setPose(startPose.pos, startPose.forward);
   syncSurfacePeerVisuals();
   syncSurfaceResourcePins();
   safeCall(ui, 'enterSurface', { planet });
@@ -3025,17 +3053,11 @@ function frame(t) {
     // One RAF loop (this one): the controller advances pose and harvest state,
     // the shared renderer draws the planet, cells and entities.
     surface.update(dt);
-    // Single camera: the same zoom/focus/inertia state drives the surface view.
-    updateCameraInertia(dt);
+    // Approved carrier control: the camera is held by the pilot/cursor anchor
+    // through parallel transport. Never write Euler yaw/pitch here; mouse drag
+    // rotates the planet object with exact point follow (quaternion).
     const pose = surface.pose();
-    // SINGLE CAMERA: the surface is the same orbit camera, just zoomed/following
-    // the pilot. One camera instance, one scene, no separate surface projection.
-    if (pose && pose.pos) {
-      const p = pose.pos;
-      const horizontal = Math.hypot(p.x, p.z) || 1;
-      camera.yaw = Math.atan2(-p.x, p.z);
-      camera.pitch = Math.atan2(p.y, horizontal);
-    }
+    if (pose && pose.pos) surfaceCamera.setPose(pose.pos, pose.forward);
     renderer.setSurfaceMode({
       active: true,
       entities: surface.entities(),
@@ -3044,7 +3066,7 @@ function frame(t) {
       progress: surface.progress(),
     });
     try {
-      renderer.render(camera, t);
+      renderer.render(surfaceCamera, t);
     } catch (err) {
       if (!frame.warned) {
         frame.warned = true;
@@ -3331,6 +3353,8 @@ window.__ICOSA__ = {
   camera,
   renderer,
   ui,
+  surfaceCamera: () => surfaceCamera,
+  cameraMode: () => ({ surface: 'carrier', contractVersion: 1 }),
   join,
   focusFace,
   hoverFace: () => (hoveredLabel ? faceInfo(hoveredLabel) : null),

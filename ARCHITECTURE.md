@@ -17,7 +17,7 @@ Architecture decisions are recorded as ADRs: [docs/adr/README.md](docs/adr/READM
 | Rendering | Canvas 2D + WebGL | game planet: Canvas 2D; spherical-icosahedron reference viewer: WebGL ray–sphere shader |
 | Simulation | Node.js ≥20 | authoritative game server, HTTP + Server-Sent Events |
 | Persistence | JSON files + atomic rename | one file per planet, one registry file |
-| Tests | `node:test` | <!-- test-count:556 -->556<!-- /test-count --> tests, no test dependencies; ownership map in [docs/TEST_MAP.md](docs/TEST_MAP.md) |
+| Tests | `node:test` | <!-- test-count:560 -->560<!-- /test-count --> tests, no test dependencies; ownership map in [docs/TEST_MAP.md](docs/TEST_MAP.md) |
 | CI | GitHub Actions | Node 20 and 22, `npm test`; Node 22 GDS island build/contract/determinism; scheduled OPS-02 load/soak/chaos gate |
 | Deploy | `node server.js` behind any static/reverse proxy | Cloudflare tunnel used for the live build |
 
@@ -251,7 +251,7 @@ Authoritative rules live in [narimato-physics.md](narimato-physics.md):
 - One camera interface: `public/js/shared/camera-contract.js` declares the members `IcosaRenderer`
   reads (`project`, `viewAxis`, `distance`, `zoom`, `width`, `height`, `focalPx`, `nearPlane`,
   `unprojectView`, `unprojectScreen`, `setViewport`); `z = dot(point, viewAxis())` for every camera.
-- Surface framing is the same `SphereCamera` zoomed further; there is no second projection or
+- Surface framing is a carrier camera held by the pilot/cursor (parallel transport, fixed-focal radius dolly); there is no second projection or
   contract and the same planet geometry.
 - Mouse rotates the **object**, not the camera, via exact surface-point unprojection + shortest-arc
   quaternion.
@@ -727,10 +727,10 @@ debounce 0.5 min + 5 min backup interval), RTO ≤ 15 min; retention is 7 daily 
 
 ## Testing
 
-The suite currently runs <!-- test-count:556 -->556<!-- /test-count --> tests. Behaviour ownership: [docs/TEST_MAP.md](docs/TEST_MAP.md).
+The suite currently runs <!-- test-count:560 -->560<!-- /test-count --> tests. Behaviour ownership: [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 ```bash
-npm test                 # node:test suite (556 tests)
+npm test                 # node:test suite (560 tests)
 npm run check:slo        # evaluate observability/slo.json against /api/metrics (0/1/2/3)
 npm run gate:load        # OPS-02 load/soak/chaos gate (ephemeral server, artifacts)
 npm run gate:perf        # PERF-01 client probe + 15% desktop baseline gate

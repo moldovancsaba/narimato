@@ -75,7 +75,7 @@ release ledger. On the owning issue, after the evidence exists:
 | Field | Fill with |
 |---|---|
 | `Delivered` | One or two sentences naming the shipped outcome, the commit SHA, and the PR URL. Example: "REL-01 release gate: `npm run release:gate` runs the matrix and writes `release-manifest.json`; commit `<delivery-sha>`, PR #N." |
-| `Release Evidence` | The gate verdict and exit code, the manifest and report paths, the executed test count, and the docs/a11y/load evidence paths. Example: "Gate BLOCKED (exit 5) on A11Y-02/OPS-04; code gates PASS; 556/556 tests; manifest `artifacts/release/v3.58.0/release-manifest.json`." |
+| `Release Evidence` | The gate verdict and exit code, the manifest and report paths, the executed test count, and the docs/a11y/load evidence paths. Example: "Gate BLOCKED (exit 5) on A11Y-02/OPS-04; code gates PASS; 560/560 tests; manifest `artifacts/release/v3.58.0/release-manifest.json`." |
 | `Documentation` | The exact repository paths changed, for example `docs/RELEASE_EVIDENCE.md`, `RELEASE_NOTES.md`, `docs/SSOT.md`. |
 | `Next Action` | The next concrete unblocker; for a blocked release name the external owner and the evidence required. Example: "A11Y-02 owner links the device matrix; OPS-04 owner links the stub-origin report; rerun `npm run release:gate`." |
 
@@ -119,7 +119,7 @@ Do not write "done", "delivered" or "live" in any field while the gate reports
 | Delivery scope | REL-01 release gate, REL-02 evidence ledger, TST-01 acceptance fix |
 | Version SSOT | `package.json` 3.58.0 · cache-bust 3.58.0 · README 3.58.0 · notes heading v3.58.0 |
 | Audio cache key | `3.58.0+56190bd8` (content hash unchanged; spoken text did not change) |
-| Executed suite | 556 tests, 556 pass, 0 fail (`node:test`) |
+| Executed suite | 560 tests, 560 pass, 0 fail (`node:test`) |
 | Docs gate | pass: 42 markdown files, 889 links, 0 findings (`npm run docs:check`) |
 | Headless accessibility | Chromium gate clean: 9 surfaces, 0 failure, 0 warning, 0 incomplete |
 | Browser acceptance | two-client 7/7, surface-truth 4/4 (TST-01 exit contract fixed) |

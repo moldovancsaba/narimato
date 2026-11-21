@@ -260,7 +260,7 @@ procedure are in [docs/RELEASE_EVIDENCE.md](docs/RELEASE_EVIDENCE.md), and
 |---|---|---|---|
 | Persistent shared world, scoring and escape | LIVE | `test:test/world-core.test.js`, `test:test/server.test.js` | Server-authoritative; tokens reconnect pilots |
 | GDS UI and accessible HUD surfaces | LIVE | `script:scripts/a11y-gate.mjs`, `test:test/a11y-report.test.js` | Headless Chromium/WebKit gate; real-device sign-off is separate |
-| One spherical scene for orbit and surface | LIVE | `script:scripts/acceptance-two-client-surface.mjs`, `test:test/renderer-surface.test.js` | One renderer and one camera; surface is the same active-cell scene at deeper zoom, no derived mesh |
+| One spherical scene for orbit and surface | LIVE | `test:test/carrier-camera.test.js`, `test:test/renderer-surface.test.js` | One renderer/scene; surface uses the pole-safe carrier camera (cursor object-follow, fixed-focal dolly), no derived mesh |
 | Two-client surface multiplayer | LIVE | `script:scripts/acceptance-two-client-surface.mjs`, `test:test/renderer-surface.test.js` | Peer tags, authoritative beams, supply relocation and live mutation |
 | Release acceptance gate | LIVE | `script:scripts/release-gate.mjs`, `test:test/release-gate.test.js` | `npm run release:gate` fails closed; manifest under `artifacts/release/` |
 | Release evidence ledger | LIVE | `script:scripts/evidence-check.mjs`, `test:test/evidence-check.test.js` | Closed status vocabulary with typed, resolvable evidence |
@@ -272,7 +272,7 @@ procedure are in [docs/RELEASE_EVIDENCE.md](docs/RELEASE_EVIDENCE.md), and
 
 ## Development
 
-The node:test suite currently runs <!-- test-count:556 -->556<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
+The node:test suite currently runs <!-- test-count:560 -->560<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 ```
 npm test                 # node:test suite, no dependencies
