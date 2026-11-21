@@ -51,7 +51,13 @@ const BASE = (process.env.BASE_URL || 'http://127.0.0.1:4173').replace(/\/+$/, '
 const CLIENTS = Math.max(1, Math.min(500, Number(process.env.CLIENTS) || 50));
 const CLICKS = Math.max(0, Math.min(100, Number(process.env.CLICKS) || 5));
 const SSE_CLIENTS = Math.max(0, Math.min(CLIENTS, Number(process.env.SSE_CLIENTS) || 25));
-const DURATION = Math.max(0, Math.min(3600, Number(process.env.DURATION_SECONDS) || 0));
+// Honor the requested duration up to a 4-hour safety cap; a release soak needs 7200 s.
+const MAX_DURATION_SECONDS = 4 * 3600;
+const REQUESTED_DURATION = Number(process.env.DURATION_SECONDS) || 0;
+const DURATION = Math.max(0, Math.min(MAX_DURATION_SECONDS, REQUESTED_DURATION));
+if (REQUESTED_DURATION > MAX_DURATION_SECONDS) {
+  console.warn(`[load] requested ${REQUESTED_DURATION}s exceeds the ${MAX_DURATION_SECONDS}s cap; running ${DURATION}s`);
+}
 const CLICK_PAUSE = Math.max(0, Number(process.env.CLICK_PAUSE_MS) || 45);
 const TAG_PREFIX = process.env.TAG_PREFIX || 'LT';
 const LABELS = ['1', '2', '3', '4', '5', '6', '7', '8'];

@@ -144,6 +144,17 @@ function failure(metric, kind, observed, threshold, detail = '') {
 }
 
 /**
+ * A duration-bearing scenario must actually run for its declared duration.
+ * Process/setup overhead is tolerated, but a silently clamped generator run is
+ * a correctness failure: a short soak must never be reported as a pass.
+ */
+export function durationSatisfied(scenario, elapsedMs, toleranceMs = 5_000) {
+  const requiredMs = Math.max(0, Number(scenario.durationSeconds) || 0) * 1000;
+  if (!requiredMs) return { ok: true, requiredMs: 0, elapsedMs };
+  return { ok: Number(elapsedMs) >= requiredMs - toleranceMs, requiredMs, elapsedMs };
+}
+
+/**
  * Evaluate one generator run against the resolved thresholds.
  * `latencyOnly` is the flake policy input: only latency metrics may qualify
  * for the 2-of-3 pass rule; correctness always needs every run.
@@ -460,13 +471,26 @@ async function runLoadScenario({ document, scenario, ruleset, outDir }) {
       } else if (result.timedOut) {
         evaluation.failures.push(failure('generator', 'correctness', null, null, 'generator exceeded its scenario timeout'));
       }
+      const elapsedMs = Date.now() - startedAt;
+      const durationCheck = durationSatisfied(scenario, elapsedMs);
+      if (!durationCheck.ok) {
+        evaluation.failures.push(
+          failure(
+            'duration',
+            'correctness',
+            Math.round(elapsedMs / 1000),
+            Math.round(durationCheck.requiredMs / 1000),
+            'run duration was shorter than the scenario requirement (clamped or interrupted generator)',
+          ),
+        );
+      }
       const row = {
         scenario: scenario.id,
         run,
         repeat: scenario.repeat,
         verdict: evaluation.failures.length ? 'FAIL' : 'PASS',
         startedAt: new Date(startedAt).toISOString(),
-        durationMs: Date.now() - startedAt,
+        durationMs: elapsedMs,
         thresholds,
         before: before || null,
         after: after || null,
@@ -543,7 +567,7 @@ async function runChaosScenario({ document, scenario, ruleset, outDir }) {
         repeat: scenario.repeat,
         verdict: evaluation.failures.length ? 'FAIL' : 'PASS',
         startedAt: new Date(startedAt).toISOString(),
-        durationMs: Date.now() - startedAt,
+        durationMs: elapsedMs,
         thresholds,
         summary: summary || null,
         failures: evaluation.failures,
