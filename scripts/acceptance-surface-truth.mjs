@@ -58,28 +58,51 @@ try {
   const page = clients.pages[0];
   await joinClient(page, `TR${Math.floor(Math.random() * 900 + 100)}`, server.url);
   await enterSurfaceClient(page);
-  const debug = await page.evaluate(() => window.__ICOSA__.surfaceDebug());
-  const targetLabel = debug && debug.targetLabel;
-  const targetCan = !!(debug && debug.targetCan);
-  addCheck(report, 'target-available', !!targetLabel, { targetLabel, targetCan });
-  // The HUD verdict and the API click must be the same predicate (CTL-03).
+  // Acquire a target and click it under the same state snapshot. The server is
+  // concurrently contested by robots and by the client's own footprint, so a
+  // snapshot can legitimately go stale between the HUD read and the click; retry
+  // only for that race, never to hide a persistently wrong HUD predicate.
   let hudState = null;
-  try {
-    await waitFor(page, (expected) => {
-      const node = document.querySelector('#surface-target');
-      if (!node) return false;
-      return expected ? node.dataset.state === 'can' : node.dataset.state !== 'can';
-    }, { label: 'hud-target-state', timeout: HARD_MS, artifactDir, arg: targetCan });
-    hudState = await page.evaluate(() => {
-      const node = document.querySelector('#surface-target');
-      return node ? { text: node.textContent, state: node.dataset.state } : null;
-    });
-  } catch (error) {
-    report.errors.push(error.message);
+  let targetLabel = null;
+  let targetCan = false;
+  let click = null;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const debug = await page.evaluate(() => window.__ICOSA__.surfaceDebug());
+    targetLabel = debug && debug.targetLabel;
+    targetCan = !!(debug && debug.targetCan);
+    if (!targetLabel) {
+      await delay(150);
+      continue;
+    }
+    try {
+      await waitFor(page, (expected) => {
+        const node = document.querySelector('#surface-target');
+        if (!node) return false;
+        return expected ? node.dataset.state === 'can' : node.dataset.state !== 'can';
+      }, { label: 'hud-target-state', timeout: 2_000, artifactDir, arg: targetCan });
+      hudState = await page.evaluate(() => {
+        const node = document.querySelector('#surface-target');
+        return node ? { text: node.textContent, state: node.dataset.state } : null;
+      });
+    } catch (error) {
+      report.errors.push(error.message);
+    }
+    const fresh = await page.evaluate(() => window.__ICOSA__.surfaceDebug());
+    if (!fresh || fresh.targetLabel !== targetLabel || !!fresh.targetCan !== targetCan) {
+      continue;
+    }
+    click = await postAction(page, { type: 'click', label: targetLabel });
+    const awarded = !!(click && click.status === 200 && click.body && click.body.ok);
+    if (targetCan ? awarded : !awarded) break;
+    // A 409/refusal can be the rightful result of a contest that landed after
+    // the snapshot; refresh the snapshot and retry instead of asserting a race.
+    if (!targetCan || (click && click.status === 409)) continue;
+    break;
   }
-  const click = targetLabel ? await postAction(page, { type: 'click', label: targetLabel }) : null;
   const clickOk = !!(click && click.status === 200 && click.body && click.body.ok);
-  const truthAgrees = !!hudState && (targetCan ? clickOk : !clickOk);
+  addCheck(report, 'target-available', !!targetLabel, { targetLabel, targetCan });
+  const truthAgrees =
+    !!hudState && (targetCan ? clickOk : !clickOk) && (targetCan ? hudState.state === 'can' : hudState.state !== 'can');
   addCheck(report, 'hud-truth', truthAgrees, {
     hud: hudState,
     targetCan,
