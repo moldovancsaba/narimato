@@ -12,7 +12,7 @@
       "title": "Real-device accessibility gate \u2014 iPhone, Android and screen readers",
       "requiredEvidence": "executed docs/device-gate/EVIDENCE.json with two approvals, linked from issue #13",
       "verification": "gh issue view 13 --repo moldovancsaba/narimato",
-      "note": "Issue closed after the device-gate package landed; the physical-device ledger, defect links and two approvals are still missing."
+      "note": "Gate package delivered in PR #62; issue #13 remains open until the physical-device EVIDENCE.json, defect links and two approvals are attached."
     },
     {
       "id": "OPS-04",
@@ -22,7 +22,8 @@
       "blocksRelease": true,
       "title": "Edge/CDN activation with a stub-origin verification report",
       "requiredEvidence": "cdn:preflight report against the real hostname plus the ASSET_BASE_URL rollback proof, linked from issue #41",
-      "verification": "gh issue view 41 --repo moldovancsaba/narimato"
+      "verification": "gh issue view 41 --repo moldovancsaba/narimato",
+      "note": "Activation package delivered in PR #62; issue #41 remains open until a real CDN hostname/credentials and the preflight + rollback reports are attached."
     }
   ],
   "deferred": [
