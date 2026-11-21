@@ -7,11 +7,12 @@
       "id": "A11Y-02",
       "issue": 13,
       "owner": "accessibility-lead",
-      "status": "open",
+      "status": "blocked",
       "blocksRelease": true,
-      "title": "Real-device accessibility gate — iPhone, Android and screen readers",
-      "requiredEvidence": "per-commit device-gate captures and two approvals, linked from issue #13",
-      "verification": "gh issue view 13 --repo moldovancsaba/narimato"
+      "title": "Real-device accessibility gate \u2014 iPhone, Android and screen readers",
+      "requiredEvidence": "executed docs/device-gate/EVIDENCE.json with two approvals, linked from issue #13",
+      "verification": "gh issue view 13 --repo moldovancsaba/narimato",
+      "note": "Issue closed after the device-gate package landed; the physical-device ledger, defect links and two approvals are still missing."
     },
     {
       "id": "OPS-04",
@@ -20,7 +21,7 @@
       "status": "open",
       "blocksRelease": true,
       "title": "Edge/CDN activation with a stub-origin verification report",
-      "requiredEvidence": "scripts/edge-verify.mjs report and the ASSET_BASE_URL rollback proof, linked from issue #41",
+      "requiredEvidence": "cdn:preflight report against the real hostname plus the ASSET_BASE_URL rollback proof, linked from issue #41",
       "verification": "gh issue view 41 --repo moldovancsaba/narimato"
     }
   ],
@@ -31,7 +32,7 @@
       "owner": "platform-ops",
       "status": "open",
       "blocksRelease": false,
-      "title": "120-minute weekly soak — a separate release prerequisite",
+      "title": "120-minute weekly soak \u2014 a separate release prerequisite",
       "requiredEvidence": "artifacts/gate/soak/summary.json from the weekly CI job for the release commit",
       "verification": "node scripts/perf-gate.mjs --only=soak"
     }

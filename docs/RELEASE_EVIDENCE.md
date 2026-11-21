@@ -75,7 +75,7 @@ release ledger. On the owning issue, after the evidence exists:
 | Field | Fill with |
 |---|---|
 | `Delivered` | One or two sentences naming the shipped outcome, the commit SHA, and the PR URL. Example: "REL-01 release gate: `npm run release:gate` runs the matrix and writes `release-manifest.json`; commit `<delivery-sha>`, PR #N." |
-| `Release Evidence` | The gate verdict and exit code, the manifest and report paths, the executed test count, and the docs/a11y/load evidence paths. Example: "Gate BLOCKED (exit 5) on A11Y-02/OPS-04; code gates PASS; 562/562 tests; manifest `artifacts/release/v3.58.0/release-manifest.json`." |
+| `Release Evidence` | The gate verdict and exit code, the manifest and report paths, the executed test count, and the docs/a11y/load evidence paths. Example: "Gate BLOCKED (exit 5) on A11Y-02/OPS-04; code gates PASS; 602/602 tests; manifest `artifacts/release/v3.58.0/release-manifest.json`." |
 | `Documentation` | The exact repository paths changed, for example `docs/RELEASE_EVIDENCE.md`, `RELEASE_NOTES.md`, `docs/SSOT.md`. |
 | `Next Action` | The next concrete unblocker; for a blocked release name the external owner and the evidence required. Example: "A11Y-02 owner links the device matrix; OPS-04 owner links the stub-origin report; rerun `npm run release:gate`." |
 
@@ -118,7 +118,7 @@ Do not write "done", "delivered" or "live" in any field while the gate reports
 | Delivery scope | REL-01 release gate, REL-02 evidence ledger, TST-01 acceptance fix |
 | Version SSOT | `package.json` 3.58.0 · cache-bust 3.58.0 · README 3.58.0 · notes heading v3.58.0 |
 | Audio cache key | `3.58.0+56190bd8` (content hash unchanged; spoken text did not change) |
-| Executed suite | 562 tests, 562 pass, 0 fail (`node:test`) |
+| Executed suite | 602 tests, 602 pass, 0 fail (`node:test`) |
 | Docs gate | pass at gate time; exact file/link counts are recorded in the gate manifest and log |
 | Headless accessibility | Chromium gate clean: 9 surfaces, 0 failure, 0 warning, 0 incomplete |
 | Browser acceptance | single-scene self-test, two-client 7/7, surface-truth 4/4 (TST-01 exit contract fixed) |
@@ -142,16 +142,18 @@ Claim ledger for this release (the checker parses this table):
 | Load and chaos gate | LIVE | `script:scripts/perf-gate.mjs`, `test:test/perf-gate.test.js` | OPS-02 scenarios and thresholds |
 | Persistence recovery drill | LIVE | `script:scripts/recovery-test.mjs`, `test:test/recovery.test.js` | Backup, verify, restore and token rejoin |
 | Binary rollback drill | LIVE | `script:scripts/rollback-drill.mjs`, `test:test/release-gate.test.js` | Previous-tag worktree, suite, schema compatibility, RTO |
-| Real-device accessibility sign-off | PLANNED | `issue:#13` | Awaits A11Y-02 captures and two approvals |
-| Edge/CDN asset delivery | PLANNED | `issue:#41` | Awaits OPS-04 stub-origin proof and production credentials |
+| Real-device gate procedure | LIVE | `script:scripts/device-gate.mjs`, `test:test/device-gate.test.js` | Plan/check matrix, evidence provenance and approval validation |
+| Physical-device accessibility sign-off | PARTIAL | `issue:#13`, `script:scripts/device-gate.mjs` | The 20-row ledger is not executed on hardware; two approvals remain (A11Y-02) |
+| CDN preflight gate | LIVE | `script:scripts/cdn-preflight.mjs`, `test:test/cdn-preflight.test.js` | Fail-closed policy, CORS/range/cache and production-host checks |
+| Edge/CDN asset delivery | PLANNED | `issue:#41`, `script:scripts/cdn-preflight.mjs` | Activation will follow the real CDN hostname and credentials (OPS-04) |
 | 120-minute soak for this release | PARTIAL | `script:scripts/perf-gate.mjs` | Fast gate runs smoke and chaos; the 120-minute soak remains separate |
 
 ## 7. External blockers for this release
 
 | ID | Issue | Owner | Status | Required evidence |
 |---|---|---|---|---|
-| A11Y-02 | #13 | accessibility-lead | open | `media/a11y/device-gate/<commit>/` captures, defect issues, two approvals |
-| OPS-04 | #41 | platform-ops | open | stub-origin verification report and the `ASSET_BASE_URL` rollback proof |
+| A11Y-02 | #13 | accessibility-lead | blocked (issue closed, evidence unmet) | executed `docs/device-gate/EVIDENCE.json`, defect links and two approvals |
+| OPS-04 | #41 | platform-ops | open | `cdn:preflight` report against the real hostname and the `ASSET_BASE_URL` rollback proof |
 | SOAK | #39 | platform-ops | separate prerequisite | weekly 120-minute `artifacts/gate/soak/summary.json` for the release commit |
 
 The machine-readable twin is `observability/release-prerequisites.json`; the release

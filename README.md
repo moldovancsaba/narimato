@@ -266,13 +266,13 @@ procedure are in [docs/RELEASE_EVIDENCE.md](docs/RELEASE_EVIDENCE.md), and
 | Release evidence ledger | LIVE | `script:scripts/evidence-check.mjs`, `test:test/evidence-check.test.js` | Closed status vocabulary with typed, resolvable evidence |
 | Recovery and rollback drills | LIVE | `script:scripts/recovery-test.mjs`, `script:scripts/rollback-drill.mjs` | Backup -> verify -> restore and previous-tag worktree drill |
 | Load and chaos gate | LIVE | `script:scripts/perf-gate.mjs`, `test:test/perf-gate.test.js` | Smoke/load/chaos scenarios with OPS-01 thresholds |
-| Real-device accessibility sign-off | PLANNED | `issue:#13` | Awaits the A11Y-02 capture matrix and two approvals |
-| Edge/CDN asset delivery | PLANNED | `issue:#41` | Awaits OPS-04 stub-origin proof and production credentials |
+| Real-device accessibility sign-off | PARTIAL | `script:scripts/device-gate.mjs`, `test:test/device-gate.test.js` | A11Y-02 gate package is live; the physical-device ledger and two approvals remain |
+| Edge/CDN asset delivery | PLANNED | `script:scripts/cdn-preflight.mjs`, `issue:#41` | OPS-04 preflight gate exists; activation awaits a CDN hostname and credentials |
 | 120-minute soak for this release | PARTIAL | `script:scripts/perf-gate.mjs` | The fast gate runs smoke and chaos; the 120-minute soak remains a separate release prerequisite |
 
 ## Development
 
-The node:test suite currently runs <!-- test-count:583 -->583<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
+The node:test suite currently runs <!-- test-count:602 -->602<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 ```
 npm test                 # node:test suite, no dependencies
