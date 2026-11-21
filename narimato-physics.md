@@ -254,15 +254,21 @@ camera's near bound; `project()` never mutates camera state.
 The orbital `SphereCamera` keeps its quaternion view and pixels; the contract
 members are additive (`depth`, `focalPx`, `nearPlane`, `unprojectScreen`).
 
-### Surface view uses the same camera
+### Surface uses the approved carrier camera
 
-There is **no separate surface camera and no derived surface mesh**. The game has
-one `SphereCamera` instance and one `IcosaRenderer` instance for the whole zoom
-range. Entering the surface does not swap projection, canvas, RAF loop or scene:
-it moves the same camera deeper (zoom), keeps the same active-cell leaf pass, and
-adds the pilot/peer/entity overlay through the same `project()`/`viewAxis()`
-interface. Scrolling in/out continues the same camera; scrolling out past the
-surface entry rung returns to orbit through the exit policy.
+There is **no derived surface mesh and no second scene**. The game has one
+`IcosaRenderer` and one active-cell leaf pass for orbit and surface. Orbit uses
+`SphereCamera`; the surface uses `CarrierCamera`, the approved v3.57 model:
+
+- the camera carrier is held at the pilot/cursor anchor (`carrierFrame`) and
+  advances by parallel transport, so walking crosses the poles with no Euler
+  reversal;
+- mouse drag rotates the spherical OBJECT with exact surface-point follow
+  (`shortestArcQuat`), so the grabbed point stays under the cursor;
+- wheel/pinch change the carrier RADIUS with fixed focal length, not the field of
+  view;
+- the pilot/peer/beam entity pass projects through the same carrier camera, with
+  no second canvas, RAF loop or scene.
 
 The earlier experiments (a third-person `SurfaceCamera`, a seed-keyed globe, and
 a revision-gated 6000-triangle "live surface mesh") were separate-scene hacks.
@@ -277,9 +283,9 @@ projection or second HUD:
 
 - `app.js` owns `view ∈ {orbit, surface}` and the single `requestAnimationFrame`
   loop.
-- Entering keeps the same `SphereCamera` and deepens its zoom; the surface adds
-  the control mode and entity overlay only. Exiting returns to the farthest orbit
-  through the single exit policy (CTL-04).
+- Entering holds the carrier at the pilot anchor; the surface adds the control
+  mode and entity overlay only. Exiting returns to the farthest orbit through the
+  single exit policy (CTL-04).
 - `surface-controller.js` advances the pilot pose, resolves the harvest target
   through `shared/harvest.js`, and produces `SurfaceEntity[]`
   (`self`, `peer`, `pin`, `beam`). Entities reference cells by `cellLabel`.
@@ -288,7 +294,8 @@ projection or second HUD:
 - `World.leaves` is the only client tree; surface entities never copy `a`/`b`/`c`.
 - The planet, cells, edges, labels and markers are the same render pipeline and
   the same `World.leaves` tree at every zoom. No derived mesh, cached globe or
-  second projection exists.
+  second scene exists; only the CameraView (orbit sphere vs surface carrier)
+  differs, and both consume the same renderer.
 - Canvas terrain keeps its accessible equivalent in the HUD: the surface target
   readout reports the cell label and harvest state, and `#surface-controls` is a
   labelled `role="group"` with 44 px targets.

@@ -1157,7 +1157,9 @@ export class IcosaRenderer {
     const cy = H / 2;
     const zoom = hasCamera && Number.isFinite(camera.zoom) ? camera.zoom : 1;
     this._zoom = zoom;
-    const R = Math.min(W, H) * SPHERE_SCREEN_FRACTION * zoom;
+    const R = hasCamera && Number.isFinite(camera.screenRadius)
+      ? camera.screenRadius
+      : Math.min(W, H) * SPHERE_SCREEN_FRACTION * zoom;
     this._R = R;
 
     if (this._stylesDirty || !this._styles) this._rebuildStyles();
