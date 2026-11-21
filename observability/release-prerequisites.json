@@ -10,7 +10,7 @@
       "status": "open",
       "blocksRelease": true,
       "title": "Real-device accessibility gate — iPhone, Android and screen readers",
-      "requiredEvidence": "media/a11y/device-gate/<commit>/ captures plus two approvals, linked from issue #13",
+      "requiredEvidence": "per-commit device-gate captures and two approvals, linked from issue #13",
       "verification": "gh issue view 13 --repo moldovancsaba/narimato"
     },
     {

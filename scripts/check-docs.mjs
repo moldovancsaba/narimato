@@ -122,7 +122,7 @@ export function listMarkdownFiles(root) {
   const files = [];
   const walk = (dir) => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      if (['.git', 'node_modules', 'media', 'data', 'coverage'].includes(entry.name)) continue;
+      if (['.git', 'node_modules', 'media', 'data', 'coverage', 'artifacts'].includes(entry.name)) continue;
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) walk(full);
       else if (entry.isFile() && entry.name.endsWith('.md')) files.push(full);
