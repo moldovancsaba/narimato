@@ -53,7 +53,6 @@ import {
 } from './shared/geometry.js';
 import { resourceById } from './shared/resources.js';
 import { BIOMES } from './shared/planet.js';
-import { LiveSurfaceStore } from './shared/live-surface-mesh.js';
 import { drawTetraShip } from './shared/tetra-ship.js';
 import { createFrameBudget, detectDeviceClass, parsePinnedTier, qualityWorkScale } from './perf-budget.js';
 
@@ -250,11 +249,6 @@ export class IcosaRenderer {
     // rendered for interactive/pulsed faces.
     this.labelsVisible = false;
     this.poleLabelsVisible = false;
-    // RND-04: surface geometry is derived from the live World leaf list through
-    // a revision-gated store; there is no cached seed-keyed globe.
-    this.liveSurface = new LiveSurfaceStore({ colourOf: (leaf) => this._liveLeafColour(leaf) });
-    this.liveSurfaceStats = null;
-    this.surfaceView = false;
     // RND-02 single-scene surface mode: the renderer owns the entity pass and
     // the landing/leaving ship; the surface controller owns only pose + labels.
     this.surfaceMode = false;
@@ -262,7 +256,6 @@ export class IcosaRenderer {
     this.surfaceEffects = [];
     this.surfacePhase = 'walking';
     this.surfaceProgress = 1;
-    this.opaqueSurface = false;
     // RND-07 surface visual state: authoritative peers, beams, pins. The
     // renderer owns interpolation and fades; app.js only forwards events.
     this.peerVisuals = new Map();
@@ -286,7 +279,6 @@ export class IcosaRenderer {
       interpolated: 0,
       triangles: 0,
     };
-    this.materialProbe = false;
     this.planetTheme = null;
     this._surfaceCanvas = null;
     this._surfaceCtx = null;
@@ -413,59 +405,6 @@ export class IcosaRenderer {
   /** Apply a per-planet palette (from shared/planet-theme.js). */
   setPlanetTheme(theme) {
     this.planetTheme = theme && typeof theme === 'object' ? theme : null;
-    // Colour is derived per leaf; invalidate so the next sync rebuilds the mesh.
-    this.liveSurface.invalidate();
-  }
-
-  /**
-   * RND-04: pass the authoritative live leaf list. Geometry is rebuilt at
-   * frame preparation only when the world revision or planet seed changed.
-   * @param {{leaves?:Array, revision?:number, seed?:number}} input
-   */
-  setLiveSurface(input = {}) {
-    const next = input && typeof input === 'object' ? input : {};
-    if (Array.isArray(next.leaves)) {
-      this._leafLabels = new Set();
-      for (const leaf of next.leaves) {
-        if (leaf && typeof leaf.label === 'string') this._leafLabels.add(leaf.label);
-      }
-    }
-    return this.liveSurface.setInput({
-      leaves: Array.isArray(next.leaves) ? next.leaves : [],
-      revision: Number.isInteger(next.revision) ? next.revision : 0,
-      seed: Number(next.seed) >>> 0,
-    });
-  }
-
-  /** Rebuild metrics for QA: revision, triangles, buckets, rebuild time, skips. */
-  surfaceMeshStats() {
-    this.liveSurfaceStats = this.liveSurface.stats();
-    return this.liveSurfaceStats;
-  }
-
-  /** Colour of one leaf for the live mesh: terrain (same as the cell pass) + owner tint. */
-  _liveLeafColour(entry) {
-    if (!entry) return { r: 42, g: 92, b: 116 };
-    let rgb = entry.terrainRgb || null;
-    if (!rgb) {
-      const terrain = entry.terrain;
-      rgb = terrain && terrain.rgb ? terrain.rgb : { r: 42, g: 92, b: 116 };
-    }
-    if (entry.ownerIndex >= 0 && Array.isArray(this.players) && this.players[entry.ownerIndex]) {
-      const ownerRgb = parseColor(this.players[entry.ownerIndex].color);
-      rgb = mixRgb(rgb, ownerRgb, 0.22);
-    }
-    return rgb;
-  }
-
-  /** Use the existing cell/material pipeline from a close surface camera. */
-  setSurfaceView(enabled) {
-    this.surfaceView = !!enabled;
-    if (!this.surfaceView) {
-      this.surfaceMode = false;
-      this.surfaceEntities = [];
-      this.surfaceEffects = [];
-    }
   }
 
   /**
@@ -477,16 +416,11 @@ export class IcosaRenderer {
   setSurfaceMode(options = {}) {
     const next = options && typeof options === 'object' ? options : {};
     this.surfaceMode = !!next.active;
-    this.surfaceView = this.surfaceMode;
     this.surfaceEntities = this.surfaceMode && Array.isArray(next.entities) ? next.entities : [];
     this.surfaceEffects = this.surfaceMode && Array.isArray(next.effects) ? next.effects : [];
     this.surfacePhase = typeof next.phase === 'string' && next.phase ? next.phase : 'walking';
     this.surfaceProgress = Number.isFinite(next.progress) ? clamp(next.progress, 0, 1) : 1;
     return this;
-  }
-
-  setOpaqueSurface(enabled) {
-    this.opaqueSurface = !!enabled;
   }
 
   /**
@@ -542,78 +476,6 @@ export class IcosaRenderer {
     this._peerRig = module.buildRig(PEER_RIG_SCALE);
     return true;
   }
-
-  /**
-   * RND-06 single-scene parity probe. When enabled, `render()` draws only the
-   * live cell material (opaque biome fill, no post-processing) so the same cell
-   * can be sampled in orbit and surface phases under identical conditions.
-   * It is a measurement mode: production rendering is unchanged when off.
-   */
-  setMaterialProbe(enabled) {
-    this.materialProbe = !!enabled;
-    return this.materialProbe;
-  }
-
-  /** Draw the opaque cell material for the parity probe (back → front). */
-  _drawMaterialProbe(ctx, camera, W, H) {
-    const axis = typeof camera.viewAxis === 'function' ? camera.viewAxis() : null;
-    const origin = camera && camera.origin ? camera.origin : axis;
-    const surface = this.surfaceView;
-    const candidates = this._probeList || (this._probeList = []);
-    candidates.length = 0;
-    for (let i = 0; i < this.faces.length; i += 1) {
-      const entry = this.faces[i];
-      if (!entry || !entry.terrainRgb) continue;
-      const c = entry.centroid;
-      if (!axis) {
-        candidates.push(entry);
-        continue;
-      }
-      const facing = c.x * axis.x + c.y * axis.y + c.z * axis.z;
-      if (facing <= 0) continue;
-      if (surface && origin) {
-        const local = c.x * origin.x + c.y * origin.y + c.z * origin.z;
-        if (local < 0.35) continue;
-      }
-      candidates.push(entry);
-    }
-    // Painter order far → near so a sampled centroid shows its own material.
-    if (axis) {
-      candidates.sort((left, right) => {
-        const a = left.centroid;
-        const b = right.centroid;
-        return (a.x * axis.x + a.y * axis.y + a.z * axis.z) - (b.x * axis.x + b.y * axis.y + b.z * axis.z);
-      });
-    }
-    for (let i = 0; i < candidates.length; i += 1) {
-      const entry = candidates[i];
-      if (!this._projectEntry(entry, camera, W, H)) continue;
-      let np;
-      if (entry.allFront) {
-        np = entry.n;
-      } else {
-        np = this._clipEntryPoly(entry, camera, this._polyX, this._polyY);
-      }
-      if (np < 3) continue;
-      ctx.beginPath();
-      if (entry.allFront) {
-        const px = entry.px;
-        const py = entry.py;
-        ctx.moveTo(px[0], py[0]);
-        for (let k = 1; k < np; k += 1) ctx.lineTo(px[k], py[k]);
-      } else {
-        ctx.moveTo(this._polyX[0], this._polyY[0]);
-        for (let k = 1; k < np; k += 1) ctx.lineTo(this._polyX[k], this._polyY[k]);
-      }
-      ctx.closePath();
-      ctx.fillStyle = `rgb(${entry.terrainRgb.r},${entry.terrainRgb.g},${entry.terrainRgb.b})`;
-      ctx.fill();
-    }
-  }
-
-  /* ================================================================ *
-   * Surface visual API (RND-07)
-   * ================================================================ */
 
   /** Local monotonic clock (RAF time base) for surface visuals. */
   _localNow() {
@@ -1300,37 +1162,22 @@ export class IcosaRenderer {
 
     if (this._stylesDirty || !this._styles) this._rebuildStyles();
     if (hasCamera) this._computeCameraFrame(camera, R);
-    // One rebuild per frame maximum, only when the world revision changed.
-    const rebuilt = this.liveSurface.prepare(this.t);
-    if (rebuilt) this.perf.recordRebuild(1);
-
-    // RND-06 material probe: draw the cell material only, opaque and without
-    // screen-space post-processing, so the acceptance suite can compare the
-    // same cell's colour across camera modes. Off in production.
-    if (this.materialProbe) {
-      ctx.fillStyle = '#000';
-      ctx.fillRect(0, 0, W, H);
-      if (hasCamera && this.faces.length) this._drawMaterialProbe(ctx, camera, W, H);
-      return;
-    }
+    const rebuilt = false;
 
     // Backdrop layers.
     this._drawBackdrop(ctx, W, H);
     this._drawStarfield(ctx, W, H, dt, hasCamera ? camera : null, rm);
     const gridFade = clamp(1 - (zoom - 10) / 10, 0, 1);
-    if (!this.surfaceView && gridFade > 0.01 && this.perf.tier > 0) this._drawFloorGrid(ctx, W, H, cx, rm, gridFade);
+    if (gridFade > 0.01 && this.perf.tier > 0) this._drawFloorGrid(ctx, W, H, cx, rm, gridFade);
 
     // Zoom-aware decoration fades: sphere-scale glow must not wash a deep zoom.
     const haloFade = clamp(1 - (zoom - 2.5) / 4.5, 0, 1);
     const glassFade = clamp(1 - (zoom - 3) / 3, 0, 1);
     const cartoFade = clamp(1 - (zoom - 5) / 6, 0, 1);
 
-    if (!this.surfaceView && haloFade > 0.01 && this.perf.tier > 0) this._drawHalo(ctx, W, H, cx, cy, R, rm, haloFade);
+    if (haloFade > 0.01 && this.perf.tier > 0) this._drawHalo(ctx, W, H, cx, cy, R, rm, haloFade);
 
     this._visCount = 0;
-    if (this.surfaceView && hasCamera) {
-      this._drawSurfaceProjected(ctx, camera, W, H);
-    }
     if (this._activeFaces().length && hasCamera) {
       this._drawSphere(ctx, camera, cx, cy, R, rm, glassFade);
       this._drawResourceMarkers(ctx);
@@ -1339,7 +1186,7 @@ export class IcosaRenderer {
       if (this._visCount === 0) this._stats.emptyFrames += 1;
     }
 
-    if (!this.surfaceView && !this.opaqueSurface && hasCamera && cartoFade > 0.01) {
+    if (hasCamera && cartoFade > 0.01) {
       this._drawGraticule(ctx, camera, cartoFade);
       this._drawPoles(ctx, camera, cx, cy, cartoFade);
     }
@@ -1919,75 +1766,6 @@ export class IcosaRenderer {
    * Surface underlay: the live leaf mesh (RND-04), rebuilt from World.leaves on
    * revision/seed change and drawn in quantised colour buckets.
    */
-  _drawSurfaceProjected(ctx, camera, W, H) {
-    const mesh = this.liveSurface.mesh;
-    if (!mesh || !mesh.triangles || !mesh.triangleCount) return;
-    const tris = mesh.triangles;
-    const buckets = mesh.buckets;
-    const origin = camera && camera.origin ? camera.origin : camera.viewAxis();
-    const tmp = this._tmpV;
-    const near = Number.isFinite(camera.nearPlane) ? camera.nearPlane : 0;
-    const paths = new Map();
-    for (let b = 0; b < buckets.length; b += 1) {
-      const bucket = buckets[b];
-      const start = bucket.start * 9;
-      const end = (bucket.start + bucket.count) * 9;
-      let path = null;
-      for (let o = start; o < end; o += 9) {
-        tmp.x = tris[o]; tmp.y = tris[o + 1]; tmp.z = tris[o + 2];
-        const pa = camera.project(tmp);
-        if (!pa.visible || pa.depth <= near) continue;
-        tmp.x = tris[o + 3]; tmp.y = tris[o + 4]; tmp.z = tris[o + 5];
-        const pb = camera.project(tmp);
-        if (!pb.visible || pb.depth <= near) continue;
-        tmp.x = tris[o + 6]; tmp.y = tris[o + 7]; tmp.z = tris[o + 8];
-        const pc = camera.project(tmp);
-        if (!pc.visible || pc.depth <= near) continue;
-        // Cheap back-face/horizon cull: the centroid must face the camera.
-        const cx = (tris[o] + tris[o + 3] + tris[o + 6]) / 3;
-        const cy = (tris[o + 1] + tris[o + 4] + tris[o + 7]) / 3;
-        const cz = (tris[o + 2] + tris[o + 5] + tris[o + 8]) / 3;
-        if (cx * origin.x + cy * origin.y + cz * origin.z < -0.02) continue;
-        const minX = Math.min(pa.x, pb.x, pc.x);
-        const maxX = Math.max(pa.x, pb.x, pc.x);
-        const minY = Math.min(pa.y, pb.y, pc.y);
-        const maxY = Math.max(pa.y, pb.y, pc.y);
-        if (maxX < -4 || minX > W + 4 || maxY < -4 || minY > H + 4) continue;
-        if (!path) {
-          path = new Path2D();
-          paths.set(b, path);
-        }
-        path.moveTo(pa.x, pa.y);
-        path.lineTo(pb.x, pb.y);
-        path.lineTo(pc.x, pc.y);
-        path.closePath();
-      }
-    }
-    for (const [index, path] of paths) {
-      const fill = buckets[index].fill;
-      ctx.fillStyle = fill;
-      ctx.globalAlpha = 0.98;
-      ctx.fill(path);
-      ctx.strokeStyle = fill;
-      ctx.lineWidth = 0.8;
-      ctx.stroke(path);
-    }
-    ctx.globalAlpha = 1;
-  }
-
-  /* ================================================================ *
-   * Surface entity pass (RND-02)
-   * ================================================================ */
-
-  /**
-   * Draw the surface entity pass inside the single renderer: the local pilot,
-   * authoritative peers/robots (interpolated), beams, resource pins, supply
-   * markers, harvest effects and the landing/leaving ship. Entities reference
-   * cells by label, never by copied geometry.
-   * @param {CanvasRenderingContext2D} ctx
-   * @param {object} camera
-   * @param {boolean} rm reduced motion
-   */
   _drawSurfaceEntities(ctx, camera, rm) {
     const W = this.width;
     const H = this.height;
@@ -2436,7 +2214,7 @@ export class IcosaRenderer {
 
     // --- Back hemisphere wireframe (cheap hologram scaffold). --------
     const backFade = clamp(1 - (this._zoom - 6) / 8, 0, 1);
-    if (!this.surfaceView && !this.opaqueSurface && backFade > 0.02) {
+    if (backFade > 0.02) {
       const backPath = new Path2D();
       let backCount = 0;
       if (nf <= 800) {
@@ -2487,22 +2265,8 @@ export class IcosaRenderer {
     let vc = 0;
     for (let i = 0; i < nf; i++) {
       const e = faces[i];
-      if (this.surfaceView) {
-        // Show the local crust around the pilot, not the whole planet's far
-        // fan. culling is by angular distance from the camera's surface origin.
-        const origin = camera && camera.origin;
-        if (origin && e.centroid.x * origin.x + e.centroid.y * origin.y + e.centroid.z * origin.z < 0.35) continue;
-        if (this.opaqueSurface && origin && e.centroid.x * origin.x + e.centroid.y * origin.y + e.centroid.z * origin.z <= 0) continue;
-        if (!this._projectEntry(e, camera, W, H)) { this._stats.culled += 1; continue; }
-        let sumZ = 0;
-        for (let k = 0; k < e.n; k += 1) sumZ += e.pz[k];
-        dotZ[i] = sumZ / Math.max(1, e.n);
-        vis[vc++] = i;
-        continue;
-      }
       const c = e.centroid;
       const dotc = c.x * Kx + c.y * Ky + c.z * Kz;
-      if (this.opaqueSurface && dotc <= 0) continue;
       const ct = e.cosTheta;
       const st = e.sinTheta;
       if (dotc >= cosA * ct - sinA * st) {
@@ -2515,7 +2279,7 @@ export class IcosaRenderer {
 
     // Depth sort (far → near). Leaves tile the sphere, so this is cheap and
     // only fixes edge-glow overdraw order.
-    vis.subarray(0, vc).sort((a, b) => (this.surfaceView ? dotZ[b] - dotZ[a] : dotZ[a] - dotZ[b]));
+    vis.subarray(0, vc).sort((a, b) => dotZ[a] - dotZ[b]);
 
     // --- Fills + edge buckets. --------------------------------------
     const buckets = this._buckets;
@@ -2539,7 +2303,7 @@ export class IcosaRenderer {
       const faceIdx = vis[idx];
       const e = faces[faceIdx];
       const dotc = dotZ[faceIdx];
-      const band = this.surfaceView ? clamp(Math.floor((1 - Math.min(1, dotc)) * 5), 0, 5) : clamp(Math.floor(dotc * 6), 0, 5);
+      const band = clamp(Math.floor(dotc * 6), 0, 5);
 
       let np;
       if (e.allFront) {
@@ -2598,21 +2362,8 @@ export class IcosaRenderer {
       ctx.closePath();
 
       const terrain = e.terrain;
-      ctx.globalAlpha = this.opaqueSurface ? 1 : lodAlpha;
-      if (this.opaqueSurface && terrain && e.terrainRgb) {
-        ctx.fillStyle = `rgb(${e.terrainRgb.r},${e.terrainRgb.g},${e.terrainRgb.b})`;
-        ctx.fill();
-      } else if (terrain && this.surfaceView) {
-        // Crust view: show the biome, not a full-cell player-colour wash.
-        ctx.fillStyle = e.terrainFill;
-        ctx.fill();
-        if (e.ownerIndex >= 0 && style.overlayC[fillIdx]) {
-          ctx.globalAlpha = lodAlpha * 0.04;
-          ctx.fillStyle = style.overlayC[fillIdx];
-          ctx.fill();
-          ctx.globalAlpha = lodAlpha;
-        }
-      } else if (terrain) {
+      ctx.globalAlpha = lodAlpha;
+      if (terrain) {
         // Low-poly biome underlay: strong on unclaimed cells, translucent under
         // the player-colour claim tint so ownership stays readable.
         const owned = e.ownerIndex >= 0;
@@ -2872,11 +2623,10 @@ export class IcosaRenderer {
     }
 
     // --- Glass: rim light, sheen, sweep, scanlines (faded at deep zoom).
-    // Surface mode must not draw a whole-planet glass dome over the crust.
-    if (!this.surfaceView && glassFade > 0.01 && this.perf.tier > 0) this._drawSphereFx(ctx, cx, cy, R, rm, nf, glassFade);
+    if (glassFade > 0.01 && this.perf.tier > 0) this._drawSphereFx(ctx, cx, cy, R, rm, nf, glassFade);
 
     // --- Silhouette ring. -------------------------------------------
-    if (!this.surfaceView && glassFade > 0.01 && R < Math.max(W, H) * 2.5) {
+    if (glassFade > 0.01 && R < Math.max(W, H) * 2.5) {
       ctx.save();
       ctx.globalAlpha = glassFade;
       ctx.globalCompositeOperation = 'lighter';

@@ -54,9 +54,6 @@ import { createInterlude } from './interlude.js';
 import { createNarrator } from './narrator.js';
 import { createSupplyDrop } from './supply-drop.js';
 import { createSurfaceController } from './surface-controller.js';
-import { SurfaceCamera } from './shared/surface-camera.js';
-import { cameraModeReport, parseSurfaceCameraMode } from './shared/camera-contract.js';
-import { parseSurfaceRenderer } from './shared/view-state.js';
 import { telemetry } from './telemetry.js';
 import { HELP_SECTIONS, captainLog } from './story-copy.js';
 import { buildIncidentAnnouncement } from './shared/incident-announcements.js';
@@ -71,20 +68,6 @@ const TAG_KEY = 'icosa.tag';
 const TOKENS_KEY = 'icosa.tokens';
 const DEFAULT_THRESHOLD = 8;
 const DEFAULT_MAX_DEPTH = 24;
-// RND-01: `?surface-camera=legacy|carrier` selects the surface framing.
-// Production default is `legacy` until RND-06 proves carrier pixel parity.
-const SURFACE_CAMERA_MODE = parseSurfaceCameraMode(
-  typeof window !== 'undefined' ? window.location.search : '',
-);
-// RND-02 rollback flag: the overlay renderer is gone, so `overlay` fails closed
-// to the single-scene renderer with one console warning.
-const SURFACE_RENDERER = parseSurfaceRenderer(
-  typeof window !== 'undefined' ? window.location.search : '',
-);
-if (SURFACE_RENDERER === 'overlay') {
-  console.warn('[icosa] ?surface-renderer=overlay is retired; using the single-scene renderer');
-}
-
 const canvas = document.getElementById('arena-canvas');
 const camera = new SphereCamera(window.innerWidth || 1, window.innerHeight || 1);
 const renderer = new IcosaRenderer(canvas);
@@ -151,7 +134,6 @@ let surface = null;
 let view = 'orbit';
 const surfacePeers = new Map();
 let surfaceSupplyCells = [];
-let surfaceCamera = null;
 let planetRenderFaces = [];
 let supplyTimer = 0;
 let supplyDeadline = 0;
@@ -466,11 +448,7 @@ const ui = new UI({
 
 narrator = createNarrator();
 supplyDrop = createSupplyDrop();
-surfaceCamera = new SurfaceCamera(
-  camera.width || window.innerWidth,
-  camera.height || window.innerHeight,
-  { mode: SURFACE_CAMERA_MODE },
-);
+
 surface = createSurfaceController({
   getStartPoint: () => (camera && typeof camera.viewAxis === 'function' ? camera.viewAxis() : { x: 0, y: 0, z: 1 }),
   getLeaves: () => leafList,
@@ -652,19 +630,9 @@ function refreshPlanetRenderFaces() {
   renderer.setFaces(planetRenderFaces, { lod: { 0: coarseFaces, 1: mediumFaces } });
 }
 
-function syncLiveSurface() {
-  // RND-04: geometry derives from the live World leaf list only; the store
-  // coalesces events within a frame and rebuilds on revision/seed change.
-  safeCall(renderer, 'setLiveSurface', {
-    leaves: leafList,
-    revision: world.revision,
-    seed: world.planetSeed,
-  });
-}
 
 function syncRenderFaces() {
   refreshPlanetRenderFaces();
-  syncLiveSurface();
 }
 
 function boot() {
@@ -796,7 +764,6 @@ function resize() {
   const h = window.innerHeight || 1;
   camera.setViewport(w, h);
   try {
-    if (surfaceCamera) surfaceCamera.setViewport(w, h);
     renderer.resize();
   } catch (err) {
     console.warn('[icosa] renderer resize failed', err);
@@ -1167,7 +1134,6 @@ function handleCellEvent(msg) {
   if (Number.isInteger(lastClickIndex) && lastClickIndex === myIndex) lastClickAtClient = serverNow();
   renderer.updateCell(label, node.ownerIndex, node.clicks, node.lastClickIndex);
   refreshPlanetRenderFaces();
-  syncLiveSurface();
   if (hoveredLabel === label) safeCall(ui, 'setHoverFace', faceInfo(label));
 }
 
@@ -1179,7 +1145,6 @@ function handleBreakEvent(msg) {
   refreshLeafList();
   renderer.replaceFace(msg.label, children);
   refreshPlanetRenderFaces();
-  syncLiveSurface();
   syncSurfaceResourcePins();
   for (const child of children) renderer.pulse(child.label, { color: '#d7ff00', kind: 'break', text: '' });
   safeAudio('breakShatter');
@@ -1211,7 +1176,6 @@ function applyDiscoveredResource(label, resource, playerId) {
     try {
       if (typeof renderer.discoverResource === 'function') renderer.discoverResource(label, resource.id);
       else syncRenderFaces();
-      syncLiveSurface();
     } catch (err) {
       console.warn('[icosa] resource marker failed', err);
     }
@@ -1869,7 +1833,6 @@ function optimisticClick(label) {
   if (myIndex >= 0) node.lastClickIndex = myIndex;
   renderer.updateCell(label, node.ownerIndex, node.clicks, node.lastClickIndex);
   refreshPlanetRenderFaces();
-  syncLiveSurface();
   const color = myPlayer ? myPlayer.color : '#00f0ff';
   const info = faceInfo(label);
   renderer.pulse(label, {
@@ -1932,7 +1895,6 @@ function attemptClick(label) {
           node.clicks = before.clicks;
           renderer.updateCell(label, node.ownerIndex, node.clicks, node.lastClickIndex);
   refreshPlanetRenderFaces();
-  syncLiveSurface();
           if (hoveredLabel === label) safeCall(ui, 'setHoverFace', faceInfo(label));
         }
       } else if (err === 'NOT_JOINED') {
@@ -1945,7 +1907,6 @@ function attemptClick(label) {
           if (myIndex >= 0) node.lastClickIndex = myIndex; // remember locally: no more optimistic pulses
           renderer.updateCell(label, node.ownerIndex, node.clicks, node.lastClickIndex);
   refreshPlanetRenderFaces();
-  syncLiveSurface();
           if (hoveredLabel === label) safeCall(ui, 'setHoverFace', faceInfo(label));
         }
         safeCall(ui, 'toast', 'CELL LOCKED // ANOTHER OPERATOR MUST CONTEST IT FIRST', 'warn');
@@ -1957,7 +1918,6 @@ function attemptClick(label) {
           node.clicks = before.clicks;
           renderer.updateCell(label, node.ownerIndex, node.clicks, node.lastClickIndex);
   refreshPlanetRenderFaces();
-  syncLiveSurface();
         }
         safeCall(ui, 'toast', (data && data.message) || 'GRID REJECTED THE CLICK', 'warn');
         safeAudio('error');
@@ -2244,15 +2204,29 @@ function snapZoomToLevel() {
 
 function zoomByNotch(direction, magnitude = 1) {
   const current = zoomTarget === null ? camera.zoom : zoomTarget;
+  // SINGLE CAMERA: on the surface the same camera keeps dollying in/out; it does
+  // not swap to a second projection. Scrolling back out past the entry rung
+  // returns to orbit through the normal exit policy.
+  if (view === 'surface') {
+    if (direction > 0) {
+      startZoom(clamp(current * 2, current, MAX_ZOOM), 180 + 20 * clamp(magnitude, 0, 3));
+    } else {
+      const nextZoom = current / 2;
+      if (nextZoom <= zoomForLevel(SURFACE_ENTER_LEVEL)) {
+        requestExitSurface();
+        return;
+      }
+      startZoom(clamp(nextZoom, zoomForLevel(SURFACE_ENTER_LEVEL), MAX_ZOOM), 180 + 20 * clamp(magnitude, 0, 3));
+    }
+    lastInteraction = now();
+    return;
+  }
   const level = zoomLevelForZoom(current);
   if (direction > 0 && level >= SURFACE_ENTER_LEVEL) {
     enterSurfaceMode();
     return;
   }
   const next = clamp(level + (direction > 0 ? 1 : -1), 0, maxOrbitZoomLevel());
-  if (direction > 0 && next >= SURFACE_ENTER_LEVEL) {
-    safeCall(ui, 'toast', 'FOURTH ZOOM LEVEL // SCROLL AGAIN TO LAND ON THE SURFACE', 'info');
-  }
   startZoom(zoomForLevel(next), 240 + 40 * clamp(magnitude, 0, 2));
   lastInteraction = now();
   hoverNeedsRefresh = true;
@@ -2454,8 +2428,13 @@ function handlePointerIntent(intent) {
     if (intent.phase === 'move') {
       const scale = Number(intent.scale) || 1;
       pinchAccum *= scale;
-      if (pinchAccum > 1.25 && zoomLevelForZoom(pinchBaseZoom) >= SURFACE_ENTER_LEVEL) {
-        enterSurfaceMode();
+      if (zoomLevelForZoom(pinchBaseZoom) >= SURFACE_ENTER_LEVEL || view === 'surface') {
+        if (view !== 'surface' && pinchAccum > 1.25) {
+          enterSurfaceMode();
+          return;
+        }
+        const floor = zoomForLevel(SURFACE_ENTER_LEVEL);
+        startZoom(clamp(pinchBaseZoom * pinchAccum, floor, MAX_ZOOM), 90);
         return;
       }
       startZoom(clamp(pinchBaseZoom * pinchAccum, ORBIT_FAR_ZOOM, MAX_ZOOM), 90);
@@ -2662,7 +2641,6 @@ function finishSurfaceExit() {
   }
   view = 'orbit';
   renderer.setSurfaceMode({ active: false });
-  renderer.setSurfaceView(false);
   safeCall(renderer, 'clearSurfaceVisuals');
   syncRenderFaces();
   sendSurfaceLeave();
@@ -3047,9 +3025,17 @@ function frame(t) {
     // One RAF loop (this one): the controller advances pose and harvest state,
     // the shared renderer draws the planet, cells and entities.
     surface.update(dt);
+    // Single camera: the same zoom/focus/inertia state drives the surface view.
+    updateCameraInertia(dt);
     const pose = surface.pose();
-    surfaceCamera.setViewport(camera.width || window.innerWidth, camera.height || window.innerHeight);
-    surfaceCamera.setPose(pose.pos, pose.forward);
+    // SINGLE CAMERA: the surface is the same orbit camera, just zoomed/following
+    // the pilot. One camera instance, one scene, no separate surface projection.
+    if (pose && pose.pos) {
+      const p = pose.pos;
+      const horizontal = Math.hypot(p.x, p.z) || 1;
+      camera.yaw = Math.atan2(-p.x, p.z);
+      camera.pitch = Math.atan2(p.y, horizontal);
+    }
     renderer.setSurfaceMode({
       active: true,
       entities: surface.entities(),
@@ -3058,7 +3044,7 @@ function frame(t) {
       progress: surface.progress(),
     });
     try {
-      renderer.render(surfaceCamera, t);
+      renderer.render(camera, t);
     } catch (err) {
       if (!frame.warned) {
         frame.warned = true;
@@ -3261,10 +3247,7 @@ window.__ICOSA__ = {
       : 0,
   }),
   view: () => view,
-  surfaceRenderer: () => SURFACE_RENDERER,
   hudSnapshot: () => safeCall(ui, 'hudSnapshot'),
-  cameraMode: () => cameraModeReport(SURFACE_CAMERA_MODE),
-  surfaceCamera: () => surfaceCamera,
   surfaceDebug: () => (surface ? surface.debug() : null),
   surfaceMineCount: () => {
     const stats = safeCall(renderer, 'surfaceVisualStats');
@@ -3272,7 +3255,6 @@ window.__ICOSA__ = {
   },
   surfaceVisualStats: () => safeCall(renderer, 'surfaceVisualStats'),
   avatarStats: () => safeCall(renderer, 'avatarStats'),
-  setMaterialProbe: (enabled) => safeCall(renderer, 'setMaterialProbe', !!enabled),
   setAvatarScale: (multiplier) => safeCall(renderer, 'setAvatarScale', multiplier),
   setRenderPaused: (paused) => {
     window.__ICOSA_RENDER_PAUSED__ = !!paused;
@@ -3358,11 +3340,6 @@ window.__ICOSA__ = {
   leavesSnapshot: () => refreshLeafList().map((n) => [n.label, n.ownerIndex, n.clicks, n.resourceId || null]),
   worldRevision: () => world.revision,
   perf: () => safeCall(renderer, 'perfSnapshot'),
-  surfaceMeshStats: () => safeCall(renderer, 'surfaceMeshStats'),
-  surfaceMeshHash: () => {
-    const stats = safeCall(renderer, 'surfaceMeshStats');
-    return stats ? stats.hash : null;
-  },
   renderFaces: () => planetRenderFaces,
 };
 

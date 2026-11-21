@@ -26,7 +26,6 @@ import {
   tangentFrame,
   toolPoint,
 } from '../public/js/shared/humanoid-3d.js';
-import { SurfaceCamera } from '../public/js/shared/surface-camera.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PRODUCTION_SCALE = 0.01;
@@ -263,64 +262,6 @@ test('humanoid rig: pole and antipode anchors never produce NaN', () => {
     const posed = poseRig(rig, { walkPhase: 1, minePhase: 1 }, null, 'L0');
     assert.ok([...posed].every(Number.isFinite));
   }
-});
-
-test('humanoid rig: front, back and side projections cull back faces and sort by depth', () => {
-  const width = 1200;
-  const height = 800;
-  const anchor = { x: 0, y: 0, z: 1 };
-  const forward = { x: 1, y: 0, z: 0 };
-  const camera = new SurfaceCamera(width, height, { mode: 'legacy' });
-  camera.setPose(anchor, forward);
-  const pose = { walkPhase: 0.6, minePhase: 0.2, moving: true };
-  const ctx = mockContext();
-  const result = drawRig(ctx, camera, rig, pose, {
-    anchor,
-    forward,
-    scale: 1,
-    level: 'L0',
-    tint: '#67ddff',
-  });
-  assert.equal(result.level, 'L0');
-  assert.equal(result.triangles, 132);
-  assert.ok(result.drawn > 20 && result.drawn < 132, 'back faces are culled');
-  assert.ok(result.culled > 0);
-  const fills = ctx.calls.filter((call) => call.op === 'fill');
-  assert.equal(fills.length, result.drawn);
-  // Painter order: depths must be non-increasing.
-  const projection = projectRig(camera, rig, poseRig(rig, pose, null, 'L0'), {
-    level: 'L0', anchor, forward, scale: 1,
-  });
-  for (let i = 1; i < projection.triangles.length; i += 1) {
-    assert.ok(projection.triangles[i - 1].depth >= projection.triangles[i].depth, 'far to near draw order');
-  }
-  // The figure reads at a plausible on-screen height for the production camera.
-  assert.ok(result.heightPx >= 12 && result.heightPx <= 90, `figure height ${result.heightPx}px within 12–90px`);
-  // Behind the camera: nothing is drawn and no mirrored silhouette leaks.
-  // A figure on the opposite side of the planet is behind the camera: every
-  // vertex fails the near-plane test, so nothing is drawn (no mirrored body).
-  const behind = new SurfaceCamera(width, height, { mode: 'legacy' });
-  behind.setPose({ x: 0, y: 0, z: 1 }, { x: 1, y: 0, z: 0 });
-  const behindCtx = mockContext();
-  const behindResult = drawRig(behindCtx, behind, rig, pose, {
-    anchor: { x: 0, y: 0, z: -1 },
-    forward: { x: 1, y: 0, z: 0 },
-    scale: 1,
-    level: 'L0',
-  });
-  assert.equal(behindResult.drawn, 0, 'a figure behind the camera is culled, never mirrored');
-  assert.equal(behindResult.heightPx, 0);
-  // Front/back/side produce distinct screen coverage (evidence for the shots).
-  const coverage = ['front', 'back', 'side'].map((view) => {
-    const cam = new SurfaceCamera(width, height, { mode: 'legacy' });
-    const dir = view === 'front' ? { x: 1, y: 0, z: 0 } : view === 'back' ? { x: -1, y: 0, z: 0 } : { x: 0, y: 0, z: 1 };
-    cam.setPose(anchor, dir);
-    const projected = projectRig(cam, rig, poseRig(rig, pose, null, 'L0'), {
-      level: 'L0', anchor, forward: dir, scale: 1,
-    });
-    return projected.triangles.length;
-  });
-  assert.ok(coverage[0] > 0 && coverage[1] > 0 && coverage[2] > 0, 'figure is visible from front, back and side');
 });
 
 test('humanoid rig: reduced motion freezes the walk and keeps the mining lift', () => {

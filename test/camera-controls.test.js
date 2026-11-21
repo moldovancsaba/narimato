@@ -60,13 +60,6 @@ test('camera: the orbital six-vertex fixture projects to unchanged pixels', () =
   }
 });
 
-test('camera: no camera module depends on the retired v3.58 frame helpers', () => {
-  const retired = /\b(lookFrame|frameProject|frameUnproject)\b/;
-  for (const file of ['public/js/shared/surface-camera.js', 'public/js/shared/camera-contract.js']) {
-    const source = fs.readFileSync(path.join(ROOT, file), 'utf8');
-    assert.equal(retired.test(source), false, `${file} references a retired v3.58 helper`);
-  }
-});
 
 /* ------------------------------------------------------------------ *
  * CTL-02: pole continuity, cull axis truth and frame bounds
