@@ -184,6 +184,9 @@ export const SURFACES = Object.freeze([
     ],
     primarySelectors: ['#btn-surface-exit', '[data-surface-hold="KeyW"]'],
     ownershipRoot: '[data-gds-surface][data-gds-component]',
+    // The surface probe deliberately contests a cell; a 409 is an expected
+    // interaction outcome the UI handles, not a runtime failure.
+    allowedConsoleErrors: [/Failed to load resource: the server responded with a status of 409 \(Conflict\)/],
   },
   {
     id: 'cine',

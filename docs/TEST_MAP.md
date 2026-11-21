@@ -13,6 +13,7 @@ real count.
 |---|---|---|---|
 | `test/a11y-report.test.js` | Accessibility report schema, finding validation, surface status precedence, deterministic ordering, migrated surface registry | `scripts/lib/a11y-report.mjs`, `public/js/a11y-surfaces.js` | A11Y-01 |
 | `test/a11y-suppression.test.js` | Suppression owner/expiry validation, selector/route matching, expired never suppresses, unused audit | `scripts/lib/a11y-report.mjs`, `a11y-suppressions.json` | A11Y-01 |
+| `test/a11y-runtime-filter.test.js` | Allow-listed expected runtime errors vs fatal errors in the a11y report | `scripts/lib/a11y-report.mjs` | A11Y-01 |
 | `test/adr.test.js` | ADR numbering, front matter, index coverage, key existence | `docs/adr/` | DOC-01 |
 | `test/camera-contract.test.js` | `CameraView` conformance for both cameras, units, orthonormal basis, malformed rejection | `public/js/shared/camera-contract.js` | RND-01 |
 | `test/camera-controls.test.js` | Camera control semantics, unchanged orbital pixel fixture, 720-step two-pole loop, pole/roll face sweep, culling bounds, frame stats | `public/js/shared/geometry.js`, `public/js/renderer.js` | CTL-01, CTL-02, RND-01 |
