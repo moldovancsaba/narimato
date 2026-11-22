@@ -94,8 +94,10 @@ floated outside the limb. Leaf fills were still semi-transparent, so overlapping
 double edges/seams and the sphere surface did not read as one closed surface.
 
 **Fix.** All cell fills, cell edges and sphere-attached decorations are clipped to the projected
-silhouette circle; hologram and terrain fills are fully opaque; the limb is a clean circle instead
-of clipped triangle chords. No geometry/triangle count change.
+silhouette; hologram and terrain fills are fully opaque; visibility is tested against the real
+tangent plane (`x·P = 1`) so large leaves straddling the limb still fill it. Pitched/carrier cameras
+use the projected tangent-circle outline, not a screen-centred circle. No geometry/triangle-count
+change.
 
 **Verification.** Real-renderer captures at orbit, deep zoom and surface show a clean silhouette
 with no off-sphere strokes and no fill seams; surface-truth 4/4 and two-client 7/7 still pass;
