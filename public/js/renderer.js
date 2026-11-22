@@ -1173,7 +1173,6 @@ export class IcosaRenderer {
       ctx.save();
       ctx.clip(this._silhouettePath(camera, cx, cy, R));
       this._drawLabels(ctx, camera);
-      this._drawChargeArcs(ctx);
       this._drawWaypoint(ctx, camera);
       this._drawSupplyMarkers(ctx, camera);
       this._drawPulses(ctx, camera, rm);
@@ -2295,9 +2294,9 @@ export class IcosaRenderer {
       // Use the sampled spherical boundary, not just the three vertices: a
       // great-circle edge can bow into the visible cap while both endpoints are
       // behind the tangent plane. Vertices-only culling left a dark rim.
-      // A face may be visible if any sampled boundary point is in front of the
-      // tangent plane. The edge path itself is clipped to that plane below, so
-      // only the front portion of the arcs is stroked: no back-face leaking.
+      // Include a cell when any sampled boundary point is in front of the
+      // tangent plane. The edge pass strokes only its original front segments,
+      // never the tangent cut: partial cells cannot leak/wave at the limb.
       let maxDot = -Infinity;
       for (let k = 0; k < e.n; k += 1) {
         const o = k * 3;
@@ -2554,8 +2553,8 @@ export class IcosaRenderer {
         }
       }
 
-      // Near-breaking cells pulse.
-      if (frac >= 0.75 && !style.isUnowned) {
+      // Near-breaking cells pulse (front segments only mode: no clipped cut).
+      if (!ARC_SURFACE && frac >= 0.75 && !style.isUnowned) {
         let nb = nearBreak[sid];
         if (!nb) {
           nb = new Path2D();
@@ -2576,13 +2575,76 @@ export class IcosaRenderer {
         edgePath = new Path2D();
         buckets[key] = edgePath;
       }
-      edgePath.moveTo(px[0], py[0]);
-      for (let k = 1; k < np; k++) edgePath.lineTo(px[k], py[k]);
-      edgePath.closePath();
-      if (lockedToMe) {
-        lockedEdges.moveTo(px[0], py[0]);
-        for (let k = 1; k < np; k++) lockedEdges.lineTo(px[k], py[k]);
-        lockedEdges.closePath();
+      if (ARC_SURFACE) {
+        // Stroke only the ORIGINAL front boundary segments. The clipped
+        // polygon's tangent cut is deliberately not stroked: that artificial
+        // chord is what made wavy double-edges and back-side-looking loops.
+        const eye = this._sphereEye(camera);
+        const wx = e.wx;
+        const n = e.n;
+        const signedAt = (k) => {
+          const o = k * 3;
+          return wx[o] * eye.n.x + wx[o + 1] * eye.n.y + wx[o + 2] * eye.n.z - eye.threshold;
+        };
+        for (let k = 0; k < n; k += 1) {
+          const k2 = (k + 1) % n;
+          const sp = signedAt(k);
+          const sq = signedAt(k2);
+          if (sp < 0 && sq < 0) continue;
+          let x1;
+          let y1;
+          let x2;
+          let y2;
+          if (sp >= 0) {
+            x1 = e.px[k];
+            y1 = e.py[k];
+          } else {
+            const t = sp / (sp - sq);
+            const oi = k * 3;
+            const oj = k2 * 3;
+            const v = {
+              x: wx[oi] + (wx[oj] - wx[oi]) * t,
+              y: wx[oi + 1] + (wx[oj + 1] - wx[oi + 1]) * t,
+              z: wx[oi + 2] + (wx[oj + 2] - wx[oi + 2]) * t,
+            };
+            const pr = camera.project(normalize(v));
+            if (!pr || !Number.isFinite(pr.x) || !Number.isFinite(pr.y)) continue;
+            x1 = pr.x;
+            y1 = pr.y;
+          }
+          if (sq >= 0) {
+            x2 = e.px[k2];
+            y2 = e.py[k2];
+          } else {
+            const t = sq / (sq - sp);
+            const oi = k2 * 3;
+            const oj = k * 3;
+            const v = {
+              x: wx[oi] + (wx[oj] - wx[oi]) * t,
+              y: wx[oi + 1] + (wx[oj + 1] - wx[oi + 1]) * t,
+              z: wx[oi + 2] + (wx[oj + 2] - wx[oi + 2]) * t,
+            };
+            const pr = camera.project(normalize(v));
+            if (!pr || !Number.isFinite(pr.x) || !Number.isFinite(pr.y)) continue;
+            x2 = pr.x;
+            y2 = pr.y;
+          }
+          edgePath.moveTo(x1, y1);
+          edgePath.lineTo(x2, y2);
+          if (lockedToMe) {
+            lockedEdges.moveTo(x1, y1);
+            lockedEdges.lineTo(x2, y2);
+          }
+        }
+      } else {
+        edgePath.moveTo(px[0], py[0]);
+        for (let k = 1; k < np; k++) edgePath.lineTo(px[k], py[k]);
+        edgePath.closePath();
+        if (lockedToMe) {
+          lockedEdges.moveTo(px[0], py[0]);
+          for (let k = 1; k < np; k++) lockedEdges.lineTo(px[k], py[k]);
+          lockedEdges.closePath();
+        }
       }
     }
     this._hoverNp = hoverNp;
