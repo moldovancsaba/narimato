@@ -2200,10 +2200,11 @@ export class IcosaRenderer {
     if (this._sphereDiscKey !== discKey) {
       this._sphereDiscKey = discKey;
       const d = ctx.createRadialGradient(cx - R * 0.14, cy - R * 0.18, R * 0.06, cx, cy, R * 1.02);
-      d.addColorStop(0, 'rgba(4,1,16,0.86)');
-      d.addColorStop(0.55, 'rgba(5,1,18,0.78)');
-      d.addColorStop(0.86, 'rgba(8,3,26,0.62)');
-      d.addColorStop(1, 'rgba(10,4,30,0.2)');
+      // Opaque substrate: the surface must not show space/back geometry through it.
+      d.addColorStop(0, 'rgb(4,1,16)');
+      d.addColorStop(0.55, 'rgb(5,1,18)');
+      d.addColorStop(0.86, 'rgb(8,3,26)');
+      d.addColorStop(1, 'rgb(10,4,30)');
       this._sphereDisc = d;
     }
     ctx.save();
@@ -2214,54 +2215,7 @@ export class IcosaRenderer {
     ctx.fillRect(cx - R, cy - R, R * 2, R * 2);
     ctx.restore();
 
-    // --- Back hemisphere wireframe (cheap hologram scaffold). --------
-    const backFade = clamp(1 - (this._zoom - 6) / 8, 0, 1);
-    if (backFade > 0.02) {
-      const backPath = new Path2D();
-      let backCount = 0;
-      if (nf <= 800) {
-        // Authentic back-face wireframe of the actual leaves.
-        const backFadeInner = backFade;
-        for (let i = 0; i < nf; i++) {
-          const e = faces[i];
-          const c = e.centroid;
-          const dotc = c.x * Kx + c.y * Ky + c.z * Kz;
-          const cosBack = cosGB * e.cosTheta + sinGB * e.sinTheta;
-          if (dotc > cosBack) continue; // not a back candidate
-          if (e.depth > 3) continue;
-          const sr = (R * this._d * e.sinTheta) / Math.max(1e-6, this._d - dotc);
-          if (e.depth >= 2 && sr < 1.5 * (nf / 400)) continue;
-          if (this._addBackTri(backPath, e, camera, W, H)) backCount++;
-        }
-        if (backCount) {
-          ctx.save();
-          ctx.globalCompositeOperation = 'lighter';
-          ctx.globalAlpha = backFadeInner;
-          ctx.strokeStyle = rgba(CYAN, 0.05);
-          ctx.lineWidth = 0.5;
-          ctx.stroke(backPath);
-          ctx.restore();
-        }
-      } else {
-        // Dense worlds: draw a static coarse geodesic cage instead (much cheaper).
-        const cage = this._getCage();
-        for (let i = 0; i < cage.length; i++) {
-          const f = cage[i];
-          const c = f.centroid;
-          if (c.x * Kx + c.y * Ky + c.z * Kz > 0.02) continue;
-          if (this._addCageTri(backPath, f, camera, W, H)) backCount++;
-        }
-        if (backCount) {
-          ctx.save();
-          ctx.globalCompositeOperation = 'lighter';
-          ctx.globalAlpha = backFade * 0.9;
-          ctx.strokeStyle = rgba(CYAN, 0.045);
-          ctx.lineWidth = 0.45;
-          ctx.stroke(backPath);
-          ctx.restore();
-        }
-      }
-    }
+    // Hidden back geometry is never drawn: the front surface is opaque.
 
     // --- Cull + project front candidates. ---------------------------
     let vc = 0;
@@ -2398,9 +2352,11 @@ export class IcosaRenderer {
           if (d2 > maxD) maxD = d2;
         }
         const grad = ctx.createRadialGradient(mx, my, 0, mx, my, Math.max(3, Math.sqrt(maxD)));
-        const baseA = style.isUnowned ? 0.03 + 0.02 * (band / 5) : 0.1 + 0.05 * (band / 5) + 0.05 * frac;
-        grad.addColorStop(0, rgba(style.rgb, baseA * (style.isUnowned ? 0.5 : 0.78)));
-        grad.addColorStop(1, rgba(style.rgb, baseA * (style.isUnowned ? 1.9 : 1.35)));
+        // Opaque enough that the surface never reads as a window: no background
+        // or hidden geometry may leak through a cell.
+        const baseA = style.isUnowned ? 0.72 + 0.08 * (band / 5) : 0.82 + 0.1 * (band / 5) + 0.05 * frac;
+        grad.addColorStop(0, rgba(style.rgb, Math.min(1, baseA * (style.isUnowned ? 0.82 : 0.92))));
+        grad.addColorStop(1, rgba(style.rgb, Math.min(1, baseA * (style.isUnowned ? 1.18 : 1.08))));
         ctx.fillStyle = grad;
         ctx.fill();
       } else {
