@@ -1,6 +1,7 @@
 # Fixes log — renderer, controls and gates
 
-Durable record of the corrective work landed after the first surface delivery. Each
+Durable record of the corrective work landed after the first surface delivery. The development
+rules derived from these incidents live in [GUARDRAILS.md](GUARDRAILS.md). Each
 entry states the cause, the fix and the verification; the board owns status. Commit
 links resolve on the repository at
 [github.com/moldovancsaba/narimato](https://github.com/moldovancsaba/narimato).

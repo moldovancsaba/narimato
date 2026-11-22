@@ -14,7 +14,7 @@ to it; it never restates their status.
 
 | Milestone | Scope | Issues |
 |---|---|---|
-| M0 — SSOT & repository foundation | See [PROJECT_BOARD.md](PROJECT_BOARD.md#milestones) | 6 |
+| M0 — SSOT & repository foundation | See [PROJECT_BOARD.md](PROJECT_BOARD.md#milestones) | 7 |
 | M1 — GDS UI foundation & accessible surfaces | See [PROJECT_BOARD.md](PROJECT_BOARD.md#milestones) | 7 |
 | M2 — Single-scene renderer | See [PROJECT_BOARD.md](PROJECT_BOARD.md#milestones) | 6 |
 | M3 — Authoritative surface multiplayer | See [PROJECT_BOARD.md](PROJECT_BOARD.md#milestones) | 6 |
@@ -33,6 +33,7 @@ to it; it never restates their status.
 | [SSOT-04](https://github.com/moldovancsaba/narimato/issues/4) | Docs: Legacy delivery-doc retirement - migrate status backlogs into the issue SSOT | M0 | 15 | [SSOT-01](https://github.com/moldovancsaba/narimato/issues/1) | [REL-01](https://github.com/moldovancsaba/narimato/issues/45) |
 | [QA-01](https://github.com/moldovancsaba/narimato/issues/5) | Quality: Test-suite SSOT - dead-code removal, coverage map, and documentation count sync | M0 | 35 | [SSOT-01](https://github.com/moldovancsaba/narimato/issues/1) | [REL-01](https://github.com/moldovancsaba/narimato/issues/45) |
 | [DOC-01](https://github.com/moldovancsaba/narimato/issues/6) | Docs: Architecture ADR and technical-doc maintenance - durable knowledge links to issues | M0 | 40 | [SSOT-01](https://github.com/moldovancsaba/narimato/issues/1) | [REL-01](https://github.com/moldovancsaba/narimato/issues/45) |
+| [DOC-02](https://github.com/moldovancsaba/narimato/issues/86) | Docs: Development guardrails - do-not-do, detour prevention, and protected-behaviour protocol | M0 | 45 | [DOC-01](https://github.com/moldovancsaba/narimato/issues/6) | [REL-01](https://github.com/moldovancsaba/narimato/issues/45) |
 | [UI-01](https://github.com/moldovancsaba/narimato/issues/7) | UI: GDS integration foundation - React island build, GdsProvider, and canvas/DOM boundary | M1 | 100 | [SSOT-01](https://github.com/moldovancsaba/narimato/issues/1) | [UI-02](https://github.com/moldovancsaba/narimato/issues/8), [UI-03](https://github.com/moldovancsaba/narimato/issues/9), [UI-04](https://github.com/moldovancsaba/narimato/issues/10), [UI-05](https://github.com/moldovancsaba/narimato/issues/11), [A11Y-01](https://github.com/moldovancsaba/narimato/issues/12) |
 | [UI-02](https://github.com/moldovancsaba/narimato/issues/8) | UI: HUD migration - GDS mission, cargo, players, score, and target panels | M1 | 110 | [UI-01](https://github.com/moldovancsaba/narimato/issues/7) | [A11Y-01](https://github.com/moldovancsaba/narimato/issues/12), [A11Y-02](https://github.com/moldovancsaba/narimato/issues/13), [RND-03](https://github.com/moldovancsaba/narimato/issues/16) |
 | [UI-03](https://github.com/moldovancsaba/narimato/issues/9) | UI: Overlay migration - landing, Field Manual, Guide, Report, and confirm dialogs | M1 | 120 | [UI-01](https://github.com/moldovancsaba/narimato/issues/7) | [A11Y-02](https://github.com/moldovancsaba/narimato/issues/13), [CTL-05](https://github.com/moldovancsaba/narimato/issues/30) |
@@ -105,7 +106,9 @@ to it; it never restates their status.
 | [SPEC_PLANET.md](../SPEC_PLANET.md) | Frozen planet surface/terrain layer contract. | [RND-02](https://github.com/moldovancsaba/narimato/issues/15), [RND-04](https://github.com/moldovancsaba/narimato/issues/17) |
 | [SPEC_PLANETS.md](../SPEC_PLANETS.md) | Frozen multi-planet progression contract. | [SRV-01](https://github.com/moldovancsaba/narimato/issues/20) |
 | [SPEC_RESOURCES.md](../SPEC_RESOURCES.md) | Frozen resource/mining layer contract. | [CTL-03](https://github.com/moldovancsaba/narimato/issues/28) |
-| [docs/SSOT.md](SSOT.md) | Delivery SSOT entry point and non-negotiable rules. | [SSOT-02](https://github.com/moldovancsaba/narimato/issues/2), [DOC-01](https://github.com/moldovancsaba/narimato/issues/6), [REL-02](https://github.com/moldovancsaba/narimato/issues/46) |
+| [docs/SSOT.md](SSOT.md) | Delivery SSOT entry point and non-negotiable rules. | [SSOT-02](https://github.com/moldovancsaba/narimato/issues/2), [DOC-01](https://github.com/moldovancsaba/narimato/issues/6), [DOC-02](https://github.com/moldovancsaba/narimato/issues/86), [REL-02](https://github.com/moldovancsaba/narimato/issues/46) |
+| [docs/FIXES.md](FIXES.md) | Cause/fix/verification log for the renderer, controls and gate corrections. | [DOC-01](https://github.com/moldovancsaba/narimato/issues/6), [DOC-02](https://github.com/moldovancsaba/narimato/issues/86) |
+| [docs/GUARDRAILS.md](GUARDRAILS.md) | Development rules, DO NOT DO list, detour detection and protected-behaviour protocol. | [DOC-02](https://github.com/moldovancsaba/narimato/issues/86) |
 | [docs/PROJECT_BOARD.md](PROJECT_BOARD.md) | Board fields, statuses, readiness, views, operating routine. | — |
 | [docs/DEFINITION_OF_DONE.md](DEFINITION_OF_DONE.md) | The only definition of done and release gate. | — |
 | [docs/ISSUE_INTAKE.md](ISSUE_INTAKE.md) | Issue authoring standard and anti-patterns. | — |
