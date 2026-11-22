@@ -296,6 +296,10 @@ projection or second HUD:
   the same `World.leaves` tree at every zoom. No derived mesh, cached globe or
   second scene exists; only the CameraView (orbit sphere vs surface carrier)
   differs, and both consume the same renderer.
+- Every cell fill, cell edge and sphere-attached decoration is clipped to the
+  projected sphere silhouette, and fills are opaque: nothing draws outside the
+  limb and overlapping leaves cannot show seams or background through the
+  surface.
 - Canvas terrain keeps its accessible equivalent in the HUD: the surface target
   readout reports the cell label and harvest state, and `#surface-controls` is a
   labelled `role="group"` with 44 px targets.

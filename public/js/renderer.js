@@ -1189,8 +1189,13 @@ export class IcosaRenderer {
     }
 
     if (hasCamera && cartoFade > 0.01) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, Math.max(1, R), 0, TAU);
+      ctx.clip();
       this._drawGraticule(ctx, camera, cartoFade);
       this._drawPoles(ctx, camera, cx, cy, cartoFade);
+      ctx.restore();
     }
 
     this._drawForegroundDust(ctx, W, H, dt, rm);
@@ -1199,15 +1204,26 @@ export class IcosaRenderer {
 
     // Labels + charge arcs are drawn crisp above the vignette.
     if (hasCamera) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, Math.max(1, R), 0, TAU);
+      ctx.clip();
       this._drawLabels(ctx, camera);
       this._drawChargeArcs(ctx);
       this._drawWaypoint(ctx, camera);
       this._drawSupplyMarkers(ctx, camera);
+      this._drawPulses(ctx, camera, rm);
+      ctx.restore();
     }
 
-    if (this.surfaceMode && hasCamera) this._drawSurfaceEntities(ctx, camera, rm);
-
-    if (hasCamera) this._drawPulses(ctx, camera, rm);
+    if (this.surfaceMode && hasCamera) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, Math.max(1, R), 0, TAU);
+      ctx.clip();
+      this._drawSurfaceEntities(ctx, camera, rm);
+      ctx.restore();
+    }
 
     this._finishPerfFrame(raw, perfFrameMs, rebuilt);
   }
@@ -2195,6 +2211,14 @@ export class IcosaRenderer {
     const dotZ = this._dotZ;
     const vis = this._visList;
 
+    // Every cell fill, edge and sphere decoration is clipped to the true
+    // projected silhouette: nothing may draw outside the limb, and the horizon
+    // is a clean circle rather than clipped triangle chords.
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, Math.max(1, R), 0, TAU);
+    ctx.clip();
+
     // --- Dark glass substrate clipped to the sphere silhouette. ------
     const discKey = `${Math.round(cx)}|${Math.round(cy)}|${Math.round(R)}`;
     if (this._sphereDiscKey !== discKey) {
@@ -2323,7 +2347,7 @@ export class IcosaRenderer {
         // Low-poly biome underlay: strong on unclaimed cells, translucent under
         // the player-colour claim tint so ownership stays readable.
         const owned = e.ownerIndex >= 0;
-        ctx.globalAlpha = lodAlpha * (0.82 + 0.18 * (band / 5));
+        ctx.globalAlpha = lodAlpha;
         ctx.fillStyle = owned ? e.terrainFillOwned : e.terrainFill;
         ctx.fill();
         ctx.globalAlpha = lodAlpha;
@@ -2352,11 +2376,10 @@ export class IcosaRenderer {
           if (d2 > maxD) maxD = d2;
         }
         const grad = ctx.createRadialGradient(mx, my, 0, mx, my, Math.max(3, Math.sqrt(maxD)));
-        // Opaque enough that the surface never reads as a window: no background
-        // or hidden geometry may leak through a cell.
-        const baseA = style.isUnowned ? 0.72 + 0.08 * (band / 5) : 0.82 + 0.1 * (band / 5) + 0.05 * frac;
-        grad.addColorStop(0, rgba(style.rgb, Math.min(1, baseA * (style.isUnowned ? 0.82 : 0.92))));
-        grad.addColorStop(1, rgba(style.rgb, Math.min(1, baseA * (style.isUnowned ? 1.18 : 1.08))));
+        // Fully opaque: overlapping leaves may not show their shared seam or the
+        // background through a fill. The silhouette clip owns the outline.
+        grad.addColorStop(0, rgba(style.rgb, 1));
+        grad.addColorStop(1, rgba(style.rgb, 1));
         ctx.fillStyle = grad;
         ctx.fill();
       } else {
@@ -2615,6 +2638,7 @@ export class IcosaRenderer {
       ctx.stroke();
       ctx.restore();
     }
+    ctx.restore();
   }
 
   _addBackTri(path, entry, camera, W, H) {
