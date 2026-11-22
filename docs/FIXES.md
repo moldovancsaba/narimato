@@ -104,3 +104,19 @@ with no off-sphere strokes and no fill seams; surface-truth 4/4 and two-client 7
 560/560 tests.
 
 Refs: [#88](https://github.com/moldovancsaba/narimato/issues/88).
+
+## 2026-11-22 — Solid opaque limb (no glass shell, no 2-sided edge)
+
+**Cause.** The projected edge still behaved like a hollow shell: a glass-dome FX/halo drew a second
+rim, the substrate showed as a dark void where front leaves did not reach the exact silhouette, and
+face clipping used the camera plane instead of the visible tangent hemisphere.
+
+**Fix.** Faces are clipped against the real visible tangent hemisphere (`x·P = 1`); culling uses the
+sampled spherical boundary so geodesic edges that bow into view still fill the limb; `SphereCamera`
+reports its exact projected silhouette radius; the glass-dome FX/halo and decorative outer rings are
+removed, and the opaque substrate uses a surface tone rather than a dark void.
+
+**Verification.** Four stage captures show an opaque limb with no see-through/2-sided shapes or
+hollow shell; one triangle per active leaf; 560/560 tests, acceptance and a11y gates green.
+
+Refs: [#91](https://github.com/moldovancsaba/narimato/issues/91).

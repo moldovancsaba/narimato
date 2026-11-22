@@ -513,6 +513,13 @@ export class SphereCamera {
     return 0;
   }
 
+  /** Projected silhouette radius of the unit sphere for this optical zoom. */
+  get screenRadius() {
+    const base = Math.min(this.width, this.height) * SPHERE_SCREEN_FRACTION * this.zoom;
+    const d = this.distance;
+    return base * d / Math.sqrt(Math.max(1e-6, d * d - 1));
+  }
+
   /** Legacy Euler access: setting either property resets a clean yaw/pitch view. */
   get yaw() { return this._yaw; }
   set yaw(value) {
