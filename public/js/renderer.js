@@ -1190,9 +1190,7 @@ export class IcosaRenderer {
 
     if (hasCamera && cartoFade > 0.01) {
       ctx.save();
-      ctx.beginPath();
-      ctx.arc(cx, cy, Math.max(1, R), 0, TAU);
-      ctx.clip();
+      ctx.clip(this._silhouettePath(camera, cx, cy, R));
       this._drawGraticule(ctx, camera, cartoFade);
       this._drawPoles(ctx, camera, cx, cy, cartoFade);
       ctx.restore();
@@ -1205,9 +1203,7 @@ export class IcosaRenderer {
     // Labels + charge arcs are drawn crisp above the vignette.
     if (hasCamera) {
       ctx.save();
-      ctx.beginPath();
-      ctx.arc(cx, cy, Math.max(1, R), 0, TAU);
-      ctx.clip();
+      ctx.clip(this._silhouettePath(camera, cx, cy, R));
       this._drawLabels(ctx, camera);
       this._drawChargeArcs(ctx);
       this._drawWaypoint(ctx, camera);
@@ -1218,9 +1214,7 @@ export class IcosaRenderer {
 
     if (this.surfaceMode && hasCamera) {
       ctx.save();
-      ctx.beginPath();
-      ctx.arc(cx, cy, Math.max(1, R), 0, TAU);
-      ctx.clip();
+      ctx.clip(this._silhouettePath(camera, cx, cy, R));
       this._drawSurfaceEntities(ctx, camera, rm);
       ctx.restore();
     }
@@ -2193,6 +2187,59 @@ export class IcosaRenderer {
     }
   }
 
+  /**
+   * Projected outline of the planet silhouette for the active camera. The
+   * clipped sphere is the tangent circle x·P = 1 (|P| = distance); projecting
+   * its sampled rim gives the true limb for pitched/carrier cameras instead of
+   * a screen-centred circle. Falls back to the circle when no 3D camera origin
+   * is available.
+   */
+  _silhouettePath(camera, cx, cy, R) {
+    const path = new Path2D();
+    const axis = camera && typeof camera.viewAxis === 'function' ? camera.viewAxis() : null;
+    const distance = camera && Number.isFinite(camera.distance) ? camera.distance : 0;
+    const project = camera && typeof camera.project === 'function' ? (point) => camera.project(point) : null;
+    if (axis && project && distance > 1.0001) {
+      const p = { x: axis.x * distance, y: axis.y * distance, z: axis.z * distance };
+      const t = { x: axis.x / distance, y: axis.y / distance, z: axis.z / distance };
+      const rim = Math.sqrt(Math.max(0, 1 - 1 / (distance * distance)));
+      const helper = Math.abs(axis.y) < 0.9 ? { x: 0, y: 1, z: 0 } : { x: 0, y: 0, z: 1 };
+      let u = {
+        x: axis.y * helper.z - axis.z * helper.y,
+        y: axis.z * helper.x - axis.x * helper.z,
+        z: axis.x * helper.y - axis.y * helper.x,
+      };
+      const ul = Math.hypot(u.x, u.y, u.z) || 1;
+      u = { x: u.x / ul, y: u.y / ul, z: u.z / ul };
+      const v = {
+        x: axis.y * u.z - axis.z * u.y,
+        y: axis.z * u.x - axis.x * u.z,
+        z: axis.x * u.y - axis.y * u.x,
+      };
+      for (let i = 0; i <= 96; i += 1) {
+        const a = (i / 96) * TAU;
+        const w = {
+          x: t.x + rim * (Math.cos(a) * u.x + Math.sin(a) * v.x),
+          y: t.y + rim * (Math.cos(a) * u.y + Math.sin(a) * v.y),
+          z: t.z + rim * (Math.cos(a) * u.z + Math.sin(a) * v.z),
+        };
+        const pr = project(w);
+        if (!pr || !Number.isFinite(pr.x) || !Number.isFinite(pr.y)) return this._circlePath(cx, cy, R);
+        if (i === 0) path.moveTo(pr.x, pr.y);
+        else path.lineTo(pr.x, pr.y);
+      }
+      path.closePath();
+      return path;
+    }
+    return this._circlePath(cx, cy, R);
+  }
+
+  _circlePath(cx, cy, R) {
+    const path = new Path2D();
+    path.arc(cx, cy, Math.max(1, R), 0, TAU);
+    return path;
+  }
+
   _drawSphere(ctx, camera, cx, cy, R, rm, glassFade) {
     const W = this.width;
     const H = this.height;
@@ -2215,9 +2262,7 @@ export class IcosaRenderer {
     // projected silhouette: nothing may draw outside the limb, and the horizon
     // is a clean circle rather than clipped triangle chords.
     ctx.save();
-    ctx.beginPath();
-    ctx.arc(cx, cy, Math.max(1, R), 0, TAU);
-    ctx.clip();
+    ctx.clip(this._silhouettePath(camera, cx, cy, R));
 
     // --- Dark glass substrate clipped to the sphere silhouette. ------
     const discKey = `${Math.round(cx)}|${Math.round(cy)}|${Math.round(R)}`;
@@ -2232,9 +2277,7 @@ export class IcosaRenderer {
       this._sphereDisc = d;
     }
     ctx.save();
-    ctx.beginPath();
-    ctx.arc(cx, cy, Math.max(1, R), 0, TAU);
-    ctx.clip();
+    ctx.clip(this._silhouettePath(camera, cx, cy, R));
     ctx.fillStyle = this._sphereDisc;
     ctx.fillRect(cx - R, cy - R, R * 2, R * 2);
     ctx.restore();
@@ -2242,18 +2285,34 @@ export class IcosaRenderer {
     // Hidden back geometry is never drawn: the front surface is opaque.
 
     // --- Cull + project front candidates. ---------------------------
+    // Visibility against the real silhouette plane x·P = 1 (P = camera eye),
+    // not a centroid-only view cone: large leaves straddling the limb have a
+    // hidden centroid but visible area. Any face with at least one vertex in
+    // front of the silhouette plane can be visible; the silhouette clip masks
+    // the exact outline. Faces entirely behind the plane are skipped.
+    const eye = camera && camera.origin && Number.isFinite(camera.origin.x)
+      ? camera.origin
+      : {
+        x: (camera && typeof camera.viewAxis === 'function' ? camera.viewAxis().x : 0) * (camera && Number.isFinite(camera.distance) ? camera.distance : 1),
+        y: (camera && typeof camera.viewAxis === 'function' ? camera.viewAxis().y : 0) * (camera && Number.isFinite(camera.distance) ? camera.distance : 1),
+        z: (camera && typeof camera.viewAxis === 'function' ? camera.viewAxis().z : 1) * (camera && Number.isFinite(camera.distance) ? camera.distance : 1),
+      };
+    const axisV = camera && typeof camera.viewAxis === 'function' ? camera.viewAxis() : { x: 0, y: 0, z: 1 };
+    const eyeLen = Math.hypot(eye.x, eye.y, eye.z) || 1;
+    const eyeN = { x: eye.x / eyeLen, y: eye.y / eyeLen, z: eye.z / eyeLen };
+    const eyeThreshold = 1 / eyeLen;
     let vc = 0;
     for (let i = 0; i < nf; i++) {
       const e = faces[i];
-      const c = e.centroid;
-      const dotc = c.x * Kx + c.y * Ky + c.z * Kz;
-      const ct = e.cosTheta;
-      const st = e.sinTheta;
-      if (dotc >= cosA * ct - sinA * st) {
-        if (!this._projectEntry(e, camera, W, H)) { this._stats.culled += 1; continue; }
-        dotZ[i] = dotc;
-        vis[vc++] = i;
-      }
+      const maxDot = Math.max(
+        e.a.x * eyeN.x + e.a.y * eyeN.y + e.a.z * eyeN.z,
+        e.b.x * eyeN.x + e.b.y * eyeN.y + e.b.z * eyeN.z,
+        e.c.x * eyeN.x + e.c.y * eyeN.y + e.c.z * eyeN.z,
+      );
+      if (maxDot < eyeThreshold - 1e-6) continue;
+      if (!this._projectEntry(e, camera, W, H)) { this._stats.culled += 1; continue; }
+      dotZ[i] = e.centroid.x * axisV.x + e.centroid.y * axisV.y + e.centroid.z * axisV.z;
+      vis[vc++] = i;
     }
     this._visCount = vc;
 
