@@ -96,7 +96,8 @@ Observability: `public/js/telemetry.js` posts a tiny privacy-safe numeric beacon
   It is the single renderer for both views: `setSurfaceMode({ active, entities, phase, progress })`
   turns on the surface entity pass (avatars, pins, beams, harvest FX, landing ship) on the same
   `#arena-canvas`. PERF-01 feeds every rAF delta into `perf-budget.js` and draws the full/medium/
-  coarse tessellation chosen by the quality ladder; tiers change only canvas work, never DOM/GDS.
+  one triangle per authoritative active leaf; quality tiers change only canvas decoration
+  work, never the triangle set or DOM/GDS.
 - **`perf-budget.js`** — pure, Node-importable client budgets: three device classes, 512-sample
   frame ring, windowed p95, interaction ring, 2 s-hysteresis quality tier and `evaluatePerf()`.
   `perf-probe.mjs` evaluates the same functions outside the browser, so budgets cannot drift.
@@ -598,7 +599,7 @@ and the single stylesheet, and no parallel component library or second visual sy
 - **Labels:** base 1–20; children 1–4 in the parent's gnomonic tangent chart, 1 = largest x+y,
   then clockwise, 4 = centre. Stable forever; digits always 1–4.
 - **Picking:** ray–sphere intersection + spherical containment (not flat chord triangles).
-- **Rendering:** arcs slerp-tessellated, mixed-depth culling/LOD, thin owner edges, and a cached
+- **Rendering:** arcs slerp-sampled along the leaf boundary, mixed-depth culling, thin owner edges, and a cached
   high-resolution procedural geography mesh (continents/oceans/mountains/ice) drawn to an offscreen
   globe and composited beneath translucent ownership cells.
 - **Planet surface:** one 32-bit seed → domain-warped 3D value-noise fBm (continents), ridged noise
