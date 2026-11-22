@@ -49,7 +49,7 @@ the surface regressions. It is binding for renderer, camera and control work; se
 | L1 | Orbit | 3.20 R | 0° | Whole sphere, centred, no horizon |
 | L2 | Halfway | 2.10 R | 13° | Surface fills lower ~70%, horizon top band |
 | L3 | 80% | 1.44 R | 24° | Surface fills frame, horizon top |
-| L4 | Landed (Option A) | **1.30 R** | **35°** | Closer to surface; more sky at the top; ship/pilot + terrain visible |
+| L4 | Landed (Option A) | **1.18 R** | **32°** | Much closer to surface; sky/horizon at the top; ship/pilot + terrain visible |
 
 L4 literal 30 m is **not approved** with the current pilot/terrain scale. Do not ship it without a
 separate metres-per-world-unit scale model.
