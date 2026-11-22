@@ -20,6 +20,7 @@ Canonical issue standard: [sovereignsquad/general-design-system#81](https://gith
 | Is this issue done? | [DEFINITION_OF_DONE.md](DEFINITION_OF_DONE.md) |
 | How to write an issue | [ISSUE_INTAKE.md](ISSUE_INTAKE.md) |
 | Which issue covers which doc/backlog item | [ISSUE_MAP.md](ISSUE_MAP.md) |
+| How to develop without detouring / DO NOT DO | [GUARDRAILS.md](GUARDRAILS.md) |
 | Architecture decisions (ADRs) | [adr/README.md](adr/README.md) |
 | Machine-readable issue index | [issues.json](issues.json) |
 | Current technical architecture | [../ARCHITECTURE.md](../ARCHITECTURE.md) |
@@ -50,6 +51,9 @@ Canonical issue standard: [sovereignsquad/general-design-system#81](https://gith
    a planning snapshot, recomputed when a blocker closes or reopens.
 8. **Docs link issues; issues link docs.** A doc must not restate board status. When a durable
    decision changes, update the doc and the related issue together.
+9. **Working behaviour is protected.** Continue from the confirmed-working system; never replace
+   mouse/camera/planet behaviour, add a second scene or derive new geometry to satisfy a nearby
+   request. See [GUARDRAILS.md](GUARDRAILS.md).
 
 ## How work moves
 
@@ -78,6 +82,8 @@ Living technical and product documents stay at the repository root; delivery doc
 - `OBSERVABILITY.md`, `LOAD_TEST.md`, `EDGE_DEPLOYMENT.md` — operations contracts.
 - `A11Y_CHECKLIST.md`, `UX_AUDIT.md` — accessibility and UX evidence/gates.
 - `RELEASE_NOTES.md` — shipped-release ledger.
+- `docs/FIXES.md` — cause/fix/verification log of corrective work.
+- `docs/GUARDRAILS.md` — development rules, DO NOT DO list, detour detection and protected-behaviour protocol.
 - `docs/` — SSOT governance, issue map, ADRs.
 
 ## Repository quality gate (R1–R6)

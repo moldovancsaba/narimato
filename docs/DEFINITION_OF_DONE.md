@@ -10,10 +10,21 @@ definition used by the board; [PROJECT_BOARD.md](PROJECT_BOARD.md) defines the w
 - [ ] `npm test` is green locally and in CI; new/changed behaviour has focused tests.
 - [ ] The change is committed and pushed; the PR/commit references the issue.
 - [ ] No unrelated scope, no drive-by refactor, no silent behaviour change.
+- [ ] User-visible changes are verified visually (before/after screenshots) and protected behaviour is
+      proven unchanged; see [GUARDRAILS.md](GUARDRAILS.md).
 - [ ] Documentation is updated where knowledge changed; the issue lists exact paths.
 - [ ] The issue body's `Delivered`, `Release Evidence`, `Documentation`, `Next` fields are filled.
 - [ ] Known limitations and rollback/recovery are recorded when the change has operational risk.
 - [ ] Board `Status = Done` and the issue is closed; dependent issues' Readiness is recomputed.
+
+## Behaviour-protection gate (renderer, camera, controls, geometry, visual style)
+
+- [ ] A baseline (commit + screenshots) of the working behaviour exists and is referenced.
+- [ ] The change is the smallest path; no second renderer/canvas/scene/mesh and no render-only facets.
+- [ ] Mouse point-follow, pole crossing and wheel/pinch are exercised; camera orientation is not
+      overwritten per frame.
+- [ ] Triangle/face count equals the active leaf count; the surface is opaque (no see-through).
+- [ ] [FIXES.md](FIXES.md) updated for corrective work.
 
 ## UI / frontend gate (any DOM UI change)
 

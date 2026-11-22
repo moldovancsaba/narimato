@@ -1,5 +1,10 @@
 # NARIMATO — Agent Instructions
 
+Before changing renderer, camera, controls or geometry, read
+[docs/GUARDRAILS.md](docs/GUARDRAILS.md). Working behaviour is protected: never replace the
+mouse/cursor/planet interaction, never add a second scene/renderer/mesh, and never derive extra
+geometry or render-only triangles. Continue from the last confirmed-working state.
+
 This repository uses a GitHub Project + issue SSOT. Read these before changing code:
 
 1. [docs/SSOT.md](docs/SSOT.md) — two-source model and non-negotiable rules.
