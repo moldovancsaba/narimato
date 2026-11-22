@@ -135,11 +135,11 @@ function segmentsForDepth(depth) {
   // Boundary sampling only: the cell geometry/set is unchanged. Close surface
   // cameras need enough samples for the same spherical triangles to read as
   // arcs instead of chords.
-  if (depth <= 0) return 12;
-  if (depth === 1) return 10;
-  if (depth === 2) return 6;
-  if (depth === 3) return 3;
-  return 1;
+  if (depth <= 0) return 24;
+  if (depth === 1) return 20;
+  if (depth === 2) return 16;
+  if (depth === 3) return 10;
+  return 8;
 }
 
 const DEPTH_EDGE_SCALE = [1, 0.85, 0.7, 0.55];
@@ -2295,6 +2295,9 @@ export class IcosaRenderer {
       // Use the sampled spherical boundary, not just the three vertices: a
       // great-circle edge can bow into the visible cap while both endpoints are
       // behind the tangent plane. Vertices-only culling left a dark rim.
+      // A face may be visible if any sampled boundary point is in front of the
+      // tangent plane. The edge path itself is clipped to that plane below, so
+      // only the front portion of the arcs is stroked: no back-face leaking.
       let maxDot = -Infinity;
       for (let k = 0; k < e.n; k += 1) {
         const o = k * 3;
