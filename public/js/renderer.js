@@ -46,7 +46,6 @@
 import {
   SPHERE_SCREEN_FRACTION,
   CAMERA_DISTANCE,
-  latLonToVec,
   normalize,
   slerp,
   getMesh,
@@ -129,30 +128,6 @@ function parseColor(value) {
   return CYAN;
 }
 
-/* ------------------------------------------------------------------ *
- * Static cartography
- * ------------------------------------------------------------------ */
-const GRATICULE = (() => {
-  const latCircles = [];
-  for (const lat of [-60, -30, 0, 30, 60]) {
-    const pts = [];
-    for (let lon = 0; lon <= 360; lon += 4) pts.push(latLonToVec(lat, lon));
-    latCircles.push(pts);
-  }
-  const meridians = [];
-  for (let lon = 0; lon < 360; lon += 30) {
-    const pts = [];
-    for (let lat = -88; lat <= 88; lat += 4) pts.push(latLonToVec(lat, lon));
-    meridians.push(pts);
-  }
-  return { latCircles, meridians };
-})();
-
-const POLES = [
-  { v: { x: 0, y: 1, z: 0 }, name: 'N', latLabel: '90.0000' },
-  { v: { x: 0, y: -1, z: 0 }, name: 'S', latLabel: '-90.0000' },
-];
-
 const STAR_COLORS = ['#dff6ff', '#dff6ff', '#bfefff', '#00f0ff', '#8a5cff', '#ff2bd6', '#d7ff00'];
 
 /** Geodesic edge samples per edge by cell depth. */
@@ -171,6 +146,10 @@ const DEPTH_EDGE_SCALE = [1, 0.85, 0.7, 0.55];
 const MAX_PULSES = 36;
 const PULSE_DUR = { claim: 0.9, steal: 1.05, reinforce: 0.75, break: 1.3, resource: 1.5 };
 const CHARGE_TIERS = 5;
+
+// Approved icosahedron look: solid shaded sphere + geodesic cell arcs, no flat
+// facet fills and no cartographic graticule.
+const ARC_SURFACE = true;
 
 /* ------------------------------------------------------------------ *
  * Surface visual contract (RND-07)
@@ -248,7 +227,6 @@ export class IcosaRenderer {
     // Debug "show all ids" toggle (app L key). Off by default: ids are only
     // rendered for interactive/pulsed faces.
     this.labelsVisible = false;
-    this.poleLabelsVisible = false;
     // RND-02 single-scene surface mode: the renderer owns the entity pass and
     // the landing/leaving ship; the surface controller owns only pose + labels.
     this.surfaceMode = false;
@@ -1175,9 +1153,7 @@ export class IcosaRenderer {
     // Zoom-aware decoration fades: sphere-scale glow must not wash a deep zoom.
     const haloFade = clamp(1 - (zoom - 2.5) / 4.5, 0, 1);
     const glassFade = clamp(1 - (zoom - 3) / 3, 0, 1);
-    const cartoFade = clamp(1 - (zoom - 5) / 6, 0, 1);
 
-    if (haloFade > 0.01 && this.perf.tier > 0) this._drawHalo(ctx, W, H, cx, cy, R, rm, haloFade);
 
     this._visCount = 0;
     if (this._activeFaces().length && hasCamera) {
@@ -1186,14 +1162,6 @@ export class IcosaRenderer {
       // CTL-02: an empty frame is a signal, not a silent blank planet.
       this._stats.visCount = this._visCount;
       if (this._visCount === 0) this._stats.emptyFrames += 1;
-    }
-
-    if (hasCamera && cartoFade > 0.01) {
-      ctx.save();
-      ctx.clip(this._silhouettePath(camera, cx, cy, R));
-      this._drawGraticule(ctx, camera, cartoFade);
-      this._drawPoles(ctx, camera, cx, cy, cartoFade);
-      ctx.restore();
     }
 
     this._drawForegroundDust(ctx, W, H, dt, rm);
@@ -1646,18 +1614,38 @@ export class IcosaRenderer {
   }
 
   /** Sutherland–Hodgman clip of a projected boundary polygon at the horizon. */
+  /** Camera eye in world space + silhouette-plane threshold (x·P = 1). */
+  _sphereEye(camera) {
+    if (camera && camera.origin && Number.isFinite(camera.origin.x)) {
+      const eye = camera.origin;
+      const len = Math.hypot(eye.x, eye.y, eye.z) || 1;
+      return { eye, len, n: { x: eye.x / len, y: eye.y / len, z: eye.z / len }, threshold: 1 / len };
+    }
+    const axis = camera && typeof camera.viewAxis === 'function' ? camera.viewAxis() : { x: 0, y: 0, z: 1 };
+    const distance = camera && Number.isFinite(camera.distance) ? camera.distance : 1;
+    return {
+      eye: { x: axis.x * distance, y: axis.y * distance, z: axis.z * distance },
+      len: distance,
+      n: { x: axis.x, y: axis.y, z: axis.z },
+      threshold: 1 / Math.max(1e-6, distance),
+    };
+  }
+
   _clipEntryPoly(entry, camera, outX, outY) {
     const n = entry.n;
     const px = entry.px;
     const py = entry.py;
-    const pz = entry.pz;
     const wx = entry.wx;
+    const eye = this._sphereEye(camera);
     const tmp = this._tmpV;
+    const signed = (o) => wx[o] * eye.n.x + wx[o + 1] * eye.n.y + wx[o + 2] * eye.n.z - eye.threshold;
     let m = 0;
     for (let i = 0; i < n; i++) {
       const j = (i + 1) % n;
-      const zp = pz[i];
-      const zq = pz[j];
+      const oi = i * 3;
+      const oj = j * 3;
+      const zp = signed(oi);
+      const zq = signed(oj);
       if (zp >= 0) {
         outX[m] = px[i];
         outY[m] = py[i];
@@ -1665,8 +1653,6 @@ export class IcosaRenderer {
       }
       if ((zp >= 0) !== (zq >= 0) && Math.abs(zp - zq) > 1e-12) {
         const t = zp / (zp - zq);
-        const oi = i * 3;
-        const oj = j * 3;
         tmp.x = wx[oi] + (wx[oj] - wx[oi]) * t;
         tmp.y = wx[oi + 1] + (wx[oj + 1] - wx[oi + 1]) * t;
         tmp.z = wx[oi + 2] + (wx[oj + 2] - wx[oi + 2]) * t;
@@ -2195,6 +2181,10 @@ export class IcosaRenderer {
    * is available.
    */
   _silhouettePath(camera, cx, cy, R) {
+    // Product cameras (SphereCamera / CarrierCamera) aim at the centre, so the
+    // projected limb is a screen-centred circle of radius R. Only a camera with
+    // an explicit non-centred basis needs the projected tangent circle.
+    if (!(camera && camera.basis)) return this._circlePath(cx, cy, R);
     const path = new Path2D();
     const axis = camera && typeof camera.viewAxis === 'function' ? camera.viewAxis() : null;
     const distance = camera && Number.isFinite(camera.distance) ? camera.distance : 0;
@@ -2270,10 +2260,15 @@ export class IcosaRenderer {
       this._sphereDiscKey = discKey;
       const d = ctx.createRadialGradient(cx - R * 0.14, cy - R * 0.18, R * 0.06, cx, cy, R * 1.02);
       // Opaque substrate: the surface must not show space/back geometry through it.
-      d.addColorStop(0, 'rgb(4,1,16)');
-      d.addColorStop(0.55, 'rgb(5,1,18)');
-      d.addColorStop(0.86, 'rgb(8,3,26)');
-      d.addColorStop(1, 'rgb(10,4,30)');
+      // Opaque surface base: any uncovered rim reads as shaded ground, never as
+      // space or a hollow shell behind the planet.
+      // Solid shaded sphere: lit centre/top-left, darker limb. This is the
+      // opaque 3D surface; cell boundaries are drawn as arcs above it.
+      d.addColorStop(0, 'rgb(38,92,104)');
+      d.addColorStop(0.34, 'rgb(24,68,82)');
+      d.addColorStop(0.68, 'rgb(13,44,58)');
+      d.addColorStop(0.9, 'rgb(8,28,40)');
+      d.addColorStop(1, 'rgb(5,18,28)');
       this._sphereDisc = d;
     }
     ctx.save();
@@ -2290,25 +2285,22 @@ export class IcosaRenderer {
     // hidden centroid but visible area. Any face with at least one vertex in
     // front of the silhouette plane can be visible; the silhouette clip masks
     // the exact outline. Faces entirely behind the plane are skipped.
-    const eye = camera && camera.origin && Number.isFinite(camera.origin.x)
-      ? camera.origin
-      : {
-        x: (camera && typeof camera.viewAxis === 'function' ? camera.viewAxis().x : 0) * (camera && Number.isFinite(camera.distance) ? camera.distance : 1),
-        y: (camera && typeof camera.viewAxis === 'function' ? camera.viewAxis().y : 0) * (camera && Number.isFinite(camera.distance) ? camera.distance : 1),
-        z: (camera && typeof camera.viewAxis === 'function' ? camera.viewAxis().z : 1) * (camera && Number.isFinite(camera.distance) ? camera.distance : 1),
-      };
+    const eye = this._sphereEye(camera);
     const axisV = camera && typeof camera.viewAxis === 'function' ? camera.viewAxis() : { x: 0, y: 0, z: 1 };
-    const eyeLen = Math.hypot(eye.x, eye.y, eye.z) || 1;
-    const eyeN = { x: eye.x / eyeLen, y: eye.y / eyeLen, z: eye.z / eyeLen };
-    const eyeThreshold = 1 / eyeLen;
+    const eyeN = eye.n;
+    const eyeThreshold = eye.threshold;
     let vc = 0;
     for (let i = 0; i < nf; i++) {
       const e = faces[i];
-      const maxDot = Math.max(
-        e.a.x * eyeN.x + e.a.y * eyeN.y + e.a.z * eyeN.z,
-        e.b.x * eyeN.x + e.b.y * eyeN.y + e.b.z * eyeN.z,
-        e.c.x * eyeN.x + e.c.y * eyeN.y + e.c.z * eyeN.z,
-      );
+      // Use the sampled spherical boundary, not just the three vertices: a
+      // great-circle edge can bow into the visible cap while both endpoints are
+      // behind the tangent plane. Vertices-only culling left a dark rim.
+      let maxDot = -Infinity;
+      for (let k = 0; k < e.n; k += 1) {
+        const o = k * 3;
+        const d = e.wx[o] * eyeN.x + e.wx[o + 1] * eyeN.y + e.wx[o + 2] * eyeN.z;
+        if (d > maxDot) maxDot = d;
+      }
       if (maxDot < eyeThreshold - 1e-6) continue;
       if (!this._projectEntry(e, camera, W, H)) { this._stats.culled += 1; continue; }
       dotZ[i] = e.centroid.x * axisV.x + e.centroid.y * axisV.y + e.centroid.z * axisV.z;
@@ -2344,18 +2336,10 @@ export class IcosaRenderer {
       const dotc = dotZ[faceIdx];
       const band = clamp(Math.floor(dotc * 6), 0, 5);
 
-      let np;
-      if (e.allFront) {
-        np = e.n;
-        const srcX = e.px;
-        const srcY = e.py;
-        for (let k = 0; k < np; k++) {
-          px[k] = srcX[k];
-          py[k] = srcY[k];
-        }
-      } else {
-        np = this._clipEntryPoly(e, camera, px, py);
-      }
+      // Always clip to the visible tangent hemisphere. Clipping at the camera
+      // plane leaves hidden face portions projecting inside the silhouette,
+      // which produced the wedge-shaped fake geometry.
+      const np = this._clipEntryPoly(e, camera, px, py);
       if (np < 3) continue;
 
       // Centroid + radius of the drawn polygon.
@@ -2400,6 +2384,7 @@ export class IcosaRenderer {
       for (let k = 1; k < np; k++) ctx.lineTo(px[k], py[k]);
       ctx.closePath();
 
+      if (!ARC_SURFACE) {
       const terrain = e.terrain;
       ctx.globalAlpha = lodAlpha;
       if (terrain) {
@@ -2545,6 +2530,7 @@ export class IcosaRenderer {
       }
       ctx.globalAlpha = 1;
 
+      }
       // Freshly spawned children flash white as they pop in.
       const bornAge = this.t - e.born;
       if (bornAge >= 0 && bornAge < 0.42) {
@@ -2662,41 +2648,6 @@ export class IcosaRenderer {
       ctx.restore();
     }
 
-    // --- Glass: rim light, sheen, sweep, scanlines (faded at deep zoom).
-    if (glassFade > 0.01 && this.perf.tier > 0) this._drawSphereFx(ctx, cx, cy, R, rm, nf, glassFade);
-
-    // --- Silhouette ring. -------------------------------------------
-    if (glassFade > 0.01 && R < Math.max(W, H) * 2.5) {
-      ctx.save();
-      ctx.globalAlpha = glassFade;
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.strokeStyle = rgba(CYAN, 0.34);
-      ctx.lineWidth = 1.3;
-      ctx.beginPath();
-      ctx.arc(cx, cy, R, 0, TAU);
-      ctx.stroke();
-      ctx.strokeStyle = rgba(CYAN, 0.05);
-      ctx.lineWidth = 6;
-      ctx.stroke();
-      ctx.strokeStyle = 'rgba(228,255,255,0.3)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(cx, cy, R, -2.55, -1.7);
-      ctx.stroke();
-      ctx.strokeStyle = 'rgba(228,255,255,0.06)';
-      ctx.lineWidth = 9;
-      ctx.stroke();
-      ctx.strokeStyle = 'rgba(255,43,214,0.1)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.arc(cx, cy, R + 1.8, -0.3, Math.PI * 0.92);
-      ctx.stroke();
-      ctx.strokeStyle = 'rgba(0,240,255,0.12)';
-      ctx.beginPath();
-      ctx.arc(cx, cy, R - 1.8, Math.PI * 1.04, Math.PI * 1.96);
-      ctx.stroke();
-      ctx.restore();
-    }
     ctx.restore();
   }
 
@@ -3212,116 +3163,6 @@ export class IcosaRenderer {
       }
     }
     return m;
-  }
-
-  /* ================================================================ *
-   * Cartography
-   * ================================================================ */
-
-  _drawGraticule(ctx, camera, fade) {
-    const path = new Path2D();
-    let segments = 0;
-    const addPolyline = (pts) => {
-      let prev = null;
-      for (let i = 0; i < pts.length; i++) {
-        const p = camera.project(pts[i]);
-        if (p.visible) {
-          if (prev) {
-            path.moveTo(prev.x, prev.y);
-            path.lineTo(p.x, p.y);
-            segments++;
-          }
-          prev = p;
-        } else {
-          prev = null;
-        }
-      }
-    };
-    for (const circle of GRATICULE.latCircles) addPolyline(circle);
-    for (const meridian of GRATICULE.meridians) addPolyline(meridian);
-    if (!segments) return;
-
-    ctx.save();
-    ctx.globalAlpha = fade;
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.lineWidth = 2.4;
-    ctx.strokeStyle = rgba(CYAN, 0.055);
-    ctx.stroke(path);
-    ctx.lineWidth = 0.75;
-    ctx.strokeStyle = 'rgba(150,255,255,0.21)';
-    ctx.stroke(path);
-    ctx.restore();
-  }
-
-  _drawPoles(ctx, camera, cx, cy, fade) {
-    if (this.poleLabelsVisible === false) return;
-    ctx.save();
-    ctx.globalAlpha = fade;
-    ctx.textBaseline = 'alphabetic';
-    for (let i = 0; i < POLES.length; i++) {
-      const pole = POLES[i];
-      const p = camera.project(pole.v);
-      if (!(p.z > 0.02)) continue;
-      if (p.x < -200 || p.x > this.width + 200 || p.y < -200 || p.y > this.height + 200) continue;
-      const alpha = clamp(0.3 + p.z * 0.7, 0, 0.95) * (this.reducedMotion ? 0.85 : 1);
-
-      let ux = p.x - cx;
-      let uy = p.y - cy;
-      const len = Math.hypot(ux, uy);
-      if (len < 1) {
-        ux = 0;
-        uy = -1;
-      } else {
-        ux /= len;
-        uy /= len;
-      }
-      const right = ux >= 0;
-      const lx = p.x + ux * 22 + (right ? 6 : -6);
-      const ly = p.y + uy * 26 + 3;
-
-      ctx.strokeStyle = rgba(CYAN, alpha * 0.5);
-      ctx.lineWidth = 0.8;
-      ctx.beginPath();
-      ctx.moveTo(p.x + ux * 6, p.y + uy * 6);
-      ctx.lineTo(lx - (right ? 4 : -4), ly - 8);
-      ctx.stroke();
-
-      ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.rotate(Math.PI / 4);
-      ctx.strokeStyle = rgba(CYAN, alpha * 0.95);
-      ctx.lineWidth = 1;
-      ctx.strokeRect(-2.8, -2.8, 5.6, 5.6);
-      ctx.fillStyle = rgba(WHITE, alpha * 0.55);
-      ctx.fillRect(-1, -1, 2, 2);
-      ctx.restore();
-      ctx.strokeStyle = rgba(CYAN, alpha * 0.34);
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 7.5, 0, TAU);
-      ctx.stroke();
-
-      ctx.textAlign = right ? 'left' : 'right';
-      try {
-        ctx.letterSpacing = '0.7px';
-      } catch (_) {
-        /* ignore */
-      }
-      ctx.shadowColor = 'rgba(0,0,0,0.95)';
-      ctx.shadowBlur = 4;
-      ctx.font = `700 11px ${FONT_STACK}`;
-      ctx.fillStyle = rgba(WHITE, alpha * 0.92);
-      ctx.fillText(`${pole.name} ${pole.latLabel}`, lx, ly);
-      ctx.font = `500 9.5px ${FONT_STACK}`;
-      ctx.fillStyle = rgba(CYAN, alpha * 0.72);
-      ctx.fillText('LON 0.0000', lx, ly + 13);
-      ctx.shadowBlur = 0;
-      try {
-        ctx.letterSpacing = '0px';
-      } catch (_) {
-        /* ignore */
-      }
-    }
-    ctx.restore();
   }
 
   /* ================================================================ *

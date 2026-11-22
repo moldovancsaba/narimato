@@ -104,3 +104,20 @@ with no off-sphere strokes and no fill seams; surface-truth 4/4 and two-client 7
 560/560 tests.
 
 Refs: [#88](https://github.com/moldovancsaba/narimato/issues/88).
+
+## 2026-11-22 — Solid opaque limb (no glass shell, no 2-sided edge)
+
+**Cause.** The projected edge still behaved like a hollow shell: a glass-dome FX/halo drew a second
+rim, the substrate showed as a dark void where front leaves did not reach the exact silhouette, and
+face clipping used the camera plane instead of the visible tangent hemisphere.
+
+**Fix.** The planet is now the approved arc-surface model: one solid shaded opaque sphere with
+geodesic cell boundaries drawn as arcs, no flat facet fills, no glass-dome FX/halo, no cartographic
+graticule or pole labels. Faces are clipped against the visible tangent hemisphere and culled by the
+sampled spherical boundary so arcs that bow into view are kept; `SphereCamera` reports its exact
+projected silhouette radius.
+
+**Verification.** Four stage captures show an opaque limb with no see-through/2-sided shapes or
+hollow shell; one triangle per active leaf; 560/560 tests, acceptance and a11y gates green.
+
+Refs: [#91](https://github.com/moldovancsaba/narimato/issues/91).
