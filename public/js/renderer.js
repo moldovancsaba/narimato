@@ -46,7 +46,6 @@
 import {
   SPHERE_SCREEN_FRACTION,
   CAMERA_DISTANCE,
-  latLonToVec,
   normalize,
   slerp,
   getMesh,
@@ -129,30 +128,6 @@ function parseColor(value) {
   return CYAN;
 }
 
-/* ------------------------------------------------------------------ *
- * Static cartography
- * ------------------------------------------------------------------ */
-const GRATICULE = (() => {
-  const latCircles = [];
-  for (const lat of [-60, -30, 0, 30, 60]) {
-    const pts = [];
-    for (let lon = 0; lon <= 360; lon += 4) pts.push(latLonToVec(lat, lon));
-    latCircles.push(pts);
-  }
-  const meridians = [];
-  for (let lon = 0; lon < 360; lon += 30) {
-    const pts = [];
-    for (let lat = -88; lat <= 88; lat += 4) pts.push(latLonToVec(lat, lon));
-    meridians.push(pts);
-  }
-  return { latCircles, meridians };
-})();
-
-const POLES = [
-  { v: { x: 0, y: 1, z: 0 }, name: 'N', latLabel: '90.0000' },
-  { v: { x: 0, y: -1, z: 0 }, name: 'S', latLabel: '-90.0000' },
-];
-
 const STAR_COLORS = ['#dff6ff', '#dff6ff', '#bfefff', '#00f0ff', '#8a5cff', '#ff2bd6', '#d7ff00'];
 
 /** Geodesic edge samples per edge by cell depth. */
@@ -171,6 +146,10 @@ const DEPTH_EDGE_SCALE = [1, 0.85, 0.7, 0.55];
 const MAX_PULSES = 36;
 const PULSE_DUR = { claim: 0.9, steal: 1.05, reinforce: 0.75, break: 1.3, resource: 1.5 };
 const CHARGE_TIERS = 5;
+
+// Approved icosahedron look: solid shaded sphere + geodesic cell arcs, no flat
+// facet fills and no cartographic graticule.
+const ARC_SURFACE = true;
 
 /* ------------------------------------------------------------------ *
  * Surface visual contract (RND-07)
@@ -248,7 +227,6 @@ export class IcosaRenderer {
     // Debug "show all ids" toggle (app L key). Off by default: ids are only
     // rendered for interactive/pulsed faces.
     this.labelsVisible = false;
-    this.poleLabelsVisible = false;
     // RND-02 single-scene surface mode: the renderer owns the entity pass and
     // the landing/leaving ship; the surface controller owns only pose + labels.
     this.surfaceMode = false;
@@ -1175,7 +1153,6 @@ export class IcosaRenderer {
     // Zoom-aware decoration fades: sphere-scale glow must not wash a deep zoom.
     const haloFade = clamp(1 - (zoom - 2.5) / 4.5, 0, 1);
     const glassFade = clamp(1 - (zoom - 3) / 3, 0, 1);
-    const cartoFade = clamp(1 - (zoom - 5) / 6, 0, 1);
 
 
     this._visCount = 0;
@@ -1185,14 +1162,6 @@ export class IcosaRenderer {
       // CTL-02: an empty frame is a signal, not a silent blank planet.
       this._stats.visCount = this._visCount;
       if (this._visCount === 0) this._stats.emptyFrames += 1;
-    }
-
-    if (hasCamera && cartoFade > 0.01) {
-      ctx.save();
-      ctx.clip(this._silhouettePath(camera, cx, cy, R));
-      this._drawGraticule(ctx, camera, cartoFade);
-      this._drawPoles(ctx, camera, cx, cy, cartoFade);
-      ctx.restore();
     }
 
     this._drawForegroundDust(ctx, W, H, dt, rm);
@@ -2293,10 +2262,13 @@ export class IcosaRenderer {
       // Opaque substrate: the surface must not show space/back geometry through it.
       // Opaque surface base: any uncovered rim reads as shaded ground, never as
       // space or a hollow shell behind the planet.
-      d.addColorStop(0, 'rgb(14,44,50)');
-      d.addColorStop(0.55, 'rgb(11,36,44)');
-      d.addColorStop(0.86, 'rgb(8,27,35)');
-      d.addColorStop(1, 'rgb(6,19,27)');
+      // Solid shaded sphere: lit centre/top-left, darker limb. This is the
+      // opaque 3D surface; cell boundaries are drawn as arcs above it.
+      d.addColorStop(0, 'rgb(38,92,104)');
+      d.addColorStop(0.34, 'rgb(24,68,82)');
+      d.addColorStop(0.68, 'rgb(13,44,58)');
+      d.addColorStop(0.9, 'rgb(8,28,40)');
+      d.addColorStop(1, 'rgb(5,18,28)');
       this._sphereDisc = d;
     }
     ctx.save();
@@ -2412,6 +2384,7 @@ export class IcosaRenderer {
       for (let k = 1; k < np; k++) ctx.lineTo(px[k], py[k]);
       ctx.closePath();
 
+      if (!ARC_SURFACE) {
       const terrain = e.terrain;
       ctx.globalAlpha = lodAlpha;
       if (terrain) {
@@ -2557,6 +2530,7 @@ export class IcosaRenderer {
       }
       ctx.globalAlpha = 1;
 
+      }
       // Freshly spawned children flash white as they pop in.
       const bornAge = this.t - e.born;
       if (bornAge >= 0 && bornAge < 0.42) {
@@ -3189,116 +3163,6 @@ export class IcosaRenderer {
       }
     }
     return m;
-  }
-
-  /* ================================================================ *
-   * Cartography
-   * ================================================================ */
-
-  _drawGraticule(ctx, camera, fade) {
-    const path = new Path2D();
-    let segments = 0;
-    const addPolyline = (pts) => {
-      let prev = null;
-      for (let i = 0; i < pts.length; i++) {
-        const p = camera.project(pts[i]);
-        if (p.visible) {
-          if (prev) {
-            path.moveTo(prev.x, prev.y);
-            path.lineTo(p.x, p.y);
-            segments++;
-          }
-          prev = p;
-        } else {
-          prev = null;
-        }
-      }
-    };
-    for (const circle of GRATICULE.latCircles) addPolyline(circle);
-    for (const meridian of GRATICULE.meridians) addPolyline(meridian);
-    if (!segments) return;
-
-    ctx.save();
-    ctx.globalAlpha = fade;
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.lineWidth = 2.4;
-    ctx.strokeStyle = rgba(CYAN, 0.055);
-    ctx.stroke(path);
-    ctx.lineWidth = 0.75;
-    ctx.strokeStyle = 'rgba(150,255,255,0.21)';
-    ctx.stroke(path);
-    ctx.restore();
-  }
-
-  _drawPoles(ctx, camera, cx, cy, fade) {
-    if (this.poleLabelsVisible === false) return;
-    ctx.save();
-    ctx.globalAlpha = fade;
-    ctx.textBaseline = 'alphabetic';
-    for (let i = 0; i < POLES.length; i++) {
-      const pole = POLES[i];
-      const p = camera.project(pole.v);
-      if (!(p.z > 0.02)) continue;
-      if (p.x < -200 || p.x > this.width + 200 || p.y < -200 || p.y > this.height + 200) continue;
-      const alpha = clamp(0.3 + p.z * 0.7, 0, 0.95) * (this.reducedMotion ? 0.85 : 1);
-
-      let ux = p.x - cx;
-      let uy = p.y - cy;
-      const len = Math.hypot(ux, uy);
-      if (len < 1) {
-        ux = 0;
-        uy = -1;
-      } else {
-        ux /= len;
-        uy /= len;
-      }
-      const right = ux >= 0;
-      const lx = p.x + ux * 22 + (right ? 6 : -6);
-      const ly = p.y + uy * 26 + 3;
-
-      ctx.strokeStyle = rgba(CYAN, alpha * 0.5);
-      ctx.lineWidth = 0.8;
-      ctx.beginPath();
-      ctx.moveTo(p.x + ux * 6, p.y + uy * 6);
-      ctx.lineTo(lx - (right ? 4 : -4), ly - 8);
-      ctx.stroke();
-
-      ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.rotate(Math.PI / 4);
-      ctx.strokeStyle = rgba(CYAN, alpha * 0.95);
-      ctx.lineWidth = 1;
-      ctx.strokeRect(-2.8, -2.8, 5.6, 5.6);
-      ctx.fillStyle = rgba(WHITE, alpha * 0.55);
-      ctx.fillRect(-1, -1, 2, 2);
-      ctx.restore();
-      ctx.strokeStyle = rgba(CYAN, alpha * 0.34);
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 7.5, 0, TAU);
-      ctx.stroke();
-
-      ctx.textAlign = right ? 'left' : 'right';
-      try {
-        ctx.letterSpacing = '0.7px';
-      } catch (_) {
-        /* ignore */
-      }
-      ctx.shadowColor = 'rgba(0,0,0,0.95)';
-      ctx.shadowBlur = 4;
-      ctx.font = `700 11px ${FONT_STACK}`;
-      ctx.fillStyle = rgba(WHITE, alpha * 0.92);
-      ctx.fillText(`${pole.name} ${pole.latLabel}`, lx, ly);
-      ctx.font = `500 9.5px ${FONT_STACK}`;
-      ctx.fillStyle = rgba(CYAN, alpha * 0.72);
-      ctx.fillText('LON 0.0000', lx, ly + 13);
-      ctx.shadowBlur = 0;
-      try {
-        ctx.letterSpacing = '0px';
-      } catch (_) {
-        /* ignore */
-      }
-    }
-    ctx.restore();
   }
 
   /* ================================================================ *

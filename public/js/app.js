@@ -541,7 +541,6 @@ intro = createIntro({
   safeAudio,
   onStart: () => {
     focusAnim = null;
-    safeCall(renderer, 'setPoleLabelsVisible', false);
     hoveredLabel = null;
     safeCall(ui, 'setHoverFace', null);
     safeCall(ui, 'hideLanding');
@@ -554,7 +553,6 @@ intro = createIntro({
   },
   onComplete: ({ skipped }) => {
     if (!skipped) narrator.playCue('intro-arrival', { speaker: 'SHIP AI' });
-    safeCall(renderer, 'setPoleLabelsVisible', joined);
     if (!joined) {
       safeCall(ui, 'showLanding');
       safeCall(ui, 'setConnection', 'connected');
@@ -626,7 +624,6 @@ function boot() {
   primeTokenMap();
   resize();
   renderer.setPlayers([], null);
-  safeCall(renderer, 'setPoleLabelsVisible', false);
   renderer.setConfig({ threshold: DEFAULT_THRESHOLD, maxDepth: DEFAULT_MAX_DEPTH });
   syncRenderFaces();
 
@@ -866,7 +863,6 @@ async function join(rawTag) {
       }
     }, 300);
   }
-  safeCall(renderer, 'setPoleLabelsVisible', true);
   safeCall(ui, 'setJoinBusy', false);
   safeCall(ui, 'setSoundMuted', !!audio.isMuted);
   safeAudio('join');
