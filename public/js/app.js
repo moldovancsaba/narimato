@@ -585,52 +585,36 @@ interlude = createInterlude({ safeCall, safeAudio });
  * Boot
  * ------------------------------------------------------------------ */
 
-function buildPlanetRenderFaces(levelOverride) {
-  // ONE render tessellation per quality tier for the whole planet, identical
-  // in orbit and surface. The camera never changes triangle density; the
-  // PERF-01 quality ladder selects full/medium/coarse before drawing.
-  const targetLevel = Number.isInteger(levelOverride)
-    ? clamp(levelOverride, 0, 4)
-    : leafList.length <= 120 ? 4 : leafList.length <= 400 ? 3 : 2;
+function buildPlanetRenderFaces() {
+  // EXACT GEOMETRY: one render face per authoritative active leaf. The old
+  // tessellation recursion drew 4^level render-only children per leaf (up to
+  // 256), so the planet showed thousands of triangles and internal edges that
+  // are not cells. Boundary arcs are drawn by the renderer's slerp edge pass;
+  // the fill itself must stay the leaf triangle.
   const out = [];
-  const angle = (p, q) => Math.acos(clamp(p.x * q.x + p.y * q.y + p.z * q.z, -1, 1));
   for (const node of leafList) {
     if (!node || !node.a) continue;
-    const edge = Math.max(angle(node.a, node.b), angle(node.b, node.c), angle(node.c, node.a));
-    const edgeLevel = clamp(Math.ceil(Math.log2(Math.max(1e-4, edge / 0.03))), 0, 5);
-    const level = Math.min(targetLevel, edgeLevel);
-    let tris = [{ a: node.a, b: node.b, c: node.c }];
-    for (let i = 0; i < level; i += 1) {
-      const next = [];
-      for (const tri of tris) for (const child of childTriangles(tri.a, tri.b, tri.c)) next.push(child);
-      tris = next;
-    }
-    for (let i = 0; i < tris.length; i += 1) {
-      const tri = tris[i];
-      out.push({
-        label: `~${node.label}.${i}`,
-        sourceLabel: node.label,
-        a: tri.a, b: tri.b, c: tri.c,
-        centroid: faceCentroid(tri.a, tri.b, tri.c),
-        depth: node.depth,
-        ownerIndex: node.ownerIndex,
-        clicks: node.clicks,
-        lastClickIndex: node.lastClickIndex,
-        terrain: node.terrain,
-        resourceId: null,
-      });
-    }
+    out.push({
+      label: `~${node.label}.0`,
+      sourceLabel: node.label,
+      a: node.a, b: node.b, c: node.c,
+      centroid: faceCentroid(node.a, node.b, node.c),
+      depth: node.depth,
+      ownerIndex: node.ownerIndex,
+      clicks: node.clicks,
+      lastClickIndex: node.lastClickIndex,
+      terrain: node.terrain,
+      resourceId: null,
+    });
   }
   return out;
 }
 
 function refreshPlanetRenderFaces() {
   planetRenderFaces = buildPlanetRenderFaces();
-  // PERF-01 LOD: tier 1 medium (2^2 triangles per leaf), tier 0 coarse
-  // (2^1). Both keep the exact live-leaf boundaries and ownership tint.
-  const mediumFaces = buildPlanetRenderFaces(2);
-  const coarseFaces = buildPlanetRenderFaces(1);
-  renderer.setFaces(planetRenderFaces, { lod: { 0: coarseFaces, 1: mediumFaces } });
+  // One geometry for every quality tier: LOD changes canvas decoration work,
+  // never the triangle set (the triangle set is the authoritative leaf set).
+  renderer.setFaces(planetRenderFaces);
 }
 
 
