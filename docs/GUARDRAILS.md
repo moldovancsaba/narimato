@@ -3,7 +3,8 @@
 **Authority.** This document records the rules that prevent the regressions documented in
 [FIXES.md](FIXES.md). It is referenced by [SSOT.md](SSOT.md), [DEFINITION_OF_DONE.md](DEFINITION_OF_DONE.md),
 the repository [AGENTS.md](../AGENTS.md) and the PR template. If a request or a plan conflicts with
-this document, stop and resolve the conflict before writing code.
+this document, stop and resolve the conflict before writing code. The renderer/camera specifics are
+binding in [RENDERER_TECHNOLOGY.md](RENDERER_TECHNOLOGY.md).
 
 One sentence: **continue from the working system; never replace working behaviour with a new
 mechanism to satisfy a nearby request.**

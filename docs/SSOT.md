@@ -21,6 +21,7 @@ Canonical issue standard: [sovereignsquad/general-design-system#81](https://gith
 | How to write an issue | [ISSUE_INTAKE.md](ISSUE_INTAKE.md) |
 | Which issue covers which doc/backlog item | [ISSUE_MAP.md](ISSUE_MAP.md) |
 | How to develop without detouring / DO NOT DO | [GUARDRAILS.md](GUARDRAILS.md) |
+| Renderer/camera technology + forbidden patterns | [RENDERER_TECHNOLOGY.md](RENDERER_TECHNOLOGY.md) |
 | Architecture decisions (ADRs) | [adr/README.md](adr/README.md) |
 | Machine-readable issue index | [issues.json](issues.json) |
 | Current technical architecture | [../ARCHITECTURE.md](../ARCHITECTURE.md) |
