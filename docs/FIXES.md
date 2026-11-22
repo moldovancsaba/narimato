@@ -86,3 +86,19 @@ opaque surface.
 arcs through the planet; no page errors; tests/a11y gates green.
 
 Refs: [#84](https://github.com/moldovancsaba/narimato/issues/84).
+
+## 2026-11-22 — Clean sphere silhouette, opaque seam-free fills
+
+**Cause.** Cell edges, graticule, labels and markers were drawn without a silhouette clip, so arcs
+floated outside the limb. Leaf fills were still semi-transparent, so overlapping leaves showed
+double edges/seams and the sphere surface did not read as one closed surface.
+
+**Fix.** All cell fills, cell edges and sphere-attached decorations are clipped to the projected
+silhouette circle; hologram and terrain fills are fully opaque; the limb is a clean circle instead
+of clipped triangle chords. No geometry/triangle count change.
+
+**Verification.** Real-renderer captures at orbit, deep zoom and surface show a clean silhouette
+with no off-sphere strokes and no fill seams; surface-truth 4/4 and two-client 7/7 still pass;
+560/560 tests.
+
+Refs: [#88](https://github.com/moldovancsaba/narimato/issues/88).
