@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "test": "node --test test/*.test.js",
+    "test": "node --test test/*.test.js v2/test/*.test.js",
     "docs:check": "node scripts/check-docs.mjs",
     "check:version": "node scripts/check-version.mjs",
     "check:slo": "node scripts/check-slo.mjs",
@@ -44,7 +44,9 @@
     "a11y:gate:chromium": "node scripts/a11y-gate.mjs --engine=chromium",
     "a11y:gate:webkit": "node scripts/a11y-gate.mjs --engine=webkit",
     "device:gate": "node scripts/device-gate.mjs",
-    "cdn:preflight": "node scripts/cdn-preflight.mjs"
+    "cdn:preflight": "node scripts/cdn-preflight.mjs",
+    "test:v2": "node --test v2/test/*.test.js",
+    "start:v2": "node v2/server.js"
   },
   "engines": {
     "node": ">=20"
