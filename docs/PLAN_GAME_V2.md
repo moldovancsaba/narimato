@@ -91,9 +91,12 @@ A player can start, collect 30 triangles with server confirmation, see four robo
 to the next planet, with approved camera and minimal GDS HUD; tests/a11y/docs/release evidence pass;
 legacy game retired with rollback preserved.
 
-## 7. Approvals needed before Wave 2
+## 7. Resolved decisions (2026-11-23)
 
-1. Robots non-blocking (proposed) — approve or specify competition.
-2. First-person 1.04 R landing (approved frames) or third-person fixed rig offset.
-3. Endless planets or fixed count.
-4. Minimal audio or silent.
+- Robots respawn when they reach their target; four remain active; collection stays non-blocking.
+- Third-person fixed rig offset; avatar visible; one camera, pitch-only horizon alignment.
+- Triangles: three breaking levels; the triangle field respawns when fully mined.
+- Silent game; no audio system.
+
+The remaining exact numbers (robot target, triangle-respawn timing) are fixed in Wave 1 and must not
+add challenge or interruption.
