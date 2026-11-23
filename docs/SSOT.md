@@ -22,6 +22,9 @@ Canonical issue standard: [sovereignsquad/general-design-system#81](https://gith
 | Which issue covers which doc/backlog item | [ISSUE_MAP.md](ISSUE_MAP.md) |
 | How to develop without detouring / DO NOT DO | [GUARDRAILS.md](GUARDRAILS.md) |
 | Renderer/camera technology + forbidden patterns | [RENDERER_TECHNOLOGY.md](RENDERER_TECHNOLOGY.md) |
+| Approved camera contract for v2 | [CAMERA_APPROVED.md](CAMERA_APPROVED.md) |
+| Game v2 specification | [GAME_V2.md](GAME_V2.md) |
+| Game v2 implementation + retirement plan | [PLAN_GAME_V2.md](PLAN_GAME_V2.md) |
 | Architecture decisions (ADRs) | [adr/README.md](adr/README.md) |
 | Machine-readable issue index | [issues.json](issues.json) |
 | Current technical architecture | [../ARCHITECTURE.md](../ARCHITECTURE.md) |
@@ -85,6 +88,8 @@ Living technical and product documents stay at the repository root; delivery doc
 - `RELEASE_NOTES.md` — shipped-release ledger.
 - `docs/FIXES.md` — cause/fix/verification log of corrective work.
 - `docs/GUARDRAILS.md` — development rules, DO NOT DO list, detour detection and protected-behaviour protocol.
+- `docs/CAMERA_APPROVED.md` — approved camera contract for the v2 rewrite.
+- `docs/GAME_V2.md` / `docs/PLAN_GAME_V2.md` — v2 simple game spec and implementation/retirement plan.
 - `docs/` — SSOT governance, issue map, ADRs.
 
 ## Repository quality gate (R1–R6)
