@@ -62,6 +62,7 @@ resets its crust and releases new resources. The game never ends.
 - **[Delivery SSOT](docs/SSOT.md)** — how work is planned, tracked and proven.
 - **[Fixes log](docs/FIXES.md)** — cause/fix/verification of the renderer, controls and gate corrections.
 - **[Development guardrails](docs/GUARDRAILS.md)** — how to develop, DO NOT DO list, detour detection and protected-behaviour protocol.
+- **[Game v2 spec](docs/GAME_V2.md)** and **[implementation plan](docs/PLAN_GAME_V2.md)** — simple triangle-collection game; current game to be retired.
   The board is the single delivery source of truth:
   [NARIMATO delivery board](https://github.com/users/moldovancsaba/projects/80) ·
   [issue index and doc map](docs/ISSUE_MAP.md) ·

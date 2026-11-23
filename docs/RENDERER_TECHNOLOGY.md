@@ -1,6 +1,7 @@
 # Renderer technology contract — how the planet must work, and what is NOT OK
 
-This document records the core renderer/camera technology and the concrete anti-patterns that caused
+This document records the core renderer/camera technology; the approved v2 camera contract is in
+[CAMERA_APPROVED.md](CAMERA_APPROVED.md). and the concrete anti-patterns that caused
 the surface regressions. It is binding for renderer, camera and control work; see also
 [GUARDRAILS.md](GUARDRAILS.md) and [FIXES.md](FIXES.md).
 
@@ -42,6 +43,13 @@ the surface regressions. It is binding for renderer, camera and control work; se
   be cancelled by a follow hack.
 - Wheel/pinch change the carrier radius, not the field of view.
 
+### Horizon anchor
+
+L2, L3 and L4 must place the horizon on the **same screen row: 10% from the top** (y = 0.10 ×
+viewport height). The camera's vertical pitch is solved per distance (`θ = asin(1/d) − φ`, with φ the
+angle for the 10% row at the chosen focal), so the horizon does not drift between zoom levels. L1
+(orbit) has no horizon.
+
 ### Four zoom levels (core framing contract)
 
 | Level | Name | Camera | Pitch from nadir | Framing |
@@ -49,7 +57,7 @@ the surface regressions. It is binding for renderer, camera and control work; se
 | L1 | Orbit | 3.20 R | 0° | Whole sphere, centred, no horizon |
 | L2 | Halfway | 2.10 R | 13° | Surface fills lower ~70%, horizon top band |
 | L3 | 80% | 1.44 R | 24° | Surface fills frame, horizon top |
-| L4 | Landed (Option A) | **1.20 R** | **35°** | Close to surface; full horizon/sky band at the top; ship/pilot + terrain visible |
+| L4 | Landed (Option A) | **1.18 R** | **36°** | Close to surface; horizon fixed at the 10% top anchor; ship/pilot + terrain visible |
 
 L4 literal 30 m is **not approved** with the current pilot/terrain scale. Do not ship it without a
 separate metres-per-world-unit scale model.
