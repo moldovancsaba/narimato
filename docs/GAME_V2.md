@@ -20,7 +20,18 @@ A spherical triangle-collecting game: each planet has triangles and four robots;
 6. Repeat. There is no other challenge, timer, interruption, mission, event, supply, incident,
    leaderboard, story gate or fail state.
 
-## 3. Rules (simple and explicit)
+## 3. Approved decisions (2026-11-23)
+
+1. **Robots respawn.** When a robot reaches its target it is replaced by a newly spawned robot; four
+   robots remain active.
+2. **Avatar is visible.** The landing camera is third-person: a fixed backward/up offset on the same
+   rig so the player is visible; still one camera, no zoom, pitch-only alignment.
+3. **Triangles break in 3 levels, then respawn when fully mined.** Triangle geometry has three
+   breaking levels; when the planet's triangle field is fully mined it respawns. Player progress is
+   still 30 collected triangles for this planet.
+4. **Silent game.** No audio system, narration or sound cues.
+
+## 4. Rules (simple and explicit)
 
 - **Player progress:** 0 → 30 collected triangles on the current planet. One collect per valid
   triangle click/tap, server-authoritative.
@@ -35,7 +46,7 @@ A spherical triangle-collecting game: each planet has triangles and four robots;
   transitions are server decisions. No client-fabricated progress.
 - **Persistence:** player progress/planet index survives reconnect; robots are server-owned.
 
-## 4. Presentation
+## 5. Presentation
 
 - **Camera:** [CAMERA_APPROVED.md](CAMERA_APPROVED.md) is binding.
 - **Planet:** one solid sphere with geodesic triangle edges; front surface only; no cartography,
@@ -46,13 +57,13 @@ A spherical triangle-collecting game: each planet has triangles and four robots;
 - **Accessibility:** keyboard/touch collection, focus, AA contrast, reduced motion, 200% zoom,
   screen-reader labels for progress and robots.
 
-## 5. Explicitly out of scope
+## 6. Explicitly out of scope
 
 Mining resources, inventory, ship-refit parts, missions, story/narration, guide/manual, incidents,
 supply drops, arcs, leaderboards, scores, PvP, timers, hazards, economy, audio beyond minimal UI
 sounds, multiple concurrent human players (until separately approved).
 
-## 6. Acceptance of v2
+## 7. Acceptance of v2
 
 - A new player starts on planet 1 and can collect 30 triangles using keyboard/touch with the server
   confirming each one.
@@ -61,10 +72,7 @@ sounds, multiple concurrent human players (until separately approved).
 - Camera: four phases, one rig, horizon 10% row, full planet, no masks/cuts.
 - Tests, docs, accessibility and release evidence gates green.
 
-## 7. Open approvals
+## 8. Resolved approvals
 
-1. Robot collection is cosmetic/non-blocking (proposed) or competitive for the same 30 triangles?
-2. Is the landing view first-person at 1.04 R (approved frames) or third-person with a fixed rig
-   offset so the avatar is visible?
-3. Number of planets: endless or fixed set?
-4. Minimal audio: none, or UI click/collect/leave cues?
+All four questions are answered above. Remaining implementation detail to fix in Wave 1: the exact
+robot target count and triangle-respawn timing/scope; these must not add a challenge or interruption.

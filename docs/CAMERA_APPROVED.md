@@ -6,7 +6,8 @@ It is the camera the new game engine must implement; it is not a suggestion.
 ## 1. The approved model
 
 - **One camera, attached to the gamer rig.** The player and camera are one rig; the camera has a
-  fixed local offset.
+  fixed **backward/up offset so the avatar is visible (third-person)**. The offset is fixed across all
+  phases.
 - **No zoom.** The four phases move the player physically closer to the planetary surface; the
   camera comes with the player. FOV and focal length never change.
 - **Vertical rotation only.** The camera pitches around its local right axis per phase. No yaw, no
@@ -66,8 +67,9 @@ L4 is the approved drastic-close landing view: 4% of the planet radius above the
 - Re-tilting geometry per phase or changing triangle density.
 - Reusing the old surface-camera/derived-mesh code.
 
-## 6. Known approved-frame caveat
+## 6. Approved visibility decision
 
-At 1.04 R the approved view is effectively at the surface and the pilot avatar is below the camera
-(not visible in the frame). If the avatar must be visible at landing, that is a **fixed backward/up
-rig offset**, still one camera; it must be approved separately before implementation.
+The avatar **must be visible**. The camera uses a fixed backward/up rig offset for all phases; still
+one camera, no zoom, no second camera. The L4 distance/pitch remains 1.04 R / 53.5°, with the rig
+offset applied. New prototype frames with the visible avatar will be captured in Wave 4 before the
+camera is accepted in v2.
