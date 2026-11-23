@@ -73,11 +73,16 @@ export function verifyCounts(root, counts) {
 }
 
 function testFiles(root) {
-  return fs
-    .readdirSync(path.join(root, 'test'))
-    .filter((name) => name.endsWith('.test.js'))
-    .sort()
-    .map((name) => path.join(root, 'test', name));
+  const dirs = ['test', 'v2/test'];
+  const files = [];
+  for (const dir of dirs) {
+    const full = path.join(root, dir);
+    if (!fs.existsSync(full)) continue;
+    for (const name of fs.readdirSync(full).filter((n) => n.endsWith('.test.js')).sort()) {
+      files.push(path.join(full, name));
+    }
+  }
+  return files;
 }
 
 /** Run the suite in a child process and return the raw TAP text. */

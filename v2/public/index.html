@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NARIMATO v2 — planet</title>
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #05010f; }
+    #planet-canvas { display: block; width: 100vw; height: 100vh; }
+    .hud { position: fixed; left: 20px; top: 20px; color: #dffcff; font: 600 14px/1.5 ui-monospace, monospace;
+      background: rgba(2,4,14,.72); border: 1px solid rgba(90,240,255,.35); border-radius: 10px; padding: 10px 14px; }
+    .hud b { color: #7df9ff; letter-spacing: .08em; }
+    .kbd { position: fixed; left: 20px; bottom: 18px; color: rgba(190,240,255,.6); font: 12px ui-monospace, monospace; }
+  </style>
+</head>
+<body>
+  <canvas id="planet-canvas" aria-label="Spherical planet with geodesic triangle edges"></canvas>
+  <div class="hud"><b id="phase-label">PHASE 1 // ORBIT</b><div id="phase-detail"></div></div>
+  <div class="kbd">1–4 phases · SPACE/→ next · ← previous</div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
