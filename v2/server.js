@@ -24,6 +24,32 @@ export function createV2Server() {
   timer.unref?.();
   return http.createServer((req, res) => {
     const url = new URL(req.url || '/', 'http://localhost');
+    const phaseMatch = /^\/phase\/([0-4])$/.exec(url.pathname);
+    if (phaseMatch) {
+      const phase = Number(phaseMatch[1]);
+      const phases = [
+        { tag: 'v2-phase-0', title: 'Phase 0 — clean scaffold', body: 'Zero-dependency server, minimal client and tests. No planet yet.' },
+        { tag: 'v2-phase-1', title: 'Phase 1 — planet + approved camera', body: 'Geodesic ray–sphere planet and the one-rig four-phase camera (3.20 / 2.10 / 1.44 / 1.04 R).' },
+        { tag: 'v2-phase-2', title: 'Phase 2 — collection + next planet', body: 'Server-authoritative triangle collection: 30 breaks, then the next planet. Robots tick.' },
+        { tag: 'v2-phase-3', title: 'Phase 3 — playable client', body: 'Clickable triangles, four robots with respawn, HUD, visible gamer.' },
+        { tag: 'v2-phase-4', title: 'Phase 4 — cutover + rollback docs', body: 'Legacy retired from the product entry, per-phase tags, phase links and rollback.' },
+      ];
+      const p = phases[phase];
+      const link = `https://github.com/moldovancsaba/narimato/tree/${p.tag}`;
+      const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${p.title}</title>
+<style>body{margin:0;min-height:100vh;background:#05010f;color:#dffcff;font-family:ui-monospace,monospace;display:grid;place-items:center}main{width:min(760px,92vw)}h1{color:#7df9ff;font-size:24px;letter-spacing:.06em}a{display:block;margin:12px 0;padding:14px 16px;border:1px solid rgba(90,240,255,.4);border-radius:10px;color:#dffcff;text-decoration:none;background:rgba(8,20,30,.7)}a:hover{border-color:#7df9ff}code{color:#9ffcff}small{color:#9fdce8;display:block;margin-top:4px}</style></head>
+<body><main><h1>${p.title}</h1><p>${p.body}</p>
+<a href="/">▶ OPEN V2 GAME<small>current delivery</small></a>
+<a href="/phases.html">CAMERA PHASE INDEX<small>orbit → halfway → 80% → landed</small></a>
+<a href="${link}">GITHUB TAG ${p.tag}<small>${link}</small></a>
+<a href="/phase/${Math.max(0, phase - 1)}">← PREVIOUS PHASE</a>
+<a href="/phase/${Math.min(4, phase + 1)}">NEXT PHASE →</a>
+<p><code>git checkout ${p.tag} &amp;&amp; node v2/server.js</code></p>
+<p><small>Rollback docs: docs/V2_ROLLBACK.md · issues/PRs: #111, #112</small></p></main></body></html>`;
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+      res.end(html);
+      return;
+    }
     if (url.pathname === '/api/health') {
       res.writeHead(200, { 'content-type': 'application/json' });
       res.end(JSON.stringify({ ok: true, version: 2 }));

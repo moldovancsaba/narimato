@@ -6,6 +6,12 @@ the product entry point but preserved** under its tag so any phase can be restor
 ## 1. Product entry points
 
 - **v2 game (new product):** `node v2/server.js` or `npm start` → `http://127.0.0.1:4180/`
+- **Implementation phase pages** (each phase has its own live page):
+  - Phase 0 — `http://127.0.0.1:4180/phase/0`
+  - Phase 1 — `http://127.0.0.1:4180/phase/1`
+  - Phase 2 — `http://127.0.0.1:4180/phase/2`
+  - Phase 3 — `http://127.0.0.1:4180/phase/3`
+  - Phase 4 — `http://127.0.0.1:4180/phase/4`
 - **Camera phase links** (each phase has its own URL):
   - Phase 1 orbit — `/?phase=0` → [open](http://127.0.0.1:4180/?phase=0)
   - Phase 2 halfway — `/?phase=1` → [open](http://127.0.0.1:4180/?phase=1)
