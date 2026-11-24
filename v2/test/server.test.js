@@ -11,7 +11,7 @@ test('v2 scaffold: health, state and client are served', async () => {
     assert.equal(health.version, 2);
     const state = await fetch(`${base}/api/state`).then((r) => r.json());
     assert.equal(state.player.target, 30);
-    assert.equal(state.robots, 4);
+    assert.equal(state.robots.length, 4);
     const html = await fetch(`${base}/`).then((r) => r.text());
     assert.ok(html.includes('planet-canvas'));
   } finally {

@@ -7,6 +7,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createGame, collectTriangle, publicState, tickRobots } from './server/game.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(ROOT, 'public');
@@ -18,6 +19,9 @@ const MIME = {
 };
 
 export function createV2Server() {
+  const game = createGame();
+  const timer = setInterval(() => tickRobots(game), 2000);
+  timer.unref?.();
   return http.createServer((req, res) => {
     const url = new URL(req.url || '/', 'http://localhost');
     if (url.pathname === '/api/health') {
@@ -25,15 +29,21 @@ export function createV2Server() {
       res.end(JSON.stringify({ ok: true, version: 2 }));
       return;
     }
-    if (url.pathname === '/api/state') {
+    if (url.pathname === '/api/state' && req.method === 'GET') {
       res.writeHead(200, { 'content-type': 'application/json' });
-      res.end(JSON.stringify({
-        ok: true,
-        version: 2,
-        planet: { index: 1, seed: 20261123, triangles: 30 },
-        robots: 4,
-        player: { collected: 0, target: 30 },
-      }));
+      res.end(JSON.stringify({ ok: true, version: 2, ...publicState(game) }));
+      return;
+    }
+    if (url.pathname === '/api/collect' && req.method === 'POST') {
+      let body = '';
+      req.on('data', (chunk) => { body += chunk; if (body.length > 1024) req.destroy(); });
+      req.on('end', () => {
+        let id = null;
+        try { id = JSON.parse(body || '{}').triangleId; } catch {}
+        const result = collectTriangle(game, id);
+        res.writeHead(result.ok ? 200 : 409, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ ...result, state: publicState(game) }));
+      });
       return;
     }
     let file = url.pathname === '/' ? '/index.html' : url.pathname;
