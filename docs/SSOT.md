@@ -25,6 +25,7 @@ Canonical issue standard: [sovereignsquad/general-design-system#81](https://gith
 | Approved camera contract for v2 | [CAMERA_APPROVED.md](CAMERA_APPROVED.md) |
 | Game v2 specification | [GAME_V2.md](GAME_V2.md) |
 | Game v2 implementation + retirement plan | [PLAN_GAME_V2.md](PLAN_GAME_V2.md) |
+| v2 phase links + rollback (every phase) | [V2_ROLLBACK.md](V2_ROLLBACK.md) |
 | Architecture decisions (ADRs) | [adr/README.md](adr/README.md) |
 | Machine-readable issue index | [issues.json](issues.json) |
 | Current technical architecture | [../ARCHITECTURE.md](../ARCHITECTURE.md) |

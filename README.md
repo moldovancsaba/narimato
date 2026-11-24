@@ -1,5 +1,10 @@
 # NARIMATO
 
+> **v2 is the active game.** The legacy game is retired and preserved at the
+> [legacy tag](https://github.com/moldovancsaba/narimato/tree/legacy-v3.58.0-retired).
+> Run the new game with `npm start`; phase links and rollback: [docs/V2_ROLLBACK.md](docs/V2_ROLLBACK.md).
+
+
 ![CI](https://github.com/moldovancsaba/narimato/actions/workflows/ci.yml/badge.svg)
 
 > **YEAR 2189. A wormhole throws your damaged ship to the far side of the universe.**
@@ -275,7 +280,7 @@ procedure are in [docs/RELEASE_EVIDENCE.md](docs/RELEASE_EVIDENCE.md), and
 
 ## Development
 
-The node:test suite currently runs <!-- test-count:565 -->565<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
+The node:test suite currently runs <!-- test-count:569 -->569<!-- /test-count --> tests; ownership is mapped in [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 ```
 npm test                 # node:test suite, no dependencies

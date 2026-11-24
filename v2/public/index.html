@@ -3,20 +3,36 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>NARIMATO v2 — planet</title>
+  <title>NARIMATO v2 — collect 30</title>
   <style>
-    html, body { margin: 0; height: 100%; overflow: hidden; background: #05010f; }
-    #planet-canvas { display: block; width: 100vw; height: 100vh; }
-    .hud { position: fixed; left: 20px; top: 20px; color: #dffcff; font: 600 14px/1.5 ui-monospace, monospace;
-      background: rgba(2,4,14,.72); border: 1px solid rgba(90,240,255,.35); border-radius: 10px; padding: 10px 14px; }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #05010f; color: #dffcff; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    canvas { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+    #game-canvas { cursor: crosshair; z-index: 2; }
+    #planet-canvas { z-index: 1; }
+    .hud { position: fixed; left: 20px; top: 20px; z-index: 5; background: rgba(2,4,14,.78); border: 1px solid rgba(90,240,255,.35); border-radius: 12px; padding: 12px 16px; min-width: 260px; }
     .hud b { color: #7df9ff; letter-spacing: .08em; }
-    .kbd { position: fixed; left: 20px; bottom: 18px; color: rgba(190,240,255,.6); font: 12px ui-monospace, monospace; }
+    .row { display: flex; justify-content: space-between; gap: 16px; margin-top: 6px; font-size: 13px; }
+    #progress { font-size: 22px; color: #fff; margin-top: 6px; }
+    #robots { margin-top: 10px; font-size: 12px; color: #9fdce8; }
+    #robots div { margin-top: 3px; }
+    #status { position: fixed; left: 50%; top: 22px; transform: translateX(-50%); z-index: 6; color: #06121a; background: #7df9ff; padding: 8px 14px; border-radius: 8px; font-weight: 700; opacity: 0; transition: opacity .2s; }
+    .kbd { position: fixed; left: 20px; bottom: 18px; z-index: 5; color: rgba(190,240,255,.6); font-size: 12px; }
+    .avatar { position: fixed; left: 50%; bottom: 36px; transform: translateX(-50%); z-index: 5; color: #7df9ff; font-size: 12px; text-align: center; }
+    .avatar .ship { width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent; border-bottom: 26px solid #9ffcff; margin: 0 auto 6px; filter: drop-shadow(0 0 8px #2ee); }
   </style>
 </head>
 <body>
-  <canvas id="planet-canvas" aria-label="Spherical planet with geodesic triangle edges"></canvas>
-  <div class="hud"><b id="phase-label">PHASE 1 // ORBIT</b><div id="phase-detail"></div></div>
-  <div class="kbd">1–4 phases · SPACE/→ next · ← previous</div>
+  <canvas id="planet-canvas" aria-hidden="true"></canvas>
+  <canvas id="game-canvas" aria-label="Collect triangles on the planet. Arrow keys change camera phase; ten triangles, three breaks each."></canvas>
+  <div class="hud">
+    <b id="phase-label">PHASE 1 // ORBIT</b>
+    <div id="progress">0 / 30</div>
+    <div class="row"><span>PLANET</span><span id="planet">1</span></div>
+    <div id="robots"></div>
+  </div>
+  <div id="status" role="status" aria-live="polite"></div>
+  <div class="avatar"><div class="ship"></div>GAMER</div>
+  <div class="kbd">click/tap a triangle · 3 breaks per triangle · 1–4 camera preview</div>
   <script type="module" src="./app.js"></script>
 </body>
 </html>
