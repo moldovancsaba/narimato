@@ -3,6 +3,21 @@
 Every delivery phase has its own tag, link and rollback command. The legacy game is **retired from
 the product entry point but preserved** under its tag so any phase can be restored.
 
+## 0. Public online build (no install)
+
+- **Play now:** https://moldovancsaba.github.io/narimato/
+- **Online phase index:** https://moldovancsaba.github.io/narimato/phases.html
+- **Online delivery phases:**
+  - https://moldovancsaba.github.io/narimato/phase-0.html
+  - https://moldovancsaba.github.io/narimato/phase-1.html
+  - https://moldovancsaba.github.io/narimato/phase-2.html
+  - https://moldovancsaba.github.io/narimato/phase-3.html
+  - https://moldovancsaba.github.io/narimato/phase-4.html
+- **Online camera phases:** `/?phase=0` … `/?phase=3` on the Pages URL.
+
+The Pages build runs the same rules with a browser-state fallback (no Node API); the Node build
+(`npm start`) keeps server authority. Both are playable; use the public build for try/test.
+
 ## 1. Product entry points
 
 - **v2 game (new product):** `node v2/server.js` or `npm start` → `http://127.0.0.1:4180/`
