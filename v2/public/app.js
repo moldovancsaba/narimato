@@ -1,5 +1,6 @@
 import { PHASES, LANDING, phaseCamera } from './camera.js';
 import { V2Renderer } from './renderer.js';
+import { collectTriangle, createGame, publicState, tickRobots } from './game-rules.js';
 
 const planetCanvas = document.getElementById('planet-canvas');
 const gameCanvas = document.getElementById('game-canvas');
@@ -14,6 +15,7 @@ const params = new URLSearchParams(location.search);
 const previewPhase = params.has('phase') ? Math.max(0, Math.min(3, Number(params.get('phase')) || 0)) : null;
 
 let state = null;
+let offlineGame = null;
 let phase = previewPhase ?? 0;
 let lastClick = 0;
 const norm = (v) => { const l = Math.hypot(v.x, v.y, v.z) || 1; return { x: v.x / l, y: v.y / l, z: v.z / l }; };
@@ -133,14 +135,29 @@ async function collectAt(x, y) {
     .filter((t) => t.dist < Math.max(28, t.size * 1.4))
     .sort((a, b) => a.dist - b.dist)[0];
   if (!hit) return;
-  const res = await fetch('/api/collect', {
+  if (!offlineGame) {
+    const res = await tryRemoteCollect(hit.i);
+    if (res) {
+      state = res.state;
+      if (res.cleared) flash('PLANET CLEARED — NEXT PLANET');
+      else flash(`TRIANGLE ${res.triangleId + 1} · ${res.level} LEFT`);
+      return;
+    }
+  }
+  if (!offlineGame) offlineGame = createGame();
+  const local = collectTriangle(offlineGame, hit.i);
+  if (!local.ok) return;
+  state = publicState(offlineGame);
+  if (local.cleared) flash('PLANET CLEARED — NEXT PLANET');
+  else flash(`TRIANGLE ${local.triangleId + 1} · ${local.level} LEFT`);
+}
+
+async function tryRemoteCollect(triangleId) {
+  const res = await fetch('api/collect', {
     method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ triangleId: hit.i }),
+    body: JSON.stringify({ triangleId }),
   }).then((r) => r.json()).catch(() => null);
-  if (!res || !res.ok) return;
-  state = res.state;
-  if (res.cleared) flash('PLANET CLEARED — NEXT PLANET');
-  else flash(`TRIANGLE ${res.triangleId + 1} · ${res.level} LEFt`);
+  return res && res.ok ? res : null;
 }
 
 gameCanvas.addEventListener('pointerdown', (event) => {
@@ -154,10 +171,22 @@ window.addEventListener('keydown', (event) => {
 window.__v2 = { projected: () => projected, state: () => state };
 
 async function loadState() {
-  const data = await fetch('/api/state').then((r) => r.json()).catch(() => null);
-  if (data && data.ok) state = data;
+  const data = await fetch('api/state').then((r) => r.json()).catch(() => null);
+  if (data && data.ok) {
+    state = data;
+    offlineGame = null;
+    return;
+  }
+  if (!offlineGame) {
+    offlineGame = createGame();
+    state = publicState(offlineGame);
+    flash('PUBLIC PLAYTEST — browser state');
+  }
 }
 resize();
 loadState();
 frame();
 setInterval(loadState, 1000);
+setInterval(() => {
+  if (offlineGame) state = publicState(tickRobots(offlineGame));
+}, 2000);
