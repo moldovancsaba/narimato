@@ -5,7 +5,7 @@
   "type": "module",
   "description": "NARIMATO \u2014 the way back: persistent multiplayer mining, planet escape and deep-space progression on a spherical icosahedron",
   "scripts": {
-    "start": "node server.js",
+    "start": "node v2/server.js",
     "dev": "node server.js",
     "test": "node --test test/*.test.js v2/test/*.test.js",
     "docs:check": "node scripts/check-docs.mjs",
@@ -46,7 +46,8 @@
     "device:gate": "node scripts/device-gate.mjs",
     "cdn:preflight": "node scripts/cdn-preflight.mjs",
     "test:v2": "node --test v2/test/*.test.js",
-    "start:v2": "node v2/server.js"
+    "start:v2": "node v2/server.js",
+    "start:legacy": "node server.js"
   },
   "engines": {
     "node": ">=20"
