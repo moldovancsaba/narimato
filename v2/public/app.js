@@ -18,6 +18,10 @@ const previewPhase = params.has('phase') ? Math.max(0, Math.min(3, Number(params
 let state = null;
 let offlineGame = null;
 let phase = previewPhase ?? 0;
+let manualPhase = previewPhase;
+let viewYaw = 0;
+let viewPitch = 0;
+let viewDistance = null;
 let lastClick = 0;
 const norm = (v) => { const l = Math.hypot(v.x, v.y, v.z) || 1; return { x: v.x / l, y: v.y / l, z: v.z / l }; };
 const dot = (a, b) => a.x * b.x + a.y * b.y + a.z * b.z;
@@ -74,12 +78,18 @@ function resize() {
 window.addEventListener('resize', resize);
 
 function phaseForState() {
-  if (previewPhase !== null) return previewPhase;
-  if (!state) return 0;
-  // Gameplay stays in the orbit view so the whole surface remains visible and collectible.
-  // Camera descent becomes playable when the third-person rig offset lands.
+  if (manualPhase !== null) return manualPhase;
   return 0;
 }
+
+const LANDED_SURFACE_PITCH = 12; // landed view looks at the surface so its faces are visible
+function currentPitch() {
+  const base = phase === 3 ? LANDED_SURFACE_PITCH : PHASES[phase].pitchDeg;
+  return Math.max(-20, Math.min(70, base + viewPitch));
+}
+
+// Surface play view: close enough that the local surface triangles are visible and clickable.
+const LANDED_SURFACE_DISTANCE = 1.44;
 
 function drawTriangles(camera) {
   const W = window.innerWidth, H = window.innerHeight;
@@ -94,7 +104,8 @@ function drawTriangles(camera) {
       if (!pts) return null;
       poly.push(...pts);
     }
-    if (center.x < 2 || center.x > W - 2 || center.y < 2 || center.y > H - 2) return null;
+    const xs = poly.map((q) => q.x), ys = poly.map((q) => q.y);
+    if (Math.max(...xs) < 0 || Math.min(...xs) > W || Math.max(...ys) < 0 || Math.min(...ys) > H) return null;
     const tri = state ? state.triangles[cell.id] : { level: 3, mined: false };
     return { i: cell.id, x: center.x, y: center.y, points: poly, level: tri.level, mined: tri.mined };
   }).filter(Boolean);
@@ -135,7 +146,11 @@ function drawTriangles(camera) {
 let projected = [];
 function frame() {
   phase = phaseForState();
-  const camera = phaseCamera(phase, window.innerWidth, window.innerHeight);
+  const camera = phaseCamera(phase, window.innerWidth, window.innerHeight, {
+    yawDeg: viewYaw,
+    pitchDeg: currentPitch(),
+    distance: viewDistance ?? (phase === 3 ? LANDED_SURFACE_DISTANCE : PHASES[phase].distance),
+  });
   renderer.render(camera, renderer.dpr || 1);
   gctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
   projected = drawTriangles(camera);
@@ -189,15 +204,88 @@ async function tryRemoteCollect(triangleId) {
   return res && res.ok ? res : null;
 }
 
-gameCanvas.addEventListener('pointerdown', (event) => {
+const pointers = new Map();
+let drag = null;
+let pinchStart = null;
+
+function localPoint(event) {
   const rect = gameCanvas.getBoundingClientRect();
-  collectAt(event.clientX - rect.left, event.clientY - rect.top);
+  return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+}
+gameCanvas.style.cursor = 'grab';
+gameCanvas.addEventListener('pointerdown', (event) => {
+  const p = localPoint(event);
+  pointers.set(event.pointerId, p);
+  try { gameCanvas.setPointerCapture(event.pointerId); } catch {}
+  if (pointers.size === 2) {
+    const [a, b] = [...pointers.values()];
+    pinchStart = { dist: Math.hypot(a.x - b.x, a.y - b.y), distance: viewDistance ?? PHASES[phase].distance };
+    drag = null;
+  } else if (pointers.size === 1) {
+    drag = { startX: p.x, startY: p.y, lastX: p.x, lastY: p.y, moved: false };
+    gameCanvas.style.cursor = 'grabbing';
+  }
 });
+gameCanvas.addEventListener('pointermove', (event) => {
+  const p = localPoint(event);
+  if (!pointers.has(event.pointerId)) return;
+  pointers.set(event.pointerId, p);
+  if (pointers.size === 2 && pinchStart) {
+    const [a, b] = [...pointers.values()];
+    const dist = Math.max(1, Math.hypot(a.x - b.x, a.y - b.y));
+    viewDistance = Math.max(phase === 3 ? LANDED_SURFACE_DISTANCE : 1.04, Math.min(3.2, pinchStart.distance * (pinchStart.dist / dist)));
+    return;
+  }
+  if (!drag) return;
+  const dx = p.x - drag.lastX;
+  const dy = p.y - drag.lastY;
+  if (Math.hypot(p.x - drag.startX, p.y - drag.startY) > 4) drag.moved = true;
+  drag.lastX = p.x;
+  drag.lastY = p.y;
+  if (drag.moved) {
+    viewYaw = (viewYaw + dx * 0.35) % 360;
+    viewPitch = Math.max(-20, Math.min(35, viewPitch + dy * 0.22));
+  }
+});
+function endPointer(event) {
+  const p = localPoint(event);
+  pointers.delete(event.pointerId);
+  if (pointers.size < 2) pinchStart = null;
+  if (drag && !drag.moved) collectAt(p.x, p.y);
+  drag = null;
+  gameCanvas.style.cursor = pointers.size ? 'grabbing' : 'grab';
+}
+gameCanvas.addEventListener('pointerup', endPointer);
+gameCanvas.addEventListener('pointercancel', (event) => { pointers.delete(event.pointerId); pinchStart = null; drag = null; });
+gameCanvas.addEventListener('wheel', (event) => {
+  event.preventDefault();
+  const base = viewDistance ?? PHASES[phase].distance;
+  viewDistance = Math.max(phase === 3 ? LANDED_SURFACE_DISTANCE : 1.04, Math.min(3.2, base * (event.deltaY < 0 ? 0.9 : 1.1)));
+}, { passive: false });
 window.addEventListener('keydown', (event) => {
-  if (/^[1-4]$/.test(event.key)) { phase = Number(event.key) - 1; if (previewPhase === null) flash(`CAMERA PREVIEW ${phase + 1}`); }
+  if (/^[1-4]$/.test(event.key)) {
+    phase = Number(event.key) - 1;
+    manualPhase = phase;
+    viewDistance = null;
+    if (previewPhase === null) flash(`CAMERA PREVIEW ${phase + 1}`);
+    return;
+  }
+  if (event.key === 'ArrowLeft') viewYaw -= 5;
+  if (event.key === 'ArrowRight') viewYaw += 5;
+  if (event.key === 'ArrowUp') viewPitch = Math.max(-20, viewPitch - 3);
+  if (event.key === 'ArrowDown') viewPitch = Math.min(35, viewPitch + 3);
 });
 
-window.__v2 = { projected: () => projected, state: () => state };
+window.__v2 = {
+  projected: () => projected,
+  state: () => state,
+  setView: (o = {}) => {
+    if (Number.isFinite(o.phase)) { phase = o.phase; manualPhase = o.phase; }
+    if (Number.isFinite(o.yaw)) viewYaw = o.yaw;
+    if (Number.isFinite(o.pitch)) viewPitch = o.pitch;
+    if (Number.isFinite(o.distance)) viewDistance = o.distance;
+  },
+};
 
 async function loadState() {
   const data = await fetch('api/state').then((r) => r.json()).catch(() => null);

@@ -58,6 +58,8 @@ A spherical triangle-collecting game: each planet has triangles and four robots;
 - **Planet:** one solid sphere with geodesic triangle edges; front surface only; no cartography,
   glass shell, derived mesh or render tessellation.
 - **Robots:** four simple closed-volume figures on the surface, visibly collecting.
+- **Controls (playtest):** click a surface face to collect; pointer drag orbits the rig; wheel/pinch
+  move the rig distance (no FOV change); keys 1–4 select camera phase; arrows rotate the view.
 - **HUD:** minimal GDS surfaces only: current planet, 0/30 progress, four robot indicators, controls.
   Every canvas visual has a DOM/text equivalent.
 - **Accessibility:** keyboard/touch collection, focus, AA contrast, reduced motion, 200% zoom,
