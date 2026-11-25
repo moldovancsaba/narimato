@@ -58,8 +58,11 @@ block player.
 Acceptance: deterministic test clock, four robots, visible collection, player can still finish 30.
 
 ### Wave 4 — camera phases
-Wire one attached rig to L1–L4 distances and solve pitch for the 10% horizon row; no zoom/masks.
-Acceptance: four real screenshots, horizon row 10% ±1%, one camera, fixed geometry, no cut/leak.
+Wire one attached rig to the final approved steps **4.40 / 1.50 / 1.20 / 1.01 R** with constant 50° FOV;
+solve pitch for the **25% horizon row**; add the fixed **1.4% R landing camera arm**; gamer hidden in
+Steps 1–3 and visible on the surface at Step 4; no zoom/masks.
+Acceptance: four real screenshots + transition frames, horizon 25% ±1%, gamer visibility rules,
+one camera, fixed geometry, no cut/leak.
 
 ### Wave 5 — UI/accessibility/release
 GDS HUD, keyboard/touch, screen-reader progress, reduced motion, 200% zoom; docs/evidence; release

@@ -54,15 +54,16 @@ A spherical triangle-collecting game: each planet has triangles and four robots;
 
 ## 5. Presentation
 
-- **Camera:** [CAMERA_APPROVED.md](CAMERA_APPROVED.md) is binding; the revised landing process and
-  25% horizon feasibility are in [CAMERA_LANDING_PROCESS.md](CAMERA_LANDING_PROCESS.md).
+- **Camera:** [CAMERA_APPROVED.md](CAMERA_APPROVED.md) is binding: one camera, constant 50° FOV,
+  25% horizon, steps 4.40 / 1.50 / 1.20 / 1.01 R, landing camera arm 1.4% R; the landing process is in
+  [CAMERA_LANDING_PROCESS.md](CAMERA_LANDING_PROCESS.md).
 - **Planet:** one solid sphere with geodesic triangle edges; front surface only; no cartography,
   glass shell, derived mesh or render tessellation.
 - **Robots:** four simple closed-volume figures on the surface, visibly collecting.
-- **Controls (playtest):** click a surface face to collect; pointer drag follows the grabbed surface
-  point to orbit the rig; wheel/pinch move the rig distance (no FOV change); keys 1–4 select camera
-  phase; arrows rotate the view. When landed, **WASD walks over the surface** and collecting the face
-  you walk through. The landed play view uses 1.44 R / 12° so the local faces remain visible.
+- **Controls:** wheel/pinch move the gamer rig through the four approved steps (no FOV change);
+  the horizon stays on the 25% row. The gamer is hidden behind the camera in Steps 1–3 and visible on
+  the surface at Step 4. Clicking collects a surface face; landed WASD walking collects the face the
+  gamer walks through.
 - **HUD:** minimal GDS surfaces only: current planet, 0/30 progress, four robot indicators, controls.
   Every canvas visual has a DOM/text equivalent.
 - **Accessibility:** keyboard/touch collection, focus, AA contrast, reduced motion, 200% zoom,
