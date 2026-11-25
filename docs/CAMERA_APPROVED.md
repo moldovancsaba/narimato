@@ -1,83 +1,74 @@
 # Approved camera contract (v2)
 
-**Status: camera contract approved 2026-11-23; landing process under revision.**
-The revised process (25% horizon, gamer visibility/landing) is in
-[CAMERA_LANDING_PROCESS.md](CAMERA_LANDING_PROCESS.md) and supersedes the horizon-anchor numbers
-below once its Step-1 choice is confirmed.
+**Status: FINAL — approved 2026-11-25.** This supersedes all earlier camera/landing numbers,
+including the 10% horizon and the 1.44 R surface play view. The camera arm at landing is approved.
+
+The detailed landing process is in [CAMERA_LANDING_PROCESS.md](CAMERA_LANDING_PROCESS.md).
 
 ## 1. The approved model
 
-- **One camera, attached to the gamer rig.** The player and camera are one rig; the camera has a
-  fixed **backward/up offset so the avatar is visible (third-person)**. The offset is fixed across all
-  phases.
-- **No zoom.** The four phases move the player physically closer to the planetary surface; the
-  camera comes with the player. FOV and focal length never change.
-- **Vertical rotation only.** The camera pitches around its local right axis per phase. No yaw, no
-  roll, no second camera, no carrier/landed camera swap.
-- **Fixed horizon row.** The real geometric horizon is placed on the **same screen row** in every
-  phase: **10% of viewport height from the top**. Alignment comes exclusively from vertical pitch.
-- **Full planet rendering.** The whole sphere is rendered: sky where rays miss, surface where they
-  hit. No cut top, no mask, no crop, no painted horizon, no fake sky rectangle.
-- **Fixed geometry.** The planet triangles/arcs do not change between phases; only the rig position
-  and camera pitch change.
+- **One camera, attached to the gamer rig.** Same camera object in all steps. No second camera,
+  no carrier/landed camera swap.
+- **No optical zoom / no FOV change.** Constant vertical FOV **50°**. Wheel/pinch and the four steps
+  move the **gamer rig physically**; they never change the lens.
+- **The top 25% of the viewport is always space/sky.** The real horizon/limb sits exactly on the
+  **25% line** in Steps 2–4. In Step 1 the whole planet is visible: planet top on the 25% line,
+  planet centre on the 50% line.
+- **Vertical pitch only.** The camera pitches so the horizon stays on the 25% row. No yaw/roll
+  animation hacks, no per-frame orientation overwrite from an animation pose.
+- **Full planet rendering.** Sky where rays miss, surface where they hit. No cut top, mask, crop,
+  painted horizon or fake sky.
+- **Fixed geometry.** The same spherical surface triangles are rendered in every step.
 
-Prototype frames (approved):
+## 2. Final step table (FOV 50°, H = viewport height)
 
-- [proto-storyboard-4-phases.png](plan/proto-storyboard-4-phases.png)
-- [L1 orbit](plan/proto-level1-orbit.png)
-- [L2 halfway](plan/proto-level2-halfway.png)
-- [L3 80%](plan/proto-level3-80.png)
-- [L4 landed, drastically close](plan/proto-level4-landed.png)
+| Step | Rig distance from centre | Camera pitch from nadir | Gamer | Horizon row |
+|---|---|---|---|---|
+| 1 far orbit | **4.40 R** | 0° (looks at centre) | behind camera, not rendered | planet top at 25%, centre 50% |
+| 2 closer | **1.50 R** | **28.68°** | behind camera, not rendered | 25% |
+| 3 almost landed | **1.20 R** | **43.31°** | behind camera, not rendered | 25% |
+| 4 landed | **1.01 R radial** | **68.77°** | in front, exactly on surface | 25% |
 
-## 2. Phase table (approved)
-
-| Phase | Rig distance from planet centre | Camera pitch from nadir | Horizon row |
-|---|---|---|---|
-| L1 orbit | 3.20 R | 0° (look at centre) | no horizon (whole sphere) |
-| L2 halfway | 2.10 R | 8° | 10% of viewport |
-| L3 80% | 1.44 R | 23.5° | 10% of viewport |
-| L4 landed | **1.04 R** | **53.5°** | 10% of viewport |
-
-L4 is the approved drastic-close landing view: 4% of the planet radius above the surface.
+**Step-4 camera arm:** the camera sits **1.4% of the planet radius behind the gamer** along the
+backward surface tangent (approved value; safe range 1.2–1.7%). The radial height is 1.01 R.
+This puts the gamer at roughly **75–80% down the screen**, on the surface, while the horizon stays
+at 25%.
 
 ## 3. Technical model
 
-- Camera position `P = L · distance`, where `L` is the landing point unit vector.
-- For phase pitch `θ` (from nadir) and tangent forward `F`:
-  `D = normalize(-L cos θ + F sin θ)`; screen right/up are derived from the local vertical so the
-  horizon is horizontal.
-- Perspective projection with fixed focal length; the horizon is the real limb of the unit sphere.
-- Sphere is rendered by ray–sphere intersection (front surface only); geodesic triangle edges are
-  analytic great-circle edges. The earlier Canvas polygon/clip hacks are **not** part of v2.
-- Player movement changes the rig distance; the camera follows automatically because it is attached.
-- Pitch is solved so the horizon lands at the 10% row:
-  `α = asin(1/d)`; `φ = atan((0.5 − 0.10) · H / focal)`; `θ = α − φ`.
+- Landing point unit vector `L`; forward tangent `F`; rig distance `d`.
+- Horizon angle from nadir: `α = asin(1/d)`.
+- For a 25% horizon row: `φ = atan(0.25 · H / focal)`; with H=800 and 50° FOV, `φ = 13.13°`.
+- Camera pitch: `θ = α − φ`.
+- At Step 4 the camera is at radial distance **1.01 R** and displaced **0.014 R backward** along the
+  tangent. The camera-to-gamer direction is about **54.5° from nadir**, so the gamer projects below
+  the horizon but inside the 50° FOV.
+- Rendering is ray–sphere front surface with analytic great-circle triangle edges. No polygon-clip
+  hacks are part of v2.
+- Pitch is re-solved from the current distance every frame; distance is the animation driver.
+  This is what prevents horizon wobble during transitions.
 
 ## 4. Acceptance for the implementation
 
-- One camera instance; no additional camera/zoom/FOV changes.
-- Four phases driven by rig distance: 3.20 / 2.10 / 1.44 / 1.04 R.
-- Horizon row measured at **10% ± 1%** of viewport height in L2, L3, L4.
-- Full sphere rendered; no cut/mask/crop; no wedge/leak; no cartography.
-- Fixed geometry: triangle count unchanged across phases.
-- Real screenshots at all four phases plus a limb close-up; tests/CI/a11y green.
+- One camera instance; constant 50° FOV; no camera swap.
+- Step distances: **4.40 / 1.50 / 1.20 / 1.01 R**.
+- Horizon at **25% ± 1%** of viewport height in Steps 2–4; stable during transitions (no wobble).
+- Step 1: planet centre at **50% ± 1%**, planet top at **25% ± 1%**.
+- Step 4: camera arm **1.4% R ± 0.2%**, radial 1.01 R; gamer visible on the surface in the lower
+  frame, inside the FOV; gamer absent in Steps 1–3.
+- No cut/mask/crop, no wedge, no leak, no cartography; fixed triangle count.
+- Real browser screenshots at all four steps plus transition frames; tests/CI/a11y green.
 
 ## 5. Forbidden deviations
 
-- Second camera, optical zoom, FOV change, camera-height offset as a substitute for player movement.
+- Second camera, optical zoom, FOV change, camera swap, or animation-driven camera overwrite.
 - Any horizon mask, top crop, sky overlay, painted horizon or silhouette cut.
-- Re-tilting geometry per phase or changing triangle density.
-- Reusing the old surface-camera/derived-mesh code.
+- Moving the camera independently of the gamer rig except the approved fixed 1.4% R landing arm.
+- Re-tilting geometry per step or changing triangle density.
+- Reusing the old adaptive/derived-mesh surface renderer.
 
-## 6. Play-view note
+## 6. Approved prototype frames
 
-The approved L4 framing is 1.04 R / 53.5° for the planet/horizon view. The v2 **surface play view**
-uses 1.44 R / 12° so local surface faces and the avatar remain visible while walking; the camera
-contract distances/pitches above still govern the phase framing previews and the sequence.
-
-## 7. Approved visibility decision
-
-The avatar **must be visible**. The camera uses a fixed backward/up rig offset for all phases; still
-one camera, no zoom, no second camera. The L4 distance/pitch remains 1.04 R / 53.5°, with the rig
-offset applied. New prototype frames with the visible avatar will be captured in Wave 4 before the
-camera is accepted in v2.
+The frames under `docs/plan/proto-*` are the earlier prototype that approved the one-rig,
+full-planet, no-mask rendering approach. Their distances/pitches/10% horizon are **historical** and
+are not the final numbers above. Final acceptance needs new real screenshots at the steps in Section 2.
