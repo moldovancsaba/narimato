@@ -20,6 +20,25 @@ const dot = (a, b) => a.x * b.x + a.y * b.y + a.z * b.z;
 const cross = (a, b) => ({ x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x });
 const mul = (a, k) => ({ x: a.x * k, y: a.y * k, z: a.z * k });
 const add = (a, b) => ({ x: a.x + b.x, y: a.y + b.y, z: a.z + b.z });
+const qMul = (a, b) => ({
+  x: a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y,
+  y: a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x,
+  z: a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w,
+  w: a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z,
+});
+const qNorm = (q) => { const l = Math.hypot(q.x, q.y, q.z, q.w) || 1; return { x: q.x / l, y: q.y / l, z: q.z / l, w: q.w / l }; };
+const qAxis = (axis, angle) => {
+  const h = angle / 2;
+  return { x: axis.x * Math.sin(h), y: axis.y * Math.sin(h), z: axis.z * Math.sin(h), w: Math.cos(h) };
+};
+const qRotate = (q, v) => {
+  const p = { x: v.x, y: v.y, z: v.z, w: 0 };
+  const c = qNorm(q);
+  const inv = { x: -c.x, y: -c.y, z: -c.z, w: c.w };
+  const r = qMul(qMul(c, p), inv);
+  return { x: r.x, y: r.y, z: r.z };
+};
+
 const slerp = (a, b, t) => {
   const o = Math.acos(Math.max(-1, Math.min(1, dot(a, b))));
   if (o < 1e-5) return a;
@@ -31,6 +50,7 @@ let offlineGame = null;
 let step = previewPhase ?? 0;
 let targetStep = step;
 let playerDir = { ...LANDING };
+let viewAxis = { ...LANDING };
 let headingYaw = 0;
 let viewPitch = 0;
 let lastClick = 0;
@@ -98,7 +118,7 @@ function currentCamera() {
     yawDeg: headingYaw,
     pitchDeg: pitch + viewPitch,
     distance: d,
-    landing: playerDir,
+    landing: viewAxis,
     arm: currentArm() * d,
     fovDeg: 50,
   });
@@ -142,6 +162,13 @@ function drawFaces(camera) {
     const center = camera.project(cell.center);
     projected.push({ i: cell.id, x: center.x, y: center.y, points: poly, level: tri.level, mined: tri.mined });
   }
+  const cx = camera.project(camera.axis).x;
+  const cy = camera.project(camera.axis).y;
+  const R = Math.max(1, camera.screenRadius || 0);
+  gctx.save();
+  gctx.beginPath();
+  gctx.arc(cx, cy, R, 0, Math.PI * 2);
+  gctx.clip();
   for (const t of projected) {
     const active = !t.mined && t.level > 0;
     gctx.beginPath();
@@ -153,6 +180,7 @@ function drawFaces(camera) {
     gctx.lineWidth = active ? 2 : 1.2;
     gctx.stroke();
   }
+  gctx.restore();
   return projected;
 }
 
@@ -247,6 +275,7 @@ function moveGamer(dt) {
     const dir = forward > 0 ? tangent : mul(tangent, -1);
     const stepAngle = 0.9 * dt;
     playerDir = norm(add(mul(playerDir, Math.cos(stepAngle)), mul(dir, Math.sin(stepAngle))));
+    viewAxis = playerDir;
     if (step > 2.75) {
       const face = faceAtPoint(playerDir);
       if (face >= 0 && (face !== lastWalkFace || performance.now() - lastWalkAt > 450)) {
@@ -297,8 +326,11 @@ gameCanvas.addEventListener('pointermove', (event) => {
   if (!drag) return;
   if (Math.hypot(p.x - drag.x, p.y - drag.y) > 4) drag.moved = true;
   if (drag.moved) {
-    headingYaw += (p.x - drag.x) * 0.35;
-    viewPitch = Math.max(-20, Math.min(35, viewPitch + (p.y - drag.y) * 0.22));
+    const camera = currentCamera();
+    const dx = (p.x - drag.x) * 0.006;
+    const dy = (p.y - drag.y) * 0.006;
+    const q = qMul(qAxis(camera.basis.up, dx), qAxis(camera.basis.right, -dy));
+    viewAxis = norm(qRotate(q, viewAxis));
   }
   drag.x = p.x; drag.y = p.y;
 });
@@ -334,7 +366,7 @@ window.addEventListener('keydown', (event) => {
 });
 window.addEventListener('keyup', (event) => walkKeys.delete(event.key.toLowerCase()));
 
-window.__v2 = { projected: () => projected, state: () => state, step: () => step, player: () => playerDir, camera: () => currentCamera(), faceAt: faceAtPoint };
+window.__v2 = { projected: () => projected, state: () => state, step: () => step, player: () => playerDir, camera: () => currentCamera(), faceAt: faceAtPoint, axis: () => viewAxis, drag: () => drag };
 async function loadState() {
   const data = await fetch('api/state').then((r) => r.json()).catch(() => null);
   if (data && data.ok) { state = data; offlineGame = null; return; }
