@@ -88,6 +88,8 @@ The gamer is on the real surface and inside the visible horizon cap; no overlay 
 
 ## 8. Implementation status
 
-**Not implemented.** The current game still uses the old 10% horizon and the temporary 1.44 R/12°
-surface play view. This document is the binding target for the next implementation; it is not a claim
-that the game currently matches it.
+**Implemented in the v2 playtest on 2026-11-25** at https://moldovancsaba.github.io/narimato/:
+four distance steps, 25% horizon, constant 50° FOV, landing camera arm, gamer hidden in Steps 1–3 and
+visible on the surface at Step 4, distance-driven pitch, no masks/cuts/second camera. Real screenshots
+were captured at all four steps. Final acceptance still requires transition recording, measured
+horizon-row automation and the remaining pointer-control parity.

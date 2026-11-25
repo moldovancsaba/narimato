@@ -6,13 +6,14 @@
  * same 10% screen row. No zoom, no second camera, no masks/cuts.
  */
 export const PHASES = Object.freeze([
-  { id: 0, name: 'ORBIT', distance: 3.20, pitchDeg: 0.00 },
-  { id: 1, name: 'HALFWAY', distance: 2.10, pitchDeg: 8.00 },
-  { id: 2, name: '80% TO SURFACE', distance: 1.44, pitchDeg: 23.50 },
-  { id: 3, name: 'LANDED', distance: 1.04, pitchDeg: 53.50 },
+  { id: 0, name: 'ORBIT', distance: 4.40, pitchDeg: 0.00 },
+  { id: 1, name: 'CLOSER', distance: 1.50, pitchDeg: 28.68 },
+  { id: 2, name: 'ALMOST LANDED', distance: 1.20, pitchDeg: 43.31 },
+  { id: 3, name: 'LANDED', distance: 1.01, pitchDeg: 68.77 },
 ]);
 export const FOV_DEG = 50;
-export const HORIZON_FRACTION = 0.10;
+export const HORIZON_FRACTION = 0.25;
+export const LANDING_ARM = 0.014; // fraction of planet radius behind the gamer
 
 const norm = (v) => {
   const l = Math.hypot(v.x, v.y, v.z) || 1;
@@ -50,10 +51,12 @@ export function phaseCamera(phaseIndex, width, height, options = {}) {
   const rotateY = (v) => ({ x: v.x * cosY + v.z * sinY, y: v.y, z: -v.x * sinY + v.z * cosY });
   const axis = rotateY(LANDING);
   const tangent = rotateY(TANGENT);
-  const distance = Number.isFinite(options.distance) ? Math.max(1.02, Number(options.distance)) : phase.distance;
+  const distance = Number.isFinite(options.distance) ? Math.max(1.005, Number(options.distance)) : phase.distance;
   const pitchDeg = Number.isFinite(options.pitchDeg) ? Number(options.pitchDeg) : phase.pitchDeg;
   const theta = (pitchDeg * Math.PI) / 180;
-  const P = mul(axis, distance);
+  const arm = Number.isFinite(options.arm) ? Number(options.arm) : 0;
+  const P = add(mul(axis, distance), mul(tangent, -arm));
+  const horizonDistance = Math.hypot(P.x, P.y, P.z);
   const D = norm(add(mul(axis, -Math.cos(theta)), mul(tangent, Math.sin(theta))));
   const U = phase.id === 0
     ? tangent
@@ -78,6 +81,8 @@ export function phaseCamera(phaseIndex, width, height, options = {}) {
     height: H,
     distance,
     pitchDeg,
+    arm,
+    horizonDistance,
     focal,
     origin: P,
     landing: LANDING,
