@@ -41,16 +41,23 @@ export function horizonRow(height) {
  * The camera position is the rig distance along the landing radial; the view
  * direction is pitched toward the tangent so the limb lands on the fixed row.
  */
-export function phaseCamera(phaseIndex, width, height) {
+export function phaseCamera(phaseIndex, width, height, options = {}) {
   const phase = PHASES[Math.max(0, Math.min(PHASES.length - 1, phaseIndex | 0))];
   const W = Math.max(1, Number(width) || 1);
   const H = Math.max(1, Number(height) || 1);
-  const theta = (phase.pitchDeg * Math.PI) / 180;
-  const P = mul(LANDING, phase.distance);
-  const D = norm(add(mul(LANDING, -Math.cos(theta)), mul(TANGENT, Math.sin(theta))));
+  const yaw = ((Number(options.yawDeg) || 0) * Math.PI) / 180;
+  const cosY = Math.cos(yaw), sinY = Math.sin(yaw);
+  const rotateY = (v) => ({ x: v.x * cosY + v.z * sinY, y: v.y, z: -v.x * sinY + v.z * cosY });
+  const axis = rotateY(LANDING);
+  const tangent = rotateY(TANGENT);
+  const distance = Number.isFinite(options.distance) ? Math.max(1.02, Number(options.distance)) : phase.distance;
+  const pitchDeg = Number.isFinite(options.pitchDeg) ? Number(options.pitchDeg) : phase.pitchDeg;
+  const theta = (pitchDeg * Math.PI) / 180;
+  const P = mul(axis, distance);
+  const D = norm(add(mul(axis, -Math.cos(theta)), mul(tangent, Math.sin(theta))));
   const U = phase.id === 0
-    ? TANGENT
-    : norm(add(LANDING, mul(D, -dot(LANDING, D))));
+    ? tangent
+    : norm(add(axis, mul(D, -dot(axis, D))));
   const R = norm(cross(D, U));
   const focal = (H / 2) / Math.tan((FOV_DEG * Math.PI) / 360);
   const project = (v) => {
@@ -69,16 +76,18 @@ export function phaseCamera(phaseIndex, width, height) {
     phase,
     width: W,
     height: H,
-    distance: phase.distance,
-    pitchDeg: phase.pitchDeg,
+    distance,
+    pitchDeg,
     focal,
     origin: P,
     landing: LANDING,
     forward: TANGENT,
     basis: { forward: D, up: U, right: R, position: P },
+    axis,
+    tangent,
     project,
     get screenRadius() {
-      return focal / Math.sqrt(Math.max(1e-6, phase.distance * phase.distance - 1));
+      return focal / Math.sqrt(Math.max(1e-6, distance * distance - 1));
     },
   };
 }
