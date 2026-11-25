@@ -1,7 +1,9 @@
 # Approved camera contract (v2)
 
-**Status: APPROVED by the user on 2026-11-23.** This supersedes the earlier surface-camera experiments.
-It is the camera the new game engine must implement; it is not a suggestion.
+**Status: camera contract approved 2026-11-23; landing process under revision.**
+The revised process (25% horizon, gamer visibility/landing) is in
+[CAMERA_LANDING_PROCESS.md](CAMERA_LANDING_PROCESS.md) and supersedes the horizon-anchor numbers
+below once its Step-1 choice is confirmed.
 
 ## 1. The approved model
 
@@ -67,7 +69,13 @@ L4 is the approved drastic-close landing view: 4% of the planet radius above the
 - Re-tilting geometry per phase or changing triangle density.
 - Reusing the old surface-camera/derived-mesh code.
 
-## 6. Approved visibility decision
+## 6. Play-view note
+
+The approved L4 framing is 1.04 R / 53.5° for the planet/horizon view. The v2 **surface play view**
+uses 1.44 R / 12° so local surface faces and the avatar remain visible while walking; the camera
+contract distances/pitches above still govern the phase framing previews and the sequence.
+
+## 7. Approved visibility decision
 
 The avatar **must be visible**. The camera uses a fixed backward/up rig offset for all phases; still
 one camera, no zoom, no second camera. The L4 distance/pitch remains 1.04 R / 53.5°, with the rig
