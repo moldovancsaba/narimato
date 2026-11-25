@@ -50,7 +50,19 @@ export function phaseCamera(phaseIndex, width, height, options = {}) {
   const cosY = Math.cos(yaw), sinY = Math.sin(yaw);
   const rotateY = (v) => ({ x: v.x * cosY + v.z * sinY, y: v.y, z: -v.x * sinY + v.z * cosY });
   const baseLanding = options.landing && Number.isFinite(options.landing.x) ? norm(options.landing) : LANDING;
-  const baseTangent = norm(cross(cross(baseLanding, { x: 0, y: 1, z: 0 }), baseLanding));
+  let baseTangent = null;
+  if (options.forward && Number.isFinite(options.forward.x)) {
+    const f = options.forward;
+    const proj = { x: f.x - baseLanding.x * dot(f, baseLanding), y: f.y - baseLanding.y * dot(f, baseLanding), z: f.z - baseLanding.z * dot(f, baseLanding) };
+    const l = Math.hypot(proj.x, proj.y, proj.z);
+    if (l > 1e-6) baseTangent = { x: proj.x / l, y: proj.y / l, z: proj.z / l };
+  }
+  if (!baseTangent) {
+    // Pole-free fallback: use the world axis least aligned with the landing normal.
+    const ax = Math.abs(baseLanding.x), ay = Math.abs(baseLanding.y), az = Math.abs(baseLanding.z);
+    const up = ax <= ay && ax <= az ? { x: 1, y: 0, z: 0 } : ay <= az ? { x: 0, y: 1, z: 0 } : { x: 0, y: 0, z: 1 };
+    baseTangent = norm(cross(cross(baseLanding, up), baseLanding));
+  }
   const axis = rotateY(baseLanding);
   const tangent = rotateY(baseTangent);
   const distance = Number.isFinite(options.distance) ? Math.max(1.005, Number(options.distance)) : phase.distance;

@@ -1,7 +1,8 @@
-import { PHASES, LANDING, LANDING_ARM, phaseCamera } from './camera.js?v=final4';
-import { V2Renderer } from './renderer.js?v=final4';
-import { subdividedIcosahedron } from './geometry.js?v=final4';
-import { collectTriangle, createGame, publicState, tickRobots } from './game-rules.js?v=final4';
+import { PHASES, LANDING, LANDING_ARM, phaseCamera } from './camera.js?v=final5';
+import { V2Renderer } from './renderer.js?v=final5';
+import { subdividedIcosahedron } from './geometry.js?v=final5';
+import { initialHeading, moveHeading, rotateFrame, turnHeading } from './controls.js?v=final5';
+import { collectTriangle, createGame, publicState, tickRobots } from './game-rules.js?v=final5';
 
 const planetCanvas = document.getElementById('planet-canvas');
 const gameCanvas = document.getElementById('game-canvas');
@@ -50,42 +51,12 @@ let offlineGame = null;
 let step = previewPhase ?? 0;
 let targetStep = step;
 let playerDir = { ...LANDING };
-let viewAxis = { ...LANDING };
-let headingYaw = 0;
-let viewPitch = 0;
+let heading = initialHeading(LANDING);
 let lastClick = 0;
 let lastFrame = performance.now();
 let lastWalkFace = -1;
 let lastWalkAt = 0;
 const walkKeys = new Set();
-function solveAxisFollow(grabbed, targetX, targetY) {
-  let axis = { ...viewAxis };
-  let best = { axis, err: Infinity };
-  for (let it = 0; it < 9; it += 1) {
-    const cam = cameraForAxis(axis);
-    const p = cam.project(grabbed);
-    const ex = targetX - p.x;
-    const ey = targetY - p.y;
-    const err = Math.hypot(ex, ey);
-    if (err < best.err) best = { axis: { ...axis }, err };
-    if (err < 0.5) break;
-    const h = 0.004;
-    const up = cam.basis.up, right = cam.basis.right;
-    const aUp = norm(qRotate(qAxis(up, h), axis));
-    const aRight = norm(qRotate(qAxis(right, h), axis));
-    const pUp = cameraForAxis(aUp).project(grabbed);
-    const pRight = cameraForAxis(aRight).project(grabbed);
-    const j11 = (pUp.x - p.x) / h, j12 = (pRight.x - p.x) / h;
-    const j21 = (pUp.y - p.y) / h, j22 = (pRight.y - p.y) / h;
-    const det = j11 * j22 - j12 * j21;
-    if (Math.abs(det) < 1e-9) break;
-    const dUp = (ex * j22 - ey * j12) / det;
-    const dRight = (j11 * ey - j21 * ex) / det;
-    axis = norm(qRotate(qMul(qAxis(up, Math.max(-0.08, Math.min(0.08, dUp))), qAxis(right, Math.max(-0.08, Math.min(0.08, dRight)))), axis));
-  }
-  return best;
-}
-
 const pointers = new Map();
 let drag = null;
 let pinch = null;
@@ -138,33 +109,18 @@ function horizonPitch(distance) {
   const alpha = Math.asin(Math.min(1, 1 / distance));
   return ((alpha - phi) * 180) / Math.PI;
 }
-function cameraForAxis(axis) {
-  const d = currentDistance();
-  const pitch = step < 0.2 ? 0 : horizonPitch(d);
-  const phase = Math.max(0, Math.min(3, Math.round(step)));
-  return phaseCamera(phase, window.innerWidth, window.innerHeight, {
-    yawDeg: headingYaw,
-    pitchDeg: pitch + viewPitch,
-    distance: d,
-    landing: axis,
-    arm: currentArm() * d,
-    fovDeg: 50,
-  });
-}
-
 function currentCamera() {
   const d = currentDistance();
   const pitch = step < 0.2 ? 0 : horizonPitch(d);
   const phase = Math.max(0, Math.min(3, Math.round(step)));
-  const cam = phaseCamera(phase, window.innerWidth, window.innerHeight, {
-    yawDeg: headingYaw,
-    pitchDeg: pitch + viewPitch,
+  return phaseCamera(phase, window.innerWidth, window.innerHeight, {
+    pitchDeg: pitch,
     distance: d,
-    landing: viewAxis,
+    landing: playerDir,
+    forward: heading,
     arm: currentArm() * d,
     fovDeg: 50,
   });
-  return cam;
 }
 
 function arcPoints(a, b, camera, segments = 8) {
@@ -242,7 +198,8 @@ function drawRobots(camera) {
   if (!state) return;
   state.robots.forEach((robot, i) => {
     const a = (i / 4) * Math.PI * 2 + 0.6;
-    const dir = norm(add(mul(playerDir, Math.cos(0.4)), add(mul(norm(cross(cross(playerDir, { x: 0, y: 1, z: 0 }), playerDir)), Math.sin(0.4) * Math.cos(a)), mul(norm(cross(playerDir, norm(cross(cross(playerDir, { x: 0, y: 1, z: 0 }), playerDir)))), Math.sin(0.4) * Math.sin(a)))));
+    const sideR = norm(cross(playerDir, heading));
+    const dir = norm(add(mul(playerDir, Math.cos(0.4)), add(mul(heading, Math.sin(0.4) * Math.cos(a)), mul(sideR, Math.sin(0.4) * Math.sin(a)))));
     const p = camera.project(dir);
     if (!p.visible || p.depth <= 0) return;
     gctx.save(); gctx.translate(p.x, p.y);
@@ -309,15 +266,11 @@ function moveGamer(dt) {
   if (walkKeys.has('a') || walkKeys.has('arrowleft')) turn += 1;
   if (walkKeys.has('d') || walkKeys.has('arrowright')) turn -= 1;
   if (!forward && !turn) return;
-  headingYaw += turn * 110 * dt;
+  if (turn) heading = turnHeading(playerDir, heading, turn * 1.9 * dt);
   if (forward) {
-    const camera = currentCamera();
-    const fwd = camera.basis.forward;
-    const tangent = norm(add(fwd, mul(playerDir, -dot(fwd, playerDir))));
-    const dir = forward > 0 ? tangent : mul(tangent, -1);
-    const stepAngle = 0.9 * dt;
-    playerDir = norm(add(mul(playerDir, Math.cos(stepAngle)), mul(dir, Math.sin(stepAngle))));
-    viewAxis = playerDir;
+    const moved = moveHeading(playerDir, heading, forward * 0.9 * dt);
+    playerDir = moved.landing;
+    heading = moved.heading;
     if (step > 2.75) {
       const face = faceAtPoint(playerDir);
       if (face >= 0 && (face !== lastWalkFace || performance.now() - lastWalkAt > 450)) {
@@ -368,9 +321,14 @@ gameCanvas.addEventListener('pointermove', (event) => {
   }
   if (!drag) return;
   if (Math.hypot(p.x - drag.x, p.y - drag.y) > 4) drag.moved = true;
-  if (drag.moved && drag.grabbed) {
-    const solved = solveAxisFollow(drag.grabbed, p.x, p.y);
-    viewAxis = solved.axis;
+  if (drag.moved) {
+    const camera = currentCamera();
+    const dx = (p.x - drag.x) * 0.006;
+    const dy = (p.y - drag.y) * 0.006;
+    const q = qMul(qAxis(camera.basis.up, dx), qAxis(camera.basis.right, -dy));
+    const moved = rotateFrame(playerDir, heading, q);
+    playerDir = moved.landing;
+    heading = moved.heading;
   }
   drag.x = p.x; drag.y = p.y;
 });
@@ -406,7 +364,7 @@ window.addEventListener('keydown', (event) => {
 });
 window.addEventListener('keyup', (event) => walkKeys.delete(event.key.toLowerCase()));
 
-window.__v2 = { projected: () => projected, state: () => state, step: () => step, player: () => playerDir, camera: () => currentCamera(), faceAt: faceAtPoint, axis: () => viewAxis, drag: () => drag, screenToSphere, cursor: () => gameCanvas.style.cursor, solve: solveAxisFollow, setAxis: (a) => { viewAxis = norm(a); }, camFor: cameraForAxis };
+window.__v2 = { projected: () => projected, state: () => state, step: () => step, player: () => playerDir, camera: () => currentCamera(), faceAt: faceAtPoint, axis: () => playerDir, heading: () => heading, drag: () => drag, screenToSphere, cursor: () => gameCanvas.style.cursor, setFrame: (landing) => { playerDir = norm(landing); heading = initialHeading(playerDir); } };
 async function loadState() {
   const data = await fetch('api/state').then((r) => r.json()).catch(() => null);
   if (data && data.ok) { state = data; offlineGame = null; return; }
