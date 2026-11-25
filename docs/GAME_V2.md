@@ -36,8 +36,8 @@ A spherical triangle-collecting game: each planet has triangles and four robots;
 - **The surface is the collectible.** There are no separate pickup objects. The planet is a spherical
   icosahedron surface subdivided into geodesic triangles; clicking a face while in orbit collects that
   surface cell, and walking through a face while landed collects it.
-- **80 surface faces** at one subdivision; each face has three breaking levels. Collecting 30 breaks
-  clears the planet and moves to the next. The surface field respawns when fully mined.
+- **1280 surface faces** at three subdivisions; each face has three breaking levels. Collecting 30
+  breaks clears the planet and moves to the next. The surface field respawns when fully mined.
 
 - **Player progress:** 0 → 30 collected triangles on the current planet. One collect per valid
   triangle click/tap, server-authoritative.

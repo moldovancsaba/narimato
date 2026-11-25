@@ -116,7 +116,8 @@ Both WASD and the cursor keys produce the same intents:
 
 ## 6. Implementation status
 
-**Not implemented.** The current v2 playtest uses temporary yaw/pitch pointer drag, keys 1–4 for
-camera phases, and no shared orbit/surface turn-move controller. The approved implementation requires
-the quaternion absolute-point-follow pointer path and the shared WASD/arrow carrier controller above.
-No game code is claimed to match this document yet.
+**Partially implemented in the v2 playtest on 2026-11-25.** The shared WASD/arrow turn-move works in
+orbit and landed views, and landed walking collects the face walked through. Pointer drag currently
+uses an incremental yaw/pitch point-follow solver, **not yet** the approved quaternion absolute
+right-multiply path with unlimited rotation. Therefore the pointer part of this contract is still
+open and is not claimed as compliant.

@@ -1,6 +1,6 @@
 /** NARIMATO v2 — server-authoritative simple game state. */
 
-export const TRIANGLE_COUNT = 80; // one-subdivision icosahedron surface faces
+export const TRIANGLE_COUNT = 1280; // three-subdivision icosahedron surface faces
 export const BREAK_LEVELS = 3;
 export const PLAYER_TARGET = 30; // 10 triangles x 3 breaking levels
 export const ROBOT_COUNT = 4;
