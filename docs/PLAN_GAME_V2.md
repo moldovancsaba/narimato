@@ -1,7 +1,7 @@
 # NARIMATO v2 — implementation and retirement plan
 
-**Status: planning only. No v2 code yet.** Companion to [GAME_V2.md](GAME_V2.md) and
-[CAMERA_APPROVED.md](CAMERA_APPROVED.md).
+**Status: v2 playtest implemented; current delivery state lives in [V2_STATUS.md](V2_STATUS.md) and the board (issues #137–#142).** Companion to [GAME_V2.md](GAME_V2.md), [CAMERA_APPROVED.md](CAMERA_APPROVED.md),
+[CONTROLS_APPROVED.md](CONTROLS_APPROVED.md) and [V2_STATUS.md](V2_STATUS.md).
 
 ## 1. Principles
 

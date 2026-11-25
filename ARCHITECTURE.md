@@ -9,6 +9,53 @@
 
 Architecture decisions are recorded as ADRs: [docs/adr/README.md](docs/adr/README.md).
 
+## v2 architecture — active product (2026-11-25)
+
+The active product is the clean v2 engine. The legacy v3.58.0 architecture below is **retired**
+from the product entry point and preserved for rollback only.
+
+**Topology**
+
+```
+Browser (Pages playtest)                    Node v2 server (authoritative)
+  index.html ── app.js ── camera.js           server.js ── game.js
+       │           ├─ controls.js                  │
+       │           ├─ renderer.js (WebGL)          └─ game-rules.js (shared)
+       │           ├─ geometry.js
+       │           └─ game-rules.js (shared)
+       └─ browser-state fallback                 /api/health · /api/state · /api/collect
+```
+
+**v2 modules**
+
+| File | Responsibility |
+|---|---|
+| `v2/server.js` | zero-dependency HTTP server, static files, API and state |
+| `v2/server/game.js` | server-authoritative game wrapper |
+| `v2/public/game-rules.js` | shared rules: 1280 surface faces, 3 break levels, 30 target, 4 robots/respawn, next planet |
+| `v2/public/geometry.js` | icosahedron and subdivision geometry only |
+| `v2/public/renderer.js` | WebGL ray–sphere surface and geodesic arc edges; front surface only |
+| `v2/public/camera.js` | final four-step camera: 4.40 / 1.50 / 1.20 / 1.01 R, constant 50° FOV, 25% horizon, landing arm |
+| `v2/public/controls.js` | pole-free quaternion heading, turn/move and parallel transport |
+| `v2/public/app.js` | game session, player/robots, surface faces, clipped 2D face mesh overlay, HUD, input |
+| `v2/test/` | camera, controls, game rules and server tests |
+
+**Contracts and current state**
+
+- Camera: [CAMERA_APPROVED.md](docs/CAMERA_APPROVED.md),
+  [CAMERA_LANDING_PROCESS.md](docs/CAMERA_LANDING_PROCESS.md).
+- Controls: [CONTROLS_APPROVED.md](docs/CONTROLS_APPROVED.md). Movement is non-Euler quaternion
+  heading/parallel transport; pole crossing is tested. Pointer drag rotates the quaternion frame but
+  exact `shortestArcQuat` grabbed-point follow remains open (issue #137).
+- State/status: [V2_STATUS.md](docs/V2_STATUS.md); board issues #137–#142 hold remaining work.
+- Public playtest: https://moldovancsaba.github.io/narimato/ (browser-state fallback).
+- Authoritative local build: `npm start` → `http://127.0.0.1:4180/`.
+- Tests: **572/572** (`npm test`), Node 20/22, no runtime dependencies.
+
+---
+
+## Legacy architecture (retired v3.58.0 — rollback reference)
+
 ## Stack
 
 | Layer | Technology | Notes |

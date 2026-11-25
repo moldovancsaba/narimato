@@ -44,6 +44,8 @@ The Pages build runs the same rules with a browser-state fallback (no Node API);
 | Phase 2 | server-authoritative collecting: 10 triangles × 3 breaks, 30/30, next planet | [v2-phase-2](https://github.com/moldovancsaba/narimato/tree/v2-phase-2) | `git checkout v2-phase-2` |
 | Phase 3 | playable client: clickable triangles, 4 robots + respawn, HUD, visible gamer | [v2-phase-3](https://github.com/moldovancsaba/narimato/tree/v2-phase-3) | `git checkout v2-phase-3` |
 | Phase 4 | cutover/retirement docs, phase links, legacy tag | [v2-phase-4](https://github.com/moldovancsaba/narimato/tree/v2-phase-4) | `git checkout v2-phase-4` |
+| Phase 5 | final camera/landing/controls + status/rollback docs | [v2-phase-5](https://github.com/moldovancsaba/narimato/tree/v2-phase-5) | `git checkout v2-phase-5` |
+| Phase 6 | non-Euler pole-free quaternion movement | [v2-phase-6](https://github.com/moldovancsaba/narimato/tree/v2-phase-6) | `git checkout v2-phase-6` |
 | Live v2 | accepted v2 product | [v2-live](https://github.com/moldovancsaba/narimato/tree/v2-live) | `git checkout v2-live` |
 | Legacy | old game, retired, preserved for rollback | [legacy-v3.58.0-retired](https://github.com/moldovancsaba/narimato/tree/legacy-v3.58.0-retired) | `git checkout legacy-v3.58.0-retired` + `npm run start:legacy` |
 

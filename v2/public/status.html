@@ -29,7 +29,7 @@
     <li>Game: surface faces are collectible; 30 breaks → next planet; 4 robots collecting/respawning.</li>
     <li>Camera: constant 50° FOV, steps 4.40 / 1.50 / 1.20 / 1.01 R, horizon fixed at 25%.</li>
     <li>Step 4: 1.4% R rear camera arm; gamer hidden Steps 1–3, visible on surface at Step 4.</li>
-    <li>WASD + arrows turn/move identically in orbit and landed; walking collects faces.</li>
+    <li>Non-Euler quaternion movement: WASD + arrows turn/move identically in orbit and landed; pole crossing verified; walking collects faces.</li>
     <li>Click collects a surface face; wheel/pinch step the camera; keys 1–4 jump steps.</li>
     <li>1280 spherical surface faces; four robots; silent HUD; planet transition at 30/30.</li>
   </ul>
@@ -44,12 +44,11 @@
   </ol>
   <h2 class="gap">KNOWN GAPS</h2>
   <ul>
-    <li>Pointer drag is an incremental yaw/pitch solver; the approved quaternion absolute
-      point-follow with unlimited rotation is not implemented yet.</li>
-    <li>Horizon row/transitions are not yet measured by an automated 25% ±1% test.</li>
-    <li>Step-4 local triangle visibility/density still needs visual acceptance.</li>
-    <li>Gamer/robots are simple markers; v2 GDS HUD and full accessibility gates are not complete.</li>
-    <li>Pages build is browser-state; Node build is server-authoritative.</li>
+    <li>Pointer drag rotates the quaternion frame but exact shortestArcQuat grabbed-point follow is still open (issue #137).</li>
+    <li>Horizon row/transitions are not yet measured by an automated 25% ±1% test (issue #139).</li>
+    <li>Step-4 local triangle visibility/density still needs visual acceptance (issue #138).</li>
+    <li>Gamer/robots are simple markers (issue #141); v2 GDS HUD and accessibility gates are incomplete (issue #142).</li>
+    <li>Pages build is browser-state; server-authoritative public hosting is open (issue #140).</li>
   </ul>
   <h2>LINKS</h2>
   <ul>
