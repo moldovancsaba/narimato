@@ -1,7 +1,9 @@
 # Approved camera contract (v2)
 
-**Status: APPROVED by the user on 2026-11-23.** This supersedes the earlier surface-camera experiments.
-It is the camera the new game engine must implement; it is not a suggestion.
+**Status: camera contract approved 2026-11-23; landing process under revision.**
+The revised process (25% horizon, gamer visibility/landing) is in
+[CAMERA_LANDING_PROCESS.md](CAMERA_LANDING_PROCESS.md) and supersedes the horizon-anchor numbers
+below once its Step-1 choice is confirmed.
 
 ## 1. The approved model
 

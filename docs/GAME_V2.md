@@ -54,7 +54,8 @@ A spherical triangle-collecting game: each planet has triangles and four robots;
 
 ## 5. Presentation
 
-- **Camera:** [CAMERA_APPROVED.md](CAMERA_APPROVED.md) is binding.
+- **Camera:** [CAMERA_APPROVED.md](CAMERA_APPROVED.md) is binding; the revised landing process and
+  25% horizon feasibility are in [CAMERA_LANDING_PROCESS.md](CAMERA_LANDING_PROCESS.md).
 - **Planet:** one solid sphere with geodesic triangle edges; front surface only; no cartography,
   glass shell, derived mesh or render tessellation.
 - **Robots:** four simple closed-volume figures on the surface, visibly collecting.
