@@ -2,7 +2,7 @@
 
 > **v2 is the active game.** The legacy game is retired and preserved at the
 > [legacy tag](https://github.com/moldovancsaba/narimato/tree/legacy-v3.58.0-retired).
-> Play online: **https://moldovancsaba.github.io/narimato/** — or run locally with `npm start`; phase links and rollback: [docs/V2_ROLLBACK.md](docs/V2_ROLLBACK.md).
+> Play online: **https://moldovancsaba.github.io/narimato/** — or run locally with `npm start`; status/test guide: [docs/V2_STATUS.md](docs/V2_STATUS.md); phase links and rollback: [docs/V2_ROLLBACK.md](docs/V2_ROLLBACK.md).
 
 
 ![CI](https://github.com/moldovancsaba/narimato/actions/workflows/ci.yml/badge.svg)

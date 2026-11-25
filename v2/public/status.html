@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>NARIMATO v2 — status</title>
+  <style>
+    body { margin: 0; min-height: 100vh; background: #05010f; color: #dffcff; font: 14px/1.65 ui-monospace, monospace; }
+    main { width: min(900px, 92vw); margin: 40px auto; }
+    h1 { color: #7df9ff; font-size: 24px; letter-spacing: .06em; }
+    h2 { color: #9fdce8; font-size: 15px; margin-top: 28px; letter-spacing: .08em; }
+    a { color: #7df9ff; }
+    li { margin: 4px 0; }
+    .ok { color: #06d6a0; } .gap { color: #ffd166; }
+    .box { border: 1px solid rgba(90,240,255,.35); border-radius: 10px; padding: 14px 18px; background: rgba(8,20,30,.6); margin: 14px 0; }
+  </style>
+</head>
+<body><main>
+  <h1>NARIMATO v2 — CURRENT STATUS</h1>
+  <div class="box">
+    <b>Public playtest build.</b> Static Pages build with browser-state fallback; the Node build
+    (<code>npm start</code>) is server-authoritative.
+    <p><a href="./">▶ PLAY</a> · <a href="./phases.html">PHASE INDEX</a> · <a href="./status.html">STATUS</a></p>
+  </div>
+  <h2 class="ok">IMPLEMENTED</h2>
+  <ul>
+    <li>Clean v2 engine: zero-dependency server, shared game rules, WebGL spherical surface.</li>
+    <li>Game: surface faces are collectible; 30 breaks → next planet; 4 robots collecting/respawning.</li>
+    <li>Camera: constant 50° FOV, steps 4.40 / 1.50 / 1.20 / 1.01 R, horizon fixed at 25%.</li>
+    <li>Step 4: 1.4% R rear camera arm; gamer hidden Steps 1–3, visible on surface at Step 4.</li>
+    <li>WASD + arrows turn/move identically in orbit and landed; walking collects faces.</li>
+    <li>Click collects a surface face; wheel/pinch step the camera; keys 1–4 jump steps.</li>
+    <li>1280 spherical surface faces; four robots; silent HUD; planet transition at 30/30.</li>
+  </ul>
+  <h2>TESTING</h2>
+  <ol>
+    <li>Open the game; wheel/pinch or 1–4 through the four steps. Step 1 has 25% space above and the
+      planet centre at 50%; Steps 2–4 have the horizon on the 25% line.</li>
+    <li>The gamer is not shown in Steps 1–3; it appears on the surface in Step 4.</li>
+    <li>Click a surface face to collect. Reach 30/30 to advance the planet.</li>
+    <li>At Step 4 hold WASD/arrows to walk and collect faces you cross.</li>
+    <li>Four robots tick and respawn; they do not block progress.</li>
+  </ol>
+  <h2 class="gap">KNOWN GAPS</h2>
+  <ul>
+    <li>Pointer drag is an incremental yaw/pitch solver; the approved quaternion absolute
+      point-follow with unlimited rotation is not implemented yet.</li>
+    <li>Horizon row/transitions are not yet measured by an automated 25% ±1% test.</li>
+    <li>Step-4 local triangle visibility/density still needs visual acceptance.</li>
+    <li>Gamer/robots are simple markers; v2 GDS HUD and full accessibility gates are not complete.</li>
+    <li>Pages build is browser-state; Node build is server-authoritative.</li>
+  </ul>
+  <h2>LINKS</h2>
+  <ul>
+    <li><a href="./">Game</a> · <a href="./phases.html">Camera + delivery phases</a></li>
+    <li><a href="./phase-0.html">Phase 0</a> · <a href="./phase-1.html">Phase 1</a> ·
+        <a href="./phase-2.html">Phase 2</a> · <a href="./phase-3.html">Phase 3</a> ·
+        <a href="./phase-4.html">Phase 4</a></li>
+    <li>Docs: <code>docs/V2_STATUS.md</code>, <code>docs/CAMERA_APPROVED.md</code>,
+        <code>docs/CAMERA_LANDING_PROCESS.md</code>, <code>docs/CONTROLS_APPROVED.md</code>,
+        <code>docs/GAME_V2.md</code>, <code>docs/V2_ROLLBACK.md</code>.</li>
+  </ul>
+</main></body></html>
