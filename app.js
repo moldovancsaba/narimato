@@ -321,7 +321,7 @@ gameCanvas.addEventListener('pointerup', endPointer);
 gameCanvas.addEventListener('pointercancel', (event) => { pointers.delete(event.pointerId); pinch = null; drag = null; });
 gameCanvas.addEventListener('wheel', (event) => {
   event.preventDefault();
-  targetStep = Math.max(0, Math.min(3, targetStep + (event.deltaY < 0 ? 0.25 : -0.25)));
+  targetStep = Math.max(0, Math.min(3, Math.round(targetStep) + (event.deltaY < 0 ? 1 : -1)));
 }, { passive: false });
 window.addEventListener('keydown', (event) => {
   const k = event.key.toLowerCase();
