@@ -49,8 +49,10 @@ export function phaseCamera(phaseIndex, width, height, options = {}) {
   const yaw = ((Number(options.yawDeg) || 0) * Math.PI) / 180;
   const cosY = Math.cos(yaw), sinY = Math.sin(yaw);
   const rotateY = (v) => ({ x: v.x * cosY + v.z * sinY, y: v.y, z: -v.x * sinY + v.z * cosY });
-  const axis = rotateY(LANDING);
-  const tangent = rotateY(TANGENT);
+  const baseLanding = options.landing && Number.isFinite(options.landing.x) ? norm(options.landing) : LANDING;
+  const baseTangent = norm(cross(cross(baseLanding, { x: 0, y: 1, z: 0 }), baseLanding));
+  const axis = rotateY(baseLanding);
+  const tangent = rotateY(baseTangent);
   const distance = Number.isFinite(options.distance) ? Math.max(1.005, Number(options.distance)) : phase.distance;
   const pitchDeg = Number.isFinite(options.pitchDeg) ? Number(options.pitchDeg) : phase.pitchDeg;
   const theta = (pitchDeg * Math.PI) / 180;
