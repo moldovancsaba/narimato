@@ -67,7 +67,13 @@ L4 is the approved drastic-close landing view: 4% of the planet radius above the
 - Re-tilting geometry per phase or changing triangle density.
 - Reusing the old surface-camera/derived-mesh code.
 
-## 6. Approved visibility decision
+## 6. Play-view note
+
+The approved L4 framing is 1.04 R / 53.5° for the planet/horizon view. The v2 **surface play view**
+uses 1.44 R / 12° so local surface faces and the avatar remain visible while walking; the camera
+contract distances/pitches above still govern the phase framing previews and the sequence.
+
+## 7. Approved visibility decision
 
 The avatar **must be visible**. The camera uses a fixed backward/up rig offset for all phases; still
 one camera, no zoom, no second camera. The L4 distance/pitch remains 1.04 R / 53.5°, with the rig
