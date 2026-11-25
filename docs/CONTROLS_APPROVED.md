@@ -116,18 +116,19 @@ Both WASD and the cursor keys produce the same intents:
 
 ## 6. Implementation status
 
-**Implemented in the v2 playtest on 2026-11-25** (https://moldovancsaba.github.io/narimato/):
+**Non-Euler quaternion movement is implemented in the v2 playtest (2026-11-25)** at
+https://moldovancsaba.github.io/narimato/:
 
+- Player position and heading are maintained in a **quaternion frame**, not Euler yaw/pitch.
+- A/D and Left/Right turn the heading around the local normal; W/Up and S/Down move forward/backward
+  along the heading with **parallel transport**; the same controller runs in orbit and landed views.
+- Browser pole test: starting just below the north pole and holding W crossed the pole continuously
+  (`playerDir.y` went from +0.99 to −0.61); heading stayed tangent and finite. No pole stop.
+- Camera forward is supplied by the transported heading; the camera no longer derives a tangent from
+  a fixed world Y axis.
 - Cursor states verified: `grab` → `grabbing` → `grab`.
-- Pointer drag verified in horizontal and vertical directions and across the former pole region;
-  the camera axis is a quaternion orbit with no pitch/yaw clamps or poles.
-- Grabbed-point follow verified with a real Playwright drag: the point grabbed at screen centre,
-  dragged to (780,300), projected at (777,309) after the move — about **10 px residual**.
-- Shared WASD/arrow turn-move works in orbit and landed views; landed walking collects the face
-  walked through.
-- Wheel/pinch camera steps work.
+- Pointer drag rotates the quaternion frame in both axes with no pitch/yaw clamps and no pole stop.
 
-**Residual:** the point-follow is solved numerically on the camera axis each move, rather than the
-literal `shortestArcQuat` object-rotation path. It meets behaviour and has no limits/poles, but the
-algorithm differs from the literal contract and ~10 px residual remains. Exact object-quaternion
-implementation is the next refinement, not a blocker for testing the current control feel.
+**Residual:** pointer drag does not yet satisfy the literal absolute point-follow requirement; the
+grabbed point follows through the frame rotation approximately, not via the documented
+`shortestArcQuat` object rotation. Exact point-follow remains the next control refinement.

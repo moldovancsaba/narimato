@@ -119,7 +119,7 @@ Do not write "done", "delivered" or "live" in any field while the gate reports
 | Delivery scope | REL-01 release gate, REL-02 evidence ledger, TST-01 acceptance fix |
 | Version SSOT | `package.json` 3.58.0 · cache-bust 3.58.0 · README 3.58.0 · notes heading v3.58.0 |
 | Audio cache key | `3.58.0+56190bd8` (content hash unchanged; spoken text did not change) |
-| Executed suite | 569 tests, 569 pass, 0 fail (`node:test`) |
+| Executed suite | 572 tests, 572 pass, 0 fail (`node:test`) |
 | Docs gate | pass: 42 markdown files, 889 links, 0 findings (`npm run docs:check`) |
 | Headless accessibility | Chromium gate clean: 9 surfaces, 0 failure, 0 warning, 0 incomplete |
 | Browser acceptance | two-client 7/7, surface-truth 4/4 (TST-01 exit contract fixed) |
