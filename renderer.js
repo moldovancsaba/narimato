@@ -2,7 +2,7 @@
  * NARIMATO v2 renderer — WebGL ray–sphere planet with analytic geodesic edges.
  * One full-screen pass, front surface only. No masks, crops or derived meshes.
  */
-import { baseIcosahedron } from './geometry.js';
+import { subdividedIcosahedron } from './geometry.js';
 
 const VERT = `attribute vec2 aPos; void main(){ gl_Position = vec4(aPos,0.0,1.0); }`;
 const FRAG = `
@@ -13,8 +13,8 @@ uniform vec3 uPos;
 uniform vec3 uRight;
 uniform vec3 uUp;
 uniform vec3 uFwd;
-uniform vec3 uEdgeA[30];
-uniform vec3 uEdgeB[30];
+uniform vec3 uEdgeA[60];
+uniform vec3 uEdgeB[60];
 float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453123); }
 void main(){
   vec2 s = gl_FragCoord.xy - uRes * 0.5;
@@ -37,8 +37,8 @@ void main(){
   float shade = 0.18 + 0.52 * light;
   vec3 col = vec3(0.055, 0.24, 0.28) * shade + vec3(0.01,0.03,0.04);
   // analytic geodesic edges of the base icosahedron
-  float edgeWidth = max(1e-5, 1.5 * (length(O) - 1.0) / uFocal);
-  for (int i = 0; i < 30; i++) {
+  float edgeWidth = max(0.00012, 2.0 * (length(O) - 1.0) / uFocal);
+  for (int i = 0; i < 60; i++) {
     vec3 A = uEdgeA[i];
     vec3 B = uEdgeB[i];
     float edgeCos = dot(A,B) - 0.0002;
@@ -82,23 +82,20 @@ export class V2Renderer {
     for (const name of ['uRes','uFocal','uPos','uRight','uUp','uFwd','uEdgeA','uEdgeB']) {
       this.u[name] = gl.getUniformLocation(program, name);
     }
-    const { vertices, faces } = baseIcosahedron();
+    const { vertices, faces } = subdividedIcosahedron(3);
     const seen = new Set();
-    const A = new Float32Array(90);
-    const B = new Float32Array(90);
-    let e = 0;
+    const edges = [];
     for (const [a, b, c] of faces) {
       for (const [i, j] of [[a, b], [b, c], [c, a]]) {
         const k = i < j ? `${i}-${j}` : `${j}-${i}`;
         if (seen.has(k)) continue;
         seen.add(k);
-        A.set([vertices[i].x, vertices[i].y, vertices[i].z], e * 3);
-        B.set([vertices[j].x, vertices[j].y, vertices[j].z], e * 3);
-        e += 1;
+        edges.push([vertices[i], vertices[j]]);
       }
     }
-    this.edgeA = A;
-    this.edgeB = B;
+    this.edges = edges;
+    this.edgeA = new Float32Array(180);
+    this.edgeB = new Float32Array(180);
   }
 
   resize(width, height, dpr = 1) {
@@ -116,8 +113,18 @@ export class V2Renderer {
     gl.uniform3f(this.u.uRight, right.x, right.y, right.z);
     gl.uniform3f(this.u.uUp, up.x, up.y, up.z);
     gl.uniform3f(this.u.uFwd, forward.x, forward.y, forward.z);
-    gl.uniform3fv(this.u.uEdgeA, this.edgeA);
-    gl.uniform3fv(this.u.uEdgeB, this.edgeB);
+    const look = camera.landing || camera.axis || position;
+    const ranked = this.edges
+      .map(([a, b]) => ({ a, b, d: Math.hypot((a.x + b.x) / 2 - look.x, (a.y + b.y) / 2 - look.y, (a.z + b.z) / 2 - look.z) }))
+      .sort((p, q) => p.d - q.d)
+      .slice(0, 60);
+    const A = this.edgeA, B = this.edgeB;
+    ranked.forEach((e, i) => {
+      A.set([e.a.x, e.a.y, e.a.z], i * 3);
+      B.set([e.b.x, e.b.y, e.b.z], i * 3);
+    });
+    gl.uniform3fv(this.u.uEdgeA, A);
+    gl.uniform3fv(this.u.uEdgeB, B);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 }
