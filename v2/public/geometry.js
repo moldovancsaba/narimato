@@ -22,3 +22,36 @@ export function baseIcosahedron() {
   ];
   return { vertices, faces };
 }
+
+
+/** One subdivision level: 20 base faces -> 80 spherical triangles. */
+export function subdividedIcosahedron(level = 1) {
+  const { vertices, faces } = baseIcosahedron();
+  let verts = vertices.map((v) => ({ ...v }));
+  let current = faces.map((f) => [...f]);
+  for (let l = 0; l < level; l += 1) {
+    const cache = new Map();
+    const midpoint = (i, j) => {
+      const key = i < j ? `${i}:${j}` : `${j}:${i}`;
+      if (cache.has(key)) return cache.get(key);
+      const v = normalize({
+        x: verts[i].x + verts[j].x,
+        y: verts[i].y + verts[j].y,
+        z: verts[i].z + verts[j].z,
+      });
+      verts.push(v);
+      const index = verts.length - 1;
+      cache.set(key, index);
+      return index;
+    };
+    const next = [];
+    for (const [a, b, c] of current) {
+      const ab = midpoint(a, b);
+      const bc = midpoint(b, c);
+      const ca = midpoint(c, a);
+      next.push([a, ab, ca], [ab, b, bc], [ca, bc, c], [ab, bc, ca]);
+    }
+    current = next;
+  }
+  return { vertices: verts, faces: current };
+}
