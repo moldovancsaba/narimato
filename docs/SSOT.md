@@ -28,6 +28,7 @@ Canonical issue standard: [sovereignsquad/general-design-system#81](https://gith
 | Game v2 specification | [GAME_V2.md](GAME_V2.md) |
 | Game v2 implementation + retirement plan | [PLAN_GAME_V2.md](PLAN_GAME_V2.md) |
 | **v2 current status + public test guide** | [V2_STATUS.md](V2_STATUS.md) |
+| v2 architecture (active product) | [ARCHITECTURE.md](../ARCHITECTURE.md) |
 | v2 phase links + rollback (every phase) | [V2_ROLLBACK.md](V2_ROLLBACK.md) |
 | Architecture decisions (ADRs) | [adr/README.md](adr/README.md) |
 | Machine-readable issue index | [issues.json](issues.json) |
