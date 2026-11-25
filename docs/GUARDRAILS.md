@@ -66,6 +66,9 @@ work.
 
 ### 3.2 Controls and camera
 
+- The approved input contract is [CONTROLS_APPROVED.md](CONTROLS_APPROVED.md): quaternion absolute
+  pointer-point follow, unlimited rotation, and one shared WASD/arrow orbit/surface controller.
+
 - **Never overwrite the pointer/carrier camera orientation every frame** from an animation pose.
   That cancels mouse drag and produces pole reversal. Set the carrier pose once per frame only as the
   approved carrier model does (held at the pilot/cursor anchor, parallel transport).
