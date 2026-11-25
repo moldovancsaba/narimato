@@ -247,7 +247,7 @@ function moveGamer(dt) {
     const dir = forward > 0 ? tangent : mul(tangent, -1);
     const stepAngle = 0.9 * dt;
     playerDir = norm(add(mul(playerDir, Math.cos(stepAngle)), mul(dir, Math.sin(stepAngle))));
-    if (step > 3.5) {
+    if (step > 2.75) {
       const face = faceAtPoint(playerDir);
       if (face >= 0 && (face !== lastWalkFace || performance.now() - lastWalkAt > 450)) {
         lastWalkFace = face;
