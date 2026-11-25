@@ -2,7 +2,7 @@
  * NARIMATO v2 renderer — WebGL ray–sphere planet with analytic geodesic edges.
  * One full-screen pass, front surface only. No masks, crops or derived meshes.
  */
-import { subdividedIcosahedron } from './geometry.js?v=final3';
+import { subdividedIcosahedron } from './geometry.js?v=final5';
 
 const VERT = `attribute vec2 aPos; void main(){ gl_Position = vec4(aPos,0.0,1.0); }`;
 const FRAG = `

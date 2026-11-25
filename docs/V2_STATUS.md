@@ -79,9 +79,9 @@ Docs are contracts; the board owns delivery state; the live URL is the test targ
 
 ## 5. Known gaps / not yet accepted
 
-1. **Pointer point-follow is numerically solved** on a quaternion camera axis with no pole/limit
-   clamps; a real drag test shows about 10 px residual. The literal shortest-arc object-quaternion
-   algorithm is still the next refinement. [CONTROLS_APPROVED.md](CONTROLS_APPROVED.md).
+1. **Non-Euler movement is implemented** with quaternion heading and parallel transport; pole crossing
+   was verified in-browser. **Pointer drag rotates the frame but does not yet do exact grabbed-point
+   follow** (the literal shortestArcQuat object path is still pending). [CONTROLS_APPROVED.md](CONTROLS_APPROVED.md).
 2. **Horizon/transition automation** is not yet measured frame-by-frame; current evidence is real
    screenshots, not an automated 25% ±1% row test.
 3. **Step-4 surface triangle visibility** shows local arc faces but is sparse; visual acceptance of
