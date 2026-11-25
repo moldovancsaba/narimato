@@ -54,6 +54,9 @@ A spherical triangle-collecting game: each planet has triangles and four robots;
 
 ## 5. Presentation
 
+- **User controls:** [CONTROLS_APPROVED.md](CONTROLS_APPROVED.md) is binding: pointer grabs and
+  exactly follows surface points with unlimited rotation; WASD and arrows turn/move the gamer
+  identically in orbit and surface.
 - **Camera:** [CAMERA_APPROVED.md](CAMERA_APPROVED.md) is binding: one camera, constant 50° FOV,
   25% horizon, steps 4.40 / 1.50 / 1.20 / 1.01 R, landing camera arm 1.4% R; the landing process is in
   [CAMERA_LANDING_PROCESS.md](CAMERA_LANDING_PROCESS.md).

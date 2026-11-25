@@ -40,7 +40,8 @@ the surface regressions. It is binding for renderer, camera and control work; se
   pilot/cursor anchor; parallel transport; fixed-focal radius dolly).
 - The surface camera is never overwritten with Euler yaw/pitch each frame.
 - Mouse drag rotates the object with exact point follow (`shortestArcQuat`); pointer drag must never
-  be cancelled by a follow hack.
+  be cancelled by a follow hack. The full approved input model is in
+  [CONTROLS_APPROVED.md](CONTROLS_APPROVED.md).
 - Wheel/pinch change the carrier radius, not the field of view.
 
 ### Horizon anchor

@@ -24,6 +24,7 @@ Canonical issue standard: [sovereignsquad/general-design-system#81](https://gith
 | Renderer/camera technology + forbidden patterns | [RENDERER_TECHNOLOGY.md](RENDERER_TECHNOLOGY.md) |
 | Approved camera contract for v2 | [CAMERA_APPROVED.md](CAMERA_APPROVED.md) |
 | Final 25% horizon landing process + camera arm | [CAMERA_LANDING_PROCESS.md](CAMERA_LANDING_PROCESS.md) |
+| Approved user controls (pointer object rotation + WASD/arrows) | [CONTROLS_APPROVED.md](CONTROLS_APPROVED.md) |
 | Game v2 specification | [GAME_V2.md](GAME_V2.md) |
 | Game v2 implementation + retirement plan | [PLAN_GAME_V2.md](PLAN_GAME_V2.md) |
 | v2 phase links + rollback (every phase) | [V2_ROLLBACK.md](V2_ROLLBACK.md) |
