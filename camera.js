@@ -29,6 +29,7 @@ const mul = (a, k) => ({ x: a.x * k, y: a.y * k, z: a.z * k });
 
 /** Landing point + tangent forward (fixed for v2 phase tests). */
 export const LANDING = norm({ x: 0, y: 0.25, z: 0.968 });
+export { norm, dot, cross, mul, add };
 const TANGENT = norm(cross(cross(LANDING, { x: 0, y: 1, z: 0 }), LANDING));
 
 /** Required horizon row (px) for a viewport. */
@@ -45,11 +46,13 @@ export function phaseCamera(phaseIndex, width, height, options = {}) {
   const phase = PHASES[Math.max(0, Math.min(PHASES.length - 1, phaseIndex | 0))];
   const W = Math.max(1, Number(width) || 1);
   const H = Math.max(1, Number(height) || 1);
+  const baseLanding = options.landing && Number.isFinite(options.landing.x) ? norm(options.landing) : LANDING;
+  const baseTangent = norm(cross(cross(baseLanding, { x: 0, y: 1, z: 0 }), baseLanding));
   const yaw = ((Number(options.yawDeg) || 0) * Math.PI) / 180;
   const cosY = Math.cos(yaw), sinY = Math.sin(yaw);
   const rotateY = (v) => ({ x: v.x * cosY + v.z * sinY, y: v.y, z: -v.x * sinY + v.z * cosY });
-  const axis = rotateY(LANDING);
-  const tangent = rotateY(TANGENT);
+  const axis = rotateY(baseLanding);
+  const tangent = rotateY(baseTangent);
   const distance = Number.isFinite(options.distance) ? Math.max(1.02, Number(options.distance)) : phase.distance;
   const pitchDeg = Number.isFinite(options.pitchDeg) ? Number(options.pitchDeg) : phase.pitchDeg;
   const theta = (pitchDeg * Math.PI) / 180;
@@ -80,8 +83,8 @@ export function phaseCamera(phaseIndex, width, height, options = {}) {
     pitchDeg,
     focal,
     origin: P,
-    landing: LANDING,
-    forward: TANGENT,
+    landing: axis,
+    forward: tangent,
     basis: { forward: D, up: U, right: R, position: P },
     axis,
     tangent,

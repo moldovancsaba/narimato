@@ -22,6 +22,11 @@ let manualPhase = previewPhase;
 let viewYaw = 0;
 let viewPitch = 0;
 let viewDistance = null;
+let playerPos = { ...LANDING };
+let walkKeys = new Set();
+let lastWalkFace = -1;
+let lastWalkAt = 0;
+let lastFrameTime = performance.now();
 let lastClick = 0;
 const norm = (v) => { const l = Math.hypot(v.x, v.y, v.z) || 1; return { x: v.x / l, y: v.y / l, z: v.z / l }; };
 const dot = (a, b) => a.x * b.x + a.y * b.y + a.z * b.z;
@@ -43,8 +48,22 @@ const BASE = subdividedIcosahedron(1);
 const TRIANGLE_CELLS = BASE.faces.map((face, id) => {
   const [a, b, c] = face.map((idx) => BASE.vertices[idx]);
   const center = norm(add(add(a, b), c));
-  return { id, center, vertices: [a, b, c] };
+  const n = norm(cross(b, c));
+  const edges = [];
+  for (const [x, y] of [[a, b], [b, c], [c, a]]) {
+    let normal = norm(cross(x, y));
+    if (dot(normal, center) < 0) normal = mul(normal, -1);
+    edges.push(normal);
+  }
+  return { id, center, vertices: [a, b, c], edges };
 });
+
+function faceAtPoint(q) {
+  for (const cell of TRIANGLE_CELLS) {
+    if (cell.edges.every((normal) => dot(q, normal) >= -1e-6)) return cell.id;
+  }
+  return -1;
+}
 
 function arcPoints(a, b, camera, segments = 10) {
   const out = [];
@@ -143,14 +162,62 @@ function drawTriangles(camera) {
   return projected;
 }
 
+function collectFace(id) {
+  if (!state || id < 0) return;
+  const tri = state.triangles[id];
+  if (!tri || tri.mined || tri.level <= 0) return;
+  const doRemote = !offlineGame;
+  const send = doRemote ? tryRemoteCollect(id) : Promise.resolve(null);
+  send.then((res) => {
+    if (res) {
+      state = res.state;
+      if (res.cleared) flash('PLANET CLEARED — NEXT PLANET');
+      else flash(`FACE ${id + 1} · ${res.level} LEFT`);
+      return;
+    }
+    if (!offlineGame) offlineGame = createGame();
+    const local = collectTriangle(offlineGame, id);
+    if (!local.ok) return;
+    state = publicState(offlineGame);
+    if (local.cleared) flash('PLANET CLEARED — NEXT PLANET');
+    else flash(`FACE ${id + 1} · ${local.level} LEFT`);
+  });
+}
+
+function walkStep(camera, dt) {
+  let dx = 0, dy = 0;
+  if (walkKeys.has('w') || walkKeys.has('ArrowUp')) dy += 1;
+  if (walkKeys.has('s') || walkKeys.has('ArrowDown')) dy -= 1;
+  if (walkKeys.has('a') || walkKeys.has('ArrowLeft')) dx -= 1;
+  if (walkKeys.has('d') || walkKeys.has('ArrowRight')) dx += 1;
+  if (!dx && !dy) return;
+  const forward = camera.basis.forward;
+  const tangentF = norm(add(forward, mul(playerPos, -dot(forward, playerPos))));
+  const right = norm(cross(playerPos, tangentF));
+  const dir = norm(add(mul(tangentF, dy), mul(right, dx)));
+  const step = 0.9 * dt;
+  playerPos = norm(add(mul(playerPos, Math.cos(step)), mul(dir, Math.sin(step))));
+  const face = faceAtPoint(playerPos);
+  if (face >= 0 && (face !== lastWalkFace || performance.now() - lastWalkAt > 450)) {
+    lastWalkFace = face;
+    lastWalkAt = performance.now();
+    collectFace(face);
+  }
+}
+
 let projected = [];
 function frame() {
   phase = phaseForState();
+  const now = performance.now();
+  const dt = Math.min(0.05, Math.max(0, (now - lastFrameTime) / 1000));
+  lastFrameTime = now;
   const camera = phaseCamera(phase, window.innerWidth, window.innerHeight, {
     yawDeg: viewYaw,
     pitchDeg: currentPitch(),
     distance: viewDistance ?? (phase === 3 ? LANDED_SURFACE_DISTANCE : PHASES[phase].distance),
+    landing: phase === 3 ? playerPos : undefined,
   });
+  if (phase === 3) walkStep(camera, dt);
   renderer.render(camera, renderer.dpr || 1);
   gctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
   projected = drawTriangles(camera);
@@ -204,6 +271,52 @@ async function tryRemoteCollect(triangleId) {
   return res && res.ok ? res : null;
 }
 
+function screenToSphere(x, y, camera) {
+  const W = window.innerWidth, H = window.innerHeight;
+  const rel = { x: x - W / 2, y: H / 2 - y };
+  const dir = norm(add(add(mul(camera.basis.right, rel.x), mul(camera.basis.up, rel.y)), mul(camera.basis.forward, camera.focal)));
+  const O = camera.origin;
+  const b = 2 * dot(O, dir);
+  const c = dot(O, O) - 1;
+  const disc = b * b - 4 * c;
+  if (disc < 0) return null;
+  const t = (-b - Math.sqrt(disc)) / 2;
+  if (!(t > 0)) return null;
+  return norm(add(O, mul(dir, t)));
+}
+
+function clampYaw(yaw) { return ((yaw + 540) % 360) - 180; }
+
+/** Absolute surface-point follow: solve yaw/pitch so the grabbed point stays under the pointer. */
+function solvePointFollow({ phase, distance, landing, grabbed, targetX, targetY, yaw, pitch }) {
+  const make = (y, p) => phaseCamera(phase, window.innerWidth, window.innerHeight, {
+    yawDeg: y, pitchDeg: p, distance, landing,
+  });
+  let best = { yaw, pitch, err: Infinity };
+  let cy = yaw, cp = pitch;
+  for (let it = 0; it < 10; it += 1) {
+    const cam = make(cy, cp);
+    const p = cam.project(grabbed);
+    const ex = targetX - p.x;
+    const ey = targetY - p.y;
+    const err = Math.hypot(ex, ey);
+    if (err < best.err) best = { yaw: cy, pitch: cp, err };
+    if (err < 0.7) break;
+    const h = 0.35;
+    const py = make(cy + h, cp).project(grabbed);
+    const pp = make(cy, cp + h).project(grabbed);
+    const j11 = (py.x - p.x) / h, j12 = (pp.x - p.x) / h;
+    const j21 = (py.y - p.y) / h, j22 = (pp.y - p.y) / h;
+    const det = j11 * j22 - j12 * j21;
+    if (Math.abs(det) < 1e-7) break;
+    const dy = (ex * j22 - ey * j12) / det;
+    const dp = (j11 * ey - j21 * ex) / det;
+    cy = clampYaw(cy + Math.max(-18, Math.min(18, dy)));
+    cp = Math.max(-20, Math.min(70, cp + Math.max(-18, Math.min(18, dp))));
+  }
+  return { yaw: best.yaw, pitch: best.pitch, err: best.err };
+}
+
 const pointers = new Map();
 let drag = null;
 let pinchStart = null;
@@ -222,7 +335,10 @@ gameCanvas.addEventListener('pointerdown', (event) => {
     pinchStart = { dist: Math.hypot(a.x - b.x, a.y - b.y), distance: viewDistance ?? PHASES[phase].distance };
     drag = null;
   } else if (pointers.size === 1) {
-    drag = { startX: p.x, startY: p.y, lastX: p.x, lastY: p.y, moved: false };
+    const cam = phaseCamera(phase, window.innerWidth, window.innerHeight, {
+      yawDeg: viewYaw, pitchDeg: currentPitch(), distance: viewDistance ?? (phase === 3 ? LANDED_SURFACE_DISTANCE : PHASES[phase].distance), landing: phase === 3 ? playerPos : undefined,
+    });
+    drag = { startX: p.x, startY: p.y, lastX: p.x, lastY: p.y, moved: false, grabbed: screenToSphere(p.x, p.y, cam) };
     gameCanvas.style.cursor = 'grabbing';
   }
 });
@@ -237,14 +353,27 @@ gameCanvas.addEventListener('pointermove', (event) => {
     return;
   }
   if (!drag) return;
-  const dx = p.x - drag.lastX;
-  const dy = p.y - drag.lastY;
   if (Math.hypot(p.x - drag.startX, p.y - drag.startY) > 4) drag.moved = true;
+  const moveDx = p.x - drag.lastX;
   drag.lastX = p.x;
   drag.lastY = p.y;
-  if (drag.moved) {
-    viewYaw = (viewYaw + dx * 0.35) % 360;
-    viewPitch = Math.max(-20, Math.min(35, viewPitch + dy * 0.22));
+  if (drag.moved && drag.grabbed) {
+    const solved = solvePointFollow({
+      phase,
+      distance: viewDistance ?? (phase === 3 ? LANDED_SURFACE_DISTANCE : PHASES[phase].distance),
+      landing: phase === 3 ? playerPos : undefined,
+      grabbed: drag.grabbed,
+      targetX: p.x,
+      targetY: p.y,
+      yaw: viewYaw,
+      pitch: currentPitch(),
+    });
+    viewYaw = solved.yaw;
+    viewPitch = solved.pitch - (phase === 3 ? LANDED_SURFACE_PITCH : PHASES[phase].pitchDeg);
+    if (solved.err > 24) {
+      // Fallback for points near the limb where the two-axis solve is ill-conditioned.
+      viewYaw = clampYaw(viewYaw + moveDx * 0.2);
+    }
   }
 });
 function endPointer(event) {
@@ -262,7 +391,11 @@ gameCanvas.addEventListener('wheel', (event) => {
   const base = viewDistance ?? PHASES[phase].distance;
   viewDistance = Math.max(phase === 3 ? LANDED_SURFACE_DISTANCE : 1.04, Math.min(3.2, base * (event.deltaY < 0 ? 0.9 : 1.1)));
 }, { passive: false });
+window.addEventListener('keyup', (event) => {
+  if (/^[wasd]$/i.test(event.key)) walkKeys.delete(event.key.toLowerCase());
+});
 window.addEventListener('keydown', (event) => {
+  if (phase === 3 && /^[wasd]$/i.test(event.key)) { walkKeys.add(event.key.toLowerCase()); }
   if (/^[1-4]$/.test(event.key)) {
     phase = Number(event.key) - 1;
     manualPhase = phase;
