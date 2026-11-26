@@ -10,6 +10,9 @@ A spherical triangle-collecting game: each planet has triangles and four robots;
 
 ## 2. The loop
 
+The plain-English first-load experience and whole player loop is in
+[PLAYER_GUIDE.md](PLAYER_GUIDE.md).
+
 1. The player arrives at a planet rendered from the **approved camera** (one rig, four distance
    phases, horizon fixed at the 10% row).
 2. The planet is a spherical icosahedron subdivided into triangles. Triangles are the only
