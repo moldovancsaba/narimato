@@ -14,7 +14,11 @@ production hosting, GDS/a11y release gate, 3D models and optional literal pointe
 - Pages uses a **browser-state fallback** because it is static. `npm start` runs the Node build with
   **server-authoritative** state at `http://127.0.0.1:4180/`.
 
-## 2. What exists
+## 2. What the player sees
+
+Plain-English strategy, first-load screen and controls: [PLAYER_GUIDE.md](PLAYER_GUIDE.md).
+
+## 3. What exists
 
 ### Clean v2 engine
 - `v2/server.js` — zero-dependency HTTP server: `/api/health`, `/api/state`, `/api/collect`, static.
@@ -52,7 +56,7 @@ production hosting, GDS/a11y release gate, 3D models and optional literal pointe
   algorithm refinement, but the behavioural pointer test passes.
 - Contract: [CONTROLS_APPROVED.md](CONTROLS_APPROVED.md).
 
-## 3. How to test
+## 4. How to test
 
 1. Open the public URL; wheel/pinch or 1–4 through the steps.
    - Step 1: whole planet, 25% space above, centre at 50%.
@@ -64,7 +68,7 @@ production hosting, GDS/a11y release gate, 3D models and optional literal pointe
 5. Four robots tick/respawn; do not block progress. At 30/30 the planet advances.
 6. Phase links: `/phases.html`, `/phase-0..4.html`, `/?phase=0..3`.
 
-## 4. Evidence
+## 5. Evidence
 
 - Tests **572/572**; docs gate 54 files/1016 links; CI green (Node 20/22, docs, GDS, a11y
   Chromium + WebKit).
@@ -75,7 +79,7 @@ production hosting, GDS/a11y release gate, 3D models and optional literal pointe
 - Merges: `656f138` (final camera/controls/status fixes), `13d670c` (non-Euler movement).
 - Tags: `v2-phase-0..7`, `v2-live`, `v2-approved-2026-11-26`, `legacy-v3.58.0-retired`.
 
-## 5. Approval and remaining work
+## 6. Approval and remaining work
 
 **Approved:** the current playtest build and its behaviour as tested by the user on 2026-11-26 —
 camera steps/25% horizon/landing arm/gamer visibility, non-Euler pole-free movement, pointer/cursor
@@ -90,7 +94,7 @@ Remaining, not covered by the approval:
 4. Optional refinements: literal object-Q `shortestArcQuat` pointer algorithm and Step-4 triangle
    density polish.
 
-## 6. Rollback and links
+## 7. Rollback and links
 
 - [V2_ROLLBACK.md](V2_ROLLBACK.md) — phase tags/releases, public phase pages, commands.
 - [ARCHITECTURE.md](../ARCHITECTURE.md) — v2 architecture.
