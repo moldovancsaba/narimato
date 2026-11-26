@@ -31,6 +31,7 @@ let state = null;
 let offlineGame = null;
 let step = preview ?? 0;
 let targetStep = step;
+let surfaceDistance = 1.15;
 let stepStart = performance.now();
 let stepFrom = step;
 let playerDir = { ...LANDING };
@@ -70,16 +71,21 @@ function horizonPitch(d) {
   return ((Math.asin(Math.min(1, 1 / d)) - phi) * 180) / Math.PI;
 }
 function cameraFor(landing, forward) {
-  const d = stepDistance();
+  const d = surfaceActive() ? surfaceDistance : stepDistance();
   const phase = Math.max(0, Math.min(3, Math.round(step)));
   let pitch = step < 0.2 ? 0 : horizonPitch(d);
-  if (surfaceActive()) pitch += 1.4; // landing arm compensation
+  if (surfaceActive()) pitch += 5.6;
+  let arm = 0;
+  if (surfaceActive()) {
+    const h = Math.max(0.001, d - 1);
+    arm = Math.min(0.45, h * Math.tan(((pitch - 11) * Math.PI) / 180));
+  }
   return phaseCamera(phase, window.innerWidth, window.innerHeight, {
     pitchDeg: pitch,
     distance: d,
     landing,
     forward,
-    arm: surfaceActive() ? LANDING_ARM * 2 * d : 0,
+    arm,
     fovDeg: 50,
   });
 }
@@ -377,13 +383,20 @@ gameCanvas.addEventListener('pointermove', (event) => {
 function endPointer(event){ const p=localPoint(event); pointers.delete(event.pointerId); if(pointers.size<2)pinch=null; if(drag&&!drag.moved)collectAtScreen(p.x,p.y); drag=null; gameCanvas.style.cursor=pointers.size?'grabbing':'grab'; }
 gameCanvas.addEventListener('pointerup', endPointer);
 gameCanvas.addEventListener('pointercancel', (e)=>{pointers.delete(e.pointerId);pinch=null;drag=null;});
-gameCanvas.addEventListener('wheel', (event) => { if (surfaceActive()) return; event.preventDefault(); goStep(targetStep + (event.deltaY < 0 ? 1 : -1)); }, { passive:false });
+gameCanvas.addEventListener('wheel', (event) => {
+  event.preventDefault();
+  if (surfaceActive()) {
+    surfaceDistance = clamp(surfaceDistance + (event.deltaY > 0 ? 0.04 : -0.04), 1.02, 1.7);
+    return;
+  }
+  goStep(targetStep + (event.deltaY < 0 ? 1 : -1));
+}, { passive:false });
 window.addEventListener('keydown', (event) => {
   const k = event.key.toLowerCase();
   if (/^[1-4]$/.test(event.key)) { goStep(Number(event.key)-1); return; }
   if (surfaceActive() && ['w','a','s','d','arrowup','arrowleft','arrowdown','arrowright'].includes(k)) { event.preventDefault(); handleSurfaceKey(k); }
 });
-window.__v2 = { state: () => state, step: () => step, axis: () => playerDir, heading: () => heading, camera: () => currentCamera(), leaves: leafData, cursor: () => gameCanvas.style.cursor, setStep: goStep, move: () => move, screenToSphere, solve: solvePointerFollow };
+window.__v2 = { state: () => state, step: () => step, axis: () => playerDir, heading: () => heading, camera: () => currentCamera(), leaves: leafData, cursor: () => gameCanvas.style.cursor, setStep: goStep, move: () => move, screenToSphere, solve: solvePointerFollow, surfaceDistance: () => surfaceDistance };
 
 async function loadState() {
   const data = await fetch('api/state').then(r=>r.json()).catch(()=>null);
