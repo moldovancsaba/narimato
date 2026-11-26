@@ -121,3 +121,21 @@ projected silhouette radius.
 hollow shell; one triangle per active leaf; 560/560 tests, acceptance and a11y gates green.
 
 Refs: [#91](https://github.com/moldovancsaba/narimato/issues/91).
+
+## 2026-11-26 — Flat-chord rendering regression (mandatory arc contract)
+
+**Cause.** Commit `23e6cac` ("implement final triangle/actor rules") rewrote the active-leaf client
+renderer and replaced slerp-sampled great-circle boundaries with straight projected `lineTo` chords,
+while also zeroing the WebGL great-circle edge arrays. Near the limb, faces whose centre was front but
+whose boundary vertices were behind the tangent plane were still projected into the disc, producing
+overlapping flat triangles. No document approved this; `RENDERER_TECHNOLOGY`/`GUARDRAILS` explicitly
+prohibit straight chords and flat facet fills.
+
+**Fix.** Restore the mandatory renderer contract: active-leaf boundaries are sampled with slerp along
+great circles; only samples in front of the tangent plane (`x·P = 1`) are stroked; filled green/red
+spherical faces are drawn only when the whole sampled boundary is front; partial faces are arc-only;
+straight chords and back/limb projections are removed. Documentation is now declared binding and
+non-negotiable.
+
+**Verification.** Real orbit/surface captures show curved arc boundaries and no overlapping triangles;
+camera acceptance PASS 24.98 / 25.00 / 25.00 / 24.82; pointer/cursor PASS 5.7 px; 575/575 tests.

@@ -33,9 +33,10 @@ and a player who collects 30 clicks leaves for the next of 3 planets.
 - Up/forward steps; left/right rotates to the next neighbour centre; down/back reverses.
 - Walking into a green-for-player centre records one click; walking into a red-for-player centre
   records none.
-- Surface camera height is **1.02 R** (double the old 1.01 R), horizon **25%**.
+- Surface camera height starts at **1.15 R**, wheel/pinch can move it out to **1.70 R**; horizon **25%**.
 - Camera pitch transitions use the same 0.5 s Bézier/eased, sectioned motion.
-- The mouse acts only in orbit; surface control is keyboard-only.
+- Mouse on the surface moves the camera outward/inward (wheel/pinch); pointer drag stays orbit-only;
+  surface gamer movement is keyboard-only.
 
 ## 4. Out of scope
 

@@ -9,6 +9,33 @@ binding in [RENDERER_TECHNOLOGY.md](RENDERER_TECHNOLOGY.md).
 One sentence: **continue from the working system; never replace working behaviour with a new
 mechanism to satisfy a nearby request.**
 
+## 0. Documentation is binding — mandatory
+
+**The repository documentation and approved contracts are mandatory.** No implementation may
+contradict them. This applies to every renderer, camera, control, rule and UI change.
+
+Before touching code:
+
+1. Read [SSOT.md](SSOT.md), the owning contract, and this file.
+2. Compare the requested change against the documented contracts.
+3. If a request genuinely changes a contract, **update the document first and get it approved**;
+   never silently implement a different behaviour.
+
+**Non-negotiable renderer rules** — violating any of these is a release blocker:
+
+- The planet is a **solid opaque sphere**; no hollow shell, no flat facet world.
+- Active-leaf boundaries are **slerp-sampled great-circle arcs**.
+- **Straight-chord triangle edges are prohibited.**
+- **Flat chord-bounded coloured polygon facets are prohibited.**
+- v2 green/red face colour is allowed **only as a spherical region whose boundary is sampled arcs**;
+  if the boundary is not fully in front, stroke only the front arc segments and do not fill.
+- Only boundary samples in front of the tangent plane `x·P = 1` are stroked; never project
+  back-side/limb vertices into the disc.
+- Triangle count equals active leaf count; no derived mesh, no render-only tessellation.
+
+A documented contract can only be changed by updating the document and receiving approval. Tests,
+green CI, a plan, or "it looks okay" do not override the docs.
+
 ## 1. Prime directive — protect the working parts
 
 The repository has already reached working states that the user explicitly confirmed: the spherical
