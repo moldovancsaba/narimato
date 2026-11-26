@@ -1,6 +1,6 @@
 # Approved camera contract (v2)
 
-**Status: FINAL — approved 2026-11-25.** This supersedes all earlier camera/landing numbers,
+**Status: FINAL — approved 2026-11-25; v2 implementation user-approved 2026-11-26.** This supersedes all earlier camera/landing numbers,
 including the 10% horizon and the 1.44 R surface play view. The camera arm at landing is approved.
 
 The detailed landing process is in [CAMERA_LANDING_PROCESS.md](CAMERA_LANDING_PROCESS.md).
