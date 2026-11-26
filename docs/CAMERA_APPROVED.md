@@ -27,11 +27,12 @@ The detailed landing process is in [CAMERA_LANDING_PROCESS.md](CAMERA_LANDING_PR
 | 1 far orbit | **4.40 R** | 0° (looks at centre) | behind camera, not rendered | planet top at 25%, centre 50% |
 | 2 closer | **1.50 R** | **28.68°** | behind camera, not rendered | 25% |
 | 3 almost landed | **1.20 R** | **43.31°** | behind camera, not rendered | 25% |
-| 4 landed | **1.02 R radial** (revised 2026-11-26; double surface altitude) | re-solve | in front, exactly on surface | 25% |
+| 4 landed | **1.15 R radial** (wheel/pinch out to 1.70 R) | re-solve | in front, exactly on surface | 25% |
 
-**Step-4 camera arm:** the playtest uses **2.8% R behind the gamer** with the doubled **1.02 R**
-radial height, so the gamer remains in the lower frame while the horizon stays at 25%. This is the
-2026-11-26 implemented value; it is pending user visual approval.
+**Step-4 camera arm:** dynamic, derived from the current surface height so the gamer stays around
+70% down the frame while the horizon remains at 25%. Default surface height **1.15 R**; wheel/pinch
+can move the camera out to **1.70 R**. This is the 2026-11-26 implemented value, pending user visual
+approval.
 This puts the gamer at roughly **75–80% down the screen**, on the surface, while the horizon stays
 at 25%.
 

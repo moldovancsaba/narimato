@@ -20,10 +20,10 @@ One camera. Constant 50° FOV. No mask, no cut, no second camera, no geometry ch
 | 1 far orbit | **4.40 R** | 0° | behind camera, not rendered | whole planet, top at 25%, centre at 50%, 25% space above |
 | 2 closer | **1.50 R** | **28.68°** | behind camera, not rendered | horizon at 25%, surface fills below, no gamer |
 | 3 almost landed | **1.20 R** | **43.31°** | behind camera, not rendered | much closer, horizon still 25%, no gamer |
-| 4 landed | **1.02 R radial** (revised 2026-11-26; double altitude) | re-solve | in front, on the surface | horizon at 25%, gamer visible, surface triangles |
+| 4 landed | **1.15 R radial** (wheel/pinch out to 1.70 R) | re-solve | in front, on the surface | horizon at 25%, gamer visible, more surface |
 
-**Step-4 camera arm:** the implemented playtest uses **2.8% R** behind the gamer with the doubled
-**1.02 R** radial height, holding the horizon at 25% and the gamer in the lower frame. Pending user
+**Step-4 camera arm:** dynamic, derived from the current surface height; default surface height
+**1.15 R**, holding the horizon at 25% and the gamer in the lower frame. Pending user
 visual approval.
 
 ## 3. Why Step 1 is 4.40 R

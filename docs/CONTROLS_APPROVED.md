@@ -110,8 +110,8 @@ Both WASD and the cursor keys produce the same intents:
 - Surface movement is **triangle-centre to triangle-centre**, 0.5 s Bézier move/rotation, input
   locked until complete; see [TRIANGLE_RULES.md](TRIANGLE_RULES.md).
 - Walking into a centre records one click only when the triangle is green for the player.
-- **Mouse acts only in orbit.** Pointer drag, wheel and pinch are disabled on the surface; surface
-  control is keyboard-only.
+- **Mouse on the surface moves the camera outward/inward** via wheel or pinch (1.02–1.70 R);
+  pointer drag/click remains orbit-only; surface gamer movement is keyboard-only.
 - The new centre-to-centre 0.5 s Bézier movement and mouse-orbit-only rule are implemented in the
   2026-11-26 playtest build; they are pending user visual approval.
 

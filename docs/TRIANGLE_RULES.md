@@ -84,14 +84,14 @@ Resets do not remove actors or change planet ownership.
 
 ## 6. Surface camera and mouse
 
-- Surface camera height is **double the current height**: from 1.01 R to **1.02 R** radial
-  (2% of the planet radius above the surface).
+- Surface camera height starts at **1.15 R radial** and can be moved outward with the mouse wheel or
+  pinch to **1.70 R** (and back to 1.02 R) to see more surface. The rig is higher than the old 1.02 R view.
 - The camera pitch is re-solved so the horizon stays at **25%** and the gamer remains visible.
 - Camera transitions between pitch steps use the same **0.5 s Bézier/eased, sectioned motion** as
   player movement; distance, pitch and landing arm move together and the horizon is solved every
   frame.
-- **The mouse acts only in orbit.** On the surface, pointer drag, wheel and pinch are disabled;
-  surface control is keyboard-only.
+- **Mouse on the surface moves the camera outward/inward** (wheel or pinch) between 1.02 R and 1.70 R.
+  Pointer drag/click remains orbit-only; keyboard controls the gamer on the surface.
 
 ## 7. Rendering rules
 
@@ -114,8 +114,8 @@ Resets do not remove actors or change planet ownership.
 - Robot 30 clicks → respawn on the same planet.
 - Surface: centre-to-centre Bézier, 0.5 s per move/turn, input lock, auto-click on arrival only when
   green for the player.
-- Camera: 1.02 R surface height; horizon 25%; 0.5 s Bézier/eased pitch transitions; mouse disabled
-  on the surface.
+- Camera: 1.15 R default surface height, wheel/pinch out to 1.70 R, horizon 25%, 0.5 s Bézier/eased
+  pitch transitions; surface mouse wheel/pinch controls camera distance.
 
 ## 9. Implementation status
 
