@@ -19,7 +19,10 @@ This document corrects earlier invented rules. Do not add restrictions that are 
 ## 2. Turning — no fixed angle
 
 - Left/right rotate only to the **next possible triangle centre** on that side.
+- Every edge-neighbour centre is a candidate, including every child centre along a split side.
+- Choose the candidate on that side requiring the **shortest turn from the current facing**.
 - The amount rotated is the actual angle to that centre; it is **not 90°** and not a fixed increment.
+- Ties are not expected by design; if several candidates tie, choose the one on the **right**.
 - The gamer may turn **as many times as needed**, through all available edge-neighbours.
 - The gamer may face the **previous triangle** and press forward to go back to it.
 - There is **no “previous triangle excluded” rule**, no turn limit and no forced forward direction.
@@ -27,18 +30,22 @@ This document corrects earlier invented rules. Do not add restrictions that are 
 ## 3. Forward movement
 
 - From the current triangle, consider the edge-neighbour centres in front of the gamer.
-- Move to the closest valid centre in front.
-- On arrival, the camera/gamer turns to face the **closest next triangle centre**.
-- If more than one next centre is equally close, the camera turns to the one on the **right** of the
-  current facing direction.
+- Choose the valid centre requiring the **shortest turn from the current facing**.
+- If more than one is equally close by shortest turn, choose the one on the **right**.
+- Move to that centre.
+- On arrival, the camera rig turns to the **next possible forward direction** — literally aims at
+  that next centre — if it is not already aimed at the front of that triangle.
+- If multiple next directions require an equal turn, choose the one on the **right**.
 - The triangle just left is included in the possible next centres.
 
 ## 4. Backward movement
 
-- Move to the closest edge-neighbour centre **behind** the gamer.
+- Consider only edge-neighbour centres **behind** the gamer.
+- Choose the one requiring the **shortest turn from the current facing**.
 - If more than one is equally close behind, choose the one on the **left behind**.
 - The previous triangle is included in the possible centres.
-- On arrival, the camera faces the closest next triangle centre; equal choices go to the **right**.
+- On arrival, the camera rig turns to the next possible forward direction, exactly as after a forward
+  move; equal choices go to the **right**.
 
 ## 5. Animation and input
 
@@ -48,6 +55,26 @@ This document corrects earlier invented rules. Do not add restrictions that are 
 - The next move/turn is accepted only when the previous one completes. One input may be buffered.
 - The gamer can rotate arbitrarily many times before moving.
 
+## 5a. Orbit camera: free planet rotation, snap on release
+
+- In orbit, dragging rotates the **planet under the camera**. Only the planet rotates; the camera rig
+  does not orbit around it.
+- Dragging is free rotation and does **not** change camera distance.
+- When the user stops dragging and releases the cursor, with no further mouse/touchpad/screen input,
+  the planet rotates/snap so the camera view centre lands on the **closest active triangle centre**.
+- The snap follows the **shortest turn from the current facing**.
+- If multiple triangle centres are equally close, choose the **right-hand** one.
+- This snap happens at **every orbit distance**.
+- On the surface, the planet is **not rotatable with the mouse**.
+- The four camera distances still stop at every distance; drag never bypasses or changes them.
+- **Orbit arrows/WASD are the approved free orbit movement, not triangle stepping.** While held
+  they freely turn/move the camera around the planet exactly as the approved build did; they do not
+  change camera distance. When the arrow/WASD input stops (keys released), the planet snaps to the
+  closest active triangle centre exactly like mouse release: shortest turn, ties right, at every
+  orbit distance.
+- **Surface arrows** use the edge-neighbour movement in this document; the surface planet is not
+  mouse-rotatable.
+
 ## 6. Current four-option bug — explanation
 
 The current implementation has four keyboard directions and selects one highest-scoring leaf centre
@@ -56,20 +83,14 @@ current triangle’s edge-neighbours. The true next set is the current triangle�
 neighbours: 3 in a conforming area, more when split sides create partial-edge contacts (up to 24 under
 the current hierarchy). A fixed four-option set is wrong.
 
-## 7. Open points — do not invent an answer
+## 7. Camera distance steps and remaining implementation constants
 
-These have not been confirmed yet; implementation must wait for a decision:
-
-1. If more than one valid centre is equally close **in front**, which target rule applies before
-   moving? (The camera tie-break after arrival is confirmed: right.)
-2. After a **backward** arrival, does the camera turn to the closest next centre with the same tie
-   rules as forward?
-3. Is “closest” measured by centre-to-centre angular distance or by the shortest turn from the
-   current facing? Both must be defined explicitly before coding.
-4. If the current triangle has several edge-neighbours along one split side, how are left/right
-   choosing among them? All valid edge contacts are neighbours; the selection order still needs a rule.
-5. How does surface camera mouse-out interact with the four camera distances? The camera must stop at
-   every distance; the default surface stage and the extra surface dolly need one state model.
+- **Surface wheel/pinch stops at discrete distance steps.** Each step settles and stops; it must not
+  drift continuously. Range: 1.02–1.70 R, default 1.15 R. Exact step interval/sequence is an
+  implementation constant, not a new movement rule.
+- The four orbit/landing camera distances are discrete and stop at every distance.
+- Orbit drag and orbit arrow movement do not change distance.
+- No other movement/camera behaviour remains unspecified.
 
 ## 8. Implementation status
 

@@ -27,11 +27,11 @@ The detailed landing process is in [CAMERA_LANDING_PROCESS.md](CAMERA_LANDING_PR
 | 1 far orbit | **4.40 R** | 0° (looks at centre) | behind camera, not rendered | planet top at 25%, centre 50% |
 | 2 closer | **1.50 R** | **28.68°** | behind camera, not rendered | 25% |
 | 3 almost landed | **1.20 R** | **43.31°** | behind camera, not rendered | 25% |
-| 4 landed | **1.15 R radial** (wheel/pinch out to 1.70 R) | re-solve | in front, exactly on surface | 25% |
+| 4 landed | **1.15 R radial** (wheel/pinch out in discrete steps to 1.70 R) | re-solve | in front, exactly on surface | 25% |
 
 **Step-4 camera arm:** dynamic, derived from the current surface height so the gamer stays around
 70% down the frame while the horizon remains at 25%. Default surface height **1.15 R**; wheel/pinch
-can move the camera out to **1.70 R**. This is the 2026-11-26 implemented value, pending user visual
+move the camera out in discrete steps to **1.70 R**. This is the 2026-11-26 implemented value, pending user visual
 approval.
 This puts the gamer at roughly **75–80% down the screen**, on the surface, while the horizon stays
 at 25%.
@@ -74,3 +74,15 @@ at 25%.
 The frames under `docs/plan/proto-*` are the earlier prototype that approved the one-rig,
 full-planet, no-mask rendering approach. Their distances/pitches/10% horizon are **historical** and
 are not the final numbers above. Final acceptance needs new real screenshots at the steps in Section 2.
+
+
+## Orbit free rotation and snap (confirmed 2026-11-26)
+
+- Dragging in orbit rotates the **planet under the camera**; only the planet rotates.
+- Dragging does not change camera distance.
+- On release, with no further pointer input, the planet rotates/snaps so the camera view centre
+  lands on the closest active triangle centre, using the shortest turn from the current facing;
+  ties go to the right.
+- Snap happens at **every orbit distance**.
+- On the surface, the planet is **not rotatable with the mouse**.
+- The four distance stops remain discrete; free orbit rotation never bypasses them.
