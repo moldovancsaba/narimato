@@ -1,6 +1,6 @@
 # Approved user-control contract (v2)
 
-**Status: APPROVED by the user on 2026-11-25. Documentation only — not implemented in the game yet.**
+**Status: APPROVED 2026-11-25; implemented in v2 and user-approved 2026-11-26 (build e7f65e5).**
 This is the binding user-control model for the planet and the gamer, in orbit and on the surface.
 It is separate from the camera/zoom contract in [CAMERA_APPROVED.md](CAMERA_APPROVED.md) and
 [CAMERA_LANDING_PROCESS.md](CAMERA_LANDING_PROCESS.md).
@@ -131,4 +131,4 @@ https://moldovancsaba.github.io/narimato/:
 
 **Residual:** point-follow is solved numerically on the quaternion frame, not via the literal
 `shortestArcQuat` object-orientation path; the behavioural acceptance passes at 12 px tolerance.
-Issue #137 is behavioural-done; the literal algorithm is a refinement.
+Behavioural acceptance is part of the 2026-11-26 user-approved build; the literal algorithm is an optional refinement.

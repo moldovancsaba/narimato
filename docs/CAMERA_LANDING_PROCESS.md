@@ -1,6 +1,6 @@
 # Camera landing process — final approved 25% horizon + camera arm
 
-**Status: APPROVED final process, 2026-11-25. Documentation only — not implemented in the game yet.**
+**Status: APPROVED 2026-11-25; implemented in v2 and user-approved 2026-11-26 (build e7f65e5).**
 This supersedes the earlier 10% horizon and all previous landing views.
 
 ## 1. Plain-English process

@@ -1,7 +1,8 @@
 # NARIMATO v2 — current delivery status and test guide
 
-**As of 2026-11-25.** Single status/entry document for the v2 playtest. Durable contracts live in the
-camera/control/game docs; the project board owns remaining work (issues #138, #140–#142; #137 behavioural-done, literal algorithm refinement).
+**Status: USER-APPROVED v2 playtest build — 2026-11-26.** Tested build `e7f65e5` (PR #145), Pages
+final6, 572/572 tests. Approval scope and exclusions: [APPROVALS.md](APPROVALS.md). Remaining work is
+production hosting, GDS/a11y release gate, 3D models and optional literal pointer/triangle refinements.
 
 ## 1. Public test build
 
@@ -72,16 +73,22 @@ camera/control/game docs; the project board owns remaining work (issues #138, #1
   walking collection; pole crossing.
 - Public build verified at the URL above.
 - Merges: `656f138` (final camera/controls/status fixes), `13d670c` (non-Euler movement).
-- Tags: `v2-phase-0..7`, `v2-live`, `legacy-v3.58.0-retired`.
+- Tags: `v2-phase-0..7`, `v2-live`, `v2-approved-2026-11-26`, `legacy-v3.58.0-retired`.
 
-## 5. Known gaps (board issues)
+## 5. Approval and remaining work
 
-1. **#138** Step-4 local surface triangle density/visual acceptance.
+**Approved:** the current playtest build and its behaviour as tested by the user on 2026-11-26 —
+camera steps/25% horizon/landing arm/gamer visibility, non-Euler pole-free movement, pointer/cursor
+behaviour, surface collection, walking, robots, 30/30→next planet, online Pages build. See
+[APPROVALS.md](APPROVALS.md).
+
+Remaining, not covered by the approval:
+
+1. **#140** server-authoritative public hosting (Pages is browser-state).
 2. **#142** v2 GDS HUD + accessibility release gate.
-3. **#140** server-authoritative public hosting (Pages is browser-state).
-4. **#141** replace gamer/robot markers with approved models.
-5. **#137** literal object-Q shortestArcQuat pointer algorithm (behavioural acceptance passes at 5.7 px).
-6. Robots/gamer remain simple markers; v2 release evidence is not complete.
+3. **#141** replace gamer/robot markers with approved models.
+4. Optional refinements: literal object-Q `shortestArcQuat` pointer algorithm and Step-4 triangle
+   density polish.
 
 ## 6. Rollback and links
 

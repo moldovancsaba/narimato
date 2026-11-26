@@ -9,7 +9,7 @@
 
 Architecture decisions are recorded as ADRs: [docs/adr/README.md](docs/adr/README.md).
 
-## v2 architecture — active product (2026-11-25)
+## v2 architecture — active product (v2 playtest user-approved 2026-11-26)
 
 The active product is the clean v2 engine. The legacy v3.58.0 architecture below is **retired**
 from the product entry point and preserved for rollback only.
