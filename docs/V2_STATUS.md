@@ -10,7 +10,9 @@ The user-confirmed triangle/actor/planet rules in [TRIANGLE_RULES.md](TRIANGLE_R
 in the v2 playtest build on 2026-11-26: 20→80→320→1280 hierarchy, per-actor clicks/colours, level-4
 all-red, reset when no click is possible, 30 clicks → 3-planet wrap, robots target 30 and respawn on
 the same planet, centre-to-centre 0.5 s Bézier movement, 1.02 R surface camera, mouse orbit-only.
-The user has not yet approved this new build. The mandatory arc renderer is restored after the
+The user has not yet approved this new build. The five regressions reported at 20:14 are analysed in
+[V2_REGRESSION_FIX_PLAN.md](V2_REGRESSION_FIX_PLAN.md); movement rules are in
+[SURFACE_ADJACENCY.md](SURFACE_ADJACENCY.md). Implementation is pending the plan/contracts. The mandatory arc renderer is restored after the
 flat-chord regression in commit 23e6cac; see [FIXES.md](FIXES.md).
 
 ## 1. Public test build
