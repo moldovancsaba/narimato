@@ -1,6 +1,7 @@
 # Approved user-control contract (v2)
 
-**Status: APPROVED 2026-11-25; implemented in v2 and user-approved 2026-11-26 (build e7f65e5).**
+**Status: APPROVED 2026-11-25; orbit free-movement and snap semantics reconfirmed 2026-11-26.
+Surface triangle movement is finalised in [SURFACE_ADJACENCY.md](SURFACE_ADJACENCY.md).**
 This is the binding user-control model for the planet and the gamer, in orbit and on the surface.
 It is separate from the camera/zoom contract in [CAMERA_APPROVED.md](CAMERA_APPROVED.md) and
 [CAMERA_LANDING_PROCESS.md](CAMERA_LANDING_PROCESS.md).
@@ -18,8 +19,17 @@ It is separate from the camera/zoom contract in [CAMERA_APPROVED.md](CAMERA_APPR
   - **D / Right** turns the gamer right.
   - **W / Up** moves the gamer forward.
   - **S / Down** moves the gamer backward.
-- This movement works **the same in orbit and on the surface**. There is no different control mode,
-  no second input path, and no point where movement stops because of a pole or an edge.
+- **In orbit**, WASD/arrows move the camera freely around the planet, exactly as the approved build:
+  A/Left and D/Right turn; W/Up and S/Down move forward/backward. This is continuous free movement
+  while held and never changes camera distance.
+- **When orbit arrow input stops (keys released)**, the planet snaps to the closest active triangle
+  centre using the shortest turn from the current facing; ties go right. This is the same snap as
+  mouse release and happens at every orbit distance.
+- **On the surface**, WASD/arrows move the gamer triangle-centre to triangle-centre using the edge
+  adjacency graph in [SURFACE_ADJACENCY.md](SURFACE_ADJACENCY.md); the previous triangle is valid and
+  turning is unlimited. Surface camera distance is controlled by wheel/pinch, not by arrows.
+- There is no pole stop, no edge stop and no fixed 90° rotation. The two views use the same keys with
+  the confirmed view-specific movement law.
 
 ## 2. Technical translation
 
@@ -66,10 +76,15 @@ Both WASD and the cursor keys produce the same intents:
   reverse.
 - The local frame is **parallel-transported** as the gamer moves. Heading and up never jump, never
   flip, and never hit a pole.
-- The **same controller and the same movement law** run in orbit and on surface. The view mode never
-  changes key meaning; no surface-only branch, no orbit-only branch.
-- Rates are implementation constants (turning angular speed, movement angular speed), not user-facing
-  limits on reachable orientation.
+- **Orbit:** the same heading/parallel-transport controller as the approved build; WASD/arrows turn
+  and move the camera rig freely; no triangle stepping, no distance change, no pole stop. On key
+  release the planet snaps to the closest active triangle centre (shortest turn, ties right; every
+  orbit distance).
+- **Surface:** keys move the gamer between edge-neighbour triangle centres (see
+  [SURFACE_ADJACENCY.md](SURFACE_ADJACENCY.md)); no free slide, no fixed-angle turn, previous triangle
+  valid, unlimited turns.
+- Rates are implementation constants for orbit free movement; surface movement is fixed 0.5 s
+  centre-to-centre.
 - Diagonal input is combined and normalised; opposite keys cancel.
 
 ### 2.4 Interaction precedence
@@ -87,7 +102,8 @@ Both WASD and the cursor keys produce the same intents:
   the pointer within a small pixel tolerance for the entire gesture.
 - Repeat drags can reach any orientation; no clamp, no pole warning, no inversion, no end reached.
 - A/`ArrowLeft` turns left, D/`ArrowRight` turns right, W/`ArrowUp` moves forward, S/`ArrowDown`
-  moves backward; the same in orbit and surface, verified with matching trajectories.
+  moves backward. In orbit the camera moves freely around the planet and snaps on release; on the
+  surface the gamer moves only to edge-neighbour triangle centres. Verify both separately.
 - The same input at a former pole region keeps turning/moving continuously; no singularity or flip.
 - No per-frame camera orientation overwrite from animations cancels or fights the pointer.
 - Tap still collects; drag does not accidentally collect.
@@ -99,7 +115,8 @@ Both WASD and the cursor keys produce the same intents:
 - Euler yaw/pitch control, pitch/yaw clamps, latitude/longitude limits or pole stopping.
 - Relative-only drag that does not keep the grabbed point under the pointer.
 - Per-frame orientation overwrite, animation pose overriding the pointer, or camera-follow hacks.
-- A separate surface movement path with different keys or limits.
+- A separate surface movement path with different **keys**; the keys stay the same, but orbit is free
+  camera movement and surface is edge-neighbour triangle movement as documented.
 - Adding an auto-rotation or star-based natural spin.
 - Inverting axes, snapping to poles, or declaring “upside down” as a blocked state.
 - Replacing this shared input path with a second independent controller without an approved issue and
@@ -112,8 +129,12 @@ Both WASD and the cursor keys produce the same intents:
 - Walking into a centre records one click only when the triangle is green for the player.
 - **Mouse on the surface moves the camera outward/inward** via wheel or pinch (1.02–1.70 R);
   pointer drag/click remains orbit-only; surface gamer movement is keyboard-only.
-- The new centre-to-centre 0.5 s Bézier movement and mouse-orbit-only rule are implemented in the
-  2026-11-26 playtest build; they are pending user visual approval.
+- Surface wheel/pinch changes camera distance in **discrete steps and stops at each step**; no
+  continuous drift. Range 1.02–1.70 R, default 1.15 R.
+- Orbit: drag and arrows rotate the planet under the camera; release/stop snaps to the closest
+  triangle centre; the four camera distances stop at every distance.
+- The new centre-to-centre 0.5 s Bézier movement and orbit/surface semantics are implemented in the
+  2026-11-26 playtest build pending user visual approval.
 
 ## 6. Relationship to the camera contract
 

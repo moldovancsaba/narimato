@@ -38,12 +38,15 @@ never restored.
 
 **Required fix.** One shared movement controller for orbit and surface:
 - arrows and WASD are never gated to surface only;
-- orbit applies the same edge-neighbour movement where valid, or the approved orbit movement if the
-  gamer is not on the surface — decide one model before coding;
-- arrow keys must visibly move/rotate the rig in orbit;
-- no duplicate orbit-only input path.
+- orbit arrows/WASD reproduce the approved free camera movement around the planet; continuous while
+  held, no distance change;
+- when orbit arrow input stops, the planet snaps to the closest active triangle centre exactly like
+  mouse release: shortest turn, ties right, at every orbit distance;
+- surface uses the edge-neighbour movement contract;
+- no orbit-only gating and no duplicate controller for orbit arrows.
 
-**Acceptance.** Real browser: arrows/WASD move in orbit and on surface with the same key meanings.
+**Acceptance.** Real browser: orbit arrows move freely, release snaps to closest centre at every orbit
+distance; surface movement uses only edge-neighbours.
 
 ## R3 — Camera does not step/stop between orbit and surface
 
@@ -56,10 +59,13 @@ Crossing `step > 2.5` switches distance, pitch and arm discontinuously; wheel on
 `surfaceDistance` only, not the step ladder; returning to orbit jumps back.
 
 **Required fix.** One camera state with four discrete stops:
-`4.40 → 1.50 → 1.20 → surface`. Each step must settle exactly and stop. Surface default height and
-the mouse-out surface dolly must be part of this one state, not an override that bypasses the ladder.
-Pitch/arm solve at every stop; camera transitions remain 0.5 s eased. Remove the `surfaceActive()`
-distance override or replace it with an explicit continuous value that also updates the stop state.
+`4.40 → 1.50 → 1.20 → surface`. Each step must settle exactly and stop. Orbit drag only rotates the
+planet and never changes distance; on release the planet snaps to the closest triangle centre at the
+current orbit distance (shortest turn, ties right), at **every** orbit distance. Surface wheel/pinch
+dolly changes in discrete steps and stops at each step; range 1.02–1.70 R, default 1.15 R. Pitch/arm
+solve at every stop; camera transitions remain 0.5 s eased. Remove the
+`surfaceActive()` distance override or replace it with an explicit continuous value that also updates
+the stop state.
 
 **Acceptance.** Browser test drives all four stops forward and backward, verifies each stop settles,
 no jump at 2.5, horizon stays 25% at every stop.
@@ -77,9 +83,13 @@ is not guaranteed to still exist after a split. Introduced in `23e6cac`.
 - previous triangle is a valid neighbour and can be faced/moved back to;
 - no limit on repeated turns;
 - forward/back/left/right target only edge-neighbours;
-- camera after forward arrival faces closest next centre; ties right;
-- backward target closest behind; ties left-behind; after-arrival camera behaviour is an open point
-  in SURFACE_ADJACENCY until confirmed;
+- “closest” means **shortest turn from the current facing**, not centre-to-centre distance;
+- after any arrival the camera rig turns to the next possible forward direction, literally aims at
+  that next centre if it is not already front; ties right;
+- forward target: shortest turn among front edge-neighbours; ties right;
+- backward target: shortest turn among edge-neighbours behind; ties left-behind;
+- left/right: every edge-neighbour centre on that side is a candidate, including all child centres
+  on a split side; choose shortest turn; ties right;
 - input lock 0.5 s; one buffered input.
 
 **Acceptance.** Graph tests for conforming (3), split-side (6/12/24) cases; browser movement lands only
@@ -99,8 +109,9 @@ neighbours).
 
 ## Order of implementation
 
-1. **Documentation lock** — confirm the open points in SURFACE_ADJACENCY §7 and camera/surface dolly
-   state; update docs before code.
+1. **Documentation lock** — contracts for orbit free arrow movement/snap, surface edge adjacency, and
+   discrete surface camera steps are written in SURFACE_ADJACENCY/CONTROLS_APPROVED. Only
+   implementation constants remain; do not invent new behaviour.
 2. **Adjacency core** — pure edge-contact graph + tests (conforming and split sides); no rendering
    change yet.
 3. **Input/camera ladder** — one four-stop camera state; restore orbit arrow movement; remove

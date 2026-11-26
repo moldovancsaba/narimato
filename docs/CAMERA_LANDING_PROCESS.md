@@ -20,7 +20,7 @@ One camera. Constant 50° FOV. No mask, no cut, no second camera, no geometry ch
 | 1 far orbit | **4.40 R** | 0° | behind camera, not rendered | whole planet, top at 25%, centre at 50%, 25% space above |
 | 2 closer | **1.50 R** | **28.68°** | behind camera, not rendered | horizon at 25%, surface fills below, no gamer |
 | 3 almost landed | **1.20 R** | **43.31°** | behind camera, not rendered | much closer, horizon still 25%, no gamer |
-| 4 landed | **1.15 R radial** (wheel/pinch out to 1.70 R) | re-solve | in front, on the surface | horizon at 25%, gamer visible, more surface |
+| 4 landed | **1.15 R radial** (wheel/pinch out in discrete steps to 1.70 R) | re-solve | in front, on the surface | horizon at 25%, gamer visible, more surface |
 
 **Step-4 camera arm:** dynamic, derived from the current surface height; default surface height
 **1.15 R**, holding the horizon at 25% and the gamer in the lower frame. Pending user
@@ -94,3 +94,15 @@ four distance steps, 25% horizon, constant 50° FOV, landing camera arm, gamer h
 visible on the surface at Step 4, distance-driven pitch, no masks/cuts/second camera. Real screenshots
 were captured at all four steps. Final acceptance still requires transition recording, measured
 horizon-row automation and the remaining pointer-control parity.
+
+
+## Orbit free rotation and snap (confirmed 2026-11-26)
+
+- Dragging in orbit rotates the **planet under the camera**; only the planet rotates.
+- Dragging does not change camera distance.
+- On release, with no further pointer input, the planet rotates/snaps so the camera view centre
+  lands on the closest active triangle centre, using the shortest turn from the current facing;
+  ties go to the right.
+- Snap happens at **every orbit distance**.
+- On the surface, the planet is **not rotatable with the mouse**.
+- The four distance stops remain discrete; free orbit rotation never bypasses them.

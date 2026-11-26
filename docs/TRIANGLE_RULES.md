@@ -73,8 +73,10 @@ Resets do not remove actors or change planet ownership.
   (derived max **24** for a level-1 triangle bordered by level-4 children). The previous triangle is
   a valid neighbour; no exclusion and no turn limit.
 - Left/right rotate only to the next possible edge-neighbour centre; no fixed 90°/step angle.
-- Forward moves to the closest valid centre in front; on arrival the camera faces the closest next
-  centre; ties go to the right. Backward moves to the closest centre behind; ties go left-behind.
+- “Closest” means **shortest turn from the current facing**. Forward: shortest-turn valid centre in
+  front, ties right. Backward: shortest-turn valid centre behind, ties left-behind. On arrival the
+  camera rig turns to the next possible forward direction; ties right. Previous triangle included;
+  unlimited turns.
 - Every move or rotation is **0.5 seconds**, regardless of triangle size.
 - Paths are **spherical quadratic Bézier** curves between the two centres; rotations use the same
   0.5 s eased quaternion interpolation.
@@ -122,8 +124,8 @@ Resets do not remove actors or change planet ownership.
 - Robot 30 clicks → respawn on the same planet.
 - Surface: centre-to-centre Bézier, 0.5 s per move/turn, input lock, auto-click on arrival only when
   green for the player.
-- Camera: 1.15 R default surface height, wheel/pinch out to 1.70 R, horizon 25%, 0.5 s Bézier/eased
-  pitch transitions; surface mouse wheel/pinch controls camera distance.
+- Camera: 1.15 R default surface height, wheel/pinch out in discrete steps to 1.70 R, horizon 25%, 0.5 s Bézier/eased
+  pitch transitions; surface mouse wheel/pinch controls camera distance in discrete steps.
 
 ## 9. Implementation status
 
