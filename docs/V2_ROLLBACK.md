@@ -46,6 +46,7 @@ The Pages build runs the same rules with a browser-state fallback (no Node API);
 | Phase 4 | cutover/retirement docs, phase links, legacy tag | [v2-phase-4](https://github.com/moldovancsaba/narimato/tree/v2-phase-4) | `git checkout v2-phase-4` |
 | Phase 5 | final camera/landing/controls + status/rollback docs | [v2-phase-5](https://github.com/moldovancsaba/narimato/tree/v2-phase-5) | `git checkout v2-phase-5` |
 | Phase 6 | non-Euler pole-free quaternion movement | [v2-phase-6](https://github.com/moldovancsaba/narimato/tree/v2-phase-6) | `git checkout v2-phase-6` |
+| Phase 7 | pointer point-follow + automated camera acceptance + denser surface | [v2-phase-7](https://github.com/moldovancsaba/narimato/tree/v2-phase-7) | `git checkout v2-phase-7` |
 | Live v2 | accepted v2 product | [v2-live](https://github.com/moldovancsaba/narimato/tree/v2-live) | `git checkout v2-live` |
 | Legacy | old game, retired, preserved for rollback | [legacy-v3.58.0-retired](https://github.com/moldovancsaba/narimato/tree/legacy-v3.58.0-retired) | `git checkout legacy-v3.58.0-retired` + `npm run start:legacy` |
 
