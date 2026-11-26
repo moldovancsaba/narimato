@@ -1,17 +1,16 @@
 # NARIMATO v2 — current delivery status and test guide
 
 **Status: USER-APPROVED v2 playtest build — 2026-11-26.** Tested build `e7f65e5` (PR #145), Pages
-final6, 572/572 tests. Approval scope and exclusions: [APPROVALS.md](APPROVALS.md). Remaining work is
+final6, 574/574 tests. Approval scope and exclusions: [APPROVALS.md](APPROVALS.md). Remaining work is
 production hosting, GDS/a11y release gate, 3D models and optional literal pointer/triangle refinements.
 
-## 0. Final rules confirmed — not yet implemented
+## 0. Final rules implemented — awaiting user test
 
-On 2026-11-26 the user confirmed the final triangle/actor/planet rules in
-[TRIANGLE_RULES.md](TRIANGLE_RULES.md): 20→80→320→1280 hierarchy, per-actor click/colour, level-4
-stays red for all, reset when no click is possible, 30 clicks → next of 3 planets, robots target 30
-and respawn same planet, centre-to-centre 0.5 s Bézier surface movement, surface camera 1.02 R.
-**The deployed approved build still implements the older rules.** Implementation is tracked on the
-board; this status page will not call the new rules delivered until they are.
+The user-confirmed triangle/actor/planet rules in [TRIANGLE_RULES.md](TRIANGLE_RULES.md) are implemented
+in the v2 playtest build on 2026-11-26: 20→80→320→1280 hierarchy, per-actor clicks/colours, level-4
+all-red, reset when no click is possible, 30 clicks → 3-planet wrap, robots target 30 and respawn on
+the same planet, centre-to-centre 0.5 s Bézier movement, 1.02 R surface camera, mouse orbit-only.
+The user has not yet approved this new build.
 
 ## 1. Public test build
 
@@ -37,10 +36,11 @@ Plain-English strategy, first-load screen and controls: [PLAYER_GUIDE.md](PLAYER
 - `v2/public/camera.js` — final four-step camera + landing arm.
 - `v2/public/controls.js` — non-Euler quaternion heading/turn/move with parallel transport.
 - `v2/public/app.js` — session, faces, collection, 4 robots, gamer, clipped mesh overlay, HUD.
-- `v2/test/` — camera, controls, game-rule and server tests. **572/572 tests pass.**
+- `v2/test/` — camera, controls, game-rule and server tests. **574/574 tests pass.**
 
 ### Game rules (implemented)
-- Surface is the collectible: 5120 spherical geodesic faces at four subdivisions; no pickup icons.
+- Surface is the collectible: active leaf hierarchy starts at 20 level-1 triangles and splits to
+  80/320/1280; no pickup icons.
 - Each face has 3 breaking levels; player target **30 breaks**; at 30 the planet advances/resets.
 - Four server robots tick; each respawns as a new robot on reaching its target; non-blocking.
 - Silent; no other challenge/interruption.
@@ -79,7 +79,7 @@ Plain-English strategy, first-load screen and controls: [PLAYER_GUIDE.md](PLAYER
 
 ## 5. Evidence
 
-- Tests **572/572**; docs gate 54 files/1016 links; CI green (Node 20/22, docs, GDS, a11y
+- Tests **574/574**; docs gate 54 files/1016 links; CI green (Node 20/22, docs, GDS, a11y
   Chromium + WebKit).
 - Browser verification: four camera steps with **first surface row 25.00 / 24.88 / 24.88 / 25.00%**
   (`npm run test:v2:camera` PASS); pointer/cursor **5.7 px** follow (`npm run test:v2:pointer` PASS);

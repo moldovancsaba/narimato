@@ -7,7 +7,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createGame, collectTriangle, publicState, tickRobots } from './server/game.js';
+import { createGame, collectPlayer, publicState, tickRobots } from './server/game.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC = path.join(ROOT, 'public');
@@ -66,7 +66,7 @@ export function createV2Server() {
       req.on('end', () => {
         let id = null;
         try { id = JSON.parse(body || '{}').triangleId; } catch {}
-        const result = collectTriangle(game, id);
+        const result = collectPlayer(game, id);
         res.writeHead(result.ok ? 200 : 409, { 'content-type': 'application/json' });
         res.end(JSON.stringify({ ...result, state: publicState(game) }));
       });

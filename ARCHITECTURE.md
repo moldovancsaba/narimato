@@ -32,7 +32,7 @@ Browser (Pages playtest)                    Node v2 server (authoritative)
 |---|---|
 | `v2/server.js` | zero-dependency HTTP server, static files, API and state |
 | `v2/server/game.js` | server-authoritative game wrapper |
-| `v2/public/game-rules.js` | shared rules: 5120 surface faces, 3 break levels, 30 target, 4 robots/respawn, next planet |
+| `v2/public/game-rules.js` | shared rules: 20→80→320→1280 leaf hierarchy, per-actor clicks, level-4 all-red, reset, 30 clicks → 3-planet wrap, 4 robots target 30/respawn |
 | `v2/public/geometry.js` | icosahedron and subdivision geometry only |
 | `v2/public/renderer.js` | WebGL ray–sphere surface and geodesic arc edges; front surface only |
 | `v2/public/camera.js` | final four-step camera: 4.40 / 1.50 / 1.20 / 1.01 R, constant 50° FOV, 25% horizon, landing arm |
@@ -42,8 +42,8 @@ Browser (Pages playtest)                    Node v2 server (authoritative)
 
 **Contracts and current state**
 
-- New final triangle/actor rules are documented in [TRIANGLE_RULES.md](docs/TRIANGLE_RULES.md) and are
-  **not implemented yet**; the deployed build still uses the older 30-break/5120-face model.
+- Final triangle/actor rules are documented in [TRIANGLE_RULES.md](docs/TRIANGLE_RULES.md) and are
+  **implemented in the 2026-11-26 playtest build** (pending user visual approval).
 
 
 - Camera: [CAMERA_APPROVED.md](docs/CAMERA_APPROVED.md),
@@ -68,7 +68,7 @@ Browser (Pages playtest)                    Node v2 server (authoritative)
 | Rendering | Canvas 2D + WebGL | game planet: Canvas 2D; spherical-icosahedron reference viewer: WebGL ray–sphere shader |
 | Simulation | Node.js ≥20 | authoritative game server, HTTP + Server-Sent Events |
 | Persistence | JSON files + atomic rename | one file per planet, one registry file |
-| Tests | `node:test` | <!-- test-count:572 -->572<!-- /test-count --> tests, no test dependencies; ownership map in [docs/TEST_MAP.md](docs/TEST_MAP.md) |
+| Tests | `node:test` | <!-- test-count:575 -->575<!-- /test-count --> tests, no test dependencies; ownership map in [docs/TEST_MAP.md](docs/TEST_MAP.md) |
 | CI | GitHub Actions | Node 20 and 22, `npm test`; Node 22 GDS island build/contract/determinism; scheduled OPS-02 load/soak/chaos gate |
 | Deploy | `node server.js` behind any static/reverse proxy | Cloudflare tunnel used for the live build |
 
@@ -779,10 +779,10 @@ debounce 0.5 min + 5 min backup interval), RTO ≤ 15 min; retention is 7 daily 
 
 ## Testing
 
-The suite currently runs <!-- test-count:572 -->572<!-- /test-count --> tests. Behaviour ownership: [docs/TEST_MAP.md](docs/TEST_MAP.md).
+The suite currently runs <!-- test-count:575 -->575<!-- /test-count --> tests. Behaviour ownership: [docs/TEST_MAP.md](docs/TEST_MAP.md).
 
 ```bash
-npm test                 # node:test suite (572 tests)
+npm test                 # node:test suite (575 tests)
 npm run check:slo        # evaluate observability/slo.json against /api/metrics (0/1/2/3)
 npm run gate:load        # OPS-02 load/soak/chaos gate (ephemeral server, artifacts)
 npm run gate:perf        # PERF-01 client probe + 15% desktop baseline gate

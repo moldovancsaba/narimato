@@ -29,10 +29,9 @@ The detailed landing process is in [CAMERA_LANDING_PROCESS.md](CAMERA_LANDING_PR
 | 3 almost landed | **1.20 R** | **43.31°** | behind camera, not rendered | 25% |
 | 4 landed | **1.02 R radial** (revised 2026-11-26; double surface altitude) | re-solve | in front, exactly on surface | 25% |
 
-**Step-4 camera arm:** the camera sits **1.4% of the planet radius behind the gamer** along the
-backward surface tangent (approved value; safe range 1.2–1.7%). The radial height is **1.02 R** per
-the 2026-11-26 rule revision; the exact pitch/arm solution is an implementation item, not yet in the
-approved build.
+**Step-4 camera arm:** the playtest uses **2.8% R behind the gamer** with the doubled **1.02 R**
+radial height, so the gamer remains in the lower frame while the horizon stays at 25%. This is the
+2026-11-26 implemented value; it is pending user visual approval.
 This puts the gamer at roughly **75–80% down the screen**, on the surface, while the horizon stays
 at 25%.
 
