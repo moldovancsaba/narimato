@@ -2,7 +2,7 @@
  * NARIMATO v2 renderer — WebGL ray–sphere planet with analytic geodesic edges.
  * One full-screen pass, front surface only. No masks, crops or derived meshes.
  */
-import { subdividedIcosahedron } from './geometry.js?v=final6';
+import { subdividedIcosahedron } from './geometry.js?v=final7';
 
 const VERT = `attribute vec2 aPos; void main(){ gl_Position = vec4(aPos,0.0,1.0); }`;
 const FRAG = `
@@ -113,16 +113,9 @@ export class V2Renderer {
     gl.uniform3f(this.u.uRight, right.x, right.y, right.z);
     gl.uniform3f(this.u.uUp, up.x, up.y, up.z);
     gl.uniform3f(this.u.uFwd, forward.x, forward.y, forward.z);
-    const look = camera.landing || camera.axis || position;
-    const ranked = this.edges
-      .map(([a, b]) => ({ a, b, d: Math.hypot((a.x + b.x) / 2 - look.x, (a.y + b.y) / 2 - look.y, (a.z + b.z) / 2 - look.z) }))
-      .sort((p, q) => p.d - q.d)
-      .slice(0, 60);
+    // The active-leaf overlay owns the triangle mesh; keep the sphere shader clean.
     const A = this.edgeA, B = this.edgeB;
-    ranked.forEach((e, i) => {
-      A.set([e.a.x, e.a.y, e.a.z], i * 3);
-      B.set([e.b.x, e.b.y, e.b.z], i * 3);
-    });
+    A.fill(0); B.fill(0);
     gl.uniform3fv(this.u.uEdgeA, A);
     gl.uniform3fv(this.u.uEdgeB, B);
     gl.drawArrays(gl.TRIANGLES, 0, 3);

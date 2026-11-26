@@ -9,7 +9,7 @@ export const PHASES = Object.freeze([
   { id: 0, name: 'ORBIT', distance: 4.40, pitchDeg: 0.00 },
   { id: 1, name: 'CLOSER', distance: 1.50, pitchDeg: 28.68 },
   { id: 2, name: 'ALMOST LANDED', distance: 1.20, pitchDeg: 43.31 },
-  { id: 3, name: 'LANDED', distance: 1.01, pitchDeg: 68.77 },
+  { id: 3, name: 'LANDED', distance: 1.02, pitchDeg: 65.39 },
 ]);
 export const FOV_DEG = 50;
 export const HORIZON_FRACTION = 0.25;
