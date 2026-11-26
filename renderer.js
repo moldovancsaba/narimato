@@ -2,7 +2,7 @@
  * NARIMATO v2 renderer — WebGL ray–sphere planet with analytic geodesic edges.
  * One full-screen pass, front surface only. No masks, crops or derived meshes.
  */
-import { subdividedIcosahedron } from './geometry.js?v=final9';
+import { subdividedIcosahedron } from './geometry.js?v=final10';
 
 const VERT = `attribute vec2 aPos; void main(){ gl_Position = vec4(aPos,0.0,1.0); }`;
 const FRAG = `
@@ -13,6 +13,7 @@ uniform vec3 uPos;
 uniform vec3 uRight;
 uniform vec3 uUp;
 uniform vec3 uFwd;
+uniform vec3 uTint;
 uniform vec3 uEdgeA[60];
 uniform vec3 uEdgeB[60];
 float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453123); }
@@ -36,6 +37,7 @@ void main(){
   float light = max(0.0, dot(n, normalize(vec3(-0.4,0.6,0.7))));
   float shade = 0.18 + 0.52 * light;
   vec3 col = vec3(0.055, 0.24, 0.28) * shade + vec3(0.01,0.03,0.04);
+  if (length(uTint) > 0.001) col = mix(col, uTint, 0.55);
   // analytic geodesic edges of the base icosahedron
   float edgeWidth = max(0.00012, 2.0 * (length(O) - 1.0) / uFocal);
   for (int i = 0; i < 60; i++) {
@@ -79,7 +81,7 @@ export class V2Renderer {
     gl.enableVertexAttribArray(loc);
     gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
     this.u = {};
-    for (const name of ['uRes','uFocal','uPos','uRight','uUp','uFwd','uEdgeA','uEdgeB']) {
+    for (const name of ['uRes','uFocal','uPos','uRight','uUp','uFwd','uTint','uEdgeA','uEdgeB']) {
       this.u[name] = gl.getUniformLocation(program, name);
     }
     const { vertices, faces } = subdividedIcosahedron(4);
@@ -104,7 +106,7 @@ export class V2Renderer {
     this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
   }
 
-  render(camera, dpr = 1) {
+  render(camera, dpr = 1, tint = null) {
     const gl = this.gl;
     const { position, forward, up, right } = camera.basis;
     gl.uniform2f(this.u.uRes, this.canvas.width, this.canvas.height);
@@ -113,6 +115,7 @@ export class V2Renderer {
     gl.uniform3f(this.u.uRight, right.x, right.y, right.z);
     gl.uniform3f(this.u.uUp, up.x, up.y, up.z);
     gl.uniform3f(this.u.uFwd, forward.x, forward.y, forward.z);
+    gl.uniform3f(this.u.uTint, tint ? tint[0] : 0, tint ? tint[1] : 0, tint ? tint[2] : 0);
     // The active-leaf overlay owns the triangle mesh; keep the sphere shader clean.
     const A = this.edgeA, B = this.edgeB;
     A.fill(0); B.fill(0);
