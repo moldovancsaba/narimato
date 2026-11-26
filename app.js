@@ -1,8 +1,8 @@
-import { PHASES, LANDING, LANDING_ARM, phaseCamera } from './camera.js?v=final5';
-import { V2Renderer } from './renderer.js?v=final5';
-import { subdividedIcosahedron } from './geometry.js?v=final5';
-import { initialHeading, moveHeading, rotateFrame, turnHeading } from './controls.js?v=final5';
-import { collectTriangle, createGame, publicState, tickRobots } from './game-rules.js?v=final5';
+import { PHASES, LANDING, LANDING_ARM, phaseCamera } from './camera.js?v=final6';
+import { V2Renderer } from './renderer.js?v=final6';
+import { subdividedIcosahedron } from './geometry.js?v=final6';
+import { initialHeading, moveHeading, rotateFrame, turnHeading } from './controls.js?v=final6';
+import { collectTriangle, createGame, publicState, tickRobots } from './game-rules.js?v=final6';
 
 const planetCanvas = document.getElementById('planet-canvas');
 const gameCanvas = document.getElementById('game-canvas');
