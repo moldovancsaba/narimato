@@ -95,6 +95,10 @@ Resets do not remove actors or change planet ownership.
 
 ## 7. Rendering rules
 
+- **Renderer contract is mandatory:** the planet is a solid opaque sphere; active-leaf boundaries are
+  slerp-sampled great-circle arcs. Straight chords, flat chord-bounded facets and back-side/limb
+  projections are prohibited. See [RENDERER_TECHNOLOGY.md](RENDERER_TECHNOLOGY.md) and
+  [GUARDRAILS.md](GUARDRAILS.md).
 - Only the current active leaf triangles are rendered; children replace the parent.
 - Green = the current player has not clicked that triangle.
 - Red = the current player has clicked it; a level-4 triangle clicked by two distinct actors is red

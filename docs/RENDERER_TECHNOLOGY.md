@@ -5,6 +5,22 @@ This document records the core renderer/camera technology; the approved v2 camer
 the surface regressions. It is binding for renderer, camera and control work; see also
 [GUARDRAILS.md](GUARDRAILS.md) and [FIXES.md](FIXES.md).
 
+## 0. Binding rule — no exceptions
+
+This document is a **mandatory implementation contract**. Any code that contradicts it is a release
+blocker. Do not ship, merge or call fixed a renderer that violates it.
+
+**Mandatory:**
+
+- solid opaque sphere; active-leaf boundaries sampled with **slerp great-circle arcs**;
+- **no straight-chord triangle edges**;
+- **no flat chord-bounded facet fills**;
+- only front boundary samples (`x·P >= 1`) are stroked; back/limb vertices must not project into the disc;
+- triangle count equals active leaf count; no derived mesh/render-only tessellation.
+
+v2 player-facing green/red triangle colour is a spherical face colour, allowed only when the full
+boundary is front and sampled arcs form the fill boundary. Partial faces are arc-only; no fill.
+
 ## 1. One planet, one surface
 
 - One Canvas 2D renderer (`public/js/renderer.js`) draws the planet; no second renderer/canvas/HUD.
@@ -71,6 +87,8 @@ separate metres-per-world-unit scale model.
 | Derived surface mesh / cached globe | Separate geometry, broken arcs, user rejection |
 | Render-only triangle tessellation/LOD copies | Extra triangles not cells |
 | Flat coloured facet fills | Not a spherical arc surface; looks like 2-sided shell |
+| Straight-chord triangle edges | Non-spherical triangles; violates the mandatory arc rule |
+| Projecting limb/back vertices into the disc | Overlapping ghost triangles outside the visible surface |
 | Transparent/translucent sphere or fills | Shows back side/space through the planet |
 | Glass-dome FX, halo, rim shells | Hollow/2-sided edge look |
 | Back/other-side arcs stroked | Immediate leak |

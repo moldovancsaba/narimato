@@ -131,7 +131,7 @@ function leafData() {
 }
 function leafColor(leaf) {
   const clicked = leaf.globallyRed || (leaf.clickedBy || []).includes('player');
-  return clicked ? { fill: 'rgba(220,60,75,.55)', stroke: 'rgba(255,110,120,.95)' } : { fill: 'rgba(35,180,110,.38)', stroke: 'rgba(110,255,180,.9)' };
+  return clicked ? { fill: 'rgba(220,60,75,.55)', stroke: 'rgba(255,110,120,.95)', base: [0.62, 0.16, 0.20] } : { fill: 'rgba(35,180,110,.38)', stroke: 'rgba(110,255,180,.9)', base: [0.07, 0.38, 0.24] };
 }
 function containsPoint(leaf, q) {
   const verts = [leaf.a, leaf.b, leaf.c];
@@ -147,30 +147,66 @@ function pickLeaf(q) {
   return null;
 }
 
+function sampleArc(a, b, camera, segments = 12) {
+  const samples = [];
+  for (let k = 0; k <= segments; k += 1) {
+    const point = slerp(a, b, k / segments);
+    const front = dot(point, camera.origin) >= 1.0;
+    const p = camera.project(point);
+    samples.push({ front: front && p.visible && p.depth > 0, x: p.x, y: p.y });
+  }
+  return samples;
+}
+
 function drawLeaves(camera) {
   if (!state) return;
   const W = window.innerWidth, H = window.innerHeight;
   const leaves = leafData();
   const cx = camera.project(camera.axis).x, cy = camera.project(camera.axis).y;
   const R = Math.max(1, camera.screenRadius || 0);
-  gctx.save(); gctx.beginPath(); gctx.arc(cx, cy, R, 0, Math.PI * 2); gctx.clip();
-  if (surfaceActive()) {
-    const under = pickLeaf(playerDir) || leaves[0];
-    if (under) {
-      const c = leafColor(under);
-      gctx.fillStyle = c.fill;
-      gctx.fillRect(0, H * 0.25, W, H * 0.75);
-    }
-  }
+  gctx.save();
+  gctx.beginPath();
+  gctx.arc(cx, cy, R, 0, Math.PI * 2);
+  gctx.clip();
   for (const leaf of leaves) {
     if (dot(leaf.center, camera.origin) <= 1.0) continue;
-    const pts = [leaf.a, leaf.b, leaf.c].map((v) => camera.project(v));
-    if (pts.some((p) => !p.visible || p.depth <= 0)) continue;
-    const xs = pts.map((p) => p.x), ys = pts.map((p) => p.y);
-    if (Math.max(...xs) < 0 || Math.min(...xs) > W || Math.max(...ys) < 0 || Math.min(...ys) > H) continue;
+    const arcs = [
+      sampleArc(leaf.a, leaf.b, camera),
+      sampleArc(leaf.b, leaf.c, camera),
+      sampleArc(leaf.c, leaf.a, camera),
+    ];
+    const allFront = arcs.every((arc) => arc.every((p) => p.front));
     const col = leafColor(leaf);
-    gctx.beginPath(); gctx.moveTo(pts[0].x, pts[0].y); gctx.lineTo(pts[1].x, pts[1].y); gctx.lineTo(pts[2].x, pts[2].y); gctx.closePath();
-    gctx.fillStyle = col.fill; gctx.fill(); gctx.strokeStyle = col.stroke; gctx.lineWidth = 1.6; gctx.stroke();
+    if (allFront) {
+      // Filled spherical face: boundary is the sampled great-circle arc path.
+      gctx.beginPath();
+      let first = true;
+      for (const arc of arcs) {
+        for (let i = 0; i < arc.length; i += 1) {
+          if (!first && i === 0) continue; // shared vertices
+          const p = arc[i];
+          if (first) { gctx.moveTo(p.x, p.y); first = false; } else gctx.lineTo(p.x, p.y);
+        }
+      }
+      gctx.closePath();
+      gctx.fillStyle = col.fill;
+      gctx.fill();
+      gctx.strokeStyle = col.stroke;
+      gctx.lineWidth = 1.8;
+      gctx.stroke();
+    } else {
+      // Near the limb only original front boundary samples are stroked; no chord, no fill.
+      for (const arc of arcs) {
+        let drawing = false;
+        for (let i = 0; i < arc.length; i += 1) {
+          const p = arc[i];
+          if (!p.front) { drawing = false; continue; }
+          if (!drawing) { gctx.beginPath(); gctx.moveTo(p.x, p.y); drawing = true; }
+          else gctx.lineTo(p.x, p.y);
+        }
+        if (drawing) { gctx.strokeStyle = col.stroke; gctx.lineWidth = 1.5; gctx.stroke(); }
+      }
+    }
   }
   gctx.restore();
 }
@@ -332,7 +368,12 @@ function frame() {
   if (t >= 1) step = targetStep;
   if (surfaceActive()) { ensureLeaf(); stepSurface(dt); }
   const camera = currentCamera();
-  renderer.render(camera, renderer.dpr || 1);
+  let tint = null;
+  if (surfaceActive() && state) {
+    const under = pickLeaf(playerDir);
+    if (under) tint = leafColor(under).base;
+  }
+  renderer.render(camera, renderer.dpr || 1, tint);
   gctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
   drawLeaves(camera);
   drawGamer(camera);

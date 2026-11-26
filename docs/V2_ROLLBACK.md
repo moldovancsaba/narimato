@@ -48,6 +48,7 @@ The Pages build runs the same rules with a browser-state fallback (no Node API);
 | Phase 6 | non-Euler pole-free quaternion movement | [v2-phase-6](https://github.com/moldovancsaba/narimato/tree/v2-phase-6) | `git checkout v2-phase-6` |
 | Phase 7 | pointer point-follow + automated camera acceptance + denser surface | [v2-phase-7](https://github.com/moldovancsaba/narimato/tree/v2-phase-7) | `git checkout v2-phase-7` |
 | Phase 8 | final triangle/actor hierarchy, surface Bézier, 1.02 R camera | [v2-phase-8](https://github.com/moldovancsaba/narimato/tree/v2-phase-8) | `git checkout v2-phase-8` |
+| Phase 9 | mandatory slerp arc renderer restored + higher surface camera/mouse dolly | [v2-phase-9](https://github.com/moldovancsaba/narimato/tree/v2-phase-9) | `git checkout v2-phase-9` |
 | Live v2 | accepted v2 product | [v2-live](https://github.com/moldovancsaba/narimato/tree/v2-live) | `git checkout v2-live` |
 | Approved playtest | user-approved 2026-11-26 build `e7f65e5` | [v2-approved-2026-11-26](https://github.com/moldovancsaba/narimato/tree/v2-approved-2026-11-26) | `git checkout v2-approved-2026-11-26` |
 | Legacy | old game, retired, preserved for rollback | [legacy-v3.58.0-retired](https://github.com/moldovancsaba/narimato/tree/legacy-v3.58.0-retired) | `git checkout legacy-v3.58.0-retired` + `npm run start:legacy` |

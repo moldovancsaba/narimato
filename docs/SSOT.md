@@ -63,7 +63,10 @@ Canonical issue standard: [sovereignsquad/general-design-system#81](https://gith
    a planning snapshot, recomputed when a blocker closes or reopens.
 8. **Docs link issues; issues link docs.** A doc must not restate board status. When a durable
    decision changes, update the doc and the related issue together.
-9. **Working behaviour is protected.** Continue from the confirmed-working system; never replace
+9. **Documentation is binding.** No implementation may contradict the approved contracts; if a request
+   changes a contract, update the owning document and get approval before code. Renderer arc rules are
+   non-negotiable.
+10. **Working behaviour is protected.** Continue from the confirmed-working system; never replace
    mouse/camera/planet behaviour, add a second scene or derive new geometry to satisfy a nearby
    request. See [GUARDRAILS.md](GUARDRAILS.md).
 
