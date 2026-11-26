@@ -82,7 +82,7 @@ export class V2Renderer {
     for (const name of ['uRes','uFocal','uPos','uRight','uUp','uFwd','uEdgeA','uEdgeB']) {
       this.u[name] = gl.getUniformLocation(program, name);
     }
-    const { vertices, faces } = subdividedIcosahedron(3);
+    const { vertices, faces } = subdividedIcosahedron(4);
     const seen = new Set();
     const edges = [];
     for (const [a, b, c] of faces) {
