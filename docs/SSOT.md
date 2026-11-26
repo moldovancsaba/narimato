@@ -29,6 +29,7 @@ Canonical issue standard: [sovereignsquad/general-design-system#81](https://gith
 | Game v2 implementation + retirement plan | [PLAN_GAME_V2.md](PLAN_GAME_V2.md) |
 | **v2 current status + public test guide** | [V2_STATUS.md](V2_STATUS.md) |
 | v2 player guide + first-load experience | [PLAYER_GUIDE.md](PLAYER_GUIDE.md) |
+| Final triangle/actor/planet rules | [TRIANGLE_RULES.md](TRIANGLE_RULES.md) |
 | User approval ledger (exact build + scope) | [APPROVALS.md](APPROVALS.md) |
 | v2 architecture (active product) | [ARCHITECTURE.md](../ARCHITECTURE.md) |
 | v2 phase links + rollback (every phase) | [V2_ROLLBACK.md](V2_ROLLBACK.md) |

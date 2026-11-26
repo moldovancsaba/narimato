@@ -20,10 +20,11 @@ One camera. Constant 50° FOV. No mask, no cut, no second camera, no geometry ch
 | 1 far orbit | **4.40 R** | 0° | behind camera, not rendered | whole planet, top at 25%, centre at 50%, 25% space above |
 | 2 closer | **1.50 R** | **28.68°** | behind camera, not rendered | horizon at 25%, surface fills below, no gamer |
 | 3 almost landed | **1.20 R** | **43.31°** | behind camera, not rendered | much closer, horizon still 25%, no gamer |
-| 4 landed | **1.01 R radial** | **68.77°** | in front, on the surface | horizon at 25%, gamer visible around 75–80% down, surface triangles |
+| 4 landed | **1.02 R radial** (revised 2026-11-26; double altitude) | re-solve | in front, on the surface | horizon at 25%, gamer visible, surface triangles |
 
 **Step-4 camera arm:** **1.4% R** behind the gamer along the backward tangent. Approved range
-1.2–1.7% R. The radial height stays 1.01 R.
+1.2–1.7% R. The radial height is **1.02 R** under the 2026-11-26 revision; exact pitch/arm
+re-solve is pending implementation.
 
 ## 3. Why Step 1 is 4.40 R
 

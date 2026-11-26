@@ -1,21 +1,26 @@
 # NARIMATO v2 — player guide and first-load experience
 
-**Status: describes the user-approved v2 playtest build (2026-11-26).** This is the plain-English
-game experience. Technical contracts live in the camera/control/game documents.
+**Status: final rules confirmed 2026-11-26; current playtest implements the older rules. This guide
+describes the target player experience. Detailed rules: [TRIANGLE_RULES.md](TRIANGLE_RULES.md).**
 
 ## 1. The game in one sentence
 
-You are on a spherical planet: collect 30 surface triangles, then leave for the next planet.
+You are on a spherical planet: collect 30 click-harvests, triangles split through four levels, then you leave for the next of 3 planets.
 
 ## 2. The strategy — the whole loop
 
+- The planet starts with **20 large triangles**; each one can split into **4 smaller** triangles after two different actors click it, down to **1,280** level-4 triangles.
+- The player, robots and (future) other gamers all click once per triangle. Colour is personal: red means **you** clicked it; green means you may click it.
+- Level 4 faces do not split; after two clicks they stay red for everybody.
+- Robots have the same 30 target and respawn on the same planet.
+
 1. Start on a planet.
 2. The planet's **surface triangles are the collectible** — there are no separate pickups.
-3. Collect **30 triangle breaks**.
+3. Collect **30 successful clicks** by clicking triangles in orbit or walking into their centres on the surface.
 4. **Four robots** also collect. They **do not block you**. When a robot reaches its target it
    respawns as a new robot.
-5. At **30/30** you leave that planet and arrive at the next one; progress resets to 0/30.
-6. Repeat.
+5. At **30/30** you leave for the next planet; there are **3 planets**, wrapping 3 → 1; arrival starts a fresh round.
+6. A planet resets to 20 fresh level-1 triangles only when **no click is possible** — all remaining leaves are level 4 and red for everybody.
 
 There is **no timer, no failure, no enemies, no story interruption, no mission, no score beyond
 30/30 and the planet number, and no audio**. The strategy is simply to choose how to collect:
