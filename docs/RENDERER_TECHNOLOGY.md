@@ -33,6 +33,18 @@ boundary is front and sampled arcs form the fill boundary. Partial faces are arc
   coloured triangles.
 - Surface is front-only: no hidden hemisphere, no back-face geometry, no translucent covering.
 
+## 1a. Active-leaf face colour
+
+- Every visible active leaf must show its viewer colour (green when the viewer has not clicked it,
+  red when the viewer has clicked it; level-4 globally red).
+- The colour region must be the **visible spherical region of the leaf**, bounded by slerp-sampled
+  great-circle arcs. Partial faces near the limb must be clipped to the front tangent hemisphere and
+  filled; they must not be left as dark holes.
+- Never fill with straight-chord polygons. Never project back/limb vertices into the disc.
+- If the CPU cannot clip correctly, use the ray–sphere shader to determine the leaf/colour per pixel;
+  the triangle set and arc contract remain unchanged.
+- The only dark area is real sky outside the sphere silhouette.
+
 ## 2. Silhouette and visibility
 
 - The clip is the **projected silhouette** of the sphere for the active camera (screen-centred circle

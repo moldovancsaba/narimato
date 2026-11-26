@@ -68,19 +68,23 @@ Resets do not remove actors or change planet ownership.
 ## 5. Surface movement
 
 - The gamer moves **triangle centre to triangle centre**, using the current active leaf triangles.
-- Movement graph: each active triangle has 3 edge-neighbours.
-- Up/forward: step to the neighbouring centre in the facing direction.
-- Down/back: step to the centre behind.
-- Left/right: rotate to the next neighbouring centre around the current triangle
-  (3 directions, 120° increments).
+- Neighbours are **edge-contact only**; see [SURFACE_ADJACENCY.md](SURFACE_ADJACENCY.md).
+- A conforming triangle has **3 edge-neighbours**; split sides can give multiple child contacts
+  (derived max **24** for a level-1 triangle bordered by level-4 children). The previous triangle is
+  a valid neighbour; no exclusion and no turn limit.
+- Left/right rotate only to the next possible edge-neighbour centre; no fixed 90°/step angle.
+- Forward moves to the closest valid centre in front; on arrival the camera faces the closest next
+  centre; ties go to the right. Backward moves to the closest centre behind; ties go left-behind.
 - Every move or rotation is **0.5 seconds**, regardless of triangle size.
 - Paths are **spherical quadratic Bézier** curves between the two centres; rotations use the same
   0.5 s eased quaternion interpolation.
-- The next input is accepted only when the previous move/rotation finishes. The implementation may
-  buffer one input.
-- On arrival at a centre, if the triangle is green for the player it records one click for the
-  player; if it is red for the player, movement still happens and no click is recorded.
+- The next input is accepted only after the previous move/rotation finishes; one input may be
+  buffered.
+- On arrival at a centre, if the triangle is green for the player it records one click; if red for
+  the player, movement still happens and no click is recorded.
 - When a triangle splits or the planet resets, the movement graph updates to the new active leaves.
+- The current four-direction/random-target implementation is wrong; see
+  [V2_REGRESSION_FIX_PLAN.md](V2_REGRESSION_FIX_PLAN.md).
 
 ## 6. Surface camera and mouse
 
