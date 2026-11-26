@@ -25,6 +25,10 @@ tests or a plan are not approval.
   robots tick/respawn; silent minimal HUD; next planet.
 - Current online Pages browser-state build is accepted for playtesting.
 
+**New rules confirmed but not delivered:** the 2026-11-26 triangle/actor/surface rules in
+[TRIANGLE_RULES.md](TRIANGLE_RULES.md) are confirmed requirements, not implemented in this approved
+build; they are tracked as implementation work.
+
 **Not covered by this approval**
 
 - Production server-authoritative public hosting (#140).

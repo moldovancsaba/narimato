@@ -42,6 +42,10 @@ Browser (Pages playtest)                    Node v2 server (authoritative)
 
 **Contracts and current state**
 
+- New final triangle/actor rules are documented in [TRIANGLE_RULES.md](docs/TRIANGLE_RULES.md) and are
+  **not implemented yet**; the deployed build still uses the older 30-break/5120-face model.
+
+
 - Camera: [CAMERA_APPROVED.md](docs/CAMERA_APPROVED.md),
   [CAMERA_LANDING_PROCESS.md](docs/CAMERA_LANDING_PROCESS.md).
 - Controls: [CONTROLS_APPROVED.md](docs/CONTROLS_APPROVED.md). Movement is non-Euler quaternion

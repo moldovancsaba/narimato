@@ -4,6 +4,15 @@
 final6, 572/572 tests. Approval scope and exclusions: [APPROVALS.md](APPROVALS.md). Remaining work is
 production hosting, GDS/a11y release gate, 3D models and optional literal pointer/triangle refinements.
 
+## 0. Final rules confirmed — not yet implemented
+
+On 2026-11-26 the user confirmed the final triangle/actor/planet rules in
+[TRIANGLE_RULES.md](TRIANGLE_RULES.md): 20→80→320→1280 hierarchy, per-actor click/colour, level-4
+stays red for all, reset when no click is possible, 30 clicks → next of 3 planets, robots target 30
+and respawn same planet, centre-to-centre 0.5 s Bézier surface movement, surface camera 1.02 R.
+**The deployed approved build still implements the older rules.** Implementation is tracked on the
+board; this status page will not call the new rules delivered until they are.
+
 ## 1. Public test build
 
 - **Play online:** https://moldovancsaba.github.io/narimato/
@@ -99,6 +108,7 @@ Remaining, not covered by the approval:
 - [V2_ROLLBACK.md](V2_ROLLBACK.md) — phase tags/releases, public phase pages, commands.
 - [ARCHITECTURE.md](../ARCHITECTURE.md) — v2 architecture.
 - [SSOT.md](SSOT.md), [GAME_V2.md](GAME_V2.md), [PLAN_GAME_V2.md](PLAN_GAME_V2.md).
+- [TRIANGLE_RULES.md](TRIANGLE_RULES.md), [PLAYER_GUIDE.md](PLAYER_GUIDE.md).
 - [CONTROLS_APPROVED.md](CONTROLS_APPROVED.md), [CAMERA_APPROVED.md](CAMERA_APPROVED.md),
   [CAMERA_LANDING_PROCESS.md](CAMERA_LANDING_PROCESS.md).
 - [RELEASE_EVIDENCE.md](RELEASE_EVIDENCE.md).
