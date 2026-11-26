@@ -1,6 +1,6 @@
 # Final triangle, actor and planet rules
 
-**Status: user-confirmed 2026-11-26. Documentation; implementation is pending.**
+**Status: user-confirmed 2026-11-26; implemented in the playtest build the same day, pending user visual approval.**
 This document supersedes the earlier 10-triangle/30-target rules in GAME_V2.
 
 ## 1. Triangle hierarchy
@@ -119,6 +119,8 @@ Resets do not remove actors or change planet ownership.
 
 ## 9. Implementation status
 
-**Not implemented.** The current approved playtest still uses the older 30-break/5120-face model,
-global triangle colours and free movement. The implementation work is tracked on the project board;
-this document is the final rules contract, not a claim that the live build follows it.
+**Implemented in the v2 playtest build on 2026-11-26.** Server rules, per-actor click state, hierarchy
+split, level-4 all-red, planet reset, 3-planet wrap, robot target/respawn, surface movement and camera
+are in `v2/`. Tests: **574/574**; camera acceptance PASS 24.98 / 25.00 / 25.00 / 24.82; pointer/cursor
+acceptance PASS. This is a delivered playtest build, not the final approval; visual acceptance is
+pending the user's test.

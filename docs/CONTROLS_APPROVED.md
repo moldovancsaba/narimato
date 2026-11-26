@@ -112,7 +112,8 @@ Both WASD and the cursor keys produce the same intents:
 - Walking into a centre records one click only when the triangle is green for the player.
 - **Mouse acts only in orbit.** Pointer drag, wheel and pinch are disabled on the surface; surface
   control is keyboard-only.
-- The current approved playtest uses the older free surface movement; this is an implementation item.
+- The new centre-to-centre 0.5 s Bézier movement and mouse-orbit-only rule are implemented in the
+  2026-11-26 playtest build; they are pending user visual approval.
 
 ## 6. Relationship to the camera contract
 

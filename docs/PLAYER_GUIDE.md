@@ -1,7 +1,7 @@
 # NARIMATO v2 — player guide and first-load experience
 
-**Status: final rules confirmed 2026-11-26; current playtest implements the older rules. This guide
-describes the target player experience. Detailed rules: [TRIANGLE_RULES.md](TRIANGLE_RULES.md).**
+**Status: final rules implemented in the 2026-11-26 playtest build; pending user visual approval.**
+Detailed rules: [TRIANGLE_RULES.md](TRIANGLE_RULES.md).
 
 ## 1. The game in one sentence
 

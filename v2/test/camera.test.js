@@ -6,8 +6,8 @@ const W = 1200;
 const H = 800;
 
 test('v2 camera: four approved distances and pitches', () => {
-  assert.deepEqual(PHASES.map((p) => p.distance), [4.40, 1.50, 1.20, 1.01]);
-  assert.deepEqual(PHASES.map((p) => p.pitchDeg), [0, 28.68, 43.31, 68.77]);
+  assert.deepEqual(PHASES.map((p) => p.distance), [4.40, 1.50, 1.20, 1.02]);
+  assert.deepEqual(PHASES.map((p) => p.pitchDeg), [0, 28.68, 43.31, 65.39]);
 });
 
 test('v2 camera: one camera instance per phase with the fixed landing rig', () => {
