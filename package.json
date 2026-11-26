@@ -47,7 +47,9 @@
     "cdn:preflight": "node scripts/cdn-preflight.mjs",
     "test:v2": "node --test v2/test/*.test.js",
     "start:v2": "node v2/server.js",
-    "start:legacy": "node server.js"
+    "start:legacy": "node server.js",
+    "test:v2:camera": "node scripts/acceptance/v2-camera-horizon.mjs",
+    "test:v2:pointer": "node scripts/acceptance/v2-pointer.mjs"
   },
   "engines": {
     "node": ">=20"

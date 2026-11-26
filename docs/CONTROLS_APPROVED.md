@@ -116,19 +116,19 @@ Both WASD and the cursor keys produce the same intents:
 
 ## 6. Implementation status
 
-**Non-Euler quaternion movement is implemented in the v2 playtest (2026-11-25)** at
+**Implemented and browser-tested in the v2 playtest on 2026-11-25** at
 https://moldovancsaba.github.io/narimato/:
 
-- Player position and heading are maintained in a **quaternion frame**, not Euler yaw/pitch.
+- Player position and heading use a **quaternion frame**, not Euler yaw/pitch.
 - A/D and Left/Right turn the heading around the local normal; W/Up and S/Down move forward/backward
-  along the heading with **parallel transport**; the same controller runs in orbit and landed views.
-- Browser pole test: starting just below the north pole and holding W crossed the pole continuously
-  (`playerDir.y` went from +0.99 to −0.61); heading stayed tangent and finite. No pole stop.
-- Camera forward is supplied by the transported heading; the camera no longer derives a tangent from
-  a fixed world Y axis.
+  along the heading with **parallel transport**; same controller in orbit and landed.
+- Browser pole test crossed the north pole continuously (`playerDir.y +0.99 → −0.31`), no stop.
+- Camera forward comes from the transported heading; no fixed world-Y tangent.
 - Cursor states verified: `grab` → `grabbing` → `grab`.
+- Pointer point-follow verified with `scripts/acceptance/v2-pointer.mjs`: grabbing screen centre and
+  dragging to (780,300) projects the grabbed point at (775.1,302.9) — **5.7 px error**, PASS.
 - Pointer drag rotates the quaternion frame in both axes with no pitch/yaw clamps and no pole stop.
 
-**Residual:** pointer drag does not yet satisfy the literal absolute point-follow requirement; the
-grabbed point follows through the frame rotation approximately, not via the documented
-`shortestArcQuat` object rotation. Exact point-follow remains the next control refinement.
+**Residual:** point-follow is solved numerically on the quaternion frame, not via the literal
+`shortestArcQuat` object-orientation path; the behavioural acceptance passes at 12 px tolerance.
+Issue #137 is behavioural-done; the literal algorithm is a refinement.

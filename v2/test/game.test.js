@@ -2,10 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { BREAK_LEVELS, PLAYER_TARGET, ROBOT_COUNT, ROBOT_TARGET, collectTriangle, createGame, tickRobots } from '../server/game.js';
 
-test('v2 game: planet starts with 1280 surface triangles, 3 levels and 4 robots', () => {
+test('v2 game: planet starts with 5120 surface triangles, 3 levels and 4 robots', () => {
   const game = createGame();
   assert.equal(game.planetIndex, 1);
-  assert.equal(game.triangles.length, 1280);
+  assert.equal(game.triangles.length, 5120);
   assert.equal(game.triangles[0].level, BREAK_LEVELS);
   assert.equal(game.robots.length, ROBOT_COUNT);
   assert.equal(game.player.target, PLAYER_TARGET);

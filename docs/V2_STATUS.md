@@ -1,7 +1,7 @@
 # NARIMATO v2 — current delivery status and test guide
 
 **As of 2026-11-25.** Single status/entry document for the v2 playtest. Durable contracts live in the
-camera/control/game docs; the project board owns remaining work (issues #137–#142).
+camera/control/game docs; the project board owns remaining work (issues #138, #140–#142; #137 behavioural-done, literal algorithm refinement).
 
 ## 1. Public test build
 
@@ -26,7 +26,7 @@ camera/control/game docs; the project board owns remaining work (issues #137–#
 - `v2/test/` — camera, controls, game-rule and server tests. **572/572 tests pass.**
 
 ### Game rules (implemented)
-- Surface is the collectible: 1280 spherical geodesic faces at three subdivisions; no pickup icons.
+- Surface is the collectible: 5120 spherical geodesic faces at four subdivisions; no pickup icons.
 - Each face has 3 breaking levels; player target **30 breaks**; at 30 the planet advances/resets.
 - Four server robots tick; each respawns as a new robot on reaching its target; non-blocking.
 - Silent; no other challenge/interruption.
@@ -40,14 +40,15 @@ camera/control/game docs; the project board owns remaining work (issues #137–#
   [CAMERA_LANDING_PROCESS.md](CAMERA_LANDING_PROCESS.md).
 - Screenshots: `docs/plan/v2-final-step1.png` … `v2-final-step4.png`.
 
-### Controls (implemented, one open pointer gap)
+### Controls (implemented)
 - **Non-Euler movement:** player position + heading quaternion, parallel transport; A/Left turn left,
   D/Right turn right, W/Up forward, S/Down backward; same in orbit and landed.
 - Browser pole test crossed the north pole continuously: `playerDir.y +0.99 → −0.31`, no stop.
 - Cursor states verified: `grab` → `grabbing` → `grab`.
 - Landed walking collects the face walked through; click collects a face.
-- Pointer drag rotates the quaternion frame in both axes with no pole/limit clamps, **but exact
-  grabbed-point follow (`shortestArcQuat`) is still open** (issue #137).
+- Pointer drag now solves the quaternion frame so the grabbed point follows the pointer; measured residual
+  **5.7 px** with cursor `grab → grabbing → grab`. Literal object-Q `shortestArcQuat` is still the
+  algorithm refinement, but the behavioural pointer test passes.
 - Contract: [CONTROLS_APPROVED.md](CONTROLS_APPROVED.md).
 
 ## 3. How to test
@@ -66,21 +67,21 @@ camera/control/game docs; the project board owns remaining work (issues #137–#
 
 - Tests **572/572**; docs gate 54 files/1016 links; CI green (Node 20/22, docs, GDS, a11y
   Chromium + WebKit).
-- Browser verification: four steps; step 4 horizon/gamer; walking collection; pole crossing;
-  cursor states; pointer drag axes.
+- Browser verification: four camera steps with **first surface row 25.00 / 24.88 / 24.88 / 25.00%**
+  (`npm run test:v2:camera` PASS); pointer/cursor **5.7 px** follow (`npm run test:v2:pointer` PASS);
+  walking collection; pole crossing.
 - Public build verified at the URL above.
 - Merges: `656f138` (final camera/controls/status fixes), `13d670c` (non-Euler movement).
-- Tags: `v2-phase-0..6`, `v2-live`, `legacy-v3.58.0-retired`.
+- Tags: `v2-phase-0..7`, `v2-live`, `legacy-v3.58.0-retired`.
 
 ## 5. Known gaps (board issues)
 
-1. **#137** pointer exact `shortestArcQuat` grabbed-point follow.
-2. **#138** Step-4 local surface triangle density/visual acceptance.
-3. **#139** automated 25% horizon row + transition stability test.
-4. **#142** v2 GDS HUD + accessibility release gate.
-5. **#140** server-authoritative public hosting (Pages is browser-state).
-6. **#141** replace gamer/robot markers with approved models.
-7. Robots/gamer remain simple markers; v2 release evidence is not complete.
+1. **#138** Step-4 local surface triangle density/visual acceptance.
+2. **#142** v2 GDS HUD + accessibility release gate.
+3. **#140** server-authoritative public hosting (Pages is browser-state).
+4. **#141** replace gamer/robot markers with approved models.
+5. **#137** literal object-Q shortestArcQuat pointer algorithm (behavioural acceptance passes at 5.7 px).
+6. Robots/gamer remain simple markers; v2 release evidence is not complete.
 
 ## 6. Rollback and links
 

@@ -32,7 +32,7 @@ Browser (Pages playtest)                    Node v2 server (authoritative)
 |---|---|
 | `v2/server.js` | zero-dependency HTTP server, static files, API and state |
 | `v2/server/game.js` | server-authoritative game wrapper |
-| `v2/public/game-rules.js` | shared rules: 1280 surface faces, 3 break levels, 30 target, 4 robots/respawn, next planet |
+| `v2/public/game-rules.js` | shared rules: 5120 surface faces, 3 break levels, 30 target, 4 robots/respawn, next planet |
 | `v2/public/geometry.js` | icosahedron and subdivision geometry only |
 | `v2/public/renderer.js` | WebGL ray–sphere surface and geodesic arc edges; front surface only |
 | `v2/public/camera.js` | final four-step camera: 4.40 / 1.50 / 1.20 / 1.01 R, constant 50° FOV, 25% horizon, landing arm |
