@@ -16,15 +16,38 @@ set is also non-conforming because robots split some faces; the renderer has no 
 clipping. Commit `4dcc083` introduced the `allFront` fill gate while restoring arcs; commit
 `23e6cac` introduced the mixed-level active-leaf rendering.
 
+**Contract status.** The contradictory sentence “partial faces are arc-only; no fill” was removed
+from RENDERER_TECHNOLOGY. That behaviour is now explicitly prohibited; partial visible leaves must be
+filled.
+
 **Required fix.**
 
 - For every active leaf, fill its **visible spherical region**, bounded only by slerp-sampled
   great-circle arcs; clip the region to the front tangent hemisphere and include the limb
   intersection arc where needed.
 - No flat chord fill, no back/limb vertex projection, no dark holes from skipped partial faces.
-- Alternatively move active-leaf colour into the ray–sphere shader with per-leaf IDs/colours; the
-  arc boundary contract still applies.
 - No render-only mesh or triangle-count change.
+
+**Implementation solution (approved shape, no code yet).**
+
+1. Represent each active leaf as a spherical polygon with its three great-circle boundary arcs.
+2. Clip that polygon against the front hemisphere `x·P >= 1`:
+   - keep the leaf-edge arc samples where `x·P >= 1`;
+   - find the exact arc/tangent-plane intersection points;
+   - add the limb arc between those intersection points when the leaf crosses the horizon.
+3. Sample the resulting visible boundary with slerp, project the samples, and fill the screen-space
+   path. Every path segment between consecutive samples is short enough that it is an arc
+   approximation, never a long straight chord.
+4. Draw the same sampled boundary as the arc stroke.
+5. Fill **all** visible active leaves; never gate the fill on `allFront`.
+6. If CPU clipping cannot meet the visual quality/performance bar, render active-leaf colour in the
+   ray–sphere shader: determine the active leaf ID per pixel, sample its viewer colour from a texture,
+   and keep the arc overlay. No extra mesh; triangle count still equals active-leaf count.
+7. The only permitted dark area is real sky outside the sphere silhouette.
+
+**Acceptance.** Real orbit/surface screenshots show every visible active leaf coloured green/red
+within its arc boundaries, including leaves cut by the limb; no dark holes inside the silhouette;
+no flat chords or overlaps; all existing tests and acceptance remain green.
 
 **Acceptance.** Real orbit/surface screenshots show all visible active leaves coloured green/red
 within their arc boundaries; the only dark area is real sky; no flat chords or overlaps.
