@@ -31,6 +31,10 @@ Before touching code:
   if the boundary is not fully in front, stroke only the front arc segments and do not fill.
 - Only boundary samples in front of the tangent plane `x·P = 1` are stroked; never project
   back-side/limb vertices into the disc.
+- **Every visible active leaf must be filled** with its viewer colour over its visible spherical
+  region, including partial faces clipped to the front hemisphere. Leaving a partial limb leaf
+  arc-only or leaving a non-sky dark area is strictly prohibited and is a release blocker.
+- An `allFront`-only fill gate, flat chord fills and back/limb projections are prohibited.
 - Triangle count equals active leaf count; no derived mesh, no render-only tessellation.
 
 A documented contract can only be changed by updating the document and receiving approval. Tests,

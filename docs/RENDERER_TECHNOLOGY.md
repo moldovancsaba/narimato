@@ -18,8 +18,11 @@ blocker. Do not ship, merge or call fixed a renderer that violates it.
 - only front boundary samples (`x·P >= 1`) are stroked; back/limb vertices must not project into the disc;
 - triangle count equals active leaf count; no derived mesh/render-only tessellation.
 
-v2 player-facing green/red triangle colour is a spherical face colour, allowed only when the full
-boundary is front and sampled arcs form the fill boundary. Partial faces are arc-only; no fill.
+v2 active-leaf colour is **mandatory on every visible active leaf**. The visible spherical region
+must be clipped to the front tangent hemisphere and filled with the leaf's viewer colour. Leaving a
+partial limb leaf **arc-only**, or leaving any non-sky area dark/uncoloured, is **strictly prohibited
+and a release blocker**. Flat chord fills remain prohibited: the fill boundary must be slerp-sampled
+great-circle arcs.
 
 ## 1. One planet, one surface
 
@@ -44,6 +47,17 @@ boundary is front and sampled arcs form the fill boundary. Partial faces are arc
 - If the CPU cannot clip correctly, use the ray–sphere shader to determine the leaf/colour per pixel;
   the triangle set and arc contract remain unchanged.
 - The only dark area is real sky outside the sphere silhouette.
+
+**Strictly prohibited:**
+
+- skipping a partial limb leaf because its full boundary is not front;
+- drawing a partial active leaf as arc-only;
+- leaving the solid sphere base visible where an active leaf exists;
+- an `allFront`-only fill gate;
+- flat chord or flat facet fills;
+- projecting back/limb vertices into the disc;
+- calling the first-screenshot state acceptable.
+
 
 ## 2. Silhouette and visibility
 
@@ -100,6 +114,8 @@ separate metres-per-world-unit scale model.
 | Render-only triangle tessellation/LOD copies | Extra triangles not cells |
 | Flat coloured facet fills | Not a spherical arc surface; looks like 2-sided shell |
 | Straight-chord triangle edges | Non-spherical triangles; violates the mandatory arc rule |
+| Partial limb leaf left arc-only / dark hole | Violates mandatory visible-leaf fill; first-screenshot regression |
+| `allFront`-only fill gate | Skips every face that crosses the limb; prohibited |
 | Projecting limb/back vertices into the disc | Overlapping ghost triangles outside the visible surface |
 | Transparent/translucent sphere or fills | Shows back side/space through the planet |
 | Glass-dome FX, halo, rim shells | Hollow/2-sided edge look |
