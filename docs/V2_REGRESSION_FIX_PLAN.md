@@ -154,3 +154,53 @@ neighbours).
 - No second camera/input path.
 - No code change that contradicts docs; if a doc is wrong, fix the doc first with approval.
 - Do not call fixed without real browser evidence for each R1–R5.
+
+## Implementation phases — approved working plan
+
+The phase order below is the plan to execute. Do not skip acceptance gates.
+
+### Phase 0 — Contracts (complete)
+- Contracts merged: renderer strict prohibition, active-leaf fill solution, surface adjacency,
+  orbit arrows/snap, discrete surface steps.
+- No game code changed.
+- Exit: docs/a11y/CI green; board issues ready.
+
+### Phase 1 — R1 renderer active-leaf fill — #162
+- Replace the `allFront` gate with front-hemisphere clipping of each active leaf's spherical polygon.
+- Intersect each leaf edge with the tangent plane `x·P = 1`; close the visible polygon with the limb arc.
+- Sample the final boundary with slerp; fill every visible leaf; stroke the same arc boundary.
+- Fallback only if needed: per-pixel active-leaf colour in the ray–sphere shader.
+- Exit: first screenshot fixed; every visible leaf coloured; no non-sky dark holes; no flat chords;
+  real orbit/surface screenshots.
+
+### Phase 2 — R2/R3 orbit input and camera ladder — #163, #164
+- Remove the `surfaceActive()` movement gate.
+- Orbit WASD/arrows reproduce the approved free camera movement around the planet.
+- On arrow release, snap to the closest triangle centre exactly like mouse release: shortest turn,
+  ties right, at every orbit distance.
+- One camera state: four discrete stops; remove the separate `surfaceDistance` override.
+- Surface wheel/pinch changes distance in discrete steps and stops.
+- Exit: orbit arrows work; all four stops settle; no jump at `step > 2.5`; horizon 25% at every stop.
+
+### Phase 3 — R4 edge-adjacency core — #166
+- Build an authoritative active-leaf edge-contact graph.
+- Support non-conforming split sides; multiple child centres are separate neighbours.
+- Include the previous triangle; no exclusion.
+- Unit tests for conforming 3, split-side 6/12/24.
+- Exit: deterministic edge-neighbour lists for every active leaf.
+
+### Phase 4 — R4 surface movement — #166
+- Forward/back/left/right use only edge-neighbours.
+- Closest = shortest turn from current facing.
+- Forward ties right; backward ties left-behind; left/right ties right.
+- On arrival, camera aims at the next possible forward direction; no redundant turn.
+- Unlimited turns; previous triangle valid; 0.5 s Bézier/input lock.
+- Exit: no random global targets; no fixed four-option set; browser movement lands only on true
+  edge-neighbours.
+
+### Phase 5 — R5 full acceptance — #165
+- Real browser evidence for R1–R4, including limb and split hierarchy.
+- Full test/CI/a11y/docs gates.
+- Exit: all five 20:14 reports verified fixed; no unsupported “fixed” claim.
+
+Dependencies: Phase 1 and Phase 2 are independent. Phase 3 must precede Phase 4. Phase 5 last.
